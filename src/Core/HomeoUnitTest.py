@@ -27,7 +27,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertTrue(self.unit.inputConnections.last.state == 'manual')
 
     def testClassDefaults(self):
-        "test that  the class has its appropriate dictionary of Defaults and that the values are not empty"
+        """test that  the class has its appropriate dictionary of Defaults and that the values are not empty."""
         defParam = HomeoUnit.defaultParameters  #HomeoUnit class variables with all the defaults values"
 
 
@@ -60,7 +60,6 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertTrue(outputRange.haskey('low'))
         self.assertTrue(outputRange['low'] is not None)
 
- 
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
