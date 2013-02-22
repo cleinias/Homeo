@@ -1,3 +1,6 @@
+from  HomeoNeedleUnit import *
+from  HomeoUniselector import *
+from  HomeoConnection import *
 
 class HomeoUnit:
     """
@@ -85,13 +88,80 @@ class HomeoUnit:
                               density = 1,                      # density of water
                               maxViscosity = (10^6))
     
-##    Names := Set new: 5.
+    #TODO: Need to create a pool of unique names (a Set)
     
     
     def __init__(self):
-        criticalDeviation = 0
-        currentOutput = 0
-        inputConnections = []
-        maxDeviation = 0
+#        "reads default parameters"
+        self.viscosity = HomeoUnit.DefaultParameters['viscosity']
+        self.maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
+        self.outputRange = HomeoUnit.DefaultParameters['outputRange']
+        self.noise = HomeoUnit.DefaultParameters['noise']
+        self.potentiometer = HomeoUnit.DefaultParameters['potentiometer']
+        self.time = HomeoUnit.DefaultParameters['time']
+        self.uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
+        self.uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
+        self.needleCompMethod    = HomeoUnit.DefaultParameters['needleCompMethod']
+        self.uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
+
+        self.currentVelocity = 0 #"a New unit is turned off, hence its velocity is 0"
+
+        self.needleUnit = HomeoNeedleUnit()
+
+
+        #sets the correspondence between the simulation units and real physical units"
+        self. physicalParameters=dict(timeEquivalence =1,         # 1 simulation tick corresponds to 1 second of physical time"
+                                      lengthEquivalence = 0.01,   # 1 unit of displacement corresponds to 1 cm (expressed in meters)"
+                                      massEquivalence = 0.001)        # 1 unit of mass equals one gram, or 0.001 kg"
+    
+        #creates the connection collection and connects the unit to itself in manual mode with a negative feedback"
+        self.inputConnections = ()
+        self.setDefaultSelfConnection()
+
+        #sets default uniselector settings."
+        self.setDefaultUniselectorSettings()
+        #give the unit  a default name
+        self.setUnitName()
+        #generates a random output to set the unit close to equilibrium"
+        self.setDefaultOutputAndDeviation()
         
-    pass
+        #turn the unit on"
+        self.status= 'Active'
+        self.debugMode = False
+        self.showUniselectorAction = False
+    
+    def setDefaultSelfConnection(self):
+        pass
+    def setNewName(self):
+        pass
+    def setDefaultOutputAndConnections(self):
+        pass
+    def setDefaultUniselectorSettings(self):
+        pass
+    def setUnitName(self):
+        pass
+    def setDefaultOutputAndDeviation(self):
+        pass
+    def isConnectedTo(self,aHomeoUnit):
+        pass
+    def addConnection(self, aHomeoUnit, weight,polarity,state):
+        "polarity is 1 or -1; state is 'active' or 'uniselector'"
+        pass
+    def addConnectionWithNoise(self,aHomeoUnit,weight,polarity,noise,state):
+        "polarity is 1 or -1; state is 'active' or 'uniselector'; noise is a number < 1"
+        pass
+    def isReadyToGo(self):
+        pass
+    def saveTo(self,filename):
+        pass
+    def setRandomValues(self):
+        pass
+    def removeConnectionFromUnit(self,aHomeoUnit):
+        pass
+    
+#This is a class method that create a new HomeoUnit instance from filename    
+#       def readFrom(self,filename):
+#        pass
+ 
+        
+    
