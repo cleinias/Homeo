@@ -28,19 +28,19 @@ class HomeoUnitTest(unittest.TestCase):
 
     def testClassDefaults(self):
         """test that  the class has its appropriate dictionary of Defaults and that the values are not empty."""
-        defParam = HomeoUnit.defaultParameters  #HomeoUnit class variables with all the defaults values"
+        defParam = HomeoUnit.DefaultParameters  #HomeoUnit class variables with all the defaults values"
 
 
-        self.assertTrue(defParam.haskey('viscosity'))
-        self.assertTrue(defParam.haskey('maxDeviation'))
-        self.assertTrue(defParam.haskey('outputRange'))
-        self.assertTrue(defParam.haskey('noise'))
-        self.assertTrue(defParam.haskey('potentiometer'))
-        self.assertTrue(defParam.haskey('time'))
-        self.assertTrue(defParam.haskey('uniselectorTimeInterval'))
-        self.assertTrue(defParam.haskey('uniselectorTime'))
-        self.assertTrue(defParam.haskey('needleCompMethod'))
-        self.assertTrue(defParam.haskey('outputRange'))
+        self.assertTrue(defParam.has_key('viscosity'))
+        self.assertTrue(defParam.has_key('maxDeviation'))
+        self.assertTrue(defParam.has_key('outputRange'))
+        self.assertTrue(defParam.has_key('noise'))
+        self.assertTrue(defParam.has_key('potentiometer'))
+        self.assertTrue(defParam.has_key('time'))
+        self.assertTrue(defParam.has_key('uniselectorTimeInterval'))
+        self.assertTrue(defParam.has_key('uniselectorTime'))
+        self.assertTrue(defParam.has_key('needleCompMethod'))
+        self.assertTrue(defParam.has_key('outputRange'))
 
         self.assertTrue(defParam['viscosity'] is not None)
         self.assertTrue(defParam['maxDeviation'] is not None)
@@ -54,11 +54,58 @@ class HomeoUnitTest(unittest.TestCase):
 
         outputRange = defParam['outputRange']
 
-        self.assertTrue(outputRange.haskey('high'))
+        self.assertTrue(outputRange.has_key('high'))
         self.assertTrue(outputRange['high'] is not None)
 
-        self.assertTrue(outputRange.haskey('low'))
+        self.assertTrue(outputRange.has_key('low'))
         self.assertTrue(outputRange['low'] is not None)
+        
+    def  testSaveToFileAndBack(self):
+        "test that the unit can be saved to file and recovered"
+        self.unit.saveTo('pippo.unit')
+        newUnit = HomeoUnit.readFrom('pippo.unit')
+        self.assertTrue(isinstance(newUnit, HomeoUnit))
+        self.assertTrue(self.unit.sameAs(newUnit))
+
+    def testIsConnectedTo(self):
+        newUnit=HomeoUnit()
+        weight = 0.5
+        polarity = 1
+
+        self.assertFalse(self.unit.isConnectedTo(newUnit))
+        self.unit.addConnectionWithWeightAndPolarityAndState(newUnit,weight,polarity,'manual')
+        self.assertTrue(self.unit.isConnectedTo(newUnit))
+        
+    def testRandomizeValues(self):
+        self.unit.setRandomValues
+        oldOutput = self.unit.currentOutput
+        self.unit.setRandomValues
+        self.assertFalse(oldOutput == self.unit.currentOutput)
+            
+    def testRemoveConnection(self):
+        newUnit = HomeoUnit()
+        weight = 0.5
+        polarity = 1
+
+        self.unit.addConnectionWithWeightAndPolarityAndState(newUnit,weight,polarity,'manual')
+        self.unit.removeConnectionFromUnit(newUnit)
+        self.assertFalse(self.unit.isConnectedTo(newUnit))
+
+    def testIstReadyToGo(self):
+        "test the initialization procedure of a HomeoUnit against the conditions set in the isReadyToGo method"
+        "A newly created unit must be ready to go"
+        newUnit=HomeoUnit() 
+        self.assertTrue(newUnit.isReadyToGo)
+
+    def testUnitNameExist(self):
+        "Units must have a name"
+        self.assertTrue(self.unit.name is not None)
+
+    def testUnitNameUnique(self):
+        "Two units cannot have the sane name"
+        secondUnit=HomeoUnit()
+        self.assertFalse(self.unit.name==secondUnit.Name)
+
 
 
 if __name__ == "__main__":
