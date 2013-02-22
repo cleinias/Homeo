@@ -19,7 +19,8 @@ class HomeoUnitTest(unittest.TestCase):
         newUnit = HomeoUnit()
         weight = 0.5
         polarity = 1
-        self.unit.addConnection(newUnit, weight, polarity)
+        state = 'manual'
+        self.unit.addConnection(newUnit, weight, polarity, state)
         self.assertTrue(self.unit.inputConnections is not None)
         self.assertTrue(self.unit.inputConnections.last.incomingUnit == newUnit)
         self.assertTrue(self.unit.inputConnections.last.weight == weight)
@@ -73,13 +74,13 @@ class HomeoUnitTest(unittest.TestCase):
         polarity = 1
 
         self.assertFalse(self.unit.isConnectedTo(newUnit))
-        self.unit.addConnectionWithWeightAndPolarityAndState(newUnit,weight,polarity,'manual')
+        self.unit.addConnection(newUnit,weight,polarity,'manual')
         self.assertTrue(self.unit.isConnectedTo(newUnit))
         
     def testRandomizeValues(self):
-        self.unit.setRandomValues
+        self.unit.setRandomValues()
         oldOutput = self.unit.currentOutput
-        self.unit.setRandomValues
+        self.unit.setRandomValues()
         self.assertFalse(oldOutput == self.unit.currentOutput)
             
     def testRemoveConnection(self):
@@ -87,7 +88,8 @@ class HomeoUnitTest(unittest.TestCase):
         weight = 0.5
         polarity = 1
 
-        self.unit.addConnectionWithWeightAndPolarityAndState(newUnit,weight,polarity,'manual')
+        self.unit.addConnection(newUnit,weight,polarity,'manual')
+        self.assertTrue(self.unit.isConnectedTo(newUnit))
         self.unit.removeConnectionFromUnit(newUnit)
         self.assertFalse(self.unit.isConnectedTo(newUnit))
 
@@ -95,7 +97,7 @@ class HomeoUnitTest(unittest.TestCase):
         "test the initialization procedure of a HomeoUnit against the conditions set in the isReadyToGo method"
         "A newly created unit must be ready to go"
         newUnit=HomeoUnit() 
-        self.assertTrue(newUnit.isReadyToGo)
+        self.assertTrue(newUnit.isReadyToGo())
 
     def testUnitNameExist(self):
         "Units must have a name"
@@ -104,7 +106,7 @@ class HomeoUnitTest(unittest.TestCase):
     def testUnitNameUnique(self):
         "Two units cannot have the sane name"
         secondUnit=HomeoUnit()
-        self.assertFalse(self.unit.name==secondUnit.Name)
+        self.assertFalse(self.unit.name==secondUnit.name)
 
 
 
