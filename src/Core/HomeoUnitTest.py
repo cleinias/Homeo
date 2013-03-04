@@ -141,7 +141,7 @@ class HomeoUnitTest(unittest.TestCase):
 
         self.unit.needleCompMethod('linear')
         self.unit.needleUnit.mass(1)                 # the force acting on a Aristotelian unit is always inversely proportional to the mass. 
-                                                     # set it to 1 to exclude complications from this test."
+                                                                  # set it to 1 to exclude complications from this test."
 
         #1. with self connection to 1, noise at 0, viscosity to 1 and the unit not connected to other units, 
         # the deviation increases by the ratio criticalDeviation/maxDeviation every cycle if it starts positive, 
