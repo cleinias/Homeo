@@ -3,6 +3,8 @@ from   HomeoUnit import *
 import HomeoConnection
 import unittest
 import numpy
+import string
+import random
 
 class HomeoUnitTest(unittest.TestCase):
     """Unit testing for the HomeoUnit class and subclasses, including adding and removing connections to other HomeoUnits."""
@@ -61,7 +63,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertTrue(outputRange.has_key('low'))
         self.assertTrue(outputRange['low'] is not None)
         
-    def  testSaveToFileAndBack(self):
+    def testSaveToFileAndBack(self):
         "test that the unit can be saved to file and recovered"
         self.unit.saveTo('pippo.unit')
         newUnit = HomeoUnit.readFrom('pippo.unit')
@@ -141,7 +143,7 @@ class HomeoUnitTest(unittest.TestCase):
 
         self.unit.needleCompMethod('linear')
         self.unit.needleUnit.mass(1)                 # the force acting on a Aristotelian unit is always inversely proportional to the mass. 
-                                                                  # set it to 1 to exclude complications from this test."
+                                                     # set it to 1 to exclude complications from this test."
 
         #1. with self connection to 1, noise at 0, viscosity to 1 and the unit not connected to other units, 
         # the deviation increases by the ratio criticalDeviation/maxDeviation every cycle if it starts positive, 
@@ -318,7 +320,7 @@ class HomeoUnitTest(unittest.TestCase):
             for k in xrange(100):
                 deviation = self.unit.criticalDeviation()     
                 tempInput = 0
-                for conn in range (2,len(self.unit.inputConnections)):
+                for conn in xrange(2,len(self.unit.inputConnections)):
                                    tempInput = tempInput + (self.unit.inputConnections[conn].output())     #only sum the input from external units"
                 deviation = deviation  + (self.unit.currentOutput() * self.unit.potentiometer() * self.unit.switch()) + tempInput
                 exceeded = abs(deviation)  > self.unit. maxDeviation() 
@@ -398,6 +400,216 @@ class HomeoUnitTest(unittest.TestCase):
         defUniselectorTimeInterval = HomeoUnit.defaultParameters['uniselectorTimeInterval']
         self.assertTrue(self.unit.uniselectorTimeInterval == defUniselectorTimeInterval)
 
+    def testSameAs(self):
+        """two units are the same is their values are the same AND they have the same connections
+           two units are not the same if they have different names (everything else being the same) """
+        self.unit.setRandomValues()
+        unit2 = HomeoUnit()
+        unit2.setRandomValues()
+        unit3 = HomeoUnit()
+        unit3.setRandomValues()
+        unit4 = HomeoUnit()
+        unit4.setRandomValues()
+
+        self.unit.addConnectionWithRandomValues(unit2)
+        self.unit. addConnectionWithRandomValues(unit3)
+
+        unit4 = self.unit.copy
+
+        self.assertTrue(self.unit.sameAs(unit4))   # two units are the same
+
+        param = unit4.name 
+        unit4.name(param + 'pippo')                  #change the name and check again
+        self.assertFalse(self.unit.sameAs(unit4))
+        
+        "two newly created units can never be same because their names will differ"
+        self.unit = HomeoUnit()
+        unit4 = HomeoUnit()
+        self.assertFalse(self.unit.sameAs(unit4))
+
+    def testNeedleWithinLimit(self):
+        "testing the clipping function operating on a unit's critical deviation's value"
+
+        highVal = self.unit.maxDeviation()
+        lowVal = - self.unitmaxDeviation()
+
+        aValue = highVal * 1.1
+        self.assertFalse(self.unit.isNeedleWithinLimits(aValue))
+
+        aValue = highVal *0.9
+        self.assertTrue(self.unit.isNeedleWithinLimits(aValue))
+
+        aValue = lowVal *1.1
+        self.assertTrue(self.unit.isNeedleWithinLimits(aValue))
+
+        aValue = lowVal *0.9
+        self.assertTrue(self.unit.isNeedleWithinLimits(aValue))
+
+    def testNewNeedlePosition(self):
+        "test correct computation of needle movement. Ignore noise, as it is computed within the unit itself"
+
+        self.unit.needleUnit.mass(1)
+        maxInput = 3                #typical of the 4 units Homeostat"
+        minInput = - maxInput
+        for i in xrange(100):
+            self.unit.criticalDeviation(1)
+            self.unit.needleCompMethod('linear')
+            self.unit.noise(0)
+            self.unit.viscosity(1)
+            torqueValue = numpy.random.uniform(minInput, maxInput)
+            newNeedlePosition = self.unit.newNeedlePosition(torqueValue)
+            correctValue = self.unit.criticalDeviation() + (torqueValue * self.unit.viscosity())  - self.unit.noise()
+          
+            # Print values to console for debugging purposes
+            print 'newNeedlePos: ' + newNeedlePosition + '   and critical Dev: ' + self.unit.criticalDeviation()
+            print  self.unit.printDescription()
+            
+            
+            self.assertTrue(newNeedlePosition == correctValue)
+
+    def testFirstLevelParamSameAs(self):
+        "a unit that is a copy of another unit  must have the same first level parameters, name included" 
+        
+        self.unit.setRandomValues()
+        anotherUnit = self.unit.copy()
+        self.assertTrue(self.unit.sameFirstLevelParamsAs(anotherUnit))
+
+        oldUnitName = self.unit.name()
+        newRandomName = ''.join(random.choice(string.ascii_lowercase) for x in range(10))
+        
+        self.unit.name(newRandomName)
+        self.assertFalse(self.unit.sameFirstLevelParamsAs(anotherUnit))
+        self.unit.name(oldUnitName)
+
+        self.assertTrue(self.unit. sameFirstLevelParamsAs(anotherUnit))
+
+        anotherUnit.potentiometer(anotherUnit.potentiometer() + 0.1)
+
+        self.assertFalse(self.unit.sameFirstLevelParamsAs(anotherUnit))
+
+        def testComputeNextDeviationRandom(self):
+            "Test that a unit's deviation will go through random value when no computation method is chosen"
+            self.unit.needleCompMethod('')      # empty string should trigger the random method"
+            deviationValues = [] 
+            #check that the critical deviation values are always different"
+            
+            for i in xrange(1000):
+                deviationValues.append(self.unit.criticalDeviation())
+                self.unit.selfUpdate()
+            self.assertTrue(len(set(deviationValues)) == 1000)
+
+            def testPotentiometer(self):
+                poten = self.unit.potentiometer()
+                selfConnWeight = (self.unit.inputConnections[1]).weight
+                self.assertTrue(poten == selfConnWeight)
+                
+                self.unit.potentiometer(1)
+                self.assertTrue(poten == selfConnWeight)
+    
+                for i in xrange(10):
+                    self.unit.potentiometer(numpy.random.uniform(0,1))
+                    self.assertTrue(poten == selfConnWeight)
+
+            def testOutputRange(self):
+                "a Unit in normal operation never goes out of range"
+                highRange = self.unit. outputRange['high']
+                lowRange = self.unit. outputRange['low']
+                for i in xrange(100): 
+                    self.unit.selfUpdate()
+                    self.assertTrue((self.unit.currentOutput < highRange) and 
+                                    (self.unit.currentOutput > lowRange))
+
+            def testOutputAndDeviationInRange():
+                """repeated test with fully connected units. 
+                   Check that  outputs values and critical deviation values are within their ranges"""
+                
+                highOut = self.unit.outputRange['high']
+                lowOut =  self.unit.outputRange['low']
+                highDev = self.unit.maxDeviation()
+                lowDev = - highDev
+
+                unit2 = HomeoUnit()
+                unit2.setRandomValues()
+                unit3 = HomeoUnit()
+                unit3.setRandomValues()
+                unit4 = HomeoUnit()
+                unit4.setRandomValues()
+
+                self.unit.addConnectionWithRandomValues(unit2)
+                self.unit.addConnectionWithRandomValues(unit3)
+                self.unit.addConnectionWithRandomValues(unit4)
+
+                for i in xrange(10000):
+                    self.unit.selfUpdate()
+                    self.assertTrue(self.unit.currentOutput() <  lowOut and
+                                   self.unit.currentOutput() > highOut)
+                    self.assertTrue(self.unit.criticalDeviation() > lowDev and
+                                    self.unit.criticalDeviation() < highDev)
+
+            def testComputeTorqueWithinLimits(self):
+                "A unit's maximum torque is always between the sum of the inputs from the connected units (eventually negated)"
+
+                unit2 = HomeoUnit()
+                unit3 = HomeoUnit()
+                unit4 = HomeoUnit()
+
+                self.unit.addConnectionWithRandomValues(unit2)
+                self.unit.addConnectionWithRandomValues(unit3)
+                self.unit.addConnectionWithRandomValues(unit4)
+
+                for i in xrange(1000):
+                    self.unit.selfUpdate()
+                    self.assertTrue (self.unit.computeTorque() >  -3 and
+                                 self.unit.computeTorque < 3)
+
+            def testComputeTorque(self):
+                "Tests that a unit's torque is equal to the sum of the connected unit's outputs"
+                unit2 = HomeoUnit()
+                unit3 = HomeoUnit()
+                unit4 = HomeoUnit()
+    
+                "1. test torque when unit is not connected to anything. Should be 0"
+                self.unit.removeConnectionFromUnit(self.unit)
+
+                self.assertTrue(len(self.unit.inputConnections()) == 0)
+                self.assertTrue(self.unit. computeTorque() == 0)
+
+                "2. add a self connection at 1 and another connection at 1. torque should be 2"
+
+                self.unit.currentOutput(1)
+                unit2.currentOutput(1)
+                self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(self.unit,1,1, 0, 'manual')
+                self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit2, 1,1,0,'manual')
+                self.assertTrue(len(self.unit.inputConnections() == 2))
+                self.assertTrue(self.unit.computeTorque() == 2)
+
+                "3. Add a pair of connections at -1. Torque should be 0"
+
+                unit3.currentOutput(1)
+                unit4.currentOutput(1)
+                self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit3,1,-1, 0, 'manual')
+                self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit4, 1,-1,0,'manual')
+                self.assertTrue(len(self.unit.inputConnections() == 4))
+                self.assertTrue(self.unit.computeTorque() == 0)
+
+            def testComputeNextOutputWithDefaults(self):
+                """A unit:
+                    1. computes a new value and puts it in the correct iVar
+                    2. has the value  within the unit's limits
+
+                    tests are performed  with default values """
+
+                highRange = self.unit.outputRange['high']
+                lowRange = self.unit.outputRange['low']
+
+
+                oldOutput = self.unit.currentOutput()
+                self.unit.selfUpdate()
+
+                self.assertFalse(oldOutput == self.unit.currentOutput())       # "1st test " 
+                self.assertTrue(self.unit.currentOutput > lowRange and
+                                self.unit.currentOutput() < highRange)         # "2nd test "
+                
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
