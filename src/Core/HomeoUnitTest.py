@@ -1,10 +1,11 @@
-   
 from   HomeoUnit import *
 import HomeoConnection
+from General_Helper_Functions import import *
 import unittest
 import numpy
 import string
 import random
+
 
 class HomeoUnitTest(unittest.TestCase):
     """Unit testing for the HomeoUnit class and subclasses, including adding and removing connections to other HomeoUnits."""
@@ -602,14 +603,152 @@ class HomeoUnitTest(unittest.TestCase):
                 highRange = self.unit.outputRange['high']
                 lowRange = self.unit.outputRange['low']
 
-
-                oldOutput = self.unit.currentOutput()
+                oldOutput= self.unit.currentOutput()
                 self.unit.selfUpdate()
 
                 self.assertFalse(oldOutput == self.unit.currentOutput())       # "1st test " 
                 self.assertTrue(self.unit.currentOutput > lowRange and
                                 self.unit.currentOutput() < highRange)         # "2nd test "
                 
+            def testComputeNextDeviationWithDefaults(self):
+                """
+                A unit:
+                    1. computes a new value for critical deviaiton and puts it in the correct iVar
+                    2. has the value within the unit's limits
+
+                    tests are performed  with default values 
+                """
+                highRange = self.unit.maxDeviation()
+                lowRange = - highRange
+
+                oldCriticalDeviation = self.unit.criticalDeviation()
+                self.unit.selfUpdate()
+
+                self.assertFalse(oldNextDeviation == self.unit.criticalDeviation())       # "1st test " 
+                self.assertTrue(self.unit.criticalDeviation() > lowRange and
+                                self.unit.criticalDeviation() < highRange)         # "2nd test "
+
+def testComputeNextDeviationProportional(self):
+        """the polarity of the output controls the change in the criticalDeviation through simple summation. 
+        However, the change is proportional to the range of deviation of the output. 
+
+        """
+
+        self.unit.needleCompMethod('proportional')
+
+        #" We set noises to 0, viscosity to 1, potentiometer to 1, etc, to check that the basic mechanism works."
+
+
+        # 1. with self connection to 1, noise at 0, viscosity to 1 and the unit not connected to other units, 
+        # the deviation should increase by the ratio b/w unit's inputs and unit's range" 
+
+        self.unit.potentiometer(1)      # set the weight of the self-connection"
+        self.unit. switch(1)            # set the polarity of the self-connection"
+        self.unit. noise(0)
+        self.unit.viscosity(1)
+        self.unit.criticalDeviation(0)
+        self.unit.currentOutput(2)
+        self.unit.maxDeviation(10)
+        unitRange = self.unit.outputRange['high'] - self.unit.outputRange['low']
+        proportionalIncrease = self.unit.currentOutput() / unitRange  
+
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.criticalDeviation() == 0 + proportionalIncrease)
+
+        # 2 with  output negative we decrease by the same ratio"
+        self.unit.criticalDeviation(0)
+        self.unit.currentOutput(-2)
+        self.unit.maxDeviation(10)
+        proportionalIncrease = self.unit.currentOutput() / unitRange  
+
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.criticalDeviation() ==  0 + proportionalIncrease)
+
+    def testChangeUniselectorType(self):
+        """
+        try changing a HomeoUnit uniselector  to an instance of the HomeoUniselector (sub)class
+        and to some random string
+        """
+        goodUniselectors = []
+        badUniselectors = []
+
+    goodUniselectors.extend([class_.__name__ for class_ in withAllSubclasses(HomeoUniselector)])
+    badUniselectors.extend('Ashby','UniformRandom','HomeoUnit')
+    self.unit.setDefaultUniselectorSettings()
+    for unisel in goodUniselectors:
+        self.unit.uniselectorChangeType(unisel)
+        self.assertTrue(self.unit.uniselector().__class__.__name__ == unisel)
+
+    self.unit.setDefaultUniselectorSettings()
+    for unisel in badUniselectors:
+        self.unit.uniselectorChangeType(unisel)
+        self .assertFalse(self.unit.uniselector.__class__.__name__ == unisel)
+
+    def testViscosity(self):
+        """
+        TODO Viscosity reduces the effect of  the outside force on the unit's needle movement.
+    
+        When viscosity = 0, the force affecting the unit  is unchanged"""
+
+        self.assertTrue(False)
+
+
+        "When viscosity > 0, the force  changes according to drag. Real tests of drag laws performed in drag unit tests. Here we just check that it is lower than when viscosity +0"
+
+        self.assertTrue(False)
+
+    def testSelfUpdateAdvancesUnitTime(self):
+        """
+        Test that a HomeoUnit's simulation time advances by 1 after a self update
+        """
+        oldUnitTime = self.unit.'CHECK THE CORRECT METHOD NAME IN VW'
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.'CHECK THE CORRECT METHOD NAME IN VW' == oldUnitTime + 1)
+
+    def testSelfUpdateAdvancesUniselctorTime(self):
+        """
+        Test that a HomeoUnit's Uniselector's simulation time advances by 1 after a self update
+        """
+        oldUniselectorTime= self.unit.uniselectorTime()
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.uniselectorTime() == oldUniselectorTime + 1)
+
+    def testDeviationComputationsDontTouchInstanceVariables(self):
+        """
+        Check that the various methods used to compute the critical deviation simply output 
+         a value and do not indeed change the actual value of deviation stored in the instance variable
+         """
+    
+        self.unit.setRandomValues()
+
+        self.unit.needleCompMethod('linear')
+        for i in xrange(10):
+                    aTorqueValue = numpy.random.uniform( -1 ,  1)
+                    oldDeviation = self.unit.criticalDeviation()
+                    self.unit.newNeedlePosition(aTorqueValue)
+                    self.assertTrue(oldDeviation == self.unit.criticalDeviation)
+
+        self.unit.needleCompMethod('proportional')
+        for i in xrange(10):
+                    aTorqueValue = numpy.random.uniform( -1 ,  1)
+                    oldDeviation = self.unit.criticalDeviation()
+                    self.unit.newNeedlePosition(aTorqueValue)
+                    self.assertTrue(oldDeviation == self.unit.criticalDeviation)
+
+        self.unit.needleCompMethod('random')
+        for i in xrange(10):
+                    aTorqueValue = numpy.random.uniform( -1 ,  1)
+                    oldDeviation = self.unit.criticalDeviation()
+                    self.unit.newNeedlePosition(aTorqueValue)
+                    self.assertTrue(oldDeviation == self.unit.criticalDeviation)
+
+        self.unit needleCompMethod('')
+        for i in xrange(10):
+                    aTorqueValue = numpy.random.uniform( -1 ,  1)
+                    oldDeviation = self.unit.criticalDeviation()
+                    self.unit.newNeedlePosition(aTorqueValue)
+                    self.assertTrue(oldDeviation == self.unit.criticalDeviation)
+    
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
