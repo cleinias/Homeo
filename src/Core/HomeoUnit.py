@@ -92,7 +92,13 @@ class HomeoUnit:
     
     
     def __init__(self):
-#        "reads default parameters"
+        """
+        Initialize the HomeoUnit with the default parameters found in the Class variable 
+        DefaultParameters. Assign a random but unique name and sets the output to 
+        some value around 0, i.e. at equilibrium.
+        These values are supposed to be overridden in normal practice, because the values are set  by the  simulation 
+        (an instance of HomeoSimulation or by the graphic interface)
+        """
         self.__viscosity = HomeoUnit.DefaultParameters['viscosity']
         self.__maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
         self.__outputRange = HomeoUnit.DefaultParameters['outputRange']
@@ -136,19 +142,54 @@ class HomeoUnit:
     def viscosity(self):
         return self.__viscosity
     
+    def setPotentiometer(self, aValue):
+        self.__potentiometer = aValue
+    def potentiometer(self):
+        return self.__potentiometer
     
-    #===========================================================================
-    # HomeoUnit.DefaultParameters['viscosity']
-    #    self.__maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
-    #    self.__outputRange = HomeoUnit.DefaultParameters['outputRange']
-    #    self.__noise = HomeoUnit.DefaultParameters['noise']
-    #    self.__potentiometer = HomeoUnit.DefaultParameters['potentiometer']
-    #    self.__time = HomeoUnit.DefaultParameters['time']
-    #    self.__uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
-    #    self.__uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
-    #    self.__needleCompMethod    = HomeoUnit.DefaultParameters['needleCompMethod']
-    #    self.__uniselectorActivated
-    #===========================================================================
+    def setNoise(self, aValue):
+        self.__noise = aValue
+    def noise(self):
+        return self.__noise
+    
+    def setTime(self, aValue):
+        self.__time = aValue
+    def time(self):
+        return self.__time
+    
+    def setUniselectorTime(self, aValue):
+        self.__uniselectorTime = aValue
+    def uniselectorTime(self):
+        return self.__uniselectorTime
+    
+    def setNeedleCompMethod(self, aString):
+        self.__needleCompMethod = aString
+    def needleCompMethod(self):
+        return self.__needleCompMethod
+    
+    def setMaxDeviation(self,aValue):
+        self.__maxDeviation = aValue
+    def maxDeviation(self):
+        return self.__maxDeviation
+    
+    def setOutputRange(self, aDict):
+        self.__outputRange = aDict
+    
+    def outputRange(self):
+        return self.__outputRange
+
+    def setUniselectorActivated(self,aBoolean):
+        self.__uniselectorActivated = aBoolean
+    def uniselectorActivate(self):
+        return self.__uniselectorActivated
+    
+    def setUniselectorTimeInterval(self,aValue):
+        self.__uniselectorTimeInterval = aValue
+    def uniselectorTimeInterval(self):
+        return self.__uniselectorTimeInterval
+
+    "end of setter and getter methods"
+
     
     def setDefaultSelfConnection(self):
         pass
