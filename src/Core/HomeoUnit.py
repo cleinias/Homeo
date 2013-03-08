@@ -93,29 +93,29 @@ class HomeoUnit:
     
     def __init__(self):
 #        "reads default parameters"
-        self.viscosity = HomeoUnit.DefaultParameters['viscosity']
-        self.maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
-        self.outputRange = HomeoUnit.DefaultParameters['outputRange']
-        self.noise = HomeoUnit.DefaultParameters['noise']
-        self.potentiometer = HomeoUnit.DefaultParameters['potentiometer']
-        self.time = HomeoUnit.DefaultParameters['time']
-        self.uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
-        self.uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
-        self.needleCompMethod    = HomeoUnit.DefaultParameters['needleCompMethod']
-        self.uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
+        self.__viscosity = HomeoUnit.DefaultParameters['viscosity']
+        self.__maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
+        self.__outputRange = HomeoUnit.DefaultParameters['outputRange']
+        self.__noise = HomeoUnit.DefaultParameters['noise']
+        self.__potentiometer = HomeoUnit.DefaultParameters['potentiometer']
+        self.__time = HomeoUnit.DefaultParameters['time']
+        self.__uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
+        self.__uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
+        self.__needleCompMethod    = HomeoUnit.DefaultParameters['needleCompMethod']
+        self.__uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
 
-        self.currentVelocity = 0 #"a New unit is turned off, hence its velocity is 0"
+        self.__currentVelocity = 0 #"a New unit is turned off, hence its velocity is 0"
 
-        self.needleUnit = HomeoNeedleUnit()
+        self.__needleUnit = HomeoNeedleUnit()
 
 
         #sets the correspondence between the simulation units and real physical units"
-        self. physicalParameters=dict(timeEquivalence =1,         # 1 simulation tick corresponds to 1 second of physical time"
+        self.__physicalParameters=dict(timeEquivalence =1,         # 1 simulation tick corresponds to 1 second of physical time"
                                       lengthEquivalence = 0.01,   # 1 unit of displacement corresponds to 1 cm (expressed in meters)"
                                       massEquivalence = 0.001)        # 1 unit of mass equals one gram, or 0.001 kg"
     
         #creates the connection collection and connects the unit to itself in manual mode with a negative feedback"
-        self.inputConnections = ()
+        self.__inputConnections = []
         self.setDefaultSelfConnection()
 
         #sets default uniselector settings."
@@ -129,6 +129,26 @@ class HomeoUnit:
         self.status= 'Active'
         self.debugMode = False
         self.showUniselectorAction = False
+        
+    "setter and getter methods for external access"
+    def setViscosity(self, aValue):
+        self.__viscosity = aValue
+    def viscosity(self):
+        return self.__viscosity
+    
+    
+    #===========================================================================
+    # HomeoUnit.DefaultParameters['viscosity']
+    #    self.__maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
+    #    self.__outputRange = HomeoUnit.DefaultParameters['outputRange']
+    #    self.__noise = HomeoUnit.DefaultParameters['noise']
+    #    self.__potentiometer = HomeoUnit.DefaultParameters['potentiometer']
+    #    self.__time = HomeoUnit.DefaultParameters['time']
+    #    self.__uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
+    #    self.__uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
+    #    self.__needleCompMethod    = HomeoUnit.DefaultParameters['needleCompMethod']
+    #    self.__uniselectorActivated
+    #===========================================================================
     
     def setDefaultSelfConnection(self):
         pass
@@ -161,7 +181,7 @@ class HomeoUnit:
     
 #This is a class method that create a new HomeoUnit instance from filename    
 #       def readFrom(self,filename):
-#        pass
+#           pass
  
         
     
