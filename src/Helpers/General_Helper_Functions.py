@@ -7,6 +7,4 @@ def withAllSubclasses(aClass):
     subs.extend([x for x in aClass.__subclasses__()])
     return subs
 
-class Foo(object):
-    pass
     

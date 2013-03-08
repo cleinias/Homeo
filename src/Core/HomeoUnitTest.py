@@ -1,10 +1,11 @@
 from   HomeoUnit import *
-import HomeoConnection
-from General_Helper_Functions import import *
-import unittest
-import numpy
-import string
-import random
+from   HomeoConnection import *
+from   HomeoUniselector import *
+from   Homeostat import *
+from   HomeoNeedleUnit import *
+from   Helpers.General_Helper_Functions import *
+
+import unittest, numpy, string, random
 
 
 class HomeoUnitTest(unittest.TestCase):
@@ -499,136 +500,143 @@ class HomeoUnitTest(unittest.TestCase):
                 self.unit.selfUpdate()
             self.assertTrue(len(set(deviationValues)) == 1000)
 
-            def testPotentiometer(self):
-                poten = self.unit.potentiometer()
-                selfConnWeight = (self.unit.inputConnections[1]).weight
-                self.assertTrue(poten == selfConnWeight)
+    def testPotentiometer(self):
+        poten = self.unit.potentiometer()
+        selfConnWeight = (self.unit.inputConnections[1]).weight
+        self.assertTrue(poten == selfConnWeight)
                 
-                self.unit.potentiometer(1)
-                self.assertTrue(poten == selfConnWeight)
+        self.unit.potentiometer(1)
+        self.assertTrue(poten == selfConnWeight)
+        
+        for i in xrange(10):
+            self.unit.potentiometer(numpy.random.uniform(0,1))
+            self.assertTrue(poten == selfConnWeight)
+
+    def testOutputRange(self):
+        "a Unit in normal operation never goes out of range"
+        highRange = self.unit. outputRange['high']
+        lowRange = self.unit. outputRange['low']
+        for i in xrange(100): 
+            self.unit.selfUpdate()
+            self.assertTrue((self.unit.currentOutput < highRange) and 
+                            (self.unit.currentOutput > lowRange))
+
+    def testOutputAndDeviationInRange(self):
+        """
+        Repeated test with fully connected units. 
+        Check that  outputs values and 
+        critical deviation values are within their ranges
+        """
+                
+        highOut = self.unit.outputRange['high']
+        lowOut = self.unit.outputRange['low']
+        highDev = self.unit.maxDeviation()
+        lowDev = -highDev
+
+        unit2 = HomeoUnit()
+        unit2.setRandomValues()
+        unit3 = HomeoUnit()
+        unit3.setRandomValues()
+        unit4 = HomeoUnit()
+        unit4.setRandomValues()
+
+        self.unit.addConnectionWithRandomValues(unit2)
+        self.unit.addConnectionWithRandomValues(unit3)
+        self.unit.addConnectionWithRandomValues(unit4)
+
+        for i in xrange(10000):
+            self.unit.selfUpdate()
+            self.assertTrue(self.unit.currentOutput() < lowOut and
+                            self.unit.currentOutput() > highOut)
+            self.assertTrue(self.unit.criticalDeviation() > lowDev and
+                            self.unit.criticalDeviation() < highDev)
+
+
+    def testComputeTorqueWithinLimits(self):
+        """
+        A unit's maximum torque is always between 
+        the sum of the inputs from the connected units (eventually negated)
+        """
+
+        unit2 = HomeoUnit()
+        unit3 = HomeoUnit()
+        unit4 = HomeoUnit()
+
+        self.unit.addConnectionWithRandomValues(unit2)
+        self.unit.addConnectionWithRandomValues(unit3)
+        self.unit.addConnectionWithRandomValues(unit4)
+
+        for i in xrange(1000):
+            self.unit.selfUpdate()
+            self.assertTrue (self.unit.computeTorque() >  -3 and
+                             self.unit.computeTorque < 3)
+
+    def testComputeTorque(self):
+        "Tests that a unit's torque is equal to the sum of the connected unit's outputs"
+        unit2 = HomeoUnit()
+        unit3 = HomeoUnit()
+        unit4 = HomeoUnit()
     
-                for i in xrange(10):
-                    self.unit.potentiometer(numpy.random.uniform(0,1))
-                    self.assertTrue(poten == selfConnWeight)
+        "1. test torque when unit is not connected to anything. Should be 0"
+        self.unit.removeConnectionFromUnit(self.unit)
 
-            def testOutputRange(self):
-                "a Unit in normal operation never goes out of range"
-                highRange = self.unit. outputRange['high']
-                lowRange = self.unit. outputRange['low']
-                for i in xrange(100): 
-                    self.unit.selfUpdate()
-                    self.assertTrue((self.unit.currentOutput < highRange) and 
-                                    (self.unit.currentOutput > lowRange))
+        self.assertTrue(len(self.unit.inputConnections()) == 0)
+        self.assertTrue(self.unit. computeTorque() == 0)
 
-            def testOutputAndDeviationInRange():
-                """repeated test with fully connected units. 
-                   Check that  outputs values and critical deviation values are within their ranges"""
-                
-                highOut = self.unit.outputRange['high']
-                lowOut =  self.unit.outputRange['low']
-                highDev = self.unit.maxDeviation()
-                lowDev = - highDev
+        "2. add a self connection at 1 and another connection at 1. torque should be 2"
 
-                unit2 = HomeoUnit()
-                unit2.setRandomValues()
-                unit3 = HomeoUnit()
-                unit3.setRandomValues()
-                unit4 = HomeoUnit()
-                unit4.setRandomValues()
+        self.unit.currentOutput(1)
+        unit2.currentOutput(1)
+        self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(self.unit,1,1, 0, 'manual')
+        self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit2, 1,1,0,'manual')
+        self.assertTrue(len(self.unit.inputConnections() == 2))
+        self.assertTrue(self.unit.computeTorque() == 2)
 
-                self.unit.addConnectionWithRandomValues(unit2)
-                self.unit.addConnectionWithRandomValues(unit3)
-                self.unit.addConnectionWithRandomValues(unit4)
+        "3. Add a pair of connections at -1. Torque should be 0"
 
-                for i in xrange(10000):
-                    self.unit.selfUpdate()
-                    self.assertTrue(self.unit.currentOutput() <  lowOut and
-                                   self.unit.currentOutput() > highOut)
-                    self.assertTrue(self.unit.criticalDeviation() > lowDev and
-                                    self.unit.criticalDeviation() < highDev)
+        unit3.currentOutput(1)
+        unit4.currentOutput(1)
+        self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit3,1,-1, 0, 'manual')
+        self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit4, 1,-1,0,'manual')
+        self.assertTrue(len(self.unit.inputConnections() == 4))
+        self.assertTrue(self.unit.computeTorque() == 0)
 
-            def testComputeTorqueWithinLimits(self):
-                "A unit's maximum torque is always between the sum of the inputs from the connected units (eventually negated)"
+    def testComputeNextOutputWithDefaults(self):
+        """A unit:
+            1. computes a new value and puts it in the correct iVar
+            2. has the value  within the unit's limits
 
-                unit2 = HomeoUnit()
-                unit3 = HomeoUnit()
-                unit4 = HomeoUnit()
+            tests are performed  with default values """
 
-                self.unit.addConnectionWithRandomValues(unit2)
-                self.unit.addConnectionWithRandomValues(unit3)
-                self.unit.addConnectionWithRandomValues(unit4)
+        highRange = self.unit.outputRange['high']
+        lowRange = self.unit.outputRange['low']
 
-                for i in xrange(1000):
-                    self.unit.selfUpdate()
-                    self.assertTrue (self.unit.computeTorque() >  -3 and
-                                 self.unit.computeTorque < 3)
+        oldOutput= self.unit.currentOutput()
+        self.unit.selfUpdate()
 
-            def testComputeTorque(self):
-                "Tests that a unit's torque is equal to the sum of the connected unit's outputs"
-                unit2 = HomeoUnit()
-                unit3 = HomeoUnit()
-                unit4 = HomeoUnit()
-    
-                "1. test torque when unit is not connected to anything. Should be 0"
-                self.unit.removeConnectionFromUnit(self.unit)
+        self.assertFalse(oldOutput == self.unit.currentOutput())       # "1st test " 
+        self.assertTrue(self.unit.currentOutput > lowRange and
+                        self.unit.currentOutput() < highRange)         # "2nd test "
+        
+    def testComputeNextDeviationWithDefaults(self):
+        """
+        A unit:
+            1. computes a new value for critical deviaiton and puts it in the correct iVar
+            2. has the value within the unit's limits
 
-                self.assertTrue(len(self.unit.inputConnections()) == 0)
-                self.assertTrue(self.unit. computeTorque() == 0)
+            tests are performed  with default values 
+        """
+        highRange = self.unit.maxDeviation()
+        lowRange = - highRange
 
-                "2. add a self connection at 1 and another connection at 1. torque should be 2"
+        oldCriticalDeviation = self.unit.criticalDeviation()
+        self.unit.selfUpdate()
 
-                self.unit.currentOutput(1)
-                unit2.currentOutput(1)
-                self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(self.unit,1,1, 0, 'manual')
-                self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit2, 1,1,0,'manual')
-                self.assertTrue(len(self.unit.inputConnections() == 2))
-                self.assertTrue(self.unit.computeTorque() == 2)
+        self.assertFalse(oldCriticalDeviation == self.unit.criticalDeviation())       # "1st test " 
+        self.assertTrue(self.unit.criticalDeviation() > lowRange and
+                        self.unit.criticalDeviation() < highRange)         # "2nd test "
 
-                "3. Add a pair of connections at -1. Torque should be 0"
-
-                unit3.currentOutput(1)
-                unit4.currentOutput(1)
-                self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit3,1,-1, 0, 'manual')
-                self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit4, 1,-1,0,'manual')
-                self.assertTrue(len(self.unit.inputConnections() == 4))
-                self.assertTrue(self.unit.computeTorque() == 0)
-
-            def testComputeNextOutputWithDefaults(self):
-                """A unit:
-                    1. computes a new value and puts it in the correct iVar
-                    2. has the value  within the unit's limits
-
-                    tests are performed  with default values """
-
-                highRange = self.unit.outputRange['high']
-                lowRange = self.unit.outputRange['low']
-
-                oldOutput= self.unit.currentOutput()
-                self.unit.selfUpdate()
-
-                self.assertFalse(oldOutput == self.unit.currentOutput())       # "1st test " 
-                self.assertTrue(self.unit.currentOutput > lowRange and
-                                self.unit.currentOutput() < highRange)         # "2nd test "
-                
-            def testComputeNextDeviationWithDefaults(self):
-                """
-                A unit:
-                    1. computes a new value for critical deviaiton and puts it in the correct iVar
-                    2. has the value within the unit's limits
-
-                    tests are performed  with default values 
-                """
-                highRange = self.unit.maxDeviation()
-                lowRange = - highRange
-
-                oldCriticalDeviation = self.unit.criticalDeviation()
-                self.unit.selfUpdate()
-
-                self.assertFalse(oldNextDeviation == self.unit.criticalDeviation())       # "1st test " 
-                self.assertTrue(self.unit.criticalDeviation() > lowRange and
-                                self.unit.criticalDeviation() < highRange)         # "2nd test "
-
-def testComputeNextDeviationProportional(self):
+    def testComputeNextDeviationProportional(self):
         """the polarity of the output controls the change in the criticalDeviation through simple summation. 
         However, the change is proportional to the range of deviation of the output. 
 
@@ -672,17 +680,17 @@ def testComputeNextDeviationProportional(self):
         goodUniselectors = []
         badUniselectors = []
 
-    goodUniselectors.extend([class_.__name__ for class_ in withAllSubclasses(HomeoUniselector)])
-    badUniselectors.extend('Ashby','UniformRandom','HomeoUnit')
-    self.unit.setDefaultUniselectorSettings()
-    for unisel in goodUniselectors:
-        self.unit.uniselectorChangeType(unisel)
-        self.assertTrue(self.unit.uniselector().__class__.__name__ == unisel)
+        goodUniselectors.extend([class_.__name__ for class_ in withAllSubclasses(HomeoUniselector)])
+        badUniselectors.extend('Ashby','UniformRandom','HomeoUnit')
+        self.unit.setDefaultUniselectorSettings()
+        for unisel in goodUniselectors:
+            self.unit.uniselectorChangeType(unisel)
+            self.assertTrue(self.unit.uniselector().__class__.__name__ == unisel)
 
-    self.unit.setDefaultUniselectorSettings()
-    for unisel in badUniselectors:
-        self.unit.uniselectorChangeType(unisel)
-        self .assertFalse(self.unit.uniselector.__class__.__name__ == unisel)
+        self.unit.setDefaultUniselectorSettings()
+        for unisel in badUniselectors:
+            self.unit.uniselectorChangeType(unisel)
+            self .assertFalse(self.unit.uniselector.__class__.__name__ == unisel)
 
     def testViscosity(self):
         """
@@ -701,9 +709,9 @@ def testComputeNextDeviationProportional(self):
         """
         Test that a HomeoUnit's simulation time advances by 1 after a self update
         """
-        oldUnitTime = self.unit.'CHECK THE CORRECT METHOD NAME IN VW'
+        oldUnitTime = self.unit.time() 
         self.unit.selfUpdate()
-        self.assertTrue(self.unit.'CHECK THE CORRECT METHOD NAME IN VW' == oldUnitTime + 1)
+        self.assertTrue(self.unit.time() == oldUnitTime + 1)
 
     def testSelfUpdateAdvancesUniselctorTime(self):
         """
@@ -742,7 +750,7 @@ def testComputeNextDeviationProportional(self):
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
-        self.unit needleCompMethod('')
+        self.unit.needleCompMethod('')
         for i in xrange(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
                     oldDeviation = self.unit.criticalDeviation()
