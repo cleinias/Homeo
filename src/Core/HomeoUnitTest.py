@@ -109,8 +109,8 @@ class HomeoUnitTest(unittest.TestCase):
 
     def testUnitNameUnique(self):
         "Two units cannot have the sane name. Check on 100 units"
-        #Create 100 unitsw, collects their names and check"
-        self.unitsNames = []
+        #Create 100 units, collects their names and check"
+        self.unitsNames = ()
         for i in xrange(100):
             newUnit = HomeoUnit()
             self.unitNames.append(newUnit.name())
@@ -713,7 +713,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.selfUpdate()
         self.assertTrue(self.unit.time() == oldUnitTime + 1)
 
-    def testSelfUpdateAdvancesUniselctorTime(self):
+    def testSelfUpdateAdvancesUniselectorTime(self):
         """
         Test that a HomeoUnit's Uniselector's simulation time advances by 1 after a self update
         """
