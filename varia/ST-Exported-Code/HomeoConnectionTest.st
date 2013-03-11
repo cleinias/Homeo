@@ -37,18 +37,18 @@
 <methods>
 <class-id>HomeoConnectionTest</class-id> <category>running</category>
 
-<body package="Homeostat" selector="testAddConnection">testAddConnection
+DONE <!--<body package="Homeostat" selector="testAddConnection">testAddConnection
 
-self assert: ((connection incomingUnit) = unit1).</body>
+self assert: ((connection incomingUnit) = unit1).</body>-->
 
-<body package="Homeostat" selector="testDefaults">testDefaults
+DONE <!--<body package="Homeostat" selector="testDefaults">testDefaults
 	"comment stating purpose of message"
 
 	self assert: ((connection weight) between: 0 and: 1).
 	self assert: ((connection noise) between: 0 and: 0.1).
-	self assert: ((connection switch) notNil).</body>
+	self assert: ((connection switch) notNil).</body>-->
 
-<body package="Homeostat" selector="testSameAs">testSameAs
+DONE <!--<body package="Homeostat" selector="testSameAs">testSameAs
 
 |connection2 |
 unit1 := HomeoUnit new.
@@ -66,9 +66,9 @@ self assert: (connection sameAs: connection2).
 
 connection incomingUnit: unit2.
 
-self deny: (connection sameAs: connection2).</body>
+self deny: (connection sameAs: connection2).</body>-->
 
-<body package="Homeostat" selector="testState">testState
+DONE <!--<body package="Homeostat" selector="testState">testState
 
 "test default state of the connection  units" 
 self assert: ((connection state) = 'uniselector'). 
@@ -79,9 +79,9 @@ connection switchToUniselector.
 self assert: ((connection state) = 'uniselector').
 
 connection switchToManual.
-self assert: ((connection state) = 'manual').</body>
+self assert: ((connection state) = 'manual').</body>-->
 
-<body package="Homeostat" selector="testValueOfState">testValueOfState
+DONE <!--<body package="Homeostat" selector="testValueOfState">testValueOfState
 	""
 
 self assert: (((connection state) = 'manual') or: [(connection state) = 'uniselector']).
@@ -92,9 +92,9 @@ self assert: (((connection state) = 'manual') or: [(connection state) = 'unisele
 connection state: 'uniselector'.
 self assert: (((connection state) = 'manual') or: [(connection state) = 'uniselector']).
 
-self should: [connection state:  'wrongValue']  raise: Error.</body>
+self should: [connection state:  'wrongValue']  raise: Error.</body>-->
 
-<body package="Homeostat" selector="testWeight">testWeight
+DONE <!--<body package="Homeostat" selector="testWeight">testWeight
 
 
 	| outputWeighed  inputUnit errorTolerance noiseLevel|
@@ -104,14 +104,14 @@ self should: [connection state:  'wrongValue']  raise: Error.</body>
 	inputUnit := connection incomingUnit.
 	connection noise: 0.                               "eliminate noise"
 	self assert: (outputWeighed -
-				 (inputUnit currentOutput * connection weight * connection switch - connection noise) &lt; errorTolerance).
+				 (inputUnit currentOutput * connection weight * connection switch - connection noise) < errorTolerance).
 
 	"accounting for noise"
 	connection noise: noiseLevel.                               "set noise"
 	
-	"the differnece between the weighed connection output and the unit's value is at most eual to noise (plus the tolerance"
+	"the differnece between the weighed connection output and the unit's value is at most equal to noise (plus the tolerance"
 	self assert: ((outputWeighed -
-				 (inputUnit currentOutput * connection weight * connection switch - connection noise)) abs &lt; (noiseLevel + errorTolerance)).</body>
+				 (inputUnit currentOutput * connection weight * connection switch - connection noise)) abs < (noiseLevel + errorTolerance)).</body>-->
 </methods>
 
 <methods>
@@ -123,13 +123,13 @@ self should: [connection state:  'wrongValue']  raise: Error.</body>
 	" *** Replace this comment with the appropriate initialization code *** "
 	^self</body>
 
-<body package="Homeostat" selector="setUp">setUp
+DONE <!--<body package="Homeostat" selector="setUp">setUp
 	"comment stating purpose of message"
 
 	unit1 := HomeoUnit new.
 	unit1 selfUpdate.              "allows the unit to have some values in its slots"
 	connection := HomeoConnection new.
-	connection incomingUnit: unit1.</body>
+	connection incomingUnit: unit1.</body>-->
 </methods>
 
 </st-source>

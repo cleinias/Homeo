@@ -53,7 +53,7 @@ currentClasses do: [:string| self assert: (HomeoUniselector includesType: string
 <body package="Homeostat" selector="testIntervalBounds">testIntervalBounds
 
 
-self assert: ((uniselector upperBound) - (uniselector lowerBound)) &gt;= 0.</body>
+ self assert: ((uniselector upperBound) - (uniselector lowerBound)) >= 0.</body>
 </methods>
 
 <methods>

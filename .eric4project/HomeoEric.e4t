@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Tasks SYSTEM "Tasks-4.2.dtd">
 <!-- eric4 tasks file for project HomeoEric -->
-<!-- Saved: 2013-03-06, 23:45:50 -->
+<!-- Saved: 2013-03-08, 11:13:20 -->
 <Tasks version="4.2">
+  <Task priority="1" completed="False" bugfix="False">
+    <Summary>TODO: Need to create a pool of unique names (a Set)</Summary>
+    <Description></Description>
+    <Created>2013-03-08, 11:13:20</Created>
+    <Resource>
+      <Filename>src/Core/HomeoUnit.py</Filename>
+      <Linenumber>91</Linenumber>
+    </Resource>
+  </Task>
 </Tasks>
