@@ -37,7 +37,7 @@
 <methods>
 <class-id>HomeoUniselectorTest</class-id> <category>running</category>
 
-<body package="Homeostat" selector="testHomeoUniselectorClassType">testHomeoUniselectorClassType
+DONE <!--<body package="Homeostat" selector="testHomeoUniselectorClassType">testHomeoUniselectorClassType
 
 |currentClasses bogusClasses|
 
@@ -48,25 +48,25 @@ bogusClasses add: 'pippo'; add: 'HomeoUnit'; add: 'Object'.
 
 
 bogusClasses do: [:string | self deny: (HomeoUniselector includesType: string)].
-currentClasses do: [:string| self assert: (HomeoUniselector includesType: string)].</body>
+currentClasses do: [:string| self assert: (HomeoUniselector includesType: string)].</body>-->
 
-<body package="Homeostat" selector="testIntervalBounds">testIntervalBounds
+DONE <!--<body package="Homeostat" selector="testIntervalBounds">testIntervalBounds
 
 
  self assert: ((uniselector upperBound) - (uniselector lowerBound)) >= 0.</body>
-</methods>
+</methods>-->
 
 <methods>
 <class-id>HomeoUniselectorTest</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+USELESS<!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize a newly created instance. This method must answer the receiver."
 
 	" *** Replace this comment with the appropriate initialization code *** "
-	^self</body>
+	^self</body>-->
 
-<body package="Homeostat" selector="setUp">setUp
-uniselector := HomeoUniselector new.</body>
+DONE <!--<body package="Homeostat" selector="setUp">setUp
+uniselector := HomeoUniselector new.</body>-->
 </methods>
 
 </st-source>
