@@ -132,11 +132,12 @@ class HomeoUnit:
         self.setDefaultOutputAndDeviation()
         
         #turn the unit on"
-        self.status= 'Active'
-        self.debugMode = False
-        self.showUniselectorAction = False
+        self.__status= 'Active'
+        self.__debugMode = False
+        self.__showUniselectorAction = False
         
     "setter and getter methods for external access"
+    
     def setViscosity(self, aValue):
         self.__viscosity = aValue
     def viscosity(self):
@@ -178,9 +179,9 @@ class HomeoUnit:
     def outputRange(self):
         return self.__outputRange
 
-    def setUniselectorActivated(self,aBoolean):
+    def setUniselectorActive(self,aBoolean):
         self.__uniselectorActivated = aBoolean
-    def uniselectorActivate(self):
+    def uniselectorActive(self):
         return self.__uniselectorActivated
     
     def setUniselectorTimeInterval(self,aValue):
@@ -190,7 +191,9 @@ class HomeoUnit:
 
     "end of setter and getter methods"
 
-    
+    def unitActive(self, aBoolean):
+        self.__status= True
+
     def setDefaultSelfConnection(self):
         pass
     def setNewName(self):
