@@ -37,25 +37,25 @@
 <methods>
 <class-id>HomeoUniselectorUniformRandomTest</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+USELESS <!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize a newly created instance. This method must answer the receiver."
 
 	" *** Replace this comment with the appropriate initialization code *** "
-	^self</body>
+	^self</body>-->
 
-<body package="Homeostat" selector="setUp">setUp
+DONE <!--<body package="Homeostat" selector="setUp">setUp
 
-uniselector := HomeoUniselectorUniformRandom new.</body>
+uniselector := HomeoUniselectorUniformRandom new.</body>-->
 </methods>
 
 <methods>
 <class-id>HomeoUniselectorUniformRandomTest</class-id> <category>running</category>
 
-<body package="Homeostat" selector="testDefaultIntervalBounds">testDefaultIntervalBounds
+DONE <!--<body package="Homeostat" selector="testDefaultIntervalBounds">testDefaultIntervalBounds
 uniselector := HomeoUniselectorUniformRandom new.
-self assert: (uniselector lowerBound = -1 and: [uniselector upperBound = 1]).</body>
+self assert: (uniselector lowerBound = -1 and: [uniselector upperBound = 1]).</body>-->
 
-<body package="Homeostat" selector="testIntervalBounds">testIntervalBounds
+DONE<!--<body package="Homeostat" selector="testIntervalBounds">testIntervalBounds
 "Interval bounds are always centered around 0, i.e. lowerbounds always = to upperBound negated"
 
 
@@ -65,9 +65,9 @@ uniselector := HomeoUniselectorUniformRandom new.
 					uniselector lowerBound:  ((UniformDistribution from: -10 to: 10) random).
 					self assert: (uniselector lowerBound = uniselector upperBound negated).
 					uniselector upperBound: ((UniformDistribution from: -10 to: 10) random).
-					self assert: (uniselector lowerBound = uniselector upperBound negated)].</body>
+					self assert: (uniselector lowerBound = uniselector upperBound negated)].</body>-->
 
-<body package="Homeostat" selector="testProduceNewValue">testProduceNewValue
+DONE<!--<body package="Homeostat" selector="testProduceNewValue">testProduceNewValue
 	| newValue values sortedValues tests |
 	
       tests := 1000.
@@ -90,9 +90,9 @@ sortedValues := SortedCollection new.
 			[newValue := uniselector produceNewValue.
 			values add: newValue.
 			sortedValues add: newValue].
-	self assert: sortedValues asSet size = tests	"no repeated values"</body>
+	self assert: sortedValues asSet size = tests	"no repeated values"</body>-->
 
-<body package="Homeostat" selector="testValueWithinIntervalBounds">testValueWithinIntervalBounds
+DONE <!--<body package="Homeostat" selector="testValueWithinIntervalBounds">testValueWithinIntervalBounds
 
 | sortedValues tests|
 
@@ -102,8 +102,8 @@ sortedValues := SortedCollection new.
 
 tests timesRepeat:  [sortedValues add:  uniselector produceNewValue.].
 
-self assert: (sortedValues last &lt;= uniselector upperBound).
-self assert: (sortedValues first &gt;= uniselector lowerBound).</body>
+self assert: (sortedValues last <= uniselector upperBound).
+  self assert: (sortedValues first >= uniselector lowerBound).</body>-->
 </methods>
 
 </st-source>
