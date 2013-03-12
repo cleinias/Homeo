@@ -12,17 +12,17 @@ from   HomeoNeedleUnit import *
 from   Helpers.General_Helper_Functions import *
 import unittest, numpy, string, random
 
-class Test(unittest.TestCase):
+class HomeoConnectionTest(unittest.TestCase):
 
 
     def setUp(self):
         """
         Set up a unit connected to itself
         """
-        self.unit1 = HomeoUnit()
-        self.unit1.selfUpdate()              #allows the unit to have some values in its slots"
+        self.unit = HomeoUnit()
+        self.unit.selfUpdate()              #allows the unit to have some values in its slots"
         self.connection = HomeoConnection()
-        self.connection.incomingUnit(self.unit1)
+        self.connection.incomingUnit(self.unit)
 
     def tearDown(self):
         pass
@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
 
     def testAddConnection(self):
         "Test the unit we setup is properly connected to itself"
-        self.assertTrue(self.connection.incomingUnit() == self.unit1)
+        self.assertTrue(self.connection.incomingUnit() == self.unit)
 
     def testDefaults(self):
         "Test default values for a connection "
@@ -43,13 +43,13 @@ class Test(unittest.TestCase):
     def testSameAs(self):
         "Test if two connections are the same"
 
-        self.unit1 = HomeoUnit()
-        self.unit1.setRandomValues()
+        self.unit = HomeoUnit()
+        self.unit.setRandomValues()
         unit2 = HomeoUnit()
         unit2.setRandomValues()
 
         self.connection.randomizeConnectionValues()
-        self.connection.incomingUnit(self.unit1)
+        self.connection.incomingUnit(self.unit)
 
         connection2 = self.connection.copy()
         self.assertTrue(self.connection.sameAs(connection2))

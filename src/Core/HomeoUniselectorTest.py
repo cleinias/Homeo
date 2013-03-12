@@ -15,7 +15,7 @@ from   Helpers.General_Helper_Functions import *
 import unittest, numpy, string, random
 
 
-class Test(unittest.TestCase):
+class HomeoUniselectorTest(unittest.TestCase):
 
 
     def setUp(self):
