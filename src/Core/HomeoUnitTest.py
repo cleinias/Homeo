@@ -1,8 +1,6 @@
 from   HomeoUnit import *
-from   HomeoConnection import *
 from   HomeoUniselector import *
 from   Homeostat import *
-from   HomeoNeedleUnit import *
 from   Helpers.General_Helper_Functions import *
 
 import unittest, numpy, string, random

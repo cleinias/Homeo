@@ -3,14 +3,9 @@ Created on Mar 11, 2013
 
 @author: stefano
 '''
-import unittest
 from   HomeoUnit import *
-from   HomeoConnection import *
-from   HomeoUniselector import *
 from   Homeostat import *
-from   HomeoNeedleUnit import *
-from   Helpers.General_Helper_Functions import *
-import unittest, numpy, string, random
+import unittest, string, random
 
 class HomeoConnectionTest(unittest.TestCase):
 

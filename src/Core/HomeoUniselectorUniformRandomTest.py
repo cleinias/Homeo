@@ -4,13 +4,9 @@ Created on Mar 11, 2013
 @author: stefano
 '''
 from   HomeoUnit import *
-from   HomeoConnection import *
-from   HomeoUniselector import *
 from   HomeoUniselectorUniformRandom import *
 from   Homeostat import *
-from   HomeoNeedleUnit import *
-from   Helpers.General_Helper_Functions import *
-import unittest, numpy, string, random
+import unittest, numpy
 
 
 class HomeoUniselectorUniformRandomTest(unittest.TestCase):

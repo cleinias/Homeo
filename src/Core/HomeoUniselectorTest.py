@@ -6,13 +6,11 @@ Created on Mar 11, 2013
 These tests are currently very scarce. Need to add better coverage
 '''
 from   HomeoUnit import *
-from   HomeoConnection import *
 from   HomeoUniselector import *
 from   Homeostat import *
-from   HomeoNeedleUnit import *
 from   Helpers.General_Helper_Functions import *
 
-import unittest, numpy, string, random
+import unittest, string, random
 
 
 class HomeoUniselectorTest(unittest.TestCase):
@@ -43,7 +41,7 @@ class HomeoUniselectorTest(unittest.TestCase):
         """
         Test that HomeoUniselector has a positive interval
         """
-        self.assertTrue(self.uniselector.upperBound() - self.uniselector.lowerBound()) >= 0
+        self.assertTrue((self.uniselector.upperBound() - self.uniselector.lowerBound()) >= 0)
                         
     def testHomeoUniselectorTriggered(self):
         """
