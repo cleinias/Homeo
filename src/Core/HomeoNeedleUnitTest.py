@@ -6,7 +6,7 @@ Created on Mar 11, 2013
 import unittest
 
 
-class Test(unittest.TestCase):
+class HomeoNeedleUnitTest(unittest.TestCase):
 
 
     def setUp(self):
@@ -17,8 +17,6 @@ class Test(unittest.TestCase):
         pass
 
 
-    def testName(self):
-        pass
 
 
 if __name__ == "__main__":

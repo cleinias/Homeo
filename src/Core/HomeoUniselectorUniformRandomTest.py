@@ -20,7 +20,7 @@ class HomeoUniselectorUniformRandomTest(unittest.TestCase):
        - values produced are always different
     """
     def setUp(self):
-        uniselector = HomeoUniselectorUniformRandom()
+        self.uniselector = HomeoUniselectorUniformRandom()
         
         def testDefaultIntervalBounds(self):
             """

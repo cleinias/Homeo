@@ -174,11 +174,11 @@ unit currentOutput: 0.1.
 ]</body>
 
 <body package="Homeostat" selector="testDragEquationDrag">testDragEquationDrag
-	"The Drag equation comptutes drag force on a surface of area A as
+	"The Drag equation computes drag force on a surface of area A as
 	 Drag = Area * 1/2 * DragCoefficient * density * velocity^2
 	  We actually need to convert the unit's current velocity
 	   to real physical units to have a minimun of plausibility.
-	  HomeoUnit&gt;&gt;physicalVelocity does that on the basis of conversion parameters
+	     HomeoUnit>>physicalVelocity does that on the basis of conversion parameters
 	 stored in the iVar physicalParameters"
 
 |dragForce errorTolerance testRuns delta|

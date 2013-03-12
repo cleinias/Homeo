@@ -6,7 +6,7 @@ Created on Mar 11, 2013
 import unittest
 
 
-class Test(unittest.TestCase):
+class HomeoUnitNewtonianTest(unittest.TestCase):
 
 
     def setUp(self):
@@ -16,9 +16,6 @@ class Test(unittest.TestCase):
     def tearDown(self):
         pass
 
-
-    def testName(self):
-        pass
 
 
 if __name__ == "__main__":
