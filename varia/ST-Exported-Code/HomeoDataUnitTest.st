@@ -37,7 +37,7 @@
 <methods>
 <class-id>HomeoDataUnitTest</class-id> <category>running</category>
 
-<body package="Homeostat" selector="testNewStateFor">testNewStateFor
+DONE <!--<body package="Homeostat" selector="testNewStateFor">testNewStateFor
 
 | newDataUnit |
 
@@ -54,9 +54,9 @@ self assert: dataUnit name = unit1 name.
 			self assert: (connArray at: 3) = conn state.
 			self assert: (connArray at: 4) = conn noise].
 	self assert: dataUnit output = unit1 currentOutput.
-	self assert: dataUnit uniselectorState = unit1 uniselectorActive</body>
+	self assert: dataUnit uniselectorState = unit1 uniselectorActive</body>-->
 
-<body package="Homeostat" selector="testPrintDataOnStream">testPrintDataOnStream
+DONE <!--<body package="Homeostat" selector="testPrintDataOnStream">testPrintDataOnStream
 
 | aStream aString|
 aString := String new.
@@ -69,9 +69,9 @@ Transcript show: aString.
 
 aStream close.
 
-self assert: false.</body>
+self assert: false.</body>-->
 
-<body package="Homeostat" selector="testPrintEssentialVariableOn">testPrintEssentialVariableOn
+DONE <!--<body package="Homeostat" selector="testPrintEssentialVariableOn">testPrintEssentialVariableOn
 
 | aStream aString|
 aString := String new.
@@ -87,9 +87,9 @@ Transcript show: aString.
 aStream close.
 
 
-self assert: false.</body>
+self assert: false.</body>-->
 
-<body package="Homeostat" selector="testReadDataFromUnit">testReadDataFromUnit
+DONE <!--<body package="Homeostat" selector="testReadDataFromUnit">testReadDataFromUnit
 
 	dataUnit readStateFrom: unit1.
 	self assert: dataUnit name = unit1 name.
@@ -103,27 +103,26 @@ self assert: false.</body>
 			self assert: (connArray at: 3) = conn state.
 			self assert: (connArray at: 4) = conn noise].
 	self assert: dataUnit output = unit1 currentOutput.
-	self assert: dataUnit uniselectorState = unit1 uniselectorActive</body>
+	self assert: dataUnit uniselectorState = unit1 uniselectorActive</body>-->
 
-<body package="Homeostat" selector="testSameValuesAs">testSameValuesAs
+DONE <!--<body package="Homeostat" selector="testSameValuesAs">testSameValuesAs
 
 
-self assert: false.</body>
+self assert: false.</body>-->
 </methods>
 
 <methods>
 <class-id>HomeoDataUnitTest</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+USELESS<!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize a newly created instance. This method must answer the receiver."
 
 	" *** Replace this comment with the appropriate initialization code *** "
-	^self</body>
+	^self</body>-->
 
 <body package="Homeostat" selector="setUp">setUp
-
-dataUnit := HomeoDataUnit new.
-unit1 := HomeoUnit new.</body>
+DONE <!--dataUnit := HomeoDataUnit new.
+unit1 := HomeoUnit new.</body>-->
 </methods>
 
 </st-source>
