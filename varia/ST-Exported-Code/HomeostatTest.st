@@ -22,14 +22,14 @@
 <!-- -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -   -->
 
 
-<methods>
+DONE <!--<methods>
 <class-id>HomeostatTest class</class-id> <category>instance creation</category>
 
 <body package="Homeostat" selector="new">new
 	"Answer a newly created and initialized instance."
 
 	^super new initialize</body>
-</methods>
+</methods>-->
 
 <!-- -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -   -->
 
@@ -37,7 +37,7 @@
 <methods>
 <class-id>HomeostatTest</class-id> <category>running</category>
 
-<body package="Homeostat" selector="testAddFullyConnectedUnit">testAddFullyConnectedUnit
+DONE <!--<body package="Homeostat" selector="testAddFullyConnectedUnit">testAddFullyConnectedUnit
 	| unit1 unit2 unit3 coll1 coll2 |
 	unit1 := HomeoUnit new.
 	unit2 := HomeoUnit new.
@@ -57,9 +57,9 @@
 			[:firstIndex | 
 			coll2 do: 
 					[:secondIndex | 
-					self assert: (homeostat isConnectedFrom: secondIndex to: firstIndex)]]</body>
+					self assert: (homeostat isConnectedFrom: secondIndex to: firstIndex)]]</body>-->
 
-<body package="Homeostat" selector="testAddUnit">testAddUnit
+DONE <!--body package="Homeostat" selector="testAddUnit">testAddUnit
 
 | unit1 |
 unit1 := HomeoUnit new.
@@ -69,9 +69,9 @@ self assert: (homeostat hasUnit: unit1).
 
 "test adding an already exisitng unit"
 homeostat addUnit: unit1.
-self assert: ((homeostat homeoUnits size) = 1).</body>
+self assert: ((homeostat homeoUnits size) = 1).</body>-->
 
-<body package="Homeostat" selector="testBossOutHomeostat">testBossOutHomeostat
+DONE <!--<body package="Homeostat" selector="testBossOutHomeostat">testBossOutHomeostat
 	"comment stating purpose of message"
 
 
@@ -85,9 +85,9 @@ self assert: ((homeostat homeoUnits size) = 1).</body>
 	newHomeostat:= boss next.
 	boss close.
 
-	self assert: (homeostat sameAs: newHomeostat ).</body>
+	self assert: (homeostat sameAs: newHomeostat ).</body>-->
 
-<body package="Homeostat" selector="testHomeostatReadyToGo">testHomeostatReadyToGo
+DONE <!--<body package="Homeostat" selector="testHomeostatReadyToGo">testHomeostatReadyToGo
 	
 	| unitA unitB unitC unitD |
 	
@@ -101,9 +101,9 @@ self assert: ((homeostat homeoUnits size) = 1).</body>
 	homeostat addFullyConnectedUnit: unitC.
 	homeostat addFullyConnectedUnit: unitD.
 	
-	self assert: homeostat isReadyToGo</body>
+	self assert: homeostat isReadyToGo</body>-->
 
-<body package="Homeostat" selector="testHomeostatSaveInitialConditions">testHomeostatSaveInitialConditions
+DONE <!--<body package="Homeostat" selector="testHomeostatSaveInitialConditions">testHomeostatSaveInitialConditions
 	
 	| unitA unitB unitC unitD file boss newHomeostat |
 	
@@ -123,9 +123,9 @@ self assert: ((homeostat homeoUnits size) = 1).</body>
 	boss :=  BinaryObjectStorage onOldNoScan: (Filename named: 'pippo.sts') readStream.
 	newHomeostat := boss next.
 	boss close.
-	self assert: (homeostat sameAs: newHomeostat).</body>
+	self assert: (homeostat sameAs: newHomeostat).</body>-->
 
-<body package="Homeostat" selector="testIsConnectedAUnitToAnotherUnit">testIsConnectedAUnitToAnotherUnit
+DONE<!--<body package="Homeostat" selector="testIsConnectedAUnitToAnotherUnit">testIsConnectedAUnitToAnotherUnit
 
 | unit1 unit2 |
 
@@ -142,9 +142,9 @@ self assert: (homeostat isConnectedFrom: unit1 to: unit2).
 
 homeostat removeConnectionFrom: unit1 to: unit2.
 
-self deny: ( homeostat isConnectedFrom: unit1 to: unit2).</body>
+self deny: ( homeostat isConnectedFrom: unit1 to: unit2).</body>-->
 
-<body package="Homeostat" selector="testRemoveConnection">testRemoveConnection
+DONE <!--<body package="Homeostat" selector="testRemoveConnection">testRemoveConnection
 
 | unit1 unit2 unit3|
 	unit1 := HomeoUnit new.
@@ -163,9 +163,9 @@ self deny: ( homeostat isConnectedFrom: unit1 to: unit2).</body>
 	self assert: (homeostat isConnectedFrom: unit2 to: unit1).
 	self deny: (homeostat isConnectedFrom: unit1 to: unit2).
 	self deny: (homeostat isConnectedFrom: unit2 to: unit3).
-</body>
+</body>-->
 
-<body package="Homeostat" selector="testRemoveUnit">testRemoveUnit
+DONE <!--<body package="Homeostat" selector="testRemoveUnit">testRemoveUnit
 
 | unit1 | 
 unit1 := HomeoUnit new.
@@ -178,9 +178,9 @@ self deny: (homeostat hasUnit: unit1).
 
 "test removing a non existing unit"
 
-self shouldnt: [homeostat removeUnit: unit1] raise: (Error).</body>
+self shouldnt: [homeostat removeUnit: unit1] raise: (Error).</body>-->
 
-<body package="Homeostat" selector="testRun">testRun
+DONE <!--<body package="Homeostat" selector="testRun">testRun
 
 "| unitA unitB unitC unitD |
 	
@@ -196,9 +196,9 @@ self shouldnt: [homeostat removeUnit: unit1] raise: (Error).</body>
 
 homeostat start.
 
-"</body>
+"</body>-->
 
-<body package="Homeostat" selector="testRunForTicks">testRunForTicks
+DONE <!--<body package="Homeostat" selector="testRunForTicks">testRunForTicks
 
 | unitA unitB unitC unitD ticks |
 	
@@ -225,9 +225,9 @@ homeostat dataCollector states
 			homeostat homeoUnits 
 				do: [
 					:unit |
-					self assert: (dataCollec keys includes: unit name)]]</body>
+					self assert: (dataCollec keys includes: unit name)]]</body>-->
 
-<body package="Homeostat" selector="testRunForTicksWithRandomValues">testRunForTicksWithRandomValues
+USELESS <!--<body package="Homeostat" selector="testRunForTicksWithRandomValues">testRunForTicksWithRandomValues
 
 | unitA unitB unitC unitD ticks string stream|
 
@@ -262,9 +262,9 @@ homeostat dataCollector states
 
 homeostat dataCollector printEssentialDataOn: stream.
 stream close.
-Transcript clear; show: string.</body>
+Transcript clear; show: string.</body>-->
 
-<body package="Homeostat" selector="testRunningwithDelays">testRunningwithDelays
+DONE <!--<body package="Homeostat" selector="testRunningwithDelays">testRunningwithDelays
 
 | unitA unitB unitC unitD  timeAtStart timeAtEnd delay|
 	
@@ -284,18 +284,18 @@ Transcript clear; show: string.</body>
 			timeAtStart := Time  millisecondClockValue.
 			homeostat runOnce.
 			timeAtEnd :=  Time  millisecondClockValue.
-			self assert: ((timeAtEnd -timeAtStart) &gt;= delay).]</body>
+			self assert: ((timeAtEnd -timeAtStart) &gt;= delay).]</body>-->
 
-<body package="Homeostat" selector="testSameAs">testSameAs
+DONE <!--<body package="Homeostat" selector="testSameAs">testSameAs
 
 
 | anotherHomeostat |
 
 anotherHomeostat := homeostat copy.
 
-self assert: (homeostat sameAs: anotherHomeostat)</body>
+self assert: (homeostat sameAs: anotherHomeostat)</body>-->
 
-<body package="Homeostat" selector="testSetupRandomValueFor">testSetupRandomValueFor
+DONE <!--<body package="Homeostat" selector="testSetupRandomValueFor">testSetupRandomValueFor
 
 	| unit1 unit2 unit3  oldOutput  |
 	unit1 := HomeoUnit new.
@@ -310,26 +310,26 @@ self assert: (homeostat sameAs: anotherHomeostat)</body>
 
 	oldOutput := unit1 currentOutput.
 	homeostat randomizeValuesFor: unit1.
-	self deny: (oldOutput = unit1 currentOutput).</body>
+	self deny: (oldOutput = unit1 currentOutput).</body>-->
 
-<body package="Homeostat" selector="testStop">testStop
+DONE <!--<body package="Homeostat" selector="testStop">testStop
 
 
 self assert: false.</body>
 </methods>
-
-<methods>
+-->
+DONE <!--<methods>
 <class-id>HomeostatTest</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+USELESS <!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize a newly created instance. This method must answer the receiver."
 
 	" *** Replace this comment with the appropriate initialization code *** "
-	^self</body>
+	^self</body>-->
 
-<body package="Homeostat" selector="setUp">setUp
+DONE <!--<body package="Homeostat" selector="setUp">setUp
 
-homeostat := Homeostat new.</body>
-</methods>
+homeostat := Homeostat new.</body>-->
+</methods>-->
 
 </st-source>
