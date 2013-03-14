@@ -2,13 +2,17 @@
 Created on Mar 13, 2013
 
 @author: stefano
+<<<<<<< Updated upstream
 
 
 
+=======
+>>>>>>> Stashed changes
 '''
 
 class Homeostat(object):
     '''
+<<<<<<< Updated upstream
     Homeostat manages the complete homeostat by taking care of the communication between the units and between the Units and the Uniselector.
     It stores a collection of units, and some state variables representing the general state of the Homeostat at any point in time. 
     "Starting" (an instance of) this class is equivalent to turning the switch on the electro-mechanical machine built by Ashby. 
@@ -27,6 +31,9 @@ class Homeostat(object):
         collectsData         <aBoolean>       whether or not the homeostat collects data about its run
         slowingFactor:       <milliseconds>   it slows down the simulation by inserting a slowingFactor wait after each cycle.
         isRunning            <aBoolean>       whether the homeostat is running
+=======
+    classdocs
+>>>>>>> Stashed changes
     '''
 
 
