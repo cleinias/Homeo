@@ -37,7 +37,7 @@
 <methods>
 <class-id>HomeoDataCollectorTest</class-id> <category>running</category>
 
-<body package="Homeostat" selector="testAddStateForUnit">testAddStateForUnit
+DONE <!--<body package="Homeostat" selector="testAddStateForUnit">testAddStateForUnit
 	" DataCollector adds a DataUnit for a  HomeoUnit for time t"
 
 	| unit1 unit2 unit3 |
@@ -83,9 +83,9 @@
 					self assert: (dataDic includesKey: unit2 name).
 					self assert: (dataDic includesKey: unit3 name).
 					self assert: (((dataDic at: unit1 name ) name)= unit1 name).				
-]].</body>
+]].</body>-->
 
-<body package="Homeostat" selector="testBossOut">testBossOut
+DONE <!--<body package="Homeostat" selector="testBossOut">testBossOut
 "saves the complete run to  a Boss file for later rereading and analysis "
 
 
@@ -124,7 +124,7 @@ dataCollector states values asArray with: (newDataCollector states values  asArr
 			firstDic keys asSortedCollection asArray with: ( secDic keys asSortedCollection asArray)
 					do: [
 						:origName :savedName |
-					  	self assert: (origName = savedName)]]</body>
+					  	self assert: (origName = savedName)]]</body>-->
 
 <body package="Homeostat" selector="testConvertCriticalDevForUnit">testConvertCriticalDevForUnit
 
@@ -155,7 +155,7 @@ Transcript clear. coll do: [:elem | Transcript show: elem printString; cr].
 
 self assert: false.</body>
 
-<body package="Homeostat" selector="testExtractCriticalDevAsCollectionForUnit">testExtractCriticalDevAsCollectionForUnit
+DONE <!--<body package="Homeostat" selector="testExtractCriticalDevAsCollectionForUnit">testExtractCriticalDevAsCollectionForUnit
 	"produce some data"
 
 	"initializing and setting up the homeostat run  and the data collections"
@@ -176,7 +176,7 @@ self assert: false.</body>
 				do: 
 					[:index | 
 					testResultCollection add: ( (extractedData at: index) = (extractedData at: index)) not].    "collecting all instances in which the data differ"
-			self assert: (testResultCollection includes: true) not]</body>
+			self assert: (testResultCollection includes: true) not]</body>-->
 
 <body package="Homeostat" selector="testPrintCriticalDeviationDataforGGobiOnFile">testPrintCriticalDeviationDataforGGobiOnFile
 	"produce some data"
@@ -245,7 +245,7 @@ dataReadBack doWithIndex: [:dataColumnReadBack :index |
 
 self assert: (testResults size = 0).</body>
 
-<body package="Homeostat" selector="testPrintOutCompleteData">testPrintOutCompleteData
+DONE <!--<body package="Homeostat" selector="testPrintOutCompleteData">testPrintOutCompleteData
 
 "produce some data"
 	| unit1 unit2 unit3 aStream aString  |
@@ -270,7 +270,7 @@ dataCollector printCompleteDataOn: aStream.
 "quick hack"
 Transcript clear; show: aString.
 
-self assert: false.</body>
+self assert: false.</body>-->
 
 <body package="Homeostat" selector="testPrintOutCompleteDataForUnit">testPrintOutCompleteDataForUnit
 
@@ -461,7 +461,7 @@ self assert: false.</body>
 	" *** Replace this comment with the appropriate initialization code *** "
 	^self</body>
 
-<body package="Homeostat" selector="setUp">setUp
+DONE <!--<body package="Homeostat" selector="setUp">setUp
 
 dataCollector := HomeoDataCollector new.
 
@@ -472,7 +472,7 @@ dataCollector := HomeoDataCollector new.
 			[| unit |
 			unit := HomeoUnit new setRandomValues.
 			homeostat addFullyConnectedUnit: unit].
-	homeostat slowingFactor: 0.</body>
+	homeostat slowingFactor: 0.</body>-->
 </methods>
 
 </st-source>
