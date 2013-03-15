@@ -1,0 +1,940 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Core.HomeoUnit.HomeoUnit</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            >Homeo</th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        Package&nbsp;Core ::
+        <a href="Core.HomeoUnit-module.html">Module&nbsp;HomeoUnit</a> ::
+        Class&nbsp;HomeoUnit
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="Core.HomeoUnit.HomeoUnit-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class HomeoUnit</h1><p class="nomargin-top"><span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit">source&nbsp;code</a></span></p>
+<pre class="literalblock">
+
+Created on Feb 19, 2013
+
+@author: stefano
+
+Homeo Unit is the fundamental element of a Homeostat.
+
+HomeoUnit represents a basic unit of Ashby's Homeostat (see Ashby's Design for a Brain, 1960, chp. 8). 
+HomeoUnit does know about its connections to other units (including itself). 
+
+HomeoUnit holds the  values describing the state of the unit at time t, as specified by Ashby.
+The design of this simulation of the Homeostat  has been influenced by the C simulation described 
+by Alice Eldridge in &quot;Ashby's Homeostat in Simulation,&quot; unpublished, 2002, 
+available at: http://www.informatics.sussex.ac.uk/users/alicee/NEWSITE/ecila_files/content/papers/ACEhom.pdf 
+
+ Instance Variables:
+ criticalDeviation        &lt;Float&gt;    Deviation of the needle from equilibrium (0 state). In Ashby's original electromechanical model, 
+                                      this value is a function of the input current applied to the magnet that operates
+                                      the needle AND the possible manual operation on the needle itself
+ currentOutput            &lt;Float&gt;    The current  the unit outputs at time t. This value is proportional to criticalDeviation and typically between 0 and 1.
+ inputConnections         &lt;List&gt;     A collection of HomeoConnections storing the units the presents unit is connected to and the associated weights. 
+                                     It includes a connection to itself. 
+ maxDeviation             &lt;Float&gt;    Maximum deviation from equilibrium
+ nextDeviation            &lt;Float&gt;    The needle's deviation the unit will assume at at t+1. This is a function of criticalDeviation, 
+                                     of viscosity (as a dampener), and potentiometer. It is limited at both ends by maxDeviation
+                                     (i.e. maxDeviation negated &lt; nextDeviation &lt; maxDeviation)
+ outputRange              &lt;Dict&gt;     The range of the output current, keyed as low and high. Default is 0 to 1.
+ viscosity                &lt;Float&gt;    The viscosity of the medium in which the metallic needle of the original Ashbian unit is free to move. 
+                                     It acts as a dampening agent on the change of output
+ density                  &lt;Float&gt;    The density  of the medium in which the metallic needle of the original Ashbian unit is free to move. 
+                                     Used to compute the drag at high velocities, if needed
+ noise                    &lt;Float&gt;    As per Ashby's implementation, it represents the noise in the transmission medium 
+                                     of the unit's connection to itself. In our implementation it is always identical 
+                                     to the noise of a unit's first connection 
+ potentiometer             &lt;Float&gt;   As per Ashby's implementation, it represents the weight of the unit's connection to itself. 
+                                     In our implementation it is always identical to the weight of a unit's 
+                                     first connection,---Check Design for a Brain, chp.8  for details
+ switch                    &lt;Integer&gt;  As per Ashby's implementation, it represents the polarity of the connection of the unit to itself.  
+                                      In our implementation it is always identical to the polarity of a unit's first connection,
+ time                      &lt;Integer&gt;  The internal tick counter
+ uniselectorTime            &lt;Integer&gt; The internal tick counter for activation of the uniselector
+ uniselectorTimeInterval    &lt;Integer&gt; The number of ticks that specifies how often to check that the output is in range and eventually activate uniselector
+ uniselector       &lt;HomeoUniselector&gt; The uniselector that can modify the weights of input values coming from other units
+ uniselectorActive          &lt;Boolean&gt;  Whether the uniselector mechanism is active or not
+ needleCompMethod          &lt;String&gt;    Whether the unit's needle's displacement depends of the sum of its input, 
+                                      or on the ratio between the sum of the inputs and the maxDeviation. 
+                                      Possible values are 'linear' and 'proportional', default is 'linear'.
+inputTorque                &lt;Float&gt;    It represents the input force derived from the weighed sum of the inputs (as computed by computeTorque)
+active                     &lt;String&gt;   Whether the unit is active or not (on or off)
+status                     &lt;String&gt;   Active, Non Active, or other possible status
+debugMode                  &lt;Boolean&gt;  It control whether the running methods print out debugging information
+showUniselectorAction      &lt;Boolean&gt;  It controls whether the running methods print out when the uniselector kicks into action
+currentVelocity            &lt;Float&gt;    The current velocity of the needle moving in the trough
+needleUnit         &lt;HomeoNeedleUnit&gt;  Holds an instance of HomeoNeedleUnit, the class containing the parameters 
+                                      of the needle used by the unit (mass, area, etc.)
+physicalParameters        &lt;Dict&gt;      A dictionary containing equivalence factors between the simulation units and real physical parameters
+
+
+A HomeoUnit knows how to:
+
+- compute its next output on the basis of the input (received through connections stored in inputConnections) and its internal parameters
+- add a connection with a given unit as the incoming unit
+- periodically check that its outputValue has not become critical (outside the acceptable range) 
+- ask the uniselector to reset the weight of its inputConnections
+- print a description of itself with the values of all its parameters
+ 
+
+</pre>
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUnit.HomeoUnit-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Initialize the HomeoUnit with the default parameters found in the 
+      Class variable DefaultParameters.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setViscosity"></a><span class="summary-sig-name">setViscosity</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setViscosity">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="viscosity"></a><span class="summary-sig-name">viscosity</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.viscosity">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setPotentiometer"></a><span class="summary-sig-name">setPotentiometer</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setPotentiometer">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="potentiometer"></a><span class="summary-sig-name">potentiometer</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.potentiometer">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setNoise"></a><span class="summary-sig-name">setNoise</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setNoise">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="noise"></a><span class="summary-sig-name">noise</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.noise">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setTime"></a><span class="summary-sig-name">setTime</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setTime">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="time"></a><span class="summary-sig-name">time</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.time">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setUniselectorTime"></a><span class="summary-sig-name">setUniselectorTime</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setUniselectorTime">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="uniselectorTime"></a><span class="summary-sig-name">uniselectorTime</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.uniselectorTime">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setNeedleCompMethod"></a><span class="summary-sig-name">setNeedleCompMethod</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aString</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setNeedleCompMethod">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="needleCompMethod"></a><span class="summary-sig-name">needleCompMethod</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.needleCompMethod">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setMaxDeviation"></a><span class="summary-sig-name">setMaxDeviation</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setMaxDeviation">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="maxDeviation"></a><span class="summary-sig-name">maxDeviation</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.maxDeviation">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setOutputRange"></a><span class="summary-sig-name">setOutputRange</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aDict</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setOutputRange">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="outputRange"></a><span class="summary-sig-name">outputRange</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.outputRange">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setUniselectorActive"></a><span class="summary-sig-name">setUniselectorActive</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aBoolean</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setUniselectorActive">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="uniselectorActive"></a><span class="summary-sig-name">uniselectorActive</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.uniselectorActive">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setUniselectorTimeInterval"></a><span class="summary-sig-name">setUniselectorTimeInterval</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setUniselectorTimeInterval">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="uniselectorTimeInterval"></a><span class="summary-sig-name">uniselectorTimeInterval</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.uniselectorTimeInterval">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="unitActive"></a><span class="summary-sig-name">unitActive</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aBoolean</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.unitActive">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setDefaultSelfConnection"></a><span class="summary-sig-name">setDefaultSelfConnection</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setDefaultSelfConnection">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setNewName"></a><span class="summary-sig-name">setNewName</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setNewName">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setDefaultOutputAndConnections"></a><span class="summary-sig-name">setDefaultOutputAndConnections</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setDefaultOutputAndConnections">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setDefaultUniselectorSettings"></a><span class="summary-sig-name">setDefaultUniselectorSettings</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setDefaultUniselectorSettings">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setUnitName"></a><span class="summary-sig-name">setUnitName</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setUnitName">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setDefaultOutputAndDeviation"></a><span class="summary-sig-name">setDefaultOutputAndDeviation</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setDefaultOutputAndDeviation">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="isConnectedTo"></a><span class="summary-sig-name">isConnectedTo</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aHomeoUnit</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.isConnectedTo">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="addConnection"></a><span class="summary-sig-name">addConnection</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aHomeoUnit</span>,
+        <span class="summary-sig-arg">weight</span>,
+        <span class="summary-sig-arg">polarity</span>,
+        <span class="summary-sig-arg">state</span>)</span><br />
+      polarity is 1 or -1; state is 'active' or 'uniselector'</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.addConnection">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="addConnectionWithNoise"></a><span class="summary-sig-name">addConnectionWithNoise</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aHomeoUnit</span>,
+        <span class="summary-sig-arg">weight</span>,
+        <span class="summary-sig-arg">polarity</span>,
+        <span class="summary-sig-arg">noise</span>,
+        <span class="summary-sig-arg">state</span>)</span><br />
+      polarity is 1 or -1; state is 'active' or 'uniselector'; noise is a 
+      number &lt; 1</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.addConnectionWithNoise">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="isReadyToGo"></a><span class="summary-sig-name">isReadyToGo</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.isReadyToGo">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="saveTo"></a><span class="summary-sig-name">saveTo</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">filename</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.saveTo">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setRandomValues"></a><span class="summary-sig-name">setRandomValues</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.setRandomValues">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="removeConnectionFromUnit"></a><span class="summary-sig-name">removeConnectionFromUnit</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aHomeoUnit</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.removeConnectionFromUnit">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="unitRange"></a><span class="summary-name">unitRange</span> = <code title="{'high': 1, 'low': -1}"><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">high</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">low</code><code class="variable-quote">'</code><code class="variable-op">: </code>-1<code class="variable-group">}</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="Core.HomeoUnit.HomeoUnit-class.html#DefaultParameters" class="summary-name">DefaultParameters</a> = <code title="{'density': 1,
+ 'inputValue': 0,
+ 'maxDeviation': 10,
+ 'maxViscosity': 12,
+ 'needleCompMethod': 'linear',
+ 'noise': 0,
+ 'outputRange': {'high': 1, 'low': -1},
+ 'potentiometer': 1,
+..."><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">density</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">inputValue</code><code class="variable-quote">'</code><code class="variable-op">: </code>0<code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">maxDeviat</code><code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="__showUniselectorAction"></a><span class="summary-name">__showUniselectorAction</span><br />
+      setter and getter methods for external access
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUnit-pysrc.html#HomeoUnit.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Initialize the HomeoUnit with the default parameters found in the 
+  Class variable DefaultParameters. Assign a random but unique name and 
+  sets the output to some value around 0, i.e. at equilibrium. These values
+  are supposed to be overridden in normal practice, because the values are 
+  set  by the  simulation (an instance of HomeoSimulation or by the graphic
+  interface)</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== CLASS VARIABLE DETAILS ==================== -->
+<a name="section-ClassVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="DefaultParameters"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">DefaultParameters</h3>
+  
+  <dl class="fields">
+  </dl>
+  <dl class="fields">
+    <dt>Value:</dt>
+      <dd><table><tr><td><pre class="variable">
+<code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">density</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">inputValue</code><code class="variable-quote">'</code><code class="variable-op">: </code>0<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">maxDeviation</code><code class="variable-quote">'</code><code class="variable-op">: </code>10<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">maxViscosity</code><code class="variable-quote">'</code><code class="variable-op">: </code>12<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">needleCompMethod</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-quote">'</code><code class="variable-string">linear</code><code class="variable-quote">'</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">noise</code><code class="variable-quote">'</code><code class="variable-op">: </code>0<code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">outputRange</code><code class="variable-quote">'</code><code class="variable-op">: </code><code class="variable-group">{</code><code class="variable-quote">'</code><code class="variable-string">high</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">, </code><code class="variable-quote">'</code><code class="variable-string">low</code><code class="variable-quote">'</code><code class="variable-op">: </code>-1<code class="variable-group">}</code><code class="variable-op">,</code>
+ <code class="variable-quote">'</code><code class="variable-string">potentiometer</code><code class="variable-quote">'</code><code class="variable-op">: </code>1<code class="variable-op">,</code>
+<code class="variable-ellipsis">...</code>
+</pre></td></tr></table>
+</dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            >Homeo</th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Thu Mar 14 22:19:14 2013
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
