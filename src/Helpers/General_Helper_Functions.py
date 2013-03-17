@@ -1,6 +1,6 @@
 def withAllSubclasses(aClass):
     """
-    Return a list wiith aClass and all its first-level subclasses
+    Return a list with aClass and all its first-level subclasses
     """
     subs = []
     subs.append(aClass)
