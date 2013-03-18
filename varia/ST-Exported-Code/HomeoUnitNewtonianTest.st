@@ -46,19 +46,19 @@
 	" *** And replace this comment with additional initialization code *** "
 	^self</body>
 
-<body package="Homeostat" selector="setUp">setUp
+DONE <!--<body package="Homeostat" selector="setUp">setUp
 	"Initialize the HomeoUnit class and sets up a default HomeoUnit for testing"
 
 "initialize the HomeoUnit class to clear all old names (held in the Names shared variable)"
 HomeoUnit initialize.
 
-unit := HomeoUnitNewtonian new.</body>
+unit := HomeoUnitNewtonian new.</body>-->
 </methods>
 
 <methods>
 <class-id>HomeoUnitNewtonianTest</class-id> <category>running</category>
 
-<body package="Homeostat" selector="testComputeNextDeviationLinear">testComputeNextDeviationLinear
+DONE <!--<body package="Homeostat" selector="testComputeNextDeviationLinear">testComputeNextDeviationLinear
 	
 
 | oldDev oldVelocity torque |
@@ -70,9 +70,9 @@ unit criticalDeviation: 0.
 		oldDev := unit criticalDeviation.
 		oldVelocity := unit currentVelocity.
 		unit criticalDeviation: (unit newLinearNeedlePosition: torque).
-		self assert: ((unit criticalDeviation) = (oldDev  + oldVelocity + (1/2 * (torque/ unit needleUnit mass))))].      "Check the computation is correct according to Newtonian dynamics"</body>
+		self assert: ((unit criticalDeviation) = (oldDev  + oldVelocity + (1/2 * (torque/ unit needleUnit mass))))].      "Check the computation is correct according to Newtonian dynamics"</body>-->
 
-<body package="Homeostat" selector="testComputeNextVelocityWithConnections">testComputeNextVelocityWithConnections
+DONE <!--<body package="Homeostat" selector="testComputeNextVelocityWithConnections">testComputeNextVelocityWithConnections
 	| testRuns oldVelocity anotherUnit errorTolerance maxDelta counter |
 	errorTolerance := 10 raisedTo: -14.
 	testRuns := 1000.
@@ -102,12 +102,12 @@ unit criticalDeviation: 0.
 					computedVelocity := oldVelocity + (torque / unit needleUnit mass).	"velocity value according to  Newtonian dynamics: v = v0 +at (where a is force / mass)"
 					unit selfUpdate.
 					"Do not compare calculations when the unit's needle would have gone over the maximum limit, because the actual displacement is clipped at the maximum value. 
-			Since actual velocity is computed on the basis of actual displacement (as it should be), the theoretical value is bound to be off"
-					(unit criticalDeviation &gt;= unit maxDeviation 
-						or: [unit criticalDeviation &lt;= unit maxDeviation negated]) 
+					Since actual velocity is computed on the basis of actual displacement (as it should be), the theoretical value is bound to be off"
+					(unit criticalDeviation >= unit maxDeviation 
+						or: [unit criticalDeviation <= unit maxDeviation negated]) 
 							ifTrue: [velocityDelta := 0]
 							ifFalse: [velocityDelta := (unit currentVelocity - computedVelocity) abs].
-					velocityDelta &lt; errorTolerance 
+					velocityDelta < errorTolerance 
 						ifFalse: 
 							["Transcript
 								show: 'Failed on: ' , velocityDelta printString , ' at run: ' 
@@ -117,18 +117,18 @@ unit criticalDeviation: 0.
 					"Transcript
 						show: 'delta between theoretical velocity and computed velocity is: ' 
 									, velocityDelta printString , ' and test is: ' 
-									, (velocityDelta &lt; errorTolerance) printString;
+									, (velocityDelta < errorTolerance) printString;
 						cr."
-					velocityDelta &gt; maxDelta ifTrue: [maxDelta := velocityDelta].
-					self assert: velocityDelta &lt; errorTolerance].
+					velocityDelta > maxDelta ifTrue: [maxDelta := velocityDelta].
+					self assert: velocityDelta < errorTolerance].
 			"Transcript
 				show: 'MaxDelta was: ' , maxDelta printString , ' and I failed ' 
 							, counter printString , ' test over: ' 
 							, testRuns printString , ' or about: ' 
 							, (counter / testRuns * 100) asFloat printString , '%';
-				cr"]</body>
+				cr"]</body>-->
 
-<body package="Homeostat" selector="testComputeNextVelocityWithoutConnections">testComputeNextVelocityWithoutConnections
+DONE <!--<body package="Homeostat" selector="testComputeNextVelocityWithoutConnections">testComputeNextVelocityWithoutConnections
 	
 
 | testRuns oldVelocity  errorTolerance maxDelta counter|
@@ -162,18 +162,18 @@ unit currentOutput: 0.1.
 		unit selfUpdate.
 		"Do not compare calculations when the unit's needle would have gone over the maximum limit, because the actual displacement is clipped at the maximum value. 
 		Since actual velocity is computed on the basis of actual displacement (as it should be), the theoretical value is bound to be off"
-		((unit criticalDeviation &gt;= unit maxDeviation)	or: [unit criticalDeviation &lt;= unit maxDeviation negated]) 
+		((unit criticalDeviation >= unit maxDeviation)	or: [unit criticalDeviation <= unit maxDeviation negated]) 
 			ifTrue: [ velocityDelta := 0]
 			ifFalse:[velocityDelta := ((unit currentVelocity) - computedVelocity) abs] .      
-		velocityDelta &lt; errorTolerance  ifFalse: ["Transcript show: 'Failed on: ', velocityDelta printString, ' at run: ', i printString; cr. " counter := counter + 1.].
-"		Transcript show: 'delta between theoretical velocity and computed velocity is: ', velocityDelta printString,  ' and test is: ', (velocityDelta &lt; errorTolerance) printString; cr."
-		velocityDelta &gt; maxDelta ifTrue: [maxDelta := velocityDelta].
-		"velocityDelta abs &gt; errorTolerance ifTrue: [ Transcript show: 'Run number: ', i printString, ' delta: ', velocityDelta printString, ' updated comp vel.: ', unit currentVelocity printString, ' theoretical vel.: ',  computedVelocity printString; cr]."
-		self assert: (velocityDelta abs &lt; errorTolerance)].
+		velocityDelta < errorTolerance  ifFalse: ["Transcript show: 'Failed on: ', velocityDelta printString, ' at run: ', i printString; cr. " counter := counter + 1.].
+"		Transcript show: 'delta between theoretical velocity and computed velocity is: ', velocityDelta printString,  ' and test is: ', (velocityDelta < errorTolerance) printString; cr."
+		velocityDelta > maxDelta ifTrue: [maxDelta := velocityDelta].
+		"velocityDelta abs > errorTolerance ifTrue: [ Transcript show: 'Run number: ', i printString, ' delta: ', velocityDelta printString, ' updated comp vel.: ', unit currentVelocity printString, ' theoretical vel.: ',  computedVelocity printString; cr]."
+		self assert: (velocityDelta abs < errorTolerance)].
 	"Transcript show: 'MaxDelta was: ', maxDelta printString, ' and I failed ', counter printString, ' test over: ', testRuns printString, ' or about: ', (counter/testRuns*100) asFloat printString, '%'; cr"
-]</body>
+]</body>-->
 
-<body package="Homeostat" selector="testDragEquationDrag">testDragEquationDrag
+DONE <!--<body package="Homeostat" selector="testDragEquationDrag">testDragEquationDrag
 	"The Drag equation computes drag force on a surface of area A as
 	 Drag = Area * 1/2 * DragCoefficient * density * velocity^2
 	  We actually need to convert the unit's current velocity
@@ -210,9 +210,9 @@ testRuns timesRepeat: [
 
 	dragForce := unit dragEquationDrag.
 	delta := (dragForce - (1/2 * unit needleUnit surfaceArea * unit needleUnit dragCoefficient * unit density * unit physicalVelocity squared)) abs.
-	self assert: delta &lt; errorTolerance. ]</body>
+	self assert: delta < errorTolerance. ]</body>-->
 
-<body package="Homeostat" selector="testStokesDrag">testStokesDrag
+DONE <!--<body package="Homeostat" selector="testStokesDrag">testStokesDrag
 	"Stokes's law computes drag force on a sphere of radius r  as 6* pi * radius * viscosity * velocity.
 	 We use the radius of the surface area of the moving needle instead"
 
@@ -240,7 +240,7 @@ testRuns timesRepeat: [
 	unit needleUnit surfaceArea: (UniformDistribution from: ((1/Double pi) * 0.001) to: 1000) random.
 	radius := (unit needleUnit surfaceArea *( Double pi)) sqrt.
 	dragForce := unit stokesLawDrag.
-	self assert: ((dragForce = (6 * (Double pi) * radius * unit viscosity * unit currentVelocity) negated))].</body>
+	self assert: ((dragForce = (6 * (Double pi) * radius * unit viscosity * unit currentVelocity) negated))].</body>-->
 </methods>
 
 </st-source>
