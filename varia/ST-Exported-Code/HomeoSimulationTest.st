@@ -70,7 +70,7 @@ simulation homeostat addUnit: unit2.
 	"add a connection from the second unit to first one"
 	simulation homeostat addConnectionWithRandomValuesFrom: unit2 to: unit1.
 	"check that the first unit has now two connections"
-	self assert: ((simulation homeostat homeoUnits at: 1) inputConnections size = 2).	"all units are self-connected and self-connected only"
+	self assert: ((simulation homeostat homeoUnits at: 1) inputConnections size = 2).	 
 	self assert: ((unit1 inputConnections size) = 2)</body>
 
 <body package="Homeostat" selector="testAddFullyConnectedUnit">testAddFullyConnectedUnit

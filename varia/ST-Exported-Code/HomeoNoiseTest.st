@@ -93,7 +93,7 @@ self assert: (values first  sign) = (unit criticalDeviation sign * -1).
 self assert:	((values first abs) = ((unit noise)*unit criticalDeviation abs)).
 self assert:	((values last abs) = ((unit noise)*unit criticalDeviation abs)).</body>-->
 
-<body package="Homeostat" selector="testDegradingNormalLinearNoise">testDegradingNormalLinearNoise
+DONE <!--<body package="Homeostat" selector="testDegradingNormalLinearNoise">testDegradingNormalLinearNoise
 | values signs tests  tolerance  mean minAbsNoise maxAbsNoise coll|
 	
 	tests := 1000.
@@ -159,9 +159,9 @@ self assert: (((coll size/tests) >= (0.95 * (1-tolerance))) and: [(coll size /te
 "Check 68% of values (with tolerance) within 1 sigma, i.e. in the interval {2/3 * noise, 4/3 noise}"
 
 coll := values select: [:noiseValue | noiseValue abs > (unit noise * 2/3) and: [noiseValue abs <= (unit noise * 4/3)]].
-self assert: (((coll size/tests) >= (0.68 * (1-tolerance))) and: [(coll size /tests) <= ((1+ tolerance) * 0.68)]).</body>
+self assert: (((coll size/tests) >= (0.68 * (1-tolerance))) and: [(coll size /tests) <= ((1+ tolerance) * 0.68)]).</body>-->
 
-<body package="Homeostat" selector="testDegradingNormalProportionalNoise">testDegradingNormalProportionalNoise
+DONE <!--<body package="Homeostat" selector="testDegradingNormalProportionalNoise">testDegradingNormalProportionalNoise
 | values signs tests  tolerance  mean minAbsNoise maxAbsNoise coll|
 	
 	tests := 1000.
@@ -177,9 +177,6 @@ unit criticalDeviation:  -0.1."
 
 	noise := HomeoNoise newWithCurrent: unit criticalDeviation
 				andNoise: unit noise.
-	2 * (unit noise) * tolerance.
-	2* (unit noise) * (1 - tolerance).
-
 
 	noise
 		normal;
@@ -227,9 +224,9 @@ self assert: (((coll size/tests) >= (0.95 * (1-tolerance))) and: [(coll size /te
 "Check 68% of values (with tolerance) within 1 sigma, i.e. in the interval {2/3 * noise*current abs, 4/3 noise * current abs}"
 
 coll := values select: [:noiseValue | noiseValue abs> (unit noise * 2/3 *unit criticalDeviation abs) and: [noiseValue abs <= (unit noise * 4/3 *unit criticalDeviation abs)]].
-self assert: (((coll size/tests) >= (0.68 * (1-tolerance))) and: [(coll size /tests) <= ((1+ tolerance) * 0.68)]).</body>
+self assert: (((coll size/tests) >= (0.68 * (1-tolerance))) and: [(coll size /tests) <= ((1+ tolerance) * 0.68)]).</body>-->
 
-<body package="Homeostat" selector="testDegradingUniformLinearNoise">testDegradingUniformLinearNoise
+DONE <!--<body package="Homeostat" selector="testDegradingUniformLinearNoise">testDegradingUniformLinearNoise
 
 
 |  values tests tolerance mean lowThreshold highThreshold minAbsNoise maxAbsNoise|
@@ -270,9 +267,9 @@ self assert: ((maxAbsNoise <= (2 * unit noise)) and: [ maxAbsNoise >= highThresh
 "checks the mean of the noise values are about equal to unit noise"
 self assert:  ((mean >= ((unit noise ) * (1 - tolerance)))
  
-			and: [mean <= ((unit noise) * (1+ tolerance ))]).</body>
+			and: [mean <= ((unit noise) * (1+ tolerance ))]).</body>-->
 
-<body package="Homeostat" selector="testDegradingUniformProportionalNoise">testDegradingUniformProportionalNoise
+DONE <!--<body package="Homeostat" selector="testDegradingUniformProportionalNoise">testDegradingUniformProportionalNoise
 
 
 |  values tests tolerance mean lowThreshold highThreshold minAbsNoise maxAbsNoise |
@@ -313,9 +310,9 @@ self assert: ((maxAbsNoise <= (2 * unit noise)) and: [ maxAbsNoise >= highThresh
 "checks the mean of the noise values are about equal to unit noise"
 self assert:  ((mean >= ((unit noise *(unit criticalDeviation abs )) * (1 - tolerance)) )
  
-			and: [mean <= ((unit noise*(unit criticalDeviation abs)) * (1+ tolerance ))]).</body>
+			and: [mean <= ((unit noise*(unit criticalDeviation abs)) * (1+ tolerance ))]).</body>-->
 
-<body package="Homeostat" selector="testDistortingConstantLinearNoise">testDistortingConstantLinearNoise
+DONE <!--<body package="Homeostat" selector="testDistortingConstantLinearNoise">testDistortingConstantLinearNoise
 	
 | values signs tests positives tolerance |
 	
@@ -347,9 +344,9 @@ self assert:  ((mean >= ((unit noise *(unit criticalDeviation abs )) * (1 - tole
 
 	"test the value of the noise produced"
 	self assert: values first abs = unit noise.
-	self assert: values last abs = unit noise</body>
+	self assert: values last abs = unit noise</body>-->
 
-<body package="Homeostat" selector="testDistortingConstantProportionalNoise">testDistortingConstantProportionalNoise
+DONE <!--<body package="Homeostat" selector="testDistortingConstantProportionalNoise">testDistortingConstantProportionalNoise
 	
 | values signs tests positives tolerance |
 	
@@ -381,9 +378,9 @@ self assert:  ((mean >= ((unit noise *(unit criticalDeviation abs )) * (1 - tole
 
 	"test the value of the noise produced"
 	self assert:	((values first abs) = ((unit noise)*unit criticalDeviation abs)).
-	self assert:	((values last abs) = ((unit noise)*unit criticalDeviation abs)).</body>
+	self assert:	((values last abs) = ((unit noise)*unit criticalDeviation abs)).</body>-->
 
-<body package="Homeostat" selector="testDistortingNormalLinearlNoise">testDistortingNormalLinearlNoise
+DONE <!--<body package="Homeostat" selector="testDistortingNormalLinearlNoise">testDistortingNormalLinearlNoise
 | values signs tests  tolerance  mean minAbsNoise maxAbsNoise coll|
 	
 	tests := 1000.
@@ -437,9 +434,9 @@ self assert: (((coll size/tests) >= (0.95 * (1-tolerance))) and: [(coll size /te
 "Check 68% of values (with tolerance) within 1 sigma, i.e. in the interval {-1/3 * noise, 1/3 noise}"
 
 coll := values select: [:noiseValue | noiseValue > (unit noise * 1/3 negated) and: [noiseValue <= (unit noise * 1/3)]].
-self assert: (((coll size/ tests) >= (0.68 * (1-tolerance))) and: [(coll size /tests) <= ((1+ tolerance) * 0.68)]).</body>
+self assert: (((coll size/ tests) >= (0.68 * (1-tolerance))) and: [(coll size /tests) <= ((1+ tolerance) * 0.68)]).</body>-->
 
-<body package="Homeostat" selector="testDistortingNormalLinearNoise">testDistortingNormalLinearNoise
+DONE <!--<body package="Homeostat" selector="testDistortingNormalLinearNoise">testDistortingNormalLinearNoise
 | values signs tests  tolerance  mean minAbsNoise maxAbsNoise coll|
 	
 	tests := 1000.
@@ -493,9 +490,9 @@ self assert: (((coll size/tests) >= (0.95 * (1-tolerance))) and: [(coll size /te
 "Check 68% of values (with tolerance) within 1 sigma, i.e. in the interval {-1/3 * noise, 1/3 noise}"
 
 coll := values select: [:noiseValue | noiseValue > (unit noise * 1/3 negated) and: [noiseValue <= (unit noise * 1/3)]].
-self assert: (((coll size/tests) >= (0.68 * (1-tolerance))) and: [(coll size /tests) <= ((1+ tolerance) * 0.68)]).</body>
+self assert: (((coll size/tests) >= (0.68 * (1-tolerance))) and: [(coll size /tests) <= ((1+ tolerance) * 0.68)]).</body>-->
 
-<body package="Homeostat" selector="testDistortingNormalProportionalNoise">testDistortingNormalProportionalNoise
+DONE <!--<body package="Homeostat" selector="testDistortingNormalProportionalNoise">testDistortingNormalProportionalNoise
 | values signs tests  tolerance  mean minNoise maxNoise coll|
 	
 	tests := 1000.
@@ -549,9 +546,9 @@ self assert: (((coll size/tests) >= (0.95 * (1-tolerance))) and: [(coll size /te
 "Check 68% of values (with tolerance) within 1 sigma, i.e. in the interval {-1/3 * noise * current, 1/3 noise * current}"
 
 coll := values select: [:noiseValue | noiseValue > ((unit noise * 1/3* -1) * (unit criticalDeviation abs)) and: [noiseValue <=  ((unit noise * 1/3) * (unit criticalDeviation abs))]].
-self assert: (((coll size/tests) >= (0.68 * (1-tolerance))) and: [(coll size /tests) <= ((1+ tolerance) * 0.68)]).</body>
+self assert: (((coll size/tests) >= (0.68 * (1-tolerance))) and: [(coll size /tests) <= ((1+ tolerance) * 0.68)]).</body>-->
 
-<body package="Homeostat" selector="testDistortingUniformLinearNoise">testDistortingUniformLinearNoise
+DONE <!--<body package="Homeostat" selector="testDistortingUniformLinearNoise">testDistortingUniformLinearNoise
 
 
 |  values tests tolerance mean minAbsNoise maxAbsNoise|
@@ -587,9 +584,9 @@ self assert: (maxAbsNoise <= unit noise).
 
 "checks the mean of the noise values are about equal to 0"
 self assert:  ((mean >= (0  - tolerance)) 
-			and: [mean <= (0+  tolerance )]).</body>
+			and: [mean <= (0+  tolerance )]).</body>-->
 
-<body package="Homeostat" selector="testDistortingUniformProportionalNoise">testDistortingUniformProportionalNoise
+DONE <!--<body package="Homeostat" selector="testDistortingUniformProportionalNoise">testDistortingUniformProportionalNoise
 
 
 |  values tests tolerance mean minAbsNoise maxAbsNoise|
@@ -625,7 +622,7 @@ self assert: (maxAbsNoise <= (unit noise  * unit criticalDeviation abs)).
 
 "checks the mean of the noise values are about equal to 0"
 self assert:  ((mean >= (0  - tolerance)) 
-			and: [mean <= (0+  tolerance )]).</body>
+			and: [mean <= (0+  tolerance )]).</body>-->
 </methods>
 
 </st-source>

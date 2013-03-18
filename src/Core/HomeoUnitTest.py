@@ -755,7 +755,7 @@ class HomeoUnitTest(unittest.TestCase):
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
     
-
+     
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()  
