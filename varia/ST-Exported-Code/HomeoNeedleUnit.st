@@ -36,15 +36,15 @@
 <methods>
 <class-id>HomeoNeedleUnit class</class-id> <category>instance creation</category>
 
-<body package="Homeostat" selector="initialize">initialize
+DONE <!--<body package="Homeostat" selector="initialize">initialize
 	"Sets DefaultParameters, the class variable holding the  default values of all the various parameters of future needle units.
 	 All 'physical' values are expressed in internal units.  Conversion to real physical units, if necessary,  done by Physical parameters dictionary in HomeoUnit
 	   HomeoUnit initialize "
 	
 	DefaultParameters := Dictionary new.
-	DefaultParameters 	at: 'mass' 				      put: 1 asDouble;  "mass expressed in internal units."
+	DefaultParameters 	at: 'mass' 		put: 1 asDouble;  "mass expressed in internal units."
 							at: 'surfaceArea' 			put: (1/ Double pi) asDouble ; "in  internal units. This is the area equivalent to a circle whose radius is 1 unit. "
-							at: 'dragCoefficient' 		put:  1 asDouble.  "dimensionless, of course. Used to compute drag according to general drag law (for high velocities)"</body>
+							at: 'dragCoefficient' 		put:  1 asDouble.  "dimensionless, of course. Used to compute drag according to general drag law (for high velocities)"</body>-->
 
 <body package="Homeostat" selector="new">new
 	"Answer a newly created and initialized instance."
@@ -70,7 +70,7 @@ Instance Variables:
 <methods>
 <class-id>HomeoNeedleUnit</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+DONE <!--<body package="Homeostat" selector="initialize">initialize
 "Initialize the HomeoNeedleUnit with the default parameters found in the Class variable DefaultParameters."
 
 
@@ -78,13 +78,13 @@ Instance Variables:
 
 	mass := DefaultParameters at: 'mass'.
 	surfaceArea := DefaultParameters at: 'surfaceArea'. 	
-	dragCoefficient := DefaultParameters at: 'dragCoefficient'.</body>
+	dragCoefficient := DefaultParameters at: 'dragCoefficient'.</body>-->
 </methods>
 
 <methods>
 <class-id>HomeoNeedleUnit</class-id> <category>accessing</category>
-
-<body package="Homeostat" selector="dragCoefficient">dragCoefficient
+ALL DONE
+<!--<body package="Homeostat" selector="dragCoefficient">dragCoefficient
 	^dragCoefficient</body>
 
 <body package="Homeostat" selector="dragCoefficient:">dragCoefficient: anObject
@@ -100,7 +100,7 @@ Instance Variables:
 	^surfaceArea</body>
 
 <body package="Homeostat" selector="surfaceArea:">surfaceArea: anObject
-	surfaceArea := anObject</body>
+	surfaceArea := anObject</body>-->
 </methods>
 
 <initialize>
