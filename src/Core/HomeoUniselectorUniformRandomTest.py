@@ -3,9 +3,7 @@ Created on Mar 11, 2013
 
 @author: stefano
 '''
-from   HomeoUnit import *
 from   HomeoUniselectorUniformRandom import *
-from   Homeostat import *
 import unittest, numpy
 
 
