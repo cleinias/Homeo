@@ -34,28 +34,28 @@
 <!-- -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -   -->
 
 
-<methods>
-<class-id>HomeoSimulationTest</class-id> <category>initialize-release</category>
+<!--<methods>
+<class-id>HomeoSimulationTest</class-id> <category>initialize-release</category>-->
 
-<body package="Homeostat" selector="initialize">initialize
+USELESS <!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize a newly created instance. This method must answer the receiver."
 
 	" *** Replace this comment with the appropriate initialization code *** "
-	^self</body>
+	^self</body>-->
 
-<body package="Homeostat" selector="setUp">setUp
+DONE <!--<body package="Homeostat" selector="setUp">setUp
 
-simulation := HomeoSimulation new.</body>
+simulation := HomeoSimulation new.</body>-->
 
-<body package="Homeostat" selector="tearDown">tearDown
+USELESS <!--<body package="Homeostat" selector="tearDown">tearDown
 	"ensure that homeostat is always new and initialized between successive runs, including of the same test.;"
-simulation := HomeoSimulation new.</body>
+simulation := HomeoSimulation new.</body>-->
 </methods>
 
 <methods>
 <class-id>HomeoSimulationTest</class-id> <category>running</category>
 
-<body package="Homeostat" selector="testAddConnection">testAddConnection
+DONE <!--<body package="Homeostat" selector="testAddConnection">testAddConnection
 |unit1 unit2 |	
 
 unit1 := HomeoUnit new.
@@ -71,9 +71,9 @@ simulation homeostat addUnit: unit2.
 	simulation homeostat addConnectionWithRandomValuesFrom: unit2 to: unit1.
 	"check that the first unit has now two connections"
 	self assert: ((simulation homeostat homeoUnits at: 1) inputConnections size = 2).	 
-	self assert: ((unit1 inputConnections size) = 2)</body>
+	self assert: ((unit1 inputConnections size) = 2)</body>-->
 
-<body package="Homeostat" selector="testAddFullyConnectedUnit">testAddFullyConnectedUnit
+DONE <!--<body package="Homeostat" selector="testAddFullyConnectedUnit">testAddFullyConnectedUnit
 
 | unitsAdded| 
 unitsAdded := 5.
@@ -83,32 +83,32 @@ self assert: ((simulation homeostat homeoUnits at: 1) inputConnections size = 1)
 unitsAdded timesRepeat:  [simulation addFullyConnectedUnit: HomeoUnit new].
 simulation homeostat homeoUnits 
 		do: [:unit |
-			(unit inputConnections size = (1+ unitsAdded))]</body>
+			(unit inputConnections size = (1+ unitsAdded))]</body>-->
 
-<body package="Homeostat" selector="testAddUnit">testAddUnit
+DONE<!--<body package="Homeostat" selector="testAddUnit">testAddUnit
 
 | unitsAdded| 
 unitsAdded := 5.
 simulation addUnit: HomeoUnit new.
 self assert: (simulation homeostat homeoUnits size = 1).
 unitsAdded timesRepeat:  [simulation addUnit: HomeoUnit new].
-self assert: (simulation homeostat homeoUnits size = (1 + unitsAdded)).</body>
+self assert: (simulation homeostat homeoUnits size = (1 + unitsAdded)).</body>-->
 
-<body package="Homeostat" selector="testDataFile">testDataFile
+DONE <!--<body package="Homeostat" selector="testDataFile">testDataFile
 "either the datafile exists and it is writable or it does not exist yet."
 
 self assert: ((simulation datafile asFilename definitelyExists and: [simulation datafile asFilename definitelyExists  isWritable])
-			or: [ simulation datafile asFilename definitelyExists not])</body>
+			or: [ simulation datafile asFilename definitelyExists not])</body>-->
 
-<body package="Homeostat" selector="testDataFileIsPresent">testDataFileIsPresent
+DONE <!--<body package="Homeostat" selector="testDataFileIsPresent">testDataFileIsPresent
 
-self assert: (simulation datafile notNil)</body>
+self assert: (simulation datafile notNil)</body>-->
 
-<body package="Homeostat" selector="testReadConditionsFromFile">testReadConditionsFromFile
+DONE <!--<body package="Homeostat" selector="testReadConditionsFromFile">testReadConditionsFromFile
 
-self assert: false.</body>
+self assert: false.</body>-->
 
-<body package="Homeostat" selector="testRemoveConnection">testRemoveConnection
+DONE <!--<body package="Homeostat" selector="testRemoveConnection">testRemoveConnection
 
 |unit1 unit2 |	
 
@@ -131,9 +131,9 @@ simulation homeostat addUnit: unit2.
 	simulation homeostat removeConnectionFrom: unit2 to: unit1.
 
 	"check  number of connections for unit1 is back to 1 (self-connection)"
-	self assert: ((unit1 inputConnections size) = 1).</body>
+	self assert: ((unit1 inputConnections size) = 1).</body>-->
 
-<body package="Homeostat" selector="testRemoveUnit">testRemoveUnit
+DONE <!--<body package="Homeostat" selector="testRemoveUnit">testRemoveUnit
 
 | unitsAdded unit|
 unit := HomeoUnit new. 
@@ -144,13 +144,13 @@ unitsAdded timesRepeat:  [simulation addUnit: HomeoUnit new].
 self assert: (simulation homeostat homeoUnits size = (1 + unitsAdded)).
 
 simulation homeostat removeUnit: unit.
-self assert: (simulation homeostat homeoUnits size = unitsAdded).</body>
+self assert: (simulation homeostat homeoUnits size = unitsAdded).</body>-->
 
-<body package="Homeostat" selector="testSaveToFile">testSaveToFile
+DONE <!--<body package="Homeostat" selector="testSaveToFile">testSaveToFile
 
-self assert: false.</body>
+self assert: false.</body>-->
 
-<body package="Homeostat" selector="testStart">testStart
+DONE <!--<body package="Homeostat" selector="testStart">testStart
 
 |simulationCycles|
 
@@ -160,9 +160,9 @@ simulation maxRuns: simulationCycles .
 
 simulation start.  "runs for the default number of cycles"
 
-self assert: (simulationCycles = simulation homeostat time).</body>
+self assert: (simulationCycles = simulation homeostat time).</body>-->
 
-<body package="Homeostat" selector="testStop">testStop
+DONE <!--<body package="Homeostat" selector="testStop">testStop
 
 
 |simulationCycles|
@@ -176,7 +176,7 @@ simulation start.
 simulation stop.
 
 
-self assert: ((simulationCycles = simulation homeostat time) not).</body>
+self assert: ((simulationCycles = simulation homeostat time) not).</body>-->
 </methods>
 
 </st-source>
