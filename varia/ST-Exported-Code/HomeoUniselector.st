@@ -25,16 +25,16 @@
 <methods>
 <class-id>HomeoUniselector class</class-id> <category>instance creation</category>
 
-<body package="Homeostat" selector="new">new
+USELESS<!--<body package="Homeostat" selector="new">new
 	"comment stating purpose of message"
 
-^ super new initialize</body>
+^ super new initialize</body>-->
 </methods>
 
 <methods>
 <class-id>HomeoUniselector class</class-id> <category>testing class hierarchy</category>
 
-<body package="Homeostat" selector="includesType:">includesType: aString
+DONE <!--<body package="Homeostat" selector="includesType:">includesType: aString
 
 "answers true if aString represents the HomeoUniselector class or one of its subclasses"
 
@@ -44,7 +44,7 @@ uniselectorClasses := Set new.
 
 (HomeoUniselector withAllSubclasses) do: [:class | uniselectorClasses add: class name asString].
 
-^uniselectorClasses includes: aString</body>
+^uniselectorClasses includes: aString</body>-->
 </methods>
 
 <!-- -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -   -->
@@ -52,20 +52,20 @@ uniselectorClasses := Set new.
 
 <comment>
 <class-id>HomeoUniselector</class-id>
-<body>Uniselector is the abstract class for different kinds of mechanisms producing random values for the connection between two units. UniselectorAshby replicate as much as possible the original stepping mechanism described by Ashby. UniselectorRandom provides a simpler mechanism that simply produces a random value in the admitted interval. Other mechanism can be added by subclassing Uniselector and providing an alternative method produceNewValue.
+DONE <!--<body>Uniselector is the abstract class for different kinds of mechanisms producing random values for the connection between two units. UniselectorAshby replicate as much as possible the original stepping mechanism described by Ashby. UniselectorRandom provides a simpler mechanism that simply produces a random value in the admitted interval. Other mechanism can be added by subclassing Uniselector and providing an alternative method produceNewValue.
  
 Instance Variables:
 
 	lowerBound           the lower bound of the weight, default is 0
 	upperBound          the uperbound of the weight, default is 1
 	beeps                    aBoolean that control whether the uniselector beeps when activated.
-</body>
+</body>-->
 </comment>
 
 <methods>
 <class-id>HomeoUniselector</class-id> <category>selection-functions</category>
 
-<body package="Homeostat" selector="ashbyRandom">ashbyRandom
+DONE <!--<body package="Homeostat" selector="ashbyRandom">ashbyRandom
 
 "produces 1 of a possible 25 different values for the weight by selecting at random a 25th of the interval defined by lowerBound and upperBound "
 
@@ -75,7 +75,7 @@ intervalSegment := (upperBound - lowerBound) / 25.
 randValue := ((Random new) nextBetween: 0 and: 25) rounded.
 sign := ((Random new) nextBetween: -1 and: 1) rounded.
 
-^ randValue*intervalSegment * sign.</body>
+^ randValue*intervalSegment * sign.</body>-->
 
 <body package="Homeostat" selector="simpleRandom">simpleRandom</body>
 </methods>
@@ -83,51 +83,51 @@ sign := ((Random new) nextBetween: -1 and: 1) rounded.
 <methods>
 <class-id>HomeoUniselector</class-id> <category>accessing</category>
 
-<body package="Homeostat" selector="advance">advance
+DONE <!--<body package="Homeostat" selector="advance">advance
 
 "control how to advance to the next position of the uniselector. Each subclass implements different mechanisms"
-self subclassResponsibility</body>
+self subclassResponsibility</body>-->
 
-<body package="Homeostat" selector="beeps">beeps
-	^beeps</body>
+DONE <!--<body package="Homeostat" selector="beeps">beeps
+	^beeps</body>-->
 
-<body package="Homeostat" selector="lowerBound">lowerBound
-	^lowerBound</body>
+DONE <!--<body package="Homeostat" selector="lowerBound">lowerBound
+	^lowerBound</body>-->
 
-<body package="Homeostat" selector="lowerBound:">lowerBound: anObject
-	lowerBound := anObject</body>
+DONE <!--<body package="Homeostat" selector="lowerBound:">lowerBound: anObject
+	lowerBound := anObject</body>-->
 
-<body package="Homeostat" selector="toggleBeeping">toggleBeeping
+DONE <!--<body package="Homeostat" selector="toggleBeeping">toggleBeeping
 	"toggle sound"
 
 beeps isNil
 	ifFalse: [beeps:= beeps not]
 	ifTrue:  [beeps := true].
-self changed: #uniselectorSound</body>
+self changed: #uniselectorSound</body>-->
 
-<body package="Homeostat" selector="upperBound">upperBound
-	^upperBound</body>
+DONE <!--<body package="Homeostat" selector="upperBound">upperBound
+	^upperBound</body>-->
 
-<body package="Homeostat" selector="upperBound:">upperBound: anObject
-	upperBound := anObject</body>
+DONE <!--<body package="Homeostat" selector="upperBound:">upperBound: anObject
+	upperBound := anObject</body>-->
 </methods>
 
 <methods>
 <class-id>HomeoUniselector</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+DONE <!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize a newly created instance. This method must answer the receiver."
 
-self setDefaults.</body>
+self setDefaults.</body>-->
 
-<body package="Homeostat" selector="setDefaults">setDefaults
+DONE <!--<body package="Homeostat" selector="setDefaults">setDefaults
 
 "sets the defaults for the uniselector weights. Can be (and usually is) overidden by subclasses"
 
 lowerBound := 0.
 upperBound := 1.
 
-beeps:= false.</body>
+beeps:= false.</body>-->
 </methods>
 
 </st-source>
