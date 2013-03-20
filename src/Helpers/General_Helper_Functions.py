@@ -8,3 +8,5 @@ def withAllSubclasses(aClass):
     return subs
 
     
+class SubclassResponsibility(Exception):
+    pass 
