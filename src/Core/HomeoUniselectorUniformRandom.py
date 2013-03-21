@@ -56,9 +56,9 @@ class HomeoUniselectorUniformRandom(HomeoUniselector):
 
     def __init__(self):
         '''
-        Initializes according to superclass 
+        Initializes according to superclass first.
         '''
         super(HomeoUniselectorUniformRandom, self).__init__()
         self._lowerBound = -1
         self._upperBound = 1
-        self._beeps - False
+        self._beeps = False
