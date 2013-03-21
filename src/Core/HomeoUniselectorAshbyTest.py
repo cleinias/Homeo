@@ -19,7 +19,7 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
 
     def testDefaultSteps(self):
         '''
-        test Asby's original implementation's value: it must be 12, 
+        Test Asby's original implementation's value: it must be 12, 
         because Ashby had 25 steps overall, and we assume
         12 positive values, 0, and 12 negative values
         '''
@@ -27,13 +27,14 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
 
     def testStep(self):
         '''
-        There must always be a positive number of steps in the uniselector
+        There must always be am integer positive number of steps in the uniselector
         '''
-        self.assertTrue(self.uniselector.steps() > 0)
+        self.assertTrue(self.uniselector.steps > 0)
 
         for index in xrange(100):
-            self.uniselector.steps(int(numpy.random.uniform(-100,100)))
-            self.assertTrue(self.uniselector.steps() >  0)
+            self.uniselector.steps = numpy.random.uniform(-100,100)
+            self.assertTrue(self.uniselector.steps >  0)
+            self.assertTrue(isinstance(self.uniselector.steps, (int, long)))
 
     def testIntervalBounds(self):
         '''
@@ -43,23 +44,23 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
 
         self.uniselector.equallySpaced()
         for index in xrange(100):
-            self.uniselector.lowerBound(numpy.random.uniform(-10,10))
-            self.assertTrue(self.uniselector.lowerBound() == 0)
-            self.uniselector.upperBound(numpy.random.uniform(-10,10))
+            self.uniselector.lowerBound = numpy.random.uniform(-10,10)
+            self.assertTrue(self.uniselector.lowerBound == 0)
+            self.uniselector.upperBound = numpy.random.uniform(-10,10)
             self.assertTrue(self.uniselector.upperBound == 1)
 
         self.uniselector.independentlyRandomized()
         for index in xrange(100):
-            self.uniselector.lowerBound(numpy.random.uniform(-10,10))
-            self.assertTrue(self.uniselector.lowerBound() == 0)
-            self.uniselector.upperBound(numpy.random.uniform(-10,10))
+            self.uniselector.lowerBound = numpy.random.uniform(-10,10)
+            self.assertTrue(self.uniselector.lowerBound == 0)
+            self.uniselector.upperBound = numpy.random.uniform(-10,10)
             self.assertTrue(self.uniselector.upperBound == 1)
 
         self.uniselector.randomized()        
         for index in xrange(100):
-            self.uniselector.lowerBound(numpy.random.uniform(-10,10))
-            self.assertTrue(self.uniselector.lowerBound() == 0)
-            self.uniselector.upperBound(numpy.random.uniform(-10,10))
+            self.uniselector.lowerBound = numpy.random.uniform(-10,10)
+            self.assertTrue(self.uniselector.lowerBound == 0)
+            self.uniselector.upperBound = numpy.random.uniform(-10,10)
             self.assertTrue(self.uniselector.upperBound == 1)
 
 
@@ -85,12 +86,12 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         as in Ashby's original implementation, with the default value of steps)
         '''
         self.uniselector.equallySpaced()
-        expectedNumberOfValues = (self.uniselector.steps() * 2 ) + 1 
+        expectedNumberOfValues = (self.uniselector.steps * 2 ) + 1 
         valuesProduced =  []
 
         for i in xrange(1000):
             values =  []
-            for unit in self.uniselector.unitsControlled():
+            for unit in xrange(self.uniselector.unitsControlled):
                 values.append(self.uniselector.produceNewValue()) 
             valuesProduced.append(values)
             self.uniselector.advance()
