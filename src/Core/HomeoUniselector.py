@@ -19,7 +19,7 @@ class HomeoUniselector(object):
     Instance Variables:
 
     lowerBound          the lower bound of the weight, default is 0
-    upperBound          the uperbound of the weight, default is 1
+    upperBound          the upperbound of the weight, default is 1
     beeps               aBoolean that control whether the uniselector beeps when activated.
     '''
     
