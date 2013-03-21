@@ -21,12 +21,17 @@
 
 <comment>
 <class-id>HomeoUniselectorAshby</class-id>
-<body>HomeoUniselectorAshby2 is a different implementation of Ashby's (sparsely decribed!) algorithm.  It simulates a stepping switch (or Uniselector) that advances one step every time it is activated. At every step the uniselector produces weight values ofr the HomeoUnits connections. The simulation is implemented  with a m x n matrix (the ivar sequence) where m are the steps of the uniselector, and n are the number of connected units. In Ashby's clasical homeosta m= 25, n = 3.  The values in the matrix are produced according to three different algorithms, each a different intepretation of Ashby's original idea. the string deciding which production method to use is held in ashbyKind.
+<body>HomeoUniselectorAshby2 is a different implementation of Ashby's (sparsely decribed!) algorithm.  It simulates a stepping switch (or Uniselector) that advances one step every time it is activated. At every step the uniselector produces weight values for the HomeoUnits connections. The simulation is implemented  with a m x n matrix (the ivar matrix) where m are the steps of the uniselector, and n are the number of connected units. In Ashby's classical homeosta m= 25, n = 3.  The values in the matrix are produced according to three different algorithms, each a different intepretation of Ashby's original idea. the string deciding which production method to use is held in ashbyKind.
 
 Instance Variables:
-	unitsControlled &lt;anInteger&gt;	The maximum number of units this uniselector controls. Default values is 10. It will be incremented in 10-units increment if needed
-	unitIndex         &lt;anInteger&gt;      The index keeping track of which unit's connection we are currently producing a value (a weight) for.
-	ashbyKind       &lt;aString&gt;          The string determining which initialization (and re-initialization) method to use.  
+	unitsControlled <anInteger>	   The maximum number of units this uniselector controls. Default values is 10. It will be incremented in 10-units increment if needed
+	unitIndex       <anInteger>        The index keeping track of which unit's connection we are currently producing a value (a weight) for.
+	ashbyKind       <aString>          The string determining which initialization (and re-initialization) method to use.
+	unitIndex
+	interval
+	steps		<anInteger>	   The number of possible steps in the Uniselector (default is 12, as per Ashby's implementation)
+	index		<anInteger>	   The index keeping track of which row of weight we should output next
+	matrix		<aMatrix>	   A matrix of size (unitsControlled x steps) holding all the possible weights
 
 </body>
 </comment>
@@ -63,7 +68,7 @@ ashbyKind := 'IndependentlyRandomizedValues'</body>
 <body package="Homeostat" selector="produceNewValue">produceNewValue
 
 "returns the weight for the next connection and advances the unitIndex"
-unitIndex + 1 &gt; unitsControlled
+unitIndex + 1 > unitsControlled
 			 ifFalse: [beeps
 					  ifTrue: [Screen default ringBell].
 					  unitIndex := unitIndex + 1.
@@ -86,18 +91,18 @@ ashbyKind := 'RandomizedValues'</body>
 
 <body package="Homeostat" selector="steps:">steps: aPositiveNumber
 
-"Must always be an integer &gt; 0" 
+"Must always be an integer > 0" 
 
-aPositiveNumber &gt; 0 ifTrue: [steps := aPositiveNumber asInteger]</body>
+aPositiveNumber > 0 ifTrue: [steps := aPositiveNumber asInteger]</body>
 
 <body package="Homeostat" selector="unitsControlled">unitsControlled
 	^unitsControlled</body>
 
 <body package="Homeostat" selector="unitsControlled:">unitsControlled: aNumber
 
-"The uniselector is initialized to to control  10 maximum connections and it initializes its transition matrix (sequence) accordingly. When the required number of max connections increases, it goes up in 10 units step increments and produces a new transition matrix."
+"The uniselector is initialized to control 10 maximum connections and it initializes its transition matrix (sequence) accordingly. When the required number of max connections increases, it goes up in 10 units step increments and produces a new transition matrix."
 
-aNumber &gt; unitsControlled 
+aNumber > unitsControlled 
 		ifTrue: [unitsControlled := unitsControlled + 10].
 self produceSequence.</body>
 
@@ -177,7 +182,7 @@ matrix := (Matrix rows: tempSeq) transpose.</body>
 
 <body package="Homeostat" selector="produceSequence">produceSequence
 
-"produces the matrix containing the vlaues for the uniselector switch according to the kind of Ashby uniselector specified in ashbyKind"
+"produces the matrix containing the values for the uniselector switch according to the kind of Ashby uniselector specified in ashbyKind"
 
 self perform: ('produce',ashbyKind) asSymbol.</body>
 </methods>
