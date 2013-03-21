@@ -48,21 +48,39 @@ class HomeoUniselector(object):
 
         self._beeps = False
      
-    @property
-    def lowerBound(self):
+#    @property
+#    def lowerBound(self):
+#        return self._lowerBound
+#    
+#    @lowerBound.setter
+#    def lowerBound(self, aValue):
+#        self._lowerBound = aValue
+
+    def getLowerBound(self):
         return self._lowerBound
     
-    @lowerBound.setter
-    def lowerBound(self, aValue):
+    def setLowerBound(self, aValue):
         self._lowerBound = aValue
-    
-    @property
-    def upperBound(self):
+
+    lowerBound = property(fget = lambda self: self.getLowerBound(),
+                          fset = lambda self, value: self.setLowerBound(value))
+
+    def getUpperBound(self):
         return self._upperBound
     
-    @upperBound.setter
-    def upperBound(self, aValue):
+    def setUpperBound(self, aValue):
         self._upperBound = aValue
+
+    upperBound = property(fget = lambda self: self.getUpperBound(),
+                          fset = lambda self, value: self.setUpperBound(value))
+    
+#    @property
+#    def upperBound(self):
+#        return self._upperBound
+#    
+#    @upperBound.setter
+#    def upperBound(self, aValue):
+#        self._upperBound = aValue
     
     @property
     def beeps(self):

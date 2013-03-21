@@ -3,11 +3,8 @@ Created on Mar 11, 2013
 
 @author: stefano
 
-These tests are currently very scarce. Need to add better coverage
 '''
-from   HomeoUnit import *
 from   HomeoUniselector import *
-from   Homeostat import *
 from   Helpers.General_Helper_Functions import *
 
 import unittest, string, random
@@ -66,8 +63,5 @@ class HomeoUniselectorTest(unittest.TestCase):
             value = self.uniselector.ashbyRandom()
             self.assertAlmostEqual(abs(value),interval/25,delta = 0.0001)
         
-        
-        
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
