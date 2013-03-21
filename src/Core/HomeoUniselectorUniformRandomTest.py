@@ -27,13 +27,13 @@ class HomeoUniselectorUniformRandomTest(unittest.TestCase):
     def testIntervalBounds(self):
         """
         "Interval bounds are always centered around 0, 
-        i.e. lowerbounds always = to upperBound negated"
+        i.e. lowerBound always = to upperBound negated"
         """
         for i in xrange(100):
-            self.uniselector.lowerBound(numpy.random.uniform(-10, 10))
-            self.assertTrue(self.uniselector.lowerBound() == - self.uniselector.upperBound())
-            self.uniselector.upperBound(numpy.random.uniform(-10, 10))
-            self.assertTrue(self.uniselector.lowerBound() == - self.uniselector.upperBound())
+            self.uniselector.lowerBound = numpy.random.uniform(-10, 10)
+            self.assertTrue(self.uniselector.lowerBound == - self.uniselector.upperBound)
+            self.uniselector.upperBound = numpy.random.uniform(-10, 10)
+            self.assertTrue(self.uniselector.lowerBound == - self.uniselector.upperBound)
 
     def testProduceNewValue(self):
         """
@@ -50,13 +50,13 @@ class HomeoUniselectorUniformRandomTest(unittest.TestCase):
 
 
         "testing with random values for interval: No repeated values"
-        values = []
-        for i in xrange(10): 
-            self.uniselector.upperBound(numpy.random.uniform(-10, 10))
+        for i in xrange(10):
+            values = []
+            self.uniselector.upperBound = numpy.random.uniform(-10, 10)
             for test in xrange(tests): 
                 newValue = self.uniselector.produceNewValue()
                 values.append(newValue)
-                self.assertTrue(len(set(values)) == tests)    
+            self.assertTrue(len(set(values)) == tests)    
                     
     def testValueWithinIntervalBounds(self):
         """
@@ -68,8 +68,15 @@ class HomeoUniselectorUniformRandomTest(unittest.TestCase):
         for test in xrange(tests):
             values.append(self.uniselector.produceNewValue())
 
-        self.assertTrue(max(values)  <= self.uniselector.upperBound())
-        self.assertTrue(min(values) >= self.uniselector.lowerBound())                    
+        self.assertTrue(max(values)  <= self.uniselector.upperBound)
+        self.assertTrue(min(values) >= self.uniselector.lowerBound)             
+        
+    def testDefaultInterval(self):
+        """
+        Default interval is (-1, 1)
+        """
+        self.assertTrue(self.uniselector.lowerBound == -1 and
+                        self.uniselector.upperBound == 1)       
   
     def tearDown(self):
         pass
