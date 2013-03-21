@@ -21,40 +21,40 @@
 
 <comment>
 <class-id>HomeoUniselectorUniformRandom</class-id>
-<body>HomeoUniselectorUniformRandom is a Uniselector that does NOT follow Ashby's model. It provides a random value uniformly distributed in the interval [lowerbound, upperBound], 
+DONE <!--<body>HomeoUniselectorUniformRandom is a Uniselector that does NOT follow Ashby's model. It provides a random value uniformly distributed in the interval [lowerbound, upperBound], 
 which is symmetric around 0, i.e. lowerbound = upperBound negated.
 The default values for the interval are [-1, +1], but other values can be chosen. However, the accessors of lowerBound and upperBound enforce the constraint by refusing positive (resp. negative) values 
-for lowerBound (resp. upperBound) and changing upperBound (resp. lowerBound) to the negated value of lowerBound (resp. upperBound). </body>
+for lowerBound (resp. upperBound) and changing upperBound (resp. lowerBound) to the negated value of lowerBound (resp. upperBound). </body>-->
 </comment>
 
 <methods>
 <class-id>HomeoUniselectorUniformRandom</class-id> <category>accessing</category>
 
-<body package="Homeostat" selector="advance">advance
+DONE <!--<body package="Homeostat" selector="advance">advance
 "does nothing because this uniselector has no concept of an index---it produces a new uniformly distributed  random value every time it  is called "
-^self</body>
+^self</body>-->
 
-<body package="Homeostat" selector="lowerBound:">lowerBound: aNumber
+DONE <!--<body package="Homeostat" selector="lowerBound:">lowerBound: aNumber
 	"The lowerBound of the interval the uniselector value is chosen from. The interval must be symmetric around 0"
 
-aNumber &lt;= 0 ifTrue: [lowerBound := aNumber.
+aNumber <= 0 ifTrue: [lowerBound := aNumber.
 					      upperBound := lowerBound negated]
 				ifFalse: [Transcript show: 'Uniselector received a wrong (positive) value for its lowerBound. Value was ignored.'; cr.].</body>
-
-<body package="Homeostat" selector="produceNewValue">produceNewValue
+-->
+DONE <!--<body package="Homeostat" selector="produceNewValue">produceNewValue
 "produce a new random value uniformly distributed in the interval [lowerBoud, upperBound]"
 
 
 beeps ifTrue: [Screen default ringBell].
-^ (UniformDistribution from: lowerBound to: upperBound) random.</body>
+^ (UniformDistribution from: lowerBound to: upperBound) random.</body>-->
 
-<body package="Homeostat" selector="upperBound:">upperBound: aNumber
+<!--<body package="Homeostat" selector="upperBound:">upperBound: aNumber
 	"The upperBound of the interval the uniselector value is chosen from. The interval must be symmetric around 0"
 
-aNumber &gt;= 0 ifTrue: [upperBound := aNumber.
+aNumber >= 0 ifTrue: [upperBound := aNumber.
 					      lowerBound := upperBound negated]
 				ifFalse: [Transcript show: 'Uniselector received a wrong (negative) value for its lowerBound. Value was ignored.'; cr].</body>
-</methods>
+<-->/methods>
 
 <methods>
 <class-id>HomeoUniselectorUniformRandom</class-id> <category>initialize-release</category>
@@ -66,14 +66,14 @@ aNumber &gt;= 0 ifTrue: [upperBound := aNumber.
 	" *** Replace this comment with the appropriate initialization code *** "
 	^self</body>
 
-<body package="Homeostat" selector="setDefaults">setDefaults
+DONE <!--<body package="Homeostat" selector="setDefaults">setDefaults
 
 "sets the defaults for the uniselector weights. Can be ovveridden by subclasses"
 
 lowerBound := -1.
 upperBound := 1.
 
-beeps:= false.</body>
+beeps:= false.</body>-->
 </methods>
 
 </st-source>
