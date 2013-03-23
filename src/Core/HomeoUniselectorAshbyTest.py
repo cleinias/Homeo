@@ -81,8 +81,8 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
 
     def testEquallySpacedValuesMatrix(self):
         '''
-        checks that the Uniselector produces a number of different sets of value
-        equal to uniselector steps (which would  be  25 different sets of values, 
+        checks that the Uniselector produces a number of different sets of values
+        equal to uniselector steps (which would  be  sets of 25 different values, 
         as in Ashby's original implementation, with the default value of steps)
         '''
         self.uniselector.equallySpaced()
@@ -101,14 +101,14 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         for values in valuesProduced:
             allValues.extend(values)
     
-        uniqueSortedValues = list(set(allValues)).sort    
+        uniqueSortedValues = sorted(list(set(allValues)))
         self.assertTrue(len(uniqueSortedValues) == expectedNumberOfValues)
 
         "Check that the values are equally spaced"
         deltas = []
-        for greaterValue in xrange(len(uniqueSortedValues), 1, -1):
-            for lesserValue in xrange(len(uniqueSortedValues) -1, 0, -1):
-                deltas.add(uniqueSortedValues[greaterValue] - uniqueSortedValues[lesserValue])
+        for value in xrange(len(uniqueSortedValues) , 1, -1):
+            deltas.append(round(uniqueSortedValues[value-1] - uniqueSortedValues[value - 2], 7) )
+        setDeltas = set(deltas)
         self.assertTrue(len(set(deltas)) == 1)
         
         '''We cannot run a test such as:
@@ -120,7 +120,7 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         (see comments to produceRandomizedSequence for more comments''' 
         
         for values in valuesProduced: 
-            self.assertTrue(len(values) == self.uniselector.unitsControlled())
+            self.assertTrue(len(values) == self.uniselector.unitsControlled )
 
     def testIndependentlyRandomizedValuesMatrix(self):
         '''
