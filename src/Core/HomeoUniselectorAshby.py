@@ -58,7 +58,10 @@ class HomeoUniselectorAshby(HomeoUniselector):
     def setSteps(self, aValue):
         '''
         steps is always a positive integer'''
-        self._steps = int(abs(aValue))
+        if int(abs(aValue)) == 0:
+            self._steps = 1
+        else:
+            self._steps = int(abs(aValue))
         
     def getSteps(self):
         return self._steps
@@ -67,7 +70,12 @@ class HomeoUniselectorAshby(HomeoUniselector):
                           fset = lambda self, value: self.setSteps(value))
     
     def setAshbyKind(self,aString):
-        self._ashbyKind = aString
+        '''
+        Do nothing. The value of AshbyKind is managed by 
+        other methods'''
+        pass
+        
+
     
     def getAshbyKind(self):
         return self._ashbyKind
@@ -77,6 +85,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
     
     def getUnitsControlled(self):
         return self._unitsControlled
+    
     
     def setUnitsControlled(self,aNumber):
         '''The uniselector is initialized to control 10 maximum connections 
@@ -90,6 +99,10 @@ class HomeoUniselectorAshby(HomeoUniselector):
         
     unitsControlled = property(fget = lambda self: self.getUnitsControlled(),
                           fset = lambda self, value: self.setUnitControlled(value))
+    
+    def matrix(self):
+        return self._matrix
+    
     def equallySpaced(self):
         '''set initialization procedure to equally spaced values
            and reinitializes the transition matrix if necessary 
@@ -101,7 +114,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
     
 
     def independentlyRandomized(self):
-        '''Set initialization procedure to independentely randomized  values
+        '''Set initialization procedure to independently randomized  values
             and reinitializes the transition matrix if necessary 
             (See method produceIndependentlyRandomizedValues for details)'''
 
@@ -130,7 +143,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
             tempSeq = np.column_stack((tempSeq,tempSeqq))
         return tempSeq
 
-    def produceIndependentRandomizedValues(self):
+    def produceIndependentlyRandomizedValues(self):
         ''' Produce a m x n Matrix, where m = number of  uniformly distributed random values  (default = 25),
         n = maximum number of units controlled by the Uniselector. 
         Notice that in this implementation, all connections have ***different***  random values.
@@ -140,21 +153,21 @@ class HomeoUniselectorAshby(HomeoUniselector):
         on the other hand, produces a matrix in which all rows (connections) 
         share the same  random values'''
 
-        return np.random.uniform(0,1, (self._steps,self._unitsControlled))
+        return np.random.uniform(- self._upperBound, self._upperBound, ((self._steps * 2) + 1 ,self._unitsControlled))
 
     def produceRandomizedValues(self):
         '''
         Produce a m x n Matrix, where m = number of  uniformly distributed random values  
         (default = 25), n = maximum number of units controlled by the Uniselector. 
-        Notice that in this implementation, all connections share the same space o
-        f 25 random values, although they go through them in a different sequence. 
+        Notice that in this implementation, all connections share the same space 
+        of 25 random values, although they go through them in a different order. 
         This seems to capture (one of the interpretations) of the original homeostat, 
         where random values were implemented in hardware and could not be changed. 
         Initializing the uniselector with produceIndependentRandomized Sequence, 
         on the other hand, produces a matrix in which all rows have (a highly likelihood of being)
         completely different values'''
 
-        tempSeq = np.random.uniform(0,1,self._steps)
+        tempSeq = np.random.uniform(- self._upperBound, self._upperBound,(self._steps * 2) +1)
         tempSeqq = tempSeq.copy()
         for i in xrange(self._unitsControlled):
             tempSeqqq = tempSeqq.copy()
@@ -164,15 +177,18 @@ class HomeoUniselectorAshby(HomeoUniselector):
     
     def produceSequence(self):
         ''' Produces the matrix containing the values for the uniselector switch
-            according to the kind of Ashby uniselector specified in ashbyKind'''
+            according to the kind of Ashby uniselector specified in ashbyKind
+            
+            New matrix production methods can be added by:
+            1 - Adding a method that produces a n*m matrix of transition values,
+                where m is = self._unitsControlled
+            2 - Naming the method 'produce' + methodName
+            3 - Adding a method that allows setting self._ashbyKind  to methodName  
+            
+            '''
         
-        if self._ashbyKind == 'EquallySpacedValues':
-            self._matrix = self.produceEquallySpacedValues()
-        if self._ashbyKind == 'IndependentlyRandomizedValues':
-                self._matrix = self.produceIndependentRandomizedValues()
-        if self._ashbyKind ==  'RandomizedValues':
-            self._matrix = self.produceRandomizedValues()
-
+        self._matrix = getattr(self,'produce'+ self.ashbyKind)()
+        
     def produceNewValue(self):
         '''Return the weight for the next connection and advances the unitIndex'''
         if not self._unitIndex  > self._unitsControlled:
@@ -192,3 +208,21 @@ class HomeoUniselectorAshby(HomeoUniselector):
             self._index = self._index + 1
             
         self._unitIndex = 0
+    
+    def sameAs(self,aUniselector):
+        '''True if it is of the  same ashby kind
+            as aUniselector and transition matrices are the same.
+            
+            It will almost never return true for uniselector, for
+            transition matrices' values are  shuffled'''
+        
+        return (self.sameKindAs(aUniselector) and
+                np.array_equal(self.matrix(), aUniselector.matrix()))
+            
+    
+    def sameKindAs(self,aUniselector):
+        ''' It is the same class as aUniselector'''
+        
+        return (type(self) == type(aUniselector) and
+                self.ashbyKind == aUniselector.ashbyKind)
+        
