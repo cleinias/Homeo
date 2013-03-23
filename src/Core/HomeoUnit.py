@@ -3,7 +3,7 @@ from  HomeoUniselector import *
 from  HomeoConnection import *
 
 class HomeoUnit:
-    """
+    '''
     Created on Feb 19, 2013
 
     @author: stefano
@@ -68,12 +68,12 @@ class HomeoUnit:
     - periodically check that its outputValue has not become critical (outside the acceptable range) 
     - ask the uniselector to reset the weight of its inputConnections
     - print a description of itself with the values of all its parameters
-     """
+     '''
 
     "The unit's output range is by default -1  to 1 to express the proportion of the needle's deviation" 
     unitRange = {'high':1,'low':-1}               
 
-#   "DefaultParameters is a class variable holding the  default values of all the various parameters of future created units."
+   #"DefaultParameters is a class variable holding the  default values of all the various parameters of future created units."
     DefaultParameters  = dict(viscosity = 1,
                               maxDeviation=10,
                               outputRange = unitRange,
@@ -99,20 +99,20 @@ class HomeoUnit:
         These values are supposed to be overridden in normal practice, because the values are set  by the  simulation 
         (an instance of HomeoSimulation or by the graphic interface)
         """
-        self.__viscosity = HomeoUnit.DefaultParameters['viscosity']
-        self.__maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
-        self.__outputRange = HomeoUnit.DefaultParameters['outputRange']
-        self.__noise = HomeoUnit.DefaultParameters['noise']
-        self.__potentiometer = HomeoUnit.DefaultParameters['potentiometer']
-        self.__time = HomeoUnit.DefaultParameters['time']
-        self.__uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
-        self.__uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
-        self.__needleCompMethod    = HomeoUnit.DefaultParameters['needleCompMethod']
-        self.__uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
+        self.__viscosity__ = HomeoUnit.DefaultParameters['viscosity']
+        self.__maxDeviation__ = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
+        self.__outputRange__ = HomeoUnit.DefaultParameters['outputRange']
+        self.__noise__ = HomeoUnit.DefaultParameters['noise']
+        self.__potentiometer__ = HomeoUnit.DefaultParameters['potentiometer']
+        self.__time__ = HomeoUnit.DefaultParameters['time']
+        self.__uniselectorTime__ = HomeoUnit.DefaultParameters['uniselectorTime']
+        self.__uniselectorTimeInterval__ = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
+        self.__needleCompMethod__    = HomeoUnit.DefaultParameters['needleCompMethod']
+        self.__uniselectorActivated__ = HomeoUnit.DefaultParameters['uniselectorActivated']
 
-        self.__currentVelocity = 0 #"a New unit is turned off, hence its velocity is 0"
+        self.__currentVelocity__ = 0 #"a New unit is turned off, hence its velocity is 0"
 
-        self.__needleUnit = HomeoNeedleUnit()
+        self.__needleUnit__ = HomeoNeedleUnit()
 
 
         #sets the correspondence between the simulation units and real physical units"
@@ -121,7 +121,7 @@ class HomeoUnit:
                                       massEquivalence = 0.001)        # 1 unit of mass equals one gram, or 0.001 kg"
     
         #creates the connection collection and connects the unit to itself in manual mode with a negative feedback"
-        self.__inputConnections = []
+        self.__inputConnections__ = []
         self.setDefaultSelfConnection()
 
         #sets default uniselector settings."
@@ -132,67 +132,67 @@ class HomeoUnit:
         self.setDefaultOutputAndDeviation()
         
         #turn the unit on"
-        self.__status= 'Active'
-        self.__debugMode = False
-        self.__showUniselectorAction = False
+        self.__status__= 'Active'
+        self.__debugMode__ = False
+        self.__showUniselectorAction__ = False
         
     "setter and getter methods for external access"
     
     def setViscosity(self, aValue):
-        self.__viscosity = aValue
+        self.__viscosity__ = aValue
     def viscosity(self):
-        return self.__viscosity
+        return self.__viscosity__
     
     def setPotentiometer(self, aValue):
-        self.__potentiometer = aValue
+        self.__potentiometer__ = aValue
     def potentiometer(self):
-        return self.__potentiometer
+        return self.__potentiometer__
     
     def setNoise(self, aValue):
-        self.__noise = aValue
+        self.__noise__ = aValue
     def noise(self):
-        return self.__noise
+        return self.__noise__
     
     def setTime(self, aValue):
-        self.__time = aValue
+        self.__time__ = aValue
     def time(self):
-        return self.__time
+        return self.__time__
     
     def setUniselectorTime(self, aValue):
-        self.__uniselectorTime = aValue
+        self.__uniselectorTime__ = aValue
     def uniselectorTime(self):
-        return self.__uniselectorTime
+        return self.__uniselectorTime__
     
     def setNeedleCompMethod(self, aString):
-        self.__needleCompMethod = aString
+        self.__needleCompMethod__ = aString
     def needleCompMethod(self):
-        return self.__needleCompMethod
+        return self.__needleCompMethod__
     
     def setMaxDeviation(self,aValue):
-        self.__maxDeviation = aValue
+        self.__maxDeviation__ = aValue
     def maxDeviation(self):
-        return self.__maxDeviation
+        return self.__maxDeviation__
     
     def setOutputRange(self, aDict):
-        self.__outputRange = aDict
+        self.__outputRange__ = aDict
     
     def outputRange(self):
-        return self.__outputRange
+        return self.__outputRange__
 
     def setUniselectorActive(self,aBoolean):
-        self.__uniselectorActivated = aBoolean
+        self.__uniselectorActivated__ = aBoolean
     def uniselectorActive(self):
-        return self.__uniselectorActivated
+        return self.__uniselectorActivated__
     
     def setUniselectorTimeInterval(self,aValue):
-        self.__uniselectorTimeInterval = aValue
+        self.__uniselectorTimeInterval__ = aValue
     def uniselectorTimeInterval(self):
-        return self.__uniselectorTimeInterval
+        return self.__uniselectorTimeInterval__
 
     "end of setter and getter methods"
 
     def unitActive(self, aBoolean):
-        self.__status= True
+        self.__status__= True
 
     def setDefaultSelfConnection(self):
         pass
