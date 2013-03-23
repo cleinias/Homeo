@@ -6,8 +6,9 @@ Created on Mar 18, 2013
 from   HomeoUnit import *
 from   HomeoUniselectorAshby import *
 from   Homeostat import *
+import scipy.stats as stats
 import unittest, numpy
-
+from copy import copy, deepcopy
 
 class HomeoUniselectorAshbyTest(unittest.TestCase):
     '''
@@ -27,7 +28,7 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
 
     def testStep(self):
         '''
-        There must always be am integer positive number of steps in the uniselector
+        There must always be an integer positive number of steps in the uniselector
         '''
         self.assertTrue(self.uniselector.steps > 0)
 
@@ -108,7 +109,6 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         deltas = []
         for value in xrange(len(uniqueSortedValues) , 1, -1):
             deltas.append(round(uniqueSortedValues[value-1] - uniqueSortedValues[value - 2], 7) )
-        setDeltas = set(deltas)
         self.assertTrue(len(set(deltas)) == 1)
         
         '''We cannot run a test such as:
@@ -124,52 +124,58 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
 
     def testIndependentlyRandomizedValuesMatrix(self):
         '''
-        checks that  the Uniselector produces a number of different sets of values
-        equal to uniselector steps (which would  be  25 different sets of values, 
-        as in Ashby's original implementation, with the default value of steps)
+        Test that  the Uniselector produces a number of different sets of values
         
-        FIXME: Does not actually test the computation method
+        The values produced should be all different and uniformly distributed 
+        over the interval -1 , 1 (or -upperBound, upperBound, to be precise)
         '''
         self.uniselector.independentlyRandomized()
-        expectedNumberOfValues = (self.uniselector.steps() * 2 ) + 1 
+        expectedNumberOfValues = (self.uniselector.steps * 2 ) + 1 
         valuesProduced= []
-
-        for i in xrange(1000):
+        tests = 100
+        
+        for i in xrange(tests):
             values =  []
-            for unit in self.uniselector.unitsControlled():
+            for unit in xrange(self.uniselector.unitsControlled):
                 values.append(self.uniselector.produceNewValue()) 
             valuesProduced.append(values)
             self.uniselector.advance()
-
-        self.assertTrue(len(set(valuesProduced)) == expectedNumberOfValues)
         
-        '''We cannot run a test such as:
+        "Values are all different"
+        allValues = numpy.array(valuesProduced).flatten()
+                        
+        ''''The transition matrix has  m = ((self.uniselector.steps * 2) + 1) rows and
+        n = self._unitsControlled column. There must be m*n different values'''
+        tempSet = set(allValues)
+        self.assertTrue(len(set(allValues)) == ((self.uniselector.steps * 2) + 1) * self.uniselector.unitsControlled)
         
-        self.assertTrue(len(set(values)) == len(values)
+        '''And uniformly distributed over -upperBound,upperBound,
+            We measure against a large sample drawn from a uniform distrib and set the p-value to 0.05'''
+            
+        uniformRandomSample = numpy.random.uniform(- self.uniselector.upperBound,self.uniselector.upperBound,10000)
+        D,p = stats.ks_2samp(allValues,uniformRandomSample)
+        self.assertTrue(p < 0.05)
         
-        because values for different units cannot (necessarily) be all 
-        different:  there are only 25 possible random values 
-        (see comments to produceRandomizedSequence for more comments''' 
-        
+        "Check that the we are producing values for all units controlled"
         for values in valuesProduced: 
-            self.assertTrue(len(values) == self.uniselector.unitsControlled())
+            self.assertTrue(len(values) == self.uniselector.unitsControlled )
         
     def testRandomizedValuesMatrix(self):
         '''
-        Check that the Uniselector produces a number of different sets of values
+        Test that the Uniselector produces a number of different sets of values
         equal to uniselector steps (which would  be  25 different sets of values, 
         as in Ashby's original implementation, with the default value of steps)
         
-        FIXME: Does not actually test the computation method 
+        There is only a fixed number of different values (default = 25)
         '''
         
         self.uniselector.randomized()
-        expectedNumberOfValues = (self.uniselector.steps() * 2 ) + 1 
+        expectedNumberOfValues = (self.uniselector.steps * 2 ) + 1 
         valuesProduced= []
 
         for i in xrange(1000):
             values =  []
-            for unit in self.uniselector.unitsControlled():
+            for unit in xrange(self.uniselector.unitsControlled):
                 values.append(self.uniselector.produceNewValue()) 
             valuesProduced.append(values)
             self.uniselector.advance()
@@ -178,7 +184,7 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         allValues = [] 
         for values in valuesProduced:
             allValues.extend(values)
-    
+        tempSet = set(allValues)
         self.assertTrue(len(set(allValues)) == expectedNumberOfValues)
         
         '''We cannot run a test such as:
@@ -191,29 +197,86 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         
         "Check that the we are producing values for all units controlled"
         for values in valuesProduced: 
-            self.assertTrue(len(values) == self.uniselector.unitsControlled())
+            self.assertTrue(len(values) == self.uniselector.unitsControlled)
 
     def testValuesWithinBounds(self):
         '''
         Checks that the Uniselector produces values 
-        that are always between the upper and lower bounds
+        that are always between -upperBound (= -1)  and upperBound (= 1. 
+        The upper and lower bounds of the UniselectorAshby cannot be changed"
         '''
-        outOfBounds  = 1000
+        outOfBounds  = False
         tests = 1000
         valuesProduced = []
         for test in xrange(tests):
             values = []
-            for unit in self.uniselector.unitsControlled(): 
+            for unit in xrange(self.uniselector.unitsControlled): 
                 values.append(self.uniselector.produceNewValue())
             valuesProduced.append(values)
             self.uniselector.advance()
 
         for valueSet in valuesProduced: 
             for value in valueSet:
-                if not (value >= self.uniselector.lowerBound() and value <= self.uniselector.upperBound()):
-                    outOfBounds = 1
+                if not (value >= - self.uniselector.upperBound and value <= self.uniselector.upperBound):
+                    outOfBounds = True
         
-        self.assertTrue(outOfBounds == 1)
+        self.assertFalse(outOfBounds)
+        
+    def testSameAs(self):
+        '''
+        True if they are of same class, have same ashbyKind, and have the same transition matrix
+        '''
+    
+        "Copies should always be the same, no matter the matrix's computation method"
+        self.uniselector.equallySpaced()
+        anotherUniselector = copy(self.uniselector)
+        
+        self.assertTrue(self.uniselector.sameAs(anotherUniselector))
+     
+        self.uniselector.equallySpaced()
+        anotherUniselector = copy(self.uniselector)
+        self.assertTrue(self.uniselector.sameAs(anotherUniselector))
+        
+        self.uniselector.equallySpaced()
+        anotherUniselector = copy(self.uniselector)
+        self.assertTrue(self.uniselector.sameAs(anotherUniselector))
+
+        '''Otherwise, two uniselectors will almost never be the same.
+        Test that they will not be equal in  more than 5% of the cases'''
+        anotherUniselector = HomeoUniselectorAshby()
+        tests = 100
+        equalityResults = 0
+        deltaTests = int(tests * 0.05)
+        for i in xrange(tests):
+            anotherUniselector.equallySpaced()
+            if self.uniselector.sameAs(anotherUniselector):
+                equalityResults += 1
+            anotherUniselector.independentlyRandomized()
+            if self.uniselector.sameAs(anotherUniselector):
+                equalityResults += 1
+            anotherUniselector.randomized()
+            if self.uniselector.sameAs(anotherUniselector):
+                equalityResults += 1
+        
+        self.assertAlmostEquals(equalityResults, 0, delta = deltaTests)
+
+        
+    def testSameKindAs(self):
+        '''
+        True if they are of same class and have same ashbyKind
+        '''
+        
+        anotherUniselector = HomeoUniselectorAshby()
+        self.uniselector.independentlyRandomized()
+        anotherUniselector.independentlyRandomized()
+        
+        self.assertTrue(self.uniselector.sameKindAs(anotherUniselector))
+        
+        anotherUniselector.equallySpaced()
+        self.assertFalse(self.uniselector.sameKindAs(anotherUniselector))
+
+        anotherUniselector.randomized() 
+        self.assertFalse(self.uniselector.sameKindAs(anotherUniselector))
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
