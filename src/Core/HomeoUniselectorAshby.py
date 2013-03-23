@@ -40,7 +40,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
         super(HomeoUniselectorAshby,self).__init__()
         self._lowerBound = 0
         self._upperBound = 1
-        self._index = 1
+        self._index = 0
         self._steps = 12
         self._unitsControlled = 10
         self._unitIndex = 0
@@ -91,31 +91,41 @@ class HomeoUniselectorAshby(HomeoUniselector):
     unitsControlled = property(fget = lambda self: self.getUnitsControlled(),
                           fset = lambda self, value: self.setUnitControlled(value))
     def equallySpaced(self):
-        '''set initialization procedure to equally spaced values. 
-         (See method produceEquallySpacedValues for details'''
+        '''set initialization procedure to equally spaced values
+           and reinitializes the transition matrix if necessary 
+           (See method produceEquallySpacedValues for details)'''
 
-        self._ashbyKind = 'EquallySpacedValues'
+        if self._ashbyKind != 'EquallySpacedValues':
+            self._ashbyKind = 'EquallySpacedValues'
+            self.produceSequence()
+    
 
     def independentlyRandomized(self):
         '''Set initialization procedure to independentely randomized  values
-        (See method produceIndependentlyRandomizedValues for details)'''
+            and reinitializes the transition matrix if necessary 
+            (See method produceIndependentlyRandomizedValues for details)'''
 
-        self._ashbyKind = 'IndependentlyRandomizedValues'
+        if self._ashbyKind != 'IndependentlyRandomizedValues':
+            self._ashbyKind = 'IndependentlyRandomizedValues'
+            self.produceSequence()
         
     def randomized(self):
         '''Set initialization procedure to  randomized  values 
+           and reinitializes the transition matrix if necessary 
            (see method produceRandomizedValues for details)'''
 
-        self._ashbyKind = 'RandomizedValues'
+        if self._ashbyKind != 'RandomizedValues':
+            self._ashbyKind = 'RandomizedValues'
+            self.produceSequence()
 
     
     def produceEquallySpacedValues(self):
         ''' Produce a m x n Matrix, where m = number of equally spaced values
          (default = 25), n = maximum number of units controlled by the Uniselector'''        
         
-        tempSeq = np.linspace(0,1,self._steps)
-        for i in xrange(self._unitsControlled):
-            tempSeqq = np.linspace(0,1,self._steps)
+        tempSeq = np.linspace(-1,1,(self._steps * 2) + 1)
+        for i in xrange(self._unitsControlled - 1):
+            tempSeqq = np.linspace(-1,1,(self._steps * 2) + 1)
             np.random.shuffle(tempSeqq) 
             tempSeq = np.column_stack((tempSeq,tempSeqq))
         return tempSeq
@@ -157,7 +167,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
             according to the kind of Ashby uniselector specified in ashbyKind'''
         
         if self._ashbyKind == 'EquallySpacedValues':
-            self._matrix = self._produceEquallySpacedValues()
+            self._matrix = self.produceEquallySpacedValues()
         if self._ashbyKind == 'IndependentlyRandomizedValues':
                 self._matrix = self.produceIndependentRandomizedValues()
         if self._ashbyKind ==  'RandomizedValues':
@@ -166,18 +176,18 @@ class HomeoUniselectorAshby(HomeoUniselector):
     def produceNewValue(self):
         '''Return the weight for the next connection and advances the unitIndex'''
         if not self._unitIndex  > self._unitsControlled:
-             if self._beeps:
-                 # FIXME will need to put a beep here
-                 pass
-             self._unitIndex = self._unitIndex + 1
-             return self._matrix[self._index - 1, self._unitIndex -1]
+            if self._beeps:
+                # FIXME will need to put a beep here
+                pass
+            self._unitIndex = self._unitIndex + 1
+            return self._matrix[self._index - 1, self._unitIndex -1]
         else:
             raise Exception('Too many units for the uniselector to control')
 
     def advance(self):
         '''Advance the uniselector to the next position'''
-        if self._index - 1 == self._matrix.shape[0]:
-            self._index = 1
+        if self._index == self._matrix.shape[0]:
+            self._index = 0
         else:
             self._index = self._index + 1
             

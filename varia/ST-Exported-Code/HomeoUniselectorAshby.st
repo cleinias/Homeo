@@ -190,22 +190,22 @@ self perform: ('produce',ashbyKind) asSymbol.</body>-->
 <methods>
 <class-id>HomeoUniselectorAshby</class-id> <category>testing</category>
 
-<body package="Homeostat" selector="sameAs:">sameAs: aUniselector 
+DONE <!--<body package="Homeostat" selector="sameAs:">sameAs: aUniselector 
 	
 
 		self class = aUniselector class 
 			ifFalse: [^false] 
 			ifTrue: [
 				^(ashbyKind = aUniselector ashbyKind) 					                  "uniselectors have same ashby kind"
-					and: [(self sequence  - aUniselector sequence) isZero]].			"and Transition matrices are the same"</body>
+					and: [(self sequence  - aUniselector sequence) isZero]].			"and Transition matrices are the same"</body>-->
 
-<body package="Homeostat" selector="sameKindAs:">sameKindAs: aUniselector 
+DONE <!--<body package="Homeostat" selector="sameKindAs:">sameKindAs: aUniselector 
 	
 
 		self class = aUniselector class 
 			ifFalse: [^false] 
 			ifTrue: [
-				^ashbyKind = aUniselector ashbyKind   ]</body>
+				^ashbyKind = aUniselector ashbyKind   ]</body>-->
 </methods>
 
 </st-source>
