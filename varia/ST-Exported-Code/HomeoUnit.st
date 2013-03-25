@@ -167,32 +167,32 @@ HomeoUnit holds the  values describing the state of the unit at time t, as speci
 The design of this simulation of the Homeostat  has been influenced by the C simulation described by Alice Eldridge in "Ashby's Homeostat in Simulation," unpublished, 2002, available at: http://www.informatics.sussex.ac.uk/users/alicee/NEWSITE/ecila_files/content/papers/ACEhom.pdf 
 
 Instance Variables:
-	criticalDeviation		&lt;Object&gt;	deviation of the needle from equilibrium (0 state). In Ashby's original electromechanical model, this value is a function of the input 	current applied to the magnet that operates 									the needle AND the possible manual operation on the needle itself
-	currentOutput		&lt;Object&gt;	current  the unit outputs at time t. This value is proportional to criticalDeviation and typically between 0 and 1.
-	inputConnections	&lt;OrderedCollectiont&gt;	a collection of HomeoConnections storing the units the presents unit is connected to and the associated weights. Includes a connection to itself. 
-	maxDeviation		&lt;Object&gt;	maximum deviation from equilibrium
-	nextDeviation		&lt;Object&gt;	the needle's deviation the unit will assume at at t+1. This is a function of criticalDeviation, viscosity (as a dampener), and potentiometer. It is limited at both ends by maxDeviation 									(i.e. maxDeviation negated &lt; nextDeviation &lt; maxDeviation)
-	outputRange			&lt;Dictionary&gt;	range of the output current, keyed as low and high. Default is 0 to 1.
-	viscosity				&lt;Object&gt;	viscosity of the medium in which the metallic needle of the original Ashbian unit is free to move. Acts as a dampening agent on the change of output
-	density:                     &lt;Object&gt;    the density  of the medium in which the metallic needle of the original Ashbian unit is free to move. Used to compute the drag at high velocities, if needed
-	noise				&lt;Object&gt;	As per Ashby's implementation, it represents the noise in the transmission medium of the unit's connection to itself. In our implementation it is always identical to the noise of a unit's first 									connection 
-	potentiometer 		&lt;Object&gt;	As per Ashby's implementation, it represents the weight of the unit's connection to itself. In our implementation it is always identical to the weight of a unit's first 									connection,---Check Design for a Brain, chp.8  for details
-	switch 				&lt;Object&gt; 	As per Ashby's implementation, it represents the polarity of the connection of the unit to itself.  In our implementation it is always identical to the polarity of a unit's first 									connection,
-	time					&lt;integer&gt; 	the internal tick counter
-	uniselectorTime 		&lt;Integer&gt;       the internal tick counter for activation of the uniselector
-	uniselectorTimeInterval &lt;iInteger&gt;   the number of ticks that specifies how often to check that the output is in range and eventually activate uniselector
-	uniselector	                 &lt;Uniselector&gt; the uniselector that can modifiy the weights of input values coming from other units
-	uniselectorActive         &lt;Boolean&gt;   whether the uniselector mechanism is active or not
-	needleCompMethod   &lt;String&gt;		whether the unit's needle's displacement depends of the sum of its input, or on the ratio bettween the sum of the inputs and the maxDeviation. possible values are 'linear' and 									'proportional', default is 'linear'.
-	inputTorque                 &lt;aValue&gt;       represents the input force derived from the weighed sum of the inputs (as computed by computeTorque)
-	active 				&lt;aString&gt; 	whether the unit is active or not (on or off)
-	status  				&lt;aString&gt;      Active, Non Active, or other possible status
-	debugMode 			&lt;aBoolean&gt; controls whether the running methods print out debugging information
-	showUniselectorAction &lt;aBoolean&gt; controls whether the running methods print out when the uniselector kicks into action
+	criticalDeviation		<Object>	deviation of the needle from equilibrium (0 state). In Ashby's original electromechanical model, this value is a function of the input 	current applied to the magnet that operates 									the needle AND the possible manual operation on the needle itself
+	currentOutput		<Object>	current  the unit outputs at time t. This value is proportional to criticalDeviation and typically between 0 and 1.
+	inputConnections	<OrderedCollectiont>	a collection of HomeoConnections storing the units the presents unit is connected to and the associated weights. Includes a connection to itself. 
+	maxDeviation		<Object>	maximum deviation from equilibrium
+	nextDeviation		<Object>	the needle's deviation the unit will assume at at t+1. This is a function of criticalDeviation, viscosity (as a dampener), and potentiometer. It is limited at both ends by maxDeviation 									(i.e. maxDeviation negated < nextDeviation < maxDeviation)
+	outputRange			<Dictionary>	range of the output current, keyed as low and high. Default is 0 to 1.
+	viscosity				<Object>	viscosity of the medium in which the metallic needle of the original Ashbian unit is free to move. Acts as a dampening agent on the change of output
+	density:                     <Object>    the density  of the medium in which the metallic needle of the original Ashbian unit is free to move. Used to compute the drag at high velocities, if needed
+	noise				<Object>	As per Ashby's implementation, it represents the noise in the transmission medium of the unit's connection to itself. In our implementation it is always identical to the noise of a unit's first 									connection 
+	potentiometer 		<Object>	As per Ashby's implementation, it represents the weight of the unit's connection to itself. In our implementation it is always identical to the weight of a unit's first 									connection,---Check Design for a Brain, chp.8  for details
+	switch 				<Object> 	As per Ashby's implementation, it represents the polarity of the connection of the unit to itself.  In our implementation it is always identical to the polarity of a unit's first 									connection,
+	time					<integer> 	the internal tick counter
+	uniselectorTime 		<Integer>       the internal tick counter for activation of the uniselector
+	uniselectorTimeInterval <iInteger>   the number of ticks that specifies how often to check that the output is in range and eventually activate uniselector
+	uniselector	                 <Uniselector> the uniselector that can modifiy the weights of input values coming from other units
+	uniselectorActive         <Boolean>   whether the uniselector mechanism is active or not
+	needleCompMethod   <String>		whether the unit's needle's displacement depends of the sum of its input, or on the ratio bettween the sum of the inputs and the maxDeviation. possible values are 'linear' and 									'proportional', default is 'linear'.
+	inputTorque                 <aValue>       represents the input force derived from the weighed sum of the inputs (as computed by computeTorque)
+	active 				<aString> 	whether the unit is active or not (on or off)
+	status  				<aString>      Active, Non Active, or other possible status
+	debugMode 			<aBoolean> controls whether the running methods print out debugging information
+	showUniselectorAction <aBoolean> controls whether the running methods print out when the uniselector kicks into action
 	currentVelocity:					the current velocity of the needle moving in the trough
 	needleUnit 						Holds an instance of HomeoNeedleUnit, the class containing the parameters of the needle used by the unit (mass, area, etc.)
 
-	physicalParameters    &lt;aDictionary&gt;     a dictionary containing equivalence factors between the simulation units and real  physicalParameters
+	physicalParameters    <aDictionary>     a dictionary containing equivalence factors between the simulation units and real  physicalParameters
 
 
 A HomeoUnit knows how to:
@@ -226,7 +226,7 @@ debugMode ifTrue: [Transcript show: 'current Deviat. at time: ';  show: time pri
 
 	"3. check whether it's time to check the uniselector/detection mechanism and if so do it. 
 	       Register that the uniselector is active in aninstance variable"
-	(uniselectorTime &gt;= uniselectorTimeInterval and: [uniselectorActive]) 
+	(uniselectorTime >= uniselectorTimeInterval and: [uniselectorActive]) 
 		ifTrue: [self essentialVariableIsCritical ifTrue: [self operateUniselector.
 												   uniselectorActivated := 1]]
 		ifFalse: [uniselectorActivated:= 0].	      
@@ -628,7 +628,7 @@ uniselector unitsControlled: anInteger</body>
 <body package="Homeostat" selector="maxDeviation:">maxDeviation: aNumber
 "Max deviation is always positive, because the unit's deviation is centered around 0. Ignore negatve numbers"
 	
-	(aNumber &gt; 0) 
+	(aNumber > 0) 
 		ifTrue: [
 			maxDeviation := aNumber.
 			self changed: #maxDeviation]</body>
@@ -641,7 +641,7 @@ uniselector unitsControlled: anInteger</body>
 <body package="Homeostat" selector="minDeviation:">minDeviation: aNumber
 
 "Deviation is always centered around 0. Min deviation must be less than 0 and equal to maxDeviation negated. If we change the minimum we must change the maximum as well"
-	(aNumber &lt; 0) 
+	(aNumber < 0) 
 		ifTrue: [
 			maxDeviation := aNumber negated
 			self changed: #maxDeviation]</body>
@@ -683,8 +683,8 @@ uniselector unitsControlled: anInteger</body>
 "changes the value of the unit's internal noise. As noise must always be between 0 and 1 clip it if outside those bounds"
 	
 
-	aValue &gt; 1
-		 ifFalse: [aValue &lt;0
+	aValue > 1
+		 ifFalse: [aValue <0
 			ifFalse: [noise := aValue]
 			ifTrue:   [noise := 0]]
 		ifTrue: [noise := 1].	
@@ -842,7 +842,7 @@ self currentOutput: 0</body>
 	  this basic function mimicks Asbhy's original device by the following procedure:
 
 	1. Try to move the needle to a new position (on the basis of  the input values computed by computeTorque) 
-	     (the details of this operation are in method HomeoUnit &gt;&gt; newNeedlePosition: aValue and in HomeoUnit&gt;&gt;computeTorque
+	     (the details of this operation are in method HomeoUnit >> newNeedlePosition: aValue and in HomeoUnit>>computeTorque
 	 2. clip value if it is outside maxRange
 	 3. put new value in criticalDeviation
 
@@ -851,7 +851,7 @@ self currentOutput: 0</body>
 
 	This approach simplifies considerably the simulation, but has the disadvantage of  reducing the role of the unit to nil. In fact, all the work  (in Eldridge's simulation)  is done by the system, which reads, for every tick of time, the outputs from the various connected units, computes new outputs, and updates the units. In other words, this approach reduces the homeostat's units to simple data structures (which is literally what they are in her C program), deprived of any possiblity of 'action', i.e. of any behavior. Our approach here will be different, by allowing a partial separation between homeostat, units, and connections. It follows that the computation of the unit's next value is internal to unit itself, even if it considers  values (obtained from inputConnections) that may have been deposited from the outside. 
 	This approach allows the possibilty that different units may have different behaviors, etc. and it also allows for the possibility of having the units being operated upon by means other than the input  coming from other homeoUnits. For instance, input coming directly from the environment, like the direct manipulation of the needles. It also forces the simulation to provide a closer resemblance of Ashby's original electro-mechanical device. Furthermore, Eldridge's simple approach can be easily recovered by reducing the computation of the unit's next output to the sum of values stored in inputConnections, and by setting the range of the needles' deviation (maxDeviation) to 1. In short: Eldridge's model as reimplemented here would have the following method: 
-HomeoUnit&gt;&gt;computeNextOuput 
+HomeoUnit>>computeNextOuput 
 nextOutput := inputsCollection inject: 0 into: [ :tempSum :conn | tempSum + conn output]
 
 Our method is close to hers and basically reduces to this behavior when all the parameters specific to the unit are ininfluent. That is, when: noise = 0, viscosity = 0, and  there is no direct outside influence. Nonetheless, encapsulating the computation inside the unit allows for a much more flexible system that can be easily extended to encompass more sophisticated behavior."
@@ -874,7 +874,7 @@ Our method is close to hers and basically reduces to this behavior when all the 
 	(out between: (outputRange at: 'low') and: (outputRange at: 'high')) 
 		ifTrue: [self currentOutput: out]
 		ifFalse: 
-			[out &gt; 0 
+			[out > 0 
 				ifTrue: [self currentOutput: (outputRange at: 'high')]
 				ifFalse: [self currentOutput: (outputRange at: 'low')]]</body>
 
@@ -971,7 +971,7 @@ Our method(s) assumes:
 
 2. the torque represents the force that displaces the needle from its current position. The value of this displacement is obviously directly proportional to the force. However, the constant of proportionality is important: if the displacement is simply equal to the torque, which, in turn, is equal to the sum of inputs, then the ***potential displacement*** grows linearly with the connected units. If, instead, the displacement is equal to the ratio between the maximum torque and the maximum deviation, then the ***potential displacement*** is independent from the number of connected units and will depend more directly on the values of the incoming units rather than their number. It is obvious that the behavior of a collection of units, i.e. a homeostat, will be different in either case. Ashby's probably followed the former model, as evidenced by his (widely reported)  comments about the direct relation between instability and number of units (see also Capehart 1967 for comments to the same effect). It muct be admitted, however, that a careful manipulation of the weights of the connection may reduce the difference between the two methods: one would have to uniformly reduce the weights whenever a new conenction is added to transform the first ('Ashby's') approach into the second.
 
-In order to allow experimentation with either approach, we include both methods: HomeoUnit&gt;&gt;newLinearNeedlePosition: and HomeoUnit&gt;&gt;newProportionalNeedlePosition: 
+In order to allow experimentation with either approach, we include both methods: HomeoUnit>>newLinearNeedlePosition: and HomeoUnit>>newProportionalNeedlePosition: 
 The choice between the two is determined by the value of the instance variable needleCompMethod. Default (stored in the class variable) is linear.
 
 The viscosity is between 0 and 1, with 0 being the maximum (needle unable to move) and 1 being the minimum (no effect on movement)"</body>

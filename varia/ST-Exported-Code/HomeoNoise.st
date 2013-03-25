@@ -69,31 +69,31 @@
 <!-- -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -   -->
 
 
-<comment>
+DONE <!--<comment>
 <class-id>HomeoNoise</class-id>
-<body>HomeoNoise is a utility class that provides different algorithms to deal with the computation of how noise affects the transmission of current between units 
+<body><!--HomeoNoise is a utility class that provides different algorithms to deal with the computation of how noise affects the transmission of current between units 
 and the flicker noise  that may affect the units' internal values. 
 
 Instance variables:
 
-current       &lt;aNumber&gt;    The value of the current affected by the noise
-noise         &lt;aNumber&gt;     The value of the noise affecting the transmission of the current. This value is typically between 0 (no noise) and 1 (channel so noisy to block communication)
-mode          &lt;aString&gt;       Mode of the noise. Possible values: 'distorting' 'degrading', indicates how the noise affects the currentWhether the noise is a		
-distribution  &lt;aString&gt;		Probability distribution of the actual noise with respect to the noise value. Possible values: 'constant', 'uniform', 'normal'
-ratio 		 &lt;aString&gt;        Ratio of the noise to the affected current. Possible values: 'linear' 'proportional'
+current       <aNumber>    The value of the current affected by the noise
+noise         <aNumber>     The value of the noise affecting the transmission of the current. This value is typically between 0 (no noise) and 1 (channel so noisy to block communication)
+mode          <aString>       Mode of the noise. Possible values: 'distorting' 'degrading', indicates how the noise affects the currentWhether the noise is a		
+distribution  <aString>		Probability distribution of the actual noise with respect to the noise value. Possible values: 'constant', 'uniform', 'normal'
+ratio 		 <aString>        Ratio of the noise to the affected current. Possible values: 'linear' 'proportional'
 
 It is a singleton class,  its unique instance being held in class variable NoiseCalculator. The only class creation method is newWithCurrent: andNoise: which simply updates the values of 
 the instance variables if the unique instance exists already.
 
-The noise-computing algorithm is selected by changing the valies of the three iVars mode, distribution, and ration, and then calling the method getNoise. This method constructs a selector string from the values of the ivar and calls the corresponding method. 
+The noise-computing algorithm is selected by changing the valies of the three iVars mode, distribution, and ration, and then calling the method getNoise. This method constructs a selector string from the values of the ivar and calls the corresponding method. -->
 
 </body>
-</comment>
+</comment>-->
 
-<methods>
-<class-id>HomeoNoise</class-id> <category>initialize-release</category>
+DONE <!--<methods>
+<class-id>HomeoNoise</class-id> <category>initialize-release</category>-->
 
-<body package="Homeostat" selector="initialize">initialize
+DONE <!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize the NoiceCalculator to a current of 1 and noise of 0, representing a full current and no noise. These values are typically overriden by class creation methods."
 
 
@@ -108,8 +108,8 @@ The noise-computing algorithm is selected by changing the valies of the three iV
 "add the random number generator"
 
 randomGen := Random new.
-	^self</body>
-</methods>
+	^self</body>-->
+<!--</methods>-->
 
 <methods>
 <class-id>HomeoNoise</class-id> <category>constant noise algorithms</category>
@@ -217,8 +217,8 @@ noiseSign := current sign negated.
 noiseAbsValue := (NormalDistribution new: noise sigma: noise *1 /3) random.
 
 "trim noise within the interval {0, 2 *noise}"
-noiseAbsValue &gt; (2 * noise) ifTrue: [ noiseAbsValue := 2* noise].
-noiseAbsValue &lt; 0 ifTrue: [noiseAbsValue := 0].
+noiseAbsValue > (2 * noise) ifTrue: [ noiseAbsValue := 2* noise].
+noiseAbsValue < 0 ifTrue: [noiseAbsValue := 0].
 ^ noiseAbsValue * noiseSign.</body>
 
 <body package="Homeostat" selector="getNoiseDegradingNormalProportional">getNoiseDegradingNormalProportional
@@ -232,8 +232,8 @@ maxAbsNoise := noise * current abs *2.
 
 noiseAbsValue := (NormalDistribution new: maxAbsNoise / 2  sigma: maxAbsNoise / 6) random.
 "trim noise within the interval {0, 2 *noise *current abs}"
-noiseAbsValue &gt; maxAbsNoise ifTrue: [ noiseAbsValue := maxAbsNoise].
-noiseAbsValue &lt;  minAbsNoise  ifTrue: [noiseAbsValue := minAbsNoise].
+noiseAbsValue > maxAbsNoise ifTrue: [ noiseAbsValue := maxAbsNoise].
+noiseAbsValue <  minAbsNoise  ifTrue: [noiseAbsValue := minAbsNoise].
 
 ^ noiseAbsValue * noiseSign</body>
 
@@ -287,8 +287,8 @@ randomSign := (UniformDistribution  new initialize: -1 to: 1) random  sign .
 
 noiseValue := (NormalDistribution new: 0 sigma: noise / 3) random.
 "trim noise within the interval { -noise, noise}"
-noiseValue &gt; noise ifTrue: [ noiseValue := noise.].
-noiseValue &lt; (noise negated)  ifTrue: [noiseValue :=  noise negated.].
+noiseValue > noise ifTrue: [ noiseValue := noise.].
+noiseValue < (noise negated)  ifTrue: [noiseValue :=  noise negated.].
 
 ^ noiseValue</body>
 
@@ -303,8 +303,8 @@ maxNoise := noise * current abs.
 
 noiseValue := (NormalDistribution new: 0 sigma: maxNoise / 3) random.
 "trim noise within the interval {0, 2 *noise}"
-noiseValue &gt; maxNoise ifTrue: [ noiseValue := maxNoise].
-noiseValue &lt; minNoise  ifTrue: [noiseValue :=  minNoise].
+noiseValue > maxNoise ifTrue: [ noiseValue := maxNoise].
+noiseValue < minNoise  ifTrue: [noiseValue :=  minNoise].
 
 ^ noiseValue</body>
 
@@ -342,9 +342,9 @@ noiseAbsValue := (UniformDistribution new initialize: maxNoise negated to:  maxN
 <methods>
 <class-id>HomeoNoise</class-id> <category>accessing</category>
 
-<body package="Homeostat" selector="constant">constant
+DONE <!--<body package="Homeostat" selector="constant">constant
 	
-	distribution := 'Constant'</body>
+	distribution := 'Constant'</body>-->
 
 <body package="Homeostat" selector="current">current
 	^current</body>
@@ -352,26 +352,26 @@ noiseAbsValue := (UniformDistribution new initialize: maxNoise negated to:  maxN
 <body package="Homeostat" selector="current:">current: anObject
 	current := anObject</body>
 
-<body package="Homeostat" selector="degrading">degrading
-mode := 'Degrading'</body>
+DONE <!--<body package="Homeostat" selector="degrading">degrading
+mode := 'Degrading'</body>-->
 
-<body package="Homeostat" selector="distorting">distorting
+DONE <!--<body package="Homeostat" selector="distorting">distorting
 
 
-mode := 'Distorting'.</body>
+mode := 'Distorting'.</body>-->
 
-<body package="Homeostat" selector="getNoise">getNoise
+DONE <!--<body package="Homeostat" selector="getNoise">getNoise
 	"select the correct noise algorithm according to the values of mode, distribution and ratio and returns the noise value."
 
 | noiseAlg |
 
 noiseAlg := 'getNoise', mode , distribution , ratio.
-^ self perform: noiseAlg asSymbol.</body>
+^ self perform: noiseAlg asSymbol.</body>-->
 
-<body package="Homeostat" selector="linear">linear
+DONE <!--<body package="Homeostat" selector="linear">linear
 
 
-ratio := 'Linear'</body>
+ratio := 'Linear'</body>-->
 
 <body package="Homeostat" selector="noise">noise
 	^noise</body>
@@ -382,12 +382,12 @@ ratio := 'Linear'</body>
 <body package="Homeostat" selector="normal">normal
 	distribution := 'Normal'.</body>
 
-<body package="Homeostat" selector="proportional">proportional
+DONE <!--<body package="Homeostat" selector="proportional">proportional
 
 
-ratio := 'Proportional'</body>
+ratio := 'Proportional'</body>-->
 
-<body package="Homeostat" selector="uniform">uniform
+DONE <body package="Homeostat" selector="uniform">uniform
 distribution := 'Uniform'</body>
 </methods>
 
