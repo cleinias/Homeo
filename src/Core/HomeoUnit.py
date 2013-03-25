@@ -1,6 +1,7 @@
 from  HomeoNeedleUnit import *
 from  HomeoUniselector import *
 from  HomeoConnection import *
+import numpy as np
 
 class HomeoUnit:
     '''
@@ -73,7 +74,7 @@ class HomeoUnit:
     "The unit's output range is by default -1  to 1 to express the proportion of the needle's deviation" 
     unitRange = {'high':1,'low':-1}               
 
-   #"DefaultParameters is a class variable holding the  default values of all the various parameters of future created units."
+    "DefaultParameters is a class variable holding the  default values of all the various parameters of future created units."
     DefaultParameters  = dict(viscosity = 1,
                               maxDeviation=10,
                               outputRange = unitRange,
@@ -92,107 +93,138 @@ class HomeoUnit:
     
     
     def __init__(self):
-        """
+        '''
         Initialize the HomeoUnit with the default parameters found in the Class variable 
         DefaultParameters. Assign a random but unique name and sets the output to 
         some value around 0, i.e. at equilibrium.
-        These values are supposed to be overridden in normal practice, because the values are set  by the  simulation 
+        These values are supposed to be overridden in normal practice, because the values are set by the simulation 
         (an instance of HomeoSimulation or by the graphic interface)
-        """
-        self.__viscosity__ = HomeoUnit.DefaultParameters['viscosity']
-        self.__maxDeviation__ = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
-        self.__outputRange__ = HomeoUnit.DefaultParameters['outputRange']
-        self.__noise__ = HomeoUnit.DefaultParameters['noise']
-        self.__potentiometer__ = HomeoUnit.DefaultParameters['potentiometer']
-        self.__time__ = HomeoUnit.DefaultParameters['time']
-        self.__uniselectorTime__ = HomeoUnit.DefaultParameters['uniselectorTime']
-        self.__uniselectorTimeInterval__ = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
-        self.__needleCompMethod__    = HomeoUnit.DefaultParameters['needleCompMethod']
-        self.__uniselectorActivated__ = HomeoUnit.DefaultParameters['uniselectorActivated']
+        '''
+        self._viscosity = HomeoUnit.DefaultParameters['viscosity']
+        self._maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
+        self._outputRange = HomeoUnit.DefaultParameters['outputRange']
+        self._noise = HomeoUnit.DefaultParameters['noise']
+        self._potentiometer = HomeoUnit.DefaultParameters['potentiometer']
+        self._time = HomeoUnit.DefaultParameters['time']
+        self._uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
+        self._uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
+        self._needleCompMethod    = HomeoUnit.DefaultParameters['needleCompMethod']
+        self._uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
 
-        self.__currentVelocity__ = 0 #"a New unit is turned off, hence its velocity is 0"
+        "A new unit is turned off, hence its velocity is 0 and its criticalDeviation is 0"
+        self._currentVelocity = 0 
+        self._criticalDeviation = 0 
+        
+        self._needleUnit = HomeoNeedleUnit()
 
-        self.__needleUnit__ = HomeoNeedleUnit()
 
-
-        #sets the correspondence between the simulation units and real physical units"
-        self.__physicalParameters=dict(timeEquivalence =1,         # 1 simulation tick corresponds to 1 second of physical time"
-                                      lengthEquivalence = 0.01,   # 1 unit of displacement corresponds to 1 cm (expressed in meters)"
+        "sets the correspondence between the simulation units and real physical units"
+        self.__physicalParameters=dict(timeEquivalence =1,            # 1 simulation tick corresponds to 1 second of physical time"
+                                      lengthEquivalence = 0.01,       # 1 unit of displacement corresponds to 1 cm (expressed in meters)"
                                       massEquivalence = 0.001)        # 1 unit of mass equals one gram, or 0.001 kg"
     
-        #creates the connection collection and connects the unit to itself in manual mode with a negative feedback"
-        self.__inputConnections__ = []
+        "creates the connection collection and connects the unit to itself in manual mode with a negative feedback"
+        self._inputConnections = []
         self.setDefaultSelfConnection()
 
-        #sets default uniselector settings."
+        "sets default uniselector settings."
         self.setDefaultUniselectorSettings()
-        #give the unit  a default name
+        
+        "give the unit  a default name"
         self.setUnitName()
-        #generates a random output to set the unit close to equilibrium"
+        
+        "generates a random output to set the unit close to equilibrium"
         self.setDefaultOutputAndDeviation()
         
-        #turn the unit on"
-        self.__status__= 'Active'
-        self.__debugMode__ = False
-        self.__showUniselectorAction__ = False
+        "turn the unit on"
+        self._status= 'Active'
+        self._debugMode = False
+        self._showUniselectorAction = False
         
-    "setter and getter methods for external access"
+    "properties with setter and getter methods for external access"
+    
+    def getCriticalDeviation(self):
+        return self._criticalDeviation
+    def setCriticalDeviation(self,aValue):
+        "Do nothing. Critical deviation cannot be set from the outside"
+        pass
+    criticalDeviation = property(fget = lambda self: self.getCriticalDeviation(),
+                                 fset = lambda self, value: self.setCriticalDeviation(value))
     
     def setViscosity(self, aValue):
-        self.__viscosity__ = aValue
-    def viscosity(self):
-        return self.__viscosity__
-    
+        self._viscosity = aValue
+    def getViscosity(self):
+        return self._viscosity
+    viscosity = property(fget = lambda self: self.getViscosity(),
+                         fset = lambda self, value: self.setViscosity(value))
+      
     def setPotentiometer(self, aValue):
-        self.__potentiometer__ = aValue
-    def potentiometer(self):
-        return self.__potentiometer__
+        self._potentiometer = aValue
+    def getPotentiometer(self):
+        return self._potentiometer
+    potentiometer = property(fget = lambda self: self.getPotentiometer(),
+                             fset = lambda self, value: self.setPotentiometer(value))  
     
     def setNoise(self, aValue):
-        self.__noise__ = aValue
-    def noise(self):
-        return self.__noise__
+        self._noise = aValue
+    def getNoise(self):
+        return self._noise
+    noise = property(fget = lambda self: self.getNoise(),
+                     fset = lambda self, value: self.setNoise(value))  
     
     def setTime(self, aValue):
-        self.__time__ = aValue
-    def time(self):
-        return self.__time__
+        self._time = aValue
+    def getTime(self):
+        return self._time
+    time = property(fget = lambda self: self.getTime(),
+                    fset = lambda self, value: self.setTime(value))  
     
     def setUniselectorTime(self, aValue):
-        self.__uniselectorTime__ = aValue
-    def uniselectorTime(self):
-        return self.__uniselectorTime__
+        self._uniselectorTime = aValue
+    def getUniselectorTime(self):
+        return self._uniselectorTime
+    uniselectorTime = property(fget = lambda self: self.getUniselectorTime(),
+                               fset = lambda self, value: self.setUniselectorTime(value))  
     
     def setNeedleCompMethod(self, aString):
-        self.__needleCompMethod__ = aString
-    def needleCompMethod(self):
-        return self.__needleCompMethod__
-    
+        self._needleCompMethod = aString
+    def getNeedleCompMethod(self):
+        return self._needleCompMethod
+    needleCompMethod = property(fget = lambda self: self.getNeedleCompMethod(),
+                                fset = lambda self, value: self.setNeedleCompMethod(value))  
+        
     def setMaxDeviation(self,aValue):
-        self.__maxDeviation__ = aValue
-    def maxDeviation(self):
-        return self.__maxDeviation__
+        self._maxDeviation = aValue
+    def getMaxDeviation(self):
+        return self._maxDeviation
+    maxDeviation = property(fget = lambda self: self.getMaxDeviation(),
+                            fset = lambda self, value: self.setMaxDeviation(value))  
     
     def setOutputRange(self, aDict):
-        self.__outputRange__ = aDict
-    
-    def outputRange(self):
-        return self.__outputRange__
+        self._outputRange = aDict
+    def getOutputRange(self):
+        return self._outputRange
+    outputRange = property(fget = lambda self: self.getOutputRange(),
+                           fset = lambda self, value: self.setOutputRange(value))  
 
     def setUniselectorActive(self,aBoolean):
-        self.__uniselectorActivated__ = aBoolean
-    def uniselectorActive(self):
-        return self.__uniselectorActivated__
+        self._uniselectorActivated = aBoolean
+    def getUniselectorActive(self):
+        return self._uniselectorActivated
+    uniselectorActive = property(fget = lambda self: self.getUniselectorActive(),
+                                 fset = lambda self, value: self.setUniselectorActive(value))  
     
     def setUniselectorTimeInterval(self,aValue):
-        self.__uniselectorTimeInterval__ = aValue
-    def uniselectorTimeInterval(self):
-        return self.__uniselectorTimeInterval__
+        self._uniselectorTimeInterval = aValue
+    def getUniselectorTimeInterval(self):
+        return self._uniselectorTimeInterval
+    uniselectorTimeInterval = property(fget = lambda self: self.getUniselectorTimeInterval(),
+                                       fset = lambda self, value: self.setUniselectorTimeInterval(value))  
 
     "end of setter and getter methods"
 
     def unitActive(self, aBoolean):
-        self.__status__= True
+        self._status= True
 
     def setDefaultSelfConnection(self):
         pass
@@ -219,7 +251,22 @@ class HomeoUnit:
     def saveTo(self,filename):
         pass
     def setRandomValues(self):
-        pass
+        "sets up the unit with random values"
+
+        self._viscosity = np.random.uniform(0.8,1)
+        self._noise = np.random.uniform(0, 0.1)
+        self._potentiometer = np.random.uniform(0, 1)
+
+        switchSign = np.sign(np.random.uniform(-1, 1)) #sets the polarity of the self-connection, avoid  0"
+        if switchSign == 0:
+            switchSign = 1
+        self._switch = switchSign 
+
+        "generates a random output  over the whole range"
+        self._currentOutput =  np.random.uniform(0, 1)    
+        "set the critical deviation to a random value over the whole range"                                                         
+        self._criticalDeviation = np.random.uniform(self._outputRange['low'], self._outputRange['high']) 
+
     def removeConnectionFromUnit(self,aHomeoUnit):
         pass
     

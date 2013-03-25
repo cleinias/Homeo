@@ -4,13 +4,13 @@ Created on Mar 15, 2013
 @author: stefano
 '''
 from   Core.HomeoUnit import HomeoUnit
-from   HomeoUniselector import *
-from   HomeoDataCollector import *
-from   Homeostat import *
-from   HomeoNoise import  *
+from   Core.HomeoUniselector import *
+from   Core.HomeoDataCollector import *
+from   Core.Homeostat import *
+from   Helpers.HomeoNoise import  *
 
-import unittest,numpy
 import scipy.stats as stats
+import unittest,numpy
 
 
 class HomeoNoiseTest(unittest.TestCase):
