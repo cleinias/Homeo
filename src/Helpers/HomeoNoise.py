@@ -3,7 +3,7 @@ Created on Mar 15, 2013
 
 @author: stefano
 '''
-from Helpers.General_Helper_Functions import  *
+from Helpers.General_Helper_Functions import Singleton
 import numpy as np
 
 
@@ -46,9 +46,63 @@ class HomeoNoise(object):
         self._distribution = 'Normal'
         self._ratio = 'Proportional'
 
-        "add the random number generator"
+    def getCurrent(self):
+        return self._current
+    
+    def setCurrent(self, aValue):
+        "Do nothing. Noise is set through other methods"
+        pass
+    
+    current = property(fget = lambda self: self.getCurrent(),
+                          fset = lambda self, value: self.setCurrent(value))   
+    
+    def noiseGetter(self):
+        '''Using noiseGetter for a get method, because getNoise is used to produce noise value'''
+        return self._noise
+    
+    def noiseSetter(self, aValue):
+        "Do nothing. Noise is set through other methods"
+        pass
 
-#        randomGen := Random new.Constructor
+    noise = property(fget = lambda self: self.noiseGetter(),
+                          fset = lambda self, value: self.noiseSetter(value))   
+    
+    def getRatio(self):
+        return self._ratio
+    
+    def setRatio(self, aValue):
+        "Do nothing. Ratio is always set via other methods"
+        pass
+
+    ratio = property(fget = lambda self: self.getRatio(),
+                          fset = lambda self, value: self.setRatio(value))   
+    
+    def getMode(self):
+        return self._mode
+    
+    def setMode(self, aValue):
+        "Do nothing. Mode is always set via other methods"
+        pass
+
+    mode = property(fget = lambda self: self.getMode(),
+                          fset = lambda self, value: self.setMode(value))   
+    
+    def getDistribution(self):
+        return self._distribution
+    
+    def setDistribution(self, aValue):
+        "Do nothing. Distribution is always set via other methods"
+        pass
+
+    distribution = property(fget = lambda self: self.getDistribution(),
+                          fset = lambda self, value: self.setDistribution(value))   
+    
+    
+    def withCurrentAndNoise(self, aNumber, anotherNumber):
+        "Set current and noise on the only instance of the class"
+        self._current = aNumber
+        self._noise = anotherNumber
+
         
     def getNoise(self):
         '''Select the correct noise algorithm according to the values 
@@ -56,7 +110,8 @@ class HomeoNoise(object):
        Return a noise value computed accordingly'''
 
         noiseAlg = 'getNoise' + self._mode + self._distribution + self._ratio
-        return self.getattr(self, noiseAlg)()
+        producedNoise =  getattr(self, noiseAlg)()
+        return producedNoise
 
     "Methods setting noise's mode"
     def degrading(self):
@@ -81,3 +136,186 @@ class HomeoNoise(object):
         
     def constant(self): 
         self._distribution = 'Constant'
+
+#    "Noise algorithms"
+#
+#    def constDegradLinearNoise(self):
+#        '''Returns a value representing a constant degrading noise affecting linearly  the current .
+#         Assumes noise is a value between 0 and 1'''
+#
+#        currentSign = np.sign(self._current)
+#        if currentSign == 0:
+#            currentSign = 1        #make sure we don't lose the current when noise is 0"
+#        return (abs(self._current) - self._noise) * currentSign
+#    
+#    def constDegradPropNoise(self):
+#        '''Returns a value representing a constant degrading noise affecting the current proportionally. 
+#            Assumes noise is a value between 0 and 1, i.e. the percentage of current lost to noise'''
+#
+#        currentSign = np.sign(self._current)
+#        if currentSign == 0:
+#            currentSign = 1        #make sure we don't lose the current when noise is 0"
+#
+#            return (abs(self._current) - (abs(self._current) * self._noise)) * currentSign
+#
+#    def constDistortLinearNoise(self):
+#        '''Returns a value representing a constant distorting noise affecting the current linearly. 
+#            Assumes the noise is a number between 0 and 1'''
+#
+#        noiseSign = np.sign(np.random.uniform(-1,1))
+#        if noiseSign == 0:
+#            noiseSign = 1
+#
+#        currentSign = np.sign(self._current)
+#        if currentSign == 0:
+#            currentSign = 1        #make sure we don't lose the current when noise is 0"
+#        
+#        return (abs(self._current) - (self._noise * noiseSign)) * currentSign
+#
+#    def DistortPropNoise(self):
+#        '''Returns a value representing a constant distorting noise affecting the current proportionally. 
+#            Assumes the noise is a number between 0 and 1, i. e. the percentage of current lost to noise'''
+#
+#        noiseSign = np.sign(np.random.uniform(-1,1))
+#        if noiseSign == 0:
+#            noiseSign = 1
+#
+#        currentSign = np.sign(self._current)
+#        if currentSign == 0:
+#            currentSign = 1        #make sure we don't lose the current when noise is 0"
+#        
+#        return (abs(self._current) - (self._noise * abs(self._current) *noiseSign)) * currentSign
+    "Noise algorithms"
+
+    def getNoiseDegradingConstantLinear(self):
+        '''Return a degrading noise (with sign always opposite to affected current), 
+            and constant value equal to the noise parameter.
+            
+            If current is 0, returns 0'''
+        
+        return self._noise * -1 * np.sign(self._current)
+
+    def getNoiseDegradingConstantProportional(self):
+        '''Return a degrading noise (with sign always opposite to affected current), 
+            and constant value equal to the ratio between the noise parameter and the affected current'''
+
+        return (self._noise * abs(self._current)) * np.sign(self._current) * -1
+
+    def getNoiseDegradingNormalLinear(self):
+        '''Return a degrading noise (sign always opposite to current),
+           normally distributed and proportional to the absolute magnitude of the noise parameter'''
+
+        noiseSign = np.sign(self._current) * -1 
+        noiseAbsValue = np.random.normal(self._noise, self._noise * 1 / 3.)
+
+        "trim noise within the interval (0, 2 * noise)"
+        if noiseAbsValue > (2 * self._noise):
+            noiseAbsValue = 2 * self._noise
+        if noiseAbsValue < 0:
+            noiseAbsValue = 0
+        return noiseAbsValue * noiseSign
+
+    def getNoiseDegradingNormalProportional(self):
+        '''Return a degrading noise (with sign always opposite to affected current), 
+            and normally distributed value in the interval [0, 2 * noise * abs(current)]'''
+
+        noiseSign = np.sign(self._current) * -1 
+        minAbsNoise =0
+        maxAbsNoise = self._noise * abs(self._current) * 2
+
+        noiseAbsValue = np.random.normal(maxAbsNoise / 2, maxAbsNoise / 6.)
+        
+        "trim noise within the interval {0, 2 *noise *current abs}"
+        if noiseAbsValue > maxAbsNoise:
+            noiseAbsValue = maxAbsNoise
+        if noiseAbsValue <  minAbsNoise:
+            noiseAbsValue = minAbsNoise
+
+        return noiseAbsValue * noiseSign
+
+    def getNoiseDegradingUniformLinear(self):
+        '''Return a degrading noise (sign always opposite to current) uniformly distributed
+             and proportional to the absolute magnitude of the noise parameter'''
+
+        currentSign = np.sign(self._current) * -1
+        maxNoise = self._noise
+        noiseAbsValue = np.random.uniform(0, (2 * maxNoise))
+
+        return noiseAbsValue * currentSign
+    
+    def getNoiseDegradingUniformProportional(self):
+        '''Return a degrading noise (with sign always opposite to affected current), 
+            and uniformly distributed value in the interval [0, 2 * noise * current ]'''
+
+        currentSign = np.sign(self._current)  * -1
+        maxNoise = 2 * self._noise * abs(self._current)
+        noiseAbsValue = np.random.uniform(0, maxNoise)
+        return noiseAbsValue * currentSign
+
+    def getNoiseDistortingConstantLinear(self):
+        '''Return a distorting noise (centered around 0),  
+            with absolute value equal to the noise parameter'''
+
+        randomSign = np.sign(np.random.uniform(-1,1))
+        return  self._noise * randomSign
+
+    def getNoiseDistortingConstantProportional(self):
+        '''Return a distorting noise (centered around 0),
+            equal to the ratio between the absolute magnitude
+            of the affected current and the noise parameter'''
+
+        randomSign = np.sign(np.random.uniform(-1,1))
+        return self.noise *abs(self._current) * randomSign
+
+    def getNoiseDistortingNormalLinear(self):
+        '''Returns a distorting noise (centered around 0),
+             normally distributed and proportional to 
+             the  absolute magnitude of the noise parameter'''
+ 
+        noiseValue = np.random.normal(0, self._noise / 3.)
+        
+        "trim noise within the interval { -noise, noise}"
+        if noiseValue > self._noise:
+            noiseValue = self._noise
+        if noiseValue < -self._noise:
+            noiseValue =  -self._noise
+        return noiseValue
+            
+    def getNoiseDistortingNormalProportional(self):
+        '''Returns a distorting noise (centered around 0), normally distributed
+         and proportional to the absolute magnitude of the affected current
+         
+         Standard deviation of the normal distribution is 1/3 of noise's value'''
+
+        minNoise = - self._noise * abs(self._current)
+        maxNoise = self._noise * abs(self._current)
+
+        noiseValue = np.random.normal(0, maxNoise / 3.)
+        
+        "trim noise within the interval {0, 2 *noise}"
+        if noiseValue > maxNoise:
+            noiseValue = maxNoise
+        if noiseValue < minNoise:
+            noiseValue =  minNoise
+
+        return noiseValue
+
+    def getNoiseDistortingUniformLinear(self):
+        '''Return a distorting noise (centered around 0),
+             uniformly distributed in the interval [-noise, noise]'''
+
+        maxNoise = self._noise
+        noiseAbsValue = np.random.uniform(- maxNoise, maxNoise)
+
+        return noiseAbsValue
+
+    def getNoiseDistortingUniformProportional(self):
+        '''Return a distorting noise (centered around 0), 
+            uniformly distributed in the interval [-noise * abs(current), noise * abs(current) ]'''
+
+        maxNoise = self._noise * abs(self._current)
+        noiseValue = np.random.uniform(- maxNoise, maxNoise)
+
+        return noiseValue 
+
+
