@@ -41,17 +41,17 @@
 <methods>
 <class-id>HomeoNoise class</class-id> <category>instance creation</category>
 
-<body package="Homeostat" selector="new">new
+USELESS <!--<body package="Homeostat" selector="new">new
 	"Answer a newly created and initialized instance."
 
 
 	NoiseCalculator isNil ifTrue: [
 		NoiseCalculator := super new initialize].
 
-	^NoiseCalculator			
+	^NoiseCalculator			-->
 </body>
 
-<body package="Homeostat" selector="newWithCurrent:andNoise:">newWithCurrent: aNumber andNoise: anotherNumber
+DONE <!--<body package="Homeostat" selector="newWithCurrent:andNoise:">newWithCurrent: aNumber andNoise: anotherNumber
 	"Answer a newly created and initialized instance."
 
 
@@ -61,7 +61,7 @@
 		NoiseCalculator current: aNumber.
 		NoiseCalculator noise: anotherNumber.
 
-	^NoiseCalculator
+	^NoiseCalculator-->
 
 </body>
 </methods>
@@ -114,7 +114,7 @@ randomGen := Random new.
 <methods>
 <class-id>HomeoNoise</class-id> <category>constant noise algorithms</category>
 
-<body package="Homeostat" selector="constDegradLinearNoise">constDegradLinearNoise
+DONE <!--<body package="Homeostat" selector="constDegradLinearNoise">constDegradLinearNoise
 	"Returns a value representing a constant degrading noise affecting linearly  the current .
 	 Assumes noise is a value between 0 and 1"
 
@@ -124,9 +124,9 @@ sign := current sign.
 
 sign = 0 ifTrue: [sign := 1].   "make sure we don't lose the current when noise is 0"
 
-^((current abs) - noise) * sign</body>
+^((current abs) - noise) * sign</body>-->
 
-<body package="Homeostat" selector="constDegradPropNoise">constDegradPropNoise
+DONE <!--<body package="Homeostat" selector="constDegradPropNoise">constDegradPropNoise
 	"Returns a value representing a constant degrading noise affecting the current proportionally. Assumes noise is a value between 0 and 1, i. e. the percentage of current lost to noise"
 
 	| sign |
@@ -135,9 +135,9 @@ sign = 0 ifTrue: [sign := 1].   "make sure we don't lose the current when noise 
 	sign = 0 ifTrue: [sign := 1].   "make sure we don't lose the current when noise is 0"
 
 
-	^(current abs - (noise * current abs)) * sign</body>
+	^(current abs - (noise * current abs)) * sign</body>-->
 
-<body package="Homeostat" selector="constDistortLinearNoise">constDistortLinearNoise
+DONE <!--<body package="Homeostat" selector="constDistortLinearNoise">constDistortLinearNoise
 	"Returns a value representing a constant distorting noise affecting linearly  the current . Assumes the noise is a number between 0 and 1"
 
 |sign noiseSign|
@@ -147,9 +147,9 @@ sign := current sign.
 
 ^((current abs) - (noise * noiseSign)) *sign 
 
-</body>
+</body>-->
 
-<body package="Homeostat" selector="constDistortPropNoise">constDistortPropNoise
+DONE <!--<body package="Homeostat" selector="constDistortPropNoise">constDistortPropNoise
 	"Returns a value representing a constant distorting noise affecting proportionally  the current . Assumes the noise is a number between 0 and 1, i. e. the percentage of current lost to noise"
 
 |sign noiseSign|
@@ -157,7 +157,7 @@ sign := current sign.
 noiseSign := (Random new nextBetween: -1 and: 1) sign.
 sign := current sign.
 
-^((current abs) - (noise * (current abs) * noiseSign)) *sign</body>
+^((current abs) - (noise * (current abs) * noiseSign)) *sign</body>-->
 </methods>
 
 <methods>
@@ -188,25 +188,17 @@ sign := current sign.
 <methods>
 <class-id>HomeoNoise</class-id> <category>private-noiseAlgorithms</category>
 
-<body package="Homeostat" selector="getNoiseDegradingConstantLinear">getNoiseDegradingConstantLinear
+DONE <!--<body package="Homeostat" selector="getNoiseDegradingConstantLinear">getNoiseDegradingConstantLinear
 	"returns a degrading noise (with sign always opposite to affected current), and constant value equal to the noise parameter"
 
+^ noise * current sign * -1</body>-->
 
-
-
-
-^ noise * current sign *-1</body>
-
-<body package="Homeostat" selector="getNoiseDegradingConstantProportional">getNoiseDegradingConstantProportional
+DONE <!--<body package="Homeostat" selector="getNoiseDegradingConstantProportional">getNoiseDegradingConstantProportional
 	"returns a degrading noise (with sign always opposite to affected current), and constant value equal to the ratio between the noise parameter and the affected current"
 
+^ (noise*(current abs))  * current sign *-1</body>-->
 
-
-
-
-^ (noise*(current abs))  * current sign *-1</body>
-
-<body package="Homeostat" selector="getNoiseDegradingNormalLinear">getNoiseDegradingNormalLinear
+DONE <!--<body package="Homeostat" selector="getNoiseDegradingNormalLinear">getNoiseDegradingNormalLinear
 	"returns a degrading noise (sign always opposite to current) normally distributed and proportional to the  absolute magnitude of the noise parameter"
 
 	
@@ -219,9 +211,9 @@ noiseAbsValue := (NormalDistribution new: noise sigma: noise *1 /3) random.
 "trim noise within the interval {0, 2 *noise}"
 noiseAbsValue > (2 * noise) ifTrue: [ noiseAbsValue := 2* noise].
 noiseAbsValue < 0 ifTrue: [noiseAbsValue := 0].
-^ noiseAbsValue * noiseSign.</body>
+^ noiseAbsValue * noiseSign.</body>-->
 
-<body package="Homeostat" selector="getNoiseDegradingNormalProportional">getNoiseDegradingNormalProportional
+DONE <!--<body package="Homeostat" selector="getNoiseDegradingNormalProportional">getNoiseDegradingNormalProportional
 	"returns a degrading noise (with sign always opposite to affected current), and normally distributed value in the interval [0, 2*noiseParameter]"
 
 | noiseAbsValue  minAbsNoise maxAbsNoise  noiseSign |
@@ -235,9 +227,9 @@ noiseAbsValue := (NormalDistribution new: maxAbsNoise / 2  sigma: maxAbsNoise / 
 noiseAbsValue > maxAbsNoise ifTrue: [ noiseAbsValue := maxAbsNoise].
 noiseAbsValue <  minAbsNoise  ifTrue: [noiseAbsValue := minAbsNoise].
 
-^ noiseAbsValue * noiseSign</body>
+^ noiseAbsValue * noiseSign</body>-->
 
-<body package="Homeostat" selector="getNoiseDegradingUniformLinear">getNoiseDegradingUniformLinear
+DONE <!--<body package="Homeostat" selector="getNoiseDegradingUniformLinear">getNoiseDegradingUniformLinear
 	"returns a degrading noise (sign always opposite to current) uniformly distributed and proportional to the  absolute magnitude of the noise parameter"
 
 | sign noiseAbsValue maxNoise|
@@ -246,9 +238,9 @@ sign := current sign * -1.
 maxNoise := noise.
 noiseAbsValue := (UniformDistribution new initialize: 0 to: (2 * maxNoise)) random.
 
-^ noiseAbsValue * sign</body>
+^ noiseAbsValue * sign</body>-->
 
-<body package="Homeostat" selector="getNoiseDegradingUniformProportional">getNoiseDegradingUniformProportional
+DONE <!--<body package="Homeostat" selector="getNoiseDegradingUniformProportional">getNoiseDegradingUniformProportional
 	"returns a degrading noise (with sign always opposite to affected current), and uniformly distributed value in the interval [0, (2*noiseParameter) * current ]"
 
 | sign noiseAbsValue maxNoise|
@@ -256,9 +248,9 @@ noiseAbsValue := (UniformDistribution new initialize: 0 to: (2 * maxNoise)) rand
 sign := current sign * -1.
 maxNoise := 2 * (noise * (current abs)).
 noiseAbsValue := (UniformDistribution new initialize: 0 to:  maxNoise) random.
-^ noiseAbsValue * sign</body>
+^ noiseAbsValue * sign</body>-->
 
-<body package="Homeostat" selector="getNoiseDistortingConstantLinear">getNoiseDistortingConstantLinear
+DONE <!--<body package="Homeostat" selector="getNoiseDistortingConstantLinear">getNoiseDistortingConstantLinear
 	"returns a distorting noise (centered around 0),  with absolute value equal to the noise parameter"
 
 
@@ -267,9 +259,9 @@ noiseAbsValue := (UniformDistribution new initialize: 0 to:  maxNoise) random.
 randomSign := (UniformDistribution  new initialize: -1 to: 1) random  sign .
 
 
-^ noise * current sign *randomSign.</body>
+^ noise * current sign *randomSign.</body>-->
 
-<body package="Homeostat" selector="getNoiseDistortingConstantProportional">getNoiseDistortingConstantProportional
+DONE <!--<body package="Homeostat" selector="getNoiseDistortingConstantProportional">getNoiseDistortingConstantProportional
 	"returns a distorting noise (centered around 0),  equal to the ratio between the absolute magnitude of the affected current and the noise parameter"
 
 | randomSign |
@@ -277,9 +269,9 @@ randomSign := (UniformDistribution  new initialize: -1 to: 1) random  sign .
 randomSign := (UniformDistribution  new initialize: -1 to: 1) random  sign .
 
 
-^ (noise * (current abs)) * current sign *randomSign.</body>
+^ (noise * (current abs)) * current sign *randomSign.</body>-->
 
-<body package="Homeostat" selector="getNoiseDistortingNormalLinear">getNoiseDistortingNormalLinear
+DONE <!--<body package="Homeostat" selector="getNoiseDistortingNormalLinear">getNoiseDistortingNormalLinear
 	"returns a distorting noise (centered around 0) normally distributed and proportional to the  absolute magnitude of the noise parameter"
 	
 
@@ -290,10 +282,10 @@ noiseValue := (NormalDistribution new: 0 sigma: noise / 3) random.
 noiseValue > noise ifTrue: [ noiseValue := noise.].
 noiseValue < (noise negated)  ifTrue: [noiseValue :=  noise negated.].
 
-^ noiseValue</body>
+^ noiseValue</body>-->
 
-<body package="Homeostat" selector="getNoiseDistortingNormalProportional">getNoiseDistortingNormalProportional
-	"returns a distorting noise (centered around 0) normally distributed and porportional to the absolute magnitude of the affected current"
+DONE <!--<body package="Homeostat" selector="getNoiseDistortingNormalProportional">getNoiseDistortingNormalProportional
+	"returns a distorting noise (centered around 0) normally distributed and proportional to the absolute magnitude of the affected current"
 
 	
 
@@ -306,9 +298,9 @@ noiseValue := (NormalDistribution new: 0 sigma: maxNoise / 3) random.
 noiseValue > maxNoise ifTrue: [ noiseValue := maxNoise].
 noiseValue < minNoise  ifTrue: [noiseValue :=  minNoise].
 
-^ noiseValue</body>
+^ noiseValue</body>-->
 
-<body package="Homeostat" selector="getNoiseDistortingUniformLinear">getNoiseDistortingUniformLinear
+DONE <!--<body package="Homeostat" selector="getNoiseDistortingUniformLinear">getNoiseDistortingUniformLinear
 	"returns a distorting noise (centered around 0) uniformly  distributed in the interval [-noise, noise]."
 
 
@@ -318,9 +310,9 @@ sign := current sign * -1.
 maxNoise := noise.
 noiseAbsValue := (UniformDistribution new initialize: maxNoise negated to:  maxNoise) random.
 
-^ noiseAbsValue * sign</body>
+^ noiseAbsValue * sign</body>-->
 
-<body package="Homeostat" selector="getNoiseDistortingUniformProportional">getNoiseDistortingUniformProportional
+DONE <!--<body package="Homeostat" selector="getNoiseDistortingUniformProportional">getNoiseDistortingUniformProportional
 	"returns a distorting noise (centered around 0) uniformly  distributed in the interval [0, noise/current]."
 
 
@@ -331,7 +323,7 @@ sign := current sign * -1.
 maxNoise := noise * current abs.
 noiseAbsValue := (UniformDistribution new initialize: maxNoise negated to:  maxNoise) random.
 
-^ noiseAbsValue * sign</body>
+^ noiseAbsValue * sign</body>-->
 
 <body package="Homeostat" selector="testNormalDistrib">testNormalDistrib
 	
@@ -346,11 +338,11 @@ DONE <!--<body package="Homeostat" selector="constant">constant
 	
 	distribution := 'Constant'</body>-->
 
-<body package="Homeostat" selector="current">current
-	^current</body>
+USELESS <!--<body package="Homeostat" selector="current">current
+	^current</body>-->
 
-<body package="Homeostat" selector="current:">current: anObject
-	current := anObject</body>
+USELESS <!-- <body package="Homeostat" selector="current:">current: anObject 
+	current := anObject</body>-->
 
 DONE <!--<body package="Homeostat" selector="degrading">degrading
 mode := 'Degrading'</body>-->
@@ -373,22 +365,22 @@ DONE <!--<body package="Homeostat" selector="linear">linear
 
 ratio := 'Linear'</body>-->
 
-<body package="Homeostat" selector="noise">noise
-	^noise</body>
+DONE <!--<body package="Homeostat" selector="noise">noise
+	^noise</body>-->
 
-<body package="Homeostat" selector="noise:">noise: anObject
-	noise := anObject</body>
+DONE <!--<body package="Homeostat" selector="noise:">noise: anObject
+	noise := anObject</body>-->
 
-<body package="Homeostat" selector="normal">normal
-	distribution := 'Normal'.</body>
+DONE <!--<body package="Homeostat" selector="normal">normal
+	distribution := 'Normal'.</body>-->
 
 DONE <!--<body package="Homeostat" selector="proportional">proportional
 
 
 ratio := 'Proportional'</body>-->
 
-DONE <body package="Homeostat" selector="uniform">uniform
-distribution := 'Uniform'</body>
+DONE <!--<body package="Homeostat" selector="uniform">uniform
+distribution := 'Uniform'</body>-->
 </methods>
 
 </st-source>
