@@ -1,7 +1,13 @@
-from  HomeoNeedleUnit import *
-from  HomeoUniselector import *
-from  HomeoConnection import *
+from Core.HomeoNeedleUnit import *
+from Core.HomeoUniselectorAshby import *
+from Core.HomeoUniselector import *
+from Core.HomeoConnection import *
+from Helpers.General_Helper_Functions import withAllSubclasses
 import numpy as np
+import sys
+
+class HomeoUnitError(Exception):
+    pass
 
 class HomeoUnit:
     '''
@@ -71,6 +77,9 @@ class HomeoUnit:
     - print a description of itself with the values of all its parameters
      '''
 
+    '''CLASS CONSTANTS'''
+
+
     "The unit's output range is by default -1  to 1 to express the proportion of the needle's deviation" 
     unitRange = {'high':1,'low':-1}               
 
@@ -91,6 +100,7 @@ class HomeoUnit:
     
     #TODO: Need to create a pool of unique names (a Set)
     
+    '''END OF CLASS CONSTANTS'''
     
     def __init__(self):
         '''
@@ -221,6 +231,77 @@ class HomeoUnit:
     uniselectorTimeInterval = property(fget = lambda self: self.getUniselectorTimeInterval(),
                                        fset = lambda self, value: self.setUniselectorTimeInterval(value))  
 
+    def setActive(self, aBoolean):
+        if aBoolean == True or aBoolean == False:
+            self.active = aBoolean
+        else:
+            raise HomeoUnitError("The value of instance variable active can only be a Boolean") 
+        
+    def getActive(self):
+        return self.active
+    
+    active = property(fget = lambda self: self.getActive(),
+                      fset = lambda self, aBoolean: self.setActive(aBoolean))
+                                
+    def getCurrentOutput(self,aValue):
+        return self._currentOutput
+
+    def setCurrentOutput(self, aValue): 
+        set._currentOutput = aValue
+    
+        "For testing"
+        if self._debugMode == True:
+            sys.stderr.write(str(self._currentOutput))
+            sys.stderr.write('\n')
+
+    currentOutput = property(fget = lambda self: self.getCurrentOutput(),
+                             fset = lambda self, aBoolean: self.setCurrentOutput(aBoolean))
+  
+    def getHighRange(self):
+        return self._outputRange['high']
+
+    def setHighRange(self,aValue):
+        self._outputRange['high'] =  aValue
+
+    highRange = property(fget = lambda self: self.getHighRange(),
+                         fset = lambda self, aValue: self.setHighRange(aValue))
+    
+    def getLowRange(self):
+        return self._outputRange['low']
+
+    def setLowRange(self,aValue):
+        self._outputRange['low'] =  aValue
+
+    lowRange = property(fget = lambda self: self.getLowRange(),
+                         fset = lambda self, aValue: self.setLowRange(aValue))
+
+    def getInputConnections(self):
+        return self._inputConnections
+    
+    def setInputConnections(self, aList):
+        self._inputConnections = aList
+        
+    inputConnections = property(fget = lambda self: self.getInputConnections(),
+                                fset = lambda self, aList: self.setInputConnections(self, aList))
+
+    def getInputTorque(self):
+        return self._inputTorque
+
+    def setInputTorque(self,aValue):
+        self._inputTorque = aValue
+
+    inputTorque = property(fget = lambda self: self.getInputTorque(),
+                           fset = lambda self,aValue: self.setInputTorque(aValue))
+
+    def getCurrentVelocity(self):
+        return self._currentVelocity
+
+    def setCurrentVelocity(self, aValue):
+        self._currentVelocity = aValue
+    
+    currentVelocity = property(fget = lambda self: self.getCurrentVelocity(),
+                              fset = lambda self, aValue: self.setCurrentVelocity(aValue)) 
+
     "end of setter and getter methods"
 
     def unitActive(self, aBoolean):
@@ -238,26 +319,29 @@ class HomeoUnit:
     def setDefaultOutputAndConnections(self):
         pass
     def setDefaultUniselectorSettings(self):
-        pass
+        "set default uniselector settings"
+
+        self.uniselector = HomeoUniselectorAshby()
+        self.uniselectorActive = True
+    
     def setUnitName(self):
         pass
     def setDefaultOutputAndDeviation(self):
-        pass
+
+        randOutput = np.random.uniform(0,0.5)       #generates a random output to set the unit close to equilibrium"
+        currentOutput = randOutput
+
+        "set the critical deviation at time 0 to 0."
+        self.criticalDeviation = 0
+        
     def isConnectedTo(self,aHomeoUnit):
         pass
-    def addConnection(self, aHomeoUnit, weight,polarity,state):
-        "polarity is 1 or -1; state is 'active' or 'uniselector'"
-        pass
-    def addConnectionWithNoise(self,aHomeoUnit,weight,polarity,noise,state):
-        "polarity is 1 or -1; state is 'active' or 'uniselector'; noise is a number < 1"
-        pass
-
-    def addConnectionUnitWeightPolarityNoiseState(self,aHomeoUnit,aNumber,aValue,anotherNumber,aString)
+   
+    def addConnectionUnitWeightPolarityState(self,aHomeoUnit,aWeight,aSwitch,aString):
         '''
         Add a new connection to the unit and set the connection parameters.
         Notice that you always connect the unit starting from the destination, 
-        i.e. from the input side, and never from the output side.
-        In fact units don't know anything at all about where their output goes.
+        HomeoUnits don't know anything at all about where their output goes.
         If the parameters are not within the expected values, 
         the accessor methods of HomeoConnection will raise exceptions
         '''
@@ -266,7 +350,24 @@ class HomeoUnit:
         aNewConnection.incomingUnit = aHomeoUnit
         aNewConnection.outgoingUnit = self
         aNewConnection.setWeight(aWeight * aSwitch) #must be between -1 and +1
-        aNewConnection.noise = anotherNumber    # must be between 0 and 1"
+        aNewConnection.state = aString          # must be 'manual' or 'uniselector'"
+                
+        self.inputConnections.append(aNewConnection)
+
+    def addConnectionUnitWeightPolarityNoiseState(self,aHomeoUnit,aWeight,aSwitch,aNoise,aString):
+        '''
+        Add a new connection to the unit and set the connection parameters.
+        Notice that you always connect the unit starting from the destination, 
+        HomeoUnits don't know anything at all about where their output goes.
+        If the parameters are not within the expected values, 
+        the accessor methods of HomeoConnection will raise exceptions
+        '''
+        aNewConnection = HomeoConnection()
+
+        aNewConnection.incomingUnit = aHomeoUnit
+        aNewConnection.outgoingUnit = self
+        aNewConnection.setWeight(aWeight * aSwitch) #must be between -1 and +1
+        aNewConnection.noise = aNoise    # must be between 0 and 1"
         aNewConnection.state = aString          # must be 'manual' or 'uniselector'"
                 
         self.inputConnections.append(aNewConnection)
@@ -294,6 +395,57 @@ class HomeoUnit:
 
     def removeConnectionFromUnit(self,aHomeoUnit):
         pass
+   
+    def activate(self):
+        self.active = True
+
+    def disactivate(self):
+        self.active = False
+
+    def addConnectionWithRandomValues(self,aHomeoUnit):
+        '''
+        Add a new connection to the unit. Uses the random values (weight, noise, and polarity) 
+        selected by the initialization method of HomeoConnection.
+        Notice that you always connect the unit starting from the destination, i.e. from the input side, and never from the output side.
+        HomeoUnits don't know anything at all about where their output goes.
+        If the parameters are not within the expected values, the accessor methods of HomeoConnection will raise exceptions
+        '''
+
+        aNewConnection = HomeoConnection()        # The initialize method of HomeoConnection sets random weights"
+        aNewConnection.incomingUnit =  aHomeoUnit
+        aNewConnection.outgoingUnit =  self
+        self._inputConnections.append(aNewConnection)
+    
+    def maxConnectedUnits(self, anInteger):
+        "Changes the parameter to the Uniselector for the maximum number of connected units"
+        
+        self._uniselector.unitsControlled(anInteger)
+
+    def toggleDebugMode(self):
+        "Controls whether the running methods print out debug information"
+
+        if self.debugMode is True: 
+            self._debugMode = False
+        else: 
+            self.debugMode = True
+
+    def toggleShowUniselectorAction(self):
+        "Control whether the running methods print out information when the uniselector kicks into action"
+
+        if self._showUniselectorAction is True:
+            self.showUniselectorAction= False
+        else:
+            self._showUniselectorAction = True
+            
+    def uniselectorChangeType(self,uniselectorType):
+        "Switch the uniselector type of the unit"
+        
+        if HomeoUniselector.includesType(eval(uniselectorType)): 
+            self.uniselector = eval(uniselectorType)()
+            self._uniselectorTime = 0
+        else:
+            raise HomeoUnitError("%s is not a valid HomeoUniselector class" % uniselectorType)
+     
     
 #This is a class method that create a new HomeoUnit instance from filename    
 #       def readFrom(self,filename):
