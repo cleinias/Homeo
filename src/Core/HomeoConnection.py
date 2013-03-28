@@ -132,7 +132,13 @@ class HomeoConnection:
         return self._noise
     
     def setNoise(self, aNoise):
-        self._noise = aNoise
+        '''
+        Must be between 0 and 1 included
+        '''
+        if aNoise <= 1 and aNoise >=0:
+            self._noise = aNoise
+        else:
+            raise ConnectionError("Noise must be between 0 and 1")
     
     noise = property(fget = lambda self: self.getNoise(),
                           fset = lambda self, value: self.setNoise(value))   
@@ -162,7 +168,7 @@ class HomeoConnection:
         return self._active
     
     def setActive(self, aHomeoUnit):
-        "Do nothing. Active is set through other methods"
+        ""
         self._active = aHomeoUnit
     
     active = property(fget = lambda self: self.getActive(),
@@ -170,12 +176,16 @@ class HomeoConnection:
     
     def newWeight(self, aWeight):
         "updates weight and switch on the basis -1 >=  aWeight <= 1"
-
-        self._weight= abs(aWeight)
+        
         if aWeight == 0:
             self._switch = 1
+            self.weight = 0
         else:
-            self._switch = np.sign(aWeight)
+            if aWeight <= 1 and aWeight >=0:
+                self._weight= abs(aWeight)
+                self._switch = np.sign(aWeight)
+            else:
+                raise ConnectionError("A HomeoConnection weight must be between -1 and 1")
 
     def outgoingUnit(self):
         ''' the "outgoingUnit" is the unit the signal is going *to*. 

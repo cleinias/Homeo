@@ -227,7 +227,12 @@ class HomeoUnit:
         self._status= True
 
     def setDefaultSelfConnection(self):
-        pass
+        '''
+        Create the connection collection and 
+        connects the unit to itself in manual mode with a negative feedback
+        '''
+        self.addConnection.withWeightPolarityNoiseState(self,self,(self.potentiometer),-1,0,'manual')
+   
     def setNewName(self):
         pass
     def setDefaultOutputAndConnections(self):
@@ -246,6 +251,26 @@ class HomeoUnit:
     def addConnectionWithNoise(self,aHomeoUnit,weight,polarity,noise,state):
         "polarity is 1 or -1; state is 'active' or 'uniselector'; noise is a number < 1"
         pass
+
+    def addConnectionUnitWeightPolarityNoiseState(self,aHomeoUnit,aNumber,aValue,anotherNumber,aString)
+        '''
+        Add a new connection to the unit and set the connection parameters.
+        Notice that you always connect the unit starting from the destination, 
+        i.e. from the input side, and never from the output side.
+        In fact units don't know anything at all about where their output goes.
+        If the parameters are not within the expected values, 
+        the accessor methods of HomeoConnection will raise exceptions
+        '''
+        aNewConnection = HomeoConnection()
+
+        aNewConnection.incomingUnit = aHomeoUnit
+        aNewConnection.outgoingUnit = self
+        aNewConnection.setWeight(aWeight * aSwitch) #must be between -1 and +1
+        aNewConnection.noise = anotherNumber    # must be between 0 and 1"
+        aNewConnection.state = aString          # must be 'manual' or 'uniselector'"
+                
+        self.inputConnections.append(aNewConnection)
+
     def isReadyToGo(self):
         pass
     def saveTo(self,filename):

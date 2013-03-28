@@ -210,7 +210,7 @@ A HomeoUnit knows how to:
 <body package="Homeostat" selector="selfUpdate">selfUpdate
 	"This is the master loop for the unit. It goes through the following sequence:
 	1. compute new needle's deviation (nextDeviation (includes reading inputs))
-	2. updates the current output on the basis of the deviation.
+	2. update the current output on the basis of the deviation.
 	3. check whether it's time to check the essential value and if so do it and  update the counter (uniselectorTime) [this might change the weight of the connections]
 	4. Move the needle to new position and compute new output"
 
@@ -406,7 +406,7 @@ Does not change the uniselector operation"
 	"set the critical deviation at time 0 to 0."
 	criticalDeviation := 0</body>
 
-<body package="Homeostat" selector="setDefaultSelfConnection">setDefaultSelfConnection
+DONE <!--<body package="Homeostat" selector="setDefaultSelfConnection">setDefaultSelfConnection
 	"creates the connection collection and connects the unit to itself in manual mode with a negative feedback"
 	
 
@@ -415,7 +415,7 @@ self
 		withWeight: (self potentiometer)
 		andPolarity: -1
 		andNoise: 0
-		andState: 'manual'</body>
+		andState: 'manual'</body>-->
 
 <body package="Homeostat" selector="setDefaultUniselectorSettings">setDefaultUniselectorSettings
 	"sets default uniselector settings."
