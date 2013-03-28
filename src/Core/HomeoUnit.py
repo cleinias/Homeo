@@ -5,6 +5,7 @@ from Core.HomeoConnection import *
 from Helpers.General_Helper_Functions import withAllSubclasses
 import numpy as np
 import sys
+from copy import copy
 
 class HomeoUnitError(Exception):
     pass
@@ -94,7 +95,7 @@ class HomeoUnit:
                               uniselectorTime= 0,               # How often the uniselector checks the thresholds, in number of ticks
                               uniselectorTimeInterval = 10,
                               needleCompMethod= 'linear',       # switches between linear and proportional computation of displacement
-                              uniselectorActivated = 0,
+                              uniselectorActivated = False,
                               density = 1,                      # density of water
                               maxViscosity = (10^6))
     
@@ -169,14 +170,30 @@ class HomeoUnit:
                          fset = lambda self, value: self.setViscosity(value))
       
     def setPotentiometer(self, aValue):
+        '''Changing the value of the potentiometer affects 
+           the unit's connection to itself (which is always at position 0
+           in the inputConnections list)'''
         self._potentiometer = aValue
+        self._inputConnections[0].wight  = aValue
+
     def getPotentiometer(self):
         return self._potentiometer
     potentiometer = property(fget = lambda self: self.getPotentiometer(),
                              fset = lambda self, value: self.setPotentiometer(value))  
     
     def setNoise(self, aValue):
-        self._noise = aValue
+        '''Set the value of the unit's internal noise. 
+            As noise must always be between 0 and 1,
+            clip it if outside those bounds'''
+    
+        if aValue <= 1:
+            if aValue >=0:
+                self._noise = aValue
+            else:
+                self._noise = 0
+        else:
+            self._noise = 1
+                    
     def getNoise(self):
         return self._noise
     noise = property(fget = lambda self: self.getNoise(),
@@ -203,8 +220,14 @@ class HomeoUnit:
     needleCompMethod = property(fget = lambda self: self.getNeedleCompMethod(),
                                 fset = lambda self, value: self.setNeedleCompMethod(value))  
         
-    def setMaxDeviation(self,aValue):
-        self._maxDeviation = aValue
+    def setMaxDeviation(self,aNumber):
+        '''Max deviation is always positive, 
+           because the unit's deviation is centered around 0. 
+           Ignore negative numbers'''
+    
+        if aNumber > 0:
+            self._maxDeviation = aNumber
+            
     def getMaxDeviation(self):
         return self._maxDeviation
     maxDeviation = property(fget = lambda self: self.getMaxDeviation(),
@@ -302,6 +325,76 @@ class HomeoUnit:
     currentVelocity = property(fget = lambda self: self.getCurrentVelocity(),
                               fset = lambda self, aValue: self.setCurrentVelocity(aValue)) 
 
+    def setSwitch(self,aNumber):
+        '''Set the polarity of the unit's self-connection. 
+           aNumber must be either -1 or +1, otherwise method 
+           defaults to a positive connection (i.e. 1)
+          Notice that  changing the value of the unit's switch 
+          affects the unit's connection to itself 
+          (which is always at 1 in the inputConnections collection)'''
+
+        accValues = (-1,1)
+        if aNumber in accValues:
+            self._inputConnections[0].switch = aNumber
+        else: 
+            self._inputConnections[0].switch = 1
+    
+    def getSwitch(self):
+        return self._switch
+    
+    switch = property(fget = lambda self: self.getSwitch(),
+                      fset = lambda self, aValue: self.setSwitch(aValue))
+    
+
+    def getMinDeviation(self):
+        '''Deviation is always centered around 0. 
+           Min deviation is less than 0 and equal to maxDeviation negated'''
+
+        return - self._maxDeviation
+
+    def setMinDeviation(self,aNumber):
+        '''Deviation is always centered around 0. 
+           Min deviation must be less than 0 and equal to maxDeviation negated. 
+           If we change the minimum we must change the maximum as well'''
+        
+        if aNumber < 0:
+            self._maxDeviation = - aNumber
+    
+    minDeviation = property(fget = lambda self: self.getMinDeviation(),
+                            fset= lambda self, aValue: self.setMinDeviation(aValue))
+
+
+    def getDensity(self):
+        return self._density
+
+    def setDensity(self,aValue):
+        self._density = aValue
+
+    density = property(fget = lambda self: self.getDensity(),
+                           fset = lambda self,aValue: self.setDensity(aValue))
+    
+    def getStatus(self):
+        return self._status
+
+    def setStatus(self,aValue):
+        self._status = aValue
+
+    status = property(fget = lambda self: self.getStatus(),
+                           fset = lambda self,aValue: self.setStatus(aValue))
+    
+    def getUniselector(self):
+        return self._uniselector
+    
+    def setUniselector(self,aUniselectorString):
+        '''Set the uniselector and check that it is a valid one'''
+        
+        if HomeoUniselector.includesType(eval(aUniselectorString)): 
+            self._uniselector = eval(aUniselectorString)()
+            self._uniselectorTime = 0
+    
+    uniselector = property(fget = lambda self: self.getUniselector(),
+                           fset = lambda self, aString: self.setUniselector(aString))
+    
     "end of setter and getter methods"
 
     def unitActive(self, aBoolean):
@@ -309,10 +402,9 @@ class HomeoUnit:
 
     def setDefaultSelfConnection(self):
         '''
-        Create the connection collection and 
-        connects the unit to itself in manual mode with a negative feedback
+        Connect the unit to itself in manual mode with a negative feedback
         '''
-        self.addConnection.withWeightPolarityNoiseState(self,self,(self.potentiometer),-1,0,'manual')
+        self.addConnectionUnitWeightPolarityNoiseState(self,(self.potentiometer),-1,0,'manual')
    
     def setNewName(self):
         pass
@@ -333,9 +425,35 @@ class HomeoUnit:
 
         "set the critical deviation at time 0 to 0."
         self.criticalDeviation = 0
+
+    def randomizeAllConnectionValues(self):
+        '''Reset the weight, switch, and noise of all connections to random values 
+           (see HomeoConnection for details).
+           Do not touch the self connection of the unit to itself.  
+           Do not change the uniselector operation'''
+
+        for conn in self._inputConnections:  
+                if not conn.incomingUnit == self:
+                    conn.randomizeConnectionValues()
         
     def isConnectedTo(self,aHomeoUnit):
-        pass
+        '''Test whether there is a connection coming from aHomeoUnit'''
+            
+        connUnits = [x.incomingUnit for x in self._inputConnections]
+        return (aHomeoUnit in connUnits)
+
+    def isActive(self):
+        self._status = 'Active'
+
+    def sameAs(self,aHomeoUnit):
+        '''Test whether two units are the same, by checking (and delegating the actual checks):
+               1. name and other first-level parameters (potentiometer, switch, etcetera
+               2. the number of connections
+               3. the parameters of each  connection
+               4. the names of the connected units'''
+
+        return self.sameFirstLevelParamsAs(aHomeoUnit)  and \
+               self.sameConnectionsAs(aHomeoUnit)
    
     def addConnectionUnitWeightPolarityState(self,aHomeoUnit,aWeight,aSwitch,aString):
         '''
@@ -366,14 +484,49 @@ class HomeoUnit:
 
         aNewConnection.incomingUnit = aHomeoUnit
         aNewConnection.outgoingUnit = self
-        aNewConnection.setWeight(aWeight * aSwitch) #must be between -1 and +1
+        aNewConnection.newWeight(aWeight * aSwitch) #must be between -1 and +1
         aNewConnection.noise = aNoise    # must be between 0 and 1"
         aNewConnection.state = aString          # must be 'manual' or 'uniselector'"
                 
         self.inputConnections.append(aNewConnection)
 
+    def removeConnectionFromUnit(self, aHomeoUnit): 
+        '''Remove the connection(s) to self and originating from aHomeoUnit'''
+        
+        for conn in self._inputConnections:
+            if conn._incomingUnit == aHomeoUnit:
+                self._inputConnections.remove(aHomeoUnit)
+
     def isReadyToGo(self):
-        pass
+        '''Make sure that unit has all the parameters it needs to operate properly.
+    
+           criticalDeviation    is notNil and
+           maxDeviation    is notNil
+           outputRange        is notNil
+           viscosity            is notNil
+           noise            is notNil
+           potentiometer     is notNil     
+           if  uniselectorActive is true then
+               uniselector                 is notNil
+               uniselectorTime               is notNil
+               uniselectorTimeInterval      is notNil'''
+
+        if self.uniselectorActive:
+            uniselectorConditions = self._uniselector is not None and \
+                                    self._uniselectorTime is not None and \
+                                    self._uniselectorTimeInterval is not None
+        else:
+            uniselectorConditions = True
+        
+        return self._criticalDeviation is not None and \
+               self._maxDeviation is not None and \
+               self._outputRange is not None and \
+               self._viscosity is not None and \
+               self._noise is not None and \
+               self._potentiometer is not None and \
+               uniselectorConditions
+
+    
     def saveTo(self,filename):
         pass
     def setRandomValues(self):
@@ -392,9 +545,6 @@ class HomeoUnit:
         self._currentOutput =  np.random.uniform(0, 1)    
         "set the critical deviation to a random value over the whole range"                                                         
         self._criticalDeviation = np.random.uniform(self._outputRange['low'], self._outputRange['high']) 
-
-    def removeConnectionFromUnit(self,aHomeoUnit):
-        pass
    
     def activate(self):
         self.active = True
