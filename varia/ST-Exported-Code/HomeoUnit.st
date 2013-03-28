@@ -325,7 +325,7 @@ uniselectorTimeInterval  	is notNil"
 <methods>
 <class-id>HomeoUnit</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+ALMOST DONE <!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize the HomeoUnit with the default parameters found in the Class variable DefaultParameters.
 	Assign a random but unique name and sets the output to some value around 0, i.e. at equilibrium
 	These values are supposed to be overridden in normal practice, because the values are set  by the  simulation 
@@ -382,7 +382,7 @@ uniselectorTimeInterval  	is notNil"
 
 	debugMode := false.
 
-	showUniselectorAction := false.</body>
+	showUniselectorAction := false.</body>-->
 
 <body package="Homeostat" selector="randomizeAllConnectionValues">randomizeAllConnectionValues
 	"resets the weight, switch, and noise of all connections to random values (see HomeoConnection for details).
@@ -394,7 +394,7 @@ Does not change the uniselector operation"
 					:conn | 
 					(inputConnections at: conn) randomizeConnectionValues]</body>
 
-<body package="Homeostat" selector="setDefaultOutputAndDeviation">setDefaultOutputAndDeviation
+DONE <!--<body package="Homeostat" selector="setDefaultOutputAndDeviation">setDefaultOutputAndDeviation
 	
 
 	| randOutput |
@@ -404,7 +404,7 @@ Does not change the uniselector operation"
 	currentOutput := randOutput.
 
 	"set the critical deviation at time 0 to 0."
-	criticalDeviation := 0</body>
+	criticalDeviation := 0</body>-->
 
 DONE <!--<body package="Homeostat" selector="setDefaultSelfConnection">setDefaultSelfConnection
 	"creates the connection collection and connects the unit to itself in manual mode with a negative feedback"
@@ -417,13 +417,13 @@ self
 		andNoise: 0
 		andState: 'manual'</body>-->
 
-<body package="Homeostat" selector="setDefaultUniselectorSettings">setDefaultUniselectorSettings
+DONE <!--<body package="Homeostat" selector="setDefaultUniselectorSettings">setDefaultUniselectorSettings
 	"sets default uniselector settings."
 
 	uniselector := HomeoUniselectorAshby new.
-	uniselectorActive := true</body>
+	uniselectorActive := true</body>-->
 
-<body package="Homeostat" selector="setRandomValues">setRandomValues
+DONE <!--<body package="Homeostat" selector="setRandomValues">setRandomValues
 	"sets up the unit with random values"
 
 	| unitRange unitLimit rand switchSign|
@@ -443,7 +443,7 @@ switchSign = 0 ifTrue: [switchSign := 1].
 self switch: 	switchSign. 
 
 self currentOutput:   (rand nextBetween: 0 and: 1).	"generates a random output  over the whole range" 														
-self criticalDeviation:  (rand nextBetween: (unitRange at: 'low') and: (unitRange at: 'high')). "set the critical deviation to a random value over the whole range"</body>
+self criticalDeviation:  (rand nextBetween: (unitRange at: 'low') and: (unitRange at: 'high')). "set the critical deviation to a random value over the whole range"</body>-->
 
 <body package="Homeostat" selector="setUnitName">setUnitName
 	"assigns a unique name to the unit with the help of  an auxiliary method"
@@ -480,19 +480,19 @@ aStream nextPutAll: ': ', self name.</body>
 <methods>
 <class-id>HomeoUnit</class-id> <category>accessing</category>
 
-<body package="Homeostat" selector="activate">activate
+DONE <!--<body package="Homeostat" selector="activate">activate
 
 active := true.
-self changed: #active.</body>
+self changed: #active.</body>-->
 
-<body package="Homeostat" selector="active">active
-	^active</body>
+DONE <!--<body package="Homeostat" selector="active">active
+	^active</body>-->
 
-<body package="Homeostat" selector="active:">active: anObject
+DONE <!--<body package="Homeostat" selector="active:">active: anObject
 	active := anObject.
-	self changed: #active.</body>
+	self changed: #active.</body>-->
 
-<body package="Homeostat" selector="addConnection:withWeight:andPolarity:andNoise:andState:">addConnection: aHomeoUnit withWeight: aNumber andPolarity: aValue andNoise: aNumber2 andState: aString
+DONE <!--<body package="Homeostat" selector="addConnection:withWeight:andPolarity:andNoise:andState:">addConnection: aHomeoUnit withWeight: aNumber andPolarity: aValue andNoise: aNumber2 andState: aString
 
 "adds a new connection to the unit. Notice that you always connect the unit starting from the destination, i.e. from the input side, and never from the output side.
 In fact units don't know anything at all about where their output goes.
@@ -511,9 +511,9 @@ aNewConnection incomingUnit: aHomeoUnit;
 				
 
 inputConnections add: aNewConnection.
-self changed: #addConnection</body>
+self changed: #addConnection</body>-->
 
-<body package="Homeostat" selector="addConnection:withWeight:andPolarity:andState:">addConnection: aHomeoUnit withWeight: aNumber andPolarity: aValue andState: aString
+DONE <!--<body package="Homeostat" selector="addConnection:withWeight:andPolarity:andState:">addConnection: aHomeoUnit withWeight: aNumber andPolarity: aValue andState: aString
 
 "adds a new connection to the unit. Notice that you always connect the unit starting from the destination, i.e. from the input side, and never from the output side.
 In fact units don't know anything at all about where their output goes.
@@ -531,9 +531,9 @@ aNewConnection incomingUnit: aHomeoUnit;
 				
 
 inputConnections add: aNewConnection.
-self changed: #addConnection</body>
+self changed: #addConnection</body>-->
 
-<body package="Homeostat" selector="addConnectionWithRandomValues:">addConnectionWithRandomValues: aHomeoUnit 
+DONE <!--<body package="Homeostat" selector="addConnectionWithRandomValues:">addConnectionWithRandomValues: aHomeoUnit 
 
 "adds a new connection to the unit. Uses the random values (weight, noise, and polarity) selected by the initialization method of HomeoConnection.
 Notice that you always connect the unit starting from the destination, i.e. from the input side, and never from the output side.
@@ -545,19 +545,19 @@ If the parameters are not within the expected values, the accessor methods of Ho
 aNewConnection := HomeoConnection new.        "The initialize method of HomeoConnection sets random weights"
 aNewConnection incomingUnit: aHomeoUnit; outgoingUnit: self.
 inputConnections add: aNewConnection.
-self changed: #addConnection</body>
+self changed: #addConnection</body>-->
 
-<body package="Homeostat" selector="criticalDeviation">criticalDeviation
-	^criticalDeviation</body>
+DONE <!--<body package="Homeostat" selector="criticalDeviation">criticalDeviation
+	^criticalDeviation</body>-->
 
-<body package="Homeostat" selector="criticalDeviation:">criticalDeviation: anObject
+DONE <!--<body package="Homeostat" selector="criticalDeviation:">criticalDeviation: anObject
 	criticalDeviation := anObject.
-	self changed: #criticalDeviation</body>
+	self changed: #criticalDeviation</body>-->
 
-<body package="Homeostat" selector="currentOutput">currentOutput
-	^currentOutput</body>
+DONE <!--<body package="Homeostat" selector="currentOutput">currentOutput
+	^currentOutput</body>-->
 
-<body package="Homeostat" selector="currentOutput:">currentOutput: anObject 
+DONE <!--<body package="Homeostat" selector="currentOutput:">currentOutput: anObject 
 	currentOutput := anObject.
 
 	"testing
@@ -566,13 +566,13 @@ self changed: #addConnection</body>
 		cr."
 "	self halt.
 "
-	self changed: #currentOutput</body>
+	self changed: #currentOutput</body>-->
 
-<body package="Homeostat" selector="currentVelocity">currentVelocity
-	^currentVelocity</body>
+DONE <!--<body package="Homeostat" selector="currentVelocity">currentVelocity
+	^currentVelocity</body>-->
 
-<body package="Homeostat" selector="currentVelocity:">currentVelocity: anObject
-	currentVelocity := anObject</body>
+DONE <!--<body package="Homeostat" selector="currentVelocity:">currentVelocity: anObject
+	currentVelocity := anObject</body>-->
 
 <body package="Homeostat" selector="density">density
 	^density</body>
@@ -580,47 +580,47 @@ self changed: #addConnection</body>
 <body package="Homeostat" selector="density:">density: anObject
 	density := anObject</body>
 
-<body package="Homeostat" selector="disactivate">disactivate
+DONE <!--<body package="Homeostat" selector="disactivate">disactivate
 
 active := false.
-self changed: #active.</body>
+self changed: #active.</body>-->
 
-<body package="Homeostat" selector="highRange">highRange
+DONE <!--<body package="Homeostat" selector="highRange">highRange
 
-^outputRange at: 'high'</body>
+^outputRange at: 'high'</body>-->
 
-<body package="Homeostat" selector="highRange:">highRange: aValue
+DONE <!--<body package="Homeostat" selector="highRange:">highRange: aValue
 
 outputRange at: 'high' put: aValue.
-self changed: #range</body>
+self changed: #range</body>-->
 
-<body package="Homeostat" selector="inputConnections">inputConnections
-	^inputConnections</body>
+DONE <!--<body package="Homeostat" selector="inputConnections">inputConnections
+	^inputConnections</body>-->
 
-<body package="Homeostat" selector="inputConnections:">inputConnections: anObject
+DONE <!--<body package="Homeostat" selector="inputConnections:">inputConnections: anObject
 	inputConnections := anObject.
-	self changed:  #inputConnections</body>
+	self changed:  #inputConnections</body>-->
 
-<body package="Homeostat" selector="inputTorque">inputTorque
-	^inputTorque</body>
+DONE <!--<body package="Homeostat" selector="inputTorque">inputTorque
+	^inputTorque</body>-->
 
-<body package="Homeostat" selector="inputTorque:">inputTorque: anObject
-	inputTorque := anObject</body>
+DONE <!--<body package="Homeostat" selector="inputTorque:">inputTorque: anObject
+	inputTorque := anObject</body>-->
 
-<body package="Homeostat" selector="lowRange">lowRange
+DONE <!--<body package="Homeostat" selector="lowRange">lowRange
 
-^outputRange at: 'low'</body>
+^outputRange at: 'low'</body>-->
 
-<body package="Homeostat" selector="lowRange:">lowRange: aValue
+DONE <!--<body package="Homeostat" selector="lowRange:">lowRange: aValue
 
 outputRange at: 'low' put: aValue.
-self changed: #range.</body>
+self changed: #range.</body>-->
 
-<body package="Homeostat" selector="maxConnectedUnits:">maxConnectedUnits: anInteger
+DONE <!--<body package="Homeostat" selector="maxConnectedUnits:">maxConnectedUnits: anInteger
 
 "changes the parameter to the Uniselector for the maximun number of connected units"
 
-uniselector unitsControlled: anInteger</body>
+uniselector unitsControlled: anInteger</body>-->
 
 <body package="Homeostat" selector="maxDeviation">maxDeviation
 	^maxDeviation</body>
@@ -727,8 +727,8 @@ self changed: #inputConnections.</body>
 	status := anObject.
 	self changed: #status</body>
 
-<body package="Homeostat" selector="switch">switch
-	^switch</body>
+DONE <!--<body package="Homeostat" selector="switch">switch
+	^switch</body>-->
 
 <body package="Homeostat" selector="switch:">switch: aNumber
 	"sets the polarity of the unit's self-connection. aNumber must be either -1 or +1, otherwise method default to a positive connection (i.e. 1)
@@ -749,17 +749,17 @@ self changed: #switch.</body>
 <body package="Homeostat" selector="time:">time: anObject
 	time := anObject</body>
 
-<body package="Homeostat" selector="toggleDebugMode">toggleDebugMode
+DONE <!--<body package="Homeostat" selector="toggleDebugMode">toggleDebugMode
 	"controls whether the running methods print out debug information"
 
-	debugMode ifTrue: [debugMode := false] ifFalse: [debugMode := true]</body>
+	debugMode ifTrue: [debugMode := false] ifFalse: [debugMode := true]</body>-->
 
-<body package="Homeostat" selector="toggleShowUniselectorAction">toggleShowUniselectorAction
-	"controls whether the running methods print out  when the uniselector kicks into action"
+DONE <!--<body package="Homeostat" selector="toggleShowUniselectorAction">toggleShowUniselectorAction
+	"controls whether the running methods print out when the uniselector kicks into action"
 
 	showUniselectorAction 
 		ifTrue: [showUniselectorAction := false]
-		ifFalse: [showUniselectorAction := true]</body>
+		ifFalse: [showUniselectorAction := true]</body>-->
 
 <body package="Homeostat" selector="uniselector">uniselector
 	^uniselector</body>
@@ -781,7 +781,7 @@ self changed: #switch.</body>
 	uniselectorActive := aBoolean.
 	self changed: #uniselectorActive</body>
 
-<body package="Homeostat" selector="uniselectorChangeType:">uniselectorChangeType: uniselectorType
+DONE <!--<body package="Homeostat" selector="uniselectorChangeType:">uniselectorChangeType: uniselectorType
 
 "switches the uniselector type of the unit"
  |uniselectorClass|
@@ -792,7 +792,7 @@ self changed: #switch.</body>
 uniselectorClass isNil
 	ifFalse:[ uniselector := uniselectorClass new.
 			 self uniselectorTime: 0.
-			  self changed: #uniselector].</body>
+			  self changed: #uniselector].</body>-->
 
 <body package="Homeostat" selector="uniselectorTime">uniselectorTime
 	^uniselectorTime</body>
