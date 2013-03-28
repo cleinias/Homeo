@@ -161,7 +161,7 @@ active: unitActive
 
 <comment>
 <class-id>HomeoUnit</class-id>
-<body>HomeoUnit represents a basic unit of Ashby's Homeostat (see Ashby's Design for a Brain, 1960, chp. 8). HomeoUnit does not know about its connections to other units (including itself). The connections are managed by class Homeostat, which holds a collection of HomeoConnection, each one representing a connection between two different HomeoUnits.
+DONE <!--<body>HomeoUnit represents a basic unit of Ashby's Homeostat (see Ashby's Design for a Brain, 1960, chp. 8). HomeoUnit does not know about its connections to other units (including itself). The connections are managed by class Homeostat, which holds a collection of HomeoConnection, each one representing a connection between two different HomeoUnits.
 
 HomeoUnit holds the  values describing the state of the unit at time t, as specified by Ashby.
 The design of this simulation of the Homeostat  has been influenced by the C simulation described by Alice Eldridge in "Ashby's Homeostat in Simulation," unpublished, 2002, available at: http://www.informatics.sussex.ac.uk/users/alicee/NEWSITE/ecila_files/content/papers/ACEhom.pdf 
@@ -202,7 +202,7 @@ A HomeoUnit knows how to:
 - periodically check that its outputValue has not become critical (outside the acceptable range) 
 - ask the uniselector to reset che weight of its inputConnections
 - print a description of itself with the values of all its parameters</body>
-</comment>
+</comment>-->
 
 <methods>
 <class-id>HomeoUnit</class-id> <category>running</category>
@@ -240,19 +240,19 @@ debugMode ifTrue: [Transcript show: 'current Deviat. at time: ';  show: time pri
 <methods>
 <class-id>HomeoUnit</class-id> <category>testing</category>
 
-<body package="Homeostat" selector="isActive">isActive
+DONE <!--<body package="Homeostat" selector="isActive">isActive
 
-^status = 'Active'</body>
+^status = 'Active'</body>-->
 
-<body package="Homeostat" selector="isConnectedTo:">isConnectedTo: aHomeoUnit 
+DONE <!--<body package="Homeostat" selector="isConnectedTo:">isConnectedTo: aHomeoUnit 
 	"tests whether there is a connection coming from aHomeoUnit"
 
 | connectedUnits |
 	
 connectedUnits:= inputConnections collect: [:each | each incomingUnit].
-^connectedUnits includes: aHomeoUnit.</body>
+^connectedUnits includes: aHomeoUnit.</body>-->
 
-<body package="Homeostat" selector="isReadyToGo">isReadyToGo
+DONE <!--<body package="Homeostat" selector="isReadyToGo">isReadyToGo
 	"makes sure that unit has all the parameters it needs to operate properly:
 
 criticalDeviation	is notNil and
@@ -276,9 +276,9 @@ uniselectorTimeInterval  	is notNil"
 	^criticalDeviation notNil &amp; maxDeviation notNil &amp; outputRange notNil 
 		&amp; viscosity notNil &amp; noise notNil 
 		&amp; potentiometer notNil 
-		&amp; uniselectorConditions</body>
+		&amp; uniselectorConditions</body>-->
 
-<body package="Homeostat" selector="sameAs:">sameAs: aHomeoUnit
+DONE <!--<body package="Homeostat" selector="sameAs:">sameAs: aHomeoUnit
 
 "tests whether two units are the same, by checking (by delegating the actual checks):
 1. name and other first-level parameters (potentiometer, switch, etcetera
@@ -290,7 +290,7 @@ uniselectorTimeInterval  	is notNil"
 4. the names of the connected units"
 
 
-^(self sameFirstLevelParamsAs: aHomeoUnit)  and: [ self  sameConnectionsAs: aHomeoUnit]</body>
+^(self sameFirstLevelParamsAs: aHomeoUnit)  and: [ self  sameConnectionsAs: aHomeoUnit]</body>-->
 
 <body package="Homeostat" selector="sameConnectionsAs:">sameConnectionsAs: aHomeoUnit 
 	"checks that two units have the same connections"
@@ -384,7 +384,7 @@ ALMOST DONE <!--<body package="Homeostat" selector="initialize">initialize
 
 	showUniselectorAction := false.</body>-->
 
-<body package="Homeostat" selector="randomizeAllConnectionValues">randomizeAllConnectionValues
+DONE <!--<body package="Homeostat" selector="randomizeAllConnectionValues">randomizeAllConnectionValues
 	"resets the weight, switch, and noise of all connections to random values (see HomeoConnection for details).
 Does not touch the self connection of the unit to itself.  
 Does not change the uniselector operation"
@@ -392,7 +392,7 @@ Does not change the uniselector operation"
 	2 to: (inputConnections size) 
 				do: [
 					:conn | 
-					(inputConnections at: conn) randomizeConnectionValues]</body>
+					(inputConnections at: conn) randomizeConnectionValues]</body>-->
 
 DONE <!--<body package="Homeostat" selector="setDefaultOutputAndDeviation">setDefaultOutputAndDeviation
 	
@@ -574,11 +574,11 @@ DONE <!--<body package="Homeostat" selector="currentVelocity">currentVelocity
 DONE <!--<body package="Homeostat" selector="currentVelocity:">currentVelocity: anObject
 	currentVelocity := anObject</body>-->
 
-<body package="Homeostat" selector="density">density
-	^density</body>
+DONE <!--<body package="Homeostat" selector="density">density
+	^density</body>-->
 
-<body package="Homeostat" selector="density:">density: anObject
-	density := anObject</body>
+DONE <!--<body package="Homeostat" selector="density:">density: anObject
+	density := anObject</body>-->
 
 DONE <!--<body package="Homeostat" selector="disactivate">disactivate
 
@@ -622,29 +622,29 @@ DONE <!--<body package="Homeostat" selector="maxConnectedUnits:">maxConnectedUni
 
 uniselector unitsControlled: anInteger</body>-->
 
-<body package="Homeostat" selector="maxDeviation">maxDeviation
-	^maxDeviation</body>
+DONE <!--<body package="Homeostat" selector="maxDeviation">maxDeviation
+	^maxDeviation</body>-->
 
-<body package="Homeostat" selector="maxDeviation:">maxDeviation: aNumber
+DONE <!--<body package="Homeostat" selector="maxDeviation:">maxDeviation: aNumber
 "Max deviation is always positive, because the unit's deviation is centered around 0. Ignore negatve numbers"
 	
 	(aNumber > 0) 
 		ifTrue: [
 			maxDeviation := aNumber.
-			self changed: #maxDeviation]</body>
+			self changed: #maxDeviation]</body>-->
 
-<body package="Homeostat" selector="minDeviation">minDeviation
+DONE <!--<body package="Homeostat" selector="minDeviation">minDeviation
 	"Deviation is always centered around 0. Min deviation is less than 0 and equal to maxDeviation negated."
 
-	^maxDeviation negated</body>
+	^maxDeviation negated</body>-->
 
-<body package="Homeostat" selector="minDeviation:">minDeviation: aNumber
+DONE <!--<body package="Homeostat" selector="minDeviation:">minDeviation: aNumber
 
 "Deviation is always centered around 0. Min deviation must be less than 0 and equal to maxDeviation negated. If we change the minimum we must change the maximum as well"
 	(aNumber < 0) 
 		ifTrue: [
 			maxDeviation := aNumber negated
-			self changed: #maxDeviation]</body>
+			self changed: #maxDeviation]</body>-->
 
 <body package="Homeostat" selector="name">name
 	^name</body>
@@ -676,10 +676,10 @@ uniselector unitsControlled: anInteger</body>-->
 <body package="Homeostat" selector="nextDeviation:">nextDeviation: anObject
 	nextDeviation := anObject</body>
 
-<body package="Homeostat" selector="noise">noise
-	^noise</body>
+DONE <!--<body package="Homeostat" selector="noise">noise
+	^noise</body>-->
 
-<body package="Homeostat" selector="noise:">noise: aValue 
+DONE <!--<body package="Homeostat" selector="noise:">noise: aValue 
 "changes the value of the unit's internal noise. As noise must always be between 0 and 1 clip it if outside those bounds"
 	
 
@@ -689,26 +689,26 @@ uniselector unitsControlled: anInteger</body>-->
 			ifTrue:   [noise := 0]]
 		ifTrue: [noise := 1].	
 
-	self changed: #noise</body>
+	self changed: #noise</body>-->
 
-<body package="Homeostat" selector="outputRange">outputRange
-	^outputRange</body>
+DONE <!--<body package="Homeostat" selector="outputRange">outputRange
+	^outputRange</body>-->
 
-<body package="Homeostat" selector="outputRange:">outputRange: anObject
-	outputRange := anObject</body>
+DONE <!--<body package="Homeostat" selector="outputRange:">outputRange: anObject
+	outputRange := anObject</body>-->
 
-<body package="Homeostat" selector="potentiometer">potentiometer
+DONE <!--<body package="Homeostat" selector="potentiometer">potentiometer
 	^potentiometer
 
-</body>
+</body>-->
 
-<body package="Homeostat" selector="potentiometer:">potentiometer: aValue 
-"changing the value of the potentiometer affects the unit's connection to itself (which is always at 1 in the inputConnections collection)"
+DONE <!--<body package="Homeostat" selector="potentiometer:">potentiometer: aValue 
+"changing the value of the potentiometer affects the unit's connection to itself (which is always at position 1 in the inputConnections collection)"
 	potentiometer := aValue.
 	(inputConnections at: 1) weight: aValue.
-	self changed: #potentiometer</body>
+	self changed: #potentiometer</body>-->
 
-<body package="Homeostat" selector="removeConnectionFromUnit:">removeConnectionFromUnit: aHomeoUnit 
+DONE <!--<body package="Homeostat" selector="removeConnectionFromUnit:">removeConnectionFromUnit: aHomeoUnit 
 	"removes the connection originating from  aHomeoUnit"
 
 | collection |
@@ -718,19 +718,19 @@ collection do: [
 	:each |
 	each incomingUnit = aHomeoUnit ifTrue: [inputConnections  remove: each]].
 
-self changed: #inputConnections.</body>
+self changed: #inputConnections.</body>-->
 
-<body package="Homeostat" selector="status">status
-	^status</body>
+DONE <!--<body package="Homeostat" selector="status">status
+	^status</body>-->
 
-<body package="Homeostat" selector="status:">status: anObject
+DONE <!--<body package="Homeostat" selector="status:">status: anObject
 	status := anObject.
-	self changed: #status</body>
+	self changed: #status</body>-->
 
 DONE <!--<body package="Homeostat" selector="switch">switch
 	^switch</body>-->
 
-<body package="Homeostat" selector="switch:">switch: aNumber
+DONE <!--<body package="Homeostat" selector="switch:">switch: aNumber
 	"sets the polarity of the unit's self-connection. aNumber must be either -1 or +1, otherwise method default to a positive connection (i.e. 1)
 	  Notice that  changing the value of the unit's switch  affects the unit's connection to itself (which is always at 1 in the inputConnections collection)"
 
@@ -741,13 +741,13 @@ switch :=  aNumber.
 (accValues includes: aNumber)
 		 ifTrue: [ (inputConnections at: 1) switch: aNumber] 
 		ifFalse: [ (inputConnections at: 1) switch: 1].
-self changed: #switch.</body>
+self changed: #switch.</body>-->
 
-<body package="Homeostat" selector="time">time
-	^time</body>
+DONE <!--<body package="Homeostat" selector="time">time
+	^time</body>-->
 
-<body package="Homeostat" selector="time:">time: anObject
-	time := anObject</body>
+DONE <!--<body package="Homeostat" selector="time:">time: anObject
+	time := anObject</body>-->
 
 DONE <!--<body package="Homeostat" selector="toggleDebugMode">toggleDebugMode
 	"controls whether the running methods print out debug information"
@@ -761,25 +761,25 @@ DONE <!--<body package="Homeostat" selector="toggleShowUniselectorAction">toggle
 		ifTrue: [showUniselectorAction := false]
 		ifFalse: [showUniselectorAction := true]</body>-->
 
-<body package="Homeostat" selector="uniselector">uniselector
-	^uniselector</body>
+DONE <!--<body package="Homeostat" selector="uniselector">uniselector
+	^uniselector</body>-->
 
-<body package="Homeostat" selector="uniselector:">uniselector: anObject
+DONE <!--<body package="Homeostat" selector="uniselector:">uniselector: anObject
 	uniselector := anObject
-	self changed: #uniselector</body>
+	self changed: #uniselector</body>-->
 
-<body package="Homeostat" selector="uniselectorActivated">uniselectorActivated
-	^uniselectorActivated</body>
+DONE <!--<body package="Homeostat" selector="uniselectorActivated">uniselectorActivated
+	^uniselectorActivated</body>-->
 
-<body package="Homeostat" selector="uniselectorActivated:">uniselectorActivated: anObject
-	uniselectorActivated := anObject</body>
+DONE <!--<body package="Homeostat" selector="uniselectorActivated:">uniselectorActivated: anObject
+	uniselectorActivated := anObject</body>-->
 
-<body package="Homeostat" selector="uniselectorActive">uniselectorActive
-	^uniselectorActive</body>
+DONE <!--<body package="Homeostat" selector="uniselectorActive">uniselectorActive
+	^uniselectorActive</body>-->
 
-<body package="Homeostat" selector="uniselectorActive:">uniselectorActive: aBoolean
+DONE <!--<body package="Homeostat" selector="uniselectorActive:">uniselectorActive: aBoolean
 	uniselectorActive := aBoolean.
-	self changed: #uniselectorActive</body>
+	self changed: #uniselectorActive</body>-->
 
 DONE <!--<body package="Homeostat" selector="uniselectorChangeType:">uniselectorChangeType: uniselectorType
 

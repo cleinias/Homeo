@@ -181,7 +181,7 @@ class HomeoConnection:
             self._switch = 1
             self.weight = 0
         else:
-            if aWeight <= 1 and aWeight >=0:
+            if aWeight <= 1 and aWeight >= -1:
                 self._weight= abs(aWeight)
                 self._switch = np.sign(aWeight)
             else:
