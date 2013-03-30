@@ -178,12 +178,12 @@ class HomeoConnection:
         "updates weight and switch on the basis -1 >=  aWeight <= 1"
         
         if aWeight == 0:
-            self._switch = 1
+            self.switch = 1
             self.weight = 0
         else:
             if aWeight <= 1 and aWeight >= -1:
-                self._weight= abs(aWeight)
-                self._switch = np.sign(aWeight)
+                self.weight= abs(aWeight)
+                self.switch = np.sign(aWeight)
             else:
                 raise ConnectionError("A HomeoConnection weight must be between -1 and 1")
 
@@ -205,7 +205,7 @@ class HomeoConnection:
         newNoise.distorting()      # select  noise as distorting the current"
         newNoise.proportional()    # consider the noise on the communication line as a ration of the current being transmitted"
 
-        return (self._incomingUnit.currentOutput() * self._switch * self._weight) + newNoise.getNoise()
+        return (self._incomingUnit.currentOutput() * self.switch * self.weight) + newNoise.getNoise()
     
     def isActive(self):
         '''sets the connection to active'''
