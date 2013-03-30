@@ -2,9 +2,8 @@ from   HomeoUnit import *
 from   HomeoUniselector import *
 from   Homeostat import *
 from   Helpers.General_Helper_Functions import *
-
 import unittest, numpy, string, random
-
+from copy import copy
 
 class HomeoUnitTest(unittest.TestCase):
     """Unit testing for the HomeoUnit class and subclasses, including adding and removing connections to other HomeoUnits."""
@@ -16,18 +15,18 @@ class HomeoUnitTest(unittest.TestCase):
     def tearDown(self):
         pass
        
-    def testAddConnection(self):
+    def testAddConnectionUnitWeightPolarityState(self):
         """Connect to another unit and test the connection values."""
         newUnit = HomeoUnit()
         weight = 0.5
         polarity = 1
         state = 'manual'
-        self.unit.addConnection(newUnit, weight, polarity, state)
+        self.unit.addConnectionUnitWeightPolarityState(newUnit, weight, polarity, state)
         self.assertTrue(self.unit.inputConnections is not None)
-        self.assertTrue(self.unit.inputConnections.last.incomingUnit == newUnit)
-        self.assertTrue(self.unit.inputConnections.last.weight == weight)
-        self.assertTrue(self.unit.inputConnections.last.switch == polarity)
-        self.assertTrue(self.unit.inputConnections.last.state == 'manual')
+        self.assertTrue(self.unit.inputConnections[-1].incomingUnit == newUnit)
+        self.assertTrue(self.unit.inputConnections[-1].weight == weight)
+        self.assertTrue(self.unit.inputConnections[-1].switch == polarity)
+        self.assertTrue(self.unit.inputConnections[-1].state == 'manual')
 
     def testClassDefaults(self):
         """test that  the class has its appropriate dictionary of Defaults and that the values are not empty."""
@@ -44,6 +43,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertTrue(defParam.has_key('uniselectorTime'))
         self.assertTrue(defParam.has_key('needleCompMethod'))
         self.assertTrue(defParam.has_key('outputRange'))
+        self.assertTrue(defParam.has_key('critThreshold'))
 
         self.assertTrue(defParam['viscosity'] is not None)
         self.assertTrue(defParam['maxDeviation'] is not None)
@@ -54,6 +54,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertTrue(defParam['uniselectorTime'] is not None)
         self.assertTrue(defParam['needleCompMethod']  is not None)
         self.assertTrue(defParam['outputRange'] is not None)
+        self.assertTrue(defParam['critThreshold'] is not None)
 
         outputRange = defParam['outputRange']
 
@@ -76,12 +77,12 @@ class HomeoUnitTest(unittest.TestCase):
         polarity = 1
 
         self.assertFalse(self.unit.isConnectedTo(newUnit))
-        self.unit.addConnection(newUnit,weight,polarity,'manual')
+        self.unit.addConnectionUnitWeightPolarityState(newUnit,weight,polarity,'manual')
         self.assertTrue(self.unit.isConnectedTo(newUnit))
         
     def testRandomizeValues(self):
         self.unit.setRandomValues()
-        oldOutput = self.unit.currentOutput()
+        oldOutput = self.unit.currentOutput
         self.unit.setRandomValues()
         self.assertFalse(oldOutput == self.unit.currentOutput)
             
@@ -90,7 +91,7 @@ class HomeoUnitTest(unittest.TestCase):
         weight = 0.5
         polarity = 1
 
-        self.unit.addConnection(newUnit,weight,polarity,'manual')
+        self.unit.addConnectionUnitWeightPolarityState(newUnit,weight,polarity,'manual')
         self.assertTrue(self.unit.isConnectedTo(newUnit))
         self.unit.removeConnectionFromUnit(newUnit)
         self.assertFalse(self.unit.isConnectedTo(newUnit))
@@ -119,7 +120,7 @@ class HomeoUnitTest(unittest.TestCase):
         # FIXIT A more comprehensive test could p/h check that the noise value applied is uniformly distributing, proportional, and distorting."
 
         self.unit.setRandomValues()
-        self.unit.noise(0.1)
+        self.unit.noise = 0.1
         for i in xrange(1,10):
             oldDeviation = self.unit.criticalDeviation
             self.unit.updateDeviationWithNoise()
@@ -375,29 +376,29 @@ class HomeoUnitTest(unittest.TestCase):
     def testInitializationDefaults(self):
         "test that the class default values are properly inserted in the instance's variable"
         
-        defViscosity = HomeoUnit.defaultParameters['viscosity']
+        defViscosity = HomeoUnit.DefaultParameters['viscosity']
         self.assertTrue(self.unit.viscosity == defViscosity)
     
-        defMaxDeviation = HomeoUnit.defaultParameters['maxDeviation']
+        defMaxDeviation = HomeoUnit.DefaultParameters['maxDeviation']
         self.assertTrue(self.unit.maxDeviation == defMaxDeviation)
 
-        defNoise = HomeoUnit.defaultParameters['noise']
+        defNoise = HomeoUnit.DefaultParameters['noise']
         self.assertTrue(self.unit.noise == defNoise)
 
-        defPotentiometer = HomeoUnit.defaultParameters['potentiometer']
+        defPotentiometer = HomeoUnit.DefaultParameters['potentiometer']
         self.assertTrue(self.unit.potentiometer == defPotentiometer)
 
-        defOutputRange = HomeoUnit.defaultParameters('outputRange')
+        defOutputRange = HomeoUnit.DefaultParameters['outputRange']
         self.assertTrue((self.unit.outputRange['high']) == defOutputRange['high'])
         self.assertTrue((self.unit.outputRange['low']) == defOutputRange['low'])
 
-        defTime = HomeoUnit.defaultParameters('time')
+        defTime = HomeoUnit.DefaultParameters['time']
         self.assertTrue(self.unit.time == defTime)
 
-        defUniselectorTime = HomeoUnit.defaultParameters['uniselectorTime']
+        defUniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
         self.assertTrue(self.unit.uniselectorTime == defUniselectorTime)
 
-        defUniselectorTimeInterval = HomeoUnit.defaultParameters['uniselectorTimeInterval']
+        defUniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
         self.assertTrue(self.unit.uniselectorTimeInterval == defUniselectorTimeInterval)
 
     def testSameAs(self):
@@ -414,7 +415,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.addConnectionWithRandomValues(unit2)
         self.unit. addConnectionWithRandomValues(unit3)
 
-        unit4 = self.unit.copy
+        unit4 = copy(self.unit)
 
         self.assertTrue(self.unit.sameAs(unit4))   # two units are the same
 
@@ -430,19 +431,19 @@ class HomeoUnitTest(unittest.TestCase):
     def testNeedleWithinLimit(self):
         "testing the clipping function operating on a unit's critical deviation's value"
 
-        highVal = self.unit.maxDeviation()
-        lowVal = - self.unitmaxDeviation()
+        highVal = self.unit.maxDeviation
+        lowVal = - self.unit.maxDeviation
 
         aValue = highVal * 1.1
         self.assertFalse(self.unit.isNeedleWithinLimits(aValue))
 
-        aValue = highVal *0.9
+        aValue = highVal * 0.9
         self.assertTrue(self.unit.isNeedleWithinLimits(aValue))
 
-        aValue = lowVal *1.1
-        self.assertTrue(self.unit.isNeedleWithinLimits(aValue))
+        aValue = lowVal * 1.1
+        self.assertFalse(self.unit.isNeedleWithinLimits(aValue))
 
-        aValue = lowVal *0.9
+        aValue = lowVal * 0.9
         self.assertTrue(self.unit.isNeedleWithinLimits(aValue))
 
     def testNewNeedlePosition(self):
@@ -471,7 +472,7 @@ class HomeoUnitTest(unittest.TestCase):
         "a unit that is a copy of another unit  must have the same first level parameters, name included" 
         
         self.unit.setRandomValues()
-        anotherUnit = self.unit.copy()
+        anotherUnit = copy(self.unit)
         self.assertTrue(self.unit.sameFirstLevelParamsAs(anotherUnit))
 
         oldUnitName = self.unit.name()
@@ -487,7 +488,7 @@ class HomeoUnitTest(unittest.TestCase):
 
         self.assertFalse(self.unit.sameFirstLevelParamsAs(anotherUnit))
 
-        def testComputeNextDeviationRandom(self):
+    def testComputeNextDeviationRandom(self):
             "Test that a unit's deviation will go through random value when no computation method is chosen"
             self.unit.needleCompMethod('')      # empty string should trigger the random method"
             deviationValues = [] 
@@ -499,16 +500,31 @@ class HomeoUnitTest(unittest.TestCase):
             self.assertTrue(len(set(deviationValues)) == 1000)
 
     def testPotentiometer(self):
-        poten = self.unit.potentiometer()
-        selfConnWeight = (self.unit.inputConnections[1]).weight
+        poten = self.unit.potentiometer
+        selfConnWeight = (self.unit.inputConnections[0]).weight
         self.assertTrue(poten == selfConnWeight)
                 
-        self.unit.potentiometer(1)
+        self.unit.potentiometer = 1
         self.assertTrue(poten == selfConnWeight)
         
         for i in xrange(10):
-            self.unit.potentiometer(numpy.random.uniform(0,1))
+            self.unit.potentiometer = numpy.random.uniform(0,1)
             self.assertTrue(poten == selfConnWeight)
+            
+    def testCriticalThreshold(self):
+        '''The threshold beyond which a HomeoUnit's essential variable's 
+            value is deemed critical must be between 0 and 1'''
+        
+        for i in xrange(100):
+            critValue = np.random.uniform(0, 1)
+            self.unit.critThreshold = critValue
+            self.assertTrue(self.unit.critThreshold == critValue)        
+        for i in xrange(100):   
+            critValue = np.random.uniform(-100, 0)
+            self.assertRaises(HomeoUnitError, self.unit.setCritThreshold, critValue)
+        for i in xrange(100):   
+            critValue = np.random.uniform(1, 100)
+            self.assertRaises(HomeoUnitError, self.unit.setCritThreshold, critValue)
 
     def testOutputRange(self):
         "a Unit in normal operation never goes out of range"
@@ -548,7 +564,6 @@ class HomeoUnitTest(unittest.TestCase):
                             self.unit.currentOutput() > highOut)
             self.assertTrue(self.unit.criticalDeviation() > lowDev and
                             self.unit.criticalDeviation() < highDev)
-
 
     def testComputeTorqueWithinLimits(self):
         """
@@ -679,16 +694,16 @@ class HomeoUnitTest(unittest.TestCase):
         badUniselectors = []
 
         goodUniselectors.extend([class_.__name__ for class_ in withAllSubclasses(HomeoUniselector)])
-        badUniselectors.extend('Ashby','UniformRandom','HomeoUnit')
+        badUniselectors.extend(['Ashby','UniformRandom','HomeoUnit'])
         self.unit.setDefaultUniselectorSettings()
         for unisel in goodUniselectors:
             self.unit.uniselectorChangeType(unisel)
-            self.assertTrue(self.unit.uniselector().__class__.__name__ == unisel)
+            self.assertTrue(self.unit.uniselector.__class__.__name__ == unisel)
 
         self.unit.setDefaultUniselectorSettings()
         for unisel in badUniselectors:
-            self.unit.uniselectorChangeType(unisel)
-            self .assertFalse(self.unit.uniselector.__class__.__name__ == unisel)
+            self.assertRaises(HomeoUnitError, self.unit.uniselectorChangeType, unisel)
+            self.assertFalse(self.unit.uniselector.__class__.__name__ == unisel)
 
     def testViscosity(self):
         """

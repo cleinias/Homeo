@@ -820,22 +820,22 @@ uniselectorClass isNil
 <methods>
 <class-id>HomeoUnit</class-id> <category>private-running</category>
 
-<body package="Homeostat" selector="clearFutureValues">clearFutureValues
+DONE <!--<body package="Homeostat" selector="clearFutureValues">clearFutureValues
 	"sets to 0 the internal values used for computing future states. "
 
 
 self nextDeviation: 0.
 self inputTorque: 0.
-self currentOutput: 0</body>
+self currentOutput: 0</body>-->
 
-<body package="Homeostat" selector="clipDeviation:">clipDeviation: aValue 
+DONE <!--<body package="Homeostat" selector="clipDeviation:">clipDeviation: aValue 
 	"clips the unit's criticalDeviation value if it exceeds its maximum or minimum. Preserve the sign of  aValue."
 
 
 
 	(self isNeedleWithinLimits: aValue)
 			 ifTrue: [^aValue] 
-			ifFalse: [^(maxDeviation * aValue sign)]</body>
+			ifFalse: [^(maxDeviation * aValue sign)]</body>-->
 
 <body package="Homeostat" selector="computeNextDeviation">computeNextDeviation
 	"Computes the output current at time t+1 on the basis of the current input and the various parameters
@@ -896,7 +896,7 @@ self changed: #inputTorque.
 
 ^inputTorque</body>
 
-<body package="Homeostat" selector="essentialVariableIsCritical">essentialVariableIsCritical
+DONE <!--<body package="Homeostat" selector="essentialVariableIsCritical">essentialVariableIsCritical
 
 "Checks if the next output is critical, i.e. too close to the limit of the  acceptable range, stored in maxDeviation."
 
@@ -905,12 +905,12 @@ self changed: #inputTorque.
 
 allowedRange := maxDeviation * 0.9.
 
-^ (nextDeviation between: (allowedRange negated) and: allowedRange) not</body>
+^ (nextDeviation between: (allowedRange negated) and: allowedRange) not</body>-->
 
-<body package="Homeostat" selector="isNeedleWithinLimits:">isNeedleWithinLimits: aValue
+DONE <!--<body package="Homeostat" selector="isNeedleWithinLimits:">isNeedleWithinLimits: aValue
 	"Checks whether the proposed value exceeds the unit's range (both + and -)"
 
-	^aValue between:  (maxDeviation negated) and: maxDeviation.</body>
+	^aValue between:  (maxDeviation negated) and: maxDeviation.</body>-->
 
 <body package="Homeostat" selector="newLinearNeedlePosition:">newLinearNeedlePosition: aTorqueValue 
 	"see method newNeedlePosition for an extended comment on how to compute the displacement of the needle. Briefly, here we just sum aTorqueValue to the current deviation."" 
@@ -983,10 +983,10 @@ The viscosity is between 0 and 1, with 0 being the maximum (needle unable to mov
 	torque := aValue / (maxDeviation *2).
 	^criticalDeviation + (torque * viscosity)</body>
 
-<body package="Homeostat" selector="newRandomNeedlePosition">newRandomNeedlePosition
+DONE <!--<body package="Homeostat" selector="newRandomNeedlePosition">newRandomNeedlePosition
 	"computes a random value for the needle position within the accepted range "
 
-	^ (UniformDistribution from: (self minDeviation) to: (self maxDeviation)) random.</body>
+	^ (UniformDistribution from: (self minDeviation) to: (self maxDeviation)) random.</body>-->
 
 <body package="Homeostat" selector="operateUniselector">operateUniselector
 	"Activates the uniselector to randomly change the weights of the input connections (excluding the self connection)
@@ -1038,7 +1038,7 @@ showUniselectorAction
 				cr].]</body>
 
 <body package="Homeostat" selector="physicalVelocity">physicalVelocity
-	"convert the velocity of the unit into a vlaue expressed in physical units (m/s) according to the physical equivalence parameters"
+	"convert the velocity of the unit into a value expressed in physical units (m/s) according to the physical equivalence parameters"
 
 
 ^currentVelocity * (physicalParameters at: 'lengthEquivalence') / (physicalParameters at: 'timeEquivalence')</body>
