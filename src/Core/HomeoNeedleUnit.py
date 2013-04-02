@@ -5,7 +5,7 @@ Created on Feb 21, 2013
 '''
 import numpy
 
-class HomeoNeedleUnit:
+class HomeoNeedleUnit(object):
     '''
     HomeoNeedleUnit holds parameters and methods describing the needle unit component of a homeostat unit
     '''

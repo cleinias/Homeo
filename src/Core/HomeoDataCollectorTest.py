@@ -91,25 +91,29 @@ class HomeoDataCollectorTest(unittest.TestCase):
         self.dataCollector.AddDataUnitForAt(unit2,2)
         self.dataCollector.AddDataUnitForAt(unit3,2)
 
-
-        filename = 'pickled_dataCollector_test'
-        
-        "pickle out the dataCollector  and read it back"
-        fileOut = open(filename, 'w')
-        pickler = pickle.Pickler(fileOut)
-        unpickler = pickle.Unpickler(fileOut)
-        pickler.dump(self.dataCollector) 
-        newDataCollector = unpickler.load()
-        fileOut.close()
-        os.remove(filename)
-     
-        self.assertTrue(len(self.dataCollector.states()) == len(newDataCollector.states()))
-
-        "checks that  the saved dataCollector has, for each time tick, a dictionary indexed by the same unit names as the original dataCollector"
-        for firstDic, secDic in zip(self.dataCollector.states().values(), newDataCollector.states.values()):
-            self.assertTrue(len(firstDic) == len(secDic))
-            for origName, savedName in zip(sorted(firstDic.keys()), sorted(secDic.keys())):
-                self.assertTrue(origName == savedName)
+#===============================================================================
+# FIX ME 
+# THIS CODE goes in the actual class not in the test 
+#        filename = 'pickled_dataCollector_test'
+#        
+#        "pickle out the dataCollector and read it back"
+#        fileOut = open(filename, 'w')
+#        pickler = pickle.Pickler(fileOut)
+#        unpickler = pickle.Unpickler(fileOut)
+#        pickler.dump(self.dataCollector) 
+#        newDataCollector = unpickler.load()
+#        fileOut.close()
+#        os.remove(filename)
+#     
+#        self.assertTrue(len(self.dataCollector.states()) == len(newDataCollector.states()))
+# 
+#        "checks that  the saved dataCollector has, for each time tick, a dictionary indexed by the same unit names as the original dataCollector"
+#        for firstDic, secDic in zip(self.dataCollector.states().values(), newDataCollector.states.values()):
+#            self.assertTrue(len(firstDic) == len(secDic))
+#            for origName, savedName in zip(sorted(firstDic.keys()), sorted(secDic.keys())):
+#                self.assertTrue(origName == savedName)
+#===============================================================================
+        self.assertTrue(False, "the test is still missing")
 
     def testExtractCriticalDevAsCollectionForUnit(self):
         """

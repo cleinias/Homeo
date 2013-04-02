@@ -9,7 +9,7 @@ class ConnectionError(Exception):
     '''
     pass
 
-class HomeoConnection:
+class HomeoConnection(object):
     '''
     HomeoConnection represents a connection between two HomeoUnits.
     It  holds the incoming unit (the unit the signal is coming from), 
@@ -41,8 +41,7 @@ class HomeoConnection:
 
         self.noise = np.random.uniform(0,0.1)
         self.state = 'uniselector'
-        self.weight = np.random.uniform(0,1)
-        self.switch = np.sign(np.random.uniform(-1,1))
+        self.newWeight(np.random.uniform(-1,1))
         self.active = True
         self.status = 'Yes'
 
@@ -54,8 +53,7 @@ class HomeoConnection:
         '''
         conn = HomeoConnection()
         conn.incomingUnit = incomingUnit
-        conn.weight = aWeight
-        conn.switch = aSwitch
+        conn.newWeight(aWeight * aSwitch)
         conn.noise = aNoise
         conn.state = aState
         conn.active = anActive
@@ -71,8 +69,7 @@ class HomeoConnection:
         conn = HomeoConnection()
         conn.incomingUnit = aUnit
         conn.outgoingUnit = anotherUnit
-        conn.weight = aWeight
-        conn.switch = aSwitch
+        conn.newWeight(aWeight * aSwitch)
         conn.noise = aNoise
         conn.state = aState
         conn.active = anActive
@@ -178,12 +175,12 @@ class HomeoConnection:
         "updates weight and switch on the basis -1 >=  aWeight <= 1"
         
         if aWeight == 0:
-            self.switch = 1
-            self.weight = 0
+            self._switch = 1
+            self._weight = 0
         else:
             if aWeight <= 1 and aWeight >= -1:
-                self.weight= abs(aWeight)
-                self.switch = np.sign(aWeight)
+                self._weight= abs(aWeight)
+                self._switch = np.sign(aWeight)
             else:
                 raise ConnectionError("A HomeoConnection weight must be between -1 and 1")
 

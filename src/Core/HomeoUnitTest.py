@@ -1,8 +1,8 @@
 from   HomeoUnit import *
 from   HomeoUniselector import *
 from   Homeostat import *
-from   Helpers.General_Helper_Functions import *
-import unittest, numpy, string, random
+from   Helpers.General_Helper_Functions import  withAllSubclasses
+import unittest, numpy, string, random, pickle, os
 from copy import copy
 
 class HomeoUnitTest(unittest.TestCase):
@@ -65,10 +65,18 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertTrue(outputRange['low'] is not None)
         
     def testSaveToFileAndBack(self):
-        "test that the unit can be saved to file and recovered"
-        self.unit.saveTo('pippo.unit')
-        newUnit = HomeoUnit.readFrom('pippo.unit')
-        self.assertTrue(isinstance(newUnit, HomeoUnit))
+        '''test that the unit can be saved to file and recovered.
+        Pickle the unit to a new file to erase afterwards'''
+        
+        fileOut = 'saved_HomeoUnit_test'
+        self.unit.saveTo(fileOut)
+        newUnit = HomeoUnit.readFrom(fileOut)
+        os.remove(fileOut)
+        
+        "The read back unit belongs to HomeoUnit or its subclasses"
+        self.assertTrue(newUnit.__class__ in withAllSubclasses(HomeoUnit))
+        
+        " and it is functionally equivalent"
         self.assertTrue(self.unit.sameAs(newUnit))
 
     def testIsConnectedTo(self):
@@ -109,10 +117,10 @@ class HomeoUnitTest(unittest.TestCase):
     def testUnitNameUnique(self):
         "Two units cannot have the sane name. Check on 100 units"
         #Create 100 units, collects their names and check"
-        self.unitsNames = ()
+        self.unitNames = []
         for i in xrange(100):
             newUnit = HomeoUnit()
-            self.unitNames.append(newUnit.name())
+            self.unitNames.append(newUnit.name)
         self.assertTrue(len(self.unitNames) == len(set(self.unitNames)))
                 
     def testApplicationInternalNoise(self):
@@ -500,16 +508,16 @@ class HomeoUnitTest(unittest.TestCase):
             self.assertTrue(len(set(deviationValues)) == 1000)
 
     def testPotentiometer(self):
-        poten = self.unit.potentiometer
-        selfConnWeight = (self.unit.inputConnections[0]).weight
-        self.assertTrue(poten == selfConnWeight)
-                
-        self.unit.potentiometer = 1
-        self.assertTrue(poten == selfConnWeight)
+        "Testing initial conditions"
+        self.assertTrue(self.unit.potentiometer == self.unit.inputConnections[0].weight)
         
+        "Changing the potentiometer value changes the value of the units connection to itself"                
+      
         for i in xrange(10):
-            self.unit.potentiometer = numpy.random.uniform(0,1)
-            self.assertTrue(poten == selfConnWeight)
+            poten = numpy.random.uniform(0,1)
+            self.unit.potentiometer = poten
+            self.assertTrue(self.unit.potentiometer == poten)
+            self.assertTrue(self.unit.inputConnections[0].weight == poten)
             
     def testCriticalThreshold(self):
         '''The threshold beyond which a HomeoUnit's essential variable's 
@@ -538,7 +546,7 @@ class HomeoUnitTest(unittest.TestCase):
     def testOutputAndDeviationInRange(self):
         """
         Repeated test with fully connected units. 
-        Check that  outputs values and 
+        Check that outputs values and 
         critical deviation values are within their ranges
         """
                 
