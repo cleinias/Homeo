@@ -57,17 +57,17 @@
 <methods>
 <class-id>HomeoUnit class</class-id> <category>testing</category>
 
-<body package="Homeostat" selector="defaultParameters">defaultParameters
+DONE <!--<body package="Homeostat" selector="defaultParameters">defaultParameters
 	"returns the dictionary (shared variable) containing the default parameters of the class"
 
 self initialize.
 ^DefaultParameters.</body>
-</methods>
+</methods>-->
 
 <methods>
 <class-id>HomeoUnit class</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+DONE <!--<body package="Homeostat" selector="initialize">initialize
 	"Sets DefaultParameters, the class variable holding the  default values of all the various parameters of future created units.
 	   HomeoUnit initialize "
 	| range |
@@ -88,23 +88,23 @@ self initialize.
 					      at: 'density'			       		put: 1;   "density of water"
 						at: 'maxViscosity'				put: (10 raisedTo: 6) asDouble.
 
-	Names := Set new: 5.</body>
+	Names := Set new: 5.</body>-->
 </methods>
 
 <methods>
 <class-id>HomeoUnit class</class-id> <category>instance creation</category>
 
-<body package="Homeostat" selector="new">new
+DONE <!--<body package="Homeostat" selector="new">new
 	"Answer a newly created and initialized instance."
 	
 	"self initialize. "
 	^ super new initialize.</body>
-</methods>
+</methods>-->
 
 <methods>
 <class-id>HomeoUnit class</class-id> <category>private-saving</category>
 
-<body package="Homeostat" selector="name:viscosity:maxDeviation:criticalDeviation:noise:potentiometer:switch:outputRange:inputConnections:uniselector:uniselectorTimeInterval:uniselectorActive:needleCompMethod:active:">name: unitName 
+DONE <!--<body package="Homeostat" selector="name:viscosity:maxDeviation:criticalDeviation:noise:potentiometer:switch:outputRange:inputConnections:uniselector:uniselectorTimeInterval:uniselectorActive:needleCompMethod:active:">name: unitName 
 viscosity: unitViscosity 
 maxDeviation: unitMaxDeviation 
 criticalDeviation: unitCriticalDeviation
@@ -135,9 +135,9 @@ active: unitActive
 	uniselectorTimeInterval: unitUniselectorTimeInterval 
 	uniselectorActive: unitUniselectorActive 
 	needleCompMethod: unitNeedleCompMethod 
-	active: unitActive.</body>
+	active: unitActive.</body>-->
 
-<body package="Homeostat" selector="name:viscosity:maxDeviation:criticalDeviation:noise:potentiometer:switch:uniselector:uniselectorTimeInterval:uniselectorActive:needleCompMethod:active:">name: unitName viscosity: unitViscosity maxDeviation: unitMaxDeviation criticalDeviation: unitCriticalDeviation noise: unitNoise potentiometer: unitPotentiometer switch: unitSwitch uniselector: unitUniselector uniselectorTimeInterval: unitUniselectorTimeInterval uniselectorActive: unitUniselectorActive needleCompMethod: unitNeedleCompMethod active: unitActive
+DONE <!--<body package="Homeostat" selector="name:viscosity:maxDeviation:criticalDeviation:noise:potentiometer:switch:uniselector:uniselectorTimeInterval:uniselectorActive:needleCompMethod:active:">name: unitName viscosity: unitViscosity maxDeviation: unitMaxDeviation criticalDeviation: unitCriticalDeviation noise: unitNoise potentiometer: unitPotentiometer switch: unitSwitch uniselector: unitUniselector uniselectorTimeInterval: unitUniselectorTimeInterval uniselectorActive: unitUniselectorActive needleCompMethod: unitNeedleCompMethod active: unitActive
 
 	"create a new HomeoUnit  and sets the instance variable to the given parameters"
 
@@ -154,7 +154,7 @@ active: unitActive
 	uniselectorActive: unitUniselectorActive 
 	needleCompMethod: unitNeedleCompMethod 
 	active: unitActive.</body>
-</methods>
+</methods>-->
 
 <!-- -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -   -->
 
@@ -292,7 +292,7 @@ DONE <!--<body package="Homeostat" selector="sameAs:">sameAs: aHomeoUnit
 
 ^(self sameFirstLevelParamsAs: aHomeoUnit)  and: [ self  sameConnectionsAs: aHomeoUnit]</body>-->
 
-<body package="Homeostat" selector="sameConnectionsAs:">sameConnectionsAs: aHomeoUnit 
+DONE <!--<body package="Homeostat" selector="sameConnectionsAs:">sameConnectionsAs: aHomeoUnit 
 	"checks that two units have the same connections"
 
 	| connSame |
@@ -302,9 +302,9 @@ DONE <!--<body package="Homeostat" selector="sameAs:">sameAs: aHomeoUnit
 		ifTrue: 
 			[inputConnections with: aHomeoUnit inputConnections
 				do: [:conn1 :conn2 | (conn1 sameAs: conn2) ifFalse: [connSame := false]]].
-	^connSame</body>
+	^connSame</body>-->
 
-<body package="Homeostat" selector="sameFirstLevelParamsAs:">sameFirstLevelParamsAs: aHomeoUnit 
+DONE <!--<body package="Homeostat" selector="sameFirstLevelParamsAs:">sameFirstLevelParamsAs: aHomeoUnit 
 	"Checks whether the first level parameters of two units (i.e. not the connections) are the same. Does not include dynamic parameters (output, currentOutput, nextDeviation, crticalDeviation, time, uniselectorTime, inputTorque"
 
 	^name = aHomeoUnit name and: 
@@ -319,7 +319,7 @@ DONE <!--<body package="Homeostat" selector="sameAs:">sameAs: aHomeoUnit
 																	[uniselectorTimeInterval = aHomeoUnit uniselectorTimeInterval and: 
 																			[uniselectorActive = aHomeoUnit uniselectorActive and: 
 																					[needleCompMethod = aHomeoUnit needleCompMethod 
-																						and: [status = aHomeoUnit status]]]]]]]]]]]]</body>
+																						and: [status = aHomeoUnit status]]]]]]]]]]]]</body>-->
 </methods>
 
 <methods>
@@ -334,8 +334,8 @@ ALMOST DONE <!--<body package="Homeostat" selector="initialize">initialize
 
 
 
-	| activeNames |														"generates a random name for the unit"
-	activeNames := Set new.												"this is a hack to clear out unused names from the class variable Names."
+	| activeNames |										"generates a random name for the unit"
+	activeNames := Set new.									"this is a hack to clear out unused names from the class variable Names."
 	self class allInstancesDo: [:each | activeNames add: each name].
 	Names := activeNames.
 
@@ -445,12 +445,10 @@ self switch: 	switchSign.
 self currentOutput:   (rand nextBetween: 0 and: 1).	"generates a random output  over the whole range" 														
 self criticalDeviation:  (rand nextBetween: (unitRange at: 'low') and: (unitRange at: 'high')). "set the critical deviation to a random value over the whole range"</body>-->
 
-<body package="Homeostat" selector="setUnitName">setUnitName
+DONE <!--<body package="Homeostat" selector="setUnitName">setUnitName
 	"assigns a unique name to the unit with the help of  an auxiliary method"
 
-
-
-name := self produceNewName.</body>
+name := self produceNewName.</body>-->
 </methods>
 
 <methods>
@@ -1043,12 +1041,12 @@ showUniselectorAction
 
 ^currentVelocity * (physicalParameters at: 'lengthEquivalence') / (physicalParameters at: 'timeEquivalence')</body>
 
-<body package="Homeostat" selector="produceNewName">produceNewName
+DONE <!--<body package="Homeostat" selector="produceNewName">produceNewName
 	"produces a name made up of  'Unit'  plus an integer representing the current number  of existing units plus 1"
 
 
 ^ 'Unit', (self class allInstances size + 1) printString.
-</body>
+</body>-->
 
 <body package="Homeostat" selector="updateDeviationWithNoise">updateDeviationWithNoise
 	"apply the unit's internal noise to the critical deviation and update accordingly.  Computation of noise uses the utility HomeoNoise class"	
@@ -1078,16 +1076,16 @@ uniselectorTime := uniselectorTime + 1.</body>
 <methods>
 <class-id>HomeoUnit</class-id> <category>private-saving</category>
 
-<body package="Homeostat" selector="bossOutOn:">bossOutOn: aFilename
+USELESS <!--<body package="Homeostat" selector="bossOutOn:">bossOutOn: aFilename
 
 "bosses itself out on a file opened on aFilename. It will erase the old content of aFilename."
 
 | boss |
 boss := BinaryObjectStorage onNew: aFilename writeStream.
 [boss nextPut: self]
-	ensure: [boss close].</body>
+	ensure: [boss close].</body>-->
 
-<body package="Homeostat" selector="setName:viscosity:maxDeviation:criticalDeviation:noise:potentiometer:switch:outputRange:inputConnections:uniselector:uniselectorTimeInterval:uniselectorActive:needleCompMethod:active:">setName:  unitName viscosity: unitViscosity maxDeviation: unitMaxDeviation criticalDeviation: unitCriticalDeviation noise: unitNoise potentiometer: unitPotentiometer switch: unitSwitch outputRange: unitOutputRange inputConnections: unitInputConnections uniselector: unitUniselector uniselectorTimeInterval: unitUniselectorTimeInterval uniselectorActive: unitUniselectorActive needleCompMethod: unitNeedleCompMethod active: unitActive
+DONE <!--<body package="Homeostat" selector="setName:viscosity:maxDeviation:criticalDeviation:noise:potentiometer:switch:outputRange:inputConnections:uniselector:uniselectorTimeInterval:uniselectorActive:needleCompMethod:active:">setName:  unitName viscosity: unitViscosity maxDeviation: unitMaxDeviation criticalDeviation: unitCriticalDeviation noise: unitNoise potentiometer: unitPotentiometer switch: unitSwitch outputRange: unitOutputRange inputConnections: unitInputConnections uniselector: unitUniselector uniselectorTimeInterval: unitUniselectorTimeInterval uniselectorActive: unitUniselectorActive needleCompMethod: unitNeedleCompMethod active: unitActive
 
 	"sets the unit's instance variable vlaues to the given parameters. Used by Boss to serialize the object"
 
@@ -1106,7 +1104,7 @@ boss := BinaryObjectStorage onNew: aFilename writeStream.
 	needleCompMethod:= unitNeedleCompMethod .
 	active:= unitActive.
 
-			</body>
+			</body>-->
 </methods>
 
 <methods>

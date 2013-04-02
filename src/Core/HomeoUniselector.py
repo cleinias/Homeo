@@ -7,6 +7,9 @@ Created on Feb 19, 2013
 from Helpers.General_Helper_Functions  import *
 import numpy
 
+class HomeoUniselectorError(Exception):
+    pass
+
 class HomeoUniselector(object):
     '''
     Uniselector is the abstract class for different kinds of mechanisms producing random values 

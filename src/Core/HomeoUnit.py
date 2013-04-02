@@ -4,15 +4,14 @@ from Core.HomeoUniselector import *
 from Core.HomeoConnection import *
 from Helpers.General_Helper_Functions import withAllSubclasses
 import numpy as np
-import sys
+import sys, pickle
 from copy import copy
-import weakref
 
 
 class HomeoUnitError(Exception):
     pass
 
-class HomeoUnit:
+class HomeoUnit(object):
     '''
     Created on Feb 19, 2013
 
@@ -50,8 +49,9 @@ class HomeoUnit:
      potentiometer             <Float>   As per Ashby's implementation, it represents the weight of the unit's connection to itself. 
                                          In our implementation it is always identical to the weight of a unit's 
                                          first connection,---Check Design for a Brain, chp.8  for details
-     switch                    <Integer>  As per Ashby's implementation, it represents the polarity of the connection of the unit to itself.  
-                                          In our implementation it is always identical to the polarity of a unit's first connection,
+                                         Notice that the polarity of the self-connection (the switch, in Ashby terminology, which we follow)
+                                         is **not** held in an instance variable. In our implementation it is always identical 
+                                         to the polarity of a unit's first connection, that is: self.inputConnections[0].switch,
      time                      <Integer>  The internal tick counter
      uniselectorTime            <Integer> The internal tick counter for activation of the uniselector
      uniselectorTimeInterval    <Integer> The number of ticks that specifies how often to check that the output is in range and eventually activate uniselector
@@ -94,6 +94,7 @@ class HomeoUnit:
                               noise = 0,
                               potentiometer= 1,
                               time = 0,
+                              switch = -1,                      # This value is used to control the polarity of a unit's self-connection
                               inputValue=0,
                               uniselectorTime= 0,               # How often the uniselector checks the thresholds, in number of ticks
                               uniselectorTimeInterval = 10,
@@ -103,15 +104,23 @@ class HomeoUnit:
                               maxViscosity = (10^6),
                               critThreshold = 0.9)              # the ration of max deviation  beyond which a unit's essential variable's value  is considered critical 
     
-    allUnits = []           # list of weak references to class' instances 
     allNames = set()        # set of units' unique names
-    
-    #TODO: Need to create a pool of unique names (a Set)
-    
+        
     #===========================================================================
     #  END OF CLASS CONSTANTS 
     #===========================================================================
-
+    #===========================================================================
+    # CLASS METHODS 
+    #===========================================================================
+    
+    @classmethod    
+    def readFrom(self,filename):
+        '''This is a class method that create a new HomeoUnit instance from filename'''
+        fileIn = open(filename, 'r')
+        unpickler = pickle.Unpickler(fileIn)
+        newHomeoUnit = unpickler.load()
+        fileIn.close()
+        return newHomeoUnit
     #===========================================================================
     #  INITIALIZATIONS AND GETTERS, SETTERS, PROPERTIES
     #===========================================================================
@@ -123,21 +132,21 @@ class HomeoUnit:
         These values are supposed to be overridden in normal practice, because the values are set by the simulation 
         (an instance of HomeoSimulation or by the graphic interface)
         '''
-        self.viscosity = HomeoUnit.DefaultParameters['viscosity']
-        self.maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
-        self.outputRange = HomeoUnit.DefaultParameters['outputRange']
-        self.noise = HomeoUnit.DefaultParameters['noise']
-        self.potentiometer = HomeoUnit.DefaultParameters['potentiometer']
-        self.time = HomeoUnit.DefaultParameters['time']
-        self.uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
-        self.uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
-        self.needleCompMethod = HomeoUnit.DefaultParameters['needleCompMethod']
-        self.uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
-        self.critThreshold = HomeoUnit.DefaultParameters['critThreshold']
+        self._viscosity = HomeoUnit.DefaultParameters['viscosity']
+        self._maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
+        self._outputRange = HomeoUnit.DefaultParameters['outputRange']
+        self._noise = HomeoUnit.DefaultParameters['noise']
+        self._potentiometer = HomeoUnit.DefaultParameters['potentiometer']
+        self._time = HomeoUnit.DefaultParameters['time']
+        self._uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
+        self._uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
+        self._needleCompMethod = HomeoUnit.DefaultParameters['needleCompMethod']
+        self._uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
+        self._critThreshold = HomeoUnit.DefaultParameters['critThreshold']
 
         "A new unit is turned off, hence its velocity is 0 and its criticalDeviation is 0"
-        self.currentVelocity = 0 
-        self.criticalDeviation = 0 
+        self._currentVelocity = 0 
+        self._criticalDeviation = 0 
         
         self._needleUnit = HomeoNeedleUnit()
 
@@ -155,7 +164,8 @@ class HomeoUnit:
         self.setDefaultUniselectorSettings()
         
         "give the unit  a default name"
-        self.setUnitName()
+        self._name = None
+        self.setDefaultName()
         
         "generates a random output to set the unit close to equilibrium"
         self.setDefaultOutputAndDeviation()
@@ -165,24 +175,23 @@ class HomeoUnit:
         self._debugMode = False
         self._showUniselectorAction = False
         
-        "Keep a weak reference to the instance for name management"
-        self.__class__.allUnits.append(weakref.proxy(self))
-
         
     "properties with setter and getter methods for external access"
     
     def getCriticalDeviation(self):
         return self._criticalDeviation
     def setCriticalDeviation(self,aValue):
-        "Do nothing. Critical deviation cannot be set from the outside"
-        pass
+        "Do nothing"        
+        self._criticalDeviation = self._criticalDeviation
+    
     criticalDeviation = property(fget = lambda self: self.getCriticalDeviation(),
                                  fset = lambda self, value: self.setCriticalDeviation(value))
     
     def setViscosity(self, aValue):
-        self.viscosity = aValue
+        self._viscosity = aValue
     def getViscosity(self):
-        return self.viscosity
+        return self._viscosity
+    
     viscosity = property(fget = lambda self: self.getViscosity(),
                          fset = lambda self, value: self.setViscosity(value))
       
@@ -191,7 +200,7 @@ class HomeoUnit:
            the unit's connection to itself (which is always at position 0
            in the inputConnections list)'''
         self._potentiometer = aValue
-        self._inputConnections[0].wight  = aValue
+        self._inputConnections[0].newWeight(aValue)
 
     def getPotentiometer(self):
         return self._potentiometer
@@ -201,7 +210,7 @@ class HomeoUnit:
     def setNoise(self, aValue):
         '''Set the value of the unit's internal noise. 
             As noise must always be between 0 and 1,
-            clip it if outside those bounds'''
+            clip it otherwise'''
     
         if aValue <= 1:
             if aValue >=0:
@@ -347,19 +356,19 @@ class HomeoUnit:
     def setSwitch(self,aNumber):
         '''Set the polarity of the unit's self-connection. 
            aNumber must be either -1 or +1, otherwise method 
-           defaults to a positive connection (i.e. 1)
+           defaults to a negative feedback connection (i.e. -1)
           Notice that  changing the value of the unit's switch 
           affects the unit's connection to itself 
-          (which is always at 1 in the inputConnections collection)'''
+          (which is always at location 0  in the inputConnections collection)'''
 
         accValues = (-1,1)
         if aNumber in accValues:
             self._inputConnections[0].switch = aNumber
         else: 
-            self._inputConnections[0].switch = 1
+            self._inputConnections[0].switch = -1
     
     def getSwitch(self):
-        return self._switch
+        return self.inputConnections[0].switch
     
     switch = property(fget = lambda self: self.getSwitch(),
                       fset = lambda self, aValue: self.setSwitch(aValue))
@@ -402,11 +411,11 @@ class HomeoUnit:
     def getUniselector(self):
         return self._uniselector
     
-    def setUniselector(self,aUniselectorString):
+    def setUniselector(self,aUniselectorInstance):
         '''Set the uniselector and check that it is a valid one'''
         
-        if HomeoUniselector.includesType(eval(aUniselectorString)): 
-            self._uniselector = eval(aUniselectorString)()
+        if HomeoUniselector.includesType(aUniselectorInstance.__class__.__name__): 
+            self._uniselector = aUniselectorInstance
             self.uniselectorTime = 0
     
     uniselector = property(fget = lambda self: self.getUniselector(),
@@ -429,9 +438,10 @@ class HomeoUnit:
         return self._name
     
     def setName(self, aString):
-        "aString must be a new Name not present in HomeoUnit.allNames"
-        if aString not in self.__class__.allNames:
+        "aString must be a new name not present in HomeoUnit.allNames"
+        if aString not in HomeoUnit.allNames:
             self._name = aString
+            HomeoUnit.allNames.add(aString)
         else:
             raise(HomeoUnitError, "The name %s exists already" % aString)
     
@@ -447,9 +457,9 @@ class HomeoUnit:
 
     def setDefaultSelfConnection(self):
         '''
-        Connect the unit to itself in manual mode with a negative feedback
+        Connect the unit to itself in manual mode with the default feedback and no noise
         '''
-        self.addConnectionUnitWeightPolarityNoiseState(self,(self.potentiometer),-1,0,'manual')
+        self.addConnectionUnitWeightPolarityNoiseState(self,self.potentiometer,HomeoUnit.DefaultParameters['switch'],0,'manual')
    
     def setNewName(self):
         pass
@@ -463,9 +473,11 @@ class HomeoUnit:
         self.uniselector = HomeoUniselectorAshby()
         self.uniselectorActive = True
     
-    def setUnitName(self):
-        pass
-
+    def setDefaultName(self):
+        '''Assign a default unique name to the unit with the help of an auxiliary method'''
+        
+        self.name = self.produceNewName()
+        
     def setDefaultOutputAndDeviation(self):
 
         randOutput = np.random.uniform(0,0.5)       #generates a random output to set the unit close to equilibrium"
@@ -505,6 +517,41 @@ class HomeoUnit:
 
         return self.sameFirstLevelParamsAs(aHomeoUnit)  and \
                self.sameConnectionsAs(aHomeoUnit)
+               
+    def sameFirstLevelParamsAs(self,aHomeoUnit):
+        '''Checks whether the first level parameters of two units 
+            (i.e. not the connections) are the same.
+            Does not include dynamic parameters (output, currentOutput, 
+            nextDeviation, criticalDeviation, time, uniselectorTime, inputTorque).
+            Do not check uniselector transition tables, only kind of device'''
+
+        return (self.name ==  aHomeoUnit.name and
+                self.viscosity == aHomeoUnit.viscosity and 
+                self.maxDeviation == aHomeoUnit.maxDeviation and 
+                self.outputRange['high'] == aHomeoUnit.outputRange['high'] and 
+                self.outputRange['low'] == aHomeoUnit.outputRange['low'] and 
+                self.noise == aHomeoUnit.noise and 
+                self.potentiometer == aHomeoUnit.potentiometer and 
+                self.switch == aHomeoUnit.switch and 
+                self.uniselector.sameKindAs(aHomeoUnit.uniselector) and 
+                self.uniselectorTimeInterval == aHomeoUnit.uniselectorTimeInterval and 
+                self.uniselectorActive == aHomeoUnit.uniselectorActive and 
+                self.needleCompMethod == aHomeoUnit.needleCompMethod and 
+                self.status == aHomeoUnit.status)
+        
+    def sameConnectionsAs(self, aHomeoUnit): 
+        "Check that two units have the same connections"
+
+        connSame = True
+        if not len(self.inputConnections) == len(aHomeoUnit.inputConnections): 
+            return False
+        else:
+            for conn1, conn2 in zip(self.inputConnections, aHomeoUnit.inputConnections):
+                 if not conn1.sameAs(conn2):
+                         connSame = False
+        
+        return connSame
+        
 
     def isReadyToGo(self):
         '''Make sure that unit has all the parameters it needs to operate properly.
@@ -521,19 +568,19 @@ class HomeoUnit:
                uniselectorTimeInterval      is notNil'''
 
         if self.uniselectorActive:
-            uniselectorConditions = self.uniselector is not None and \
-                                    self.uniselectorTime is not None and \
-                                    self.uniselectorTimeInterval is not None
+            uniselectorConditions = (self.uniselector is not None and 
+                                     self.uniselectorTime is not None and 
+                                     self.uniselectorTimeInterval is not None)
         else:
             uniselectorConditions = True
         
-        return self.criticalDeviation is not None and \
-               self.maxDeviation is not None and \
-               self.outputRange is not None and \
-               self.viscosity is not None and \
-               self.noise is not None and \
-               self.potentiometer is not None and \
-               uniselectorConditions
+        return (self.criticalDeviation is not None and 
+                self.maxDeviation is not None and 
+                self.outputRange is not None and 
+                self.viscosity is not None and 
+                self.noise is not None and 
+                self.potentiometer is not None and 
+                uniselectorConditions)
    
     def essentialVariableIsCritical(self):
         '''Checks if the next output is critical, 
@@ -578,9 +625,9 @@ class HomeoUnit:
 
         aNewConnection.incomingUnit = aHomeoUnit
         aNewConnection.outgoingUnit = self
-        aNewConnection.newWeight(aWeight * aSwitch) #must be between -1 and +1
-        aNewConnection.noise = aNoise    # must be between 0 and 1"
-        aNewConnection.state = aString          # must be 'manual' or 'uniselector'"
+        aNewConnection.newWeight(aWeight * aSwitch) # must be between -1 and +1
+        aNewConnection.noise = aNoise               # must be between 0 and 1"
+        aNewConnection.state = aString              # must be 'manual' or 'uniselector'"
                 
         self.inputConnections.append(aNewConnection)
 
@@ -607,7 +654,13 @@ class HomeoUnit:
     
 
     def saveTo(self,filename):
-        pass
+        "Pickle yourself to filename"
+
+        fileOut = open(filename, 'w')
+        pickler = pickle.Pickler(fileOut)
+        pickler.dump(self) 
+        fileOut.close()
+
     
     def setRandomValues(self):
         "sets up the unit with random values"
@@ -668,14 +721,14 @@ class HomeoUnit:
             raise HomeoUnitError("%s is not a valid HomeoUniselector class" % uniselectorType)
         
     def produceNewName(self):
-        '''Produce a name made up of  'Unit'  plus an integer representing the current number of existing units plus 1.
+        '''Produce a name made up of  'Unit-'  plus a unique integer.
            Check the name does not exist yet'''
         
         i = 1
-        while ('Unit' + str(len(self.__class__.allUnits) + str(i))) in self.__class__.allNames:
+        while ('Unit-' + str(i)) in HomeoUnit.allNames:
             i += 1
         else:
-            self.name = ('Unit' + str(len(self.__class__.allUnits) + str(i)))
+            return ('Unit-' + str(i))
             
 
     #===========================================================================
@@ -703,12 +756,15 @@ class HomeoUnit:
 
         return np.random.uniform(self.minDeviation, self.maxDeviation)
          
-#This is a class method that create a new HomeoUnit instance from filename    
-#       def readFrom(self,filename):
-#           pass
 
     def __del__(self):
         ''''Remove a HomeoUnit's name from the set of used names.
             Subclasses' instances must call this method explicitly 
             to remove  their names'''
-        self.__class__.allNames.remove(self.name)
+        if self._name is not None:
+            HomeoUnit.allNames.remove(self._name)
+        
+        
+        
+        
+        
