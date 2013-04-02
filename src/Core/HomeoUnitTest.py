@@ -150,20 +150,20 @@ class HomeoUnitTest(unittest.TestCase):
         #We  check that it runs up toward positive infinity (1) and negative infinity (2) (with linear increases)"
         # We set noises to 0, viscosity to 1, potentiometer to 1, etc, to check that the basic mechanism works."
 
-        self.unit.needleCompMethod('linear')
-        self.unit.needleUnit.mass(1)                 # the force acting on a Aristotelian unit is always inversely proportional to the mass. 
+        self.unit.needleCompMethod = 'linear'
+        self.unit.needleUnit.mass = 1                 # the force acting on a Aristotelian unit is always inversely proportional to the mass. 
                                                      # set it to 1 to exclude complications from this test."
 
         #1. with self connection to 1, noise at 0, viscosity to 1 and the unit not connected to other units, 
         # the deviation increases by the ratio criticalDeviation/maxDeviation every cycle if it starts positive, 
         #because output is ALWAYS proportional to the unit's range. Eventually it will go up to infinity, i..e to maxDeviation." 
 
-        self.unit.potentiometer(1)                  #this sets the value of the self-connection"
-        self.unit.inputConnections[1].switch(1)     #self-connection is positive"
-        self.unit.noise(0)                          #No noise  to simplify calculations"
-        self.unit.viscosity(1)
-        self.unit.criticalDeviation(1)
-        self.unit.currentOutput(1)
+        self.unit.potentiometer = 1                  #this sets the value of the self-connection"
+        self.unit.inputConnections[0].newWeight(abs(self.unit.potentiometer))     # make sure self-connection is positive"
+        self.unit.noise = 0                          #No noise  to simplify calculations"
+        self.unit.viscosity = 1
+        self.unit.criticalDeviation = 1
+        self.unit.currentOutput = 1
         self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == 2)
         self.unit.selfUpdate()
@@ -236,17 +236,17 @@ class HomeoUnitTest(unittest.TestCase):
         # We also set the needleUnit mass to 1 simplify the computation"
         
         testRuns = 1000
-        self.unit.needleCompMethod('linear')
-        self.unit.potentiometer(0)  #"put the weight of the self-connection to zero."
+        self.unit.needleCompMethod = 'linear'
+        self.unit.potentiometer = 0  #"put the weight of the self-connection to zero."
 
         for each in xrange(testRuns):
-            self.unit.criticalDeviation(numpy.random.uniform(- self.unit.maxDeviation, self.unit.maxDeviation))
-            self.unit.needleUnit.mass(numpy.random.uniform(0.0001, 10000))
-            self.unit.viscosity(numpy.random.uniform(0,1))
-            tempDev = self.unit.criticalDeviation()
+            self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation, self.unit.maxDeviation)
+            self.unit.needleUnit.mass = numpy.random.uniform(0.0001, 10000)
+            self.unit.viscosity = numpy.random.uniform(0,1)
+            tempDev = self.unit.criticalDeviation
             for i in xrange(10):
                 self.unit. selfUpdate()
-            self.assertTrue(tempDev == self.unit.criticalDeviation())
+            self.assertTrue(tempDev == self.unit.criticalDeviation)
 
     def testComputeNextDeviationLinearConnected(self):
         "Checks the computation of a self-connected unit connected to another unit."
@@ -265,31 +265,31 @@ class HomeoUnitTest(unittest.TestCase):
         
         testRuns = 100
         anotherUnit = HomeoUnit()
-        self.unit.needleCompMethod('linear')
-        self.unit.noise(0)                              #Eliminate flicker noise to simplify test"
-        self.unit.needleUnit.mass(1)
+        self.unit.needleCompMethod = 'linear'
+        self.unit.noise = 0                              #Eliminate flicker noise to simplify test"
+        self.unit.needleUnit.mass = 1
     
         self.unit.addConnectionWithRandomValues(anotherUnit)
         for eachConn in self.unit.inputConnections:
-            eachConn.noise(0)                          #the self-connection and the connection to anotherUnit are noise-free"
+            eachConn.noise = 0                          #the self-connection and the connection to anotherUnit are noise-free"
 
         for i in xrange(testRuns):
-            self.unit.criticalDeviation(numpy.random.uniform(-10,10))
+            self.unit.criticalDeviation = numpy.random.uniform(-10,10)
             self.unit.computeOutput()
-            self.unit.potentiometer(numpy.random.uniform(0,1))
-            self.unit.switch(numpy.sign(numpy.random.uniform(-1,1))) #sign returns 0 for input = 0. Homeounit.switch() considers 0 to be positive
-            deviation = self.unit.criticalDeviation()     
+            self.unit.potentiometer = numpy.random.uniform(0,1)
+            self.unit.switch = numpy.sign(numpy.random.uniform(-1,1)) #sign returns 0 for input = 0. Homeounit.switch() considers 0 to be positive
+            deviation = self.unit.criticalDeviation     
             for i in xrange(10): 
                 errorTolerance = 10^-14                                    #"Cannot get a result better than 10^-14. Consistently fails on smaller values"
-                tempInput = ((self.unit.inputConnections[2]).output())
-                deviation = deviation  + (self.unit.currentOutput() * self.unit.potentiometer() * self.unit.switch()) + tempInput
-                exceeded = abs(deviation) > self.unit.maxDeviation() 
+                tempInput = ((self.unit.inputConnections[1]).output)
+                deviation = deviation  + (self.unit.currentOutput * self.unit.potentiometer * self.unit.switch) + tempInput
+                exceeded = abs(deviation) > self.unit.maxDeviation 
                 self.unit.selfUpdate()
                 if exceeded: 
                     self.assertTrue(True)                              # If criticalDeviation value went at any time beyond clipping limits don't check. 
                                                                        # testing clipping is carried out in others test methods
                 else:
-                    self.assertTrue(abs(deviation - self.unit.criticalDeviation())  < errorTolerance)
+                    self.assertTrue(abs(deviation - self.unit.criticalDeviation)  < errorTolerance)
 
     def testComputeNextDeviationLinearConnectedTo10Units(self):
         "Check the values of a unit connected to 10 other units"

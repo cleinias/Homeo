@@ -815,7 +815,7 @@ DONE <!--<body package="Homeostat" selector="viscosity:">viscosity: anObject
 	self changed: #viscosity</body>-->
 </methods>
 
-<methods>
+DONE Private-running<methods>
 <class-id>HomeoUnit</class-id> <category>private-running</category>
 
 DONE <!--<body package="Homeostat" selector="clearFutureValues">clearFutureValues
@@ -1025,7 +1025,7 @@ DONE <!--<body package="Homeostat" selector="newRandomNeedlePosition">newRandomN
 
 	^ (UniformDistribution from: (self minDeviation) to: (self maxDeviation)) random.</body>-->
 
-<body package="Homeostat" selector="operateUniselector">operateUniselector
+DONE <!--<body package="Homeostat" selector="operateUniselector">operateUniselector
 	"Activates the uniselector to randomly change the weights of the input connections (excluding the self connection)
 	  reset the tick count of uniselector activation to 0"
 
@@ -1069,13 +1069,13 @@ showUniselectorAction
 				show: ' to: ';
 				show: (connChange at: 3) printString;
 				cr;
-				cr].]</body>
+				cr].]</body>-->
 
-<body package="Homeostat" selector="physicalVelocity">physicalVelocity
+DONE <!--<body package="Homeostat" selector="physicalVelocity">physicalVelocity
 	"convert the velocity of the unit into a value expressed in physical units (m/s) according to the physical equivalence parameters"
 
 
-^currentVelocity * (physicalParameters at: 'lengthEquivalence') / (physicalParameters at: 'timeEquivalence')</body>
+^currentVelocity * (physicalParameters at: 'lengthEquivalence') / (physicalParameters at: 'timeEquivalence')</body>-->
 
 DONE <!--<body package="Homeostat" selector="produceNewName">produceNewName
 	"produces a name made up of  'Unit'  plus an integer representing the current number  of existing units plus 1"
@@ -1084,7 +1084,7 @@ DONE <!--<body package="Homeostat" selector="produceNewName">produceNewName
 ^ 'Unit', (self class allInstances size + 1) printString.
 </body>-->
 
-<body package="Homeostat" selector="updateDeviationWithNoise">updateDeviationWithNoise
+DONE <!--<body package="Homeostat" selector="updateDeviationWithNoise">updateDeviationWithNoise
 	"apply the unit's internal noise to the critical deviation and update accordingly.  Computation of noise uses the utility HomeoNoise class"	
 | newNoise |
 
@@ -1092,24 +1092,24 @@ DONE <!--<body package="Homeostat" selector="produceNewName">produceNewName
 	newNoise distorting.	"since the noise is a distortion randomly select either a positive or negative value for noise"
 	newNoise normal.	"compute a value for noise by choosing a normally distributed random value centered around 0."
 	newNoise proportional.	"consider noise as the ration of the current affected by noise"
-	criticalDeviation := criticalDeviation + newNoise getNoise.	"apply the noise to the critical deviation value"</body>
+	criticalDeviation := criticalDeviation + newNoise getNoise.	"apply the noise to the critical deviation value"</body>-->
 
-<body package="Homeostat" selector="updateTime">updateTime
+DONE <!--<body package="Homeostat" selector="updateTime">updateTime
 
 ""
 
 "Do nothing. In the current model, time is updated by the homeostat, the homeounit are basically computing machine with no knowledge of time"
 
-^self</body>
+^self</body>-->
 
-<body package="Homeostat" selector="updateUniselectorTime">updateUniselectorTime
+DONE <!--<body package="Homeostat" selector="updateUniselectorTime">updateUniselectorTime
 
 "updates the tick counter fore the uniselector"
 
-uniselectorTime := uniselectorTime + 1.</body>
+uniselectorTime := uniselectorTime + 1.</body>-->
 </methods>
 
-<methods>
+DONE Private-saving<methods>
 <class-id>HomeoUnit</class-id> <category>private-saving</category>
 
 USELESS <!--<body package="Homeostat" selector="bossOutOn:">bossOutOn: aFilename

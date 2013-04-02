@@ -68,7 +68,7 @@ class HomeoUnit(object):
     currentVelocity            <Float>    The current velocity of the needle moving in the trough
     needleUnit         <HomeoNeedleUnit>  Holds an instance of HomeoNeedleUnit, the class containing the parameters 
                                           of the needle used by the unit (mass, area, etc.)
-    physicalParameters        <Dict>      A dictionary containing equivalence factors between the simulation units and real physical parameters
+    _physicalParameters        <Dict>      A dictionary containing equivalence factors between the simulation units and real physical parameters
 
 
     A HomeoUnit knows how to:
@@ -146,13 +146,14 @@ class HomeoUnit(object):
 
         "A new unit is turned off, hence its velocity is 0 and its criticalDeviation is 0"
         self._currentVelocity = 0 
-        self._criticalDeviation = 0 
+        self._criticalDeviation = 0
+        self._nextDeviation = 0 
         
         self.needleUnit = HomeoNeedleUnit()
 
 
         "sets the correspondence between the simulation units and real physical units"
-        self.__physicalParameters=dict(timeEquivalence =1,            # 1 simulation tick corresponds to 1 second of physical time"
+        self.__physicalParameters=dict(timeEquivalence = 1,           # 1 simulation tick corresponds to 1 second of physical time"
                                       lengthEquivalence = 0.01,       # 1 unit of displacement corresponds to 1 cm (expressed in meters)"
                                       massEquivalence = 0.001)        # 1 unit of mass equals one gram, or 0.001 kg"
     
@@ -307,7 +308,7 @@ class HomeoUnit(object):
         return self._currentOutput
 
     def setCurrentOutput(self, aValue): 
-        set._currentOutput = aValue
+        self._currentOutput = aValue
     
         "For testing"
         if self._debugMode == True:
@@ -417,13 +418,13 @@ class HomeoUnit(object):
     status = property(fget = lambda self: self.getStatus(),
                            fset = lambda self,aValue: self.setStatus(aValue))
     
-    def getnextDeviation(self):
+    def getNextDeviation(self):
         return self._nextDeviation
 
     def setNextDeviation(self,aValue):
         self._nextDeviation = aValue
 
-    status = property(fget = lambda self: self.getNetxDeviation(),
+    status = property(fget = lambda self: self.getNextDeviation(),
                            fset = lambda self,aValue: self.setNextDeviation(aValue))
     def getUniselector(self):
         return self._uniselector
@@ -901,7 +902,7 @@ class HomeoUnit(object):
         self.inputTorque = sum([conn.output() for conn in activeConnections])
 
         "Testing"
-        if self.debugMode:
+        if self._debugMode:
             sys.stderr.write('Current torque at time: %s for unit %s is %f' %
                              str(self.time), self.name, self.inputTorque)
             sys.stderr.write('\n')
@@ -930,7 +931,7 @@ class HomeoUnit(object):
         
         
         "Testing"
-        if self.debugMode:
+        if self._debugMode:
             sys.stderr.write('new position at time: %s for unit %s will be %f ' %
                              str(self.time + 1),
                              self.name,
@@ -1028,7 +1029,73 @@ class HomeoUnit(object):
 
         torque = aValue / (self.maxDeviation  *2)
         return self.criticalDeviation + (torque * self.viscosity)
+    
+    def operateUniselector(self):
+        '''Activate the uniselector to randomly change the weights of the input connections        
+         (excluding the self connection) and reset the tick count of uniselector activation to 0'''
 
+
+
+        "We save the values about the units that have chanegd weights, old weights and new weight for debugging"
+        weightChanges = []
+        for conn in self.inputConnections:
+            if not conn.incomingUnit == self:
+                if conn.state ==  'uniselector' and conn.active():
+                    change = []
+                    change.append(self.incomingUnit.name)
+                    change.append(conn.weight)
+                    changedWeight = self.uniselector.produceNewValue()
+                    change.append(changedWeight)
+                    weightChanges.append(change)
+                    conn.newWeight(changedWeight)
+        self.uniselectorTime = 0
+        self.uniselector.advance()
+
+
+
+        "For debugging"
+        if self.showUniselectorAction():
+            for connChange in weightChanges:
+                sys.stderr.write('At time: %i, %s activated uniselector for unit %s switching weight from: %f to: %f' %
+                                 (self.time) + 1,
+                                 self.name,
+                                 connChange[0],
+                                 connChange[1],
+                                 connChange[2])
+                sys.stderr.write('\n')
+
+    def physicalVelocity(self):
+        '''Convert the velocity of the unit into a value expressed in 
+           physical units (m/s) according to the physical equivalence parameters'''
+
+        return self.currentVelocity * (self._physicalParameters['lengthEquivalence'] / self._physicalParameters['timeEquivalence'])
+
+    def updateDeviationWithNoise(self):
+        '''Apply the unit's internal noise to the critical deviation and update accordingly.  
+           Computation of noise uses the utility HomeoNoise class'''
+        
+        if self.noise <> 0 and self.criticalDeviation <> 0:
+            newNoise = HomeoNoise()
+            newNoise.withCurrentAndNoise(self.criticalDeviation, self.noise)
+            newNoise.distorting()    # since the noise is a distortion randomly select either a positive or negative value for noise"
+            newNoise.normal()        # compute a value for noise by choosing a normally distributed random value centered around 0."
+            newNoise.proportional()  # consider noise as the ration of the current affected by noise"   
+            self.criticalDeviation = self.criticalDeviation + newNoise.getNoise()    # apply the noise to the critical deviation value"
+
+
+    def updateTime(self):
+        '''Do nothing. In the current model, time is updated by the homeostat, 
+           the homeounit are basically computing machine with no knowledge of time'''
+
+        pass
+
+    def updateUniselectorTime(self):
+        '''Updates the tick counter fore the uniselector'''
+        
+        self.uniselectorTime = self.uniselectorTime + 1
+
+ 
+        
     def __del__(self):
         ''''Remove a HomeoUnit's name from the set of used names.
             Subclasses' instances must call this method explicitly 
