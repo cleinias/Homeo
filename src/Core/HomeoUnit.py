@@ -148,7 +148,7 @@ class HomeoUnit(object):
         self._currentVelocity = 0 
         self._criticalDeviation = 0 
         
-        self._needleUnit = HomeoNeedleUnit()
+        self.needleUnit = HomeoNeedleUnit()
 
 
         "sets the correspondence between the simulation units and real physical units"
@@ -195,6 +195,15 @@ class HomeoUnit(object):
     viscosity = property(fget = lambda self: self.getViscosity(),
                          fset = lambda self, value: self.setViscosity(value))
       
+    def setNeedleUnit(self, aValue):
+        self._needleUnit = aValue
+        
+    def getNeedleUnit(self):
+        return self._needleUnit
+    
+    needleUnit = property(fget = lambda self: self.getNeedleUnit(),
+                         fset = lambda self, value: self.setNeedleUnit(value))
+
     def setPotentiometer(self, aValue):
         '''Changing the value of the potentiometer affects 
            the unit's connection to itself (which is always at position 0
@@ -408,6 +417,14 @@ class HomeoUnit(object):
     status = property(fget = lambda self: self.getStatus(),
                            fset = lambda self,aValue: self.setStatus(aValue))
     
+    def getnextDeviation(self):
+        return self._nextDeviation
+
+    def setNextDeviation(self,aValue):
+        self._nextDeviation = aValue
+
+    status = property(fget = lambda self: self.getNetxDeviation(),
+                           fset = lambda self,aValue: self.setNextDeviation(aValue))
     def getUniselector(self):
         return self._uniselector
     
@@ -547,8 +564,8 @@ class HomeoUnit(object):
             return False
         else:
             for conn1, conn2 in zip(self.inputConnections, aHomeoUnit.inputConnections):
-                 if not conn1.sameAs(conn2):
-                         connSame = False
+                if not conn1.sameAs(conn2):
+                        connSame = False
         
         return connSame
         
@@ -693,18 +710,18 @@ class HomeoUnit(object):
     def toggleDebugMode(self):
         "Controls whether the running methods print out debug information"
 
-        if self.debugMode is True: 
+        if self._debugMode is True: 
             self._debugMode = False
         else: 
-            self.debugMode = True
+            self._debugMode = True
 
     def toggleShowUniselectorAction(self):
         "Control whether the running methods print out information when the uniselector kicks into action"
 
-        if self._showUniselectorAction is True:
-            self.showUniselectorAction= False
+        if self.showUniselectorAction is True:
+            self.showUniselectorAction = False
         else:
-            self._showUniselectorAction = True
+            self.showUniselectorAction = True
             
     def isNeedleWithinLimits(self, aValue):
         '''Check whether the proposed value exceeds the unit's range (both + and -)'''
@@ -755,7 +772,262 @@ class HomeoUnit(object):
         '''Compute a random value for the needle position within the accepted range'''
 
         return np.random.uniform(self.minDeviation, self.maxDeviation)
-         
+    
+    def selfUpdate(self):
+        '''This is the master loop for the HomeoUnit. It goes through the following sequence:
+        1. compute new needle's deviation (nextDeviation (includes reading inputs))
+        2. update the current output on the basis of the deviation.
+        3. check whether it's time to check the essential value and if so does it and  update the counter (uniselectorTime) [this might change the weight of the connections]
+        4. Move the needle to new position and compute new output'''
+
+        "1. compute where the needle should move to"
+        "Testing"
+        if self._debugMode:
+            sys.stderr.write('Current Deviat. at time: %s for unit %s is %f' 
+                             % self.name, str(self.time), str(self.criticalDeviation)) 
+            sys.stderr.write('\n')
+        
+        self.computeNextDeviation()
+
+        "2. update times"
+        self.updateTime()
+        self.updateUniselectorTime()
+
+        '''3. check whether it's time to check the uniselector/detection mechanism and if so do it. 
+           Register that the uniselector is active in an instance variable'''
+        if (self.uniselectorTime >= self.uniselectorTimeInterval and
+            self.uniselectorActive):
+            if self.essentialVariableIsCritical():
+                self.operateUniselector
+                self.uniselectorActive = 1
+            else:
+                self.uniselectorActive = 0          
+
+        '''4. updates the needle's position (critical deviation) with clipping, 
+            if necessary, and updates the output'''
+        self.criticalDeviation = self.clipDeviation(self.nextDeviation)
+        self.computeOutput()
+        self.nextDeviation = 0
+    
+    def computeNextDeviation(self):
+        '''Computes the output current at time t+1 on the basis of the current input 
+        and the various parameters of the unit.
+        This basic function mimicks Asbhy's original device by the following procedure:
+
+        1. Try to move the needle to a new position (on the basis of  the input values
+           computed by computeTorque) 
+           (the details of this operation are in method HomeoUnit >> newNeedlePosition: aValue and in HomeoUnit>>computeTorque
+        2. clip value if it is outside maxRange
+        3. put new value in criticalDeviation
+
+        One alternative  possibility would have been  to use a minimal function like
+        the one used by A Eldridge in her simulation (see Eldridge 2000, p.20): 
+        nextOutput := (input(j) * weight(j) * ) + noise  (with j ranging over  all units connected to the current unit)
+
+        This approach simplifies considerably the simulation, but has the disadvantage
+        of  reducing the role of the unit to nil. In fact, (in Eldridge's simulation) 
+        all the work is done by the system, which reads, for every tick of time, the
+        outputs from the various connected units, computes new outputs, and updates 
+        the units. In other words, this approach reduces the homeostat's units 
+        to simple data structures (which is literally what they are in her C program),
+        deprived of any possibility of 'action', i.e. of any behavior. 
+        Our approach here will be different, by allowing a partial separation 
+        between homeostat, units, and connections. It follows that the computation 
+        of the unit's next value is internal to unit itself, even if it considers 
+        values (obtained from inputConnections) that may have been deposited from the
+        outside. 
+        This approach allows the possibility that different units may have 
+        different behaviors, etc. and it also allows for the possibility of 
+        having the units being operated upon by means other than the inputs coming
+        from other homeoUnits. For instance, input coming directly from the environment,
+        like the direct manipulation of the needles. It also forces the simulation 
+        to provide a closer resemblance of Ashby's original electro-mechanical device. 
+        Furthermore, Eldridge's simple approach can be easily recovered by reducing the
+        computation of the unit's next output to the sum of values stored 
+        in inputConnections, and by setting the range of the needles' deviation 
+        (maxDeviation) to 1. 
+        In short: Eldridge's model as reimplemented here would have the following method: 
+        self.computeNextOuput 
+        self.nextOutput = sum([conn.output() for conn in inputsCollection])
+
+        Our method is close to hers and basically reduces to this behavior when 
+        all the parameters specific to the unit are uninfluent. That is, when: 
+        noise = 0, viscosity = 0, and  there is no direct outside influence. 
+        Nonetheless, encapsulating the computation inside the unit allows for a  
+        more flexible system that can be easily extended to encompass more 
+        sophisticated behavior.'''
+    
+        '''1. first update the current value of critical deviation with 
+        the unit's internal noise'''
+        self.updateDeviationWithNoise()
+        "2. then update the deviation"
+        self.nextDeviation  = self.newNeedlePosition(self.computeTorque())
+
+    def computeOutput(self):
+        '''Scale the current criticalDeviation to the output range.
+           Clip the output to within the allowed output range.'''
+
+        "1. Scaling"
+        outRange = (self.outputRange['high'] - self.outputRange['low'])
+        lowDev = self.minDeviation
+        devRange = self.maxDeviation - lowDev
+        out = ((self.criticalDeviation - lowDev) *
+               (outRange / devRange ) + self.outputRange['low'])
+                        
+        "2.Clipping"
+        if (out >= self.outputRange['low'] and
+            out <= self.outputRange['high']):
+                self.currentOutput =  out
+        else:
+            if out > 0:
+                self.currentOutput = self.outputRange['high']
+            else:
+                self.currentOutput = self.outputRange['low']
+
+    def computeTorque(self):
+        '''In order to closely simulate Asbhy's implementation, 
+        computeTorque would have to compute the torque affecting the needle
+        by solving a set of differential equations whose coefficients 
+        represents the weighted values of the input connections. This is the 
+        approach followed by Capehart (1967) in his simulaton of the Homeostat 
+        in Fortran. See the comment to the method newNeedlePosition for a discussion.
+        
+        Here we simply compute the sum of the weighted input values extracted from 
+        the inputsCollection on all the connections that are active'''
+
+        activeConnections = [conn for conn in self.inputConnections if (conn.isActive() and 
+                                                                        conn.incomingUnit.isActive())]
+
+        self.inputTorque = sum([conn.output() for conn in activeConnections])
+
+        "Testing"
+        if self.debugMode:
+            sys.stderr.write('Current torque at time: %s for unit %s is %f' %
+                             str(self.time), self.name, self.inputTorque)
+            sys.stderr.write('\n')
+
+    def newLinearNeedlePosition(self,aTorqueValue):
+        '''See method newNeedlePosition for an extended comment on how 
+        to compute the displacement of the needle. Briefly, here we just sum 
+        aTorqueValue to the current deviation.
+        
+        FIXME. NOISE IS NOT COMPUTED IN THIS METHOD 
+        We also consider noise in the following way:
+        1. Since the noise is a distortion randomly select either a positive or 
+           negative value for noise
+        2. Compute a value for noise by choosing a normally distributed random value 
+           centered around 0
+        3. Consider noise as the ration of the current affected by noise'''
+
+        totalForce = aTorqueValue    
+        '''NOTE: previous step does not  compute the net force acting on the needle 
+        by adding the (negative) force produced by the drag and/ or frictional forces). 
+        Only subclasses of HomeoUnit do that'''
+        
+        newVelocity = totalForce / self.needleUnit.mass    
+        '''In an Aristotelian model, the change in displacement (= the velocity) 
+        is equal to the force affecting the unit divided by the  mass: F = mv or v = F/m'''
+        
+        
+        "Testing"
+        if self.debugMode:
+            sys.stderr.write('new position at time: %s for unit %s will be %f ' %
+                             str(self.time + 1),
+                             self.name,
+                             self.criticalDeviation + newVelocity)
+            sys.stderr.write('\n')
+    
+        return self.criticalDeviation + newVelocity    
+        '''In an Aristotelian model, new displacement is old displacement 
+        plus velocity: x = x0 + vt, with t obviously = 1 in our case'''
+
+    def newNeedlePosition(self,aTorqueValue):
+        '''Compute the new needle position on the basis of aTorqueValue, 
+        which represents the torque applied to the unit's needle. 
+        This method is marquedly different from Ashby's implementation, 
+        even if it somehow captures its intent. A longer discussion is appended  below.'''
+
+        if self.needleCompMethod == 'linear':
+            return self.newLinearNeedlePosition(aTorqueValue)
+        else:
+            if self.needleCompMethod == 'proportional':
+                return self.newProportionalNeedlePosition(aTorqueValue)
+            else:
+                return self.newRandomNeedlePosition()       #defaults to a random computation method if the method is not specified"
+
+        """In Asbhy's original implementation, each incoming connection corresponded to a coil 
+        around the unit's magnet. The sum of the input currents flowing through the coils produced  
+        a torque on the magnet, which, in turn, moved the needle in the trough.
+        In order to closely simulate Asbhy's implementation, newNeedlePosition would have 
+        to compute the torque affecting the needle by solving a set of differential equations 
+        whose coefficients represent the weighted values of the input connections. This is 
+        the approach followed by Capehart (1967) in his simulaton of the Homeostat in Fortran.
+        
+        However, it seems pointless to use differential equations to model a physical mechanism 
+        which was originally devised to model a physiological system. After all, as Capehart 
+        himself acknowledges, the Homeostat is a kind of analogue computer set up to compute 
+        the fundamental features of the system it models.. We might as well use a different 
+        kind of computer, assuming we are able to capture the essential features as accurately. 
+        In this respect, we follow Ashby's suggestion that 'the torque on the magnet 
+        [ i.e. the needle] is approximately proportional to the algebraic sum of the currents 
+        in A, B, and C' (Ashby 1960:102, sec 8/2), where the coils A, B, C, (and D, i.e. 
+        the unit itself) carry a current equal to the weighted input. Thus, this method 
+        produces a value that is proportional to the inputValue.
+        
+        However,  it might be argued (for instance by a dynamic system theorist) that 
+        a thoroughly digital simulation of the Homeostat like this one loses what is 
+        most essential to it: the continuity of real-valued variables operating in 
+        real time. Anyone accepting this objection may partially meet it by:
+        
+        1. subclassing HomeoUnit, 
+        2. adding a method that produces differential equation describing the Torque
+        3. and replacing the two methods computeTorque and newNeedlePosition: aTorqueValue 
+        with numeric computations of the solutions of the diff equations.
+        
+        See Ashby, Design for a Brain, chps. 19-22 for a mathematical treatment of the 
+        Homeostat and Capehart 1967 for suggestions on a possible implementation 
+        (which requires a Runge-Kutta diff solution routine or equivalent and 
+        Hutwitz convergence test on the coefficient matrix
+        
+        Our method(s) assumes:
+        
+        1. that the torque is simply the sum of the input connections, hence a value 
+        included in +/-  (inputConnections size) (since the max value of any unit's output 
+        and hence  of any input,  is 1 and the minimum  -1)
+        
+        2. the torque represents the force that displaces the needle from its current position. 
+        The value of this displacement is obviously directly proportional to the force. 
+        However, the constant of proportionality is important: if the displacement is 
+        simply equal to the torque, which, in turn, is equal to the sum of inputs, 
+        then the ***potential displacement*** grows linearly with the connected units. 
+        If, instead, the displacement is equal to the ratio between the maximum torque 
+        and the maximum deviation, then the ***potential displacement*** is independent 
+        from the number of connected units and will depend more directly on the values of 
+        the incoming units rather than their number. It is obvious that the behavior of a 
+        collection of units, i.e. a homeostat, will be different in either case. Ashby's 
+        probably followed the former model, as evidenced by his (widely reported) comments 
+        about the direct relation between instability and number of units (see also 
+        Capehart 1967 for comments to the same effect). 
+        It must be admitted, however, that a careful manipulation of the weights of the 
+        connection may reduce the difference between the two methods: one would have to 
+        uniformly reduce the weights whenever a new connection is added to transform the 
+        first ('Ashby's') approach into the second.
+        
+        In order to allow experimentation with either approach, we include both methods: 
+        HomeoUnit().newLinearNeedlePosition and HomeoUnit().newProportionalNeedlePosition
+        The choice between the two is determined by the value of the instance variable 
+        needleCompMethod. Default (stored in the class variable) is linear.
+        
+        The viscosity is between 0 and 1, with 0 being the maximum (needle unable to move) 
+        and 1 being the minimum (no effect on movement)"""
+
+
+    def newProportionalNeedlePosition(self, aValue):
+        '''See method newNeedlePosition for an extended comment on how 
+        to compute the displacement of the needle'''
+
+        torque = aValue / (self.maxDeviation  *2)
+        return self.criticalDeviation + (torque * self.viscosity)
 
     def __del__(self):
         ''''Remove a HomeoUnit's name from the set of used names.
