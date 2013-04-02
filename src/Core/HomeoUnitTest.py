@@ -750,28 +750,28 @@ class HomeoUnitTest(unittest.TestCase):
     
         self.unit.setRandomValues()
 
-        self.unit.needleCompMethod = 'linear')
+        self.unit.needleCompMethod = 'linear'
         for i in xrange(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
                     oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
-        self.unit.needleCompMethod('proportional')
+        self.unit.needleCompMethod ='proportional'
         for i in xrange(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
                     oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
-        self.unit.needleCompMethod('random')
+        self.unit.needleCompMethod = 'random'
         for i in xrange(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
                     oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
-        self.unit.needleCompMethod('')
+        self.unit.needleCompMethod = ''
         for i in xrange(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
                     oldDeviation = self.unit.criticalDeviation

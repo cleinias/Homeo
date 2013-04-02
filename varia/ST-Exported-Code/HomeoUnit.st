@@ -91,7 +91,7 @@ DONE <!--<body package="Homeostat" selector="initialize">initialize
 	Names := Set new: 5.</body>-->
 </methods>
 
-<methods>
+DONE Instance creation<methods>
 <class-id>HomeoUnit class</class-id> <category>instance creation</category>
 
 DONE <!--<body package="Homeostat" selector="new">new
@@ -101,7 +101,7 @@ DONE <!--<body package="Homeostat" selector="new">new
 	^ super new initialize.</body>
 </methods>-->
 
-<methods>
+DONE Private-saving<methods>
 <class-id>HomeoUnit class</class-id> <category>private-saving</category>
 
 DONE <!--<body package="Homeostat" selector="name:viscosity:maxDeviation:criticalDeviation:noise:potentiometer:switch:outputRange:inputConnections:uniselector:uniselectorTimeInterval:uniselectorActive:needleCompMethod:active:">name: unitName 
@@ -159,7 +159,7 @@ DONE <!--<body package="Homeostat" selector="name:viscosity:maxDeviation:critica
 <!-- -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -   -->
 
 
-<comment>
+DONE Class comments<comment>
 <class-id>HomeoUnit</class-id>
 DONE <!--<body>HomeoUnit represents a basic unit of Ashby's Homeostat (see Ashby's Design for a Brain, 1960, chp. 8). HomeoUnit does not know about its connections to other units (including itself). The connections are managed by class Homeostat, which holds a collection of HomeoConnection, each one representing a connection between two different HomeoUnits.
 
@@ -204,14 +204,14 @@ A HomeoUnit knows how to:
 - print a description of itself with the values of all its parameters</body>
 </comment>-->
 
-<methods>
+DONE Running<methods>
 <class-id>HomeoUnit</class-id> <category>running</category>
 
-<body package="Homeostat" selector="selfUpdate">selfUpdate
+DONE <!--<body package="Homeostat" selector="selfUpdate">selfUpdate
 	"This is the master loop for the unit. It goes through the following sequence:
 	1. compute new needle's deviation (nextDeviation (includes reading inputs))
 	2. update the current output on the basis of the deviation.
-	3. check whether it's time to check the essential value and if so do it and  update the counter (uniselectorTime) [this might change the weight of the connections]
+	3. check whether it's time to check the essential value and if so does it and  update the counter (uniselectorTime) [this might change the weight of the connections]
 	4. Move the needle to new position and compute new output"
 
 	"1. compute where the needle should move to"
@@ -234,10 +234,10 @@ debugMode ifTrue: [Transcript show: 'current Deviat. at time: ';  show: time pri
 	"4. updates the needle's position (critical deviation) with clipping, if necessary, and updates the output"
 	self criticalDeviation: (self clipDeviation: nextDeviation).
 	self computeOutput.
-	nextDeviation := 0</body>
+	nextDeviation := 0</body>-->
 </methods>
 
-<methods>
+DONE Testing<methods>
 <class-id>HomeoUnit</class-id> <category>testing</category>
 
 DONE <!--<body package="Homeostat" selector="isActive">isActive
@@ -322,10 +322,10 @@ DONE <!--<body package="Homeostat" selector="sameFirstLevelParamsAs:">sameFirstL
 																						and: [status = aHomeoUnit status]]]]]]]]]]]]</body>-->
 </methods>
 
-<methods>
+DONE Initialize-Release<methods>
 <class-id>HomeoUnit</class-id> <category>initialize-release</category>
 
-ALMOST DONE <!--<body package="Homeostat" selector="initialize">initialize
+DONE <!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize the HomeoUnit with the default parameters found in the Class variable DefaultParameters.
 	Assign a random but unique name and sets the output to some value around 0, i.e. at equilibrium
 	These values are supposed to be overridden in normal practice, because the values are set  by the  simulation 
@@ -475,8 +475,8 @@ super printOn: aStream.
 aStream nextPutAll: ': ', self name.</body>
 </methods>
 
-<methods>
-<class-id>HomeoUnit</class-id> <category>accessing</category>
+DONE Accessing <methods>
+ <class-id>HomeoUnit</class-id> <category>accessing</category>
 
 DONE <!--<body package="Homeostat" selector="activate">activate
 
@@ -644,35 +644,35 @@ DONE <!--<body package="Homeostat" selector="minDeviation:">minDeviation: aNumbe
 			maxDeviation := aNumber negated
 			self changed: #maxDeviation]</body>-->
 
-<body package="Homeostat" selector="name">name
-	^name</body>
+DONE <!--<body package="Homeostat" selector="name">name
+	^name</body>-->
 
-<body package="Homeostat" selector="name:">name: aString
+DONE <!--<body package="Homeostat" selector="name:">name: aString
 	
 
 	(Names includes: aString) 
 			ifFalse: [
   				name := aString.
-				self broadcast: #changed: with: #name.].</body>
+				self broadcast: #changed: with: #name.].</body>-->
 
-<body package="Homeostat" selector="needleCompMethod">needleCompMethod
-	^needleCompMethod</body>
+DONE <!--<body package="Homeostat" selector="needleCompMethod">needleCompMethod
+	^needleCompMethod</body>-->
 
-<body package="Homeostat" selector="needleCompMethod:">needleCompMethod: anObject
+DONE <!--<body package="Homeostat" selector="needleCompMethod:">needleCompMethod: anObject
 	needleCompMethod := anObject.
-	self changed: #needleCompMethod</body>
+	self changed: #needleCompMethod</body>-->
 
-<body package="Homeostat" selector="needleUnit">needleUnit
-	^needleUnit</body>
+DONE <!--<body package="Homeostat" selector="needleUnit">needleUnit
+	^needleUnit</body>-->
 
-<body package="Homeostat" selector="needleUnit:">needleUnit: anObject
-	needleUnit := anObject</body>
+DONE <!--<body package="Homeostat" selector="needleUnit:">needleUnit: anObject
+	needleUnit := anObject</body>-->
 
-<body package="Homeostat" selector="nextDeviation">nextDeviation
-	^nextDeviation</body>
+DONE <!--<body package="Homeostat" selector="nextDeviation">nextDeviation
+	^nextDeviation</body>-->
 
-<body package="Homeostat" selector="nextDeviation:">nextDeviation: anObject
-	nextDeviation := anObject</body>
+DONE <!--<body package="Homeostat" selector="nextDeviation:">nextDeviation: anObject
+	nextDeviation := anObject</body>-->
 
 DONE <!--<body package="Homeostat" selector="noise">noise
 	^noise</body>-->
@@ -792,27 +792,27 @@ uniselectorClass isNil
 			 self uniselectorTime: 0.
 			  self changed: #uniselector].</body>-->
 
-<body package="Homeostat" selector="uniselectorTime">uniselectorTime
-	^uniselectorTime</body>
+DONE <!--<body package="Homeostat" selector="uniselectorTime">uniselectorTime
+	^uniselectorTime</body>-->
 
-<body package="Homeostat" selector="uniselectorTime:">uniselectorTime: anObject
+DONE <!--<body package="Homeostat" selector="uniselectorTime:">uniselectorTime: anObject
 	uniselectorTime := anObject.
-	self changed: #uniselectorTime</body>
+	self changed: #uniselectorTime</body>-->
 
-<body package="Homeostat" selector="uniselectorTimeInterval">uniselectorTimeInterval
-	^uniselectorTimeInterval</body>
+DONE <!--<body package="Homeostat" selector="uniselectorTimeInterval">uniselectorTimeInterval
+	^uniselectorTimeInterval</body>-->
 
-<body package="Homeostat" selector="uniselectorTimeInterval:">uniselectorTimeInterval: anObject
+DONE <!--<body package="Homeostat" selector="uniselectorTimeInterval:">uniselectorTimeInterval: anObject
 	uniselectorTimeInterval := anObject.
 	self changed: #uniselectorTiming
-	</body>
+	</body>-->
 
-<body package="Homeostat" selector="viscosity">viscosity
-	^viscosity</body>
+DONE  <!--<body package="Homeostat" selector="viscosity">viscosity 
+	^viscosity</body>-->
 
-<body package="Homeostat" selector="viscosity:">viscosity: anObject 
+DONE <!--<body package="Homeostat" selector="viscosity:">viscosity: anObject 
 	viscosity := anObject.
-	self changed: #viscosity</body>
+	self changed: #viscosity</body>-->
 </methods>
 
 <methods>
@@ -835,7 +835,7 @@ DONE <!--<body package="Homeostat" selector="clipDeviation:">clipDeviation: aVal
 			 ifTrue: [^aValue] 
 			ifFalse: [^(maxDeviation * aValue sign)]</body>-->
 
-<body package="Homeostat" selector="computeNextDeviation">computeNextDeviation
+DONE <!--<body package="Homeostat" selector="computeNextDeviation">computeNextDeviation
 	"Computes the output current at time t+1 on the basis of the current input and the various parameters
 	  this basic function mimicks Asbhy's original device by the following procedure:
 
@@ -857,9 +857,9 @@ Our method is close to hers and basically reduces to this behavior when all the 
 	"first update the current value of critical deviation with the unit's internal noise"
 	self updateDeviationWithNoise.
 	" then update the deviation"
-	nextDeviation  := self newNeedlePosition: self computeTorque.</body>
+	nextDeviation  := self newNeedlePosition: self computeTorque.</body>-->
 
-<body package="Homeostat" selector="computeOutput">computeOutput
+DONE <!--<body package="Homeostat" selector="computeOutput">computeOutput
 	"converts the current criticalDeviation into a a value scaled to the output range.
 	 clips the output to within the allowed output range."
 
@@ -874,9 +874,9 @@ Our method is close to hers and basically reduces to this behavior when all the 
 		ifFalse: 
 			[out > 0 
 				ifTrue: [self currentOutput: (outputRange at: 'high')]
-				ifFalse: [self currentOutput: (outputRange at: 'low')]]</body>
+				ifFalse: [self currentOutput: (outputRange at: 'low')]]</body>-->
 
-<body package="Homeostat" selector="computeTorque">computeTorque
+DONE <!--<body package="Homeostat" selector="computeTorque">computeTorque
 	
 " In order to closely simulate Asbhy's implementation, computeTorque would have to compute the torque affecting the needle by solving a set of differential equations whose coefficients represents the weighted values of the input connections. This is the approach followed by Capehart (1967) in his simulaton of the Homeostat in Fortran. See the comment to the method newNeedlePosition for a discussion.
 Here we simply compute the sum of the weighted input values extracted from  the inputsCollection on all the connections that are active"
@@ -892,7 +892,7 @@ debugMode ifTrue: [ Transcript show: 'current torque at time: ';  show: time pri
 
 self changed: #inputTorque.
 
-^inputTorque</body>
+^inputTorque</body>-->
 
 DONE <!--<body package="Homeostat" selector="essentialVariableIsCritical">essentialVariableIsCritical
 
@@ -910,7 +910,7 @@ DONE <!--<body package="Homeostat" selector="isNeedleWithinLimits:">isNeedleWith
 
 	^aValue between:  (maxDeviation negated) and: maxDeviation.</body>-->
 
-<body package="Homeostat" selector="newLinearNeedlePosition:">newLinearNeedlePosition: aTorqueValue 
+DONE <!--<body package="Homeostat" selector="newLinearNeedlePosition:">newLinearNeedlePosition: aTorqueValue 
 	"see method newNeedlePosition for an extended comment on how to compute the displacement of the needle. Briefly, here we just sum aTorqueValue to the current deviation."" 
        "  
 
@@ -936,10 +936,10 @@ DONE <!--<body package="Homeostat" selector="isNeedleWithinLimits:">isNeedleWith
 				show: (criticalDeviation + (aTorqueValue * viscosity)) printString;
 				cr;
 				cr].
-	^criticalDeviation + newVelocity	" In an Aristotelian model, new displacement is old displacement plus velocity: x = x0 + vt, with t obviously = 1 in our case."</body>
+	^criticalDeviation + newVelocity	" In an Aristotelian model, new displacement is old displacement plus velocity: x = x0 + vt, with t obviously = 1 in our case."</body>-->
 
-<body package="Homeostat" selector="newNeedlePosition:">newNeedlePosition: aTorqueValue 
-	"computes the new needle position on the basis of aTorqueValue, which represents the torque applied to the unit's needle. This method is marquedly different from Ashby's implementation, even if it captures its intent. A long discussion is appended  below."
+DONE <!--<body package="Homeostat" selector="newNeedlePosition:">newNeedlePosition: aTorqueValue 
+	"computes the new needle position on the basis of aTorqueValue, which represents the torque applied to the unit's needle. This method is marquedly different from Ashby's implementation, even if it captures its intent. A longer discussion is appended  below."
 
 	needleCompMethod = 'linear' 
 		ifTrue: [^self newLinearNeedlePosition: aTorqueValue]
@@ -947,39 +947,78 @@ DONE <!--<body package="Homeostat" selector="isNeedleWithinLimits:">isNeedleWith
 					ifTrue: [^self newProportionalNeedlePosition: aTorqueValue]
 					ifFalse: [^self newRandomNeedlePosition]]       "defaults to a random computation method if the method is not specified"
 
-
-
-
-
-"In Asbhy's original implementation, each incoming connection corresponded to a coil  around the unit's magnet. The sum of the input currents flowing through the coils produced  a torque on the magnet, which, in turn, moved the needle in the trough.
- In order to closely simulate Asbhy's implementation, newNeedlePosition would have to compute the torque affecting the needle by solving a set of differential equations whose coefficients represent the weighted values of the input connections. This is the approach followed by Capehart (1967) in his simulaton of the Homeostat in Fortran.
-
-However, it seems pointless to use differential equations to model a physical mechanism which was originally devised to model a physiological system. After all, as Capehart himself acknowledges, the Homeostat is a kind of analogue computer set up to compute the fundamental features of the system it models.. We might as well use a different kind of computer, assuming we are able to capture the essential features as accurately. In this respect, we follow Ashby's suggestion that 'the torque on the magnet [ i.e. the needle] is approximately proportional to the algebraic sum of the currents in A, B, and C' (Ashby 1960:102, sec 8/2), where the coils A, B, C, (and D, i.e. the unit itself) carry a current equal to the weighted input. Thus, this method produces a value that is proportional to the inputValue.
-
-However,  it might be argued (for instance by a dynamic system theorist) that a thoroughly digital simulation of the Homeostat like this one loses what is most essential to it: the continuity of real-valued variables operating in real time. Anyone accepting this objection may partially meet it by:
-- subclassing HomeoUnit, 
-- adding a method that produces differential equation describing the Torque
-- and replacing the two methods computeTorque and newNeedlePosition: aTorqueValue with numeric computations of the solutions of the diff equations.
-
-See Ashby, Design for a Brain, chps. 19-22 for a mathematical treatment of the Homeostat and Capehart 1967 for suggestions on a possible implementation (which requires a Runge-Kutta diff solution routine or equivalent and Hutwitz convergence test on the coefficient matrix
-
-Our method(s) assumes:
-
-1. that the torque is simply the sum of the input connections, hence a value included in +/-  (inputConnections size) (since the max value of any unit's output  and hence  of any input,  is 1 and the minimum  -1)
-
-2. the torque represents the force that displaces the needle from its current position. The value of this displacement is obviously directly proportional to the force. However, the constant of proportionality is important: if the displacement is simply equal to the torque, which, in turn, is equal to the sum of inputs, then the ***potential displacement*** grows linearly with the connected units. If, instead, the displacement is equal to the ratio between the maximum torque and the maximum deviation, then the ***potential displacement*** is independent from the number of connected units and will depend more directly on the values of the incoming units rather than their number. It is obvious that the behavior of a collection of units, i.e. a homeostat, will be different in either case. Ashby's probably followed the former model, as evidenced by his (widely reported)  comments about the direct relation between instability and number of units (see also Capehart 1967 for comments to the same effect). It muct be admitted, however, that a careful manipulation of the weights of the connection may reduce the difference between the two methods: one would have to uniformly reduce the weights whenever a new conenction is added to transform the first ('Ashby's') approach into the second.
-
-In order to allow experimentation with either approach, we include both methods: HomeoUnit>>newLinearNeedlePosition: and HomeoUnit>>newProportionalNeedlePosition: 
-The choice between the two is determined by the value of the instance variable needleCompMethod. Default (stored in the class variable) is linear.
-
-The viscosity is between 0 and 1, with 0 being the maximum (needle unable to move) and 1 being the minimum (no effect on movement)"</body>
-
-<body package="Homeostat" selector="newProportionalNeedlePosition:">newProportionalNeedlePosition: aValue 
-	"see method newNeedlePosition for an extended comment on how to compute the displacement of the needle"
+        "In Asbhy's original implementation, each incoming connection corresponded to a coil 
+        around the unit's magnet. The sum of the input currents flowing through the coils produced  
+        a torque on the magnet, which, in turn, moved the needle in the trough.
+        In order to closely simulate Asbhy's implementation, newNeedlePosition would have 
+        to compute the torque affecting the needle by solving a set of differential equations 
+        whose coefficients represent the weighted values of the input connections. This is 
+        the approach followed by Capehart (1967) in his simulaton of the Homeostat in Fortran.
+        
+        However, it seems pointless to use differential equations to model a physical mechanism 
+        which was originally devised to model a physiological system. After all, as Capehart 
+        himself acknowledges, the Homeostat is a kind of analogue computer set up to compute 
+        the fundamental features of the system it models.. We might as well use a different 
+        kind of computer, assuming we are able to capture the essential features as accurately. 
+        In this respect, we follow Ashby's suggestion that 'the torque on the magnet 
+        [ i.e. the needle] is approximately proportional to the algebraic sum of the currents 
+        in A, B, and C' (Ashby 1960:102, sec 8/2), where the coils A, B, C, (and D, i.e. 
+        the unit itself) carry a current equal to the weighted input. Thus, this method 
+        produces a value that is proportional to the inputValue.
+        
+        However,  it might be argued (for instance by a dynamic system theorist) that 
+        a thoroughly digital simulation of the Homeostat like this one loses what is 
+        most essential to it: the continuity of real-valued variables operating in 
+        real time. Anyone accepting this objection may partially meet it by:
+        
+        1. subclassing HomeoUnit, 
+        2. adding a method that produces differential equation describing the Torque
+        3. and replacing the two methods computeTorque and newNeedlePosition: aTorqueValue 
+        with numeric computations of the solutions of the diff equations.
+        
+        See Ashby, Design for a Brain, chps. 19-22 for a mathematical treatment of the 
+        Homeostat and Capehart 1967 for suggestions on a possible implementation 
+        (which requires a Runge-Kutta diff solution routine or equivalent and 
+        Hutwitz convergence test on the coefficient matrix
+        
+        Our method(s) assumes:
+        
+        1. that the torque is simply the sum of the input connections, hence a value 
+        included in +/-  (inputConnections size) (since the max value of any unit's output 
+        and hence  of any input,  is 1 and the minimum  -1)
+        
+        2. the torque represents the force that displaces the needle from its current position. 
+        The value of this displacement is obviously directly proportional to the force. 
+        However, the constant of proportionality is important: if the displacement is 
+        simply equal to the torque, which, in turn, is equal to the sum of inputs, 
+        then the ***potential displacement*** grows linearly with the connected units. 
+        If, instead, the displacement is equal to the ratio between the maximum torque 
+        and the maximum deviation, then the ***potential displacement*** is independent 
+        from the number of connected units and will depend more directly on the values of 
+        the incoming units rather than their number. It is obvious that the behavior of a 
+        collection of units, i.e. a homeostat, will be different in either case. Ashby's 
+        probably followed the former model, as evidenced by his (widely reported) comments 
+        about the direct relation between instability and number of units (see also 
+        Capehart 1967 for comments to the same effect). 
+        It must be admitted, however, that a careful manipulation of the weights of the 
+        connection may reduce the difference between the two methods: one would have to 
+        uniformly reduce the weights whenever a new conenction is added to transform the 
+        first ('Ashby's') approach into the second.
+        
+        In order to allow experimentation with either approach, we include both methods: 
+        HomeoUnit().newLinearNeedlePosition and HomeoUnit().newProportionalNeedlePosition
+        The choice between the two is determined by the value of the instance variable 
+        needleCompMethod. Default (stored in the class variable) is linear.
+        
+        The viscosity is between 0 and 1, with 0 being the maximum (needle unable to move) 
+        and 1 being the minimum (no effect on movement)"</body>-->
+        
+DONE <!--<body package="Homeostat" selector="newProportionalNeedlePosition:">newProportionalNeedlePosition: aValue 
+        	"see method newNeedlePosition for an extended comment on how to compute the displacement of the needle"
 
 	| torque |
 	torque := aValue / (maxDeviation *2).
-	^criticalDeviation + (torque * viscosity)</body>
+	^criticalDeviation + (torque * viscosity)</body>-->
 
 DONE <!--<body package="Homeostat" selector="newRandomNeedlePosition">newRandomNeedlePosition
 	"computes a random value for the needle position within the accepted range "
@@ -993,26 +1032,23 @@ DONE <!--<body package="Homeostat" selector="newRandomNeedlePosition">newRandomN
 | weightChanges change|
 
 weightChanges := OrderedCollection new.
+inputConnections do: 
+		[:conn | 
+		  | changedWeight  |
+		   conn incomingUnit = self 
+			ifFalse: 
+				[(conn state = 'uniselector' and: [conn active]) 
+					ifTrue: [
+						change := OrderedCollection new.
+						change add: conn incomingUnit name; add: conn weight.
+						changedWeight := uniselector produceNewValue.
+						change add: changedWeight.
+						weightChanges add: change.
+						conn newWeight: changedWeight]]].
+uniselectorTime := 0.
+uniselector advance.
 
 
-
-	inputConnections do: 
-			[:conn | 
-			  | changedWeight  |
-			   conn incomingUnit = self 
-				ifFalse: 
-					[(conn state = 'uniselector' and: [conn active]) 
-						ifTrue: [
-							change := OrderedCollection new.
-							change add: conn incomingUnit name; add: conn weight.
-							changedWeight := uniselector produceNewValue.
-							change add: changedWeight.
-							weightChanges add: change.
-							conn newWeight: changedWeight]]].
-	uniselectorTime := 0.
-	uniselector advance.
-
-	
 
 "For debugging"
 
