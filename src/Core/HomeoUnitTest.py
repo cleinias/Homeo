@@ -428,13 +428,14 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertTrue(self.unit.sameAs(unit4))   # two units are the same
 
         param = unit4.name 
-        unit4.name(param + 'pippo')                  #change the name and check again
+        unit4.name = param + 'pippo'                  #change the name and check again
         self.assertFalse(self.unit.sameAs(unit4))
         
         "two newly created units can never be same because their names will differ"
         self.unit = HomeoUnit()
         unit4 = HomeoUnit()
         self.assertFalse(self.unit.sameAs(unit4))
+        self.assertFalse(self.unit.name == unit4.name)
 
     def testNeedleWithinLimit(self):
         "testing the clipping function operating on a unit's critical deviation's value"
@@ -477,22 +478,21 @@ class HomeoUnitTest(unittest.TestCase):
             self.assertTrue(newNeedlePosition == correctValue)
 
     def testFirstLevelParamSameAs(self):
-        "a unit that is a copy of another unit  must have the same first level parameters, name included" 
+        '''A unit that is a copy of another unit must have 
+            the same first level parameters, name included.
+            This test only checks changing two parameters (name and potentiometer)
+            of two otherwise identical units and testing for falsity.
+            A really comprehensive test should check all relevant parameters''' 
         
         self.unit.setRandomValues()
         anotherUnit = copy(self.unit)
         self.assertTrue(self.unit.sameFirstLevelParamsAs(anotherUnit))
 
-        oldUnitName = self.unit.name()
         newRandomName = ''.join(random.choice(string.ascii_lowercase) for x in range(10))
-        
-        self.unit.name(newRandomName)
+        self.unit.name = newRandomName
         self.assertFalse(self.unit.sameFirstLevelParamsAs(anotherUnit))
-        self.unit.name(oldUnitName)
 
-        self.assertTrue(self.unit. sameFirstLevelParamsAs(anotherUnit))
-
-        anotherUnit.potentiometer(anotherUnit.potentiometer() + 0.1)
+        anotherUnit.potentiometer = anotherUnit.potentiometer + 0.1
 
         self.assertFalse(self.unit.sameFirstLevelParamsAs(anotherUnit))
 
@@ -730,17 +730,17 @@ class HomeoUnitTest(unittest.TestCase):
         """
         Test that a HomeoUnit's simulation time advances by 1 after a self update
         """
-        oldUnitTime = self.unit.time() 
+        oldUnitTime = self.unit.time 
         self.unit.selfUpdate()
-        self.assertTrue(self.unit.time() == oldUnitTime + 1)
+        self.assertTrue(self.unit.time == oldUnitTime + 1)
 
     def testSelfUpdateAdvancesUniselectorTime(self):
         """
         Test that a HomeoUnit's Uniselector's simulation time advances by 1 after a self update
         """
-        oldUniselectorTime= self.unit.uniselectorTime()
+        oldUniselectorTime= self.unit.uniselectorTime
         self.unit.selfUpdate()
-        self.assertTrue(self.unit.uniselectorTime() == oldUniselectorTime + 1)
+        self.assertTrue(self.unit.uniselectorTime == oldUniselectorTime + 1)
 
     def testDeviationComputationsDontTouchInstanceVariables(self):
         """
@@ -750,31 +750,31 @@ class HomeoUnitTest(unittest.TestCase):
     
         self.unit.setRandomValues()
 
-        self.unit.needleCompMethod('linear')
+        self.unit.needleCompMethod = 'linear')
         for i in xrange(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
-                    oldDeviation = self.unit.criticalDeviation()
+                    oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
         self.unit.needleCompMethod('proportional')
         for i in xrange(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
-                    oldDeviation = self.unit.criticalDeviation()
+                    oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
         self.unit.needleCompMethod('random')
         for i in xrange(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
-                    oldDeviation = self.unit.criticalDeviation()
+                    oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
         self.unit.needleCompMethod('')
         for i in xrange(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
-                    oldDeviation = self.unit.criticalDeviation()
+                    oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
     
