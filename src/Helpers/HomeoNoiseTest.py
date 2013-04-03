@@ -4,11 +4,10 @@ Created on Mar 15, 2013
 @author: stefano
 '''
 from   Core.HomeoUnit import HomeoUnit
-from   Helpers.HomeoNoise import  HomeoNoise
+from   Helpers.HomeoNoise import HomeoNoise
 
 import scipy.stats as stats
 import unittest,numpy
-
 
 class HomeoNoiseTest(unittest.TestCase):
     """
@@ -21,7 +20,61 @@ class HomeoNoiseTest(unittest.TestCase):
         self.unit = HomeoUnit()
         self.unit.setRandomValues()
         self.noise = HomeoNoise()
+        
+        modes = ['Distorting', 'Degrading']
+        distributions = ['Constant', 'Uniform', 'Normal']
+        ratios =  ['Linear', 'Proportional']
+        self.noiseAlgs = []
+        for mode in modes:
+            for distribution in distributions:
+                for ratio in ratios:
+                    self.noiseAlgs.append('getNoise' + mode + distribution + ratio)
 
+    def testAllAlgorithmsWithZeroNoise(self):
+        '''Check that the basic method of HomeoNoise---getNoise()---can still 
+           produce values when a unit's noise = 0'''
+                        
+        self.unit.noise = 0
+        self.unit.criticalDeviation = 0.5
+        self.noise = HomeoNoise()
+        self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+
+        for noiseAlg in self.noiseAlgs:
+            try:
+                producedNoise =  getattr(self.noise, noiseAlg)()   # raises an exception if something goes wrong
+            except:
+                self.assertTrue(False, ('Exception raised while running method: ' + noiseAlg))
+            
+    def testAllAlgorithmsWithZeroCurrent(self):
+        '''Check that the basic method of HomeoNoise---getNoise()---can still 
+           produce values when a unit's current = 0'''
+
+        self.unit.noise = 0.5
+        self.unit.criticalDeviation = 0
+        self.noise = HomeoNoise()
+        self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        
+        for noiseAlg in self.noiseAlgs:
+            try:
+                producedNoise =  getattr(self.noise, noiseAlg)()   # raises an exception if something goes wrong
+            except:
+                self.assertTrue(False, ('Exception raised while running method: ' + noiseAlg))
+        
+    def testAllAlgorithmsWithZeroNoiseAndZeroCurrent(self):
+        '''Check that the basic method of HomeoNoise---getNoise()---can still 
+           produce values when *both* a unit's current and a unit's noise = 0'''
+
+        self.unit.noise = 0
+        self.unit.criticalDeviation = 0
+        self.noise = HomeoNoise()
+        self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+
+        for noiseAlg in self.noiseAlgs:
+            try:
+                producedNoise =  getattr(self.noise, noiseAlg)()   # raises an exception if something goes wrong
+            except:
+                self.assertTrue(False, ('Exception raised while running method: ' + noiseAlg))
+   
     def testDegradingConstantLinearNoise(self):
         """
         Degrading constant linear noise must
