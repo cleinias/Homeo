@@ -80,11 +80,13 @@ class HomeoNoiseTest(unittest.TestCase):
         Degrading constant linear noise must
         - always have the same value (constant)
         - have a value equal to the unit's noise (linear)
-        - always have opposite sign to the signal (unit's critical deviation) (degrading)
+        - always have opposite sign to the signal (unit's critical deviation) (degrading),
+          unless the unit's critical deviation = 0, in which case the sign is -1
         """
 
         values = []
         self.unit.setRandomValues()
+        self.unit.selfUpdate()
         tests = 100
         self.noise = HomeoNoise()
         self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
@@ -102,6 +104,31 @@ class HomeoNoiseTest(unittest.TestCase):
         self.assertTrue(numpy.sign(values[0]) == (numpy.sign(self.unit.criticalDeviation * -1)))    # Noise is degrading the signal: opposite sign
         self.assertTrue(abs(values[0]) == self.unit.noise)
         self.assertTrue(abs(values[tests-1]) == self.unit.noise)
+        
+        '''Check behavior for zero values
+           When noise = 0, return zero
+           When current = 0, return -noise
+           When both are zero, return 0'''
+        
+        self.unit.noise = 0
+        self.unit._criticalDeviation = 0.5
+        self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        producedNoise = self.noise.getNoise()
+        self.assertTrue(producedNoise == 0)
+        
+        self.unit.noise = 0.5
+        self.unit._criticalDeviation = 0
+        self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        producedNoise = self.noise.getNoise()
+        self.assertTrue(producedNoise == -0.5)
+        
+        self.unit.noise = 0
+        self.unit._criticalDeviation = 0
+        self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        producedNoise = self.noise.getNoise()
+        self.assertTrue(producedNoise == 0)
+
+
 
     def testDegradingConstantProportionalNoise(self):
         """
@@ -130,6 +157,33 @@ class HomeoNoiseTest(unittest.TestCase):
         self.assertTrue(numpy.sign(values[0]) == (numpy.sign(self.unit.criticalDeviation * -1)))    # Noise is degrading the signal: opposite sign
         self.assertTrue(abs(values[0]) == (self.unit.noise * abs(self.unit.criticalDeviation)))
         self.assertTrue(abs(values[tests-1]) == (self.unit.noise * abs(self.unit.criticalDeviation)))
+
+        
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
 
     def testDegradingNormalLinearNoise(self):
         """
@@ -173,6 +227,31 @@ class HomeoNoiseTest(unittest.TestCase):
         "check the distribution is confidently normal (p > 0.05)"
         k2,p =  stats.normaltest(values)  #D'Agostino-Pearson omnibus test
         self.assertTrue(p > 0.05)
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
 
     def testDegradingNormalProportionalNoise(self):
         """
@@ -217,6 +296,31 @@ class HomeoNoiseTest(unittest.TestCase):
         "check the distribution is confidently normal (p > 0.05)"
         k2,p =  stats.normaltest(values)  #D'Agostino-Pearson omnibus test
         self.assertTrue(p > 0.05)
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
 
     def testDegradingUniformLinearNoise(self):
         """
@@ -274,6 +378,32 @@ class HomeoNoiseTest(unittest.TestCase):
             uniformRandomSample = numpy.random.uniform(0, 2 * self.unit.noise,10000)
         D,p = stats.ks_2samp(values,uniformRandomSample)
         self.assertTrue(p > 0.05)
+
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
         
     def testDegradingUniformProportionalNoise(self):
         """
@@ -335,6 +465,32 @@ class HomeoNoiseTest(unittest.TestCase):
         D,p = stats.ks_2samp(values,uniformRandomSample)
         self.assertTrue(p > 0.05)
 
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
+
     def testDistortingConstantLinearNoise(self):
         """
         Distorting constant linear noise must
@@ -372,6 +528,32 @@ class HomeoNoiseTest(unittest.TestCase):
         self.assertTrue(abs(values[0])  == self.unit.noise)
         self.assertTrue(abs(values[tests-1]) == self.unit.noise)
 
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
+
     def testDistortingConstantProportionalNoise(self):
         """
         Distorting constant proportional noise must
@@ -408,6 +590,32 @@ class HomeoNoiseTest(unittest.TestCase):
         "constant and proportional: the absolute value of noise is always equal to the absolute value of unit's noise * unit's value"
         self.assertTrue(abs(values[0])  == abs(self.unit.noise * self.unit.criticalDeviation))
         self.assertTrue(abs(values[tests-1]) == abs(self.unit.noise * self.unit.criticalDeviation))
+
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
 
     def testDistortingNormalLinearNoise(self):
         """
@@ -453,6 +661,32 @@ class HomeoNoiseTest(unittest.TestCase):
         k2,p =  stats.normaltest(values)  #D'Agostino-Pearson omnibus test
         self.assertTrue(p > 0.05)
 
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
+
     def testDistortingNormalProportionalNoise(self):
         """
         Distorting normal proportional noise must
@@ -497,6 +731,32 @@ class HomeoNoiseTest(unittest.TestCase):
         "Normal: check the distribution is confidently normal (p > 0.05)"
         k2,p =  stats.normaltest(values)  #D'Agostino-Pearson omnibus test
         self.assertTrue(p > 0.05)
+
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
 
     def testDistortingUniformProportionalNoise(self):
         """
@@ -545,7 +805,33 @@ class HomeoNoiseTest(unittest.TestCase):
         uniformRandomSample = numpy.random.uniform(- self.unit.noise * abs(self.unit.criticalDeviation), self.unit.noise * abs(self.unit.criticalDeviation),10000)
         D,p = stats.ks_2samp(values,uniformRandomSample)
         self.assertTrue(p > 0.05)
-            
+
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
+           
     def testDistortingUniformLinearNoise(self):
         """
         Distorting uniform linear noise must
@@ -589,11 +875,31 @@ class HomeoNoiseTest(unittest.TestCase):
         D,p = stats.ks_2samp(values,uniformRandomSample)
         self.assertTrue(p > 0.05)
 
-
-                
-                
-        
-
+        #=======================================================================
+        #          TODO (Fix expected behavior first)
+        #'''Check behavior for zero values
+        #   When noise = 0, return zero
+        #   When current = 0, return -noise
+        #   When both are zero, return 0'''
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0.5
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        # 
+        # self.unit.noise = 0.5
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == -0.5)
+        # 
+        # self.unit.noise = 0
+        # self.unit._criticalDeviation = 0
+        # self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
+        # producedNoise = self.noise.getNoise()
+        # self.assertTrue(producedNoise == 0)
+        #=======================================================================
 
     def tearDown(self):
         pass

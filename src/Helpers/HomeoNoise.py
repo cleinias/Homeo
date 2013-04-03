@@ -195,9 +195,15 @@ class HomeoNoise(object):
         '''Return a degrading noise (with sign always opposite to affected current), 
             and constant value equal to the noise parameter.
             
-            If current is 0, returns 0'''
+            If current is 0, return noise itself, the assumption being 
+            that  noise is some kind of extraneous activity that always takes
+            place, regardless of whether there is some current on the 
+            affected line'''
         
-        return self._noise * -1 * np.sign(self._current)
+        if self._current == 0:
+            return self._noise * -1
+        else:
+            return self._noise * -1 * np.sign(self._current)
 
     def getNoiseDegradingConstantProportional(self):
         '''Return a degrading noise (with sign always opposite to affected current), 
