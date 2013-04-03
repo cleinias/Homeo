@@ -105,13 +105,17 @@ class HomeoNoise(object):
 
         
     def getNoise(self):
-        '''Select the correct noise algorithm according to the values 
-       of mode, distribution and ratio and returns the noise value.
-       Return a noise value computed accordingly'''
+        '''Return 0 if noise is 0. Otherwise:
+        Select the correct noise algorithm according to the values 
+        of mode, distribution and ratio and returns the noise value.
+        Return a noise value computed accordingly'''
 
-        noiseAlg = 'getNoise' + self._mode + self._distribution + self._ratio
-        producedNoise =  getattr(self, noiseAlg)()
-        return producedNoise
+        if self._noise == 0:
+            return 0
+        else:
+            noiseAlg = 'getNoise' + self._mode + self._distribution + self._ratio
+            producedNoise =  getattr(self, noiseAlg)()
+            return producedNoise
 
     "Methods setting noise's mode"
     def degrading(self):
@@ -205,33 +209,47 @@ class HomeoNoise(object):
         '''Return a degrading noise (sign always opposite to current),
            normally distributed and proportional to the absolute magnitude of the noise parameter'''
 
-        noiseSign = np.sign(self._current) * -1 
-        noiseAbsValue = np.random.normal(self._noise, self._noise * 1 / 3.)
+        if self.noise == 0:
+            return 0
+        else:
+            noiseSign = np.sign(self._current) * -1 
+            noiseAbsValue = np.random.normal(self._noise, self._noise * 1 / 3.)
 
-        "trim noise within the interval (0, 2 * noise)"
-        if noiseAbsValue > (2 * self._noise):
-            noiseAbsValue = 2 * self._noise
-        if noiseAbsValue < 0:
-            noiseAbsValue = 0
-        return noiseAbsValue * noiseSign
+            "trim noise within the interval (0, 2 * noise)"
+            return np.clip(noiseAbsValue, 0, 2* self.noise) * noiseSign
 
     def getNoiseDegradingNormalProportional(self):
         '''Return a degrading noise (with sign always opposite to affected current), 
-            and normally distributed value in the interval [0, 2 * noise * abs(current)]'''
+            and normally distributed value in the interval [0, 2 * noise * abs(current)]
+            If the affected current is = 0, still returns a value in the interval 
+            (0 , 2 * noise)'''
 
-        noiseSign = np.sign(self._current) * -1 
-        minAbsNoise =0
-        maxAbsNoise = self._noise * abs(self._current) * 2
+        if self.noise == 0:
+            return 0
+        else:
+            if self._current <> 0:
+                minNoise = - self._noise * abs(self._current)
+                maxNoise = self._noise * abs(self._current)
+            else:
+                minNoise = - self._noise
+                maxNoise = self._noise
 
-        noiseAbsValue = np.random.normal(maxAbsNoise / 2, maxAbsNoise / 6.)
+        if self.noise == 0:
+            return 0
+        else:
+            if self._current <> 0:
+                noiseSign = np.sign(self._current) * -1 
+                minAbsNoise = 0
+                maxAbsNoise = self._noise * abs(self._current) * 2
+            else:
+                noiseSign = -1
+                minAbsNoise = 0
+                maxAbsNoise = self._noise
+
+            noiseAbsValue = np.random.normal(maxAbsNoise / 2, maxAbsNoise / 6.)
         
-        "trim noise within the interval {0, 2 *noise *current abs}"
-        if noiseAbsValue > maxAbsNoise:
-            noiseAbsValue = maxAbsNoise
-        if noiseAbsValue <  minAbsNoise:
-            noiseAbsValue = minAbsNoise
-
-        return noiseAbsValue * noiseSign
+            "trim noise within the interval {0, 2 *noise *current abs}"
+            return np.clip(noiseAbsValue, minAbsNoise, maxAbsNoise) * noiseSign
 
     def getNoiseDegradingUniformLinear(self):
         '''Return a degrading noise (sign always opposite to current) uniformly distributed
@@ -272,14 +290,13 @@ class HomeoNoise(object):
              normally distributed and proportional to 
              the  absolute magnitude of the noise parameter'''
  
-        noiseValue = np.random.normal(0, self._noise / 3.)
+        if self.noise == 0:
+            return 0
+        else:
+            noiseValue =  np.random.normal(0, self._noise / 3.)
         
         "trim noise within the interval { -noise, noise}"
-        if noiseValue > self._noise:
-            noiseValue = self._noise
-        if noiseValue < -self._noise:
-            noiseValue =  -self._noise
-        return noiseValue
+        return np.clip(noiseValue, -self.noise, self.noise)
             
     def getNoiseDistortingNormalProportional(self):
         '''Returns a distorting noise (centered around 0), normally distributed
@@ -287,18 +304,21 @@ class HomeoNoise(object):
          
          Standard deviation of the normal distribution is 1/3 of noise's value'''
 
-        minNoise = - self._noise * abs(self._current)
-        maxNoise = self._noise * abs(self._current)
 
+        if self.noise == 0:
+            return 0
+        else:
+            if self._current <> 0:
+                minNoise = - self._noise * abs(self._current)
+                maxNoise = self._noise * abs(self._current)
+            else:
+                minNoise = - self._noise
+                maxNoise = self._noise
+                
         noiseValue = np.random.normal(0, maxNoise / 3.)
-        
-        "trim noise within the interval {0, 2 *noise}"
-        if noiseValue > maxNoise:
-            noiseValue = maxNoise
-        if noiseValue < minNoise:
-            noiseValue =  minNoise
-
-        return noiseValue
+    
+        "trim noise within the interval (0, 2 *noise)"
+        return np.clip(noiseValue, minNoise, maxNoise)
 
     def getNoiseDistortingUniformLinear(self):
         '''Return a distorting noise (centered around 0),
