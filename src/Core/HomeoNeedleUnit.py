@@ -3,7 +3,7 @@ Created on Feb 21, 2013
 
 @author: stefano
 '''
-import numpy
+from  numpy import pi
 
 class HomeoNeedleUnit(object):
     '''
@@ -17,7 +17,7 @@ class HomeoNeedleUnit(object):
     HomeoUnit initialize'''
 
     DefaultParameters = dict(mass = 1.,                  # mass expressed in internal units
-                             surfaceArea = 1/numpy.pi,   # in internal units, eq. to a circle of radius 1 unit
+                             surfaceArea = 1/pi,   # in internal units, eq. to a circle of radius 1 unit
                              dragCoefficient = 1.        # dimensionless. used to compute drag acc to drag law for high velocities
                              )
 
@@ -30,29 +30,33 @@ class HomeoNeedleUnit(object):
         self._surfaceArea = HomeoNeedleUnit.DefaultParameters['surfaceArea']
         self._dragCoefficient = HomeoNeedleUnit.DefaultParameters['dragCoefficient']
 
-    @property
-    def mass(self):
+    def getMass(self):
         return self._mass
     
-    @mass.setter
-    def mass(self,aValue):
+    def setMass(self, aValue):
         self._mass = aValue
-        
-    @property
-    def surfaceArea(self):
-        return self._surfaceArea
+
+    mass = property(fget = lambda self: self.getMass(),
+                    fset = lambda self, value: self.setMass(value))
     
-    @surfaceArea.setter
-    def surfaceArea(self, aValue):
-        self._surfaceArea = aValue
         
-    @property    
-    def dragCoefficient(self):
+    def getDragCoefficient(self):
         return self._dragCoefficient
     
-    @dragCoefficient.setter
-    def dragCoefficient(self,aValue):
+    def setDragCoefficient(self, aValue):
         self._dragCoefficient = aValue
+    
+    dragCoefficient = property(fget = lambda self: self.getDragCoefficient(),
+                               fset = lambda self, value: self.setDragCoefficient(value))
+
+    def getSurfaceArea(self):
+        return self._surfaceArea
+    
+    def setSurfaceArea(self, aValue):
+        self._surfaceArea = aValue
+    surfaceArea = property(fget = lambda self: self.getSurfaceArea(),
+                           fset = lambda self, value: self.setSurfaceArea(value))
+     
    
 
         

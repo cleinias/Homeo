@@ -6,6 +6,7 @@ from Helpers.General_Helper_Functions import withAllSubclasses
 import numpy as np
 import sys, pickle
 from copy import copy
+import StringIO
 
 
 class HomeoUnitError(Exception):
@@ -144,10 +145,15 @@ class HomeoUnit(object):
         self._uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
         self._critThreshold = HomeoUnit.DefaultParameters['critThreshold']
 
-        "A new unit is turned off, hence its velocity is 0 and its criticalDeviation is 0"
+        '''A new unit is turned off, hence its velocity is 0, and 
+          its criticalDeviation and nextDeviation are 0, and
+          its inputTorque (from other units) is 0, and
+          its currentOutput is 0'''
         self._currentVelocity = 0 
         self._criticalDeviation = 0
-        self._nextDeviation = 0 
+        self._nextDeviation = 0
+        self._inputTorque = 0
+        self._currentOutput = 0 
         
         self.needleUnit = HomeoNeedleUnit()
 
@@ -181,13 +187,22 @@ class HomeoUnit(object):
     
     def getCriticalDeviation(self):
         return self._criticalDeviation
-    def setCriticalDeviation(self,aValue):
-        "Do nothing"        
+    
+    def setCriticalDeviation(self,aValue):       
         self._criticalDeviation = self._criticalDeviation
     
     criticalDeviation = property(fget = lambda self: self.getCriticalDeviation(),
                                  fset = lambda self, value: self.setCriticalDeviation(value))
     
+    def getNextDeviation(self):
+        return self._nextDeviation
+    
+    def setNextDeviation(self,aValue):       
+        self._nextDeviation = self._nextDeviation
+    
+    nextDeviation = property(fget = lambda self: self.getNextDeviation(),
+                                 fset = lambda self, value: self.setNextDeviation(value))
+
     def setViscosity(self, aValue):
         self._viscosity = aValue
     def getViscosity(self):
@@ -222,13 +237,7 @@ class HomeoUnit(object):
             As noise must always be between 0 and 1,
             clip it otherwise'''
     
-        if aValue <= 1:
-            if aValue >=0:
-                self._noise = aValue
-            else:
-                self._noise = 0
-        else:
-            self._noise = 1
+        self._noise = np.clip(aValue, 0,1)
                     
     def getNoise(self):
         return self._noise
@@ -306,10 +315,10 @@ class HomeoUnit(object):
                                 
     def getCurrentOutput(self):
         return self._currentOutput
-
-    def setCurrentOutput(self, aValue): 
+        
+    def setCurrentOutput(self, aValue):
         self._currentOutput = aValue
-    
+            
         "For testing"
         if self._debugMode == True:
             sys.stderr.write(str(self._currentOutput))
@@ -367,15 +376,19 @@ class HomeoUnit(object):
         '''Set the polarity of the unit's self-connection. 
            aNumber must be either -1 or +1, otherwise method 
            defaults to a negative feedback connection (i.e. -1)
-          Notice that  changing the value of the unit's switch 
-          affects the unit's connection to itself 
-          (which is always at location 0  in the inputConnections collection)'''
+           
+           The switch can only be set by changing the sign of weight
+           of the the unit's connection to itself (which is always 
+           at location 0 in the inputConnections collection)'''
 
-        accValues = (-1,1)
-        if aNumber in accValues:
-            self._inputConnections[0].switch = aNumber
+        acceptValues = (-1,1)
+        oldWeight = self.inputConnections[0].weight
+        newWeight = abs(oldWeight) * aNumber
+
+        if aNumber in acceptValues:
+            self.inputConnections[0].newWeight(aNumber)
         else: 
-            self._inputConnections[0].switch = -1
+            self.inputConnections[0].newWeight(abs(oldWeight) * -1)
     
     def getSwitch(self):
         return self.inputConnections[0].switch
@@ -418,14 +431,6 @@ class HomeoUnit(object):
     status = property(fget = lambda self: self.getStatus(),
                            fset = lambda self,aValue: self.setStatus(aValue))
     
-    def getNextDeviation(self):
-        return self._nextDeviation
-
-    def setNextDeviation(self,aValue):
-        self._nextDeviation = aValue
-
-    status = property(fget = lambda self: self.getNextDeviation(),
-                           fset = lambda self,aValue: self.setNextDeviation(aValue))
     def getUniselector(self):
         return self._uniselector
     
@@ -465,13 +470,14 @@ class HomeoUnit(object):
     
     name = property(fget = lambda self: self.getName(),
                     fset = lambda self, aString: self.setName(aString))  
+ 
+    def activateUnit(self):
+        self._status = 'Active'
+
     
     #===========================================================================
     #  End of setter and getter methods"
     #===========================================================================
-
-    def unitActive(self, aBoolean):
-        self._status= True
 
     def setDefaultSelfConnection(self):
         '''
@@ -517,14 +523,18 @@ class HomeoUnit(object):
     #===========================================================================
     # TESTING METHODS
     #===========================================================================
+    def isActive(self):
+        if self._status == 'Active':
+            return True
+        else:
+            return False
+    
     def isConnectedTo(self,aHomeoUnit):
         '''Test whether there is a connection coming from aHomeoUnit'''
             
         connUnits = [x.incomingUnit for x in self._inputConnections]
         return (aHomeoUnit in connUnits)
 
-    def isActive(self):
-        self._status = 'Active'
 
     def sameAs(self,aHomeoUnit):
         '''Test whether two units are the same, by checking (and delegating the actual checks):
@@ -727,7 +737,7 @@ class HomeoUnit(object):
     def isNeedleWithinLimits(self, aValue):
         '''Check whether the proposed value exceeds the unit's range (both + and -)'''
 
-        return (aValue >= (- self.maxDeviation) and aValue <= self.maxDeviation)
+        return np.clip(aValue, self.minDeviation, self.maxDeviation) == aValue
 
     def uniselectorChangeType(self,uniselectorType):
         "Switch the uniselector type of the unit"
@@ -764,10 +774,8 @@ class HomeoUnit(object):
         '''Clip the unit's criticalDeviation value if it exceeds its maximum or minimum. 
             Keep the sign of aValue'''
             
-        if self.isNeedleWithinLimits(aValue):
-            return aValue
-        else:
-            return (self.maxDeviation * np.sign(aValue))
+        return np.clip(aValue,self.minDeviation,self.maxDeviation)
+        
 
     def newRandomNeedlePosition(self):
         '''Compute a random value for the needle position within the accepted range'''
@@ -862,7 +870,8 @@ class HomeoUnit(object):
         the unit's internal noise'''
         self.updateDeviationWithNoise()
         "2. then update the deviation"
-        self.nextDeviation  = self.newNeedlePosition(self.computeTorque())
+        self.computeTorque()
+        self.nextDeviation  = self.newNeedlePosition(self.inputTorque)
 
     def computeOutput(self):
         '''Scale the current criticalDeviation to the output range.
@@ -876,14 +885,7 @@ class HomeoUnit(object):
                (outRange / devRange ) + self.outputRange['low'])
                         
         "2.Clipping"
-        if (out >= self.outputRange['low'] and
-            out <= self.outputRange['high']):
-                self.currentOutput =  out
-        else:
-            if out > 0:
-                self.currentOutput = self.outputRange['high']
-            else:
-                self.currentOutput = self.outputRange['low']
+        self.currentOutput = np.clip(out, self.outputRange['low'],self.outputRange['high'])
 
     def computeTorque(self):
         '''In order to closely simulate Asbhy's implementation, 
@@ -912,7 +914,7 @@ class HomeoUnit(object):
         to compute the displacement of the needle. Briefly, here we just sum 
         aTorqueValue to the current deviation.
         
-        FIXME. NOISE IS NOT COMPUTED IN THIS METHOD 
+        FIXME. NOISE IS NOT COMPUTED IN THIS METHOD, UT IN OTHER METHODS. FIX THE COMMENT 
         We also consider noise in the following way:
         1. Since the noise is a distortion randomly select either a positive or 
            negative value for noise
@@ -1094,7 +1096,34 @@ class HomeoUnit(object):
         
         self.uniselectorTime = self.uniselectorTime + 1
 
+ #==============================================================================
+ # Printing
+ #==============================================================================
  
+    def printDescription(self):
+        '''Return a string containing a text representation of 
+           all of the the unit's instance variables'''
+
+        aStream = StringIO.StringIO()
+        aStream.write('aHomeoUnit with values: \n')
+        for ivar in sorted(vars(self).keys()):
+            aStream.write(ivar)
+            aStream.write(' --> ')
+            aStream.write(vars(self)[ivar])
+            aStream.write('\t')
+            aStream.write
+        aStream.write('\n')
+        content = aStream.getvalue()     
+        aStream.close()
+        return content
+
+    def printOn(self, aStream):
+        "Returns a brief description of the unit"
+
+        aStream.write(self.__class__.__name__)
+        aStream.write(': ')
+        aStream.write(self.name)
+        return aStream
         
     def __del__(self):
         ''''Remove a HomeoUnit's name from the set of used names.

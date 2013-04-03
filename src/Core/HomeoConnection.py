@@ -196,13 +196,13 @@ class HomeoConnection(object):
             Several different algorithms are available, see the instance methods of HomeoNoise for details'''
         
         newNoise = HomeoNoise()
-        newNoise.withCurrentAndNoise(self.incomingUnit.currentOutput(), self._noise)
+        newNoise.withCurrentAndNoise(self.incomingUnit.currentOutput, self._noise)
 
         newNoise.normal()          # select noise as normally (Gaussian) distributed around the value for the unit's connection noise"
         newNoise.distorting()      # select  noise as distorting the current"
         newNoise.proportional()    # consider the noise on the communication line as a ration of the current being transmitted"
 
-        return (self._incomingUnit.currentOutput() * self.switch * self.weight) + newNoise.getNoise()
+        return (self._incomingUnit.currentOutput * self.switch * self.weight) + newNoise.getNoise()
     
     def isActive(self):
         '''sets the connection to active'''
