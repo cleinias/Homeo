@@ -451,10 +451,10 @@ DONE <!--<body package="Homeostat" selector="setUnitName">setUnitName
 name := self produceNewName.</body>-->
 </methods>
 
-<methods>
+DONE Printing <methods>
 <class-id>HomeoUnit</class-id> <category>printing</category>
 
-<body package="Homeostat" selector="printDescription">printDescription
+DONE <!--<body package="Homeostat" selector="printDescription">printDescription
 	"Prints a text representation of the unit"
 
 	| aString aStream temp |
@@ -466,13 +466,13 @@ name := self produceNewName.</body>-->
 										temp isNil ifTrue: [aStream nextPutAll: 'nil'] ifFalse: [aStream nextPutAll: (temp printString)].
 										aStream  cr.].
 	aStream close.
-	^ aString.</body>
+	^ aString.</body>-->
 
-<body package="Homeostat" selector="printOn:">printOn: aStream
+DONE <!--<body package="Homeostat" selector="printOn:">printOn: aStream
 	"Prints a brief description of the unit for inspectors, etc"
 
 super printOn: aStream.
-aStream nextPutAll: ': ', self name.</body>
+aStream nextPutAll: ': ', self name.</body>-->
 </methods>
 
 DONE Accessing <methods>
