@@ -11,6 +11,7 @@ class HomeoUnitTest(unittest.TestCase):
     def setUp(self):
         """Set up a Homeounit for all tests in the suite"""
         self.unit = HomeoUnit()
+        self.unit.setRandomValues()
         
     def tearDown(self):
         pass
@@ -134,11 +135,11 @@ class HomeoUnitTest(unittest.TestCase):
             self.unit.updateDeviationWithNoise()
             self.assertFalse(oldDeviation == self.unit.criticalDeviation)
 
-        self.unit.noise(0)
+        self.unit.noise = 0
         for i in xrange(1,10):
             oldDeviation = self.unit.criticalDeviation
             self.unit.updateDeviationWithNoise()
-            self.assertTrue(oldDeviation = self.unit.criticalDeviation)
+            self.assertTrue(oldDeviation == self.unit.criticalDeviation)
             
     def testComputeNextDeviationRunoffAndStabilityLinear(self):
         "Approximate tests on the behavior of a self-connected  unit running repeatedly. Check if it runs to (+/-) infinity or it stabilizes"
@@ -167,7 +168,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == 2)
         self.unit.selfUpdate()
-        self.assertTrueself(self.unit.criticalDeviation == (2 + (2/ self.unit.maxDeviation)))
+        self.assertTrue(self.unit.criticalDeviation == (2 + (2/ self.unit.maxDeviation)))
         tempDev = self.unit.criticalDeviation
         for i in xrange(10):
             self.unit.selfUpdate()
@@ -382,7 +383,10 @@ class HomeoUnitTest(unittest.TestCase):
                 self.assertTrue(deviation == self.unit.criticalDeviation)
 
     def testInitializationDefaults(self):
-        "test that the class default values are properly inserted in the instance's variable"
+        '''test that the class default values are properly inserted in 
+           a newly created HomeoUnit's  instance variables'''
+       
+        self.unit = HomeoUnit()
         
         defViscosity = HomeoUnit.DefaultParameters['viscosity']
         self.assertTrue(self.unit.viscosity == defViscosity)
@@ -540,8 +544,8 @@ class HomeoUnitTest(unittest.TestCase):
         lowRange = self.unit. outputRange['low']
         for i in xrange(100): 
             self.unit.selfUpdate()
-            self.assertTrue((self.unit.currentOutput < highRange) and 
-                            (self.unit.currentOutput > lowRange))
+            self.assertTrue((self.unit.currentOutput <= highRange) and 
+                            (self.unit.currentOutput >= lowRange))
 
     def testOutputAndDeviationInRange(self):
         """
@@ -568,20 +572,28 @@ class HomeoUnitTest(unittest.TestCase):
 
         for i in xrange(10000):
             self.unit.selfUpdate()
-            self.assertTrue(self.unit.currentOutput < lowOut and
-                            self.unit.currentOutput > highOut)
-            self.assertTrue(self.unit.criticalDeviation > lowDev and
-                            self.unit.criticalDeviation < highDev)
+            self.assertTrue(self.unit.currentOutput >= lowOut and
+                            self.unit.currentOutput <= highOut)
+            self.assertTrue(self.unit.criticalDeviation >= lowDev and
+                            self.unit.criticalDeviation <= highDev)
 
     def testComputeTorqueWithinLimits(self):
         """
         A unit's maximum torque is always between 
-        the sum of the inputs from the connected units (eventually negated)
+        the sum of the inputs from the connected units (eventually negated).
+        Test with three connected units repeatedly self-updating
         """
 
         unit2 = HomeoUnit()
+        unit2.setRandomValues()
+
         unit3 = HomeoUnit()
+        unit3.setRandomValues()
+
         unit4 = HomeoUnit()
+        unit4.setRandomValues()
+
+        
 
         self.unit.addConnectionWithRandomValues(unit2)
         self.unit.addConnectionWithRandomValues(unit3)
@@ -589,11 +601,15 @@ class HomeoUnitTest(unittest.TestCase):
 
         for i in xrange(1000):
             self.unit.selfUpdate()
-            self.assertTrue (self.unit.computeTorque() >  -3 and
-                             self.unit.computeTorque < 3)
+            unit2.selfUpdate()
+            unit3.selfUpdate()
+            unit4.selfUpdate()
+            self.assertTrue (self.unit.inputTorque >=  -3 and
+                             self.unit.inputTorque <= 3)
 
     def testComputeTorque(self):
         "Tests that a unit's torque is equal to the sum of the connected unit's outputs"
+        self.unit = HomeoUnit()
         unit2 = HomeoUnit()
         unit3 = HomeoUnit()
         unit4 = HomeoUnit()
@@ -602,33 +618,57 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.removeConnectionFromUnit(self.unit)
 
         self.assertTrue(len(self.unit.inputConnections) == 0)
-        self.assertTrue(self.unit.computeTorque() == 0)
+        self.unit.computeTorque()
+        self.assertTrue(self.unit.inputTorque == 0)
 
         "2. add a self connection at 1 and another connection at 1. torque should be 2"
 
         self.unit.currentOutput = 1
         unit2.currentOutput = 1
-        self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(self.unit,1,1, 0, 'manual')
-        self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit2, 1,1,0,'manual')
-        self.assertTrue(len(self.unit.inputConnections == 2))
-        self.assertTrue(self.unit.computeTorque() == 2)
+        self.unit.addConnectionUnitWeightPolarityNoiseState(self.unit,1,1, 0, 'manual')
+        self.unit.addConnectionUnitWeightPolarityNoiseState(unit2, 1,1,0,'manual')
+        self.assertTrue(len(self.unit.inputConnections) == 2)
+        self.unit.computeTorque()
+        self.assertTrue(self.unit.inputTorque == 2)
 
         "3. Add a pair of connections at -1. Torque should be 0"
 
         unit3.currentOutput = 1
         unit4.currentOutput = 1
-        self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit3,1,-1, 0, 'manual')
-        self.unit.addConnectionWithWeightAndPolarityAndNoiseAndState(unit4, 1,-1,0,'manual')
-        self.assertTrue(len(self.unit.inputConnections == 4))
-        self.assertTrue(self.unit.computeTorque() == 0)
+        self.unit.addConnectionUnitWeightPolarityNoiseState(unit3,1,-1, 0, 'manual')
+        self.unit.addConnectionUnitWeightPolarityNoiseState(unit4, 1,-1,0,'manual')
+        self.unit.computeTorque()
+        self.assertTrue(self.unit.inputTorque == 0)
+        
+        "4. Put some random values in the units, add their outputs, check inputTorque is equal to their sum"
+        
+        tests = 100
+        for i in xrange(tests):
+            out1 = np.random.uniform(-1,1)
+            self.unit.currentOutput = out1
+            
+            out2 = np.random.uniform(-1,1)
+            unit2.currentOutput = out2
+            
+            out3 = np.random.uniform(-1,1)
+            unit3.currentOutput = out3
+            
+            out4 = np.random.uniform(-1,1)
+            unit4.currentOutput = out4
+            
+            self.unit.computeTorque()
+            self.assertTrue(self.unit.inputTorque == (out1 + out2 - out3 - out4))
+
 
     def testComputeNextOutputWithDefaults(self):
         """A unit:
             1. computes a new value and puts it in the correct iVar
             2. has the value  within the unit's limits
 
-            tests are performed  with default values """
+            First tests are performed  with default values """
 
+
+        self.unit = HomeoUnit()
         highRange = self.unit.outputRange['high']
         lowRange = self.unit.outputRange['low']
 
@@ -636,8 +676,20 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.selfUpdate()
 
         self.assertFalse(oldOutput == self.unit.currentOutput)       # "1st test " 
-        self.assertTrue(self.unit.currentOutput > lowRange and
-                        self.unit.currentOutput < highRange)         # "2nd test "
+        self.assertTrue(self.unit.currentOutput >= lowRange and
+                        self.unit.currentOutput <= highRange)         # "2nd test "
+        
+        "Then repeat tests with randomized values for unit"
+        tests = 100
+        for i in xrange(tests):
+            self.unit.setRandomValues()
+            oldOutput= self.unit.currentOutput
+            self.unit.selfUpdate()
+            self.assertFalse(oldOutput == self.unit.currentOutput)       # "1st test " 
+            self.assertTrue(self.unit.currentOutput >= lowRange and
+                            self.unit.currentOutput <= highRange)         # "2nd test "
+            
+        
         
     def testComputeNextDeviationWithDefaults(self):
         """
@@ -714,16 +766,91 @@ class HomeoUnitTest(unittest.TestCase):
 
     def testViscosity(self):
         """
-        TODO Viscosity reduces the effect of  the outside force on the unit's needle movement.
-    
-        When viscosity = 0, the force affecting the unit  is unchanged"""
+        Viscosity reduces the effect of the outside force 
+        on the unit's needle movement.
+        When viscosity > 0, the force  changes according to drag. Real tests of drag laws 
+        performed in drag unit tests, here we check that it works as a multiplicative constant"""
+        
+        "Setup a Unit, it will be negatively connected to itself by default"
+        self.unit = HomeoUnit()
+        self.unit.setRandomValues()
+        self.unit.needleCompMethod = 'linear' # default, but we need to make sure
+        
+        ''''Set the noises on the internal connection and on 
+        the unit to 0 to avoid complications'''
+        self.unit.noise = 0
+        self.unit.inputConnections[0].noise = 0
+        
+        "set the unit's needle mass to 1 to avoid complications"
+        self.unit.needleUnit.mass = 1
 
-        self.assertTrue(False)
+        "Change the unit's viscosity to 0 (no effect)"
+        self.unit.viscosity = 0
+        
+        ''''Viscosity affects the inputTorque which is added to the current criticalDeviation
+        to compute the next deviation: when visc = 0, nextDeviation is the current deviation 
+        plus the sum of the inputs. Here there is only one input to consider
+        '''
+        inputTorque =  self.unit.inputConnections[0].output()
+        oldCritDeviation = self.unit.criticalDeviation
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.criticalDeviation == oldCritDeviation + inputTorque)
+        
+        "When viscosity = 1, the force affecting the unit is nullified"
+        self.unit.viscosity = 1
+        inputTorque =  self.unit.inputConnections[0].output()
+        oldCritDeviation = self.unit.criticalDeviation
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.criticalDeviation == oldCritDeviation)
+        
+        "When viscosity = aValue, the force affecting the unit is multiplied by 1 - aValue"
+        
+        viscValue  = np.random.uniform (0,1)
+        self.unit.viscosity = viscValue
+        inputTorque =  self.unit.inputConnections[0].output()
+        oldCritDeviation = self.unit.criticalDeviation
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.criticalDeviation == oldCritDeviation + (inputTorque * (1- viscValue)))
 
-
-        "When viscosity > 0, the force  changes according to drag. Real tests of drag laws performed in drag unit tests. Here we just check that it is lower than when viscosity +0"
-
-        self.assertTrue(False)
+        "Repeat the tests for the proportional method"
+        self.unit.needleCompMethod = 'proportional'
+        
+        "Change the unit's viscosity to 0 (no effect)"
+        self.unit.viscosity = 0
+        
+        ''''Viscosity affects the inputTorque which is added to the current criticalDeviation
+        to compute the next deviation: when visc = 0, nextDeviation is the current deviation 
+        plus the sum of the inputs divided by (self.maxDeviation  * 2). 
+        Here there is only one input to consider
+        '''
+        "TEMPORARY SETTINGS"
+        self.unit.criticalDeviation = 10
+        self.unit.currentOutput = 1
+        self.unit.inputConnections[0].newWeight(-1)        
+        "END TEMPORARY SETTINGS"
+        
+        inputTorque =  self.unit.inputConnections[0].output()
+        oldCritDeviation = self.unit.criticalDeviation
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.criticalDeviation == oldCritDeviation + (inputTorque/(self.unit.maxDeviation * 2.)))
+        
+        "When viscosity = 1, the force affecting the unit is nullified"
+        self.unit.viscosity = 1
+        inputTorque =  self.unit.inputConnections[0].output()
+        oldCritDeviation = self.unit.criticalDeviation
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.criticalDeviation == oldCritDeviation)
+        
+        "When viscosity = aValue, the force affecting the unit is multiplied by 1 - aValue"
+        
+        viscValue  = np.random.uniform (0,1)
+        self.unit.viscosity = viscValue
+        inputTorque =  self.unit.inputConnections[0].output()
+        oldCritDeviation = self.unit.criticalDeviation
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.criticalDeviation == oldCritDeviation + 
+                        (inputTorque /(self.unit.maxDeviation *2.)) * (1. - viscValue))
+        
 
     def testSelfUpdateAdvancesUnitTime(self):
         """

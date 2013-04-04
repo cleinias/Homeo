@@ -189,7 +189,8 @@ class HomeoUnit(object):
         return self._criticalDeviation
     
     def setCriticalDeviation(self,aValue):       
-        self._criticalDeviation = self._criticalDeviation
+#        self._criticalDeviation = self._criticalDeviation
+        self._criticalDeviation = aValue
     
     criticalDeviation = property(fget = lambda self: self.getCriticalDeviation(),
                                  fset = lambda self, value: self.setCriticalDeviation(value))
@@ -198,13 +199,19 @@ class HomeoUnit(object):
         return self._nextDeviation
     
     def setNextDeviation(self,aValue):       
-        self._nextDeviation = self._nextDeviation
+        self._nextDeviation = aValue
     
     nextDeviation = property(fget = lambda self: self.getNextDeviation(),
                                  fset = lambda self, value: self.setNextDeviation(value))
 
     def setViscosity(self, aValue):
-        self._viscosity = aValue
+        ''''Viscosity must be between 0 (zero effect)
+        and 1 (all force canceled out)'''
+        
+        if aValue < 0 or aValue > 1:
+            raise(HomeoUnitError, "The value of viscosity must always be between 0 and 1 (included)")
+        else: self._viscosity = aValue
+        
     def getViscosity(self):
         return self._viscosity
     
@@ -705,7 +712,7 @@ class HomeoUnit(object):
         "generates a random output  over the whole range"
         self._currentOutput =  np.random.uniform(0, 1)    
         "set the critical deviation to a random value over the whole range"                                                         
-        self.criticalDeviation = np.random.uniform(self.outputRange['low'], self.outputRange['high']) 
+        self._criticalDeviation = np.random.uniform(self.outputRange['low'], self.outputRange['high']) 
    
     def activate(self):
         self.active = True
@@ -914,22 +921,27 @@ class HomeoUnit(object):
         to compute the displacement of the needle. Briefly, here we just sum 
         aTorqueValue to the current deviation.
         
-        FIXME. NOISE IS NOT COMPUTED IN THIS METHOD, UT IN OTHER METHODS. FIX THE COMMENT 
-        We also consider noise in the following way:
-        1. Since the noise is a distortion randomly select either a positive or 
-           negative value for noise
-        2. Compute a value for noise by choosing a normally distributed random value 
-           centered around 0
-        3. Consider noise as the ration of the current affected by noise'''
+        Internal noise is computed in method updateDeviationWithNoise, while noise
+        on the connections is computed by HomeoConnections when they return values'''
 
         totalForce = aTorqueValue    
-        '''NOTE: previous step does not  compute the net force acting on the needle 
+        '''NOTE: the HomeoUnit method that computes aTorqueValue (passed to this method)
+        does not  compute the net force acting on the needle 
         by adding the (negative) force produced by the drag and/ or frictional forces). 
-        Only subclasses of HomeoUnit do that'''
+        
+        Only subclasses of HomeoUnit do that. Here we simply consider the viscosity 
+        of the medium as a fractional multiplier of the torque.
+        Viscosity is max at 1 (All force canceled out) and minimum at 0 (no effect)   
+        It is a proxy for the more sophisticated computation of drag carried out
+        in subclasses'''
+        
+        "Applying the viscosity "
+        totalForce = totalForce * (1 - self._viscosity)
         
         newVelocity = totalForce / self.needleUnit.mass    
         '''In an Aristotelian model, the change in displacement (= the velocity) 
-        is equal to the force affecting the unit divided by the  mass: F = mv or v = F/m'''
+        is equal to the force affecting the unit divided by the mass: F = mv or v = F/m
+        '''
         
         
         "Testing"
@@ -990,13 +1002,13 @@ class HomeoUnit(object):
         See Ashby, Design for a Brain, chps. 19-22 for a mathematical treatment of the 
         Homeostat and Capehart 1967 for suggestions on a possible implementation 
         (which requires a Runge-Kutta diff solution routine or equivalent and 
-        Hutwitz convergence test on the coefficient matrix
+        Hutwitz convergence test on the coefficient matrix)
         
         Our method(s) assumes:
         
         1. that the torque is simply the sum of the input connections, hence a value 
         included in +/-  (inputConnections size) (since the max value of any unit's output 
-        and hence  of any input,  is 1 and the minimum  -1)
+        and hence  of any input, is 1 and the minimum  -1)
         
         2. the torque represents the force that displaces the needle from its current position. 
         The value of this displacement is obviously directly proportional to the force. 
@@ -1029,8 +1041,8 @@ class HomeoUnit(object):
         '''See method newNeedlePosition for an extended comment on how 
         to compute the displacement of the needle'''
 
-        torque = aValue / (self.maxDeviation  *2)
-        return self.criticalDeviation + (torque * self.viscosity)
+        torque = aValue / (self.maxDeviation  * 2.)
+        return self.criticalDeviation + (torque * (1-self.viscosity))
     
     def operateUniselector(self):
         '''Activate the uniselector to randomly change the weights of the input connections        
@@ -1038,7 +1050,7 @@ class HomeoUnit(object):
 
 
 
-        "We save the values about the units that have chanegd weights, old weights and new weight for debugging"
+        "We save the values about the units that have changed weights, old weights and new weight for debugging"
         weightChanges = []
         for conn in self.inputConnections:
             if not conn.incomingUnit == self:
@@ -1076,13 +1088,12 @@ class HomeoUnit(object):
         '''Apply the unit's internal noise to the critical deviation and update accordingly.  
            Computation of noise uses the utility HomeoNoise class'''
         
-        if self.noise <> 0 and self.criticalDeviation <> 0:
-            newNoise = HomeoNoise()
-            newNoise.withCurrentAndNoise(self.criticalDeviation, self.noise)
-            newNoise.distorting()    # since the noise is a distortion randomly select either a positive or negative value for noise"
-            newNoise.normal()        # compute a value for noise by choosing a normally distributed random value centered around 0."
-            newNoise.proportional()  # consider noise as the ration of the current affected by noise"   
-            self.criticalDeviation = self.criticalDeviation + newNoise.getNoise()    # apply the noise to the critical deviation value"
+        newNoise = HomeoNoise()
+        newNoise.withCurrentAndNoise(self.criticalDeviation, self.noise)
+        newNoise.distorting()    # since the noise is a distortion randomly select either a positive or negative value for noise"
+        newNoise.normal()        # compute a value for noise by choosing a normally distributed random value centered around 0."
+        newNoise.proportional()  # consider noise as the ration of the current affected by noise"   
+        self._criticalDeviation = self._criticalDeviation + newNoise.getNoise()    # apply the noise to the critical deviation value"
 
 
     def updateTime(self):
