@@ -50,7 +50,7 @@ class HomeoConnectionTest(unittest.TestCase):
         connection2 = copy(self.connection)
         self.assertTrue(self.connection.sameAs(connection2))
 
-        self.connection.incomingUnit(unit2)
+        self.connection.incomingUnit = unit2
         self.assertFalse(self.connection.sameAs(connection2))
         
     def testState(self):
@@ -89,11 +89,11 @@ class HomeoConnectionTest(unittest.TestCase):
         noiseLevel = 0.1
         errorTolerance = 0.00001
         outputWeighed = self.connection.output()
-        inputUnit = self.connection.incomingUnit()
+        inputUnit = self.connection.incomingUnit
         
         self.connection.noise = 0                  # eliminate noise"
         self.assertTrue(outputWeighed - 
-                        ((inputUnit.currentOutput() * self.connection.weight * self.connection.switch) - self.connection.noise) 
+                        ((inputUnit.currentOutput * self.connection.weight * self.connection.switch) - self.connection.noise) 
                          < errorTolerance)
 
         "accounting for noise"
@@ -101,7 +101,7 @@ class HomeoConnectionTest(unittest.TestCase):
     
         "the difference between the weighed connection output and the unit's value is at most equal to noise (plus the tolerance)"
         self.assertTrue(outputWeighed -
-                        abs(((inputUnit.currentOutput() * self.connection.weight * self.connection.switch)) - self.connection.noise)
+                        abs(((inputUnit.currentOutput * self.connection.weight * self.connection.switch)) - self.connection.noise)
                         < (noiseLevel + errorTolerance))
                 
 if __name__ == "__main__":
