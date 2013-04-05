@@ -22,44 +22,44 @@
 <methods>
 <class-id>HomeoUnitNewtonian</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+DONE <!--<body package="Homeostat" selector="initialize">initialize
 	
 	super initialize.
-	self needleUnit mass: 1000.                  "default mass for Newttonian units to avoid the needle shooting up or down"</body>
-</methods>
+	self needleUnit mass: 1000.                  "default mass for Newtonian units to avoid the needle shooting up or down"</body>
+</methods>-->
 
 <methods>
 <class-id>HomeoUnitNewtonian</class-id> <category>private-running</category>
 
-<body package="Homeostat" selector="clearFutureValues">clearFutureValues
+DONE <!--<body package="Homeostat" selector="clearFutureValues">clearFutureValues
 	"sets to 0 the internal values used for computing future states. "
 
 
 self nextDeviation: 0.
 self inputTorque: 0.
 self currentOutput: 0.
-self currentVelocity: 0.</body>
+self currentVelocity: 0.</body>-->
 
-<body package="Homeostat" selector="drag">drag
+DONE <!--<body package="Homeostat" selector="drag">drag
 	"output the drag force acting on the unit as a result of the viscosity in the trough and the velocity of the needle."
 
-^ self stokesLawDrag.              </body>
+^ self stokesLawDrag.              </body>-->
 
-<body package="Homeostat" selector="dragDummy">dragDummy
+DONE <!--<body package="Homeostat" selector="dragDummy">dragDummy
 	"Used for testing purposes"
 
-^ 0</body>
+^ 0</body>-->
 
-<body package="Homeostat" selector="dragEquationDrag">dragEquationDrag
+DONE <!--<body package="Homeostat" selector="dragEquationDrag">dragEquationDrag
 
 	"Compute the drag on the needle according to the drag equation for high Reynolds numbers: 
 	D = 1/2  C A rho  v^2.
 	Outputs a number representing the drag expressed as force measured in Newtons"
 
 
-	^ 1/2  * density * needleUnit dragCoefficient * (self physicalVelocity squared) * (needleUnit surfaceArea) .</body>
+	^ 1/2  * density * needleUnit dragCoefficient * (self physicalVelocity squared) * (needleUnit surfaceArea) .</body>-->
 
-<body package="Homeostat" selector="newLinearNeedlePosition:">newLinearNeedlePosition: aTorqueValue 
+DONE <!--<body package="Homeostat" selector="newLinearNeedlePosition:">newLinearNeedlePosition: aTorqueValue 
 	"  Computes the new position of the needle taking into consideration (a simplified version of) the forces acting on the needle. "
 
 	"self halt."
@@ -96,25 +96,21 @@ self currentVelocity: 0.</body>
 				cr]."
 debugMode 
 	ifTrue: [ 
-		 (((criticalDeviation + displacement) &gt; maxDeviation) or: [(criticalDeviation + displacement) &lt; maxDeviation negated])
+		 (((criticalDeviation + displacement) > maxDeviation) or: [(criticalDeviation + displacement) < maxDeviation negated])
 			ifTrue: 
 				[Transcript show:
 				'NEW CRITICAL DEVIATION WOULD BE OVER LIMITS AT: ', ((criticalDeviation + displacement) asFixedPoint: 3) printString; cr]].
-	^criticalDeviation + displacement</body>
+	^criticalDeviation + displacement</body>-->
 
 <body package="Homeostat" selector="newNeedlePosition:">newNeedlePosition: aTorqueValue 
 	"computes the new needle position on the basis of aTorqueValue, which represents the torque applied to the unit's needle. "
-
-
-
-
 	
 	needleCompMethod = 'linear' 
 		ifTrue: [^self newLinearNeedlePosition: aTorqueValue]
 		ifFalse: [^self newRandomNeedlePosition]       "defaults to a random computation method if the method is not specified"</body>
 
 <body package="Homeostat" selector="physicalForce:">physicalForce: torqueValue
-	"converts the torque coming into a unit into a force expressed in real physical units n(i.e. Newtons)"
+	"converts the torque coming into a unit into a force expressed in real physical units n (i.e. Newtons)"
 
 
 ^ torqueValue * (physicalParameters at: 'massEquivalent') * (physicalParameters at: 'lengthEquivalent') / ((physicalParameters at: 'timeEquivalent') squared)</body>
@@ -152,7 +148,7 @@ viscosityInSiUnits := viscosity / 1000. "convert viscosity from centiPoise to Pa
 
 	"3. check whether it's time to check the uniselector/detection mechanism and if so do it. 
 	       Register that the uniselector is active in an instance variable"
-	(uniselectorTime &gt;= uniselectorTimeInterval and: [uniselectorActive]) 
+	(uniselectorTime >= uniselectorTimeInterval and: [uniselectorActive]) 
 		ifTrue: [self essentialVariableIsCritical ifTrue: [self operateUniselector.
 												   uniselectorActivated := 1]]
 		ifFalse: [uniselectorActivated:= 0].	      

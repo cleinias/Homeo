@@ -156,11 +156,11 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         testRuns = 1000
         
         "When the unit is started, velocity is zero, and dragForce should be zero"
-        self.unit.currentVelocity(0)
+        self.unit.currentVelocity = 0
 
         for index in xrange(testRuns):
-            self.unit.viscosity(numpy.random.uniform(0.1,100000))
-            self.unit.needleUnit.surfaceArea(numpy.random.uniform((1/numpy.pi * 0.001), 1000))
+            self.unit.viscosity = numpy.random.uniform(0.1,100000)
+            self.unit.needleUnit.surfaceArea = numpy.random.uniform((1/numpy.pi * 0.001), 1000)
             radius = math.sqrt(self.unit.needleUnit.surfaceArea() / numpy.pi)
             dragForce = self.unit.stokesLawDrag()
             self.assertTrue(dragForce = 0)
