@@ -1,9 +1,11 @@
+from __future__ import division
 from   HomeoUnit import *
 from   HomeoUniselector import *
 from   Homeostat import *
 from   Helpers.General_Helper_Functions import  withAllSubclasses
 import unittest, numpy, string, random, pickle, os
 from copy import copy
+from _pydev_xmlrpclib import Error
 
 class HomeoUnitTest(unittest.TestCase):
     """Unit testing for the HomeoUnit class and subclasses, including adding and removing connections to other HomeoUnits."""
@@ -142,10 +144,10 @@ class HomeoUnitTest(unittest.TestCase):
             self.assertTrue(oldDeviation == self.unit.criticalDeviation)
             
     def testComputeNextDeviationRunoffAndStabilityLinear(self):
-        "Approximate tests on the behavior of a self-connected  unit running repeatedly. Check if it runs to (+/-) infinity or it stabilizes"
+        "Approximate tests on the behavior of a self-connected unit running repeatedly. Check if it runs to (+/-) infinity or it stabilizes"
 
-        errorTolerance = 0.00000001               #Need to use a tolerance threshold for comparison, due to floating point math"
-
+        errorTolerance = pow(10,-6)              
+        self.unit = HomeoUnit()
 
         #the polarity of the output controls the change in the criticalDeviation through simple summation.
         #We  check that it runs up toward positive infinity (1) and negative infinity (2) (with linear increases)"
@@ -157,23 +159,18 @@ class HomeoUnitTest(unittest.TestCase):
 
         #1. with self connection to 1, noise at 0, viscosity to 1 and the unit not connected to other units, 
         # the deviation increases by the ratio criticalDeviation/maxDeviation every cycle if it starts positive, 
-        #because output is ALWAYS proportional to the unit's range. Eventually it will go up to infinity, i..e to maxDeviation." 
+        #because output is proportional to the unit's range. Eventually it will go up to infinity, i..e to maxDeviation." 
 
         self.unit.potentiometer = 1                  #this sets the value of the self-connection"
         self.unit.inputConnections[0].newWeight(abs(self.unit.potentiometer))     # make sure self-connection is positive"
-        self.unit.noise = 0                          #No noise  to simplify calculations"
-        self.unit.viscosity = 1
+        self.unit.noise = 0                          #No noise  to simplify computations"
+        self.unit.viscosity = 0                      #No viscosity to simplify computations
         self.unit.criticalDeviation = 1
-        self.unit.currentOutput = 1
-        self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation == 2)
-        self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation == (2 + (2/ self.unit.maxDeviation)))
-        tempDev = self.unit.criticalDeviation
+        self.unit.computeOutput()
         for i in xrange(10):
+            expectedDev = self.unit.criticalDeviation + self.unit.currentOutput
             self.unit.selfUpdate()
-            tempDev = tempDev + (tempDev/ self.unit.maxDeviation)
-        self.assertTrue(abs(self.unit.criticalDeviation  - tempDev) < errorTolerance)     
+        self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev) < errorTolerance)     
         for i in xrange(100):
             self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == self.unit.maxDeviation)
@@ -183,62 +180,163 @@ class HomeoUnitTest(unittest.TestCase):
         #"2. with starting point negative we will run up to negative infinity, 
         # because the output will become negative after the first iteration."
         self.unit.criticalDeviation = -3
-        self.unit.currentOutput(1)
+        self.unit.computeOutput()
+        expectedDev = self.unit.criticalDeviation + self.unit.currentOutput
         self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation == -2)
+        self.assertTrue(self.unit.criticalDeviation == expectedDev)
         
-        tempDev = self.unit.criticalDeviation
         for i in xrange(10):
+            expectedDev = self.unit.criticalDeviation + self.unit.currentOutput
             self.unit.selfUpdate()
-            tempDev = tempDev + (tempDev / self.unit.maxDeviation)
-        self.assertTrue(abs(self.unit.criticalDeviation  - tempDev)  < errorTolerance)     
+        self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev)  < errorTolerance)     
         for i in xrange(100):
-            self.unit.selfUpdate()
-            
-        self.assertTrue(self.unit.criticalDeviation() == -(self.unit.maxDeviation()))
+            self.unit.selfUpdate()            
+        self.assertTrue(self.unit.criticalDeviation == self.unit.minDeviation)
 
 
 
-        # 3. with polarity reversed  the unit will tend to stabilize itself around 0, 
+        # 3. with polarity reversed the unit will tend to stabilize itself around 0, 
         # because the output will always counteract the unit's deviation. "
-        self.unit.inputConnections[1].switch(- 1)       #"self-connection's switch is negative: 
+        self.unit.switch = - 1                          #"self-connection's switch is negative: 
                                                         # unit's output is reinputted with reverse polarity"
 
-        self.unit.criticalDeviation(-2)
-        self.unit.currentOutput(-1)
+        self.unit.criticalDeviation = -2
+        self.unit.computeOutput()
         self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation() == -1)
+        self.assertTrue(self.unit.criticalDeviation == (-2 + 0.2))
         for i in xrange(200):
             self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation() < abs(errorTolerance))
+        self.assertTrue(abs(self.unit.criticalDeviation) < errorTolerance)
 
         #4." 
-        self.unit.criticalDeviation(2)
-        self.unit.currentOutput(-1)
+        self.unit.criticalDeviation = 2
+        self.unit.computeOutput()
         self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation() == 3)
+        self.assertTrue((self.unit.criticalDeviation - (2 - 0.2)) < errorTolerance)
         for i in xrange(200):
             self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation < abs(errorTolerance))
+        self.assertTrue(abs(self.unit.criticalDeviation) < errorTolerance)
+
+    def testComputeNextDeviationRunoffAndStabilityProportional(self):
+        "Approximate tests on the behavior of a self-connected unit running repeatedly. Check if it runs to (+/-) infinity or it stabilizes"
+
+        errorTolerance = pow(10,-6)              
+        self.unit = HomeoUnit()
+
+        '''The polarity of the output controls the change in the criticalDeviation through simple summation.
+         We  check that it runs up toward positive infinity (1) and negative infinity (2) (with proportional increases)"
+         We set noises to 0, viscosity to 1, potentiometer to 1, etc, to check that the basic mechanism works.'''
+
+        self.unit.needleCompMethod = 'proportional'
+        self.unit.needleUnit.mass = 1                 # the force acting on a Aristotelian unit is always inversely proportional to the mass. 
+                                                     # set it to 1 to exclude complications from this test."
+
+        #1. with self connection to 1, noise at 0, viscosity to 1 and the unit not connected to other units, 
+        # the deviation increases by the ratio criticalDeviation/maxDeviation every cycle if it starts positive, 
+        #because output is proportional to the unit's range. Eventually it will go up to infinity, i..e to maxDeviation." 
+
+        self.unit.potentiometer = 1                  #this sets the value of the self-connection"
+        self.unit.inputConnections[0].newWeight(abs(self.unit.potentiometer))     # make sure self-connection is positive"
+        self.unit.noise = 0                          #No noise  to simplify computations"
+        self.unit.viscosity = 0                      #No viscosity to simplify computations
+        self.unit.criticalDeviation = 1
+        self.unit.computeOutput()
+        for i in xrange(10):
+            expectedDev = self.unit.criticalDeviation + (self.unit.currentOutput / (self.unit.maxDeviation *2.))
+            self.unit.selfUpdate()
+        self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev) < errorTolerance)     
+        runs = 1
+        maxruns = 500
+        while self.unit.criticalDeviation < self.unit.maxDeviation:
+            self.unit.selfUpdate()
+            runs += 1
+            if runs > maxruns:
+                raise(HomeoUnitError, "The unit does not run off after %u runs" % runs)
+        self.assertTrue(self.unit.criticalDeviation == self.unit.maxDeviation)
+
+
+
+        #"2. with starting point negative we will run up to negative infinity, 
+        # because the output will become negative after the first iteration."
+        self.unit.criticalDeviation = -1
+        self.unit.computeOutput()
+        expectedDev = self.unit.criticalDeviation + (self.unit.currentOutput /(self.unit.maxDeviation *2.))
+        self.unit.selfUpdate()
+        self.assertTrue((self.unit.criticalDeviation - expectedDev) < errorTolerance)        
+        for i in xrange(10):
+            expectedDev = self.unit.criticalDeviation + (self.unit.currentOutput / (self.unit.maxDeviation *2.))
+            self.unit.selfUpdate()
+        self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev)  < errorTolerance)     
+        runs = 1
+        maxruns = 500
+        while self.unit.criticalDeviation > self.unit.minDeviation:
+            self.unit.selfUpdate()
+            runs += 1
+            if runs > maxruns:
+                raise(HomeoUnitError, "The unit does not run off after %u runs" % runs)
+        self.assertTrue(self.unit.criticalDeviation == self.unit.minDeviation)
+
+        
+
+
+        # 3. with polarity reversed the unit will tend to stabilize itself around 0, 
+        # because the output will always counteract the unit's deviation. "
+        self.unit.switch = - 1                          #"self-connection's switch is negative: 
+                                                        # unit's output is re-inputted with reverse polarity"
+
+        self.unit.criticalDeviation = -2
+        self.unit.computeOutput()
+        expectedDev = self.unit.criticalDeviation - (self.unit.currentOutput / (self.unit.maxDeviation * 2.))
+        self.unit.selfUpdate()
+        self.assertTrue((self.unit.criticalDeviation - expectedDev ) < errorTolerance)
+        runs = 1
+        maxRuns = 10000
+        while (abs(self.unit.criticalDeviation) > errorTolerance):
+            self.unit.selfUpdate()
+            runs += 1
+            if runs > maxRuns:
+                raise(HomeoUnitError, "Unit does not stabilize after %u runs" % runs)
+        self.assertTrue(abs(self.unit.criticalDeviation) < errorTolerance)
+
+        #4." 
+        self.unit.criticalDeviation = 2
+        self.unit.computeOutput()
+        expectedDev = self.unit.criticalDeviation - (self.unit.currentOutput / (self.unit.maxDeviation * 2.))
+        self.unit.selfUpdate()
+        self.assertTrue((self.unit.criticalDeviation - expectedDev ) < errorTolerance)
+        runs = 1
+        maxRuns = 10000
+        while (abs(self.unit.criticalDeviation) > errorTolerance):
+            self.unit.selfUpdate()
+            runs += 1
+            if runs > maxRuns:
+                raise(HomeoUnitError, "Unit does not stabilize after %u runs" % runs)
+        self.assertTrue(abs(self.unit.criticalDeviation) < errorTolerance)
 
     def testComputeNextDeviationLinearUnconnected(self):
         "Checks  a single unconnected unit. The value will always remain at its initial value no matter how many times the unit updates"
 
-        # "A standard HomeoUnit increases its value (critiDeviation) at each computational step by the basic formula:
-        # critDeviation (n+1) = criticalDev(n) + (sum(input * weight)/ unit mass)
-        #------------------------------------------------------------------------------ 
-        # The basic formula is complicated by taking into consideration:
-        # 1. noise, which affects both the stability of a unit's critDeviation (as flickering), and the connections to other units (as distortions)
-        # 2. viscosity of the medium
-        # 3. clipping, which limits the maximum/minimum values of critDeviation
-        # 4. The unit's mass (in Newtonian units)
-        #------------------------------------------------------------------------------ 
-        # Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing."
-        # We also set the needleUnit mass to 1 simplify the computation"
+        '''A standard HomeoUnit increases its value (critDeviation) at each computational step by on of two basic formulas:
+        1. when the computation method is linear (default):
+         critDeviation (n+1) = criticalDev(n) + (sum(input * weight)/ unit mass)
+         
+        2. When the computational method is proportional:
+        critDeviation (n+1) = criticalDev(n) + ( (sum(input * weight)) / (maxDeviation *2) / unit mass)
+        
+        Here we test the method 1, see testComputeNextDeviationProportionalUnconnected for case 2
+        
+         The basic formula is complicated by taking into consideration:
+         1. noise, which affects both the stability of a unit's critDeviation (as flickering), and the connections to other units (as distortions)
+         2. viscosity of the medium
+         3. clipping, which limits the maximum/minimum values of critDeviation
+         4. The unit's mass (in Newtonian units)
+        
+         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
         
         testRuns = 1000
         self.unit.needleCompMethod = 'linear'
         self.unit.potentiometer = 0  #"put the weight of the self-connection to zero."
+        self.unit.noise = 0
 
         for each in xrange(testRuns):
             self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation, self.unit.maxDeviation)
@@ -249,51 +347,179 @@ class HomeoUnitTest(unittest.TestCase):
                 self.unit. selfUpdate()
             self.assertTrue(tempDev == self.unit.criticalDeviation)
 
+    def testComputeNextDeviationProportionalUnconnected(self):
+        "Checks  a single unconnected unit. The value will always remain at its initial value no matter how many times the unit updates"
+
+        '''A standard HomeoUnit increases its value (critDeviation) at each computational step by on of two basic formulas:
+        
+        1. When the computation method is linear (default):
+         critDeviation (n+1) = criticalDev(n) + (sum(input * weight)/ unit mass)
+         
+        2. When the computational method is proportional:
+        critDeviation (n+1) = criticalDev(n) + ( (sum(input * weight)) / (maxDeviation *2) / unit mass)
+        
+        Here we test the method 2, see testComputeNextDeviationLinearlUnconnected for case 1
+        
+         The basic formula is complicated by taking into consideration:
+         1. noise, which affects both the stability of a unit's critDeviation (as flickering), and the connections to other units (as distortions)
+         2. viscosity of the medium
+         3. clipping, which limits the maximum/minimum values of critDeviation
+         4. The unit's mass (in Newtonian units)
+        
+         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
+        
+        testRuns = 1000
+        self.unit.needleCompMethod = 'proportional'
+        self.unit.potentiometer = 0  #"put the weight of the self-connection to zero."
+        self.unit.noise = 0
+
+        for each in xrange(testRuns):
+            self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation, self.unit.maxDeviation)
+            self.unit.needleUnit.mass = numpy.random.uniform(0.0001, 10000)
+            self.unit.viscosity = numpy.random.uniform(0,1)
+            tempDev = self.unit.criticalDeviation
+            for i in xrange(10):
+                self.unit. selfUpdate()
+            self.assertTrue(tempDev == self.unit.criticalDeviation)
+
+
+
     def testComputeNextDeviationLinearConnected(self):
         "Checks the computation of a self-connected unit connected to another unit."
 
-        # "A standard HomeoUnit increases its value (critiDeviation) at each computational step by the basic formula:
-        # critDeviation (n+1) = criticalDev(n) + (sum(input * weight)/ unit mass)
-        #------------------------------------------------------------------------------ 
-        # The basic formula is complicated by taking into consideration:
-        # 1. noise, which affects both the stability of a unit's critDeviation (as flickering), and the connections to other units (as distortions)
-        # 2. viscosity of the medium
-        # 3. clipping, which limits the maximum/minimum values of critDeviation
-        # 4. The unit's mass (in Newtonian units)
-        #------------------------------------------------------------------------------ 
-        # Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing."
-        # We also set the needleUnit mass to 1 simplify the computation"
+        '''A standard HomeoUnit increases its value (critDeviation) at each computational step by on of two basic formulas:
+        
+        1. When the computation method is linear (default):
+           critDeviation (n+1) = criticalDev(n) + (sum(input * weight)/ unit mass)
+         
+        2. When the computational method is proportional:
+        critDeviation (n+1) = criticalDev(n) + ( (sum(input * weight)) / (maxDeviation *2) / unit mass)
+        
+        Here we test the method 1, see testComputeNextDeviationProportionalConnected for case 2
+        
+         The basic formula is complicated by taking into consideration:
+         1. noise, which affects both the stability of a unit's critDeviation (as flickering), and the connections to other units (as distortions)
+         2. viscosity of the medium
+         3. clipping, which limits the maximum/minimum values of critDeviation
+         4. The unit's mass (in Newtonian units)
+        
+         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
         
         testRuns = 100
         anotherUnit = HomeoUnit()
+        anotherUnit.setRandomValues()
         self.unit.needleCompMethod = 'linear'
-        self.unit.noise = 0                              #Eliminate flicker noise to simplify test"
+        self.unit.noise = 0                              # Eliminate flicker noise to simplify test"
+        self.unit.viscosity = 0                          # Eliminate viscosity effect to simplify test (viscosity has its own tests) 
         self.unit.needleUnit.mass = 1
     
         self.unit.addConnectionWithRandomValues(anotherUnit)
         for eachConn in self.unit.inputConnections:
-            eachConn.noise = 0                          #the self-connection and the connection to anotherUnit are noise-free"
+            eachConn.noise = 0                          # The self-connection and the connection to anotherUnit are noise-free"
 
         for i in xrange(testRuns):
+            
+            #-------------------------------------- " testing on simple values "
+            #----------------------------------- self.unit.criticalDeviation = 1
+            #--------------------------------- anotherUnit.criticalDeviation = 2
+            #----------------------------------------- self.unit.computeOutput()
+            #--------------------------------------- anotherUnit.computeOutput()
+            #------------------------------------- self.unit.potentiometer = 0.5
+            #------------ self.unit.switch = 1 #np.sign(np.random.uniform(-1,1))
+            #------------------------ self.unit.inputConnections[1].newWeight(1)
+            #------------------------------------- "End of simple value testing"
+            
+            "testing on random values"
             self.unit.criticalDeviation = numpy.random.uniform(-10,10)
             self.unit.computeOutput()
+            anotherUnit.computeOutput()
             self.unit.potentiometer = numpy.random.uniform(0,1)
-            self.unit.switch = numpy.sign(numpy.random.uniform(-1,1)) #sign returns 0 for input = 0. Homeounit.switch() considers 0 to be positive
-            deviation = self.unit.criticalDeviation     
+            self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))   # sign returns 0 for input = 0. 
+                                                                        # Homeounit.switch() considers 0 to be positive
             for i in xrange(10): 
-                errorTolerance = 10^-14                                    #"Cannot get a result better than 10^-14. Consistently fails on smaller values"
-                tempInput = ((self.unit.inputConnections[1]).output())
-                deviation = deviation  + (self.unit.currentOutput * self.unit.potentiometer * self.unit.switch) + tempInput
-                exceeded = abs(deviation) > self.unit.maxDeviation 
+                deviation = self.unit.criticalDeviation     
+                errorTolerance = pow(10,-14)                            
+                expectedInputfromOtherUnit = self.unit.inputConnections[1].output()
+                expectedInputfromSelf = self.unit.currentOutput * self.unit.potentiometer * self.unit.switch
+                expectedDeviation = deviation  + expectedInputfromSelf + expectedInputfromOtherUnit
+                exceeded = abs(expectedDeviation) > self.unit.maxDeviation 
                 self.unit.selfUpdate()
                 if exceeded: 
                     self.assertTrue(True)                              # If criticalDeviation value went at any time beyond clipping limits don't check. 
-                                                                       # testing clipping is carried out in others test methods
+                                                                       # clipping is tested in others test methods
                 else:
-                    self.assertTrue(abs(deviation - self.unit.criticalDeviation)  < errorTolerance)
+                    self.assertTrue(abs(expectedDeviation - self.unit.criticalDeviation)  < errorTolerance)
 
-    def testComputeNextDeviationLinearConnectedTo10Units(self):
-        "Check the values of a unit connected to 10 other units"
+    def testComputeNextDeviationProportionalConnected(self):
+        "Checks the computation of a self-connected unit connected to another unit."
+
+        '''A standard HomeoUnit increases its value (critDeviation) at each computational step by on of two basic formulas:
+        
+        1. When the computation method is linear (default):
+           critDeviation (n+1) = criticalDev(n) + (sum(input * weight)/ unit mass)
+         
+        2. When the computational method is proportional:
+        critDeviation (n+1) = criticalDev(n) + ( (sum(input * weight)) / (maxDeviation *2) / unit mass)
+        
+        Here we test the method 2, see testComputeNextDeviationLinearConnected for case 1
+        
+         The basic formula is complicated by taking into consideration:
+         1. noise, which affects both the stability of a unit's critDeviation (as flickering), and the connections to other units (as distortions)
+         2. viscosity of the medium
+         3. clipping, which limits the maximum/minimum values of critDeviation
+         4. The unit's mass (in Newtonian units)
+        
+         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
+        
+        testRuns = 100
+        anotherUnit = HomeoUnit()
+        anotherUnit.setRandomValues()
+        self.unit.needleCompMethod = 'proportional'
+        self.unit.noise = 0                              # Eliminate flicker noise to simplify test"
+        self.unit.viscosity = 0                          # Eliminate viscosity effect to simplify test (viscosity has its own tests) 
+        self.unit.needleUnit.mass = 1
+    
+        self.unit.addConnectionWithRandomValues(anotherUnit)
+        for eachConn in self.unit.inputConnections:
+            eachConn.noise = 0                          # The self-connection and the connection to anotherUnit are noise-free"
+
+        for i in xrange(testRuns):
+            
+            #-------------------------------------- " testing on simple values "
+            #----------------------------------- self.unit.criticalDeviation = 1
+            #--------------------------------- anotherUnit.criticalDeviation = 2
+            #----------------------------------------- self.unit.computeOutput()
+            #--------------------------------------- anotherUnit.computeOutput()
+            #------------------------------------- self.unit.potentiometer = 0.5
+            #------------ self.unit.switch = 1 #np.sign(np.random.uniform(-1,1))
+            #------------------------ self.unit.inputConnections[1].newWeight(1)
+            #------------------------------------- "End of simple value testing"
+            
+            "testing on random values"
+            self.unit.criticalDeviation = numpy.random.uniform(-10,10)
+            self.unit.computeOutput()
+            anotherUnit.computeOutput()
+            self.unit.potentiometer = numpy.random.uniform(0,1)
+            self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))   # sign returns 0 for input = 0. 
+                                                                        # Homeounit.switch() considers 0 to be positive
+            for i in xrange(10): 
+                deviation = self.unit.criticalDeviation     
+                errorTolerance = pow(10,-14)                            
+                expectedInputFromOtherUnit = self.unit.inputConnections[1].output()
+                expectedInputFromSelf = self.unit.currentOutput * self.unit.potentiometer * self.unit.switch
+                proportionalInput = (expectedInputFromSelf + expectedInputFromOtherUnit)/(self.unit.maxDeviation * 2.)
+                expectedDeviation = deviation  + proportionalInput
+                exceeded = abs(expectedDeviation) > self.unit.maxDeviation 
+                self.unit.selfUpdate()
+                if exceeded: 
+                    self.assertTrue(True)                              # If criticalDeviation value went at any time beyond clipping limits don't check. 
+                                                                       # clipping is tested in others test methods
+                else:
+                    self.assertTrue(abs(expectedDeviation - self.unit.criticalDeviation)  < errorTolerance)
+
+    
+    def testComputeNextDeviationLinearConnectedToNUnits(self):
+        "Check the values of a unit connected to N other units"
         
         # "A standard HomeoUnit increases its value (critiDeviation) at each computational step by the basic formula:
         # critDeviation (n+1) = criticalDev(n) + (sum(input * weight)/ unit mass)
@@ -307,46 +533,62 @@ class HomeoUnitTest(unittest.TestCase):
         # Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing."
         # We also set the needleUnit mass to 1 simplify the computation"
 
-        errorTolerance = 10^-14             #Cannot get a result better than 10^-14. Consistently fails on smaller values"
-        testRuns = 1
-
-        for each in xrange(10):
+        errorTolerance = pow(10,-14)             #Cannot get a result better than 10^-14. Consistently fails on smaller values"
+        testRuns = 10
+        N = 10                                   # number of units to create and connect to
+        for each in xrange(N):
             aUnit = HomeoUnit()
-            self.unit. addConnectionWithRandomValues(aUnit) 
+            self.unit.addConnectionWithRandomValues(aUnit) 
 
         self.unit.needleCompMethod = 'linear'
-        self.noise = 0                              # "Eliminate flicker noise to simplify test"
+        self.unit.noise = 0                              # "Eliminate flicker noise to simplify test"
         self.unit.needleUnit.mass = 1
+        self.unit.viscosity = 0                     # set viscosity effect to 0 to simplify computations
     
 
         for conn in self.unit.inputConnections:
-            conn.noise = 0                             #the self-connection and the connections to all other units  are noise-free"
+            conn.noise = 0                             #the self-connection and the connections to all other units are noise-free"
 
         for i in xrange(testRuns):
-            self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation, self.unit.maxDeviation)
+            #-------------------------------------- " Simple values for testing"
+            #--------------------------- for conn in self.unit.inputConnections:
+                #----------------------- conn.incomingUnit.criticalDeviation = 1
+                #-------------- conn.newWeight(np.sign(np.random.uniform(-1,1)))
+            #--------------------------------------- self.unit.potentiometer = 1
+            #---------------------------------------------- self.unit.switch = 1
+            #----------------------------------------------- "End simple values"
+            
+            "Random values"
+            self.unit.criticalDeviation = numpy.random.uniform(self.unit.minDeviation, self.unit.maxDeviation)
+            self.unit.potentiometer = np.random.uniform(0,1)
+            self.unit.switch = np.sign(np.random.uniform(-1,1))
+            for conn in self.unit.inputConnections:
+               conn.incomingUnit.computeOutput()
+               conn.newWeight(np.random.uniform(-1,1))
+            " End random values "
+
             self.unit.computeOutput()
-            self.unit.potentiometer = numpy.random.uniform(0,1)
-            self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))
+            for conn in self.unit.inputConnections:
+                conn.incomingUnit.computeOutput()
+
             for k in xrange(100):
                 deviation = self.unit.criticalDeviation     
-                tempInput = 0
-                for conn in xrange(2,len(self.unit.inputConnections)):
-                                   tempInput = tempInput + (self.unit.inputConnections[conn].output())     #only sum the input from external units"
-                deviation = deviation  + (self.unit.currentOutput * self.unit.potentiometer * self.unit.switch) + tempInput
-                exceeded = abs(deviation)  > self.unit.maxDeviation 
+                inputFromAllUnits = sum([conn.output() for conn in self.unit.inputConnections])  # includes self-connection
+                expectedDeviation = deviation  + inputFromAllUnits
+                exceeded = abs(expectedDeviation)  > self.unit.maxDeviation 
                 self.unit.selfUpdate()
                 if exceeded:
                     self.assertTrue(True)
-                    deviation = self.unit.criticalDeviation                                                    
+                    #expectedDeviation = self.unit.criticalDeviation                                                    
                     # If criticalDeviation value went at any time  beyond clipping limits don't check. 
                     # (This test is carried out in other unit tests) 
                     # Reset computing deviation to avoid carrying the error over to next cycles"
                 else:
-                    self.assertTrue(abs(deviation - self.unit.criticalDeviation  < errorTolerance))
+                    self.assertTrue(abs(expectedDeviation - self.unit.criticalDeviation  < errorTolerance))
 
-    def testComputeNextDeviationLinearSelfconnected(self):
-        "Check the values of a single self-connected unit"
-    
+    def testComputeNextDeviationProportionalConnectedToNUnits(self):
+        "Check the values of a unit connected to N other units"
+        
         # "A standard HomeoUnit increases its value (critiDeviation) at each computational step by the basic formula:
         # critDeviation (n+1) = criticalDev(n) + (sum(input * weight)/ unit mass)
         #------------------------------------------------------------------------------ 
@@ -359,28 +601,160 @@ class HomeoUnitTest(unittest.TestCase):
         # Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing."
         # We also set the needleUnit mass to 1 simplify the computation"
 
-        errorTolerance = 0
-        testRuns = 1000
+        errorTolerance = pow(10,-14)             #Cannot get a result better than 10^-14. Consistently fails on smaller values"
+        testRuns = 10
+        N = 10                                   # number of units to create and connect to
+        for each in xrange(N):
+            aUnit = HomeoUnit()
+            self.unit.addConnectionWithRandomValues(aUnit) 
+
+        self.unit.needleCompMethod = 'proportional'
+        self.unit.noise = 0                              # "Eliminate flicker noise to simplify test"
+        self.unit.needleUnit.mass = 1
+        self.unit.viscosity = 0                     # set viscosity effect to 0 to simplify computations
+    
+
+        for conn in self.unit.inputConnections:
+            conn.noise = 0                             #the self-connection and the connections to all other units are noise-free"
+
+        for i in xrange(testRuns):
+            #-------------------------------------- " Simple values for testing"
+            #--------------------------- for conn in self.unit.inputConnections:
+                #----------------------- conn.incomingUnit.criticalDeviation = 1
+                #-------------- conn.newWeight(np.sign(np.random.uniform(-1,1)))
+            #--------------------------------------- self.unit.potentiometer = 1
+            #---------------------------------------------- self.unit.switch = 1
+            #----------------------------------------------- "End simple values"
+            
+            "Random values"
+            self.unit.criticalDeviation = numpy.random.uniform(self.unit.minDeviation, self.unit.maxDeviation)
+            self.unit.potentiometer = np.random.uniform(0,1)
+            self.unit.switch = np.sign(np.random.uniform(-1,1))
+            for conn in self.unit.inputConnections:
+               conn.incomingUnit.computeOutput()
+               conn.newWeight(np.random.uniform(-1,1))
+            " End random values "
+
+            self.unit.computeOutput()
+            for conn in self.unit.inputConnections:
+                conn.incomingUnit.computeOutput()
+
+            for k in xrange(100):
+                deviation = self.unit.criticalDeviation     
+                inputFromAllUnits = sum([conn.output() for conn in self.unit.inputConnections])  # includes self-connection
+                expectedDeviation = deviation  + (inputFromAllUnits/ (self.unit.maxDeviation * 2.))
+                exceeded = abs(expectedDeviation)  > self.unit.maxDeviation 
+                self.unit.selfUpdate()
+                if exceeded:
+                    self.assertTrue(True)
+                    #expectedDeviation = self.unit.criticalDeviation                                                    
+                    # If criticalDeviation value went at any time  beyond clipping limits don't check. 
+                    # (This test is carried out in other unit tests) 
+                    # Reset computing deviation to avoid carrying the error over to next cycles"
+                else:
+                    self.assertTrue(abs(expectedDeviation - self.unit.criticalDeviation  < errorTolerance))
+
+    def testComputeNextDeviationLinearSelfconnected(self):
+        "Check the values of a single self-connected unit"
+    
+        '''A standard HomeoUnit increases its value (critDeviation) at each computational step by of two basic formulas:
+        
+        1. When the computation method is linear (default):
+           critDeviation (n+1) = criticalDev(n) + (sum(input * weight)/ unit mass)
+         
+        2. When the computational method is proportional:
+        critDeviation (n+1) = criticalDev(n) + ( (sum(input * weight)) / (maxDeviation *2) / unit mass)
+        
+        Here we test the method 1 on a single self-connected unit, see testComputeNextDeviationProportionalSelfconnected for case 2
+        
+         The basic formula is complicated by taking into consideration:
+         1. noise, which affects both the stability of a unit's critDeviation (as flickering), and the connections to other units (as distortions)
+         2. viscosity of the medium
+         3. clipping, which limits the maximum/minimum values of critDeviation
+         4. The unit's mass (in Newtonian units)
+        
+         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
+        
+        self.unit = HomeoUnit()
+        "testing on simple values "
+#        self.unit.criticalDeviation = 0.5
+#        self.unit.currentOutput = 1
+        " end of testing on simple values"
+        testRuns = 100
         self.unit.needleCompMethod = 'linear'
-        self.unit.maxDeviation = 100
-        self.unit.noise = 0                        #initially set the unit unconnected to correctly initialize value of output."
+        self.unit.maxDeviation = 10
+        self.unit.noise = 0                        #Eliminate flicker noise to simplify computations"
         self.unit.needleUnit.mass = 1
         self.unit.inputConnections[0].noise = 0    #the self-connection is noise-free"
+
+        ''''Test that the next computed deviation will be equal to 
+        the current deviation plus the output from self * weight (unless it runs to maximum)'''
+        
         for test in xrange(testRuns):
-            self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation,self.unit.maxDeviation)
+#            self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation,self.unit.maxDeviation)
             self.unit.computeOutput()
-            #self.unit.criticalDeviation()    FIXIT! Unclear why this instruction is here. 
-            self.unit.potentiometer = numpy.random.uniform(0, 1)
+#            self.unit.potentiometer = numpy.random.uniform(0, 1)
             self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))
             for i in xrange(10):
                 deviation = self.unit.criticalDeviation
-                deviation = deviation + (self.unit.currentOutput * self.unit.potentiometer * self.unit.switch)
-                exceeded = abs(deviation) >  self.unit.maxDeviation
-                self.unit.selfUpdate
-            if exceeded: 
-                self.assertTrue(True)
-            else:
-                self.assertTrue(deviation == self.unit.criticalDeviation)
+                nextDeviation = deviation + (self.unit.currentOutput * self.unit.potentiometer * self.unit.switch)
+                exceeded = abs(nextDeviation) >  self.unit.maxDeviation
+                self.unit.selfUpdate()
+                if exceeded: 
+                    self.assertTrue(True)
+                else:
+                    self.assertTrue(nextDeviation == self.unit.criticalDeviation)
+
+    def testComputeNextDeviationProportionalSelfconnected(self):
+        "Check the values of a single self-connected unit"
+    
+        '''A standard HomeoUnit increases its value (critDeviation) at each computational step by of two basic formulas:
+        
+        1. When the computation method is linear (default):
+           critDeviation (n+1) = criticalDev(n) + (sum(input * weight)/ unit mass)
+         
+        2. When the computational method is proportional:
+        critDeviation (n+1) = criticalDev(n) + ( (sum(input * weight)) / (maxDeviation *2) / unit mass)
+        
+        Here we test the method 1 on a single self-connected unit, see testComputeNextDeviationLinearSelfconnected for case 1
+        
+         The basic formula is complicated by taking into consideration:
+         1. noise, which affects both the stability of a unit's critDeviation (as flickering), and the connections to other units (as distortions)
+         2. viscosity of the medium
+         3. clipping, which limits the maximum/minimum values of critDeviation
+         4. The unit's mass (in Newtonian units)
+        
+         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
+        
+        self.unit = HomeoUnit()
+        "testing on simple values "
+#        self.unit.criticalDeviation = 0.5
+#        self.unit.currentOutput = 1
+        " end of testing on simple values"
+        testRuns = 100
+        self.unit.needleCompMethod = 'proportional'
+        self.unit.maxDeviation = 10
+        self.unit.noise = 0                        #Eliminate flicker noise to simplify computations"
+        self.unit.needleUnit.mass = 1
+        self.unit.inputConnections[0].noise = 0    #the self-connection is noise-free"
+
+        ''''Test that the next computed deviation will be equal to 
+        the current deviation plus the output from self * weight / maxdeviation *2 (unless it runs to maximum)'''
+        
+        for test in xrange(testRuns):
+#            self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation,self.unit.maxDeviation)
+            self.unit.computeOutput()
+#            self.unit.potentiometer = numpy.random.uniform(0, 1)
+            self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))
+            for i in xrange(10):
+                deviation = self.unit.criticalDeviation
+                nextDeviation = deviation + ((self.unit.currentOutput * self.unit.potentiometer * self.unit.switch) / (self.unit.maxDeviation * 2))
+                exceeded = abs(nextDeviation) >  self.unit.maxDeviation
+                self.unit.selfUpdate()
+                if exceeded: 
+                    self.assertTrue(True)
+                else:
+                    self.assertTrue(nextDeviation == self.unit.criticalDeviation)
 
     def testInitializationDefaults(self):
         '''test that the class default values are properly inserted in 
@@ -463,16 +837,16 @@ class HomeoUnitTest(unittest.TestCase):
         "test correct computation of needle movement. Ignore noise, as it is computed within the unit itself"
 
         self.unit.needleUnit.mass = 1
+        self.unit.needleCompMethod = 'linear'       # Default, but we want to make sure
         maxInput = 3                #typical of the 4 units Homeostat"
         minInput = - maxInput
         for i in xrange(100):
             self.unit.criticalDeviation = 1
-            self.unit.needleCompMethod = 'linear'
             self.unit.noise = 0
-            self.unit.viscosity = 1
+            self.unit.viscosity = 0      # no viscosity effects to simplify computations
             torqueValue = numpy.random.uniform(minInput, maxInput)
             newNeedlePosition = self.unit.newNeedlePosition(torqueValue)
-            correctValue = self.unit.criticalDeviation + (torqueValue * self.unit.viscosity)  - self.unit.noise
+            correctValue = self.unit.criticalDeviation + (torqueValue * (1- self.unit.viscosity))  - self.unit.noise
           
             # Print values to console for debugging purposes
             print 'newNeedlePos: ' + str(newNeedlePosition) + '   and critical Dev: ' + str(self.unit.criticalDeviation)
@@ -480,6 +854,28 @@ class HomeoUnitTest(unittest.TestCase):
             
             
             self.assertTrue(newNeedlePosition == correctValue)
+            
+            
+        "Repeat tests for proportional method"
+        self.unit.needleUnit.mass = 1
+        self.unit.needleCompMethod = 'proportional'       
+        maxInput = 3                #typical of the 4 units Homeostat"
+        minInput = - maxInput
+        for i in xrange(100):
+            self.unit.criticalDeviation = 1
+            self.unit.noise = 0
+            self.unit.viscosity = 0      # no viscosity effects to simplify computations
+            torqueValue = numpy.random.uniform(minInput, maxInput)
+            newNeedlePosition = self.unit.newNeedlePosition(torqueValue)
+            correctValue = self.unit.criticalDeviation + ((torqueValue/(self.unit.maxDeviation * 2.)) * (1- self.unit.viscosity))  - self.unit.noise
+          
+            # Print values to console for debugging purposes
+            print 'newNeedlePos: ' + str(newNeedlePosition) + '   and critical Dev: ' + str(self.unit.criticalDeviation)
+            print  self.unit.printDescription()
+            
+            
+            self.assertTrue(newNeedlePosition == correctValue)
+
 
     def testFirstLevelParamSameAs(self):
         '''A unit that is a copy of another unit must have 
@@ -546,6 +942,84 @@ class HomeoUnitTest(unittest.TestCase):
             self.unit.selfUpdate()
             self.assertTrue((self.unit.currentOutput <= highRange) and 
                             (self.unit.currentOutput >= lowRange))
+            
+    def testComputeOutput(self):
+        ''' A unit's output at time t is equal to 
+        its critical at t scaled to the outputRange interval (default: (-1,1))
+        
+        We:
+        1. compute the distance of critDeviation from the minDeviation,
+        2. scale it to the ratio outputRange/deviationRange
+        3. add the scaled distance to the minimum outputRange'''
+        
+        
+        errorTolerance = 10**-14
+        self.unit = HomeoUnit()
+        
+        "Test first with simple values and corner cases"
+        "Disconnect unit by zeroing potentiometer (value of self-connection)"
+        "test with critDev = 1"
+        self.unit.potentiometer = 0
+        self.unit.noise = 0                     #eliminate flickering noise
+        self.unit.criticalDeviation = 1
+        self.unit.selfUpdate()
+        outRange = self.unit.outputRange['high']-self.unit.outputRange['low']
+        devRange = self.unit.maxDeviation - self.unit.minDeviation
+        critDevDistance = np.sqrt(pow((1 - self.unit.minDeviation),2))
+#        dist = numpy.linalg.norm(1 - self.unit.minDeviation)                         # or could use numpy
+        expectedOutput = (critDevDistance * (outRange/devRange)) + self.unit.outputRange['low']
+        self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance) 
+        
+        self.unit.potentiometer = 0
+        self.unit.noise = 0                     #eliminate flickering noise
+        self.unit.criticalDeviation = 0
+        self.unit.selfUpdate()
+        outRange = self.unit.outputRange['high']-self.unit.outputRange['low']
+        devRange = self.unit.maxDeviation - self.unit.minDeviation
+        critDevDistance = np.sqrt(pow((0 - self.unit.minDeviation),2))  
+#        dist = numpy.linalg.norm(0 - self.unit.minDeviation)                         # or could use numpy
+        expectedOutput = (critDevDistance * (outRange/devRange)) + self.unit.outputRange['low']
+        self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance) 
+
+        "Randomize values"
+        "Test with unit still unconnected, but random values for critDeviation" 
+        self.unit.potentiometer = 0
+        self.unit.noise = 0                     #eliminate flickering noise
+        for i in xrange(100):                   
+            critDev = np.random.uniform(self.unit.minDeviation,self.unit.maxDeviation)
+            self.unit.criticalDeviation = critDev
+            self.unit.selfUpdate()
+            outRange = self.unit.outputRange['high']-self.unit.outputRange['low']
+            devRange = self.unit.maxDeviation - self.unit.minDeviation
+            critDevDistance = np.sqrt(pow((critDev - self.unit.minDeviation),2))
+#        dist = numpy.linalg.norm(critDev - self.unit.minDeviation)                         # or could use numpy
+            expectedOutput = (critDevDistance * (outRange/devRange)) + self.unit.outputRange['low']
+            self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance) 
+
+#        "Finally, connect the unit to itself with random  values"
+#        "and test with  random values for critDeviation" 
+#        self.unit.noise = 0                      #eliminate flickering noise
+#        self.unit.inputConnections[0].noise = 0  # eliminate noise on the self-connection
+#        for i in xrange(100):                   
+##            potValue = np.random.uniform(0,1)
+##            switchValue = np.sign(np.random.uniform(-1,1)) 
+#            potValue = 1
+#            switchValue = 1 
+#            self.unit.potentiometer = potValue
+#            self.unit.switch = switchValue
+#            critDev = np.random.uniform(self.unit.minDeviation,self.unit.maxDeviation)
+##            self.unit.criticalDeviation = critDev
+#            self.unit.criticalDeviation = 1
+#            self.unit.currentOutput = 1            
+#            self.unit.selfUpdate()
+#            outRange = self.unit.outputRange['high']-self.unit.outputRange['low']
+#            devRange = self.unit.maxDeviation - self.unit.minDeviation
+#            critDevDistance = np.sqrt(pow((critDev - self.unit.minDeviation),2))
+##        dist = numpy.linalg.norm(critDev - self.unit.minDeviation)                         # or could use numpy
+#            """With one connected unit (self), the output must be equal to:
+#            """
+#            expectedOutput = (critDevDistance * (outRange/devRange)) + self.unit.outputRange['low']
+#            self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance) 
 
     def testOutputAndDeviationInRange(self):
         """
@@ -660,22 +1134,24 @@ class HomeoUnitTest(unittest.TestCase):
             self.assertTrue(self.unit.inputTorque == (out1 + out2 - out3 - out4))
 
 
-    def testComputeNextOutputWithDefaults(self):
+    def testComputeNextOutputWithinRange(self):
         """A unit:
             1. computes a new value and puts it in the correct iVar
             2. has the value  within the unit's limits
 
             First tests are performed  with default values """
 
-
+        errorTolerance = pow(10,-14)
         self.unit = HomeoUnit()
+        self.unit.criticalDeviation = 1
+        self.unit.currentOutput = 0.1
         highRange = self.unit.outputRange['high']
         lowRange = self.unit.outputRange['low']
 
         oldOutput= self.unit.currentOutput
         self.unit.selfUpdate()
 
-        self.assertFalse(oldOutput == self.unit.currentOutput)       # "1st test " 
+        self.assertFalse((oldOutput - self.unit.currentOutput) < errorTolerance)       # "1st test " 
         self.assertTrue(self.unit.currentOutput >= lowRange and
                         self.unit.currentOutput <= highRange)         # "2nd test "
         
@@ -687,9 +1163,7 @@ class HomeoUnitTest(unittest.TestCase):
             self.unit.selfUpdate()
             self.assertFalse(oldOutput == self.unit.currentOutput)       # "1st test " 
             self.assertTrue(self.unit.currentOutput >= lowRange and
-                            self.unit.currentOutput <= highRange)         # "2nd test "
-            
-        
+                            self.unit.currentOutput <= highRange)         # "2nd test "                    
         
     def testComputeNextDeviationWithDefaults(self):
         """
@@ -708,42 +1182,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertTrue(self.unit.criticalDeviation > lowRange and
                         self.unit.criticalDeviation < highRange)         # "2nd test "
 
-    def testComputeNextDeviationProportional(self):
-        """the polarity of the output controls the change in the criticalDeviation through simple summation. 
-        However, the change is proportional to the range of deviation of the output. 
-
-        """
-
-        self.unit.needleCompMethod = 'proportional'
-
-        #" We set noises to 0, viscosity to 1, potentiometer to 1, etc, to check that the basic mechanism works."
-
-
-        # 1. with self connection to 1, noise at 0, viscosity to 1 and the unit not connected to other units, 
-        # the deviation should increase by the ratio b/w unit's inputs and unit's range" 
-
-        self.unit.potentiometer = 1       # set the weight of the self-connection"
-        self.unit. switch = 1             # set the polarity of the self-connection"
-        self.unit. noise = 0
-        self.unit.viscosity = 1
-        self.unit.criticalDeviation = 0
-        self.unit.currentOutput = 2 
-        self.unit.maxDeviation = 10
-        unitRange = self.unit.outputRange['high'] - self.unit.outputRange['low']
-        proportionalIncrease = self.unit.currentOutput / unitRange  
-
-        self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation == 0 + proportionalIncrease)
-
-        # 2 with  output negative we decrease by the same ratio"
-        self.unit.criticalDeviation = 0
-        self.unit.currentOutput = -2
-        self.unit.maxDeviation = 10
-        proportionalIncrease = self.unit.currentOutput / unitRange  
-
-        self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation ==  0 + proportionalIncrease)
-
+    
     def testChangeUniselectorType(self):
         """
         try changing a HomeoUnit uniselector  to an instance of the HomeoUniselector (sub)class

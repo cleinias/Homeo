@@ -1,3 +1,4 @@
+from __future__ import division
 from Core.HomeoNeedleUnit import *
 from Core.HomeoUniselectorAshby import *
 from Core.HomeoUniselector import *
@@ -24,7 +25,7 @@ class HomeoUnit(object):
     HomeoUnit does know about its connections to other units (including itself). 
 
     HomeoUnit holds the  values describing the state of the unit at time t, as specified by Ashby.
-    The design of this simulation of the Homeostat  has been influenced by the C simulation described 
+    The design of this simulation of the Homeostat  was influenced by the C simulation described 
     by Alice Eldridge in "Ashby's Homeostat in Simulation," unpublished, 2002, 
     available at: http://www.informatics.sussex.ac.uk/users/alicee/NEWSITE/ecila_files/content/papers/ACEhom.pdf 
 
@@ -39,9 +40,9 @@ class HomeoUnit(object):
      nextDeviation            <Float>    The needle's deviation the unit will assume at at t+1. This is a function of criticalDeviation, 
                                          of viscosity (as a dampener), and potentiometer. It is limited at both ends by maxDeviation
                                          (i.e. maxDeviation negated < nextDeviation < maxDeviation)
-     outputRange              <Dict>     The range of the output current, keyed as low and high. Default is 0 to 1.
+     outputRange              <Dict>     The range of the output current, keyed as low and high. Default is -1 to 1.
      viscosity                <Float>    The viscosity of the medium in which the metallic needle of the original Ashbian unit is free to move. 
-                                         It acts as a dampening agent on the change of output
+                                         It acts as a dampening agent on the change of output. Min is 0 (no effect), max is 1 (no movement)
      density                  <Float>    The density  of the medium in which the metallic needle of the original Ashbian unit is free to move. 
                                          Used to compute the drag at high velocities, if needed
      noise                    <Float>    As per Ashby's implementation, it represents the noise in the transmission medium 
@@ -89,7 +90,7 @@ class HomeoUnit(object):
     unitRange = {'high':1,'low':-1}               
 
     "DefaultParameters is a class variable holding the  default values of all the various parameters of future created units."
-    DefaultParameters  = dict(viscosity = 1,
+    DefaultParameters  = dict(viscosity = 0,
                               maxDeviation=10,
                               outputRange = unitRange,
                               noise = 0,
@@ -287,12 +288,13 @@ class HomeoUnit(object):
     maxDeviation = property(fget = lambda self: self.getMaxDeviation(),
                             fset = lambda self, value: self.setMaxDeviation(value))  
     
-    def setOutputRange(self, aDict):
+    def setOutputRange(self, minOut,maxOut):
+        aDict = {'low':minOut, 'high':maxOut}
         self._outputRange = aDict
     def getOutputRange(self):
         return self._outputRange
     outputRange = property(fget = lambda self: self.getOutputRange(),
-                           fset = lambda self, value: self.setOutputRange(value))  
+                           fset = lambda self, minOut, maxOut: self.setOutputRange(minOut,maxOut))  
 
     def setUniselectorActive(self,aBoolean):
         self._uniselectorActivated = aBoolean
@@ -382,7 +384,7 @@ class HomeoUnit(object):
     def setSwitch(self,aNumber):
         '''Set the polarity of the unit's self-connection. 
            aNumber must be either -1 or +1, otherwise method 
-           defaults to a negative feedback connection (i.e. -1)
+           raises an exception.
            
            The switch can only be set by changing the sign of weight
            of the the unit's connection to itself (which is always 
@@ -393,9 +395,9 @@ class HomeoUnit(object):
         newWeight = abs(oldWeight) * aNumber
 
         if aNumber in acceptValues:
-            self.inputConnections[0].newWeight(aNumber)
+            self.inputConnections[0].newWeight(newWeight)
         else: 
-            self.inputConnections[0].newWeight(abs(oldWeight) * -1)
+            raise  HomeConnection
     
     def getSwitch(self):
         return self.inputConnections[0].switch
@@ -885,9 +887,9 @@ class HomeoUnit(object):
            Clip the output to within the allowed output range.'''
 
         "1. Scaling"
-        outRange = (self.outputRange['high'] - self.outputRange['low'])
+        outRange = float((self.outputRange['high'] - self.outputRange['low']))
         lowDev = self.minDeviation
-        devRange = self.maxDeviation - lowDev
+        devRange = float(self.maxDeviation - lowDev)
         out = ((self.criticalDeviation - lowDev) *
                (outRange / devRange ) + self.outputRange['low'])
                         
@@ -953,7 +955,7 @@ class HomeoUnit(object):
             sys.stderr.write('\n')
     
         return self.criticalDeviation + newVelocity    
-        '''In an Aristotelian model, new displacement is old displacement 
+        '''In an Aristotelian model, new displacement is old displacement totalForce
         plus velocity: x = x0 + vt, with t obviously = 1 in our case'''
 
     def newNeedlePosition(self,aTorqueValue):
@@ -1018,10 +1020,10 @@ class HomeoUnit(object):
         If, instead, the displacement is equal to the ratio between the maximum torque 
         and the maximum deviation, then the ***potential displacement*** is independent 
         from the number of connected units and will depend more directly on the values of 
-        the incoming units rather than their number. It is obvious that the behavior of a 
+        the incoming units rather than their number. It is obvious that the behaviototalForcer of a 
         collection of units, i.e. a homeostat, will be different in either case. Ashby's 
         probably followed the former model, as evidenced by his (widely reported) comments 
-        about the direct relation between instability and number of units (see also 
+        about the direct relation between instability and number of units (see alsototalForce 
         Capehart 1967 for comments to the same effect). 
         It must be admitted, however, that a careful manipulation of the weights of the 
         connection may reduce the difference between the two methods: one would have to 
@@ -1037,12 +1039,14 @@ class HomeoUnit(object):
         and 1 being the minimum (no effect on movement)"""
 
 
-    def newProportionalNeedlePosition(self, aValue):
+    def newProportionalNeedlePosition(self, aTorque):
         '''See method newNeedlePosition for an extended comment on how 
         to compute the displacement of the needle'''
 
-        torque = aValue / (self.maxDeviation  * 2.)
-        return self.criticalDeviation + (torque * (1-self.viscosity))
+        totalForce = aTorque  / (self.maxDeviation  * 2.)
+        totalForce = totalForce * (1- self.viscosity)
+        newVelocity = totalForce / self.needleUnit.mass   
+        return self.criticalDeviation + newVelocity
     
     def operateUniselector(self):
         '''Activate the uniselector to randomly change the weights of the input connections        
