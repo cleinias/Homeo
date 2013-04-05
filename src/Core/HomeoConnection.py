@@ -1,7 +1,7 @@
+from __future__ import  division
 from Helpers.HomeoNoise import *
 import numpy as np
 from scipy.stats import * 
-
 
 class ConnectionError(Exception):
     '''
@@ -182,7 +182,7 @@ class HomeoConnection(object):
                 self._weight= abs(aWeight)
                 self._switch = np.sign(aWeight)
             else:
-                raise ConnectionError("A HomeoConnection weight must be between -1 and 1")
+                raise(ConnectionError, "A HomeoConnection weight must be between -1 and 1")
 
     def outgoingUnit(self):
         ''' the "outgoingUnit" is the unit the signal is going *to*. 
@@ -200,7 +200,7 @@ class HomeoConnection(object):
 
         newNoise.normal()          # select noise as normally (Gaussian) distributed around the value for the unit's connection noise"
         newNoise.distorting()      # select  noise as distorting the current"
-        newNoise.proportional()    # consider the noise on the communication line as a ration of the current being transmitted"
+        newNoise.proportional()    # consider the noise on the communication line as a ratio of the current being transmitted"
 
         return (self._incomingUnit.currentOutput * self.switch * self.weight) + newNoise.getNoise()
     
