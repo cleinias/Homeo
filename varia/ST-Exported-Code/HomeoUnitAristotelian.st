@@ -22,26 +22,26 @@
 <methods>
 <class-id>HomeoUnitAristotelian</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+DONE <!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize a newly created instance. This method must answer the receiver."
 
 	super initialize.
 	" *** Replace this comment with the appropriate initialization code *** "
-	^self</body>
+	^self</body>-->
 </methods>
 
 <methods>
 <class-id>HomeoUnitAristotelian</class-id> <category>private-running</category>
 
-<body package="Homeostat" selector="dragOn:">dragOn: aForce
+DONE <!--<body package="Homeostat" selector="dragOn:">dragOn: aForce
 	"computes the frictional forces acting on the Aristotelian unit. Only considers the viscosity of the medium in the trough the needle moves through, disregarding other possible frictional forces"
 | viscRatio |
 "converts the actual viscosity to a ratio"
 
 viscRatio := viscosity / (DefaultParameters at: 'maxViscosity').
-^( aForce * viscRatio ) negated.</body>
+^( aForce * viscRatio ) negated.</body>-->
 
-<body package="Homeostat" selector="newLinearNeedlePosition:">newLinearNeedlePosition: aTorqueValue 
+DONE <!--<body package="Homeostat" selector="newLinearNeedlePosition:">newLinearNeedlePosition: aTorqueValue 
 	"see method newNeedlePosition for an extended comment on how to compute the displacement of the needle. Briefly, here we just sum aTorqueValue to the current deviation. "
 
 | totalForce  newVelocity |
@@ -52,7 +52,7 @@ newVelocity := (totalForce / needleUnit mass).							  "In an Aristotelian model
 "Testing"
 debugMode ifTrue: [Transcript show: ' new position at time: ';  show: (time + 1) printString; show: ' for unit: '; show: self name; show: ' will be ' ; show: (criticalDeviation + (aTorqueValue * viscosity) ) printString; cr;cr.].
 
-	^criticalDeviation + newVelocity                                                               " In an Aristotelian model, new displacement is old displacement plus velocity: x = x0 + vt, with t obviously = 1."</body>
+	^criticalDeviation + newVelocity                                                               " In an Aristotelian model, new displacement is old displacement plus velocity: x = x0 + vt, with t obviously = 1."</body>-->
 </methods>
 
 </st-source>
