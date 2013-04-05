@@ -102,20 +102,20 @@ debugMode
 				'NEW CRITICAL DEVIATION WOULD BE OVER LIMITS AT: ', ((criticalDeviation + displacement) asFixedPoint: 3) printString; cr]].
 	^criticalDeviation + displacement</body>-->
 
-<body package="Homeostat" selector="newNeedlePosition:">newNeedlePosition: aTorqueValue 
+DONE <!--<body package="Homeostat" selector="newNeedlePosition:">newNeedlePosition: aTorqueValue 
 	"computes the new needle position on the basis of aTorqueValue, which represents the torque applied to the unit's needle. "
 	
 	needleCompMethod = 'linear' 
 		ifTrue: [^self newLinearNeedlePosition: aTorqueValue]
-		ifFalse: [^self newRandomNeedlePosition]       "defaults to a random computation method if the method is not specified"</body>
+		ifFalse: [^self newRandomNeedlePosition]       "defaults to a random computation method if the method is not specified"</body>-->
 
-<body package="Homeostat" selector="physicalForce:">physicalForce: torqueValue
+DONE <!--<body package="Homeostat" selector="physicalForce:">physicalForce: torqueValue
 	"converts the torque coming into a unit into a force expressed in real physical units n (i.e. Newtons)"
 
 
-^ torqueValue * (physicalParameters at: 'massEquivalent') * (physicalParameters at: 'lengthEquivalent') / ((physicalParameters at: 'timeEquivalent') squared)</body>
+^ torqueValue * (physicalParameters at: 'massEquivalent') * (physicalParameters at: 'lengthEquivalent') / ((physicalParameters at: 'timeEquivalent') squared)</body>-->
 
-<body package="Homeostat" selector="reynoldsNumber">reynoldsNumber
+DONE <!--<body package="Homeostat" selector="reynoldsNumber">reynoldsNumber
 	"computes the Reynolds number of the physical flow (the needle in the trough), according to the formula:
 	Re = 2 a rho v / eta"
 
@@ -123,10 +123,10 @@ debugMode
 
 
 viscosityInSiUnits := viscosity / 1000. "convert viscosity from centiPoise to Pascal/second"
+-->
+<!--^ 2 * needleUnit surfaceArea * density * self physicalVelocity / viscosityInSiUnits.</body>-->
 
-^ 2 * needleUnit surfaceArea * density * self physicalVelocity / viscosityInSiUnits.</body>
-
-<body package="Homeostat" selector="selfUpdate">selfUpdate
+DONE <!--<body package="Homeostat" selector="selfUpdate">selfUpdate
 	"This is the master loop for the unit. It goes through the following sequence:
 	1. compute new needle's deviation (nextDeviation (includes reading inputs))
 	2. updates the current output on the basis of the deviation.
@@ -150,7 +150,7 @@ viscosityInSiUnits := viscosity / 1000. "convert viscosity from centiPoise to Pa
 	       Register that the uniselector is active in an instance variable"
 	(uniselectorTime >= uniselectorTimeInterval and: [uniselectorActive]) 
 		ifTrue: [self essentialVariableIsCritical ifTrue: [self operateUniselector.
-												   uniselectorActivated := 1]]
+								  uniselectorActivated := 1]]
 		ifFalse: [uniselectorActivated:= 0].	      
 
 
@@ -168,15 +168,15 @@ viscosityInSiUnits := viscosity / 1000. "convert viscosity from centiPoise to Pa
 	
 	self criticalDeviation: newDeviation.
 	self computeOutput.
-	nextDeviation := 0</body>
+	nextDeviation := 0</body>-->
 
-<body package="Homeostat" selector="stokesLawDrag">stokesLawDrag
+DONE <!--<body package="Homeostat" selector="stokesLawDrag">stokesLawDrag
 
 	"Compute the physical drag on the needle according to Stokes equation: D = 6 pi r eta v.
 	Output is negated, since Drag's sign is always  opposite  to velocity.
 	Instead of the radius of the sphere (as in Stokes' law), it uses the surface area of the needle."
 
-^ ( 6 * Double pi * ((needleUnit surfaceArea * Double pi ) sqrt) * viscosity * currentVelocity) negated.</body>
+^ ( 6 * Double pi * ((needleUnit surfaceArea * Double pi ) sqrt) * viscosity * currentVelocity) negated.</body>-->
 </methods>
 
 </st-source>
