@@ -3,9 +3,9 @@ Created on Mar 15, 2013
 
 @author: stefano
 '''
+from __future__ import division
 from Helpers.General_Helper_Functions import Singleton
 import numpy as np
-
 
 class HomeoNoise(object):
     '''
@@ -209,7 +209,13 @@ class HomeoNoise(object):
         '''Return a degrading noise (with sign always opposite to affected current), 
             and constant value equal to the ratio between the noise parameter and the affected current'''
 
-        return (self._noise * abs(self._current)) * np.sign(self._current) * -1
+        if self.noise == 0:
+            return 0
+        else:
+            if self.current == 0:
+                return - self.noise
+            else:
+                return (self._noise * abs(self._current)) * np.sign(self._current) * -1
 
     def getNoiseDegradingNormalLinear(self):
         '''Return a degrading noise (sign always opposite to current),
