@@ -22,15 +22,15 @@
 <!-- -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -   -->
 
 
-<methods>
+DONE Class methods <!--<methods>
 <class-id>HomeoDataUnit class</class-id> <category>instance creation</category>
 
 <body package="Homeostat" selector="new">new
 	"Answer a newly created and initialized instance."
 
 	^super new initialize</body>
-
-<body package="Homeostat" selector="newUnitFor:">newUnitFor: aHomeoUnit
+-->
+DONE <!--<body package="Homeostat" selector="newUnitFor:">newUnitFor: aHomeoUnit
 
 "creates a new instance, reads the state from aHomeoUnit and returns it.
   This is just a convenience, but it is useful becaue it is the most common use of HomeoDataUnit"
@@ -41,15 +41,15 @@ dataUnit := super new initialize.
 
 ^dataUnit readStateFrom: aHomeoUnit.
 
-</body>
+</body>-->
 </methods>
 
 <!-- -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -   -->
 
 
-<comment>
+DONE <comment>
 <class-id>HomeoDataUnit</class-id>
-<body>HomeoDataUnit holds the 'photograph' of a HomeoUnit unit at a certain time instant t. It contains a representation of all the variablle affecting the unit's functioning.
+DONE <!--<body>HomeoDataUnit holds the 'photograph' of a HomeoUnit unit at a certain time instant t. It contains a representation of all the variablle affecting the unit's functioning.
 It knows how to read these values from a unit and how to print itself (in various ways) on a stream. Consistently with Ashby's, the time itself is not recorded, because we are assuming that the unit is in time always, and the data unit represents a particular splice of the unit's behavior.
 
 Instance Variables:
@@ -61,13 +61,13 @@ Instance Variables:
 	uniselectorState		&lt;aString&gt;		state of the unit's uniselector
 	uniselectorActive         &lt;aNumber&gt;           indicates whether the uniselector is active at time t (thus potentially changing connections' weight for time t+1) 
 
-</body>
+</body>-->
 </comment>
 
-<methods>
+DONE Comparing<methods>
 <class-id>HomeoDataUnit</class-id> <category>comparing</category>
 
-<body package="Homeostat" selector="sameValuesAs:">sameValuesAs: dataUnit
+DONE <!--<body package="Homeostat" selector="sameValuesAs:">sameValuesAs: dataUnit
 
 "answers true if the values in the two data units are the same. It does not check the values of the connections"
 
@@ -75,26 +75,26 @@ Instance Variables:
 ^ self name = dataUnit name &amp;
 self output = dataUnit output &amp;
 self maxDeviation = dataUnit maxDeviation &amp;
-self uniselectorState = dataUnit uniselectorState</body>
+self uniselectorState = dataUnit uniselectorState</body>-->
 </methods>
 
-<methods>
+DONE Initialize-release <methods>
 <class-id>HomeoDataUnit</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
-	connectedTo := Dictionary new.</body>
+DONE <!--<body package="Homeostat" selector="initialize">initialize
+	connectedTo := Dictionary new.</body>-->
 </methods>
 
-<methods>
+DONE printing <methods>
 <class-id>HomeoDataUnit</class-id> <category>printing</category>
 
-<body package="Homeostat" selector="printCriticalDeviationOn:">printCriticalDeviationOn: aStream 
+DONE <!--<body package="Homeostat" selector="printCriticalDeviationOn:">printCriticalDeviationOn: aStream 
 	"prints  just the DataUnit's criticalDeviation values on stream. Useful for graphing and compact representations."
 
 
-	aStream nextPutAll: (criticalDeviation printString); cr.</body>
+	aStream nextPutAll: (criticalDeviation printString); cr.</body>-->
 
-<body package="Homeostat" selector="printDataOn:">printDataOn: aStream 
+DONE <!--<body package="Homeostat" selector="printDataOn:">printDataOn: aStream 
 	"Output a complete representation of its data"
 
 	aStream
@@ -124,55 +124,55 @@ self uniselectorState = dataUnit uniselectorState</body>
 				nextPutAll: '     ';
 				nextPutAll: 'noise: ';
 				nextPutAll: ((connValue at: 4) printString)].
-	aStream nextPut: Graphics.TextConstants.CR</body>
+	aStream nextPut: Graphics.TextConstants.CR</body>-->
 
-<body package="Homeostat" selector="printEssentialVariableOn:">printEssentialVariableOn: aStream 
+DONE <!--<body package="Homeostat" selector="printEssentialVariableOn:">printEssentialVariableOn: aStream 
 	"prints  just the DataUnit's output values on stream. Useful for graphing and compact representations."
 
 
-	aStream nextPutAll: (output printString); cr.</body>
+	aStream nextPutAll: (output printString); cr.</body>-->
 
-<body package="Homeostat" selector="printUniselectorActivatedOn:">printUniselectorActivatedOn: aStream 
+DONE <!--<body package="Homeostat" selector="printUniselectorActivatedOn:">printUniselectorActivatedOn: aStream 
 	"prints  just the data about whether the DataUnit's uniselctor has been activated"
 
 
-aStream nextPutAll: (uniselectorActivated printString); cr.</body>
+aStream nextPutAll: (uniselectorActivated printString); cr.</body>-->
 </methods>
 
-<methods>
+DONE Accessing <methods>
 <class-id>HomeoDataUnit</class-id> <category>accessing</category>
 
-<body package="Homeostat" selector="connectedTo">connectedTo
-	^connectedTo</body>
+DONE <!--<body package="Homeostat" selector="connectedTo">connectedTo
+	^connectedTo</body>-->
 
-<body package="Homeostat" selector="connectedTo:">connectedTo: anObject
-	connectedTo := anObject</body>
+DONE <!--<body package="Homeostat" selector="connectedTo:">connectedTo: anObject
+	connectedTo := anObject</body>-->
 
-<body package="Homeostat" selector="criticalDeviation">criticalDeviation
-	^criticalDeviation</body>
+DONE <!--<body package="Homeostat" selector="criticalDeviation">criticalDeviation
+	^criticalDeviation</body>-->
 
-<body package="Homeostat" selector="criticalDeviation:">criticalDeviation: anObject
-	criticalDeviation := anObject</body>
+DONE <!--<body package="Homeostat" selector="criticalDeviation:">criticalDeviation: anObject
+	criticalDeviation := anObject</body>-->
 
-<body package="Homeostat" selector="maxDeviation">maxDeviation
-	^maxDeviation</body>
+DONE <!--<body package="Homeostat" selector="maxDeviation">maxDeviation
+	^maxDeviation</body>-->
 
-<body package="Homeostat" selector="maxDeviation:">maxDeviation: anObject
-	maxDeviation := anObject</body>
+DONE <!--<body package="Homeostat" selector="maxDeviation:">maxDeviation: anObject
+	maxDeviation := anObject</body>-->
 
-<body package="Homeostat" selector="name">name
-	^name</body>
+DONE <!--<body package="Homeostat" selector="name">name
+	^name</body>-->
 
-<body package="Homeostat" selector="name:">name: anObject
-	name := anObject</body>
+DONE <!--<body package="Homeostat" selector="name:">name: anObject
+	name := anObject</body>-->
 
-<body package="Homeostat" selector="output">output
-	^output</body>
+DONE <!--<body package="Homeostat" selector="output">output
+	^output</body>-->
 
-<body package="Homeostat" selector="output:">output: anObject
-	output := anObject</body>
+DONE <!--<body package="Homeostat" selector="output:">output: anObject
+	output := anObject</body>-->
 
-<body package="Homeostat" selector="readStateFrom:">readStateFrom: aHomeoUnit
+DONE <!--<body package="Homeostat" selector="readStateFrom:">readStateFrom: aHomeoUnit
 
 "reads the fundamental variables of the unit's state from the unit itself."
 
@@ -182,19 +182,19 @@ uniselectorState := aHomeoUnit uniselectorActive.
 maxDeviation :=  aHomeoUnit maxDeviation.
 criticalDeviation := aHomeoUnit criticalDeviation.
 uniselectorActivated := aHomeoUnit uniselectorActivated.
-aHomeoUnit inputConnections do: [ :conn | connectedTo at: (conn incomingUnit name) put: (Array with: (conn weight) with: (conn switch) with: (conn state) with: (conn noise))].</body>
+aHomeoUnit inputConnections do: [ :conn | connectedTo at: (conn incomingUnit name) put: (Array with: (conn weight) with: (conn switch) with: (conn state) with: (conn noise))].</body>-->
 
-<body package="Homeostat" selector="uniselectorActivated">uniselectorActivated
-	^uniselectorActivated</body>
+DONE <!--<body package="Homeostat" selector="uniselectorActivated">uniselectorActivated
+	^uniselectorActivated</body>-->
 
-<body package="Homeostat" selector="uniselectorActivated:">uniselectorActivated: anObject
-	uniselectorActivated := anObject</body>
+DONE <!--<body package="Homeostat" selector="uniselectorActivated:">uniselectorActivated: anObject
+	uniselectorActivated := anObject</body>-->
 
-<body package="Homeostat" selector="uniselectorState">uniselectorState
-	^uniselectorState</body>
+DONE <!--<body package="Homeostat" selector="uniselectorState">uniselectorState
+	^uniselectorState</body>-->
 
-<body package="Homeostat" selector="uniselectorState:">uniselectorState: anObject
-	uniselectorState := anObject</body>
+DONE <!--<body package="Homeostat" selector="uniselectorState:">uniselectorState: anObject
+	uniselectorState := anObject</body>-->
 </methods>
 
 </st-source>
