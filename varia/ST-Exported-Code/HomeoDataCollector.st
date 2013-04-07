@@ -19,39 +19,39 @@
 </attributes>
 </class>
 
-<comment>
+DONE <!--<comment>
 <class-id>HomeoDataCollector</class-id>
 <body>DataCollector collects the data for the Homestat simulation. It can output them on a variety of media (file, screen, etc) and formats, write them to file or read them from file. DataCollector DOES NOT collect the data about the homeostat itself---i.e. the engine that has produced the data. The homeostat class knows how to save itself and, conversely, how to read its data and parameters from a  saved instance.
 
 Instance Variables:
-	states	&lt;aDictionary&gt;		a collection recording a description of the states of all units, indexed by time t. It is a Dictionary indexed by time t, with each elements containing a collection of HomeoDataUnits indexed by unit's name. It cannot be an Array because the index cannot be restrained to positive numbers (1--n). Indeed, the simulation usually starts at 0, but it could reasonably start in the past. 
+	states	<aDictionary>		a collection recording a description of the states of all units, indexed by time t. It is a Dictionary indexed by time t, with each elements containing a collection of HomeoDataUnits indexed by unit's name. It cannot be an Array because the index cannot be restrained to positive numbers (1--n). Indeed, the simulation usually starts at 0, but it could reasonably start in the past. 
 
 </body>
-</comment>
+</comment>-->
 
-<methods>
+DONE Initialize-release<methods>
 <class-id>HomeoDataCollector</class-id> <category>initialize-release</category>
 
-<body package="Homeostat" selector="initialize">initialize
+USELESS <!--<body package="Homeostat" selector="initialize">initialize
 	"Initialize a newly created instance. This method must answer the receiver."
 
 	super initialize.
 	" *** Replace this comment with the appropriate initialization code *** "
-	^self</body>
+	^self</body>-->
 </methods>
 
-<methods>
+DONE Saving <methods>
 <class-id>HomeoDataCollector</class-id> <category>saving</category>
 
-<body package="Homeostat" selector="bossOutOn:">bossOutOn: aFilename
+DONE <!--<body package="Homeostat" selector="bossOutOn:">bossOutOn: aFilename
 
 "save itself on a new boss file opened on aFilename. It will erase the old content of aFilename"
 | boss |
 boss := BinaryObjectStorage onNew: aFilename writeStream.
 boss nextPut: self.
-boss close.</body>
+boss close.</body>-->
 
-<body package="Homeostat" selector="saveDeviationOn:forUnit:">saveDeviationOn: aStream forUnit: aUnit
+DONE <!--<body package="Homeostat" selector="saveDeviationOn:forUnit:">saveDeviationOn: aStream forUnit: aUnit
 
 "Saves the output of the simulation on a stream (typically associated to a file by the calling app) as a series of lines, one per time tick, each comprising the critical deviation  value for aUnit.
 Need to strip the type information (the trailing 'd') from the text representation of a double produced by printString "
@@ -66,9 +66,9 @@ states do: [
 			ifTrue: 
 				[str := ReadStream on: (dataUnit  output printString).
 				aStream nextPutAll: (str upTo: $d)].
-				aStream nextPut: Graphics.TextConstants.CR]]</body>
+				aStream nextPut: Graphics.TextConstants.CR]]</body>-->
 
-<body package="Homeostat" selector="saveEssentialsOn:separator:">saveEssentialsOn: aStream separator: aCharacter
+DONE <!--<body package="Homeostat" selector="saveEssentialsOn:separator:">saveEssentialsOn: aStream separator: aCharacter
 
 "Saves the output of the simulation on a stream (typically associated to a file by the calling app) as a series of lines, one per time tick, each comprising a row of output values separated by aCharacter.
 Need to strip the type information (the trailing 'd') from the text representation of a double produced by printString "
@@ -82,13 +82,13 @@ states do: [
 		aStream nextPutAll: (str upTo: $d); 
 				 nextPut: aCharacter.].
 	aStream nextPut: Graphics.TextConstants.CR.
-	]</body>
+	]</body>-->
 </methods>
 
-<methods>
+DONE Accesssing<methods>
 <class-id>HomeoDataCollector</class-id> <category>accessing</category>
 
-<body package="Homeostat" selector="at:addDataUnitFor:">at: timeIndex addDataUnitFor: aHomeoUnit
+DONE <!--<body package="Homeostat" selector="at:addDataUnitFor:">at: timeIndex addDataUnitFor: aHomeoUnit
 
 "adds a dataunit for aHomeoUnit representing the latter state at time timeIndex"
 
@@ -96,19 +96,19 @@ states isNil ifTrue: [states := Dictionary new].
 
 (states includesKey:  timeIndex) ifFalse: [states at: timeIndex put: Dictionary new].
 
-(states at: timeIndex) at: (aHomeoUnit name) put: (HomeoDataUnit newUnitFor: aHomeoUnit).</body>
+(states at: timeIndex) at: (aHomeoUnit name) put: (HomeoDataUnit newUnitFor: aHomeoUnit).</body>-->
 
-<body package="Homeostat" selector="states">states
-	^states</body>
+DONE <!--<body package="Homeostat" selector="states">states
+	^states</body>-->
 
-<body package="Homeostat" selector="states:">states: anObject
-	states := anObject</body>
+DONE <!--<body package="Homeostat" selector="states:">states: anObject
+	states := anObject</body>-->
 </methods>
 
-<methods>
+DONE Printing <methods>
 <class-id>HomeoDataCollector</class-id> <category>printing</category>
 
-<body package="Homeostat" selector="printCompleteDataForUnit:On:">printCompleteDataForUnit: aHomeoUnit On: aStream
+DONE <!--<body package="Homeostat" selector="printCompleteDataForUnit:On:">printCompleteDataForUnit: aHomeoUnit On: aStream
 
 "appends to aStream a brief representation of  aHomeoUnit data"
 
@@ -125,9 +125,9 @@ states do: [
 						nextPutAll: timeIndex printString;
 						nextPutAll: '  '.
 						value printDataOn:  aStream]].
-				timeIndex := timeIndex + 1.]].</body>
+				timeIndex := timeIndex + 1.]].</body>-->
 
-<body package="Homeostat" selector="printCompleteDataOn:">printCompleteDataOn: aStream
+DONE <!--<body package="Homeostat" selector="printCompleteDataOn:">printCompleteDataOn: aStream
 
 
 "appends to aStream a complete representation of its data"
@@ -144,9 +144,9 @@ states do: [
 					nextPutAll: timeIndex printString;
 					nextPutAll: '  '.
 					value printDataOn:  aStream].
-			timeIndex := timeIndex + 1.]].</body>
+			timeIndex := timeIndex + 1.]].</body>-->
 
-<body package="Homeostat" selector="printCriticalDevForUnit:On:">printCriticalDevForUnit: aHomeoUnit On: aStream
+DONE <!--<body package="Homeostat" selector="printCriticalDevForUnit:On:">printCriticalDevForUnit: aHomeoUnit On: aStream
 
 "appends to aStream the values for Critical Deviation of aHomeoUnit "
 
@@ -158,9 +158,9 @@ states do: [
 					:key :value |
 					key = aHomeoUnit name 
 						ifTrue: [
-							value printCriticalDeviationOn:  aStream]]]].</body>
+							value printCriticalDeviationOn:  aStream]]]].</body>-->
 
-<body package="Homeostat" selector="printEssentialDataForUnit:On:">printEssentialDataForUnit: aHomeoUnit On: aStream
+DONE <!--<body package="Homeostat" selector="printEssentialDataForUnit:On:">printEssentialDataForUnit: aHomeoUnit On: aStream
 
 "appends to aStream a brief representation of  aHomeoUnit data"
 
@@ -178,9 +178,9 @@ states do: [
 						nextPutAll: '  ';
 						nextPutAll: (value name) , ': '.
 						value printEssentialVariableOn:  aStream]].
-				timeIndex := timeIndex + 1.]].</body>
+				timeIndex := timeIndex + 1.]].</body>-->
 
-<body package="Homeostat" selector="printEssentialDataOn:">printEssentialDataOn: aStream
+DONE <!--<body package="Homeostat" selector="printEssentialDataOn:">printEssentialDataOn: aStream
 
 "appends to aStream a brief representation of its data"
 
@@ -197,9 +197,9 @@ states do: [
 					nextPutAll: '  ';
 					nextPutAll: (value name) , ': '.
 					value printEssentialVariableOn:  aStream].
-			timeIndex := timeIndex + 1.]].</body>
+			timeIndex := timeIndex + 1.]].</body>-->
 
-<body package="Homeostat" selector="printPlottingDataForGgobiOn:">printPlottingDataForGgobiOn: aStream
+DONE <!--<body package="Homeostat" selector="printPlottingDataForGgobiOn:">printPlottingDataForGgobiOn: aStream
 
 "appends to aStream a multi-column  representation of its data, suitable for plotting. aCharacter is the character separatng the column.
 The format includes:
@@ -218,7 +218,7 @@ decimals := 8.    "The number of fixed decimals we keep. Data points are double 
 aCharacter := $,.
 
 unitNames := OrderedCollection new.
-states size &lt; 1 ifTrue: [^Dialog warn: 'There are no data to save'].
+states size < 1 ifTrue: [^Dialog warn: 'There are no data to save'].
 (states at: 1) do: [:dataUnit | unitNames add: (dataUnit name)].
 criticDevData := self criticalDevAsCollectionOfArraysForAllUnits asArray.
 
@@ -239,9 +239,9 @@ criticDevData doWithIndex: [ :timeSlice : index  |
 			timeSlice do: [:dataPoint | aStream nextPutAll: ((ReadStream on: (dataPoint asFixedPoint: decimals)  printString) upTo: $s); 
 										 nextPut: aCharacter]. 
 	         		aStream nextPut: (Character cr)].
-aStream close.</body>
+aStream close.</body>-->
 
-<body package="Homeostat" selector="printPlottingDataForROn:">printPlottingDataForROn: aStream
+DONE <!--<body package="Homeostat" selector="printPlottingDataForROn:">printPlottingDataForROn: aStream
 
 "appends to aStream a multi-column  representation of its data, suitable for plotting with the R softwre package. aCharacter is the character separatng the column.
 The format includes:
@@ -257,7 +257,7 @@ then a sequence of lines with each  column containing the critical deviation val
 aCharacter := $,.
 
 unitNames := OrderedCollection new.
-states size &lt; 1 ifTrue: [^Dialog warn: 'There are no data to save'].
+states size < 1 ifTrue: [^Dialog warn: 'There are no data to save'].
 (states at: 1) do: [:dataUnit | unitNames add: (dataUnit name)].
 criticDevData := self criticalDevAsCollectionOfArraysForAllUnits asArray.
 
@@ -288,9 +288,9 @@ criticDevData doWithIndex: [ :timeSlice : index  |
 			timeSlice do: [:dataPoint | aStream nextPutAll: ((ReadStream on: dataPoint printString) upTo: $d); 
 										 nextPut: aCharacter]. 
 	         		aStream nextPut: (Character cr)].
-aStream close.</body>
+aStream close.</body>-->
 
-<body package="Homeostat" selector="printPlottingDataOn:">printPlottingDataOn: aStream
+DONE <!--<body package="Homeostat" selector="printPlottingDataOn:">printPlottingDataOn: aStream
 
 "appends to aStream a multi-column  representation of its data, suitable for plotting. The format includes:
 
@@ -304,7 +304,7 @@ then a sequence of lines with each  column containing the critical deviation val
 | criticDevData unitNames  |
 
 unitNames := OrderedCollection new.
-states size &lt; 1 ifTrue: [^Dialog warn: 'There are no data to save'].
+states size < 1 ifTrue: [^Dialog warn: 'There are no data to save'].
 (states at: 1) do: [:dataUnit | unitNames add: (dataUnit name)].
 criticDevData := self criticalDevAsCollectionOfArraysForAllUnits asArray.
 
@@ -336,9 +336,9 @@ criticDevData do: [ :timeSlice |
 											nextPut: (Character tab);
 											nextPut: (Character tab)].
 			aStream nextPut: (Character cr)].
-aStream close.</body>
+aStream close.</body>-->
 
-<body package="Homeostat" selector="printPlottingDataOn:withSeparator:">printPlottingDataOn: aStream withSeparator: aCharacter
+DONE <!--<body package="Homeostat" selector="printPlottingDataOn:withSeparator:">printPlottingDataOn: aStream withSeparator: aCharacter
 
 "appends to aStream a multi-column  representation of its data, suitable for plotting. aCharacter is the character separatng the column.
 The format includes:
@@ -352,7 +352,7 @@ then a sequence of lines with each  column containing the critical deviation val
 | criticDevData unitNames  |
 
 unitNames := OrderedCollection new.
-states size &lt; 1 ifTrue: [^Dialog warn: 'There are no data to save'].
+states size < 1 ifTrue: [^Dialog warn: 'There are no data to save'].
 (states at: 1) do: [:dataUnit | unitNames add: (dataUnit name)].
 criticDevData := self criticalDevAsCollectionOfArraysForAllUnits asArray.
 
@@ -378,13 +378,13 @@ criticDevData do: [ :timeSlice |
 			timeSlice do: [:dataPoint | aStream nextPutAll: ((ReadStream on: dataPoint printString) upTo: $d); 
 										 nextPut: aCharacter]. 
 	         		aStream nextPut: (Character cr)].
-aStream close.</body>
+aStream close.</body>-->
 </methods>
 
-<methods>
+DONE Converting <methods>
 <class-id>HomeoDataCollector</class-id> <category>converting</category>
 
-<body package="Homeostat" selector="criticalDevAsCollectionForUnit:">criticalDevAsCollectionForUnit: aHomeoUnit 
+DONE <!--<body package="Homeostat" selector="criticalDevAsCollectionForUnit:">criticalDevAsCollectionForUnit: aHomeoUnit 
 	"Extracts the Critical Deviaton values for aHomeoUnits and returns them as an Ordered Collection"
 
 	| aCollection |
@@ -396,9 +396,9 @@ aStream close.</body>
 					[each keysAndValuesDo: 
 							[:key :value | 
 							key = aHomeoUnit name ifTrue: [ aCollection add: (value criticalDeviation)]]]].
-	^aCollection</body>
+	^aCollection</body>-->
 
-<body package="Homeostat" selector="criticalDevAsCollectionOfArraysForAllUnits">criticalDevAsCollectionOfArraysForAllUnits 
+DONE <!--<body package="Homeostat" selector="criticalDevAsCollectionOfArraysForAllUnits">criticalDevAsCollectionOfArraysForAllUnits 
 	"Extracts the Critical Deviaton homeoDataunits for all units  and returns them as an Ordered Collection of Arrays. Each array has all the homeoDataunits for a point in time"
 
 	| aCollection  |
@@ -419,9 +419,9 @@ aStream close.</body>
 
 
 
-	^aCollection.</body>
+	^aCollection.</body>-->
 
-<body package="Homeostat" selector="uniselectorActivatedAsCollectionOfArraysForAllUnits">uniselectorActivatedAsCollectionOfArraysForAllUnits 
+DONE <!--<body package="Homeostat" selector="uniselectorActivatedAsCollectionOfArraysForAllUnits">uniselectorActivatedAsCollectionOfArraysForAllUnits 
 	"Extracts the data about the activation of the uniselector  for all units  and returns them as an Ordered Collection of Arrays. Each array has all the values for a point in time"
 
 	| aCollection  |
@@ -441,7 +441,7 @@ aStream close.</body>
 
 
 
-	^aCollection.</body>
+	^aCollection.</body>-->
 </methods>
 
 </st-source>
