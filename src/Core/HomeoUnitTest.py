@@ -17,7 +17,6 @@ class HomeoUnitTest(unittest.TestCase):
         
     def tearDown(self):
         pass
-       
     def testAddConnectionUnitWeightPolarityState(self):
         """Connect to another unit and test the connection values."""
         newUnit = HomeoUnit()
