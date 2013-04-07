@@ -119,7 +119,7 @@ class HomeoDataUnit(object):
         self.uniselectorState = aHomeoUnit.uniselectorActive
         self.maxDeviation =  aHomeoUnit.maxDeviation
         self.criticalDeviation = aHomeoUnit.criticalDeviation
-        self.uniselectorActivated = aHomeoUnit.uniselectorActivated
+        self.uniselectorActive = aHomeoUnit.uniselectorActive
         for conn in aHomeoUnit.inputConnections:
             self.connectedTo[conn.incomingUnit.name] = [conn.weight, conn.switch, conn.state, conn.noise]
 
@@ -167,6 +167,6 @@ class HomeoDataUnit(object):
     def printUniselectorActivatedOn(self, aString):
         '''Prints only the data about the DataUnit's uniselector's activation'''
         
-        aString += "%s\n" % self.uniselectorActivated
+        aString += "%s\n" % self.uniselectorActive
 
         

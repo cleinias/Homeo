@@ -42,7 +42,7 @@ class HomeoDataCollector(object):
     def setStates(self, aValue):
         self._states = aValue
         
-    states = property(fset = lambda self: self.getStates(),
+    states = property(fget = lambda self: self.getStates(),
                       fset = lambda self, value: self.setStates(value))
         
 #===============================================================================
