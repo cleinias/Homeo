@@ -29,6 +29,18 @@ class Homeostat(object):
         isRunning            <aBoolean>       whether the homeostat is running
     '''
 
+#===============================================================================
+# Class methods
+#===============================================================================
+
+    @classmethod    
+    def readFrom(self,filename):
+        '''This is a class method that create a new Homeostat instance from filename'''
+        fileIn = open(filename, 'r')
+        unpickler = pickle.Unpickler(fileIn)
+        newHomeostat = unpickler.load()
+        fileIn.close()
+        return newHomeostat
 
 #===============================================================================
 # Initialization methods, getters and setters
@@ -39,11 +51,13 @@ class Homeostat(object):
            conditions of a Homeostat. Sets also some physical equivalence parameters'''
 
         self._slowingFactor = 0
+        self._time = 0                                  # a newly created homeostat starts at 0
         self._microTime = 0
         self._homeoUnits = []
         self._dataCollector = HomeoDataCollector()
         self._collectsData = True                       # default is to collect data. Can be turned off via accessor."
         self._slowingFactor = 10
+        self._isRunning = False                         # a new homeostat is not running 
 
     def getTime(self):
         return self._time
@@ -188,36 +202,33 @@ class Homeostat(object):
             if self.time is None:
                 self.time = 0
             "FOR TESTING"
-            outputString = ''
-            outputString.append('INITIAL DATA AT TIME: %u and tick %u \n' %
-                                self.time, ticks)
+            outputString = ("INITIAL DATA AT TIME: %u and tick: %u \n" % (self.time,  ticks))
             for unit in self.homeoUnits:
-                outputString.append('Unit %s with output %.3.f and critical deviation %.3f \n' %
-                                    unit.name,
-                                    unit.currentOutput,
-                                    unit.criticalDeviation)
+                outputString += ('Unit %s with output %.3f and critical deviation %.3f \n' %
+                                 (unit.name,
+                                 unit.currentOutput,
+                                 unit.criticalDeviation))
             "END TESTING"
          
-            while self.time > ticks:
+            while self.time < ticks:
                 for unit in self.homeoUnits:
                     if self.collectsData:
-                        self.dataCollector.atTimeAddDataUnitFor(self.time, unit)
+                        self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
                         unit.time =  self.time
                         if unit.isActive():
                             unit.selfUpdate()
-                self.time =  self.time =+ 1
+                self.time +=  1
                 time.sleep(sleepTime / 1000)               # sleep accepts seconds, slowingFactor is in milliseconds
         else:
             sys.stderr.write('Warning: Homeostat is not ready to start')
             
         "FOR TESTING"
-        outputString = ''
-        outputString.append('FINAL DATA AT TIME: %u and tick %u \n') % self.time, ticks
+        outputString = 'FINAL DATA AT TIME: %u and tick %u \n' % (self.time, ticks)
         for unit in self.homeoUnits:
-            outputString.append('Unit %s with output %.3f and deviation %.3f \n' %
-                                unit.name,
-                                unit.currentOutput,
-                                unit.criticalDeviation)
+            outputString += ('Unit %s with output %.3f and deviation %.3f \n' %
+                             (unit.name,
+                             unit.currentOutput,
+                             unit.criticalDeviation))
         "END TESTING"
 
     def runOnce(self):
@@ -308,7 +319,7 @@ class Homeostat(object):
            coming from unit1'''
 
         if unit1 in self.homeoUnits and  unit2 in self.homeoUnits:
-            if self.isConnectedFromUnit1ToUnit2:
+            if self.isConnectedFromTo(unit1, unit2):
                 unit2.removeConnectionFromUnit(unit1)
 
     def removeUnit(self,aHomeoUnit):
