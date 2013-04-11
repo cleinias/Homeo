@@ -725,7 +725,7 @@ class HomeoUnit(object):
     def maxConnectedUnits(self, anInteger):
         "Changes the parameter to the Uniselector for the maximum number of connected units"
         
-        self._uniselector.unitsControlled(anInteger)
+        self._uniselector.unitsControlled = anInteger
 
     def toggleDebugMode(self):
         "Controls whether the running methods print out debug information"

@@ -44,6 +44,20 @@ class HomeoDataCollector(object):
         
     states = property(fget = lambda self: self.getStates(),
                       fset = lambda self, value: self.setStates(value))
+
+#===============================================================================
+# Class methods
+#===============================================================================
+    @classmethod
+    def readFrom(self, aFilename):
+        '''Create a new DataCollector instance from a file containing 
+           a saved instance object'''
+
+        fileIn = open(aFilename, 'r')
+        unpickler = pickle.Unpickler(fileIn)
+        newDataCollector = unpickler.load()
+        fileIn.close()
+        return newDataCollector       
         
 #===============================================================================
 # Saving methods
@@ -69,7 +83,16 @@ class HomeoDataCollector(object):
                 if dataUnit == aUnit:
                     aString += "%.5f\n" % dataUnit.output
         return aString
-                    
+         
+    def saveCompleteDataOnFile(self,aFilename):
+        '''Save all data on a file in text format.
+        Will erase aFilename if it exists already'''
+        
+        dataToSave = self.printCompleteDataOnAString('')
+        fileOut = open(aFilename, 'w')
+        fileOut.write(dataToSave)
+        fileOut.close()
+                   
     def saveEssentialsOnAStringWithSeparator(self, aString, aCharacter):
         '''Save the output of the simulation on aString (typically associated 
            to a file by the calling app) as a series of lines, one per time tick, 
@@ -113,13 +136,12 @@ class HomeoDataCollector(object):
     def printCompleteDataOnAString(self, aString):
         '''Append to aString a complete representation of its data'''
         
-        timeIndex = 1
         for state in self.states:
-            if state is not None:
-                for value in state:
-                    aString += "time:    %u    " % timeIndex
-                    aString += value.printDataOn('')
-            timeIndex = timeIndex + 1
+            if self.states[state] is not None:
+                for value in self.states[state]:
+                    aString += "time:    %u    " % state
+                    aString += self.states[state][value].printDataOn('')
+        return aString
 
     def printCriticalDevForUnitOnAString(self, aHomeoUnit, aString):
         '''Append to aString the values for Critical Deviation of aHomeoUnit'''
@@ -347,7 +369,7 @@ class HomeoDataCollector(object):
         aCollection = []
         for state in self.states:
             if state is not None:
-                for key, value in state.iteritems():
+                for key, value in self.states[state].iteritems():
                     if key == aHomeoUnit.name:
                         aCollection.append(value.criticalDeviation)
         return aCollection

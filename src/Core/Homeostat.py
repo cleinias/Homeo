@@ -298,7 +298,7 @@ class Homeostat(object):
             unit.addConnectionWithRandomValues(aHomeoUnit)
             aHomeoUnit.addConnectionWithRandomValues(unit)
             unit.maxConnectedUnits = len(self.homeoUnits) + 1           # let the old units know that there may be a new connected unit."        
-        aHomeoUnit.maxConnectedUnits = len(self.homeoUnits)             # let the new unit know how many other units there may be."
+        aHomeoUnit.maxConnectedUnits(len(self.homeoUnits))             # let the new unit know how many other units there may be."
         self.addUnit(aHomeoUnit)
 
     def addUnit(self, aHomeoUnit):
