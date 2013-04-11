@@ -98,7 +98,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
         self.produceSequence()
         
     unitsControlled = property(fget = lambda self: self.getUnitsControlled(),
-                          fset = lambda self, value: self.setUnitControlled(value))
+                          fset = lambda self, value: self.setUnitsControlled(value))
     
     def matrix(self):
         return self._matrix

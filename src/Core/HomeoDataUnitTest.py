@@ -36,7 +36,7 @@ class HomeoDataUnitTest(unittest.TestCase):
         self.assertTrue(self.dataUnit.maxDeviation  == self.unit.maxDeviation)
         for conn in self.unit.inputConnections: 
             connArray = []
-            connArray = self.dataUnit.connectedTo(conn.incomingUnit.name)
+            connArray = self.dataUnit.connectedTo[conn.incomingUnit.name]
             self.assertTrue(connArray[0] == conn.weight)
             self.assertTrue(connArray[1] == conn.switch)
             self.assertTrue(connArray[2] == conn.state)
@@ -49,18 +49,18 @@ class HomeoDataUnitTest(unittest.TestCase):
         Test all data read from a Homeounit 
         coincide with the HomeoUnit's own
         """
-        self.dataUnit.readStateFrom(self.unit1)
-        self.assertTrue(self.dataUnit.name() == self.unit.name())
-        self.assertTrue(self.dataUnit.maxDeviation() == self.unit.maxDeviation())
-        for conn in self.unit.inputConnections(): 
+        self.dataUnit.readStateFrom(self.unit)
+        self.assertTrue(self.dataUnit.name == self.unit.name)
+        self.assertTrue(self.dataUnit.maxDeviation == self.unit.maxDeviation)
+        for conn in self.unit.inputConnections: 
             connArray = []
-            connArray = self.dataUnit.connectedTo(conn.incomingUnit.name())
-            self.assertTrue(connArray[0] == conn.weight())
-            self.assertTrue(connArray[1] == conn.switch())
-            self.assertTrue(connArray[2] == conn.state())
-            self.assertTrue(connArray[3] == conn.noise())
-        self.assertTrue(self.dataUnit.output() == self.unit.currentOutput())
-        self.assertTrue(self.dataUnit.uniselectorState() == self.unit.uniselectorActive())
+            connArray = self.dataUnit.connectedTo[conn.incomingUnit.name]
+            self.assertTrue(connArray[0] == conn.weight)
+            self.assertTrue(connArray[1] == conn.switch)
+            self.assertTrue(connArray[2] == conn.state)
+            self.assertTrue(connArray[3] == conn.noise)
+        self.assertTrue(self.dataUnit.output == self.unit.currentOutput)
+        self.assertTrue(self.dataUnit.uniselectorState == self.unit.uniselectorActive)
 
     def testPrintDataOnStream(self):
         """

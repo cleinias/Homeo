@@ -35,8 +35,8 @@ class HomeoDataUnit(object):
            This is just a convenience, but it is the most common use of HomeoDataUnit'''
 
         dataUnit = HomeoDataUnit()
-
-        return dataUnit.readStateFrom(aHomeoUnit)
+        dataUnit.readStateFrom(aHomeoUnit)
+        return dataUnit
 
 
 #===============================================================================
@@ -150,13 +150,15 @@ class HomeoDataUnit(object):
     def printDataOn(self,aString):
         '''Append to aString a complete representation of its data'''
 
-        aString += "name ; %s output: %.5f uniselector: %s" % (self.name, self.output, self.uniselectorState)
+        aString += "name: %s output: %.5f uniselector: %s" % (self.name, self.output, self.uniselectorState)
         for connName, connValue in self.connectedTo.iteritems():
-            aString += " Connct to: %s weight: %.5f switch: %u noise: %.5f \n" % (connName.name,
-                                                                                  connValue[0],
-                                                                                  connValue[1],
-                                                                                  connValue[2],
-                                                                                  connValue[2],)
+            aString += " Connct to: %s weight: %.5f switch: %u noise: %.5f   " % (connName,
+                                                                                  connValue[0], # weight
+                                                                                  connValue[1], # switch (or polarity)
+                                                                                  connValue[3]) # noise
+        aString += '\n'
+        return aString
+
 
     def printEssentialVariableOn(self, aString):
         '''Append only the DataUnit's output values to aString.
