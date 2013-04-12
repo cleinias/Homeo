@@ -397,7 +397,7 @@ class HomeoUnit(object):
         if aNumber in acceptValues:
             self.inputConnections[0].newWeight(newWeight)
         else: 
-            raise  HomeConnection
+            raise  ConnectionError
     
     def getSwitch(self):
         return self.inputConnections[0].switch
@@ -493,12 +493,15 @@ class HomeoUnit(object):
         Connect the unit to itself in manual mode with the default feedback and no noise
         '''
         self.addConnectionUnitWeightPolarityNoiseState(self,self.potentiometer,HomeoUnit.DefaultParameters['switch'],0,'manual')
-   
-    def setNewName(self):
-        pass
 
-    def setDefaultOutputAndConnections(self):
-        pass
+#===============================================================================
+#   
+#    def setNewName(self):
+#        pass
+# 
+#    def setDefaultOutputAndConnections(self):
+#        pass
+#===============================================================================
 
     def setDefaultUniselectorSettings(self):
         "set default uniselector settings"
