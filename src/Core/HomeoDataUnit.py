@@ -127,14 +127,14 @@ class HomeoDataUnit(object):
 # Testing methods 
 #===============================================================================
 
-        def sameValuesAs(self, aDataUnit):
-            '''Answer true if the values in the two data units are the same. 
-               Do  not check the values of the connections'''
+    def sameValuesAs(self, aDataUnit):
+        '''Answer true if the values in the two data units are the same. 
+           Do  not check the values of the connections'''
 
-            return (self.name == aDataUnit.name and
-                    self.output == aDataUnit.output and
-                    self.maxDeviation == aDataUnit.maxDeviation and
-                    self.uniselectorState == aDataUnit.uniselectorState)
+        return (self.name == aDataUnit.name and
+                self.output == aDataUnit.output and
+                self.maxDeviation == aDataUnit.maxDeviation and
+                self.uniselectorState == aDataUnit.uniselectorState)
 
 #===============================================================================
 # Printing methods
@@ -152,23 +152,23 @@ class HomeoDataUnit(object):
 
         aString += "name: %s output: %.5f uniselector: %s" % (self.name, self.output, self.uniselectorState)
         for connName, connValue in self.connectedTo.iteritems():
-            aString += " Connct to: %s weight: %.5f switch: %u noise: %.5f   " % (connName,
+            aString += " Connected_to: %s weight: %.5f switch: %u noise: %.5f   " % (connName,
                                                                                   connValue[0], # weight
                                                                                   connValue[1], # switch (or polarity)
                                                                                   connValue[3]) # noise
         aString += '\n'
         return aString
 
-
     def printEssentialVariableOn(self, aString):
         '''Append only the DataUnit's output values to aString.
            Useful for graphing and compact representations.'''
 
-        aString += "%.5f\n" % self.output
+        aString += "%.5f\n" % self.criticalDeviation # or Output?
+        return aString
     
     def printUniselectorActivatedOn(self, aString):
         '''Prints only the data about the DataUnit's uniselector's activation'''
         
         aString += "%s\n" % self.uniselectorActive
-
+   
         
