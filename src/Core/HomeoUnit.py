@@ -2,6 +2,7 @@ from __future__ import division
 from Core.HomeoNeedleUnit import *
 from Core.HomeoUniselectorAshby import *
 from Core.HomeoUniselector import *
+from Core.HomeoUniselectorUniformRandom import  *
 from Core.HomeoConnection import *
 from Helpers.General_Helper_Functions import withAllSubclasses
 import numpy as np
