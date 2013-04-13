@@ -5,7 +5,6 @@ from   Homeostat import *
 from   Helpers.General_Helper_Functions import  withAllSubclasses
 import unittest, numpy, string, random, pickle, os
 from copy import copy
-from _pydev_xmlrpclib import Error
 
 class HomeoUnitTest(unittest.TestCase):
     """Unit testing for the HomeoUnit class and subclasses, including adding and removing connections to other HomeoUnits."""
