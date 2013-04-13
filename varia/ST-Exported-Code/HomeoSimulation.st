@@ -38,9 +38,9 @@
 <body>HomeoSimulation is the class that manages a complete run of the Homeostat. It takes care of the administrative task: setting up the initial conditions, starting and stopping the simulation. It also knows how to read initial conditions from a file (for repeated experiments). The real work of simulating the Homeostat is done by the Homeostat class---an instance of which is held by the simulation---and its components.
 
 Instance Variables:
-	homeostat		&lt;aHomeostat&gt;		description of homeostat
-	maxRuns		&lt;anInteger&gt;		description of maxRuns
-	dataFile           &lt;aString&gt;              the string corresponding to the filename the simulation data should be saved on. 
+	homeostat		<;aHomeostat>		description of homeostat
+	maxRuns		<;anInteger>		description of maxRuns
+	dataFile           <;aString>              the string corresponding to the filename the simulation data should be saved on. 
 
 
 </body>

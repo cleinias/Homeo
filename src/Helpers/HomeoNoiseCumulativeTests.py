@@ -60,5 +60,5 @@ def testAllTests(self):
                 pass
             except:
                 fails[] +1 1
-return dic                
+        return fails                
 

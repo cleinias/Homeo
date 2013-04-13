@@ -41,14 +41,14 @@ class HomeostatTest(unittest.TestCase):
 
         self.assertTrue(self.homeostat.isReadyToGo)
 
-        thr = Thread(target=self.homeostat.start, name =  'homeostatInAThread')
+        thr = Thread(target=self.homeostat.start, name = 'homeostatInAThread')
         thr.start()
      
         self.assertTrue(self.homeostat.isRunning == True)
         time.sleep(1)
         self.homeostat.stop()
         self.assertTrue(self.homeostat.isRunning == False)
-
+        
     def testAddFullyConnectedUnits(self):
         """
         
@@ -224,9 +224,9 @@ class HomeostatTest(unittest.TestCase):
         "checks that it has a number of data points equal to ticks, and for all the units."
 
         self.assertTrue(len(self.homeostat.dataCollector.states) == ticks)
-        for dataCollec in self.homeostat.dataCollector.states:
+        for timeIndex, units in self.homeostat.dataCollector.states.iteritems():
             for unit in self.homeostat.homeoUnits:
-                self.assertTrue(unit.name in dataCollec.keys())
+                self.assertTrue(unit.name in units)
 
     def testRunningwithDelays(self):
         """
@@ -278,7 +278,8 @@ class HomeostatTest(unittest.TestCase):
     def testRun(self):
         """
         Test that homeostat runs without raising exceptions/errors
-        FIXME Pretty useless test. Need a better one? 
+        and that it can be stopped once it starts. It needs to be run in a thread,
+        otherwise we would never get control back
         """
         unit1 = HomeoUnit()
         unit2 = HomeoUnit()
@@ -289,11 +290,10 @@ class HomeostatTest(unittest.TestCase):
         self.homeostat.addFullyConnectedUnit(unit3)
         self.homeostat.addFullyConnectedUnit(unit4)
 
-        try:
-            self.homeostat.start()
-        except:
-            self.fail("Homeostat should not raise Errors/Exception when ordered to run")
-        
+        thr = Thread(target = self.homeostat.start)
+        thr.start()
+        time.sleep(1)
+        self.homeostat.stop()
         
     def tearDown(self):
         pass

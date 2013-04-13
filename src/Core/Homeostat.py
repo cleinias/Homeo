@@ -254,7 +254,7 @@ class Homeostat(object):
                     unit.time = time
                     unit.selfUpdate()
                     if self.collectsData:
-                        self.dataCollector.atTimeAddUnitFor(self.time,unit)
+                        self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time,unit)
                     self.time += 1
         else:
             sys.stderr.write('Warning: Homeostat is not ready to start')
