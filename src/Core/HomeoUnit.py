@@ -160,7 +160,7 @@ class HomeoUnit(object):
 
 
         "sets the correspondence between the simulation units and real physical units"
-        self.__physicalParameters=dict(timeEquivalence = 1,           # 1 simulation tick corresponds to 1 second of physical time"
+        self._physicalParameters=dict(timeEquivalence = 1,           # 1 simulation tick corresponds to 1 second of physical time"
                                       lengthEquivalence = 0.01,       # 1 unit of displacement corresponds to 1 cm (expressed in meters)"
                                       massEquivalence = 0.001)        # 1 unit of mass equals one gram, or 0.001 kg"
     
@@ -483,6 +483,16 @@ class HomeoUnit(object):
     def activateUnit(self):
         self._status = 'Active'
 
+    def getDebugMode(self):
+        return self._debugMode
+    
+    def setDebugMode(self,aValue):
+        '''Do nothing. _debugMode is set
+         with the toggleDebugMode method'''
+        pass
+    
+    debugMode = property(fget = lambda self: self.getDebugMode(),
+                           fset = lambda self,aValue: self.setDebugMode(aValue))
     
     #===========================================================================
     #  End of setter and getter methods"

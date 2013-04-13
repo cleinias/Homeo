@@ -3,6 +3,7 @@ Created on Mar 17, 2013
 
 @author: stefano
 '''
+from __future__  import division
 from  Core.HomeoUnit import *
 import numpy as np
 from math import sqrt
@@ -69,7 +70,7 @@ class HomeoUnitNewtonian(HomeoUnit):
            Outputs a number representing the drag expressed as force measured in Newtons'''
 
 
-        return  1/2.  * self.density * self.needleUnit.dragCoefficient * pow(self.physicalVelocity,2) * (self.needleUnit.surfaceArea)
+        return  1/2.  * self.density * self.needleUnit.dragCoefficient * pow(self.physicalVelocity(),2) * (self.needleUnit.surfaceArea)
 
     def newLinearNeedlePosition(self, aTorqueValue):
         '''Computes the new position of the needle taking into consideration 
@@ -170,7 +171,7 @@ class HomeoUnitNewtonian(HomeoUnit):
     
         newDeviation = self.clipDeviation(self.nextDeviation)
         "    currentVelocity := newDeviation-criticalDeviation."             "old version"
-        currentVelocity = 2 * (newDeviation -self. criticalDeviation) - self.currentVelocity
+        self.currentVelocity = 2 * (newDeviation -self. criticalDeviation) - self.currentVelocity
 
         "5. updates the needle's position (critical deviation) with clipping, if necessary, and updates the output"
     
@@ -184,4 +185,4 @@ class HomeoUnitNewtonian(HomeoUnit):
           Output is negated, since Drag's sign is always  opposite  to velocity.
           Instead of the radius of the sphere (as in Stokes' law), it uses the surface area of the needle.'''
 
-        return - 6 * np.pi * (sqrt(self.needleUnit.surfaceArea * np.pi) * self.viscosity * self.currentVelocity) 
+        return - 6 * np.pi * (sqrt(self.needleUnit.surfaceArea / np.pi) * self.viscosity * self.currentVelocity) 
