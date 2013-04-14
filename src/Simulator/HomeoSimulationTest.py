@@ -7,10 +7,9 @@ from   Core.HomeoUnit import *
 from   Core.HomeoUniselectorUniformRandom import *
 from   Core.Homeostat import *
 from   Simulator.HomeoSimulation import *
-
 import unittest, numpy, os, sys
 from time import sleep
-
+from  threading import Thread
 
 class HomeoSimulationTest(unittest.TestCase):
     """
@@ -28,10 +27,10 @@ class HomeoSimulationTest(unittest.TestCase):
         self.simulation = HomeoSimulation()
         unitsAdded = 5
         self.simulation.addUnit(HomeoUnit())
-        self.assertTrue(len(self.simulation.homeostat.homeoUnits()) == 1)
-        for unit in unitsAdded:
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits) == 1)
+        for unit in xrange(unitsAdded):
             self.simulation.addUnit(HomeoUnit())
-            self.assertTrue(len(self.simulation.homeostat.homeoUnits()) == (1 + unitsAdded))
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits) == (1 + unitsAdded))
 
     def testAddFullyConnectedUnit(self):
         """
@@ -39,34 +38,34 @@ class HomeoSimulationTest(unittest.TestCase):
         """
         self.simulation = HomeoSimulation()
 
-        unitsAdded = 5.
+        unitsAdded = 5
         self.simulation.addFullyConnectedUnit(HomeoUnit())
-        self.assertTrue(len(self.simulation.homeostat.homeoUnits()) == 1)
-        self.assertTrue(len(self.simulation.homeostat.homeoUnits[0].inputConnections()) == 1)
-        for unit in unitsAdded:
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits) == 1)
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits[0].inputConnections) == 1)
+        for unit in xrange(unitsAdded):
             self.simulation.addFullyConnectedUnit(HomeoUnit())
-        for unit in self.simulation.homeostat.homeoUnits(): 
-            self.assertTrue(len(unit.inputConnections()) == (1+ unitsAdded))
+        for unit in self.simulation.homeostat.homeoUnits: 
+            self.assertTrue(len(unit.inputConnections) == (1+ unitsAdded))
 
     def testRemoveUnit(self):
         """
         Test removing a few units and check that the Homeostat is holding the correct number of units
         """
         self.simulation = HomeoSimulation()
-        unit = HomeoUnit() 
+        homeoUnit = HomeoUnit() 
         unitsAdded = 3
-        self.simulation.addUnit(unit)
-        self.assertTrue(len(self.simulation.homeostat.homeoUnits())  == 1)
-        for unit in unitsAdded:
+        self.simulation.addUnit(homeoUnit)
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits)  == 1)
+        for i in xrange(unitsAdded):
             self.simulation.addUnit(HomeoUnit())
-        self.assertTrue(len(self.simulation.homeostat.homeoUnits()) == (1 + unitsAdded))
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits) == (1 + unitsAdded))
 
-        self.simulation.homeostat.removeUnit(unit)
-        self.assertTrue(len(self.simulation.homeostat.homeoUnits()) == unitsAdded)
+        self.simulation.homeostat.removeUnit(homeoUnit)
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits) == unitsAdded)
         
-        for unit in self.simulation.homeostat.homeoUnits():
+        for unit in self.simulation.homeostat.homeoUnits[:]:                    # iterating over a copy of the list
             self.simulation.homeostat.removeUnit(unit)
-        self.assertTrue(len(self.simulation.homeostat.homeoUnits()) == 0)
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits) == 0)
     
     def testAddConnection(self):
         """
@@ -82,14 +81,14 @@ class HomeoSimulationTest(unittest.TestCase):
         self.simulation.homeostat.addUnit(unit2)    
         for index in xrange(2):
             "all units are self-connected and self-connected only"
-            self.assertTrue(len(self.simulation.homeostat.homeoUnits[index].inputConnections()) == 1)   
+            self.assertTrue(len(self.simulation.homeostat.homeoUnits[index].inputConnections) == 1)   
 
         "add a connection from the second unit to first one"
-        self.simulation.homeostat.addConnectionWithRandomValuesFromTo(unit2, unit1)
+        self.simulation.homeostat.addConnectionWithRandomValuesFromUnit1toUnit2(unit2, unit1)
         
         "check that the first unit has now two connections"
-        self.assertTrue(len(self.simulation.homeostat.homeoUnits[0].inputConnections()) == 2)     
-        self.assertTrue(len(unit1.inputConnections()) == 2)
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits[0].inputConnections) == 2)     
+        self.assertTrue(len(unit1.inputConnections) == 2)
 
     def testRemoveConnection(self):
         """
@@ -105,21 +104,21 @@ class HomeoSimulationTest(unittest.TestCase):
         self.simulation.homeostat.addUnit(unit2)    
         for index in xrange(2):
             "all units are self-connected and self-connected only"
-            self.assertTrue(len(self.simulation.homeostat.homeoUnits[index].inputConnections()) == 1)   
+            self.assertTrue(len(self.simulation.homeostat.homeoUnits[index].inputConnections) == 1)   
 
         "add a connection from the second unit to first one"
-        self.simulation.homeostat.addConnectionWithRandomValuesFromTo(unit2, unit1)
+        self.simulation.homeostat.addConnectionWithRandomValuesFromUnit1toUnit2(unit2, unit1)
 
         "check that the first unit has now two connections"
-        self.assertTrue(len(self.simulation.homeostat.homeoUnits[0].inputConnections()) == 2)     
-        self.assertTrue(len(unit1.inputConnections()) == 2)
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits[0].inputConnections) == 2)     
+        self.assertTrue(len(unit1.inputConnections) == 2)
 
         "remove the connection from the second unit to the first one"
-        self.simulation.homeostat.removeConnectionFromTo(unit2, unit1)
+        self.simulation.homeostat.removeConnectionFromUnit1ToUnit2(unit2, unit1)
 
         "check  number of connections for unit1 is back to 1 (self-connection)"
-        self.assertTrue(len(self.simulation.homeostat.homeoUnits[0].inputConnections()) == 1)     
-        self.assertTrue(len(unit1.inputConnections())== 1)
+        self.assertTrue(len(self.simulation.homeostat.homeoUnits[0].inputConnections) == 1)     
+        self.assertTrue(len(unit1.inputConnections)== 1)
 
     def testStart(self):
         """
@@ -133,12 +132,12 @@ class HomeoSimulationTest(unittest.TestCase):
             self.simulation.homeostat.addFullyConnectedUnit(HomeoUnit())
             
         simulationCycles = 30
-        self.simulation.maxRuns(simulationCycles)
+        self.simulation.maxRuns = simulationCycles
 
         "runs for the default number of cycles"
         self.simulation.start()  
 
-        self.assertTrue(simulationCycles == self.simulation.homeostat.time())
+        self.assertTrue(simulationCycles == self.simulation.homeostat.time)
 
     def testStop(self):
         """
@@ -152,14 +151,15 @@ class HomeoSimulationTest(unittest.TestCase):
             self.simulation.homeostat.addFullyConnectedUnit(HomeoUnit())
             
         simulationCycles = 1000
-        self.simulation.maxRuns(simulationCycles)
+        self.simulation.maxRuns = simulationCycles
 
-        self.simulation.start()
+        thr = Thread(target=self.simulation.start, name = 'simulationInAThread')
+        thr.start()
         "wait one second"
         sleep(1)
         
         self.simulation.stop()
-        self.assertFalse(simulationCycles == self.simulation.homeostat.time())
+        self.assertFalse(simulationCycles == self.simulation.homeostat.time)
         
         def testDataFileIsPresent():
             """
