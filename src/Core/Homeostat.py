@@ -261,14 +261,14 @@ class Homeostat(object):
 
     def stop(self):
         '''Stop the homeostat's running by changing the value of the isRunning ivar to false. 
-           This procedure is equivalent, and indeed wants to simulate, 
+           This procedure is equivalent to, and indeed wants to simulate, 
            turning the switch off on the physical equivalent of the homeostat'''
 
         self.isRunning = False
 
     def timeReset(self):
         '''Reset time to 0. Does not change the external values of the units 
-           or their connections, but do change their internal, computational values: 
+           or their connections, but do change their internal computational values: 
            input, nextdeviation, etcetera'''
 
         self.time = 0
