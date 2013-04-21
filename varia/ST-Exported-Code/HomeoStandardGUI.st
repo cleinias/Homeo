@@ -28,7 +28,7 @@
 <body package="Homeostat" selector="homeoControlSpec">homeoControlSpec
 	"Tools.UIPainter new openOnClass: self andSelector: #homeoControlSpec"
 
-	&lt;resource: #canvas&gt;
+	<resource: #canvas>
 	^#(#{UI.FullSpec} 
 		#window: 
 		#(#{UI.WindowSpec} 
@@ -227,7 +227,7 @@
 <body package="Homeostat" selector="homeostatSpec">homeostatSpec
 	"Tools.UIPainter new openOnClass: self andSelector: #homeostatSpec"
 
-	&lt;resource: #canvas&gt;
+	<resource: #canvas>
 	^#(#{UI.FullSpec} 
 		#window: 
 		#(#{UI.WindowSpec} 
@@ -1938,23 +1938,23 @@ app openThreeWindows.</body>
 
 <comment>
 <class-id>HomeostatStandardGUI</class-id>
-<body>HomeostatStandardGUI holds alll the data necessary to run a simulation of a standard 4-unit Ashby homeostat. In addition, it allows complete interactive access to the units' parameters and some facilities for saving and charting the simulation's data.
+<body>HomeostatStandardGUI holds all the data necessary to run a simulation of a standard 4-unit Ashby homeostat. In addition, it allows complete interactive access to the units' parameters and some facilities for saving and charting the simulation's data.
 The simulation emulates real time operation of the homeostat by running through a series of discrete time steps. The delay between these discrete steps is set by default at 1 millisecond, to allow a smooth redrawing of the visual interface, but it may be changed by the user
 
-The simulation itself is run   separate process (held in simulProcess) at a lower priority level than the interface. 
+The simulation itself is run in a  separate process (held in simulProcess) at a lower priority level than the interface. 
 
 Instance Variables:
-	currentRun					&lt;Object&gt;		current time step. 
-	dataAreSaved				&lt;Boolean&gt;		flag to mark whether the simulaiton's data have been saved to disk (Boss out)
-	dataChart					&lt;JunChartLine&gt;	the Jun object responsible for charting the data
-	datafile						&lt;Symbol&gt;		the filename to save the simulation's data to
-	homeostat					&lt;Homeostat&gt;	the homeostat that is being simulated
-	maxRuns					&lt;ValueModel&gt;	the number of time steps we are running the simulation for.
-	simulProcess				&lt;Process&gt;	        the process holding the simulation run
-	slowingFactor				&lt;ValueHolder&gt;	How long (in millisecond) we are waiting between two time steps.
-	uniselectorActiveChoices		&lt;Object&gt;		description of uniselectorActiveChoices
-	debugMode  				&lt;Boolean&gt;		controls whether info about the units are written out to screen (slows down simulation considerably)
-	showUniselectorActionMode 	&lt;Boolean&gt;		controls whether info about the uniselector action is written out to screen (slows down simulation considerably)
+	currentRun					<Object>		current time step. 
+	dataAreSaved				<Boolean>		flag to mark whether the simulation's data have been saved to disk (Boss out)
+	dataChart					<JunChartLine>	the Jun object responsible for charting the data
+	datafile					<Symbol>		the filename to save the simulation's data to
+	homeostat					<Homeostat>		the homeostat that is being simulated
+	maxRuns						<ValueModel>	the number of time steps we are running the simulation for.
+	simulProcess				<Process>	    the process holding the simulation run
+	slowingFactor				<ValueHolder>	How long (in millisecond) we are waiting between two time steps.
+	uniselectorActiveChoices	<Object>		description of uniselectorActiveChoices
+	debugMode  					<Boolean>		controls whether info about the units are written out to screen (slows down simulation considerably)
+	showUniselectorActionMode 	<Boolean>		controls whether info about the uniselector action is written out to screen (slows down simulation considerably)
 </body>
 </comment>
 
