@@ -1,0 +1,966 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Core.HomeoUniselectorAshby.HomeoUniselectorAshby</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="Core-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="Core-module.html">Package&nbsp;Core</a> ::
+        <a href="Core.HomeoUniselectorAshby-module.html">Module&nbsp;HomeoUniselectorAshby</a> ::
+        Class&nbsp;HomeoUniselectorAshby
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class HomeoUniselectorAshby</h1><p class="nomargin-top"><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby">source&nbsp;code</a></span></p>
+<pre class="base-tree">
+                       object --+    
+                                |    
+<a href="Core.HomeoUniselector.HomeoUniselector-class.html">HomeoUniselector.HomeoUniselector</a> --+
+                                    |
+                                   <strong class="uidshort">HomeoUniselectorAshby</strong>
+</pre>
+
+<hr />
+<p>HomeoUniselectorAshby is a different implementation of Ashby's 
+  (sparsely described!) algorithm. It simulates a stepping switch (or 
+  Uniselector) that advances one step every time it is activated. At every 
+  step the uniselector produces weight values for the HomeoUnits 
+  connections. The simulation is implemented  with a m x n matrix (the ivar
+  matrix) where m are the steps of the uniselector, and n are the number of
+  connected units. In Ashby's classical homeostat m= 25, n = 3.  The values
+  in the matrix are produced according to three different algorithms, each 
+  a different intepretation of Ashby's original idea. The parameter 
+  deciding which production method to use is held in ashbyKind.</p>
+  <p>Instance Variables: unitsControlled &lt;anInteger&gt;       The 
+  maximum number of units this uniselector controls. Default values is 10. 
+  It will be incremented in 10-units increment if needed unitIndex       
+  &lt;anInteger&gt;        The index keeping track of which unit's 
+  connection we are currently producing a value (a weight) for. ashbyKind
+  &lt;aString&gt;          The string determining which initialization (and
+  re-initialization) method to use. unitIndex interval steps        
+  &lt;anInteger&gt;       The number of possible steps in the Uniselector 
+  (default is 12, as per Ashby's implementation) index        
+  &lt;anInteger&gt;       The index keeping track of which row of weight we
+  should output next matrix        &lt;aMatrix&gt;       A matrix of size 
+  (unitsControlled x steps) holding all the possible weights</p>
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Initializes the interval and the steps to default values.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#setLowerBound" class="summary-sig-name">setLowerBound</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span><br />
+      Do nothing.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.setLowerBound">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#setUpperBound" class="summary-sig-name">setUpperBound</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span><br />
+      Do nothing.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.setUpperBound">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="setSteps"></a><span class="summary-sig-name">setSteps</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span><br />
+      steps is always a positive integer</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.setSteps">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getSteps"></a><span class="summary-sig-name">getSteps</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.getSteps">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#setAshbyKind" class="summary-sig-name">setAshbyKind</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aString</span>)</span><br />
+      Do nothing.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.setAshbyKind">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getAshbyKind"></a><span class="summary-sig-name">getAshbyKind</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.getAshbyKind">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getUnitsControlled"></a><span class="summary-sig-name">getUnitsControlled</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.getUnitsControlled">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#setUnitsControlled" class="summary-sig-name">setUnitsControlled</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aNumber</span>)</span><br />
+      The uniselector is initialized to control 10 maximum connections and 
+      it initializes its transition matrix (sequence) accordingly.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.setUnitsControlled">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="matrix"></a><span class="summary-sig-name">matrix</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.matrix">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="equallySpaced"></a><span class="summary-sig-name">equallySpaced</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      set initialization procedure to equally spaced values and 
+      reinitializes the transition matrix if necessary (See method 
+      produceEquallySpacedValues for details)</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.equallySpaced">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="independentlyRandomized"></a><span class="summary-sig-name">independentlyRandomized</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Set initialization procedure to independently randomized  values and 
+      reinitializes the transition matrix if necessary (See method 
+      produceIndependentlyRandomizedValues for details)</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.independentlyRandomized">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="randomized"></a><span class="summary-sig-name">randomized</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Set initialization procedure to  randomized  values and reinitializes
+      the transition matrix if necessary (see method 
+      produceRandomizedValues for details)</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.randomized">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="produceEquallySpacedValues"></a><span class="summary-sig-name">produceEquallySpacedValues</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Produce a m x n Matrix, where m = number of equally spaced values 
+      (default = 25), n = maximum number of units controlled by the 
+      Uniselector</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.produceEquallySpacedValues">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#produceIndependentlyRandomizedValues" class="summary-sig-name">produceIndependentlyRandomizedValues</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Produce a m x n Matrix, where m = number of  uniformly distributed 
+      random values  (default = 25), n = maximum number of units controlled
+      by the Uniselector.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.produceIndependentlyRandomizedValues">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#produceRandomizedValues" class="summary-sig-name">produceRandomizedValues</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Produce a m x n Matrix, where m = number of  uniformly distributed 
+      random values (default = 25), n = maximum number of units controlled 
+      by the Uniselector.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.produceRandomizedValues">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#produceSequence" class="summary-sig-name">produceSequence</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Produces the matrix containing the values for the uniselector switch
+according to the kind of Ashby uniselector specified in ashbyKind</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.produceSequence">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="produceNewValue"></a><span class="summary-sig-name">produceNewValue</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return the weight for the next connection and advances the unitIndex</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.produceNewValue">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#advance" class="summary-sig-name">advance</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Advance the uniselector to the next position</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.advance">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#sameAs" class="summary-sig-name">sameAs</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aUniselector</span>)</span><br />
+      True if it is of the  same ashby kind as aUniselector and transition 
+      matrices are the same.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.sameAs">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="sameKindAs"></a><span class="summary-sig-name">sameKindAs</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aUniselector</span>)</span><br />
+      It is the same class as aUniselector</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.sameKindAs">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html">HomeoUniselector.HomeoUniselector</a></code></b>:
+      <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html#ashbyRandom">ashbyRandom</a></code>,
+      <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html#getLowerBound">getLowerBound</a></code>,
+      <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html#getUpperBound">getUpperBound</a></code>,
+      <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html#setDefaults">setDefaults</a></code>,
+      <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html#toggleBeeping">toggleBeeping</a></code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>object</code></b>:
+      <code>__delattr__</code>,
+      <code>__format__</code>,
+      <code>__getattribute__</code>,
+      <code>__hash__</code>,
+      <code>__new__</code>,
+      <code>__reduce__</code>,
+      <code>__reduce_ex__</code>,
+      <code>__repr__</code>,
+      <code>__setattr__</code>,
+      <code>__sizeof__</code>,
+      <code>__str__</code>,
+      <code>__subclasshook__</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS METHODS ==================== -->
+<a name="section-ClassMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html">HomeoUniselector.HomeoUniselector</a></code></b>:
+      <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html#includesType">includesType</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== PROPERTIES ==================== -->
+<a name="section-Properties"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Properties</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Properties"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#steps" class="summary-name">steps</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#ashbyKind" class="summary-name">ashbyKind</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="Core.HomeoUniselectorAshby.HomeoUniselectorAshby-class.html#unitsControlled" class="summary-name">unitsControlled</a>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html">HomeoUniselector.HomeoUniselector</a></code></b>:
+      <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html#beeps">beeps</a></code>,
+      <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html#lowerBound">lowerBound</a></code>,
+      <code><a href="Core.HomeoUniselector.HomeoUniselector-class.html#upperBound">upperBound</a></code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>object</code></b>:
+      <code>__class__</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Initializes the interval and the steps to default values. The 
+  lowerBound and upperBound are always 0 and 1, as per Ashby's 
+  implementation, because they represent the fraction of the input to reach
+  the unit (see Design for a Brain sec 8/2, p. 102 (1960 ed.)</p>
+  <dl class="fields">
+    <dt>Overrides:
+        object.__init__
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="setLowerBound"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">setLowerBound</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">aValue</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.setLowerBound">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Do nothing. The lowerBound is always 0</p>
+  <dl class="fields">
+    <dt>Overrides:
+        <a href="Core.HomeoUniselector.HomeoUniselector-class.html#setLowerBound">HomeoUniselector.HomeoUniselector.setLowerBound</a>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="setUpperBound"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">setUpperBound</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">aValue</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.setUpperBound">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Do nothing. The UpperBound is always 1</p>
+  <dl class="fields">
+    <dt>Overrides:
+        <a href="Core.HomeoUniselector.HomeoUniselector-class.html#setUpperBound">HomeoUniselector.HomeoUniselector.setUpperBound</a>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="setAshbyKind"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">setAshbyKind</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">aString</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.setAshbyKind">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Do nothing. The value of AshbyKind is managed by other methods</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="setUnitsControlled"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">setUnitsControlled</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">aNumber</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.setUnitsControlled">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>The uniselector is initialized to control 10 maximum connections and 
+  it initializes its transition matrix (sequence) accordingly. When the 
+  required number of max connections increases, it goes up in 10 units step
+  increments and produces a new transition matrix</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="produceIndependentlyRandomizedValues"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">produceIndependentlyRandomizedValues</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.produceIndependentlyRandomizedValues">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Produce a m x n Matrix, where m = number of  uniformly distributed 
+  random values  (default = 25), n = maximum number of units controlled by 
+  the Uniselector. Notice that in this implementation, all connections have
+  ***different***  random values. This DOES NOT seem to capture the 
+  original homeostat, where random values were implemented in hardware and 
+  could not be changed. Initializing the uniselector with produceRandomized
+  Sequence, on the other hand, produces a matrix in which all rows 
+  (connections) share the same  random values</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="produceRandomizedValues"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">produceRandomizedValues</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.produceRandomizedValues">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Produce a m x n Matrix, where m = number of  uniformly distributed 
+  random values (default = 25), n = maximum number of units controlled by 
+  the Uniselector. Notice that in this implementation, all connections 
+  share the same space of 25 random values, although they go through them 
+  in a different order. This seems to capture (one of the interpretations) 
+  of the original homeostat, where random values were implemented in 
+  hardware and could not be changed. Initializing the uniselector with 
+  produceIndependentRandomized Sequence, on the other hand, produces a 
+  matrix in which all rows have (a highly likelihood of being) completely 
+  different values</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="produceSequence"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">produceSequence</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.produceSequence">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <pre class="literalblock">
+Produces the matrix containing the values for the uniselector switch
+according to the kind of Ashby uniselector specified in ashbyKind
+
+New matrix production methods can be added by:
+1 - Adding a method that produces a n*m matrix of transition values,
+    where m is = self._unitsControlled
+2 - Naming the method 'produce' + methodName
+3 - Adding a method that allows setting self._ashbyKind  to methodName  
+
+</pre>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="advance"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">advance</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.advance">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Advance the uniselector to the next position</p>
+  <dl class="fields">
+    <dt>Overrides:
+        <a href="Core.HomeoUniselector.HomeoUniselector-class.html#advance">HomeoUniselector.HomeoUniselector.advance</a>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="sameAs"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">sameAs</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">aUniselector</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Core.HomeoUniselectorAshby-pysrc.html#HomeoUniselectorAshby.sameAs">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>True if it is of the  same ashby kind as aUniselector and transition 
+  matrices are the same.</p>
+  <p>It will almost never return true for uniselector, for transition 
+  matrices' values are  shuffled</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== PROPERTY DETAILS ==================== -->
+<a name="section-PropertyDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Property Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-PropertyDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="steps"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">steps</h3>
+  
+  <dl class="fields">
+    <dt>Get Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>)</span>
+    </dd>
+    <dt>Set Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">value</span>)</span>
+    </dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="ashbyKind"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">ashbyKind</h3>
+  
+  <dl class="fields">
+    <dt>Get Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>)</span>
+    </dd>
+    <dt>Set Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">value</span>)</span>
+    </dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="unitsControlled"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">unitsControlled</h3>
+  
+  <dl class="fields">
+    <dt>Get Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>)</span>
+    </dd>
+    <dt>Set Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">value</span>)</span>
+    </dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="Core-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Tue Apr  2 22:00:03 2013
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

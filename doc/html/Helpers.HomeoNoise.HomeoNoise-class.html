@@ -1,0 +1,1184 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Helpers.HomeoNoise.HomeoNoise</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="Helpers-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="Helpers-module.html">Package&nbsp;Helpers</a> ::
+        <a href="Helpers.HomeoNoise-module.html">Module&nbsp;HomeoNoise</a> ::
+        Class&nbsp;HomeoNoise
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="Helpers.HomeoNoise.HomeoNoise-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class HomeoNoise</h1><p class="nomargin-top"><span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise">source&nbsp;code</a></span></p>
+<pre class="base-tree">
+object --+
+         |
+        <strong class="uidshort">HomeoNoise</strong>
+</pre>
+
+<hr />
+<p>HomeoNoise is a utility class that provides different algorithms to 
+  deal with the computation of how noise affects the transmission of 
+  current between units and the flicker noise that may affect the units' 
+  internal values.</p>
+  <p>Instance variables:</p>
+  <p>current       &lt;aNumber&gt;    The value of the current affected by 
+  the noise noise         &lt;aNumber&gt;    The value of the noise 
+  affecting the transmission of the current. This value is typically 
+  between 0 (no noise) and 1 (channel so noisy to block communication) mode
+  &lt;aString&gt;    Mode of the noise. Possible values: 'distorting' 
+  'degrading', indicates how the noise affects the currentWhether the noise
+  is a distribution  &lt;aString&gt;    Probability distribution of the 
+  actual noise with respect to the noise value. Possible values: 
+  'constant', 'uniform', 'normal' ratio         &lt;aString&gt;    Ratio of
+  the noise to the affected current. Possible values: 'linear' 
+  'proportional'</p>
+  <p>It is a singleton class. The only class creation method is 
+  newWithCurrent: andNoise: which simply updates the values of the instance
+  variables if the unique instance exists already.</p>
+  <p>The noise-computing algorithm is selected by changing the values of 
+  the three iVars mode, distribution, and ratio, and then calling the 
+  method getNoise. This method constructs a selector string from the values
+  of the ivar and calls the corresponding method.</p>
+
+<!-- ==================== NESTED CLASSES ==================== -->
+<a name="section-NestedClasses"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Nested Classes</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-NestedClasses"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="Helpers.General_Helper_Functions.Singleton-class.html" class="summary-name">__metaclass__</a>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Helpers.HomeoNoise.HomeoNoise-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Initialize the instance to a current of 1 and noise of 0, 
+      representing a full current and no noise.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.__init__">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getCurrent"></a><span class="summary-sig-name">getCurrent</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getCurrent">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Helpers.HomeoNoise.HomeoNoise-class.html#setCurrent" class="summary-sig-name">setCurrent</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span><br />
+      Do nothing.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.setCurrent">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="noiseGetter"></a><span class="summary-sig-name">noiseGetter</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Using noiseGetter for a get method, because getNoise is used to 
+      produce noise value</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.noiseGetter">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Helpers.HomeoNoise.HomeoNoise-class.html#noiseSetter" class="summary-sig-name">noiseSetter</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span><br />
+      Do nothing.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.noiseSetter">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getRatio"></a><span class="summary-sig-name">getRatio</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getRatio">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Helpers.HomeoNoise.HomeoNoise-class.html#setRatio" class="summary-sig-name">setRatio</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span><br />
+      Do nothing.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.setRatio">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getMode"></a><span class="summary-sig-name">getMode</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getMode">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Helpers.HomeoNoise.HomeoNoise-class.html#setMode" class="summary-sig-name">setMode</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span><br />
+      Do nothing.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.setMode">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getDistribution"></a><span class="summary-sig-name">getDistribution</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getDistribution">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Helpers.HomeoNoise.HomeoNoise-class.html#setDistribution" class="summary-sig-name">setDistribution</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aValue</span>)</span><br />
+      Do nothing.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.setDistribution">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="withCurrentAndNoise"></a><span class="summary-sig-name">withCurrentAndNoise</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">aNumber</span>,
+        <span class="summary-sig-arg">anotherNumber</span>)</span><br />
+      Set current and noise on the only instance of the class</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.withCurrentAndNoise">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Helpers.HomeoNoise.HomeoNoise-class.html#getNoise" class="summary-sig-name">getNoise</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return 0 if noise is 0.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoise">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="degrading"></a><span class="summary-sig-name">degrading</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.degrading">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="distorting"></a><span class="summary-sig-name">distorting</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.distorting">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="proportional"></a><span class="summary-sig-name">proportional</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.proportional">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="linear"></a><span class="summary-sig-name">linear</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.linear">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="normal"></a><span class="summary-sig-name">normal</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.normal">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="uniform"></a><span class="summary-sig-name">uniform</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.uniform">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="constant"></a><span class="summary-sig-name">constant</span>(<span class="summary-sig-arg">self</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.constant">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Helpers.HomeoNoise.HomeoNoise-class.html#getNoiseDegradingConstantLinear" class="summary-sig-name">getNoiseDegradingConstantLinear</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return a degrading noise (with sign always opposite to affected 
+      current), and constant value equal to the noise parameter.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDegradingConstantLinear">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getNoiseDegradingConstantProportional"></a><span class="summary-sig-name">getNoiseDegradingConstantProportional</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return a degrading noise (with sign always opposite to affected 
+      current), and constant value equal to the ratio between the noise 
+      parameter and the affected current</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDegradingConstantProportional">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getNoiseDegradingNormalLinear"></a><span class="summary-sig-name">getNoiseDegradingNormalLinear</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return a degrading noise (sign always opposite to current), normally 
+      distributed and proportional to the absolute magnitude of the noise 
+      parameter</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDegradingNormalLinear">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getNoiseDegradingNormalProportional"></a><span class="summary-sig-name">getNoiseDegradingNormalProportional</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return a degrading noise (with sign always opposite to affected 
+      current), and normally distributed value in the interval [0, 2 * 
+      noise * abs(current)]</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDegradingNormalProportional">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getNoiseDegradingUniformLinear"></a><span class="summary-sig-name">getNoiseDegradingUniformLinear</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return a degrading noise (sign always opposite to current) uniformly 
+      distributed and proportional to the absolute magnitude of the noise 
+      parameter</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDegradingUniformLinear">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getNoiseDegradingUniformProportional"></a><span class="summary-sig-name">getNoiseDegradingUniformProportional</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return a degrading noise (with sign always opposite to affected 
+      current), and uniformly distributed value in the interval [0, 2 * 
+      noise * current ]</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDegradingUniformProportional">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getNoiseDistortingConstantLinear"></a><span class="summary-sig-name">getNoiseDistortingConstantLinear</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return a distorting noise (centered around 0), with absolute value 
+      equal to the noise parameter</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDistortingConstantLinear">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getNoiseDistortingConstantProportional"></a><span class="summary-sig-name">getNoiseDistortingConstantProportional</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return a distorting noise (centered around 0), equal to the ratio 
+      between the absolute magnitude of the affected current and the noise 
+      parameter</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDistortingConstantProportional">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getNoiseDistortingNormalLinear"></a><span class="summary-sig-name">getNoiseDistortingNormalLinear</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Returns a distorting noise (centered around 0), normally distributed 
+      and proportional to the  absolute magnitude of the noise parameter</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDistortingNormalLinear">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="Helpers.HomeoNoise.HomeoNoise-class.html#getNoiseDistortingNormalProportional" class="summary-sig-name">getNoiseDistortingNormalProportional</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Returns a distorting noise (centered around 0), normally distributed 
+      and proportional to the absolute magnitude of the affected current</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDistortingNormalProportional">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getNoiseDistortingUniformLinear"></a><span class="summary-sig-name">getNoiseDistortingUniformLinear</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return a distorting noise (centered around 0), uniformly distributed 
+      in the interval [-noise, noise]</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDistortingUniformLinear">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="getNoiseDistortingUniformProportional"></a><span class="summary-sig-name">getNoiseDistortingUniformProportional</span>(<span class="summary-sig-arg">self</span>)</span><br />
+      Return a distorting noise (centered around 0), uniformly distributed 
+      in the interval [-noise * abs(current), noise * abs(current) ]</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDistortingUniformProportional">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>object</code></b>:
+      <code>__delattr__</code>,
+      <code>__format__</code>,
+      <code>__getattribute__</code>,
+      <code>__hash__</code>,
+      <code>__new__</code>,
+      <code>__reduce__</code>,
+      <code>__reduce_ex__</code>,
+      <code>__repr__</code>,
+      <code>__setattr__</code>,
+      <code>__sizeof__</code>,
+      <code>__str__</code>,
+      <code>__subclasshook__</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_noise"></a><span class="summary-name">_noise</span><br />
+      default values for noise parameters
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_mode"></a><span class="summary-name">_mode</span><br />
+      Methods setting noise's ratio
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_ratio"></a><span class="summary-name">_ratio</span><br />
+      Methods setting noise's distribution
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="_distribution"></a><span class="summary-name">_distribution</span><br />
+      Noise algorithms
+    </td>
+  </tr>
+</table>
+<!-- ==================== PROPERTIES ==================== -->
+<a name="section-Properties"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Properties</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Properties"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="Helpers.HomeoNoise.HomeoNoise-class.html#current" class="summary-name">current</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="Helpers.HomeoNoise.HomeoNoise-class.html#noise" class="summary-name">noise</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="Helpers.HomeoNoise.HomeoNoise-class.html#ratio" class="summary-name">ratio</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="Helpers.HomeoNoise.HomeoNoise-class.html#mode" class="summary-name">mode</a>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="Helpers.HomeoNoise.HomeoNoise-class.html#distribution" class="summary-name">distribution</a>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>object</code></b>:
+      <code>__class__</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="__init__"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>)</span>
+    <br /><em class="fname">(Constructor)</em>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.__init__">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Initialize the instance to a current of 1 and noise of 0, representing
+  a full current and no noise. These values are typically overridden by 
+  class creation methods.</p>
+  <dl class="fields">
+    <dt>Overrides:
+        object.__init__
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="setCurrent"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">setCurrent</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">aValue</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.setCurrent">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Do nothing. Noise is set through other methods</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="noiseSetter"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">noiseSetter</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">aValue</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.noiseSetter">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Do nothing. Noise is set through other methods</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="setRatio"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">setRatio</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">aValue</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.setRatio">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Do nothing. Ratio is always set via other methods</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="setMode"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">setMode</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">aValue</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.setMode">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Do nothing. Mode is always set via other methods</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="setDistribution"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">setDistribution</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">aValue</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.setDistribution">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Do nothing. Distribution is always set via other methods</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="getNoise"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">getNoise</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoise">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Return 0 if noise is 0. Otherwise: Select the correct noise algorithm 
+  according to the values of mode, distribution and ratio and returns the 
+  noise value. Return a noise value computed accordingly</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="getNoiseDegradingConstantLinear"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">getNoiseDegradingConstantLinear</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDegradingConstantLinear">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Return a degrading noise (with sign always opposite to affected 
+  current), and constant value equal to the noise parameter.</p>
+  <p>If current is 0, returns 0</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="getNoiseDistortingNormalProportional"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">getNoiseDistortingNormalProportional</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="Helpers.HomeoNoise-pysrc.html#HomeoNoise.getNoiseDistortingNormalProportional">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Returns a distorting noise (centered around 0), normally distributed 
+  and proportional to the absolute magnitude of the affected current</p>
+  <p>Standard deviation of the normal distribution is 1/3 of noise's 
+  value</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== PROPERTY DETAILS ==================== -->
+<a name="section-PropertyDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Property Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-PropertyDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="current"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">current</h3>
+  
+  <dl class="fields">
+    <dt>Get Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>)</span>
+    </dd>
+    <dt>Set Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">value</span>)</span>
+    </dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="noise"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">noise</h3>
+  
+  <dl class="fields">
+    <dt>Get Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>)</span>
+    </dd>
+    <dt>Set Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">value</span>)</span>
+    </dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="ratio"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">ratio</h3>
+  
+  <dl class="fields">
+    <dt>Get Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>)</span>
+    </dd>
+    <dt>Set Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">value</span>)</span>
+    </dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="mode"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">mode</h3>
+  
+  <dl class="fields">
+    <dt>Get Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>)</span>
+    </dd>
+    <dt>Set Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">value</span>)</span>
+    </dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="distribution"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">distribution</h3>
+  
+  <dl class="fields">
+    <dt>Get Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>)</span>
+    </dd>
+    <dt>Set Method:</dt>
+    <dd class="value"><span class="summary-sig"><i>unreachable</i>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">value</span>)</span>
+    </dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="Helpers-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Tue Apr  2 22:00:42 2013
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
