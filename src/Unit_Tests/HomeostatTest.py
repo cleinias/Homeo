@@ -240,15 +240,15 @@ class HomeostatTest(unittest.TestCase):
         self.homeostat.addFullyConnectedUnit(unit2)
         self.homeostat.addFullyConnectedUnit(unit3)
         self.homeostat.addFullyConnectedUnit(unit4)
-        delay = 100
+        delay = 100  #in milliseconds
         
         self.homeostat.slowingFactor = delay
         
         for i in xrange(5):
-            timeAtStart = time.time() 
-            self.homeostat.runOnce()
-            timeAtEnd =  time.time()
-            self.assertTrue((timeAtEnd - timeAtStart) >= delay)
+            timeAtStart = time.time() # in seconds
+            self.homeostat.runOnce()  
+            timeAtEnd =  time.time()  # in seconds
+            self.assertTrue((timeAtEnd - timeAtStart) >= (delay/1000))
 
     def testSameAs(self):
         """

@@ -141,7 +141,7 @@ class HomeoSimulationTest(unittest.TestCase):
 
     def testStop(self):
         """
-        Start a simulation and stop it: test that it has not run its maximum nyumber of cycles
+        Start a simulation and stop it: test that it has not run its maximum number of cycles
         """
         
         "Create a 4-unit full connected homeostat"

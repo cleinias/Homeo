@@ -56,7 +56,7 @@ class Homeostat(object):
         self._homeoUnits = []
         self._dataCollector = HomeoDataCollector()
         self._collectsData = True                       # default is to collect data. Can be turned off via accessor."
-        self._slowingFactor = 10
+        self._slowingFactor = 10                        # Default slowing time is 10 milliseconds 
         self._isRunning = False                         # a new homeostat is not running 
 
     def getTime(self):
@@ -71,14 +71,14 @@ class Homeostat(object):
     def setMicroTime(self,aValue):
         self._microtime = aValue
     microtime = property(fget = lambda self: self.getMicroTime(),
-                    fset = lambda self, value: self.setMicroTime(value))
+                         fset = lambda self, value: self.setMicroTime(value))
     
     def getHomeoUnits(self):
         return self._homeoUnits
     def setHomeoUnits(self,aValue):
         self._homeoUnits = aValue
     homeoUnits = property(fget = lambda self: self.getHomeoUnits(),
-                    fset = lambda self, value: self.setHomeoUnits(value))
+                          fset = lambda self, value: self.setHomeoUnits(value))
 
 
     def getDataCollector(self):
@@ -86,28 +86,29 @@ class Homeostat(object):
     def setDataCollector(self,aValue):
         self._dataCollector = aValue
     dataCollector = property(fget = lambda self: self.getDataCollector(),
-                    fset = lambda self, value: self.setDataCollector(value))
+                             fset = lambda self, value: self.setDataCollector(value))
     
     def getCollectsData(self):
         return self._collectsData
+
     def setCollectsData(self,aValue):
         self._collectsData = aValue
     collectsData = property(fget = lambda self: self.getCollectsData(),
-                    fset = lambda self, value: self.setCollectsData(value))
+                            fset = lambda self, value: self.setCollectsData(value))
 
     def getSlowingFactor(self):
         return self._slowingFactor
     def setSlowingFactor(self,aValue):
         self._slowingFactor = aValue
     slowingFactor = property(fget = lambda self: self.getSlowingFactor(),
-                    fset = lambda self, value: self.setSlowingFactor(value))
+                             fset = lambda self, value: self.setSlowingFactor(value))
 
     def getIsRunning(self):
         return self._isRunning
     def setIsRunning(self,aValue):
         self._isRunning = aValue
     isRunning = property(fget = lambda self: self.getIsRunning(),
-                    fset = lambda self, value: self.setIsRunning(value))
+                         fset = lambda self, value: self.setIsRunning(value))
 
 
 #===============================================================================
@@ -122,7 +123,7 @@ class Homeostat(object):
     def homeoUnitsArePresent(self):
         '''Checks that the minimum number of units are present. 
            This is set to one, but the method is here so it can be 
-           overriden in subclasses and/or changed in the future'''
+           overridden in subclasses and/or changed in the future'''
 
         return len(self.homeoUnits) > 0
 
@@ -244,7 +245,9 @@ class Homeostat(object):
            First check that it there are enough data to start
            Notice that once started the Homeostat goes on forever. 
            The only way to stop it is to send it the message stop.'''
-
+        
+        sleepTime = self.slowingFactor
+        
         if self.isReadyToGo():
             if self.time is None:
                 self.time = 0
@@ -256,6 +259,7 @@ class Homeostat(object):
                     if self.collectsData:
                         self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time,unit)
                     self.time += 1
+                    time.sleep(sleepTime / 1000)               # sleep accepts seconds, slowingFactor is in milliseconds
         else:
             sys.stderr.write('Warning: Homeostat is not ready to start')
 
