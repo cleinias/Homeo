@@ -16,7 +16,8 @@ class HomeoConnectionTest(unittest.TestCase):
         Set up a unit connected to itself
         """
         self.unit = HomeoUnit()
-#        self.unit.selfUpdate()              #allows the unit to have some values in its slots"
+        self.unit.setRandomValues()
+        self.unit.selfUpdate()              #allows the unit to have some values in its slots"
         self.connection = HomeoConnection()
         self.connection.incomingUnit = self.unit
 
@@ -82,28 +83,25 @@ class HomeoConnectionTest(unittest.TestCase):
             self.assertRaises(Exception, self.connection.state, randomString) 
                 
     def testWeight(self):
-        """"Test basic algorithm of a connection in various ways
-        
+        """"Test basic algorithm of a connection.
         Output is equal to the originating unit's output * weight * switch - noise 
-        """
-        noiseLevel = 0.1
-        errorTolerance = 0.00001
-        outputWeighed = self.connection.output()
-        inputUnit = self.connection.incomingUnit
+        We don't test for the influence of noise, as it is a normally distributed value around
+        connection.noise and therefore difficult to test reliably. We trust the noise tests carried
+        out in HomeNoiseTests 
         
-        self.connection.noise = 0                  # eliminate noise"
-        self.assertTrue(outputWeighed - 
-                        ((inputUnit.currentOutput * self.connection.weight * self.connection.switch) - self.connection.noise) 
-                         < errorTolerance)
-
-        "accounting for noise"
-        self.connection.noise = noiseLevel                               #set noise"
-    
-        "the difference between the weighed connection output and the unit's value is at most equal to noise (plus the tolerance)"
-        self.assertTrue(outputWeighed -
-                        abs(((inputUnit.currentOutput * self.connection.weight * self.connection.switch)) - self.connection.noise)
-                        < (noiseLevel + errorTolerance))
-                
+        """
+        errorTolerance = pow(10,-7)
+        inputUnit = self.connection.incomingUnit
+        tests = 100
+        
+        for i in xrange(tests):
+            self.connection.noise = 0                  # eliminate noise"
+            outputWeighed = self.connection.output()
+            self.assertTrue(abs(outputWeighed - 
+                                ((inputUnit.currentOutput * self.connection.weight * self.connection.switch) - self.connection.noise)) 
+                                < errorTolerance)
+            inputUnit.selfUpdate()
+            
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

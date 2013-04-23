@@ -55,12 +55,12 @@ class HomeoUnit(object):
                                          Notice that the polarity of the self-connection (the switch, in Ashby terminology, which we follow)
                                          is **not** held in an instance variable. In our implementation it is always identical 
                                          to the polarity of a unit's first connection, that is: self.inputConnections[0].switch,
-     time                      <Integer>  The internal tick counter
+     time                       <Integer>  The internal tick counter
      uniselectorTime            <Integer> The internal tick counter for activation of the uniselector
      uniselectorTimeInterval    <Integer> The number of ticks that specifies how often to check that the output is in range and eventually activate uniselector
-     uniselector       <HomeoUniselector> The uniselector that can modify the weights of input values coming from other units
+     uniselector                <HomeoUniselector> The uniselector that can modify the weights of input values coming from other units
      uniselectorActive          <Boolean>  Whether the uniselector mechanism is active or not
-     needleCompMethod          <String>    Whether the unit's needle's displacement depends of the sum of its input, 
+     needleCompMethod           <String>    Whether the unit's needle's displacement depends of the sum of its input, 
                                           or on the ratio between the sum of the inputs and the maxDeviation. 
                                           Possible values are 'linear' and 'proportional', default is 'linear'.
     inputTorque                <Float>    It represents the input force derived from the weighed sum of the inputs (as computed by computeTorque)
@@ -69,7 +69,7 @@ class HomeoUnit(object):
     debugMode                  <Boolean>  It control whether the running methods print out debugging information
     showUniselectorAction      <Boolean>  It controls whether the running methods print out when the uniselector kicks into action
     currentVelocity            <Float>    The current velocity of the needle moving in the trough
-    needleUnit         <HomeoNeedleUnit>  Holds an instance of HomeoNeedleUnit, the class containing the parameters 
+    needleUnit                 <HomeoNeedleUnit>  Holds an instance of HomeoNeedleUnit, the class containing the parameters 
                                           of the needle used by the unit (mass, area, etc.)
     _physicalParameters        <Dict>      A dictionary containing equivalence factors between the simulation units and real physical parameters
 

@@ -557,7 +557,7 @@ class HomeoNoiseTest(unittest.TestCase):
         """
         Distorting constant proportional noise must
         - always have the same value (constant)
-        - have a value proportional to the unit's value  (proportional)
+        - have a value proportional to the unit's value (proportional)
         - be distributed  *around* a unit's noise (approximately) (distorting)
         """
         tests = 1000

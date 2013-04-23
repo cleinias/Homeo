@@ -6,7 +6,7 @@ Created on Mar 19, 2013
 from Core.Homeostat import *
 from Core.HomeoDataCollector  import *
 from datetime import datetime
-import os
+import os, pickle
 
 class HomeoSimulation(object):
     '''
@@ -21,23 +21,49 @@ class HomeoSimulation(object):
     Instance Variables:
         homeostat          <aHomeostat>       The Homeostat being run in the simulation
         maxRuns            <anInteger>        The maximum number of simulation steps 
-        dataFile           <aString>          The filename used to save the simulation data 
+        dataFilename       <aString>          The filename used to save the simulation data
+        homeostatFilename  <aString>          The filename used to save the homeostat
     '''
+
+#===============================================================================
+# Class methods
+#===============================================================================
+
+    @classmethod    
+    def readFrom(self,filename):
+        '''This is a class method that create a new HomeoSimulation instance from a filename,
+        by loading a pickled homeostat'''
+        fileIn = open(filename, 'r')
+        unpickler = pickle.Unpickler(fileIn)
+        newHomeostat = unpickler.load()
+        fileIn.close()
+        newHomeoSimulation = HomeoSimulation()
+        newHomeoSimulation.homeostat = newHomeostat
+        return newHomeoSimulation
+
 
 
 #===============================================================================
 # Accessing and initialization
 #===============================================================================
 
-    def getDataFile(self):
-        return self._datafile
+    def getDataFilename(self):
+        return self._dataFilename
     
-    def setDatafile(self, aString):
-        self._datafile = aString
+    def setDataFilename(self, aString):
+        self._dataFilename = aString
 
-    datafile = property(fget = lambda self: self.getDatafile(),
-                        fset = lambda self, aString: self.setDatafile(aString))
+    dataFilename = property(fget = lambda self: self.getDataFilename(),
+                        fset = lambda self, aString: self.setDataFilename(aString))
 
+    def getHomeostatFilename(self):
+        return self._homeostatFilename
+    
+    def setHomeostatFilename(self, aString):
+        self._homeostatFilename = aString
+
+    homeostatFilename = property(fget = lambda self: self.getHomeostatFilename(),
+                        fset = lambda self, aString: self.setHomeostatFilename(aString))
 
     def getHomeostat(self):
         return self._homeostat
@@ -66,8 +92,9 @@ class HomeoSimulation(object):
         '''
         
         self._homeostat = Homeostat()
-        self.maxRuns = 1000
-        self._datafile = self.createDefaultDatafile()
+        self._maxRuns = 1000
+        self._dataFilename = self.createDefaultDataFilename()
+        self._homeostatFilename = self.createDefaultHomeostatFilename()
 
 #===============================================================================
 # Running methods
@@ -107,11 +134,11 @@ class HomeoSimulation(object):
         self._homeostat. addUnit(aHomeoUnit)
 
 #===============================================================================
-# Saving <methods>
+# Saving methods
 #===============================================================================
 
-    def createDefaultDatafile(self):
-        '''Create a default strings corresponding to the datafile. 
+    def createDefaultDataFilename(self):
+        '''Create a default string corresponding to the dataFilename. 
            Check that no file with the same name exists in current directory'''
         
         dateString = ''
@@ -124,42 +151,68 @@ class HomeoSimulation(object):
     
         while os.path.exists(completeName):
             number += 1
-            completeName = name + '-' + dateString  + '-' + str(number)
+            completeName = name + '-' + dateString  + '-' + str(number)+'.txt'
+    
+        return completeName
+
+    def createDefaultHomeostatFilename(self):
+        '''Create a default string corresponding to the dataFilename. 
+           Check that no file with the same name exists in current directory'''
+        
+        dateString = ''
+        now_ = datetime.now()
+        dateString += str(now_.month) + '-' + str(now_.day) + '-' + str(now_.year)
+        name = 'HomeoSimulation'
+    
+        number = 1
+        completeName = name + '-' + dateString + '-' + '1'
+    
+        while os.path.exists(completeName):
+            number += 1
+            completeName = name + '-' + dateString  + '-' + str(number)+'.pickled'
     
         return completeName
 
     def saveCompleteRunOnFile(self):
-        "Asks the datacollector of the homestat to save all data on datafile"
+        "Asks the datacollector of the homeostat to save all data on dataFilename"
 
         fileContent = self.homeostat.dataCollector.printEssentialDataOnAString('')
-        fileOut  = open(self.datafile, 'w')
+        fileOut  = open(self.dataFilename, 'w')
         fileOut.write(fileContent)
         fileOut.close()
 
     def saveEssentialDataOnFile(self):
-        '''Ask the datacollector of the homestat 
-           to save only the essential data on datafile'''
+        '''Ask the datacollector of the homeostat 
+           to save only the essential data on dataFilename'''
 
         fileContent = self.homeostat.dataCollector.printEssentialDataOnAString('')
-        fileOut  = open(self.datafile, 'w')
+        fileOut  = open(self.dataFilename, 'w')
         fileOut.write(fileContent)
         fileOut.close()
 
     def saveEssentialDataOnFileWithSeparator(self, aCharacter):
-        '''Ask the datacollector of the homestat 
-           to save only the essential data on datafile,
-           using aChracter as a column separator'''
+        '''Ask the datacollector of the homeostat 
+           to save only the essential data on dataFilename,
+           using aCharacter as a column separator'''
 
         fileContent = self.homeostat.dataCollector.saveEssentialsOnAStringWithSeparator('', aCharacter)
-        fileOut  = open(self.datafile, 'w')
+        fileOut  = open(self.dataFilename, 'w')
         fileOut.write(fileContent)
         fileOut.close()
+        
+        
+    def save(self):
+        '''Save the homeostat the simulation manages to a pickled file
+           It will erase the old content of aFilename.'''
+
+        self.homeostat.saveTo(self.homeostatFilename)
+
 
     def isReadyToGo(self):
         '''Check that the homeostat is ready to go and that 
-           the maxRuns and datafile are present'''
+           the maxRuns and dataFilename are present'''
 
         return (self._homeostat.isReadyToGo() and
                 self.maxRuns is not None and
-                self._datafile is not None)
+                self._dataFilename is not None)
         

@@ -5,6 +5,8 @@ Created on Apr 15, 2013
 '''
 import threading
 import time
+
+
 class Looping(object):
 
     def __init__(self):
@@ -17,8 +19,16 @@ class Looping(object):
            print "Loop number %u" % n
            n += 1
            time.sleep(1/self.timer)
+    
 
-#l = Looping()
-#t = threading.Thread(target = l.runForever())
-#t.start()
-#l.isRunning = False
+
+
+def testThreadingTime(runTime):
+    l = Looping()
+    t = threading.Thread(target = l.runForever)
+    start = time.clock()
+    t.start()
+    time.sleep(runTime)
+    l.isRunning = False
+    end = time.clock()
+    print "I have run for %f seconds" % (end-start) 
