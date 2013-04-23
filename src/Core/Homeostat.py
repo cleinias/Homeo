@@ -351,7 +351,7 @@ class Homeostat(object):
         '''Reset all units to random values'''
 
         for unit in self.homeoUnits:
-            self.randomizeValuesForAUnit(unit)
+            unit.setRandomValues()
             unit.randomizeAllConnectionValues()
 
 #===============================================================================

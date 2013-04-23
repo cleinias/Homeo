@@ -161,35 +161,87 @@ class HomeoSimulationTest(unittest.TestCase):
         self.simulation.stop()
         self.assertFalse(simulationCycles == self.simulation.homeostat.time)
         
-        def testDataFileIsPresent():
-            """
-            A simulation must always have a data file
-            """
+    def testDataFileIsPresent(self):
+        """
+        A simulation must always have a data file
+        """
 
-            self.assertTrue(self.simulation.datafile() is not None)
+        self.assertTrue(self.simulation.dataFilename is not None)
  
-        def testDataFile():
-            """
-            Test that either the data file exists and it is writable or it does not exist yet
-            """
-            
-            "Note that os.access wants a path, not just a filename"
-            self.assertTrue(os.access(self.simulation.datafile(),os.W_OK) or
-                            self.simulation.datafile is None)           
-            
-        def testReadConditionsFromFile(self):
-            """
-            FIXME: This  checks whether a simulation can be restarted from file
-            """
-            self.assertTrue(False)
-            
-            
-        def testSaveToFile(self):
-            """
-            FIXME: This test checks if the simulation can be saved to file
-            """
-            self.assertTrue(False)
-            
+    def testDataFile(self):
+        """
+        Test that either the data file exists and it is writable or the data file does not exist  yet
+        """
+        
+        "Note that os.access wants a path, not just a filename"
+        self.assertTrue(os.access(self.simulation.dataFilename,os.W_OK) or
+                        not os.access(self.simulation.dataFilename, os.F_OK))           
+        
+    def testReadConditionsFromFile(self):
+        """
+        Test  if  a simulation can be loaded from a pickled homeostat file.
+        Create a simulation, run it and save it to file first.
+        """
+
+        "Create a fully connected 2-unit homeostat and randomize its values"
+        self.simulation = HomeoSimulation()
+        unit1 = HomeoUnit()
+        unit2 = HomeoUnit()
+        self.simulation.homeostat.addFullyConnectedUnit(unit1)    
+        self.simulation.homeostat.addFullyConnectedUnit(unit2)    
+        self.simulation.homeostat.randomizeValuesforAllUnits()
+        
+        "run the simulation for a few cycles"       
+        self.simulation.maxRuns = 100
+        self.simulation.start()
+        
+        "if a file exist on disk erase it."
+        if os.access(self.simulation.homeostatFilename, os.F_OK):
+            os.remove(self.simulation.homeostatFilename)
+        
+        "save the simulation"
+        self.simulation.save()
+
+        "create a new Simulation from the saved file"
+        newSimul = HomeoSimulation.readFrom(self.simulation.homeostatFilename)
+        
+        "test the simulation is ready to go"
+        self.assertTrue(newSimul.isReadyToGo())
+        
+        "clean up after yourself"
+        os.remove(self.simulation.homeostatFilename)
+        
+        
+    def testSaveToFile(self):
+        """
+        Test if the simulation can be saved to a pickled file
+        """
+
+        "Create a fully connected 2-unit homeostat and randomize its values"
+        self.simulation = HomeoSimulation()
+        unit1 = HomeoUnit()
+        unit2 = HomeoUnit()
+        self.simulation.homeostat.addFullyConnectedUnit(unit1)    
+        self.simulation.homeostat.addFullyConnectedUnit(unit2)    
+        self.simulation.homeostat.randomizeValuesforAllUnits()
+        
+        "run the simulation for a few cycles"       
+        self.simulation.maxRuns = 100
+        self.simulation.start()
+        
+        "if a file exist on disk erase it."
+        if os.access(self.simulation.homeostatFilename, os.F_OK):
+            os.remove(self.simulation.homeostatFilename)
+        
+        "save the simulation"
+        self.simulation.save()
+        
+        "check the pickled file exists on disk"
+        self.assertTrue(os.access(self.simulation.homeostatFilename, os.F_OK))
+        
+        "clean up after yourself"
+        os.remove(self.simulation.homeostatFilename)
+        
             
     def tearDown(self):
         pass
