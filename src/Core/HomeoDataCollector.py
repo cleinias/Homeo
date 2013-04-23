@@ -5,6 +5,7 @@ Created on Mar 13, 2013
 '''
 import pickle, sys, datetime
 from Core.HomeoDataUnit import  *
+import numpy as np
 
 
 class HomeoDataCollector(object):
@@ -113,7 +114,7 @@ class HomeoDataCollector(object):
 
         if self.states is None: self.states = {}
         if timeIndex not in self.states.keys():
-            self.states[timeIndex] = {}
+            self.states[timeIndex] = {} 
         self.states[timeIndex][aHomeoUnit.name] = HomeoDataUnit.newUnitFor(aHomeoUnit)
 
 
@@ -357,7 +358,7 @@ class HomeoDataCollector(object):
                 aString +=  aCharacter
             aString += "\n"
         return aString
-
+    
 #===============================================================================
 # Converting methods
 #===============================================================================
@@ -375,17 +376,17 @@ class HomeoDataCollector(object):
         return aCollection
 
     def criticalDevAsCollectionOfArraysForAllUnits(self):
-        '''Extract the Critical Deviaton homeoDataunits for all units 
+        '''Extract the Critical Deviation and Uniselector activation data for all units 
            and returns them as a list of lists 
            Each list has all the homeoDataunits for a point in time'''
 
         aCollection = []
-        for stateAtTick in self.states:
-            if stateAtTick is not None:
+        for stateAtTick, data in self.states.iteritems():
+            if data is not None:
                 dataPoint = []
-                for homeoDataUnit in stateAtTick:
+                for HomeoUnitName, homeoDataUnit in data.iteritems():
                     dataPoint.append(homeoDataUnit.criticalDeviation)
-                    dataPoint.append(homeoDataUnit.uniselectorActivated)
+                    dataPoint.append(homeoDataUnit.uniselectorActive)
             aCollection.append(dataPoint)
 
         return aCollection
@@ -404,3 +405,17 @@ class HomeoDataCollector(object):
             aCollection.append(dataPoint)
 
         return aCollection
+
+    def criticalDevAsNPArrayForAllUnits(self):
+        '''Convert the representaiton of critical deviation homeoDataunits for all units 
+           from a list of list into a multi-dim NP-Array'''
+
+        npArr = np.array(self.criticalDevAsCollectionOfArraysForAllUnits())
+        return npArr
+    
+    def criticalDevAsNPArrayForUnit(self,aHomeoUnit):
+        '''Convert the representaiton of critical deviation homeoDataunits for aHomeoUJnit 
+           from a list of list into a mono-dim NP-Array'''
+        
+        npArr = np.array(self.criticalDevAsCollectionForUnit(aHomeoUnit))
+        return npArr
