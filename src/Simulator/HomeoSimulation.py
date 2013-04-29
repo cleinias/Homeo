@@ -5,6 +5,7 @@ Created on Mar 19, 2013
 '''
 from Core.Homeostat import *
 from Core.HomeoDataCollector  import *
+from Core.HomeoUnitNewtonian  import *
 from datetime import datetime
 import os, pickle
 
@@ -19,10 +20,12 @@ class HomeoSimulation(object):
     class---an instance of which is held by the simulation---and its components.
 
     Instance Variables:
-        homeostat          <aHomeostat>       The Homeostat being run in the simulation
-        maxRuns            <anInteger>        The maximum number of simulation steps 
-        dataFilename       <aString>          The filename used to save the simulation data
-        homeostatFilename  <aString>          The filename used to save the homeostat
+        homeostat                   <aHomeostat>       The Homeostat being run in the simulation
+        maxRuns                     <anInteger>        The maximum number of simulation steps 
+        dataFilename                <aString>          The filename used to save the simulation data
+        dataAreSaved                <aBoolean>         Whether the simnulation run data have been saved
+        homeostatFilename           <aString>          The filename used to save the homeostat
+        homeostatIsSaved            <aBoolean>         Whether the homeostat being simulated has been saved        
     '''
 
 #===============================================================================
@@ -39,6 +42,7 @@ class HomeoSimulation(object):
         fileIn.close()
         newHomeoSimulation = HomeoSimulation()
         newHomeoSimulation.homeostat = newHomeostat
+        newHomeoSimulation.homeostatIsSaved = True 
         return newHomeoSimulation
 
 
@@ -83,6 +87,24 @@ class HomeoSimulation(object):
     maxRuns = property(fget = lambda self: self.getMaxRuns(),
                        fset = lambda self, number: self.setMaxRuns(number)) 
 
+    def getHomeostatIsSaved(self):
+        return self._homeostatIsSaved
+    
+    def setHomeostatIsSaved(self,anInteger):
+        self._homeostatIsSaved=  anInteger
+
+    homeostatIsSaved = property(fget = lambda self: self.getHomeostatIsSaved(),
+                       fset = lambda self, number: self.setHomeostatIsSaved(number)) 
+
+    def getDataAreSaved(self):
+        return self._dataAreSaved
+    
+    def setDataAreSaved(self,anInteger):
+        self._dataAreSaved=  anInteger
+
+    dataAreSaved = property(fget = lambda self: self.getDataAreSaved(),
+                       fset = lambda self, number: self.setDataAreSaved(number)) 
+
     def units(self):
         return self.homeostat.homeoUnits
     
@@ -95,6 +117,17 @@ class HomeoSimulation(object):
         self._maxRuns = 1000
         self._dataFilename = self.createDefaultDataFilename()
         self._homeostatFilename = self.createDefaultHomeostatFilename()
+        self._dataAreSaved = True       # There are no data to save yet
+        self._homeostatIsSaved = False  # A new simulation has a new random Homeostat, unless is loaded form file
+        
+    def initializeAshbySimulation(self):
+        '''Adds four fully connected units with random values to the simulator 
+           (as per Ashby basic design)'''
+ 
+        for i in xrange(4):
+            unit = HomeoUnitNewtonian()
+            unit.setRandomValues()
+            self._homeostat.addFullyConnectedUnit(unit)
 
 #===============================================================================
 # Running methods
@@ -106,11 +139,15 @@ class HomeoSimulation(object):
            to the interpreter. 
            The homeostat can be stopped by sending #stop to the simulation'''
     
+        self._dataAreSaved = False
+        self._homeostatIsSaved = False
         self._homeostat.start()
 
     def start(self):
         '''Run the homeostat for the number of runs specified in maxRuns'''
 
+        self._dataAreSaved = False
+        self._homeostatIsSaved = False
         self._homeostat.runFor(self._maxRuns)
 
     def stop(self):
@@ -180,6 +217,7 @@ class HomeoSimulation(object):
         fileOut  = open(self.dataFilename, 'w')
         fileOut.write(fileContent)
         fileOut.close()
+        self._dataAreSaved = True
 
     def saveEssentialDataOnFile(self):
         '''Ask the datacollector of the homeostat 
@@ -206,6 +244,7 @@ class HomeoSimulation(object):
            It will erase the old content of aFilename.'''
 
         self.homeostat.saveTo(self.homeostatFilename)
+        self._homeostatIsSaved = True
 
 
     def isReadyToGo(self):
@@ -214,5 +253,6 @@ class HomeoSimulation(object):
 
         return (self._homeostat.isReadyToGo() and
                 self.maxRuns is not None and
-                self._dataFilename is not None)
+                self._dataFilename is not None and
+                self._homeostatFilename is not None)
         
