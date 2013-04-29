@@ -1966,7 +1966,7 @@ Instance Variables:
 As there are 4 connection for each of the 4 units, and each can be either active or inactive, we have to construct 32 event trigger handlers 
 and set the default values for each to true (i.e. connection is active)
 
-Notiice that this method assumes a classic Ashby homeostat in its starting configuration: 4 units completely connected."
+Notice that this method assumes a classic Ashby homeostat in its starting configuration: 4 units completely connected."
 
 	"activate connection handlers"
 
@@ -1992,7 +1992,7 @@ Notiice that this method assumes a classic Ashby homeostat in its starting confi
 	"construct the event triggers for all the checkboxes that activate or disactivate a unit.
 As there are 4 units in a classic Ashby Homeostat  and each can be either active or inactive, we have to construct 8 event trigger handlers, and assign default values of true (active) to each unit
 
-Notiice that this method assumes a classic Ashby homeostat in its starting configuration: 4 units completely connected."
+Notice that this method assumes a classic Ashby homeostat in its starting configuration: 4 units completely connected."
 
 	1 to: 4
 		do: 

@@ -26,7 +26,7 @@ class HomeoDataCollectorTest(unittest.TestCase):
             unit = HomeoUnit()
             unit.setRandomValues()
             self.homeostat.addFullyConnectedUnit(unit)
-            self.homeostat.slowingFactor = 0
+            self.homeostat.slowingFactor = 1
 
 
     def testAddStateForUnit(self):
@@ -128,6 +128,26 @@ class HomeoDataCollectorTest(unittest.TestCase):
                 testResultCollection.append(orig != extracted)    #collecting all instances in which the data differ"
             self.assertFalse(True in testResultCollection)
    
+    def testExtractCriticalDevAsCollectionForAllUnit(self):
+        """
+        Test that the critical deviation data extracted by the DataCollector is identical to the original
+        """
+
+        "initializing and setting up the homeostat run  and the data collections"
+        testResultCollection = []
+        originalData = []
+        extractedData = []
+        self.homeostat.runFor(1000)
+
+        "extracting data and comparing to the original" 
+        for unit in self.homeostat.homeoUnits: 
+            extractedData = self.homeostat.dataCollector.criticalDevAsCollectionForUnit(unit)
+            originalData = [self.homeostat.dataCollector.states[tick][unit.name].criticalDeviation for tick in self.homeostat.dataCollector.states]
+            self.assertTrue(len(extractedData) == len(originalData))
+            for orig, extracted in zip(originalData,extractedData) :
+                testResultCollection.append(orig != extracted)    #collecting all instances in which the data differ"
+            self.assertFalse(True in testResultCollection)
+
     def testSaveCompleteDataOnFile(self):
         """
         Test that complete data are  saved on  file: 
@@ -170,7 +190,7 @@ class HomeoDataCollectorTest(unittest.TestCase):
         dataUnitsReadBack = {}
         for line in dataReadBack:
             for unitName in unitNames:
-                if ('name: ' + unitName) in line:                                    # only count the first occurrence of unit, avoiding mentions in connections
+                if ('name: ' + unitName) in line:                        # only count the first occurrence of unit, avoiding mentions in connections
                     if unitName not in dataUnitsReadBack:
                         dataUnitsReadBack[unitName] = 1
                     else:

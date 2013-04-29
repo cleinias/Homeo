@@ -6,23 +6,25 @@ Created on Mar 13, 2013
 from Core.HomeoDataCollector import  *
 from Helpers.General_Helper_Functions import withAllSubclasses
 import time, sys, pickle
+from PyQt4.QtCore import  *
+from Helpers.QObjectProxyEmitter import emitter
 
 class Homeostat(object):
     '''
     Homeostat manages a complete homeostat by taking care of the communication between the units and between the Units and the Uniselector.
-    It stores a collection of units, and some state variables representing the general state of the Homeostat at any point in slowingFactor. 
+    It stores a collection of units, and some state variables representing the general state of the Homeostat at any point in time. 
     "Starting" (an instance of) this class is equivalent to turning the switch on the electro-mechanical machine built by Ashby. 
     Notice that this is typically done by the application class HomeoSimulation, which offers facilities for adding units, 
     adding connections, selecting parameters pertaining to the homeostat (weights, etcetera) and pertaining to the simulation 
     (number of iterations, print out and/or display of data, etcetera). Homeostat collaborates with DataCollector 
-    (an instance of which it holds) to record its states for any instant of slowingFactor it goes through. However, it does not contain any facility
+    (an instance of which it holds) to record its states for any instant of time it goes through. However, it does not contain any facility
      for visualizing the data themselves.  If operated manually, an instance of Homeostat requires manually setting up the various 
     parameters and does not offer any output.
     
     Instance Variables:
         homeoUnits           <Collection>     the collection of homeoUnits making up the homeostat
-        microTime            <aNumber>        the temporal scale regulating the communication among units (typically identical to the unit slowingFactor)
-        slowingFactor                 <aNumber>        the current slowingFactor index (i.e., t)
+        microTime            <aNumber>        the temporal scale regulating the communication among units (typically identical to the unit time)
+        slowingFactor        <aNumber>        the current slowingFactor index (i.e., t)
         dataCollector        <aDataCollector> the object recording the states of the homeostat
         collectsData         <aBoolean>       whether or not the homeostat collects data about its run
         slowingFactor:       <milliseconds>   it slows down the simulation by inserting a slowingFactor wait after each cycle.
@@ -50,6 +52,7 @@ class Homeostat(object):
         '''Set slowingFactor to 0, and microTime to 0 as well, reflecting the default 
            conditions of a Homeostat. Sets also some physical equivalence parameters'''
 
+#        super(Homeostat,self).__init__()
         self._slowingFactor = 0
         self._time = 0                                  # a newly created homeostat starts at 0
         self._microTime = 0
@@ -63,6 +66,7 @@ class Homeostat(object):
         return self._time
     def setTime(self,aValue):
         self._time = aValue
+        QObject.emit(emitter(self), SIGNAL("homeostatTimeChanged"), self._time)
     time = property(fget = lambda self: self.getTime(),
                     fset = lambda self, value: self.setTime(value))
 
