@@ -1,7 +1,7 @@
 import time, sys
 from PyQt4.QtCore  import *
 from PyQt4.QtGui import * 
-from threading import Thread
+from Helpers.SimulationThread import SimulationThread
  
 
 import weakref
@@ -77,16 +77,16 @@ class QSimulation(QObject):
         self._simulatedObject.start()
     
     def go(self):
-         self._isRunning = True
-         print 'clicked go button and iVar self._iRunning = %d' % self._isRunning
-         self.longRunning()
-         print "and now iVar self._isRunning = %s" % self._isRunning
+        self._isRunning = True
+        print 'clicked go button and iVar self._iRunning = %d' % self._isRunning
+        self.longRunning()
+        print "and now iVar self._isRunning = %s" % self._isRunning
 
     def go2(self):
-         self._isRunning = True
-         print 'clicked go button and iVar self._iRunning = %d' % self._isRunning
-         self.runForever()
-         print "and now iVar self._isRunning = %s" % self._isRunning
+        self._isRunning = True
+        print 'clicked go button and iVar self._iRunning = %d' % self._isRunning
+        self.runForever()
+        print "and now iVar self._isRunning = %s" % self._isRunning
 
     def runForever(self):
         'Must be run in a thread'
@@ -108,10 +108,6 @@ class QSimulation(QObject):
         self._isRunning = False
         print "and now iVar self._isRunning = %s" % self._isRunning
 
-class MyThread(QThread):
-    def run(self):
-        self.exec_()
-        
         
 class SimulationUi(QDialog):
     'PyQt interface'
@@ -120,40 +116,65 @@ class SimulationUi(QDialog):
         
         super(SimulationUi, self).__init__()
 
-        
-        self.goButton = QPushButton('Go')
         self.stopButton = QPushButton('Stop')
+        self.goButton = QPushButton('Go')
+        self.pauseButton = QPushButton('Pause')
+        self.pauseButton.setEnabled(False)
         self.resumeButton = QPushButton('Resume')
+        self.resumeButton.setEnabled(False)
         self.currentStep = QSpinBox()
         self.currentStep.setRange(0,100000)
         
         
         self.layout = QHBoxLayout()
         self.layout.addWidget(self.goButton)
-        self.layout.addWidget(self.resumeButton)
         self.layout.addWidget(self.stopButton)
+        self.layout.addWidget(self.resumeButton)
+        self.layout.addWidget(self.pauseButton)
         self.layout.addWidget(self.currentStep)
         self.setLayout(self.layout)
 
 
         self.qsimulation = QSimulation()
-#        self.simulThread = Thread(target = self.simulation.start)
 #        self.simulRunner = SimulRunner(self.simulation)        
-        self.simulThread = MyThread()
+        self.simulThread = SimulationThread()
         self.qsimulation.moveToThread(self.simulThread)
 
-#        self.stopButton.clicked.connect(self.stop)
-        self.stopButton.clicked.connect(self.qsimulation.stop)
-        self.goButton.clicked.connect(self.simulThread.start)
+#        self.pauseButton.clicked.connect(self.stop)
+        self.pauseButton.clicked.connect(self.pause)
+        self.goButton.clicked.connect(self.go)
+        self.stopButton.clicked.connect(self.stop)
         self.resumeButton.clicked.connect(self.qsimulation.go2)
         self.simulThread.started.connect(self.qsimulation.go2)
-#        emitter(self.qsimulation._simulatedObject).stepIncreased.connect(self.currentStep.setValue)
+#        emitter(self.qsimulation._simulatedObject).stepIncreased.connect(self.currentStep.setValue) # Does not work
         QObject.connect(emitter(self.qsimulation._simulatedObject), SIGNAL("stepIncreased"), self.currentStep.setValue)
         self.currentStep.valueChanged.connect(self.qsimulation._simulatedObject.setStep)
-    
+        
+    def go(self):
+        'Start simulation. Turn Go button into a Stop button'
+        'need to use it as a toggle to start/stop machine with an iVar checking if the QThread is running '
+        self.goButton.setText('Stop')
+        self.pauseButton.setEnabled(True)
+        self.simulThread.start()
+        
+        
+    def resume(self):
+        'Resume simulation. Disable resume button and reenable pause button'
+        self.resumeButton.setEnabled(False)
+        self.pauseButton.setEnabled(True)
+        self.qsimulation.go2()
+        
+    def pause(self):
+        'Stop simulation temporarily. Disable pause button and reenable resume button'
+        self.pauseButton.setEnabled(False)
+        self.resumeButton.setEnabled(True)
+        self.qsimulation.stop()
+        
     def stop(self):
-        print "clicked stop button"
-        print self.simulThread.isRunning()
+        'stop the thread running the simulation'
+        self.simulThread.quit()
+        del(self.simulThread)
+        print 'SimulThread is now %s' % self.simulThread.__str__()
         
 if __name__ == '__main__':
     app = QApplication(sys.argv)

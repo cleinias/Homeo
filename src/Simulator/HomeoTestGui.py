@@ -18,10 +18,9 @@ Created on Apr 23, 2013
 from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
 from Core.Homeostat import *
-from Simulator.HomeoSimulation import *
-from threading import Thread
+from Simulator.HomeoQSimulation import *
 from Helpers.QObjectProxyEmitter import emitter
-
+from Helpers.SimulationThread import SimulationThread
 
 class HomeoTestGui(QDialog):    
     '''
@@ -32,7 +31,7 @@ class HomeoTestGui(QDialog):
     The simulation itself is run in a separate thread held in simulProcess. 
 
     Instance Variables:
-        simulation                  <aHomeosimulation>  The simulation being controlled
+        simulation                  <aHomeoQSimulation>  The simulation being controlled
         simulProcess                <aProcess>          the thread holding the simulation run
     '''
     def __init__(self, parent = None):
@@ -46,7 +45,7 @@ class HomeoTestGui(QDialog):
         self._simulation = HomeoSimulation()
         self._simulation.initializeAshbySimulation()
         
-        self._simulProcess = Thread(target = self._simulation.start)
+        self._simulProcess = SimulationThread()
 
         "Widgets"
         self.maxRunsLabel = QLabel("Max Runs")
