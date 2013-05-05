@@ -1,0 +1,82 @@
+How to set up bi-directional communication between threads in Qt with signals and slots 
+
+Scenario: 
+1. The main thread runs the GUI
+2. The main thread starts a secondary thread with a long running process
+3. The main thread wants to update some of the variables in the objects managed by the secondary thread
+4. The secondary thread wants to communicate back to the primary thread the changed values of some of its variables
+5. The objects involved in the secondary thread long running process are NOT Qt-aware
+ 
+Points 1-3 are fairly standard (even though the necessity to run a long running process in a secondary thread
+makes things a but more complicated than usual)
+
+Point 4---the communication back from the secondary thread---is definitely not standard Qt, and it 
+requires a second event loop
+Point 5---running non Qt-aware objects---requires the use of QObject proxies for signals
+
+General outline of the solution:
+
+- Bi-directional communication between processes requires *two* event loops, one per thread. 
+
+- The main even loop is started when the GUI is started (with exec_)
+
+- The second event loop is started in the secondary thread by sub-classing QThread and 
+  adding  a self.exec_() command to its run() method
+
+- The long running process is  a method of a QObject instance that is then 
+  moved to the secondary thread (in the GUI initialization method)
+  
+- The long running process needs *both* to: 
+  (a) be able to listen to signals coming down from the primary thread
+  AND
+  (b) be able to process these signals.
+  Point (a) is realized by having a second event loop, as detailed above. 
+  Point (b) is realized by calling QApplication.processEvents() 
+  in the main loop of the long running process 
+  
+- Communication *down* from  the main thread to the secondary thread works as usual: 
+  by calling slots (methods) in the main object owned by the secondary thread in 
+  response to signals (buttons clicked, value changed in widgets, etc.)
+  
+- Communication from the secondary thread *up* to the primary is realized by:
+  (a) emitting a signal from the object(s) managed by the object running the 
+      long running process
+  (b) connecting one of the slots n the GUI's widgets (setValue, etc.) 
+      to the signal(s) emitted at (a)
+      
+- Finally, emitting signals from non Qt-aware objects (as required by the previous step) 
+  is made possible by using a QObject proxy.
+     
+
+Detailed recipe.
+
+1. The GUI-running primary thread is started as usual:
+   - The GUI interface is put together in a class
+   - The class is instantiated in the __main__ method and then started with app.exec_ which starts an event loop
+
+2. The secondary thread with a long running process and a second event loop
+   is created by:
+   - Instantiating a sub-classed Qthread that will run a second event loop
+   - Having the long running process as a method of a *QObject instance*
+   - Moving the QObject to the instantiated thread
+   - Connecting the long running process of the QObject instance 
+     to the "started" signal of the QThread
+   
+3. The "responding" capacity of the secondary thread is realized by: 
+   - inserting a QApplication.processEvents() into the main loop of
+     the long running process method of the QObject instance
+ 
+4. The signals emitted by the non Qt-aware objects managed by the QObject's 
+   long running process are created through a proxy managed by a weak dictionary holding QObjects 
+   indexed by the emitting objects. In practice, when a regular python objects needs to emit a signal, 
+   it calls a function like:
+   
+   QObject.emit(emitter(self), SIGNAL('signalName'), parametersToPass)
+   
+   where "emitter" is a simple function that manages a dictionary of QObject instances 
+   indexed by python objects
+   
+5. Finally, the GUI listens and process the signals emitted by the non QT-aware objects
+   by connecting them to the appropriate slots of its widgets. Notice, however, that the connection
+   must be made using the alternative syntax:
+   QObject.connect(emitter(self.QObject_instance.non-Qt-aware-object), SIGNAL("signalName"), self.someWidget.someSlot)
