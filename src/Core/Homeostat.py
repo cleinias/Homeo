@@ -9,6 +9,9 @@ import time, sys, pickle
 from PyQt4.QtCore import  *
 from Helpers.QObjectProxyEmitter import emitter
 
+class HomeostatError(Exception):
+    pass
+
 class Homeostat(object):
     '''
     Homeostat manages a complete homeostat by taking care of the communication between the units and between the Units and the Uniselector.
@@ -40,9 +43,15 @@ class Homeostat(object):
         '''This is a class method that create a new Homeostat instance from filename'''
         fileIn = open(filename, 'r')
         unpickler = pickle.Unpickler(fileIn)
-        newHomeostat = unpickler.load()
+        try:
+            newHomeostat = unpickler.load()
+        except:
+            raise HomeostatError("The file is not a pickled Homeostat")
         fileIn.close()
-        return newHomeostat
+        if newHomeostat.isReadyToGo():
+            return newHomeostat
+        else:
+            raise HomeostatError("The loaded is not a valid homeostat")
 
 #===============================================================================
 # Initialization methods, getters and setters
@@ -223,6 +232,7 @@ class Homeostat(object):
                         if unit.isActive():
                             unit.selfUpdate()
                 self.time +=  1
+                QObject.emit(emitter(self), SIGNAL('homeostatTimeChanged'), self.time)
                 time.sleep(sleepTime / 1000)               # sleep accepts seconds, slowingFactor is in milliseconds
         else:
             sys.stderr.write('Warning: Homeostat is not ready to start')

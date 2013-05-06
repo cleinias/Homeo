@@ -495,6 +495,13 @@ class HomeoUnit(object):
     debugMode = property(fget = lambda self: self.getDebugMode(),
                            fset = lambda self,aValue: self.setDebugMode(aValue))
     
+    def getShowUniselectorAction(self):
+        return self._showUniselectorAction
+    
+    def setShowUniselectorAction(self, aValue):
+        '''Do nothing. _showUniselectorAction is set
+         with the toggleShowUniselectorAction method'''
+    
     #===========================================================================
     #  End of setter and getter methods"
     #===========================================================================
@@ -744,18 +751,12 @@ class HomeoUnit(object):
     def toggleDebugMode(self):
         "Controls whether the running methods print out debug information"
 
-        if self._debugMode is True: 
-            self._debugMode = False
-        else: 
-            self._debugMode = True
+        self._debugMode = not self._debugMode
 
     def toggleShowUniselectorAction(self):
         "Control whether the running methods print out information when the uniselector kicks into action"
 
-        if self.showUniselectorAction is True:
-            self.showUniselectorAction = False
-        else:
-            self.showUniselectorAction = True
+        self._showUniselectorAction = not self._showUniselectorAction
             
     def isNeedleWithinLimits(self, aValue):
         '''Check whether the proposed value exceeds the unit's range (both + and -)'''
@@ -929,7 +930,7 @@ class HomeoUnit(object):
         "Testing"
         if self._debugMode:
             sys.stderr.write('Current torque at time: %s for unit %s is %f' %
-                             str(self.time), self.name, self.inputTorque)
+                             (str(self.time), self.name, self.inputTorque))
             sys.stderr.write('\n')
 
     def newLinearNeedlePosition(self,aTorqueValue):
@@ -1086,15 +1087,14 @@ class HomeoUnit(object):
 
 
         "For debugging"
-        if self.showUniselectorAction():
+        if self._showUniselectorAction:
             for connChange in weightChanges:
-                sys.stderr.write('At time: %i, %s activated uniselector for unit %s switching weight from: %f to: %f' %
+                sys.stderr.write('At time: %i, %s activated uniselector for unit %s switching weight from: %f to: %f \n' %
                                  (self.time) + 1,
                                  self.name,
                                  connChange[0],
                                  connChange[1],
                                  connChange[2])
-                sys.stderr.write('\n')
 
     def physicalVelocity(self):
         '''Convert the velocity of the unit into a value expressed in 

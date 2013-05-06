@@ -41,10 +41,7 @@ class HomeoQtSimulation(QObject):
     def readFrom(self,filename):
         '''This is a class method that create a new HomeoSimulation instance from a filename,
         by loading a pickled homeostat'''
-        fileIn = open(filename, 'r')
-        unpickler = pickle.Unpickler(fileIn)
-        newHomeostat = unpickler.load()
-        fileIn.close()
+        newHomeostat = Homeostat.readFrom(filename)
         newHomeoSimulation = HomeoQtSimulation()
         newHomeoSimulation.homeostat = newHomeostat
         newHomeoSimulation.homeostatIsSaved = True 
@@ -70,6 +67,7 @@ class HomeoQtSimulation(QObject):
     
     def setHomeostatFilename(self, aString):
         self._homeostatFilename = aString
+        self.emit(SIGNAL("homeostatFilenameChanged"), self._homeostatFilename)
 
     homeostatFilename = property(fget = lambda self: self.getHomeostatFilename(),
                         fset = lambda self, aString: self.setHomeostatFilename(aString))
@@ -87,7 +85,7 @@ class HomeoQtSimulation(QObject):
         return self._maxRuns
     
     def setMaxRuns(self,anInteger):
-        self._maxRuns=  anInteger
+        self._maxRuns =  anInteger
 
     maxRuns = property(fget = lambda self: self.getMaxRuns(),
                        fset = lambda self, number: self.setMaxRuns(number)) 
@@ -96,7 +94,8 @@ class HomeoQtSimulation(QObject):
         return self._homeostatIsSaved
     
     def setHomeostatIsSaved(self,anInteger):
-        self._homeostatIsSaved=  anInteger
+        self._homeostatIsSaved =  anInteger
+        #Emit signal here"
 
     homeostatIsSaved = property(fget = lambda self: self.getHomeostatIsSaved(),
                        fset = lambda self, number: self.setHomeostatIsSaved(number)) 
@@ -105,7 +104,7 @@ class HomeoQtSimulation(QObject):
         return self._dataAreSaved
     
     def setDataAreSaved(self,anInteger):
-        self._dataAreSaved=  anInteger
+        self._dataAreSaved =  anInteger
 
     dataAreSaved = property(fget = lambda self: self.getDataAreSaved(),
                        fset = lambda self, number: self.setDataAreSaved(number)) 
@@ -115,9 +114,10 @@ class HomeoQtSimulation(QObject):
     
     def setSimulDelay(self,aValue):
         self._simulDelay = aValue
+        
     simulDelay = property(fget=lambda self: self.getSimulDelay(),
                           fset = lambda self, value: self.setSimulDelay())
-
+    
     def units(self):
         return self.homeostat.homeoUnits
     
@@ -159,6 +159,7 @@ class HomeoQtSimulation(QObject):
         self._isRunning = True
         
         while self._homeostat.time  < self._maxRuns  and self._isRunning == True:
+#            print "I am running cycle number: %u" % self._homeostat.time
             self._homeostat.runOnce()
             time.sleep(self._simulDelay / 1000)
             QApplication.processEvents() 
@@ -172,6 +173,14 @@ class HomeoQtSimulation(QObject):
         "Resume the simulation"
         
         self._isRunning = True
+        self.go()
+    
+    def step(self):
+        "Advance the simulation one step"
+        if self._homeostat.time  < self._maxRuns:
+#            print "I am running cycle number: %u" % self._homeostat.time
+            self._homeostat.runOnce()
+        
 
 #===============================================================================
 # Adding methods 
@@ -189,7 +198,7 @@ class HomeoQtSimulation(QObject):
         self._homeostat. addUnit(aHomeoUnit)
 
 #===============================================================================
-# Saving methods
+# Saving and loading methods
 #===============================================================================
 
     def createDefaultDataFilename(self):
@@ -217,10 +226,10 @@ class HomeoQtSimulation(QObject):
         dateString = ''
         now_ = datetime.now()
         dateString += str(now_.month) + '-' + str(now_.day) + '-' + str(now_.year)
-        name = 'HomeoSimulation'
+        name = 'Homeostat'
     
         number = 1
-        completeName = name + '-' + dateString + '-' + '1'
+        completeName = name + '-' + dateString + '-' + '1'+'.pickled'
     
         while os.path.exists(completeName):
             number += 1
@@ -228,23 +237,17 @@ class HomeoQtSimulation(QObject):
     
         return completeName
 
-    def saveCompleteRunOnFile(self):
+    def saveCompleteRunOnFile(self,aFilename):
         "Asks the datacollector of the homeostat to save all data on dataFilename"
 
-        fileContent = self.homeostat.dataCollector.printEssentialDataOnAString('')
-        fileOut  = open(self.dataFilename, 'w')
-        fileOut.write(fileContent)
-        fileOut.close()
+        self.homeostat.dataCollector.saveCompleteDataOnFile(aFilename)
         self._dataAreSaved = True
 
-    def saveEssentialDataOnFile(self):
+    def saveEssentialDataOnFile(self,aFilename):
         '''Ask the datacollector of the homeostat 
            to save only the essential data on dataFilename'''
 
-        fileContent = self.homeostat.dataCollector.printEssentialDataOnAString('')
-        fileOut  = open(self.dataFilename, 'w')
-        fileOut.write(fileContent)
-        fileOut.close()
+        self.homeostat.dataCollector.saveEssentialDataOnFile(aFilename)
 
     def saveEssentialDataOnFileWithSeparator(self, aCharacter):
         '''Ask the datacollector of the homeostat 
@@ -273,4 +276,62 @@ class HomeoQtSimulation(QObject):
                 self.maxRuns is not None and
                 self._dataFilename is not None and
                 self._homeostatFilename is not None)
+    
+    def loadNewHomeostat(self, aFilename):
+        "loads a new homeostat from aFilename"
+        try:
+            newHomeostat = Homeostat.readFrom(aFilename)
+        except HomeostatError:
+            sys.stderr.write(("Could not load a new homeostat from filename: %s" % aFilename))
+            raise
+        self.homeostat = newHomeostat
+        self.homeostatFilename = aFilename
+        self.homeostatIsSaved = True
+        self.dataAreSaved = True
+
+#===============================================================================
+# Changing simulation values methods
+#===============================================================================
+
+    def timeReset(self):
+        """
+        Restart the  simulation: 
+        resets simulation time to zero     
+        clear the simulation data
+        set dataAreSaved to true
+        """
+        self._homeostat.timeReset()
+        self._homeostat.flushData()
+        self._dataAreSaved = True
         
+    def fullReset(self):
+        """
+        Start a new simulation:
+        fully reset the homeostat
+        clear the simulation data
+        set dataAreSaved to true
+        pick a new name
+        """
+        self._homeostat.fullReset()
+        self._homeostat.flushData()
+        self._dataAreSaved = True
+        self._homeostatFilename = self.createDefaultHomeostatFilename()
+
+        
+#===============================================================================
+# Debugging methods
+#===============================================================================
+
+    def toggleDebugMode(self):
+        'Toggle the debugMode switch of  all the units in the homeostat'
+        for unit in self._homeostat.homeoUnits:
+            unit.toggleDebugMode()
+        
+    def toggleShowUniselectorAction(self):
+        'Toggle the ShowUniselectorAction switch of all the units in the homeostat'
+        for unit in self._homeostat.homeoUnits:
+            unit.toggleShowUniselectorAction()
+    
+    def toggleDiscardData(self):
+        "toggle the collects data switch of the homeostat"
+        self._homeostat.collectsData = not self.homeostat.collectsData
