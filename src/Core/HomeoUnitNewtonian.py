@@ -94,18 +94,19 @@ class HomeoUnitNewtonian(HomeoUnit):
         "Testing"
         if self.debugMode:      
             outputString = ""
-            outputString.append("At time: %u unit %s current pos is %.3f and the new pos. is %.3f with new vel. %.3f and new acc. %.3f and new torque. %.3f /n" %
-                                self.time + 1, 
+            outputString += ("At time: %u unit %s current pos is %.3f and the new pos. is %.3f with velocity %.3f, new acc. %.3f, displacement of %.3f and new torque. %.3f \n" %
+                                (self.time + 1, 
                                 self.name, 
                                 self.criticalDeviation, 
-                                (self.criticalDeviation + self.newVelocity), 
+                                (self.criticalDeviation + self.currentVelocity), 
                                 self.currentVelocity, 
                                 displacement, 
                                 acceleration, 
-                                aTorqueValue)
-        if self.debugMode:
+                                aTorqueValue))
+            sys.stderr.write(outputString)
+
             if (((self.criticalDeviation + displacement) > self.maxDeviation) or  ((self.criticalDeviation + displacement) < self.minDeviation)):
-                outputString = "NEW CRITICAL DEVIATION WOULD BE OVER LIMITS AT: %.3f /n" % self.criticalDeviation + displacement
+                outputString = "NEW CRITICAL DEVIATION WOULD BE OVER LIMITS WITH VALUE: %.3f \n" % (self.criticalDeviation + displacement)
                 sys.stderr.write(outputString)
         return self.criticalDeviation + displacement
 

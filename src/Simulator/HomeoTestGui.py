@@ -9,6 +9,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
 from Core.Homeostat import *
 from Simulator.HomeoSimulation import *
+from Helpers.QtSeparator import Separator
 '''
 Created on Apr 23, 2013
 
@@ -18,7 +19,7 @@ Created on Apr 23, 2013
 from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
 from Core.Homeostat import *
-from Simulator.HomeoQSimulation import *
+from Simulator.HomeoQtSimulation import *
 from Helpers.QObjectProxyEmitter import emitter
 from Helpers.SimulationThread import SimulationThread
 
@@ -28,11 +29,11 @@ class HomeoTestGui(QDialog):
     It just provide access to starting and stopping the simulation and to saving and graphing data.
     It does not provide interactive real-time access to the homeostat 
     
-    The simulation itself is run in a separate thread held in simulProcess. 
+    The simulation itself is run in a separate thread held in simulThread. 
 
     Instance Variables:
-        simulation                  <aHomeoQSimulation>  The simulation being controlled
-        simulProcess                <aProcess>          the thread holding the simulation run
+        simulation                  <aHomeoQtSimulation>  The simulation being controlled
+        simulThread                <aSimulationThread>    The QT thread holding the simulation run
     '''
     def __init__(self, parent = None):
         '''
@@ -42,24 +43,31 @@ class HomeoTestGui(QDialog):
 
         super(HomeoTestGui,self).__init__(parent)
         
-        self._simulation = HomeoSimulation()
+        self._simulation = HomeoQtSimulation()
         self._simulation.initializeAshbySimulation()
         
-        self._simulProcess = SimulationThread()
+        self._simulThread = SimulationThread()
+        self._simulation.moveToThread(self._simulThread)
+        self._simulThread.started.connect(self._simulation.go)
 
         "Widgets"
+        'Labels'
         self.maxRunsLabel = QLabel("Max Runs")
         self.currentTimeLabel = QLabel("Current time")
         self.slowingFactorLabel = QLabel("Slowing Factor (millisec.)")
-        
+        'Buttons'
         self.startButton = QPushButton("Start")
-        self.stopButton = QPushButton("Stop")
+        self.pauseButton = QPushButton("Stop")
         self.stepButton = QPushButton("Step")
+        self.resumeButton = QPushButton("Resume")
         self.resetValuesButton = QPushButton("Reset unit values")
         self.resetTimeButton = QPushButton("Reset time")
         self.debugModeButton = QPushButton("Debug Mode")
-        self.showUniselActionButton = QPushButton("Show Uniselector Action")
+        self.debugModeButton.setCheckable(True)   #Turn push button into a Toggle Button
+        self.showUniselActionButton = QPushButton("Show Unisel. Action")
+        self.showUniselActionButton.setCheckable(True)
         
+        'Spinboxes and lineEdits'
         self.maxRunSpinBox = QSpinBox()
         self.currentTimeSpinBox = QSpinBox()
         self.slowingFactorSpinBox = QSpinBox()
@@ -69,44 +77,102 @@ class HomeoTestGui(QDialog):
         
         self.currentTimeSpinBox.setRange(0,100000)
         self.currentTimeSpinBox.setValue(self._simulation.homeostat.time)
+        self.currentTimeSpinBox.setReadOnly(True)
         
         self.slowingFactorSpinBox.setRange(0.1,1000)
         self.slowingFactorSpinBox.setValue(self._simulation.homeostat.slowingFactor)
         
+        "Separators"
+        self.runningSectionSep1 = Separator()
+        self.runningSectionSep2 = Separator()
+        
         
         "Layout"
         layout = QGridLayout()
-        layout.addWidget(self.maxRunsLabel,0,0)
-        layout.addWidget(self.currentTimeLabel,1,0)
-        layout.addWidget(self.slowingFactorLabel,2,0)
         
-        layout.addWidget(self.startButton, 4,1)
-        layout.addWidget(self.stopButton, 4, 0)
-        layout.addWidget(self.stepButton, 4,2)
-        layout.addWidget(self.resetValuesButton, 0,2)
-        layout.addWidget(self.resetTimeButton,1,2 )
-        layout.addWidget(self.debugModeButton,2,2 )
-        layout.addWidget(self.showUniselActionButton,3,2)
+        'Top row (0)'
+        layout.addWidget(self.startButton, 0,0,1,3)
         
-        layout.addWidget(self.maxRunSpinBox,0,1)
-        layout.addWidget(self.currentTimeSpinBox,1,1)
-        layout.addWidget(self.slowingFactorSpinBox,2,1)
+        'Row 1'
+        layout.addWidget(self.runningSectionSep1, 1,1)
+        
+        'Row 2'
+        layout.addWidget(self.pauseButton, 2,0)
+        layout.addWidget(self.resumeButton, 2,1)
+        layout.addWidget(self.stepButton, 2,2)
+        
+        'Row 3'
+        layout.addWidget(self.maxRunsLabel, 3,0)
+        layout.addWidget(self.maxRunSpinBox, 3,1)
+        
+        'Row 4'
+        layout.addWidget(self.currentTimeLabel,4,0)
+        layout.addWidget(self.currentTimeSpinBox,4,1)
+        
+        'Row 5'
+        layout.addWidget(self.slowingFactorLabel, 5,0)
+        layout.addWidget(self.slowingFactorSpinBox, 5,1)
+
+        'Row 6'
+        layout.addWidget(self.runningSectionSep2,6,1)
+        
+        'Row 7'
+        layout.addWidget(self.resetValuesButton,7,0)
+        layout.addWidget(self.debugModeButton,7,2)
+                
+        'Row 8'
+        layout.addWidget(self.resetTimeButton,8,0)
+        layout.addWidget(self.showUniselActionButton, 8,2)
         
         self.setLayout(layout)
         
         
         "Connections"
-        self.connect(self.stopButton, SIGNAL("clicked()"), self._simulation.stop)
-        self.connect(self.startButton, SIGNAL("clicked()"), self._simulProcess.start)
-        self.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged(int)"), self.currentTimeSpinBox.setValue)
-        
-        
+        self.startButton.clicked.connect(self.go)
+        self.pauseButton.clicked.connect(self.pause)
+        self.resumeButton.clicked.connect(self.resume)
+        self.stepButton.clicked.connect(self.step)
+        self.maxRunSpinBox.valueChanged.connect(self._simulation.setMaxRuns)
+        self.resetValuesButton.clicked.connect(self._simulation.homeostat.randomizeValuesforAllUnits)
+        self.resetTimeButton.clicked.connect(self._simulation.timeReset)
+        self.slowingFactorSpinBox.valueChanged.connect(self._simulation.setSimulDelay)
+        self.debugModeButton.clicked.connect(self._simulation.toggleDebugMode)
+        self.showUniselActionButton.clicked.connect(self.toggleShowUniselAction)
+
+        QObject.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged"), self.currentTimeSpinBox.setValue)
         
         self.setWindowTitle("Homeo Simulation")
         
         
-     
+    def go(self):
+        'Start simulation. Disable Go Resume, and Step buttons'
+        'need to use it as a toggle to start/stop machine with an iVar checking if the QThread is running '
+        self.pauseButton.setEnabled(True)
+        self.startButton.setEnabled(False)
+        self.stepButton.setEnabled(False)
+        self.resumeButton.setEnabled(False)
+        self._simulThread.start()
         
+    def pause(self):
+        'Pause simulation. Disable stop button, re-enable resume and step buttons'
+        self.pauseButton.setEnabled(False)
+        self.resumeButton.setEnabled(True)
+        self.stepButton.setEnabled(True)
+        self._simulation.pause()
+
+    def resume(self):
+        'Resume simulation. Disable resume and step buttons, re-enable stop button'
+        self.pauseButton.setEnabled(True)
+        self.resumeButton.setEnabled(False)
+        self.stepButton.setEnabled(False)
+        self._simulation.resume()
+        
+    def step(self):
+        'Step simulation'
+        self._simulation.step()               
+        
+    def toggleShowUniselAction(self):
+        self._simulation.toggleShowUniselectorAction()
         
 if __name__ == '__main__':
     app = QApplication(sys.argv)

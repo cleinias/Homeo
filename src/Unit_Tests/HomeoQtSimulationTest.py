@@ -140,7 +140,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
 
         "runs for the default number of cycles"
         self.simulation.moveToThread(self.thr)
-        self.thr.started(self.simulation.go)
+        self.thr.started.connect(self.simulation.go)
         self.thr.start()
 
         self.assertTrue(simulationCycles == self.simulation.homeostat.time)
@@ -202,7 +202,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         
         "run the simulation for a few cycles"       
         self.simulation.maxRuns = 100
-        self.simulation.start()
+        self.simulation.go()
         
         "if a file exist on disk erase it."
         if os.access(self.simulation.homeostatFilename, os.F_OK):
@@ -236,7 +236,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         
         "run the simulation for a few cycles"       
         self.simulation.maxRuns = 100
-        self.simulation.start()
+        self.simulation.go()
         
         "if a file exist on disk erase it."
         if os.access(self.simulation.homeostatFilename, os.F_OK):

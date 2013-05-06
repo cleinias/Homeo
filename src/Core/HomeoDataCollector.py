@@ -105,6 +105,17 @@ class HomeoDataCollector(object):
                     aString += aCharacter + "\n"
         return aString
 
+    def saveEssentialDataOnFile(self,aFilename):
+        '''Save essential data on a file in text format.
+        Will erase aFilename if it exists already'''
+        
+        dataToSave = self.printEssentialDataOnAString('')
+        fileOut = open(aFilename, 'w')
+        fileOut.write(dataToSave)
+        fileOut.close()
+
+
+
 #===============================================================================
 # Accessing methods
 #===============================================================================
@@ -126,9 +137,9 @@ class HomeoDataCollector(object):
         '''Append to aString a brief representation of aHomeoUnit data'''
         
         timeIndex = 0
-        for each in self.states:
-            if each is not None:
-                for key,value in each.iteritems():
+        for state in self.states:
+            if state is not None:
+                for key,value in state.iteritems():
                     if key == aHomeoUnit.name:
                         aString += "time: %u    " % timeIndex
                         aString += value.printDataOn('')
@@ -156,7 +167,7 @@ class HomeoDataCollector(object):
     def printEssentialDataForUnitOnAString(self, aHomeoUnit, aString):
         '''Append to aString a brief representation of aHomeoUnit data'''
         
-        timeIndex = 1
+        timeIndex = 0
         for state in self.states:
             if state is not None:
                 for key, value in state.iteritems():
@@ -168,15 +179,16 @@ class HomeoDataCollector(object):
 
     def printEssentialDataOnAString(self, aString):
         '''Append to aString a brief representation of its data'''
-        timeIndex = 1
+        timeIndex = 0
         for state in self.states:
-            if state is not None:
-                for value in state:
+            if self.states[state] is not None:
+                for key,value in self.states[state].iteritems():
                     aString += " time:    %u    " % timeIndex
                     aString += value.name
                     aString += ":    "
                     aString += value.printEssentialVariableOn('')
             timeIndex += 1
+        return aString
 
     def printPlottingDataForGgobiOnAString(self, aString):
         '''Append to aString a multi-column representation of its data, 
@@ -407,7 +419,7 @@ class HomeoDataCollector(object):
         return aCollection
 
     def criticalDevAsNPArrayForAllUnits(self):
-        '''Convert the representaiton of critical deviation homeoDataunits for all units 
+        '''Convert the representation of critical deviation homeoDataunits for all units 
            from a list of list into a multi-dim NP-Array'''
 
         npArr = np.array(self.criticalDevAsCollectionOfArraysForAllUnits())

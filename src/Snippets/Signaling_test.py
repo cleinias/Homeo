@@ -2,6 +2,7 @@ import time, sys
 from PyQt4.QtCore  import *
 from PyQt4.QtGui import * 
 from Helpers.SimulationThread import SimulationThread
+from Helpers.QtSeparator import Separator
  
 
 import weakref
@@ -124,7 +125,8 @@ class SimulationUi(QDialog):
         self.resumeButton.setEnabled(False)
         self.currentStep = QSpinBox()
         self.currentStep.setRange(0,100000)
-        
+        self.toggleDebug = QToolButton()
+        self.sep = Separator()
         
         self.layout = QHBoxLayout()
         self.layout.addWidget(self.goButton)
@@ -132,6 +134,8 @@ class SimulationUi(QDialog):
         self.layout.addWidget(self.resumeButton)
         self.layout.addWidget(self.pauseButton)
         self.layout.addWidget(self.currentStep)
+        self.layout.addWidget(self.toggleDebug)
+        self.layout.addWidget(self.sep)
         self.setLayout(self.layout)
 
 

@@ -4,7 +4,7 @@ Created on Feb 19, 2013
 @author: stefano
 '''
 
-from Helpers.General_Helper_Functions  import *
+from Helpers.General_Helper_Functions  import SubclassResponsibility, withAllSubclasses
 import numpy
 
 class HomeoUniselectorError(Exception):
@@ -51,14 +51,6 @@ class HomeoUniselector(object):
 
         self._beeps = False
      
-#    @property
-#    def lowerBound(self):
-#        return self._lowerBound
-#    
-#    @lowerBound.setter
-#    def lowerBound(self, aValue):
-#        self._lowerBound = aValue
-
     def getLowerBound(self):
         return self._lowerBound
     
@@ -75,25 +67,16 @@ class HomeoUniselector(object):
         self._upperBound = aValue
 
     upperBound = property(fget = lambda self: self.getUpperBound(),
-                          fset = lambda self, value: self.setUpperBound(value))
+                          fset = lambda self, value: self.setUpperBound(value))  
     
-#    @property
-#    def upperBound(self):
-#        return self._upperBound
-#    
-#    @upperBound.setter
-#    def upperBound(self, aValue):
-#        self._upperBound = aValue
-    
-    @property
-    def beeps(self):
+    def getBeeps(self):
         return self._beeps
     
     def toggleBeeping(self):
-        if self._beeps is None:
-            self._beeps = True
-        else:
-            self._beeps = not self._beeps
+        self._beeps = not self._beeps 
+    
+    beeps = property(fget= lambda self: self.getBeeps(),
+                     fset = lambda self: self.toggleBeeping)
     
     def ashbyRandom(self):
         '''
