@@ -454,6 +454,7 @@ class HomeoUnit(object):
     status = property(fget = lambda self: self.getStatus(),
                            fset = lambda self,aValue: self.setStatus(aValue))
     
+    
     def getUniselector(self):
         return self._uniselector
     
@@ -497,6 +498,12 @@ class HomeoUnit(object):
     def activateUnit(self):
         self._status = 'Active'
 
+    def toggleStatus(self):
+        if self._status == 'Active':
+            self._status = 'Non Active'
+        else:
+            self._status = 'Active'
+            
     def getDebugMode(self):
         return self._debugMode
     
@@ -625,19 +632,9 @@ class HomeoUnit(object):
         
 
     def isReadyToGo(self):
-        '''Make sure that unit has all the parameters it needs to operate properly.
-    
-           criticalDeviation    is notNil and
-           maxDeviation    is notNil
-           outputRange        is notNil
-           viscosity            is notNil
-           noise            is notNil
-           potentiometer     is notNil     
-           if  uniselectorActive is true then
-               uniselector                 is notNil
-               uniselectorTime               is notNil
-               uniselectorTimeInterval      is notNil'''
-
+        '''Make sure that unit has 
+           all the parameters it needs to operate properly.
+        '''
         if self.uniselectorActive:
             uniselectorConditions = (self.uniselector is not None and 
                                      self.uniselectorTime is not None and 
@@ -751,11 +748,14 @@ class HomeoUnit(object):
         "set the critical deviation to a random value over the whole range"                                                         
         self._criticalDeviation = np.random.uniform(self.outputRange['low'], self.outputRange['high']) 
    
-    def activate(self):
-        self.active = True
-
-    def disactivate(self):
-        self.active = False
+#    def activate(self):
+#        self.active = True
+#
+#    def disactivate(self):
+#        self.active = False
+#        
+#    def toggleActive(self):
+#        self.active = not self.active
 
     def maxConnectedUnits(self, anInteger):
         "Changes the parameter to the Uniselector for the maximum number of connected units"
