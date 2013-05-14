@@ -257,6 +257,7 @@ class HomeoSimulationControllerGui(QDialog):
         "set up all the units' widgets"
         self.setupHomeostatGuiUnitsLineEdits()
         self.setupHomeostatGuiUnitsComboAndCheckBoxes()
+        self.setupHomeostatGuiConnections()
 #        self.setupHomeostatGuiConnections()
         
 
@@ -292,21 +293,26 @@ class HomeoSimulationControllerGui(QDialog):
          
         uniselectList = HomeoUniselector.__subclasses__()
         for i in xrange(len(self._simulation.homeostat.homeoUnits)):
+            'comboBoxes'
             'uniselector type'
             widget = getattr(self._homeostat_gui, 'unit'+str(i+1)+'UniselectTypeComboBox')
             attribute = getattr(self._simulation.homeostat.homeoUnits[i], 'uniselector')
             for uniselectType in uniselectList:
                 widget.addItem(uniselectType.__name__.split("HomeoUniselector").pop())
-#                widget.----             #Set current choice here
+                widget.setEditable(False)
+#                ----             #Set current choice here
 #                slot = lambda i: self.changeUniselectorTypeForUnit(i,string)
 #                widget.currentIndexChanged.connect(lambda i: self.changeUniselectorTypeForUnit(i))          
+            
             'unit is active'
             widget = getattr(self._homeostat_gui, 'unit'+str(i+1)+'ActiveComboBox')
             attribute = getattr(self._simulation.homeostat.homeoUnits[i], 'status')
             widget.addItems(('Active', 'Non Active'))
-#            widget.----                 #set current choice here
-            slot = getattr(self._simulation.homeostat.homeoUnits[i], 'setStatus')
+            widget.setEditable(False)
+            widget.setCurrentIndex(("Active", "Non Active").index(self._simulation.homeostat.homeoUnits[i].status))            
+            slot = getattr(self._simulation.homeostat.homeoUnits[i], 'toggleStatus')
             widget.currentIndexChanged[str].connect(slot)  # set up signal here
+            
             'uniselector active and uniselector sound checkboxes'
             widget = getattr(self._homeostat_gui, 'unit'+str(i+1)+'UniselOnCheckBox')
             attribute = getattr(self._simulation.homeostat.homeoUnits[i],'uniselectorActive')
@@ -321,6 +327,51 @@ class HomeoSimulationControllerGui(QDialog):
             widget.setMinimum(getattr(self._simulation.homeostat.homeoUnits[i], 'minDeviation'))
             widget.setMaximum(getattr(self._simulation.homeostat.homeoUnits[i], 'maxDeviation'))
             widget.setValue(getattr(self._simulation.homeostat.homeoUnits[i], 'criticalDeviation'))
+    
+    def setupHomeostatGuiConnections(self):
+        " Set up, initialize, and connect the line edits for all the units' connections's lineEdits widgets"
+        
+        for incomingUnit in xrange(len(self._simulation.homeostat.homeoUnits)):
+            for outgoingUnit in xrange(len(self._simulation.homeostat.homeoUnits)):
+                'lineEdits'
+                widget = getattr(self._homeostat_gui, 'unit' + str(incomingUnit + 1) + 'Unit' + str(outgoingUnit+1)+ 'ConnNameLineEdit')
+                attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit].incomingUnit, 'name')
+                widget.setText(attribute)
+                widget.setReadOnly(True)
+        
+                'spinboxes'
+                'setup a dictionary with spinboxes names, types, and setter methods'
+                spinBoxes = {'weight':('Double', 'newWeight'), 
+                             'switch':('','setSwitch'), 
+                             'noise':('Double', 'setNoise')}
+                for spinBox, type in iteritems(spinBoxes):
+                    widget = getattr(self._homeostat_gui, 'unit' + str(incomingUnit + 1) + 
+                                     'Unit' + str(outgoingUnit+1)+ (spinBox[0].upper()) + spinBox[1:] + type[0] + 'SpinBox')
+                    attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], spinBox)
+                    slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], type[1])
+                    widget.setValue(attribute)
+                    widget.valueChanged.connect(slot)
+                
+                'comboboxes'
+                'setup a dictionary with comboBoxes names, values, and setter methods indexed by attributes'
+                comboBoxes = {'status':({'Active':True,'Non active':False},'Connected','toggleStatus'),
+                              'state':({'manual':'manual', 'uniselector':'uniselector'},'Uniselector', 'toggleUniselectorState')}
+                for attrName, attrData in iteritems(comboBoxes):
+                    widget = getattr(self._homeostat_gui, 'unit' + str(incomingUnit + 1) + 
+                                     'Unit' + str(outgoingUnit+1)+ attrData[1]+'ComboBox')
+                    attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], attrName)
+                    values = attrData[0].keys()
+                    slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], attrData[2])
+                    index = attrData[0].values().index(getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit],attrName))
+                    widget.addItems(values)
+                    widget.setEditable(False)
+                    widget.setCurrentIndex(index)
+                    widget.currentIndexChanged.connect(slot)
+
+                    
+
+                
+        
         
 #===============================================================================
 # Slots (local to the GUI)       

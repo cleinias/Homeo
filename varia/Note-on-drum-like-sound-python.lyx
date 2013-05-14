@@ -1,0 +1,296 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass notecard
+\begin_preamble
+% Use the minionPro fonts. See MinionPro.pdf for the options
+%\usepackage[fullfamily,opticals,normalsize,footnotefigures]{MinionPro}
+ 
+%The following package is needed to have interrupted lists
+\usepackage{mdwlist}
+
+% self-explanatory: reduces the font of the quote environment
+\usepackage{relsize}
+\newcommand*{\OriginalQuote}{}
+\let\OriginalQuote\quote
+\renewcommand*{\quote}{\OriginalQuote\smaller}
+
+% adds microtypography support 
+\usepackage{microtype}
+
+\usepackage{enumitem}
+%this is for eliminating rows b/t items with setlist nolistsep
+\setlist{nolistsep}  
+
+
+% For a smaller caption in float figures
+\addtokomafont{caption}{\smaller}
+
+% Koma command to reduce the caption indent in figures
+\setcapindent{1em}
+
+\usepackage{colortbl} 
+\usepackage{tabularx}
+
+
+
+% load biblatex (remember to comment jurabib out)
+%
+% author-year style in citation, standard bibliographic style
+%\usepackage[citestyle=authoryear-ibid, bibstyle=authoryear, sorting=nyt]{biblatex}
+
+
+% To convert all endnotes to endnotes uncomment the next TWO lines
+%\usepackage{endnotes}
+%\let\footnote=\endnote
+
+% To eliminate the date on first page uncomment the next line
+%\date{}
+
+% To eliminate the final bibliography replace \thebibliography
+% with \nobibliography (and the correct arguments) at the end of 
+% the file. You will have to do it on the LaTeX source, though
+
+
+% load footmisc with the [para] option to have multiple footnotes 
+% in a single paragraph at the bottom of the page
+% Must be loaded AFTER the package SETSPACE
+% Notice also that this package will produce fatal errors
+ % IF there are comments in a footnote
+% AND %  the next bit of code (which prints comments in a box) is active
+
+\usepackage{footmisc}
+
+
+%
+% This bit changes the heading numbering:
+%
+% It removes the chapter number and it removes all the dots after
+% the subsection numbers. It produces numbers "Wittgenstein style":
+% for instance the first section of chapter 2 becomes 1 and not 2.1 as 
+% standard LaTeX wouldl have it. In general, we have numbering of the
+% form 1.2345 instead of 1.1.2.3.4.5 
+%
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection\arabic{subsubsection}}
+\renewcommand{\theparagraph}{\thesubsubsection\arabic{paragraph}}
+\renewcommand{\thesubparagraph}{\theparagraph\arabic{subparagraph}}
+
+%The following command is needed when working in "outline mode", i.e. when 
+% the documents has a long sequence of headings only (with no text in between)
+% that would run off the bottom of the page in the pdf file (due to
+% LaTeX rule of not allowing a page break directly after a heading.)
+% Comment it out for final printings.
+
+%\renewcommand\@afterheading{} 
+% The following allows to change the paragraph spacing
+% in the printout without changing the screen spacing
+% Note: the value set here will override (not be added to) 
+% LyX's settings in  Layout>Document>Layout
+%
+\usepackage{setspace}
+%\onehalfspace
+\singlespace
+
+\AtBeginDocument{\selectlanguage{english}}
+
+\makeatother
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+How to implement drum-like sounds for uniselectors' activation in Homeo
+\end_layout
+
+\begin_layout Standard
+The desired output for an aural feedback is a percussive sound triggered
+ by the activation of the units' uniselectors.
+ There are several ways, toolkits, and packages allowing the production
+ (synthesis or playing) of sound in or from python.
+ This note describes in outline how to realize percussive sound production
+ with the combined use of SuperCollider and the SC package to control it
+ from python (https://pypi.python.org/pypi/SC/0.3.1).
+\end_layout
+
+\begin_layout Enumerate
+The three basic components needed are:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+supercollider server for sound synthesis and play
+\end_layout
+
+\begin_layout Enumerate
+parameter-controlled synthdefs for supercollider
+\end_layout
+
+\begin_layout Enumerate
+SC module for SC control
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Implementation issues
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Sound selection
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+The audio feedback must allow the identification, to a certain extent, of
+ the unit the uniselector belongs to.
+ Given the punctual nature of the uniselector activation, the most natural
+ audio feedback is represented by a percussive sound.
+ The issue is then how to distinguish or better parameterize different percussiv
+e sounds for the different units.
+ One possibility is to use drum-like synthdefs at different frequencies.
+ Another possibility is to use different kind of percussions (e.g.
+ kick, snare, etc.).
+\end_layout
+
+\begin_layout Standard
+In either case, the instantiation of a uniselector must produce a 
+\emph on
+unique
+\emph default
+ parameter controlling the sound that it will produce.
+ The parameter must be unique among the currently existing uniselectors.
+ One way of doing this is to keep count of the uniselector instances produced
+ (
+\emph on
+and 
+\emph default
+destroyed) by the system.
+ Then the current id could be linked to a global list held by a sound class,
+ or directly used to parametrize a frequency.
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+See this Stack Overflow answer on this issue: http://stackoverflow.com/questions/
+8628123/counting-instances-of-a-class
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Implementation
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Runtime production
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+The uniselector class holds on to just one parameter controlling the kind
+ of sounds it produces.
+ A simple function call produces the percussive sound.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Initialization.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Initialization requires starting the sc server and loading the syntdef(s)
+ from file.
+ This is probably best done in the simulation class(es).
+ The uniselectors know nothing about physical sound production beyond the
+ parameter they are holding on to.
+\end_layout
+
+\begin_layout Standard
+Or, alternatively, the uniselector will hold on to some kind of parametrize
+ playDrum object (an instance of a PlayDrum helper class that know how to
+ play a sound on the synth server).
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Sound production function
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+A simple helper class will provide both initialization functions (called
+ from the simulation instance) and sound production methods that will activate
+ the synth server.
+ Perhaps the simplest solution is to have a PlayDrum class that knows how
+ to play a drum sound on the synth server.
+ Instances of the class are help by uniselector instances.
+\end_layout
+
+\end_deeper
+\end_deeper
+\end_deeper
+\end_body
+\end_document

@@ -320,7 +320,7 @@
     <rect>
      <x>10</x>
      <y>200</y>
-     <width>203</width>
+     <width>214</width>
      <height>66</height>
     </rect>
    </property>
@@ -1186,7 +1186,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit2unit1ConnectedComboBox">
+       <widget class="QComboBox" name="unit2Unit1ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1213,7 +1213,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit2unit2ConnectedComboBox">
+       <widget class="QComboBox" name="unit2Unit2ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1240,7 +1240,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit2unit3ConnectedComboBox">
+       <widget class="QComboBox" name="unit2Unit3ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1267,7 +1267,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit2unit4ConnectedComboBox">
+       <widget class="QComboBox" name="unit2Unit4ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2204,7 +2204,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit3unit1ConnectedComboBox">
+       <widget class="QComboBox" name="unit3Unit1ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2231,7 +2231,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit3unit2ConnectedComboBox">
+       <widget class="QComboBox" name="unit3Unit2ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2258,7 +2258,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit3unit3ConnectedComboBox">
+       <widget class="QComboBox" name="unit3Unit3ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2285,7 +2285,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit3unit4ConnectedComboBox">
+       <widget class="QComboBox" name="unit3Unit4ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2639,7 +2639,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit1NoiseDoubleSwitchSpinBox">
+       <widget class="QDoubleSpinBox" name="unit3Unit1NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2666,7 +2666,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit2NoiseDoubleSwitchSpinBox">
+       <widget class="QDoubleSpinBox" name="unit3Unit2NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2693,7 +2693,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit3NoiseDoubleSwitchSpinBox">
+       <widget class="QDoubleSpinBox" name="unit3Unit3NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2720,7 +2720,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit4NoiseDoubleSwitchSpinBox">
+       <widget class="QDoubleSpinBox" name="unit3Unit4NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3529,7 +3529,7 @@
     <rect>
      <x>10</x>
      <y>580</y>
-     <width>203</width>
+     <width>214</width>
      <height>66</height>
     </rect>
    </property>
@@ -3891,7 +3891,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit4unit1ConnectedComboBox">
+       <widget class="QComboBox" name="unit4Unit1ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3918,7 +3918,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit4unit2ConnectedComboBox">
+       <widget class="QComboBox" name="unit4Unit2ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3945,7 +3945,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit4unit3ConnectedComboBox">
+       <widget class="QComboBox" name="unit4Unit3ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3972,7 +3972,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit4unit4ConnectedComboBox">
+       <widget class="QComboBox" name="unit4Unit4ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4326,7 +4326,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit1NoiseDoubleSwitchSpinBox">
+       <widget class="QDoubleSpinBox" name="unit4Unit1NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4353,7 +4353,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit2NoiseDoubleSwitchSpinBox">
+       <widget class="QDoubleSpinBox" name="unit4Unit2NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4380,7 +4380,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit3NoiseDoubleSwitchSpinBox">
+       <widget class="QDoubleSpinBox" name="unit4Unit3NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4407,7 +4407,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit4NoiseDoubleSwitchSpinBox">
+       <widget class="QDoubleSpinBox" name="unit4Unit4NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4584,7 +4584,7 @@
     <rect>
      <x>10</x>
      <y>390</y>
-     <width>203</width>
+     <width>214</width>
      <height>66</height>
     </rect>
    </property>
@@ -5498,7 +5498,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit1unit1ConnectedComboBox">
+       <widget class="QComboBox" name="unit1Unit1ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -5525,7 +5525,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit1unit2ConnectedComboBox">
+       <widget class="QComboBox" name="unit1Unit2ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -5552,7 +5552,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit1unit3ConnectedComboBox">
+       <widget class="QComboBox" name="unit1Unit3ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -5579,7 +5579,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="unit1unit4ConnectedComboBox">
+       <widget class="QComboBox" name="unit1Unit4ConnectedComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -6330,7 +6330,7 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>203</width>
+     <width>214</width>
      <height>66</height>
     </rect>
    </property>
@@ -6915,7 +6915,7 @@
     <rect>
      <x>612</x>
      <y>10</y>
-     <width>85</width>
+     <width>91</width>
      <height>171</height>
     </rect>
    </property>
@@ -7071,7 +7071,7 @@
     <rect>
      <x>610</x>
      <y>390</y>
-     <width>85</width>
+     <width>91</width>
      <height>171</height>
     </rect>
    </property>
@@ -7227,7 +7227,7 @@
     <rect>
      <x>610</x>
      <y>200</y>
-     <width>85</width>
+     <width>91</width>
      <height>171</height>
     </rect>
    </property>
@@ -7383,7 +7383,7 @@
     <rect>
      <x>610</x>
      <y>580</y>
-     <width>85</width>
+     <width>91</width>
      <height>181</height>
     </rect>
    </property>
