@@ -143,6 +143,22 @@ class HomeoQtSimulation(QObject):
             unit = HomeoUnitNewtonian()
             unit.setRandomValues()
             self._homeostat.addFullyConnectedUnit(unit)
+    
+    def initializeAshbyFirstExperiment(self):
+        '''Initialize a 2-Unit Homeostat as per Ashby's first experiment (The Homeostat as an adaptor):
+           2 Units, one (called "Agent") self-connected with negative feedback, 
+           the second one ("Environment") not self-connected'''
+        unit1 = HomeoUnitNewtonian()
+        unit1.setRandomValues()
+        unit1.name = "Agent"
+        unit2 = HomeoUnitNewtonian()
+        unit2.setRandomValues()
+        unit2.name = "Environment"
+        self._homeostat.addFullyConnectedUnit(unit1)
+        self._homeostat.addFullyConnectedUnit(unit2)
+        self._homeostat.removeConnectionFromUnit1ToUnit2(unit2, unit2)        # Environment unit is not self-connected"
+        self._homeostat.unitWithName("Environment").uniselectorActive = False # Environment unit has no uniselector working"
+        
 
 #===============================================================================
 # Running methods
@@ -248,6 +264,10 @@ class HomeoQtSimulation(QObject):
            to save only the essential data on dataFilename'''
 
         self.homeostat.dataCollector.saveEssentialDataOnFile(aFilename)
+        
+    def essentialSimulationData(self):
+        "Ask the DataCollector to teturn a string with the essential data about the simulaiton"
+        return self.homeostat.dataCollector.printPlottingDataForROnAString('')
 
     def saveEssentialDataOnFileWithSeparator(self, aCharacter):
         '''Ask the datacollector of the homeostat 

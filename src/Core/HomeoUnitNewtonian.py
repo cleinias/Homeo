@@ -22,7 +22,7 @@ class HomeoUnitNewtonian(HomeoUnit):
     the computation methods.  
     '''
 #===============================================================================
-# Initialization methods
+# Initialization methods and properties
 #===============================================================================
     def __init__(self):
         '''
@@ -45,6 +45,16 @@ class HomeoUnitNewtonian(HomeoUnit):
         self.inputTorque =  0
         self.currentOutput = 0
         self.currentVelocity = 0
+        
+    'Convenience property to get to the mass stored in the needleUnit'
+    def getMass(self):
+        return self._needleUnit.mass
+        
+    def setMass(self,aValue):
+        self._needleUnit.mass = aValue
+        
+    mass = property(fget = lambda self: self.getMass(),
+                    fset = lambda self, value: self.setMass(value))
         
 #===============================================================================  
 # Running methods
@@ -156,13 +166,18 @@ class HomeoUnitNewtonian(HomeoUnit):
         '''3. check whether it's time to check the uniselector/detection mechanism and if so do it. 
            Register that the uniselector is active in an instance variable'''
         
-        if self.uniselectorTime >= self.uniselectorTimeInterval and self.uniselectorActive:
+        if (self.uniselectorTime >= self.uniselectorTimeInterval and
+            self.uniselectorActive):
             if self.essentialVariableIsCritical():
-                self.operateUniselector
+                if self.debugMode == True:
+                    sys.stderr.write(('############################################ Operating uniselector for unit %s' % self.name))
+                self.operateUniselector()
                 self.uniselectorActivated = 1
+            else:
+                self.uniselectorActivated = 0
+            self.uniselectorTime = 0
         else:
-            self.uniselectorActivated = 0          
-
+            self.uniselectorActivated = 0        
 
         ''''4. Compute new current velocity according to classic Newtonian formula: x-x0 = 1/2t (v-v0)  where:
         x0 = criticalDeviation

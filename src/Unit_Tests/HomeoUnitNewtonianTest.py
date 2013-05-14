@@ -174,6 +174,33 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
             dragForce = self.unit.stokesLawDrag()
             "test with precision to 10 decimals"
             self.assertAlmostEqual(dragForce , -(6 * numpy.pi * radius * self.unit.viscosity * self.unit.currentVelocity), 10)
+
+
+    def testUniselectorIsTriggered(self):
+        """
+        Test that a unit's uniselector is triggered when a unit's essential variable is critical and uniselectorTime is equal or exceeded
+        """
+        
+        "Check a HomeoUnitNewtonian unit. Other kinds of unit have their test in their corresponding test class."
+                
+        '''Set the unit at the critical threshold and uniselectorTime to one step before the threshold 
+          (so 't will reach it in the next update'''
+        
+        self.unit = HomeoUnitNewtonian()
+        self.unit.criticalDeviation = (self.unit.maxDeviation * self.unit.critThreshold) 
+        self.unit.uniselectorActive = True
+        self.unit.uniselectorTime = self.unit.uniselectorTimeInterval
+        
+        "set self.unit connection to be positive, to insure positive feedback. 0 noise to simplify test"
+        self.unit.inputConnections[0].newWeight(1)
+        self.unit.inputConnections[0].noise = 0
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.uniselectorActivated == 1)
+        
+        "Run just one more step. UniselectorActivated should be back to 0 and uniselectorTime should be back to 1"
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.uniselectorActivated == 0)
+        self.assertTrue(self.unit.uniselectorTime == 1)
     
     def tearDown(self):
         pass

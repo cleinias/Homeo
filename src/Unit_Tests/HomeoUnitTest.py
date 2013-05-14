@@ -5,6 +5,7 @@ from   Core.Homeostat import *
 from   Helpers.General_Helper_Functions import  withAllSubclasses
 import unittest, numpy, string, random, pickle, os
 from copy import copy
+from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
 
 class HomeoUnitTest(unittest.TestCase):
     """Unit testing for the HomeoUnit class and subclasses, including adding and removing connections to other HomeoUnits."""
@@ -1296,7 +1297,7 @@ class HomeoUnitTest(unittest.TestCase):
         that holds it. A HomeUnit has no means of advancing its internal time counter.
         """
         
-        self.assertTrue(True, "A HomeoUnit does not advance its time, its controlling Homoestat does it")
+        self.assertTrue(True, "A HomeoUnit does not advance its time, its controlling Homeostat does it")
         #=======================================================================
         # "Test for alternative implementations"
         #
@@ -1312,6 +1313,32 @@ class HomeoUnitTest(unittest.TestCase):
         oldUniselectorTime= self.unit.uniselectorTime
         self.unit.selfUpdate()
         self.assertTrue(self.unit.uniselectorTime == oldUniselectorTime + 1)
+        
+    def testUniselectorIsTriggered(self):
+        """
+        Test that a unit's uniselector is triggered when a unit's essential variable is critical and uniselectorTime is equal or exceeded
+        """
+        
+        "Check a standard unit. Other kinds of unit have their test in their corresponding test class."
+                
+        "Set the unit just below the critical threshold"
+        
+        self.unit = HomeoUnit()
+        self.unit.criticalDeviation = (self.unit.maxDeviation * self.unit.critThreshold) *.95
+        self.unit.uniselectorActive = True
+        
+        "set self.unit connection to be positive, to insure positive feedback. 0 noise to simplify test"
+        self.unit.inputConnections[0].newWeight(1)
+        self.unit.inputConnections[0].noise = 0
+        for i in xrange(2 * self.unit.uniselectorTimeInterval):
+            self.unit.selfUpdate()
+        self.assertTrue(self.unit.uniselectorActivated == 1)
+        
+        "Run just one more step. UniselectorActivated should be back to 0 and uniselectorTime should be back to 1"
+        self.unit.selfUpdate()
+        self.assertTrue(self.unit.uniselectorActivated == 0)
+        self.assertTrue(self.unit.uniselectorTime == 1)
+        
 
     def testDeviationComputationsDontTouchInstanceVariables(self):
         """
