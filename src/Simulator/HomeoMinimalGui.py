@@ -14,6 +14,8 @@ from Helpers.QObjectProxyEmitter import emitter
 from Helpers.SimulationThread import SimulationThread
 import matplotlib.pyplot as plt
 import pyqtgraph as pg
+from StringIO import StringIO
+
 
 class HomeoMinimalGui(QDialog):    
     '''
@@ -36,7 +38,8 @@ class HomeoMinimalGui(QDialog):
         super(HomeoMinimalGui,self).__init__(parent)
         
         self._simulation = HomeoQtSimulation()
-        self._simulation.initializeAshbySimulation()
+#        self._simulation.initializeAshbySimulation()
+        self._simulation.initializeAshbyFirstExperiment()
         
         self._simulThread = SimulationThread()
         self._simulation.moveToThread(self._simulThread)
@@ -331,10 +334,18 @@ class HomeoMinimalGui(QDialog):
 
 
     def graphData(self):
-        dataArray = self._simulation.homeostat.dataCollector.criticalDevAsNPArrayForAllUnits() 
-        plt.plot(dataArray)
+        "Chart essential data (crit dev and uniselector ticks) with matplotlib"
+
+        dataArray = np.genfromtxt(StringIO(self._simulation.essentialSimulationData()), delimiter = ',', skiprows = 3,  names = True)
+        plt.figure()
+        for col_name in dataArray.dtype.names:
+            plt.plot(dataArray[col_name], label=col_name)
+        plt.legend(loc=3, fontsize = 8)
         plt.ylabel('Critical Deviation')
         plt.xlabel('Time')
+        plt.title(self._simulation.dataFilename)
+        plt.grid(b=True, which='both', color='0.65',linestyle='-')
+        plt.axis(ymin=self._simulation.homeostat.homeoUnits[0].minDeviation, ymax= self._simulation.homeostat.homeoUnits[0].maxDeviation)
         plt.show()
 #        pg.plot(dataArray)
 #        pg.show()

@@ -25,7 +25,7 @@ class Homeostat(object):
     parameters and does not offer any output.
     
     Instance Variables:
-        homeoUnits           <Collection>     the collection of homeoUnits making up the homeostat
+        homeoUnits           <aCollection>    the collection of homeoUnits making up the homeostat
         microTime            <aNumber>        the temporal scale regulating the communication among units (typically identical to the unit time)
         slowingFactor        <aNumber>        the current slowingFactor index (i.e., t)
         dataCollector        <aDataCollector> the object recording the states of the homeostat
@@ -333,7 +333,7 @@ class Homeostat(object):
 
     def removeConnectionFromUnit1ToUnit2(self, unit1,unit2):
         '''Remove a connections between two units by asking 
-           the receiving unit (unit2) to remove the inmputConnection 
+           the receiving unit (unit2) to remove the inputConnection 
            coming from unit1'''
 
         if unit1 in self.homeoUnits and  unit2 in self.homeoUnits:
@@ -367,6 +367,16 @@ class Homeostat(object):
         for unit in self.homeoUnits:
             unit.setRandomValues()
             unit.randomizeAllConnectionValues()
+            
+    def unitWithName(self,aString):
+        '''Return the Unit with name aString, if it exists,
+        Return None Otherwise. Assumes units' names are unique '''
+        
+        unit = filter(lambda x: x.name==aString, self.homeoUnits)
+        if len(unit) == 0:
+            return None
+        else:
+            return unit[0]
 
 #===============================================================================
 # Saving methods 

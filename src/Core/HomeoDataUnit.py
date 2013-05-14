@@ -44,14 +44,23 @@ class HomeoDataUnit(object):
 #===============================================================================
 
     def getUniselectorActive(self):
-        return self._connectedTo
+        return self._uniselectorActive
     
     def setUniselectorActive(self, anObject):
-        self._connectedTo = anObject
+        self._uniselectorActive = anObject
     
-    connectedTo = property(fget = lambda self: self.getUniselectorActive(),
+    uniselectorActive = property(fget = lambda self: self.getUniselectorActive(),
                          fset = lambda self, value: self.setUniselectorActive(value))
     
+    def getConnectedTo(self):
+        return self._connectedTo
+    
+    def setConnectedTo(self, anObject):
+        self._connectedTo = anObject
+    
+    connectedTo = property(fget = lambda self: self.getConnectedTo(),
+                         fset = lambda self, value: self.setConnectedTo(value))
+
     def getCriticalDeviation(self):
         return self._criticalDeviation
     
@@ -108,6 +117,7 @@ class HomeoDataUnit(object):
         self._output = None
         self._uniselectorState = None
         self._uniselectorActive = None
+
         
     def readStateFrom(self, aHomeoUnit):
         '''
@@ -119,7 +129,8 @@ class HomeoDataUnit(object):
         self.uniselectorState = aHomeoUnit.uniselectorActive
         self.maxDeviation =  aHomeoUnit.maxDeviation
         self.criticalDeviation = aHomeoUnit.criticalDeviation
-        self.uniselectorActive = aHomeoUnit.uniselectorActive
+        self.uniselectorActive = aHomeoUnit.uniselectorActivated
+        self.uniselectorState = aHomeoUnit.uniselectorActive
         for conn in aHomeoUnit.inputConnections:
             self.connectedTo[conn.incomingUnit.name] = [conn.weight, conn.switch, conn.state, conn.noise]
 
@@ -150,7 +161,7 @@ class HomeoDataUnit(object):
     def printDataOn(self,aString):
         '''Append to aString a complete representation of its data'''
 
-        aString += "name: %s output: %.5f uniselector: %s" % (self.name, self.output, self.uniselectorState)
+        aString += "name: %s critDev: %.5f output: %.5f uniselector: %s  active: %s" % (self.name, self.criticalDeviation, self.output, self.uniselectorState, self.uniselectorActive)
         for connName, connValue in self.connectedTo.iteritems():
             aString += " Connected_to: %s weight: %.5f switch: %u noise: %.5f   " % (connName,
                                                                                   connValue[0], # weight

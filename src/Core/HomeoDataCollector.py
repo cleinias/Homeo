@@ -6,6 +6,7 @@ Created on Mar 13, 2013
 import pickle, sys, datetime
 from Core.HomeoDataUnit import  *
 import numpy as np
+from cherrypy._cpcompat import iteritems
 
 
 class HomeoDataCollector(object):
@@ -109,7 +110,8 @@ class HomeoDataCollector(object):
         '''Save essential data on a file in text format.
         Will erase aFilename if it exists already'''
         
-        dataToSave = self.printEssentialDataOnAString('')
+#        dataToSave = self.printEssentialDataOnAString('')
+        dataToSave = self.printPlottingDataForROnAString('')
         fileOut = open(aFilename, 'w')
         fileOut.write(dataToSave)
         fileOut.close()
@@ -178,7 +180,8 @@ class HomeoDataCollector(object):
                 timeIndex += 1
 
     def printEssentialDataOnAString(self, aString):
-        '''Append to aString a brief representation of its data'''
+        '''Append to aString a brief representation of its data, with column headers'''
+#        aString += 'time,'
         timeIndex = 0
         for state in self.states:
             if self.states[state] is not None:
@@ -230,10 +233,9 @@ class HomeoDataCollector(object):
         "print the data"
         for timeSlice, index in enumerate(criticDevData):
             aString += "%u" % index
-            aString += aCharacter
             for dataPoint in timeSlice:
+                aString += aCharacter
                 aString +=  "%.8f" % dataPoint
-                aString += aCharacter 
             aString += "\n"
         
         return aString
@@ -247,7 +249,7 @@ class HomeoDataCollector(object):
              the particular simulation the data describe,
            - then a commented line with the data headers
            - then a sequence of lines with each  column containing the 
-             critical deviation value for a unit '''
+             critical deviation value for a unit and its uniselector activation (1 if any, o/w 0)'''
 
 
         aCharacter = ','
@@ -255,7 +257,7 @@ class HomeoDataCollector(object):
         unitNames = []
         if len(self.states) == 0:
             sys.stderr.write("DataCollector: There are no data to save")
-        for dataUnit in self.states[0]:
+        for index, dataUnit in iteritems(self.states[0]):
             unitNames.append(dataUnit.name)
         
         criticDevData = self.criticalDevAsCollectionOfArraysForAllUnits()
@@ -263,30 +265,26 @@ class HomeoDataCollector(object):
         "Print a header with general information at the top of the file"
         aString +=  '# Simulation data produced by HOMEO---the homeostat simulation program\n'
         aString +=  '# Data printed on: '
-        aString +=  datetime.datetime.now()
+        aString +=  str(datetime.datetime.now())
         aString +=  "\n"
         aString +=  '# There were exactly %u units in this simulation' % len(unitNames) 
-        aString += "\n\n\n"
+        aString += "\n"
 
-        "Print  the column headers, preceded by the 'Time' Header"
-        aString += 'Time'
-        aString += aCharacter
-        for name in unitNames:
+        "Print  the column headers"
+        for index, name in enumerate(unitNames):
+            if index <> 0:
+                aString += aCharacter
             aString += name
             aString += aCharacter
             aString += name
-            aString += '-unisel'
-            aString += aCharacter 
+            aString += '_un.'
         aString += "\n"
 
         "print the data"
-        for timeSlice, index in enumerate(criticDevData):
-            aString += index
-            aString += aCharacter
-            for dataPoint in timeSlice:
-                aString +=  "%.8f" % dataPoint
-                aString +=  aCharacter
-            aString += "\n"
+        for timeSlice in criticDevData:
+            CSVString = ",".join(map(str,timeSlice))
+            aString += CSVString
+            aString += '\n'
 
         return aString
 
@@ -308,11 +306,11 @@ class HomeoDataCollector(object):
         aString += '# Simulation data produced by HOMEO---the homeostat simulation program'
         aString += "\n"
         aString += '# Data printed on: '
-        aString += datetime.datetime.now()
+        aString += str(datetime.datetime.now())
         aString += "\n"
         aString +=  '# There were exactly %u ' % len(unitNames)
         aString += 'units in this simulation'
-        aString += "\n\n\n"
+        aString += "\n"
         aString +=  '# \n'
         for name in unitNames:
             aString += name
@@ -333,7 +331,7 @@ class HomeoDataCollector(object):
 
     def printPlottingDataOnAStringWithSeparator(self, aString, aCharacter):
         '''Append to aString a multi-column  representation of its data, suitable for plotting. 
-           aCharacter is the character separatng the column.
+           aCharacter is the character separating the column.
            The format includes:
            - first a couple of lines of commented data detailing the particular simulation the data describe,
            - then a commented line with the data headers
@@ -350,7 +348,7 @@ class HomeoDataCollector(object):
         aString += '# Simulation data produced by HOMEO---the homeostat simulation program'
         aString += '\n'
         aString += '# Data printed on: '
-        aString += datetime.datetime.now()
+        aString += str(datetime.datetime.now())
         aString += '\n'
         aString += '# There were exactly %u units in this simulation' % len(unitNames)
         aString += "\n\n\n"
@@ -398,7 +396,11 @@ class HomeoDataCollector(object):
                 dataPoint = []
                 for HomeoUnitName, homeoDataUnit in data.iteritems():
                     dataPoint.append(homeoDataUnit.criticalDeviation)
-                    dataPoint.append(homeoDataUnit.uniselectorActive)
+                    if (homeoDataUnit.uniselectorActive == True):
+                        dataPoint.append(1)
+                    else:
+                        dataPoint.append(0)
+                        
             aCollection.append(dataPoint)
 
         return aCollection

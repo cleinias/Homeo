@@ -59,7 +59,7 @@ class HomeoUnit(object):
      uniselectorTime            <Integer> The internal tick counter for activation of the uniselector
      uniselectorTimeInterval    <Integer> The number of ticks that specifies how often to check that the output is in range and eventually activate uniselector
      uniselector                <HomeoUniselector> The uniselector that can modify the weights of input values coming from other units
-     uniselectorActive          <Boolean>  Whether the uniselector mechanism is active or not
+     uniselectorActive          <Boolean>  Whether the uniselector mechanism is  active or not
      needleCompMethod           <String>    Whether the unit's needle's displacement depends of the sum of its input, 
                                           or on the ratio between the sum of the inputs and the maxDeviation. 
                                           Possible values are 'linear' and 'proportional', default is 'linear'.
@@ -102,10 +102,11 @@ class HomeoUnit(object):
                               uniselectorTime= 0,               # How often the uniselector checks the thresholds, in number of ticks
                               uniselectorTimeInterval = 10,
                               needleCompMethod= 'linear',       # switches between linear and proportional computation of displacement
-                              uniselectorActivated = False,
+                              uniselectorActive = True,
+                              uniselectorActivated = 0,
                               density = 1,                      # density of water
                               maxViscosity = (10^6),
-                              critThreshold = 0.9)              # the ration of max deviation  beyond which a unit's essential variable's value  is considered critical 
+                              critThreshold = 0.9)              # the ration of max deviation beyond which a unit's essential variable's value  is considered critical 
     
     allNames = set()        # set of units' unique names
         
@@ -144,6 +145,7 @@ class HomeoUnit(object):
         self._uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
         self._uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
         self._needleCompMethod = HomeoUnit.DefaultParameters['needleCompMethod']
+        self._uniselectorActive = HomeoUnit.DefaultParameters['uniselectorActive']
         self._uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
         self._critThreshold = HomeoUnit.DefaultParameters['critThreshold']
 
@@ -298,12 +300,23 @@ class HomeoUnit(object):
                            fset = lambda self, minOut, maxOut: self.setOutputRange(minOut,maxOut))  
 
     def setUniselectorActive(self,aBoolean):
-        self._uniselectorActivated = aBoolean
+        self._uniselectorActive = aBoolean
     def getUniselectorActive(self):
-        return self._uniselectorActivated
+        return self._uniselectorActive
     uniselectorActive = property(fget = lambda self: self.getUniselectorActive(),
                                  fset = lambda self, value: self.setUniselectorActive(value))  
     
+    def toggleUniselectorActive(self):
+        'Toggle state of uniselector'
+        self._uniselectorActive = not self._uniselectorActive
+    
+    def setUniselectorActivated(self,aBoolean):
+        self._uniselectorActivated = aBoolean
+    def getUniselectorActivated(self):
+        return self._uniselectorActivated
+    uniselectorActivated = property(fget = lambda self: self.getUniselectorActivated(),
+                                 fset = lambda self, value: self.setUniselectorActivated(value))  
+
     def setUniselectorTimeInterval(self,aValue):
         self._uniselectorTimeInterval = aValue
     def getUniselectorTimeInterval(self):
@@ -311,17 +324,17 @@ class HomeoUnit(object):
     uniselectorTimeInterval = property(fget = lambda self: self.getUniselectorTimeInterval(),
                                        fset = lambda self, value: self.setUniselectorTimeInterval(value))  
 
-    def setActive(self, aBoolean):
-        if aBoolean == True or aBoolean == False:
-            self.active = aBoolean
-        else:
-            raise HomeoUnitError("The value of instance variable active can only be a Boolean") 
-        
-    def getActive(self):
-        return self.active
-    
-    active = property(fget = lambda self: self.getActive(),
-                      fset = lambda self, aBoolean: self.setActive(aBoolean))
+#    def setActive(self, aBoolean):
+#        if aBoolean == True or aBoolean == False:
+#            self._active = aBoolean
+#        else:
+#            raise HomeoUnitError("The value of instance variable active can only be a Boolean") 
+#        
+#    def getActive(self):
+#        return self._active
+#    
+#    active = property(fget = lambda self: self.getActive(),
+#                      fset = lambda self, aBoolean: self.setActive(aBoolean))
                                 
     def getCurrentOutput(self):
         return self._currentOutput
@@ -646,13 +659,14 @@ class HomeoUnit(object):
             The critical threshold is stored in critThreshold and defaults to 0.9
             in DefaultParameters['critThreshold']'''
 
-        return self.nextDeviation >= self.critThreshold and self.nextDeviation <= self.critThreshold
+        return (self.nextDeviation >= (self.critThreshold * self.maxDeviation) or
+                self.nextDeviation <= (self.critThreshold * self.minDeviation))
 
 #------------------------------------------------------------------------------ 
 
-   #============================================================================
-   # CONNECTION METHODS
-   #============================================================================
+#============================================================================
+# CONNECTION METHODS
+#============================================================================
    
     def addConnectionUnitWeightPolarityState(self,aHomeoUnit,aWeight,aSwitch,aString):
         '''
@@ -831,10 +845,15 @@ class HomeoUnit(object):
         if (self.uniselectorTime >= self.uniselectorTimeInterval and
             self.uniselectorActive):
             if self.essentialVariableIsCritical():
-                self.operateUniselector
-                self.uniselectorActive = 1
+                if self.debugMode == True:
+                    sys.stderr.write(('############################################Operating uniselector for unit %s' % self.name))
+                self.operateUniselector()
+                self.uniselectorActivated = 1
             else:
-                self.uniselectorActive = 0          
+                self.uniselectorActivated = 0
+            self.uniselectorTime = 0
+        else:
+            self.uniselectorActivated = 0        
 
         '''4. updates the needle's position (critical deviation) with clipping, 
             if necessary, and updates the output'''
@@ -1065,7 +1084,7 @@ class HomeoUnit(object):
     
     def operateUniselector(self):
         '''Activate the uniselector to randomly change the weights of the input connections        
-         (excluding the self connection) and reset the tick count of uniselector activation to 0'''
+         (excluding the self connection)'''
 
 
 
@@ -1073,15 +1092,14 @@ class HomeoUnit(object):
         weightChanges = []
         for conn in self.inputConnections:
             if not conn.incomingUnit == self:
-                if conn.state ==  'uniselector' and conn.active():
+                if conn.state ==  'uniselector' and conn.active:
                     change = []
-                    change.append(self.incomingUnit.name)
+                    change.append(conn.incomingUnit.name)
                     change.append(conn.weight)
                     changedWeight = self.uniselector.produceNewValue()
                     change.append(changedWeight)
                     weightChanges.append(change)
                     conn.newWeight(changedWeight)
-        self.uniselectorTime = 0
         self.uniselector.advance()
 
 
