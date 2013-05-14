@@ -24,8 +24,7 @@ class HomeoConnection(object):
     noise                <aFloat>         possible noise on the connection (between 0--no noise - to 1, so noisy to break the connection)
     state                <aString>        determines whether the connection is governed by weight and switch or by the uniselector. 
                                           The value can only be 'manual' or 'uniselector'
-    status               <aString>        whether the connection is active or not. Values can be 'Yes' or 'No'
-    active               <aBoolean>       whether or not the connection is active
+    status               <aBoolean>        whether the connection is active or not. 
     '''
     
     
@@ -42,12 +41,11 @@ class HomeoConnection(object):
         self.noise = np.random.uniform(0,0.1)
         self.state = 'uniselector'
         self.newWeight(np.random.uniform(-1,1))
-        self.active = True
-        self.status = 'Yes'
+        self.status = True
 
     "class methods"
     @classmethod    
-    def newWithIncomingUnitWeightSwitchNoiseStateActive(cls,incomingUnit, aWeight, aSwitch, aNoise, aState, anActive):
+    def newWithIncomingUnitWeightSwitchNoiseStateActive(cls,incomingUnit, aWeight, aSwitch, aNoise, aState, aBoolean):
         '''
         Return a new connection with values initialized as specified
         '''
@@ -56,12 +54,12 @@ class HomeoConnection(object):
         conn.newWeight(aWeight * aSwitch)
         conn.noise = aNoise
         conn.state = aState
-        conn.active = anActive
+        conn.status = aBoolean
         
         return conn 
     
     @classmethod    
-    def newWithIncomingUnitOutgoingUnitWeightSwitchNoiseStateActive(cls,aUnit,anotherUnit,aWeight,aSwitch,aNoise,aState,anActive):
+    def newWithIncomingUnitOutgoingUnitWeightSwitchNoiseStateActive(cls,aUnit,anotherUnit,aWeight,aSwitch,aNoise,aState,aBoolean):
         '''
         Return a new connection with values initialized as specified.
         '''
@@ -72,7 +70,7 @@ class HomeoConnection(object):
         conn.newWeight(aWeight * aSwitch)
         conn.noise = aNoise
         conn.state = aState
-        conn.active = anActive
+        conn.status = aBoolean
         
         return conn 
 
@@ -155,22 +153,30 @@ class HomeoConnection(object):
     def getStatus(self):
         return self._status
     
-    def setStatus(self, aState):
-        self._status = aState
+    def setStatus(self, aBoolean):
+        if aBoolean in (True,False):
+            self._status = aBoolean
+        else:
+            raise(ConnectionError, 'The status of a connection can only be a Boolean')
     
     status = property(fget = lambda self: self.getStatus(),
                           fset = lambda self, value: self.setStatus(value))   
+    
+    def toggleStatus(self):
+        self.status = not self.status
 
     def getActive(self):
         return self._active
     
-    def setActive(self, aHomeoUnit):
+    def setActive(self, aBoolean):
         ""
-        self._active = aHomeoUnit
+        self._active = aBoolean
     
     active = property(fget = lambda self: self.getActive(),
                           fset = lambda self, value: self.setActive(value))   
     
+    def toggleStatus(self):
+        self.status
     def newWeight(self, aWeight):
         "updates weight and switch on the basis -1 >=  aWeight <= 1"
         
@@ -205,8 +211,7 @@ class HomeoConnection(object):
         return (self._incomingUnit.currentOutput * self.switch * self.weight) + newNoise.getNoise()
     
     def isActive(self):
-        '''sets the connection to active'''
-        self.status = 'Yes'
+        '''Return the status of the connection to active'''
         return self._status
     
     def switchToManual(self):
@@ -218,6 +223,13 @@ class HomeoConnection(object):
         "Change the state of the connection to uniselector"
 
         self.state = 'uniselector'
+    
+    def toggleUniselectorState(self):
+        "Toggle between 'manual' and 'uniselector'"
+        if self.state == 'manual':
+            self.state = 'uniselector'
+        else:
+            self.state = 'manual'
         
     def sameAs(self,aConnection): 
         '''Test if two connections are the same, which means:
