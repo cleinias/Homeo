@@ -577,6 +577,7 @@ class HomeoSimulationControllerGui(QDialog):
                 self.stepButton.setEnabled(True)
                 self.resumeButton.setEnabled(True)
                 self.pauseButton.setEnabled(False)
+                self.clearLiveCharts()
             except HomeostatError as e:
                 messageBox = QMessageBox()
                 messageBox.setText(e.__str__())
@@ -604,6 +605,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.pauseButton.setEnabled(False)
         self.stepButton.setEnabled(True)
         self.resumeButton.setEnabled(True)
+        self.clearLiveCharts()
     
     def saveAllData(self):       
         filename = QFileDialog.getSaveFileName(parent = self, 
@@ -642,6 +644,12 @@ class HomeoSimulationControllerGui(QDialog):
 
     def changeUniselectorTypeForUnit(self, aUnitNumber, aUniselectorType):
         pass
+    
+    def clearLiveCharts(self):
+        for unitRef in self._simulation._homeostat.homeoUnits:
+            self.pgChartsAndItems[unitRef][1].clear()
+            self.pgChartsAndItems[unitRef][3].clear()
+            
         
 
 class Classic_Homeostat(QDialog, Ui_ClassicHomeostat):
