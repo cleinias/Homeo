@@ -228,9 +228,9 @@ class Homeostat(object):
                 for unit in self.homeoUnits:
                     if self.collectsData:
                         self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
-                        unit.time =  self.time
-                        if unit.isActive():
-                            unit.selfUpdate()
+                    unit.time =  self.time
+                    if unit.isActive():
+                        unit.selfUpdate()
                 self.time +=  1
                 QObject.emit(emitter(self), SIGNAL('homeostatTimeChanged'), self.time)
                 time.sleep(sleepTime / 1000)               # sleep accepts seconds, slowingFactor is in milliseconds
