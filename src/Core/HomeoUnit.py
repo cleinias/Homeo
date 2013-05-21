@@ -256,7 +256,7 @@ class HomeoUnit(object):
         and 1 (all force canceled out)'''
         
         try:
-            float(aValue)
+            aValue = float(aValue)
             if aValue < 0 or aValue > 1:
                 raise(HomeoUnitError, "The value of viscosity must always be between 0 and 1 (included)")
             else: 
