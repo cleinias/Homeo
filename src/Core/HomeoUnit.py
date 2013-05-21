@@ -560,10 +560,16 @@ class HomeoUnit(object):
         return self._density
 
     def setDensity(self,aValue):
-        self._density = aValue
-        QObject.emit(emitter(self),SIGNAL("densityChanged"), self._density)
-        QObject.emit(emitter(self), SIGNAL("densityChangedLineEdit"), str(round(self._density, 5)))
+        try:
+            aValue = float(aValue)
+            self._density = aValue
+        except ValueError:
+            sys.stderr.write("Unit %s tried to assign a non numeric value to density. Value was %s\n" % (self.name, aValue))
+        finally:
+            QObject.emit(emitter(self), SIGNAL('densityChanged'), self._density)
+            QObject.emit(emitter(self), SIGNAL('densityChangedLineEdit'), str(round(self._density, 5)))
 
+        
     density = property(fget = lambda self: self.getDensity(),
                            fset = lambda self,aValue: self.setDensity(aValue))
     
