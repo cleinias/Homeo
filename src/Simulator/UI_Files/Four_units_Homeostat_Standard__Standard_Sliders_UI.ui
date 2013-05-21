@@ -785,6 +785,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -823,6 +826,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -863,6 +869,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -901,6 +910,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -978,6 +990,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="minimum">
          <number>-1</number>
         </property>
@@ -1019,6 +1034,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
          <number>-1</number>
@@ -1062,6 +1080,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="minimum">
          <number>-1</number>
         </property>
@@ -1103,6 +1124,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
          <number>-1</number>
@@ -1183,6 +1207,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -1221,6 +1248,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -1261,6 +1291,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -1299,6 +1332,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -1971,6 +2007,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -2009,6 +2048,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -2049,6 +2091,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -2087,6 +2132,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -2164,6 +2212,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="minimum">
          <number>-1</number>
         </property>
@@ -2205,6 +2256,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
          <number>-1</number>
@@ -2248,6 +2302,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="minimum">
          <number>-1</number>
         </property>
@@ -2289,6 +2346,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
          <number>-1</number>
@@ -2369,6 +2429,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -2407,6 +2470,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -2447,6 +2513,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -2482,6 +2551,9 @@
          <font>
           <pointsize>8</pointsize>
          </font>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
@@ -3229,6 +3301,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -3267,6 +3342,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -3307,6 +3385,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -3345,6 +3426,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -3422,6 +3506,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="minimum">
          <number>-1</number>
         </property>
@@ -3463,6 +3550,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
          <number>-1</number>
@@ -3506,6 +3596,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="minimum">
          <number>-1</number>
         </property>
@@ -3547,6 +3640,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
          <number>-1</number>
@@ -3627,6 +3723,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -3665,6 +3764,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -3705,6 +3807,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -3743,6 +3848,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -4419,6 +4527,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -4457,6 +4568,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -4497,6 +4611,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -4535,6 +4652,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -4612,6 +4732,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="minimum">
          <number>-1</number>
         </property>
@@ -4650,6 +4773,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
          <number>-1</number>
@@ -4693,6 +4819,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="minimum">
          <number>-1</number>
         </property>
@@ -4734,6 +4863,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="minimum">
          <number>-1</number>
@@ -4814,6 +4946,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -4852,6 +4987,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -4892,6 +5030,9 @@
         <property name="wrapping">
          <bool>true</bool>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
         <property name="decimals">
          <number>4</number>
         </property>
@@ -4930,6 +5071,9 @@
         </property>
         <property name="wrapping">
          <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="decimals">
          <number>4</number>
@@ -7575,11 +7719,11 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>614</x>
-     <y>11</y>
+     <x>612</x>
+     <y>10</y>
      <width>95</width>
      <height>172</height>
     </rect>
@@ -7715,7 +7859,13 @@
      </layout>
     </item>
     <item>
-     <widget class="QwtSlider" name="unit1CritDevSlider">
+     <widget class="QSlider" name="unit1CritDevSlider">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="minimumSize">
        <size>
         <width>25</width>
@@ -7731,29 +7881,29 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <property name="scalePosition">
-       <enum>QwtSlider::NoScale</enum>
+      <property name="invertedAppearance">
+       <bool>false</bool>
       </property>
-      <property name="handleSize">
-       <size>
-        <width>20</width>
-        <height>16</height>
-       </size>
+      <property name="invertedControls">
+       <bool>false</bool>
+      </property>
+      <property name="tickPosition">
+       <enum>QSlider::NoTicks</enum>
       </property>
      </widget>
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>611</x>
+     <x>612</x>
      <y>200</y>
      <width>95</width>
      <height>172</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_7">
+   <layout class="QHBoxLayout" name="horizontalLayout_6">
     <item>
      <layout class="QVBoxLayout" name="verticalLayout_15">
       <item>
@@ -7881,7 +8031,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QwtSlider" name="unit2CritDevSlider">
+     <widget class="QSlider" name="unit2CritDevSlider">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -7903,29 +8053,20 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <property name="scalePosition">
-       <enum>QwtSlider::NoScale</enum>
-      </property>
-      <property name="handleSize">
-       <size>
-        <width>20</width>
-        <height>16</height>
-       </size>
-      </property>
      </widget>
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>611</x>
+     <x>612</x>
      <y>390</y>
      <width>95</width>
      <height>172</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_6">
+   <layout class="QHBoxLayout" name="horizontalLayout_7">
     <item>
      <layout class="QVBoxLayout" name="verticalLayout_16">
       <item>
@@ -8053,7 +8194,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QwtSlider" name="unit3CritDevSlider">
+     <widget class="QSlider" name="unit3CritDevSlider">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -8075,23 +8216,14 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
-      <property name="scalePosition">
-       <enum>QwtSlider::NoScale</enum>
-      </property>
-      <property name="handleSize">
-       <size>
-        <width>20</width>
-        <height>16</height>
-       </size>
-      </property>
      </widget>
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>611</x>
+     <x>612</x>
      <y>580</y>
      <width>95</width>
      <height>172</height>
@@ -8225,7 +8357,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QwtSlider" name="unit4CritDevSlider">
+     <widget class="QSlider" name="unit4CritDevSlider">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -8246,15 +8378,6 @@
       </property>
       <property name="orientation">
        <enum>Qt::Vertical</enum>
-      </property>
-      <property name="scalePosition">
-       <enum>QwtSlider::NoScale</enum>
-      </property>
-      <property name="handleSize">
-       <size>
-        <width>20</width>
-        <height>16</height>
-       </size>
       </property>
      </widget>
     </item>
@@ -8295,17 +8418,8 @@
   <zorder>line_12</zorder>
   <zorder>label_79</zorder>
   <zorder>layoutWidget</zorder>
-  <zorder>unit1CritDevSlider</zorder>
-  <zorder>unit2CritDevSlider</zorder>
-  <zorder>unit3CritDevSlider</zorder>
-  <zorder>unit4CritDevSlider</zorder>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>QwtSlider</class>
-   <extends>QWidget</extends>
-   <header>qwt_slider.h</header>
-  </customwidget>
   <customwidget>
    <class>SFLineEdit</class>
    <extends>QLineEdit</extends>

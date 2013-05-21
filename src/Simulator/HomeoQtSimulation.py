@@ -31,6 +31,8 @@ class HomeoQtSimulation(QObject):
         homeostatFilename           <aString>          The filename used to save the homeostat
         homeostatIsSaved            <aBoolean>         Whether the homeostat being simulated has been saved        
         simulDelay                  <anInteger>        Delay, in milliseconds, between two simulation steps
+        liveData                    <aDictionary>      aDictionary holding the critiDev and uniselector activation data for al the units 
+        liveDataOn                  <aBoolean>         enables live charting
     '''
 
 #===============================================================================
@@ -127,13 +129,15 @@ class HomeoQtSimulation(QObject):
         '''
         super(HomeoQtSimulation,self).__init__()
         self._homeostat = Homeostat()
-        self._maxRuns = 1000
+        self._maxRuns = 10
         self._dataFilename = self.createDefaultDataFilename()
         self._homeostatFilename = self.createDefaultHomeostatFilename()
         self._dataAreSaved = True       # There are no data to save yet
         self._homeostatIsSaved = False  # A new simulation has a new random Homeostat, unless is loaded form file
         self._simulDelay = 10           # in milliseconds
         self._isRunning = False
+        self.liveData = {}
+        self.liveDataOn = False
         
     def initializeAshbySimulation(self):
         '''Adds four fully connected units with random values to the simulator 
@@ -159,6 +163,11 @@ class HomeoQtSimulation(QObject):
         self._homeostat.removeConnectionFromUnit1ToUnit2(unit2, unit2)        # Environment unit is not self-connected"
         self._homeostat.unitWithName("Environment").uniselectorActive = False # Environment unit has no uniselector working"
         
+    def initializeLiveData(self):
+        "set up the liveData dictionary for live graphing"
+        for unit in  self._homeostat.homeoUnits:
+            self.liveData[unit] = []             # add empty list to hold critDev data for unit
+            self.liveData[unit.uniselector] = []   # add empty list to hold uniselector activation data for unit
 
 #===============================================================================
 # Running methods
@@ -177,6 +186,8 @@ class HomeoQtSimulation(QObject):
         while self._homeostat.time  < self._maxRuns  and self._isRunning == True:
 #            print "I am running cycle number: %u" % self._homeostat.time
             self._homeostat.runOnce()
+#            if self.liveDataOn:
+            self.updateLiveData()
             time.sleep(self._simulDelay / 1000)
             QApplication.processEvents() 
 
@@ -196,6 +207,19 @@ class HomeoQtSimulation(QObject):
         if self._homeostat.time  < self._maxRuns:
 #            print "I am running cycle number: %u" % self._homeostat.time
             self._homeostat.runOnce()
+    
+    def updateLiveData(self):
+        for unit in self._homeostat.homeoUnits:
+            self.liveData[unit].append(unit.criticalDeviation)
+            self.liveData[unit.uniselector].append(unit.uniselectorActivated)
+#            if unit.uniselectorActivated <> 0:
+#                sys.stderr.write("Uniselector activated for unit %s at time %u and value %u\n" % (unit.name, self._homeostat.time, unit.uniselectorActivated))
+            if self.liveDataOn:
+                self.emit(SIGNAL("liveDataCritDevChanged"), unit)
+#                self.emit(SIGNAL("liveDataUniselChanged"), unit.uniselector)
+            "for testing, replaces a self halt"
+#        if (self._homeostat.time % 100 ) == 0:
+#            print "time is a multiple of 100"
         
 
 #===============================================================================
@@ -327,15 +351,18 @@ class HomeoQtSimulation(QObject):
     def fullReset(self):
         """
         Start a new simulation:
-        fully reset the homeostat
-        clear the simulation data
-        set dataAreSaved to true
-        pick a new name
+        - fully reset the homeostat
+        - clear the simulation data
+        - set dataAreSaved to true
+        - pick a new name
         """
         self._homeostat.fullReset()
         self._homeostat.flushData()
         self._dataAreSaved = True
         self._homeostatFilename = self.createDefaultHomeostatFilename()
+    
+    def toggleLivedataOn(self):
+        self.liveDataOn = not self.liveDataOn
 
         
 #===============================================================================

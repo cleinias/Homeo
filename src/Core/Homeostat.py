@@ -6,7 +6,7 @@ Created on Mar 13, 2013
 from Core.HomeoDataCollector import  *
 from Helpers.General_Helper_Functions import withAllSubclasses
 import time, sys, pickle
-from PyQt4.QtCore import  *
+from PyQt4.QtCore import  QObject, SIGNAL
 from Helpers.QObjectProxyEmitter import emitter
 
 class HomeostatError(Exception):

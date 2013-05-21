@@ -2,6 +2,9 @@ from __future__ import  division
 from Helpers.HomeoNoise import *
 import numpy as np
 from scipy.stats import * 
+from Helpers.QObjectProxyEmitter import emitter
+from PyQt4.QtCore import QObject, SIGNAL
+import sys
 
 class ConnectionError(Exception):
     '''
@@ -42,6 +45,7 @@ class HomeoConnection(object):
         self.state = 'uniselector'
         self.newWeight(np.random.uniform(-1,1))
         self.status = True
+
 
     "class methods"
     @classmethod    
@@ -87,7 +91,7 @@ class HomeoConnection(object):
         return self._incomingUnit
     
     def setIncomingUnit(self, aHomeoUnit):
-        "Do nothing. Noise is set through other methods"
+        "Set incoming unit"
         self._incomingUnit = aHomeoUnit
     
     incomingUnit = property(fget = lambda self: self.getIncomingUnit(),
@@ -96,7 +100,7 @@ class HomeoConnection(object):
         return self._outgoingUnit
     
     def setOutgoingUnit(self, aHomeoUnit):
-        "Do nothing. Noise is set through other methods"
+        "Set outgoing unit"
         self._outgoingUnit = aHomeoUnit
     
     outgoingUnit = property(fget = lambda self: self.getOutgoingUnit(),
@@ -110,13 +114,19 @@ class HomeoConnection(object):
         raise ConnectionError("A HomeoConnection's switch can only be set through the newWeight method")
     
     switch = property(fget = lambda self: self.getSwitch(),
-                          fset = lambda self, value: self.setSwitch(value))   
+                          fset = lambda self, value: self.setSwitch(value))
+    
+    def toggleSwitch(self):
+        "reverses the polarity of the connection"
+        self.newWeight(self.weight * -1)
+        QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
+   
 
     def getWeight(self):
         return self._weight
     
     def setWeight(self, aWeight):
-        '''''Raise an exception:  weight can only be set with  
+        '''Raise an exception:  weight can only be set with  
         newWeight: a value, which takes care of absolute value and polarity (switch)'''
         raise ConnectionError("A HomeoConnection's weight can only be set  through the newWeight method")
     
@@ -134,6 +144,8 @@ class HomeoConnection(object):
             self._noise = aNoise
         else:
             raise ConnectionError("Noise must be between 0 and 1")
+        QObject.emit(emitter(self), SIGNAL('noiseChanged'), self._noise)
+
     
     noise = property(fget = lambda self: self.getNoise(),
                           fset = lambda self, value: self.setNoise(value))   
@@ -165,18 +177,17 @@ class HomeoConnection(object):
     def toggleStatus(self):
         self.status = not self.status
 
-    def getActive(self):
-        return self._active
+#    def getActive(self):
+#        return self._active
+#    
+#    def setActive(self, aBoolean):
+#        ""
+#        self._active = aBoolean
+#    
+    active = property(fget = lambda self: self.getStatus(),
+                          fset = lambda self, value: self.setStatus(value))   
     
-    def setActive(self, aBoolean):
-        ""
-        self._active = aBoolean
-    
-    active = property(fget = lambda self: self.getActive(),
-                          fset = lambda self, value: self.setActive(value))   
-    
-    def toggleStatus(self):
-        self.status
+ 
     def newWeight(self, aWeight):
         "updates weight and switch on the basis -1 >=  aWeight <= 1"
         
@@ -189,6 +200,12 @@ class HomeoConnection(object):
                 self._switch = np.sign(aWeight)
             else:
                 raise(ConnectionError, "A HomeoConnection weight must be between -1 and 1")
+        QObject.emit(emitter(self), SIGNAL('weightChanged'), self._weight)
+        QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
+#        if hasattr(self, 'outgoingUnit')  and hasattr(self, 'incomingUnit'):
+#            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal switchChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._switch))
+#            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal weightChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._weight))
+
 
     def outgoingUnit(self):
         ''' the "outgoingUnit" is the unit the signal is going *to*. 
