@@ -362,6 +362,7 @@ class HomeoQtSimulation(QObject):
         self._homeostat.flushData()
         self._dataAreSaved = True
         self._homeostatFilename = self.createDefaultHomeostatFilename()
+        self.initializeLiveData()
     
     def toggleLivedataOn(self):
         self.liveDataOn = not self.liveDataOn
