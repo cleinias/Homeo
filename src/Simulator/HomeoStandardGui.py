@@ -102,6 +102,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.showUniselActionButton.setCheckable(True)
         self.discardDataButton = QPushButton("Discard data")
         self.discardDataButton.setCheckable(True)
+        self.discardDataButton.setChecked(not self._simulation.homeostat.collectsData)  
         
         'Spinboxes and lineEdits'
         self.maxRunSpinBox = QSpinBox()
@@ -454,7 +455,7 @@ class HomeoSimulationControllerGui(QDialog):
         prec = HomeoUnit.precision                    
         for i in xrange(len(self._simulation.homeostat.homeoUnits)):
             widget = getattr(self._homeostat_gui, 'unit'+str(i+1)+'CritDevSlider')
-            slot = getattr(self._simulation.homeostat.homeoUnits[i], 'setCriticalDeviation')        # scaling to float in range done by the Unit 
+            slot = getattr(self._simulation.homeostat.homeoUnits[i], 'setCriticalDeviationFromSlider')        # scaling to float in range done by the Unit 
             widget.setMinimum(int(floor(getattr(self._simulation.homeostat.homeoUnits[i], 'minDeviation') * prec)))
             widget.setMaximum(int(floor(getattr(self._simulation.homeostat.homeoUnits[i], 'maxDeviation') * prec)))
             widget.setValue(int(floor(getattr(self._simulation.homeostat.homeoUnits[i], 'criticalDeviation') *  prec)))

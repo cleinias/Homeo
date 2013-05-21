@@ -49,9 +49,11 @@ class HomeoUnit(object):
                                          It acts as a dampening agent on the change of output. Min is 0 (no effect), max is 1 (no movement)
      density                  <Float>    The density  of the medium in which the metallic needle of the original Ashbian unit is free to move. 
                                          Used to compute the drag at high velocities, if needed
-     noise                    <Float>    As per Ashby's implementation, it represents the noise in the transmission medium 
-                                         of the unit's connection to itself. In our implementation it is always identical 
-                                         to the noise of a unit's first connection 
+     noise                    <Float>    Represents the **internal** noise of the  unit affecting the value of its critical deviation.
+                                         The default value is np.random.uniform(0, 0.1): a uniformly distributed value between 0 and 0.1
+                                         The actual noise on each iteration is a *normally distributed value* centered around 0,  with 
+                                         standard deviation = to 1/3 of the noise value, and proportional to the absolute magnitude of noise's value.
+                                         In other words, noise is modeled as a kind of "static" distortion of fixed max magnitude
      potentiometer             <Float>   As per Ashby's implementation, it represents the weight of the unit's connection to itself. 
                                          In our implementation it is always identical to the weight of a unit's 
                                          first connection,---Check Design for a Brain, chp.8  for details
@@ -127,7 +129,7 @@ class HomeoUnit(object):
     
     @classmethod    
     def readFrom(self,filename):
-        '''This is a class method that create a new HomeoUnit instance from filename'''
+        '''This is a class method that creates a new HomeoUnit instance from filename'''
         fileIn = open(filename, 'r')
         unpickler = pickle.Unpickler(fileIn)
         newHomeoUnit = unpickler.load()
@@ -208,14 +210,15 @@ class HomeoUnit(object):
         try:
             aValue = float(aValue)
 
-            '''Ugly hack to convert the magnified integer value we received from the slider 
-               into a float within Deviation range'''
-            if ((not -self.maxDeviation <= aValue <= self.maxDeviation) and 
-                    (-self.maxDeviation <= aValue/HomeoUnit.precision <= self.maxDeviation)):
-                    self._criticalDeviation = self.clipDeviation(aValue/HomeoUnit.precision)
-            else:
-                self._criticalDeviation = self.clipDeviation(aValue)
-                        
+#            '''Ugly hack to convert the magnified integer value we received from the slider 
+#               into a float within Deviation range'''
+#            if ((not -self.maxDeviation <= aValue <= self.maxDeviation) and 
+#                    (-self.maxDeviation <= aValue/HomeoUnit.precision <= self.maxDeviation)):
+#                    self._criticalDeviation = self.clipDeviation(aValue/HomeoUnit.precision)
+#            else:
+#                self._criticalDeviation = self.clipDeviation(aValue)
+            self._criticalDeviation = self.clipDeviation(aValue)
+              
             QObject.emit(emitter(self), SIGNAL('criticalDeviationChanged'), self._criticalDeviation)
             QObject.emit(emitter(self), SIGNAL('criticalDeviationChangedLineEdit'), str(round(self._criticalDeviation, 5)))
             scaledValueToEmit = int(floor(self._criticalDeviation * HomeoUnit.precision))
@@ -231,6 +234,13 @@ class HomeoUnit(object):
     
     criticalDeviation = property(fget = lambda self: self.getCriticalDeviation(),
                                  fset = lambda self, value: self.setCriticalDeviation(value))
+    
+    def setCriticalDeviationFromSlider(self, aValue):
+        '''Helper function to convert the magnified integer value 
+        coming from Qt int only sliders into the needed float Value'''
+        self.criticalDeviation = np.clip((aValue/HomeoUnit.precision), self.minDeviation, self.maxDeviation)
+        QObject.emit(emitter(self), SIGNAL('criticalDeviationChanged'), self._criticalDeviation)
+
     
     def getNextDeviation(self):
         return self._nextDeviation
@@ -1099,7 +1109,7 @@ class HomeoUnit(object):
         in subclasses'''
         
         "Applying the viscosity "
-        totalForce = totalForce * (1 - self._viscosity)
+        totalForce = totalForce * (1 - self.viscosity)
         
         newVelocity = totalForce / self.needleUnit.mass    
         '''In an Aristotelian model, the change in displacement (= the velocity) 
@@ -1255,8 +1265,12 @@ class HomeoUnit(object):
         newNoise.withCurrentAndNoise(self.criticalDeviation, self.noise)
         newNoise.distorting()    # since the noise is a distortion randomly select either a positive or negative value for noise"
         newNoise.normal()        # compute a value for noise by choosing a normally distributed random value centered around 0."
-        newNoise.proportional()  # consider noise as the ration of the current affected by noise"   
-        self._criticalDeviation = self._criticalDeviation + newNoise.getNoise()    # apply the noise to the critical deviation value"
+#        newNoise.proportional()  # consider noise as the ratio of the current affected by noise"
+        newNoise.linear()        # consider noise as  proportional to the  absolute magnitude of the noise parameter
+        addedNoise = newNoise.getNoise()
+#        sys.stderr.write("New noise is %f at time: %u\n" % (addedNoise, self.time))
+#        self.criticalDeviation = np.clip((self.criticalDeviation + addedNoise), self.minDeviation, self.maxDeviation)    # apply the noise to the critical deviation value"
+        self.criticalDeviation = self.criticalDeviation + addedNoise    # apply the noise to the critical deviation value"
 
 
     def updateTime(self):

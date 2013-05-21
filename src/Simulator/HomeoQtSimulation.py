@@ -138,6 +138,8 @@ class HomeoQtSimulation(QObject):
         self._isRunning = False
         self.liveData = {}
         self.liveDataOn = False
+        self._homeostat.collectsData = False
+        
         
     def initializeAshbySimulation(self):
         '''Adds four fully connected units with random values to the simulator 

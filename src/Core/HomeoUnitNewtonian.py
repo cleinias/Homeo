@@ -106,7 +106,7 @@ class HomeoUnitNewtonian(HomeoUnit):
             
         "Then compute displacement according to Newton's second law"    
             
-        acceleration = totalForce / self.needleUnit.mass              # As per  Newton's second law 
+        acceleration = totalForce / self.needleUnit.mass                   # As per  Newton's second law 
         displacement = self.currentVelocity + (1 / 2. * acceleration)      #  x - x0 = v0t + 1/2 a t, with t obviously =  1 
     
         "Testing"
@@ -126,6 +126,7 @@ class HomeoUnitNewtonian(HomeoUnit):
             if (((self.criticalDeviation + displacement) > self.maxDeviation) or  ((self.criticalDeviation + displacement) < self.minDeviation)):
                 outputString = "NEW CRITICAL DEVIATION WOULD BE OVER LIMITS WITH VALUE: %.3f \n" % (self.criticalDeviation + displacement)
                 sys.stderr.write(outputString)
+        
         return self.criticalDeviation + displacement
 
     def newNeedlePosition(self, aTorqueValue):
@@ -192,10 +193,14 @@ class HomeoUnitNewtonian(HomeoUnit):
         x = newDeviation
         v0 = currentVelocity
         Solving for v we get: v = 2(x-x0) -v0'''
-    
-        newDeviation = self.clipDeviation(self.nextDeviation)
-        "    currentVelocity := newDeviation-criticalDeviation."             "old version"
-        self.currentVelocity = 2 * (newDeviation -self. criticalDeviation) - self.currentVelocity
+        
+        if not (self.minDeviation < self.nextDeviation < self.maxDeviation):
+            newDeviation = self.clipDeviation(self.nextDeviation)
+            self.currentVelocity = 0
+            "currentVelocity := newDeviation-criticalDeviation."             #old version"
+        else:
+            newDeviation = self.nextDeviation
+            self.currentVelocity = 2 * (newDeviation -self. criticalDeviation) - self.currentVelocity
 
         "5. updates the needle's position (critical deviation) with clipping, if necessary, and updates the output"
     
