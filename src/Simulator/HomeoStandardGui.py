@@ -16,13 +16,16 @@ import matplotlib.pyplot as plt
 import pyqtgraph as pg
 from StringIO import StringIO
 from Simulator.Four_units_Homeostat_Standard_UI import Ui_ClassicHomeostat
+from math import floor
+from itertools import cycle
 
 
 class HomeoSimulationControllerGui(QDialog):    
     '''
-    A minimal GUI for a HomeoSimulation. 
-    It just provide access to starting and stopping the simulation and to saving and graphing data.
-    It does not provide interactive real-time access to the homeostat 
+    Part of a complete GUI for  a HomeoSimulation. 
+    It provides access to starting and stopping the simulation and to saving and graphing data.
+    Real-time interactive access to the homeostat is provided by class Classic_Homeostat,
+    which this class instantiates and then modify.
     
     The simulation itself is run in a separate thread held in simulThread. 
 
@@ -41,9 +44,19 @@ class HomeoSimulationControllerGui(QDialog):
         self._simulation = HomeoQtSimulation()
         self._simulation.initializeAshbySimulation()
 #        self._simulation.initializeAshbyFirstExperiment()
+        self._simulation.initializeLiveData()
         
         'Construct the dialog in code, and initialize and connect its widgets'
+        '''Create an empty dictionary indexed by HomeoUnits to hold references to 
+           all the pyQtGraph plot widgets and plotDataItems, used to visualize the data.
+           For each unit, the dictionary item has has 4-tuple of refs:   
+           - ref to Unit PlotItem,
+           - ref to Unit PlotDataItem
+           - ref to Unit Uniselector Activated PlotItem,
+           - ref to Unit Uniselector Activated PlotDataItem'''
+        self.pgChartsAndItems= {}  # 
         self.setupSimulationDialog()
+        
 
         "Create the main interface window for the 4 unit homeostat, initialize and connect its widget"
         self._homeostat_gui = Classic_Homeostat(parent=self)
@@ -68,9 +81,9 @@ class HomeoSimulationControllerGui(QDialog):
         on the right, and a homeostat control pane on the right
         """   
     
-        """===============================================================================
-            Simulation control pane
-           ==============================================================================="""
+        #===================================================================
+        # Simulation control pane
+        #===================================================================
         "Widgets"
         'Labels'
         self.maxRunsLabel = QLabel("Max Runs")
@@ -105,7 +118,6 @@ class HomeoSimulationControllerGui(QDialog):
         "Separators"
         self.runningSectionSep1 = Separator()
         self.runningSectionSep2 = Separator()
-        
         
         "Layout"
         simulationPaneLayout = QGridLayout()
@@ -163,6 +175,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.showUniselActionButton.clicked.connect(self.toggleShowUniselAction)
         self.discardDataButton.clicked.connect(self.toggleDiscardData)
 
+
         QObject.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged"), self.currentTimeSpinBox.setValue)
         
         #===============================================================================
@@ -182,6 +195,10 @@ class HomeoSimulationControllerGui(QDialog):
         self.saveDataButton = QPushButton("Save all data")
         self.saveGraphDataButton = QPushButton("Save plot data")
         self.graphButton = QPushButton("Graph")
+        "checkBoxes"
+        self.liveDataOnCheckbox = QCheckBox("Live Charting")
+
+        
 
         "layout"
         homeostatPaneLayout = QGridLayout()
@@ -215,6 +232,9 @@ class HomeoSimulationControllerGui(QDialog):
         homeostatPaneLayout.addWidget(self.saveHomeostatButton,7,0)
         homeostatPaneLayout.addWidget(self.graphButton,7,1)
         
+        'Row 8'
+        homeostatPaneLayout.addWidget(self.liveDataOnCheckbox, 8,0,1,2)
+        
         self.vertSeparator = QFrame()
         self.vertSeparator.setFrameShape(QFrame.VLine)
         self.vertSeparator.setFrameShadow(QFrame.Sunken)
@@ -235,19 +255,97 @@ class HomeoSimulationControllerGui(QDialog):
         self.saveDataButton.clicked.connect(self.saveAllData)
         self.saveGraphDataButton.clicked.connect(self.savePlotData)
         self.graphButton.clicked.connect(self.graphData)
+        self.liveDataOnCheckbox.stateChanged.connect(self._simulation.toggleLivedataOn)
+        
+        
+        #=======================================================================
+        # Output and Err panel
+        #=======================================================================
+        # Uncomment the following to add a stdout/stderr text widget
+        # Need to work on class Outlog first
+        #=======================================================================
+        # self.outAndErr = QTextEdit()
+        # sys.stdout = OutLog(self.outAndErr, sys.stdout)
+        # sys.stderr = OutLog(self.outAndErr, sys.stderr, QColor(255,0,0) ) 
+        # completeLayout = QVBoxLayout()
+        # completeLayout.addLayout(layout)
+        # completeLayout.addWidget(self.outAndErr)
+        # self.setLayout(completeLayout)
+        #=======================================================================
+        #=======================================================================
+
+        
                 
         #===============================================================================
-        # Global layout        
+        # Homeostat control pane and Simulation control pane  layout        
         #===============================================================================
-
+        
         layout = QHBoxLayout()
         layout.addLayout(homeostatPaneLayout)
         layout.addLayout(simulationPaneLayout)
-        self.setLayout(layout)
-        self.setWindowTitle("Homeo Simulation")
         
-        
+        #====================================================================================================================
+        # Adding  Plot widget(s) and plotDataItems with PyQtGraph - perhaps add 2 * units (crit dev + uniselector for each)
+        #====================================================================================================================
+        completeLayout = QVBoxLayout()
+        completeLayout.addLayout(layout)
 
+        completeLayout.addLayout(self.setupPgChartWidget())  
+        self.setLayout(completeLayout)
+        self.setWindowTitle("Homeo Simulation")
+
+    def minusXifPlus(self, x, number):
+        if number >= x:
+            return number - x
+        else: 
+            return 0
+                
+    def setupPgChartWidget(self):
+        '''
+        Setup the widget(s) that will show a live chart of units' critical deviation
+        '''
+        
+        plotsWindow = pg.GraphicsLayoutWidget()
+        plotLayout=QVBoxLayout()
+        colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,255)]
+        for unit, color, dataPlotRow, uniselPlotRow in  zip(self._simulation.homeostat.homeoUnits, 
+                                                           cycle(colors),
+                                                            xrange(0,len(self._simulation.homeostat.homeoUnits)*2,2),
+                                                            xrange(1,(len(self._simulation.homeostat.homeoUnits)*2),2)):
+            colorFaded = [self.minusXifPlus(170,x)  for x in color]
+            self.pgChartsAndItems[unit] = []
+            plotItemCritDev = plotsWindow.addPlot(row=dataPlotRow, col=0, rowspan=1, colspan=4,  name=(unit.name))
+            plotItemCritDev.addLine(y=0)
+            plotItemCritDev.setRange(rect=None, xRange=None, yRange=(unit.minDeviation, unit.maxDeviation),
+                               padding=None, update=True, disableAutoRange=True)
+            plotItemCritDev.hideAxis('bottom')
+            plotDataItemCritDev = plotItemCritDev.plot(self._simulation.liveData[unit], pen = color)
+            self.pgChartsAndItems[unit].append(plotItemCritDev)
+            self.pgChartsAndItems[unit].append(plotDataItemCritDev)
+#            plotItem.setTitle(unit.name)
+#            plotItem.setAutoPan(x=1000)
+            "adding uniselectors"
+            plotItemUnisel = plotsWindow.addPlot(row = uniselPlotRow, col=0, rowspan=1, colspan=4, name=(unit.name + "-unisel"))
+            plotItemUnisel.setRange(rect=None, xRange=None, yRange=(0, 1),
+                               padding=None, update=True, disableAutoRange=True)
+            plotItemUnisel.hideAxis('bottom')
+            plotItemUnisel.hideAxis('left')
+            plotDataItemUnisel = plotItemUnisel.plot(self._simulation.liveData[unit.uniselector], pen = colorFaded)
+            self.pgChartsAndItems[unit].append(plotItemUnisel)
+            self.pgChartsAndItems[unit].append(plotDataItemUnisel)
+            
+            "linking x axes"
+            plotItemCritDev.getViewBox().setXLink(plotItemUnisel.getViewBox())
+            
+        plotLayout.addWidget(plotsWindow)
+        self.connect(self._simulation, SIGNAL("liveDataCritDevChanged"), self.updateCritDevChart)
+#        self.connect(self._simulation, SIGNAL("liveDataUniselChanged"), self.updateCritDevChart)
+        return plotLayout
+ 
+    def updateCritDevChart(self, unitRef):
+        self.pgChartsAndItems[unitRef][1].setData(self._simulation.liveData[unitRef])
+        self.pgChartsAndItems[unitRef][3].setData(self._simulation.liveData[unitRef.uniselector])
+#             
 #===============================================================================
 #   Homeostat Gui setup        
 #==============================================================================="""
@@ -258,20 +356,27 @@ class HomeoSimulationControllerGui(QDialog):
         self.setupHomeostatGuiUnitsLineEdits()
         self.setupHomeostatGuiUnitsComboAndCheckBoxes()
         self.setupHomeostatGuiConnections()
-#        self.setupHomeostatGuiConnections()
-        
+#        self.setupHomeostatGuiUnitsQwtCritDevSliders()
+        self.setupHomeostatGuiUnitsStandardCritDevSliders()   
 
     def setupHomeostatGuiUnitsLineEdits(self):
         "Set up the line edit widgets for the units (not for the connections)"
         
-        '1. Set up a dictionary with homeoUnits properties  corresponding (shortened) widget names, desired visualized precision (if needed)'
-        lineEditsNames = {'name':('Name', '', 'LineEdit'), 'currentOutput':('Output', 5, 'LineEdit'), 'inputTorque':('Input', 5, 'LineEdit'), 
-            'mass':('Mass', 0, 'LineEdit'), 'potentiometer':('Potent', 4, 'LineEdit'), 
-            'noise':('Noise', 4, 'LineEdit'), 
-            'switch':('Switch', 0, 'LineEdit'), 'uniselectorTimeInterval':('UniselTiming', 0, 'LineEdit'), 
-            'maxDeviation':('MaxCritDev', 0, 'LineEdit'), 'minDeviation':('MinCritDev', 0, 'LineEdit'), 
-    #                      'density':('Density'. 0, 'LineEdit'),
-            'criticalDeviation':('CritDev', 7, 'LineEdit')}
+        '''1. Set up a dictionary with homeoUnits properties  corresponding (shortened) widget names, 
+        desired visualized precision (if needed), and range (if needed)'''
+        lineEditsNames = {'name':('Name', '', 'LineEdit'), 
+                          'currentOutput':('Output', 5, 'LineEdit', ()), 
+                          'inputTorque':('Input', 5, 'LineEdit', ()), 
+                          'mass':('Mass', 0, 'LineEdit',(1,100000)), 
+                          'potentiometer':('Potent', 4, 'LineEdit',(0,1)), 
+                          'viscosity':('Viscosity', 4,'LineEdit', (0,1)),
+                          'noise':('Noise', 4, 'LineEdit', (0,1)), 
+                          'switch':('Switch', 0, 'LineEdit', ()), 
+                          'uniselectorTimeInterval':('UniselTiming', 0, 'LineEdit', (0,1000)), 
+                          'maxDeviation':('MaxCritDev', 0, 'LineEdit', ()), 
+                          'minDeviation':('MinCritDev', 0, 'LineEdit', ()), 
+                          'density':('Density', 0, 'LineEdit',()),
+                          'criticalDeviation':('CritDev', 5, 'LineEdit', ())}
         
         '2. create and setup the widgets'
         for i in xrange(len(self._simulation.homeostat.homeoUnits)):
@@ -281,16 +386,23 @@ class HomeoSimulationControllerGui(QDialog):
                 slot = getattr(self._simulation.homeostat.homeoUnits[i], 'set' + propertyName[0].upper() + propertyName[1:])
                 if isinstance(attribute, basestring):
                     widget.setText(attribute)
-                    widget.textChanged.connect(slot)
-                    'Update signals still missing'
                 else:
+#                    floatValidator = QDoubleValidator()
+#                    if lineEdit[3]:                     # Empty lists and tuple are false in Python (Yak!) 
+#                        floatValidator.setRange(lineEdit[3][0], lineEdit[3][1])
+#                    widget.setValidator(floatValidator)
                     widget.setText(str(round(attribute, lineEdit[1])))
-                    widget.textChanged.connect(slot)
-                    'Update signals still missing'
+                widget.textModified.connect(slot)                
+                'Update signals'
+                signalFromUnit =  propertyName + "ChangedLineEdit"
+                QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL(signalFromUnit), widget.setText)
 
     def setupHomeostatGuiUnitsComboAndCheckBoxes(self):
-        'set up comboboxes, checkboxes, and slider for the units (not connections)'
-         
+        '''
+        Set up comboboxes and checkboxes for the units (not connections)'
+        The values of all of these widget cannot be changed from the simulation. 
+        Therefore, they do not listen to any signal coming from it. 
+        ''' 
         uniselectList = HomeoUniselector.__subclasses__()
         for i in xrange(len(self._simulation.homeostat.homeoUnits)):
             'comboBoxes'
@@ -300,9 +412,7 @@ class HomeoSimulationControllerGui(QDialog):
             for uniselectType in uniselectList:
                 widget.addItem(uniselectType.__name__.split("HomeoUniselector").pop())
                 widget.setEditable(False)
-#                ----             #Set current choice here
-#                slot = lambda i: self.changeUniselectorTypeForUnit(i,string)
-#                widget.currentIndexChanged.connect(lambda i: self.changeUniselectorTypeForUnit(i))          
+                widget.currentIndexChanged[str].connect(self._simulation.homeostat.homeoUnits[i].changeUniselectorType)          
             
             'unit is active'
             widget = getattr(self._homeostat_gui, 'unit'+str(i+1)+'ActiveComboBox')
@@ -311,7 +421,7 @@ class HomeoSimulationControllerGui(QDialog):
             widget.setEditable(False)
             widget.setCurrentIndex(("Active", "Non Active").index(self._simulation.homeostat.homeoUnits[i].status))            
             slot = getattr(self._simulation.homeostat.homeoUnits[i], 'toggleStatus')
-            widget.currentIndexChanged[str].connect(slot)  # set up signal here
+            widget.currentIndexChanged[str].connect(slot) 
             
             'uniselector active and uniselector sound checkboxes'
             widget = getattr(self._homeostat_gui, 'unit'+str(i+1)+'UniselOnCheckBox')
@@ -322,11 +432,42 @@ class HomeoSimulationControllerGui(QDialog):
             attribute = getattr(self._simulation.homeostat.homeoUnits[i].uniselector,'beeps')
             widget.setChecked(attribute)
             widget.stateChanged.connect(self._simulation.homeostat.homeoUnits[i].uniselector.toggleBeeping)             
-            'critical deviation slider'
+
+    def setupHomeostatGuiUnitsQwtCritDevSliders(self):
+        '''Set up the critical deviation slider. 
+           As Qt slider only accept integer values, we are using PyQwt sliders, which accept floats.'''
+                
+        for i in xrange(len(self._simulation.homeostat.homeoUnits)):
             widget = getattr(self._homeostat_gui, 'unit'+str(i+1)+'CritDevSlider')
-            widget.setMinimum(getattr(self._simulation.homeostat.homeoUnits[i], 'minDeviation'))
-            widget.setMaximum(getattr(self._simulation.homeostat.homeoUnits[i], 'maxDeviation'))
+            slot = getattr(self._simulation.homeostat.homeoUnits[i], 'setCriticalDeviation') 
+            widget.setRange(getattr(self._simulation.homeostat.homeoUnits[i], 'minDeviation'), getattr(self._simulation.homeostat.homeoUnits[i], 'maxDeviation'))
             widget.setValue(getattr(self._simulation.homeostat.homeoUnits[i], 'criticalDeviation'))
+            widget.valueChanged.connect(slot)
+            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL('criticalDeviationChanged'), widget.setValue)
+            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL('deviationRangeChanged'), widget.setRange)
+
+    def setupHomeostatGuiUnitsStandardCritDevSliders(self):
+        '''Set up the critical deviation sliders. 
+           As Qt sliders only accept integer values, we convert floats to integers using a precision parameter'''
+         
+        "the precision value to use for the float <--> integer conversion is stored in a class variable of HomeoUnit" 
+        prec = HomeoUnit.precision                    
+        for i in xrange(len(self._simulation.homeostat.homeoUnits)):
+            widget = getattr(self._homeostat_gui, 'unit'+str(i+1)+'CritDevSlider')
+            slot = getattr(self._simulation.homeostat.homeoUnits[i], 'setCriticalDeviation')        # scaling to float in range done by the Unit 
+            widget.setMinimum(int(floor(getattr(self._simulation.homeostat.homeoUnits[i], 'minDeviation') * prec)))
+            widget.setMaximum(int(floor(getattr(self._simulation.homeostat.homeoUnits[i], 'maxDeviation') * prec)))
+            widget.setValue(int(floor(getattr(self._simulation.homeostat.homeoUnits[i], 'criticalDeviation') *  prec)))
+
+            widget.valueChanged.connect(slot)
+           
+            'The value passed back to the slider are scaled by the Unit'
+            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL('criticalDeviationScaledChanged(int)'), widget.setValue) 
+            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL('minDeviationScaledChanged'), widget.setMinimum)  
+            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL('maxDeviationScaledChanged'), widget.setMaximum)  
+            
+
+
     
     def setupHomeostatGuiConnections(self):
         " Set up, initialize, and connect the line edits for all the units' connections's lineEdits widgets"
@@ -338,19 +479,24 @@ class HomeoSimulationControllerGui(QDialog):
                 attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit].incomingUnit, 'name')
                 widget.setText(attribute)
                 widget.setReadOnly(True)
+                QObject.connect(emitter(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit].incomingUnit), 
+                                SIGNAL("nameChanged"), widget.setText)
         
                 'spinboxes'
                 'setup a dictionary with spinboxes names, types, and setter methods'
                 spinBoxes = {'weight':('Double', 'newWeight'), 
-                             'switch':('','setSwitch'), 
+                             'switch':('','toggleSwitch'), 
                              'noise':('Double', 'setNoise')}
                 for spinBox, type in iteritems(spinBoxes):
                     widget = getattr(self._homeostat_gui, 'unit' + str(incomingUnit + 1) + 
                                      'Unit' + str(outgoingUnit+1)+ (spinBox[0].upper()) + spinBox[1:] + type[0] + 'SpinBox')
                     attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], spinBox)
                     slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], type[1])
+                    signalFromUnit = spinBox + "Changed"
                     widget.setValue(attribute)
                     widget.valueChanged.connect(slot)
+                    QObject.connect(emitter(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit]), SIGNAL(signalFromUnit), widget.setValue)
+
                 
                 'comboboxes'
                 'setup a dictionary with comboBoxes names, values, and setter methods indexed by attributes'
@@ -492,8 +638,6 @@ class HomeoSimulationControllerGui(QDialog):
         plt.grid(b=True, which='both', color='0.65',linestyle='-')
         plt.axis(ymin=self._simulation.homeostat.homeoUnits[0].minDeviation, ymax= self._simulation.homeostat.homeoUnits[0].maxDeviation)
         plt.show()
-#        pg.plot(dataArray)
-#        pg.show()
 
     def changeUniselectorTypeForUnit(self, aUnitNumber, aUniselectorType):
         pass
@@ -507,6 +651,43 @@ class Classic_Homeostat(QDialog, Ui_ClassicHomeostat):
         super(Classic_Homeostat, self).__init__(parent)
         self.setupUi(self)
 #        self.setGeometry
+
+
+
+
+class OutLog(object):
+    "A class used to redirect stdout and stderr to a text widget"
+    def __init__(self, aQTextEdit, out=None, color=None):
+        """(edit, out=None, color=None) -> can write stdout, stderr to a
+        QTextEdit.
+        edit = QTextEdit
+        out = alternate stream ( can be the original sys.stdout )
+        color = alternate color (i.e. color stderr a different color)
+        
+        Example usage:
+        import sys
+        sys.stdout = OutLog(edit, sys.stdout)
+        sys.stderr = OutLog(edit, sys.stderr, QtGui.QColor(255,0,0) )
+
+        """
+        self.textEdit = aQTextEdit
+        self.out = None
+        self.color = color
+
+    def write(self, msg):
+        if self.color:
+            tc = self.textEdit.textColor()
+            self.textEdit.setTextColor(self.color)
+
+        
+        self.textEdit.append(msg)
+
+        if self.color:
+            self.textEdit.setTextColor(tc)
+
+        if self.out:
+            self.out.write(msg)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

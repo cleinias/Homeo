@@ -51,7 +51,15 @@ class HomeoUnitNewtonian(HomeoUnit):
         return self._needleUnit.mass
         
     def setMass(self,aValue):
-        self._needleUnit.mass = aValue
+        try:
+            self._needleUnit.mass = float(aValue)
+        except ValueError:
+            sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Mass. The value was: %s\n" % (self.name, aValue))
+        finally:
+            QObject.emit(emitter(self), SIGNAL('massChanged'),  self.mass)
+            QObject.emit(emitter(self), SIGNAL('massChangedLineEdit'), str(int( self.mass)))
+            sys.stderr.write('%s emitted signals mass    Changed with value %f\n' % (self._name, self.mass))
+            
         
     mass = property(fget = lambda self: self.getMass(),
                     fset = lambda self, value: self.setMass(value))
@@ -192,7 +200,7 @@ class HomeoUnitNewtonian(HomeoUnit):
         "5. updates the needle's position (critical deviation) with clipping, if necessary, and updates the output"
     
         self.criticalDeviation =  newDeviation
-        self.computeOutput
+        self.computeOutput()
         nextDeviation = 0
 
     def stokesLawDrag(self):

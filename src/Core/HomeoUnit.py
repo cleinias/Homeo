@@ -1,5 +1,6 @@
 from __future__ import division
 from Core.HomeoNeedleUnit import *
+from PyQt4.QtCore import QObject, SIGNAL
 from Core.HomeoUniselectorAshby import *
 from Core.HomeoUniselector import *
 from Core.HomeoUniselectorUniformRandom import  *
@@ -9,6 +10,8 @@ import numpy as np
 import sys, pickle
 from copy import copy
 import StringIO
+from Helpers.QObjectProxyEmitter import emitter
+from math import  floor
 
 
 class HomeoUnitError(Exception):
@@ -60,6 +63,7 @@ class HomeoUnit(object):
      uniselectorTimeInterval    <Integer> The number of ticks that specifies how often to check that the output is in range and eventually activate uniselector
      uniselector                <HomeoUniselector> The uniselector that can modify the weights of input values coming from other units
      uniselectorActive          <Boolean>  Whether the uniselector mechanism is  active or not
+     uniselectorActivated       <Integer>  Whether the Uniselector has just been activated
      needleCompMethod           <String>    Whether the unit's needle's displacement depends of the sum of its input, 
                                           or on the ratio between the sum of the inputs and the maxDeviation. 
                                           Possible values are 'linear' and 'proportional', default is 'linear'.
@@ -107,6 +111,10 @@ class HomeoUnit(object):
                               density = 1,                      # density of water
                               maxViscosity = (10^6),
                               critThreshold = 0.9)              # the ration of max deviation beyond which a unit's essential variable's value  is considered critical 
+
+    '''The value of the precision need for a correct working of PyQt sliders (which only allow integers). 
+    Must be equal to same parameter set in HomeoStandardGui>>setupHomeostatGuiUnitsStandardCritDevSlider'''
+    precision = 10**5  
     
     allNames = set()        # set of units' unique names
         
@@ -148,6 +156,7 @@ class HomeoUnit(object):
         self._uniselectorActive = HomeoUnit.DefaultParameters['uniselectorActive']
         self._uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
         self._critThreshold = HomeoUnit.DefaultParameters['critThreshold']
+        self.density = HomeoUnit.DefaultParameters['density']
 
         '''A new unit is turned off, hence its velocity is 0, and 
           its criticalDeviation and nextDeviation are 0, and
@@ -167,6 +176,16 @@ class HomeoUnit(object):
                                       lengthEquivalence = 0.01,       # 1 unit of displacement corresponds to 1 cm (expressed in meters)"
                                       massEquivalence = 0.001)        # 1 unit of mass equals one gram, or 0.001 kg"
     
+        "give the unit  a default name"
+        self._name = None
+        self.setDefaultName()
+
+        
+        "turn the unit on"
+        self._status= 'Active'
+        self._debugMode = False
+        self._showUniselectorAction = False
+
         "creates the connection collection and connects the unit to itself in manual mode with a negative feedback"
         self._inputConnections = []
         self.setDefaultSelfConnection()
@@ -174,17 +193,10 @@ class HomeoUnit(object):
         "sets default uniselector settings."
         self.setDefaultUniselectorSettings()
         
-        "give the unit  a default name"
-        self._name = None
-        self.setDefaultName()
         
         "generates a random output to set the unit close to equilibrium"
         self.setDefaultOutputAndDeviation()
         
-        "turn the unit on"
-        self._status= 'Active'
-        self._debugMode = False
-        self._showUniselectorAction = False
         
         
     "properties with setter and getter methods for external access"
@@ -193,8 +205,29 @@ class HomeoUnit(object):
         return self._criticalDeviation
     
     def setCriticalDeviation(self,aValue):       
-#        self._criticalDeviation = self._criticalDeviation
-        self._criticalDeviation = aValue
+        try:
+            aValue = float(aValue)
+
+            '''Ugly hack to convert the magnified integer value we received from the slider 
+               into a float within Deviation range'''
+            if ((not -self.maxDeviation <= aValue <= self.maxDeviation) and 
+                    (-self.maxDeviation <= aValue/HomeoUnit.precision <= self.maxDeviation)):
+                    self._criticalDeviation = self.clipDeviation(aValue/HomeoUnit.precision)
+            else:
+                self._criticalDeviation = self.clipDeviation(aValue)
+                        
+            QObject.emit(emitter(self), SIGNAL('criticalDeviationChanged'), self._criticalDeviation)
+            QObject.emit(emitter(self), SIGNAL('criticalDeviationChangedLineEdit'), str(round(self._criticalDeviation, 5)))
+            scaledValueToEmit = int(floor(self._criticalDeviation * HomeoUnit.precision))
+            QObject.emit(emitter(self), SIGNAL('criticalDeviationScaledChanged(int)'), scaledValueToEmit)
+
+#            sys.stderr.write('Unit %s just emitted the signal criticalDeviationScaledChanged with value %s\n' 
+#                             % (self.name, int(floor(self._criticalDeviation * HomeoUnit.precision))))
+#            sys.stderr.write('Unit %s just emitted the signal criticalDeviationChanged with value %s\n' 
+#                             % (self.name, self._criticalDeviation))
+        except ValueError:
+            sys.stderr.write("Tried to assign a non-numeric value to unit %s's Critical Deviation. The value was: %s\n" % (self.name, aValue))
+    
     
     criticalDeviation = property(fget = lambda self: self.getCriticalDeviation(),
                                  fset = lambda self, value: self.setCriticalDeviation(value))
@@ -212,9 +245,20 @@ class HomeoUnit(object):
         ''''Viscosity must be between 0 (zero effect)
         and 1 (all force canceled out)'''
         
-        if aValue < 0 or aValue > 1:
-            raise(HomeoUnitError, "The value of viscosity must always be between 0 and 1 (included)")
-        else: self._viscosity = aValue
+        try:
+            float(aValue)
+            if aValue < 0 or aValue > 1:
+                raise(HomeoUnitError, "The value of viscosity must always be between 0 and 1 (included)")
+            else: 
+                self._viscosity = aValue
+        except ValueError:
+            sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Viscosity. The value was: %s\n" % (self.name, aValue))
+        finally:
+            QObject.emit(emitter(self), SIGNAL('viscosityChanged'), self._viscosity)
+            QObject.emit(emitter(self), SIGNAL('viscosityChangedLineEdit'), str(round(self._viscosity, 4)))
+
+
+        
         
     def getViscosity(self):
         return self._viscosity
@@ -235,8 +279,16 @@ class HomeoUnit(object):
         '''Changing the value of the potentiometer affects 
            the unit's connection to itself (which is always at position 0
            in the inputConnections list)'''
-        self._potentiometer = aValue
-        self._inputConnections[0].newWeight(aValue)
+        try:
+            self._potentiometer = float(aValue)
+            self._inputConnections[0].newWeight(float(aValue))
+        except ValueError:
+            sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Potentiometer. The value was: %s\n" % (self.name, aValue))
+        finally:
+            QObject.emit(emitter(self), SIGNAL('potentiometerDeviationChanged'), self._potentiometer)
+            QObject.emit(emitter(self), SIGNAL('potentiometerChangedLineEdit'), str(round(self._potentiometer, 4)))
+
+
 
     def getPotentiometer(self):
         return self._potentiometer
@@ -247,8 +299,14 @@ class HomeoUnit(object):
         '''Set the value of the unit's internal noise. 
             As noise must always be between 0 and 1,
             clip it otherwise'''
-    
-        self._noise = np.clip(aValue, 0,1)
+        try:
+            self._noise = np.clip(float(aValue), 0,1)
+        except ValueError:
+            sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Noise. The value was: %s\n" % (self.name, aValue))
+        finally:
+            QObject.emit(emitter(self), SIGNAL('noiseChanged'), self._noise)
+            QObject.emit(emitter(self), SIGNAL('noiseChangedLineEdit'), str(round(self._noise, 4)))
+
                     
     def getNoise(self):
         return self._noise
@@ -273,6 +331,7 @@ class HomeoUnit(object):
         self._needleCompMethod = aString
     def getNeedleCompMethod(self):
         return self._needleCompMethod
+    
     needleCompMethod = property(fget = lambda self: self.getNeedleCompMethod(),
                                 fset = lambda self, value: self.setNeedleCompMethod(value))  
         
@@ -281,10 +340,23 @@ class HomeoUnit(object):
            because the unit's deviation is centered around 0. 
            Ignore negative numbers'''
     
-        if aNumber > 0:
-            self._maxDeviation = aNumber
-        else:
-            raise(HomeoUnitError, "The value of MaxDeviation must always be positive")
+        try:
+            aNumber = float(aNumber)
+            if aNumber > 0: 
+                self._maxDeviation = aNumber
+                self.minDeviation = -aNumber
+            else:
+                raise(HomeoUnitError, "The value of MaxDeviation must always be positive")
+        except ValueError:
+            sys.stderr.write('Unit %s tried to  assign a non-numeric value to maxDeviation. Value was %s\n' % (self.name, aNumber))
+        finally:
+            QObject.emit(emitter(self), SIGNAL('maxDeviationChanged'), self._maxDeviation)
+            QObject.emit(emitter(self), SIGNAL('maxDeviationChangedLineEdit'), str(int(self._maxDeviation)))
+            scaledValueToEmit = int(floor(self._maxDeviation * HomeoUnit.precision))
+            QObject.emit(emitter(self), SIGNAL('maxDeviationScaledChanged)'),scaledValueToEmit)
+            QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
+#            sys.stderr.write('%s emitted signals maxDeviation with value %f, MinDeviation changed to %f\n' % (self._name, self._maxDeviation, self.minDeviation))
+            
             
     def getMaxDeviation(self):
         return self._maxDeviation
@@ -294,6 +366,7 @@ class HomeoUnit(object):
     def setOutputRange(self, minOut,maxOut):
         aDict = {'low':minOut, 'high':maxOut}
         self._outputRange = aDict
+    
     def getOutputRange(self):
         return self._outputRange
     outputRange = property(fget = lambda self: self.getOutputRange(),
@@ -318,7 +391,16 @@ class HomeoUnit(object):
                                  fset = lambda self, value: self.setUniselectorActivated(value))  
 
     def setUniselectorTimeInterval(self,aValue):
-        self._uniselectorTimeInterval = aValue
+        try:
+            self._uniselectorTimeInterval = abs(int(aValue))
+        except ValueError:
+            sys.stderr.write('Unit %s tried to assign a non-numeric value to the Uniselector Time Interval. Value is %s\n' % (self.name, aValue))
+        finally:
+            QObject.emit(emitter(self), SIGNAL('uniselectorTimeIntervalChanged'), self._uniselectorTimeInterval)
+            QObject.emit(emitter(self), SIGNAL('uniselectorTimeIntervalChangedLineEdit'), str(self._uniselectorTimeInterval))
+            sys.stderr.write('%s emitted signals UniselectorTimeIntervalChanged with value %f\n' 
+                             % (self._name,self._uniselectorTimeInterval))
+            
     def getUniselectorTimeInterval(self):
         return self._uniselectorTimeInterval
     uniselectorTimeInterval = property(fget = lambda self: self.getUniselectorTimeInterval(),
@@ -341,11 +423,12 @@ class HomeoUnit(object):
         
     def setCurrentOutput(self, aValue):
         self._currentOutput = aValue
-            
+        QObject.emit(emitter(self), SIGNAL("currentOutputChanged"), self._currentOutput)
+        QObject.emit(emitter(self), SIGNAL("currentOutputChangedLineEdit"), str(round(self._currentOutput, 5)))
+#        sys.stderr.write( 'Unit %s just emitted the signal currentOutputChanged \n' % self.name)   
         "For testing"
         if self._debugMode == True:
-            sys.stderr.write(str(self._currentOutput))
-            sys.stderr.write('\n')
+            sys.stderr.write(str(self._currentOutput)+'\n')
 
     currentOutput = property(fget = lambda self: self.getCurrentOutput(),
                              fset = lambda self, aBoolean: self.setCurrentOutput(aBoolean))
@@ -382,6 +465,9 @@ class HomeoUnit(object):
 
     def setInputTorque(self,aValue):
         self._inputTorque = aValue
+        QObject.emit(emitter(self), SIGNAL("inputTorqueChanged"), self._inputTorque)
+        QObject.emit(emitter(self), SIGNAL("inputTorqueChangedLineEdit"), str(round(self._inputTorque, 5)))
+
 
     inputTorque = property(fget = lambda self: self.getInputTorque(),
                            fset = lambda self,aValue: self.setInputTorque(aValue))
@@ -400,18 +486,28 @@ class HomeoUnit(object):
            aNumber must be either -1 or +1, otherwise method 
            raises an exception.
            
-           The switch can only be set by changing the sign of weight
+           The switch can only be set by changing the sign of the weight
            of the the unit's connection to itself (which is always 
            at location 0 in the inputConnections collection)'''
 
-        acceptValues = (-1,1)
+        acceptedValues = (-1,1)
         oldWeight = self.inputConnections[0].weight
-        newWeight = abs(oldWeight) * aNumber
-
-        if aNumber in acceptValues:
-            self.inputConnections[0].newWeight(newWeight)
-        else: 
-            raise  ConnectionError
+        
+        try:
+            if int(aNumber) in acceptedValues:
+                newWeight = abs(oldWeight) * int(aNumber)
+                self.inputConnections[0].newWeight(newWeight)
+                self._switch = int(aNumber)
+#                sys.stderr.write("Unit %s's new weight is %f: with switch equal to %f\n" % (self.name, self.inputConnections[0].weight, self.switch))
+            else: 
+                raise  ConnectionError
+        except ValueError:
+            sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Switch. The value was: %s\n" % (self.name, aNumber))
+        finally:
+            QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
+            QObject.emit(emitter(self), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
+#            sys.stderr.write('%s emitted signals switchChanged with value %f\n' % (self._name, self._switch))
+            
     
     def getSwitch(self):
         return self.inputConnections[0].switch
@@ -428,10 +524,24 @@ class HomeoUnit(object):
     def setMinDeviation(self,aNumber):
         '''Deviation is always centered around 0. 
            Min deviation must be less than 0 and equal to maxDeviation negated. 
-           If we change the minimum we must change the maximum as well'''
-        
-        if aNumber < 0:
-            self.maxDeviation = - aNumber
+           If we change the minimum we must change the maximum as well'''        
+                
+        try:
+            aNumber = float(aNumber)
+            if aNumber < 0 and self.maxDeviation <> - aNumber: 
+                self.maxDeviation = - aNumber
+        except ValueError:
+            sys.stderr.write("Unit %s tried to assign a non numeric value to  minDeviation. Value was %s\n" % (self.name, aNumber))
+        finally:
+#            QObject.emit(emitter(self), SIGNAL('maxDeviationChanged'), self._maxDeviation)
+#            QObject.emit(emitter(self), SIGNAL('maxDeviationChangedLineEdit'), str(int(self._maxDeviation)))
+            QObject.emit(emitter(self), SIGNAL('minDeviationChanged'), - self._maxDeviation)
+            QObject.emit(emitter(self), SIGNAL('minDeviationChangedLineEdit'), str(int(- self._maxDeviation)))
+            scaledValueToEmit = int(floor(- self._maxDeviation * HomeoUnit.precision))
+            QObject.emit(emitter(self), SIGNAL('minDeviationScaledChanged)'), scaledValueToEmit)
+            QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
+            sys.stderr.write('%s emitted signals maxDeviation with value %f, MinDeviation changed to %f\n' % (self._name, self._maxDeviation, - self._maxDeviation))
+ 
     
     minDeviation = property(fget = lambda self: self.getMinDeviation(),
                             fset= lambda self, aValue: self.setMinDeviation(aValue))
@@ -441,6 +551,8 @@ class HomeoUnit(object):
 
     def setDensity(self,aValue):
         self._density = aValue
+        QObject.emit(emitter(self),SIGNAL("densityChanged"), self._density)
+        QObject.emit(emitter(self), SIGNAL("densityChangedLineEdit"), str(round(self._density, 5)))
 
     density = property(fget = lambda self: self.getDensity(),
                            fset = lambda self,aValue: self.setDensity(aValue))
@@ -489,6 +601,7 @@ class HomeoUnit(object):
         if aString not in HomeoUnit.allNames:
             self._name = aString
             HomeoUnit.allNames.add(aString)
+            QObject.emit(emitter(self), SIGNAL("nameChanged"),self._name)
         else:
             raise(HomeoUnitError, "The name %s exists already" % aString)
     
@@ -529,8 +642,10 @@ class HomeoUnit(object):
     def setDefaultSelfConnection(self):
         '''
         Connect the unit to itself in manual mode with the default feedback and no noise
+        Update value of self.switch
         '''
         self.addConnectionUnitWeightPolarityNoiseState(self,self.potentiometer,HomeoUnit.DefaultParameters['switch'],0,'manual')
+        
 
 #===============================================================================
 #   
@@ -555,7 +670,7 @@ class HomeoUnit(object):
     def setDefaultOutputAndDeviation(self):
 
         randOutput = np.random.uniform(0,0.5)       #generates a random output to set the unit close to equilibrium"
-        currentOutput = randOutput
+        self.currentOutput = randOutput
 
         "set the critical deviation at time 0 to 0."
         self.criticalDeviation = 0
@@ -564,11 +679,23 @@ class HomeoUnit(object):
         '''Reset the weight, switch, and noise of all connections to random values 
            (see HomeoConnection for details).
            Do not touch the self connection of the unit to itself.  
-           Do not change the uniselector operation'''
+           Do not change the uniselector operation.
+           Reset Input Torque to 0'''
 
         for conn in self._inputConnections:  
                 if not conn.incomingUnit == self:
                     conn.randomizeConnectionValues()
+        self.inputTorque = 0
+        
+        
+    def changeUniselectorType(self, aUniselClassName):
+        "Change the unit's uniselector to a new instance of aUniselClassName (also abbreviated)"
+        validUniselTypeNames = [x.__name__ for x in HomeoUniselector.__subclasses__()]
+        if not "HomeoUniselector" in aUniselClassName:
+            aUniselClassName = str("HomeoUniselector" + aUniselClassName) # PyQt returns QString, which will fail  as keys of globals()
+        if aUniselClassName in validUniselTypeNames:
+            uniSelInstance = globals()[aUniselClassName]()
+            self.uniselector = uniSelInstance
         
     #===========================================================================
     # TESTING METHODS
@@ -741,10 +868,10 @@ class HomeoUnit(object):
         switchSign = np.sign(np.random.uniform(-1, 1)) #sets the polarity of the self-connection, avoid  0"
         if switchSign == 0:
             switchSign = 1
-        self._switch = switchSign 
+        self.switch = switchSign 
 
         "generates a random output  over the whole range"
-        self._currentOutput =  np.random.uniform(0, 1)    
+        self.currentOutput =  np.random.uniform(0, 1)    
         "set the critical deviation to a random value over the whole range"                                                         
         self._criticalDeviation = np.random.uniform(self.outputRange['low'], self.outputRange['high']) 
    
@@ -1017,7 +1144,7 @@ class HomeoUnit(object):
         However, it seems pointless to use differential equations to model a physical mechanism 
         which was originally devised to model a physiological system. After all, as Capehart 
         himself acknowledges, the Homeostat is a kind of analogue computer set up to compute 
-        the fundamental features of the system it models.. We might as well use a different 
+        the fundamental features of the system it models. We might as well use a different 
         kind of computer, assuming we are able to capture the essential features as accurately. 
         In this respect, we follow Ashby's suggestion that 'the torque on the magnet 
         [ i.e. the needle] is approximately proportional to the algebraic sum of the currents 

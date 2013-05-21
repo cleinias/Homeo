@@ -6,6 +6,7 @@ Created on Mar 15, 2013
 from __future__ import division
 from Helpers.General_Helper_Functions import Singleton
 import numpy as np
+import sys
 
 class HomeoNoise(object):
     '''
@@ -331,6 +332,7 @@ class HomeoNoise(object):
     
         "trim noise within the interval (0, 2 *noise)"
         return np.clip(noiseValue, minNoise, maxNoise)
+        
 
     def getNoiseDistortingUniformLinear(self):
         '''Return a distorting noise (centered around 0),
