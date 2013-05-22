@@ -770,8 +770,12 @@ class HomeoUnit(object):
     def setDefaultUniselectorSettings(self):
         "set default uniselector settings"
 
-        self.uniselector = HomeoUniselectorAshby()
-        self.uniselectorActive = True
+        try:
+            self.uniselector.setDefaults()
+        except AttributeError:
+            self.uniselector = HomeoUniselectorAshby()
+        finally:
+            self.uniselectorActive = True
     
     def setDefaultName(self):
         '''Assign a default unique name to the unit with the help of an auxiliary method'''
