@@ -18,6 +18,7 @@ from StringIO import StringIO
 from Simulator.Four_units_Homeostat_Standard_UI import Ui_ClassicHomeostat
 from math import floor
 from itertools import cycle
+from dbus.decorators import signal
 
 
 class HomeoSimulationControllerGui(QDialog):    
@@ -63,8 +64,8 @@ class HomeoSimulationControllerGui(QDialog):
         self.setupHomeostatGuiDialog()
         self._homeostat_gui.move(300,0)
         self._homeostat_gui.show()
-        print self.geometry()
-        print self._homeostat_gui.geometry()
+#        sys.stderr.write(self.geometry())
+#        sys.stderr.write(self._homeostat_gui.geometry())
         
         "prepare to run the simulation itself in a thread"
         self._simulThread = SimulationThread()
@@ -363,7 +364,7 @@ class HomeoSimulationControllerGui(QDialog):
     def setupHomeostatGuiUnitsLineEdits(self):
         "Set up the line edit widgets for the units (not for the connections)"
         
-        '''1. Set up a dictionary with homeoUnits properties  corresponding (shortened) widget names, 
+        '''1. Set up a dictionary with homeoUnits properties corresponding (shortened) widget names, 
         desired visualized precision (if needed), and range (if needed)'''
         lineEditsNames = {'name':('Name', '', 'LineEdit'), 
                           'currentOutput':('Output', 5, 'LineEdit', ()), 
@@ -401,8 +402,9 @@ class HomeoSimulationControllerGui(QDialog):
     def setupHomeostatGuiUnitsComboAndCheckBoxes(self):
         '''
         Set up comboboxes and checkboxes for the units (not connections)'
-        The values of all of these widget cannot be changed from the simulation. 
-        Therefore, they do not listen to any signal coming from it. 
+        The values of all of these widget cannot be changed from the simulation as normally running. 
+        However, they need to be updated when the simulation is reset. 
+        Therefore, they need to listen to signals coming from it. 
         ''' 
         uniselectList = HomeoUniselector.__subclasses__()
         for i in xrange(len(self._simulation.homeostat.homeoUnits)):
@@ -422,17 +424,24 @@ class HomeoSimulationControllerGui(QDialog):
             widget.setEditable(False)
             widget.setCurrentIndex(("Active", "Non Active").index(self._simulation.homeostat.homeoUnits[i].status))            
             slot = getattr(self._simulation.homeostat.homeoUnits[i], 'toggleStatus')
-            widget.currentIndexChanged[str].connect(slot) 
+            widget.currentIndexChanged[str].connect(slot)
+            signalFromUnit = 'unitActiveIndexchanged'
+            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL(signalFromUnit), widget.setCurrentIndex) 
             
             'uniselector active and uniselector sound checkboxes'
             widget = getattr(self._homeostat_gui, 'unit'+str(i+1)+'UniselOnCheckBox')
             attribute = getattr(self._simulation.homeostat.homeoUnits[i],'uniselectorActive')
             widget.setChecked(attribute)
-            widget.stateChanged.connect(self._simulation.homeostat.homeoUnits[i].toggleUniselectorActive)             
+            signalFromUnit = 'unitUniselOnChanged'
+            widget.stateChanged.connect(self._simulation.homeostat.homeoUnits[i].toggleUniselectorActive)
+            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL(signalFromUnit), widget.setChecked)             
             widget = getattr(self._homeostat_gui, 'unit'+str(i+1)+'UniselSoundCheckBox')
             attribute = getattr(self._simulation.homeostat.homeoUnits[i].uniselector,'beeps')
             widget.setChecked(attribute)
-            widget.stateChanged.connect(self._simulation.homeostat.homeoUnits[i].uniselector.toggleBeeping)             
+            signalFromUnit = 'uniselSoundChanged'
+            widget.stateChanged.connect(self._simulation.homeostat.homeoUnits[i].uniselector.toggleBeeping)
+            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i].uniselector), SIGNAL(signalFromUnit), widget.setChecked)             
+             
 
     def setupHomeostatGuiUnitsQwtCritDevSliders(self):
         '''Set up the critical deviation slider. 
