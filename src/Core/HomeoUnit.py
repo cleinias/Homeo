@@ -650,6 +650,25 @@ class HomeoUnit(object):
     def setShowUniselectorAction(self, aValue):
         '''Do nothing. _showUniselectorAction is set
          with the toggleShowUniselectorAction method'''
+        
+    'Convenience property to get to the mass stored in the needleUnit'
+    def getMass(self):
+        return self._needleUnit.mass
+        
+    def setMass(self,aValue):
+        try:
+            self._needleUnit.mass = float(aValue)
+        except ValueError:
+            sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Mass. The value was: %s\n" % (self.name, aValue))
+        finally:
+            QObject.emit(emitter(self), SIGNAL('massChanged'),  self.mass)
+            QObject.emit(emitter(self), SIGNAL('massChangedLineEdit'), str(int( self.mass)))
+            sys.stderr.write('%s emitted signals mass    Changed with value %f\n' % (self._name, self.mass))
+            
+        
+    mass = property(fget = lambda self: self.getMass(),
+                    fset = lambda self, value: self.setMass(value))
+
     
     #===========================================================================
     #  End of setter and getter methods"
