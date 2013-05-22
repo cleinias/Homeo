@@ -31,21 +31,28 @@ class HomeoUniselectorAshby(HomeoUniselector):
 
     def __init__(self):
         '''
-        Initializes the interval and the steps to default values. 
-        The lowerBound and upperBound are always 0 and 1, as per Ashby's implementation, 
-        because they represent the fraction of the input to reach the unit 
-        (see Design for a Brain sec 8/2, p. 102 (1960 ed.)
-        '''
-   
+        Initialize according to superclass and then call a local initialization function
+        that may also be called outside of the constructor call'''
         super(HomeoUniselectorAshby,self).__init__()
-        self._lowerBound = 0
-        self._upperBound = 1
+        self.setDefaults()
+
+    def setDefaults(self):
+        '''
+        Initializes the interval and the steps to default values. 
+        Notice that the lowerBound and upperBound are always 0 and 1, as per Ashby's implementation, 
+        because they represent the fraction of the input to reach the unit. 
+        They are set in the superclass's init method.
+        (see Design for a Brain sec 8/2, p. 102 (1960 ed.))
+        '''
         self._index = 0
         self._steps = 12
         self._unitsControlled = 10
         self._unitIndex = 0
         self._ashbyKind = 'RandomizedValues'
         self.produceSequence()
+        self._beeps = False
+        QObject.emit(emitter(self), SIGNAL('uniselSoundChanged'), self._beeps)
+
         
     def setLowerBound(self,aValue):
         '''Do nothing. The lowerBound is always 0'''
@@ -57,7 +64,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
     
     def setSteps(self, aValue):
         '''
-        steps is always a positive integer'''
+        steps is always a positive integer > 0'''
         if int(abs(aValue)) == 0:
             self._steps = 1
         else:
