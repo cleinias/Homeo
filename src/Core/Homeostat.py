@@ -196,10 +196,12 @@ class Homeostat(object):
 #===============================================================================
 
     def fullReset(self):
-        '''Reset the values of the units and their connections to random values. 
+        '''Reset the values of the units and their connections to default values  for basic parameters
+           and to random values for deviation, weights, etc. 
            Reset time to 0.'''
 
         self.timeReset()
+        self.restoreDefaultValuesForAllUnits()
         self.randomizeValuesforAllUnits()
 
     def runFor(self,ticks):
@@ -287,7 +289,7 @@ class Homeostat(object):
     def timeReset(self):
         '''Reset time to 0. Does not change the external values of the units 
            or their connections, but do change their internal computational values: 
-           input, nextdeviation, etcetera'''
+           input, nextDeviation, etcetera'''
 
         self.time = 0
         for unit in self.homeoUnits:
@@ -367,6 +369,12 @@ class Homeostat(object):
         for unit in self.homeoUnits:
             unit.setRandomValues()
             unit.randomizeAllConnectionValues()
+            
+    def restoreDefaultValuesForAllUnits(self):
+        "Restore default values for a unit's basic parameters"
+        for unit in self.homeoUnits:
+            unit.initializeBasicParameters()
+            unit.initializeUniselector()
             
     def unitWithName(self,aString):
         '''Return the Unit with name aString, if it exists,
