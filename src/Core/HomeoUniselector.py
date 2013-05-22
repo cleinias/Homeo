@@ -42,9 +42,7 @@ class HomeoUniselector(object):
     
     def __init__(self):
         "Initialize the HomeoUniselector instance"
-        self.setDefaults()
-        
-    def setDefaults(self):        
+  
         '''sets the defaults for the uniselector weights. 
         Can be (and usually is) overridden by subclasses'''
         
