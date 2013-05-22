@@ -199,8 +199,84 @@ class HomeoUnit(object):
         "generates a random output to set the unit close to equilibrium"
         self.setDefaultOutputAndDeviation()
         
+    def initializeBasicParameters(self):
+        pass
+    
+    def initializeUniselector(self):
+        pass
+    
+    def allValuesChanged(self):
+        """
+            Send out signals corresponding to changes for all the relevant values of a unit,
+            so the GUI (if any) can update itself
+        """
+        'Name'
+        QObject.emit(emitter(self), SIGNAL("nameChanged"),self._name)
+        QObject.emit(emitter(self), SIGNAL("nameChangedLineEdit"),self._name)
+
+
+        'Active'
         
+        'Output'
+        QObject.emit(emitter(self), SIGNAL("currentOutputChanged"), self._currentOutput)
+        QObject.emit(emitter(self), SIGNAL("currentOutputChangedLineEdit"), str(round(self._currentOutput, 5)))
         
+        'Input'
+        QObject.emit(emitter(self), SIGNAL("inputTorqueChanged"), self._inputTorque)
+        QObject.emit(emitter(self), SIGNAL("inputTorqueChangedLineEdit"), str(round(self._inputTorque, 5)))
+        
+        'Mass'
+        QObject.emit(emitter(self), SIGNAL('massChanged'),  self.mass)
+        QObject.emit(emitter(self), SIGNAL('massChangedLineEdit'), str(int( self.mass)))
+        
+        'Switch'
+        QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
+        QObject.emit(emitter(self), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
+
+        
+        'Potentiometer'
+        QObject.emit(emitter(self), SIGNAL('potentiometerDeviationChanged'), self._potentiometer)
+        QObject.emit(emitter(self), SIGNAL('potentiometerChangedLineEdit'), str(round(self._potentiometer, 4)))
+
+        
+        'Viscosity'
+        QObject.emit(emitter(self), SIGNAL('viscosityChanged'), self._viscosity)
+        QObject.emit(emitter(self), SIGNAL('viscosityChangedLineEdit'), str(round(self._viscosity, 4)))
+
+        
+        'Noise'
+        QObject.emit(emitter(self), SIGNAL('noiseChanged'), self._noise)
+        QObject.emit(emitter(self), SIGNAL('noiseChangedLineEdit'), str(round(self._noise, 4)))
+
+        
+        'Density'
+        QObject.emit(emitter(self), SIGNAL('densityChanged'), self._density)
+        QObject.emit(emitter(self), SIGNAL('densityChangedLineEdit'), str(round(self._density, 5)))
+        
+        'Critical deviation, including min and max'        
+        QObject.emit(emitter(self), SIGNAL('criticalDeviationChanged'), self._criticalDeviation)
+        QObject.emit(emitter(self), SIGNAL('criticalDeviationChangedLineEdit'), str(round(self._criticalDeviation, 5)))
+        scaledValueToEmit = int(floor(self._criticalDeviation * HomeoUnit.precision))
+        QObject.emit(emitter(self), SIGNAL('criticalDeviationScaledChanged(int)'), scaledValueToEmit)
+        
+        QObject.emit(emitter(self), SIGNAL('minDeviationChanged'), - self._maxDeviation)
+        QObject.emit(emitter(self), SIGNAL('minDeviationChangedLineEdit'), str(int(- self._maxDeviation)))
+        scaledValueToEmit = int(floor(- self._maxDeviation * HomeoUnit.precision))
+        QObject.emit(emitter(self), SIGNAL('minDeviationScaledChanged)'), scaledValueToEmit)
+        QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
+
+        QObject.emit(emitter(self), SIGNAL('maxDeviationChanged'), self._maxDeviation)
+        QObject.emit(emitter(self), SIGNAL('maxDeviationChangedLineEdit'), str(int(self._maxDeviation)))
+        scaledValueToEmit = int(floor(self._maxDeviation * HomeoUnit.precision))
+        QObject.emit(emitter(self), SIGNAL('maxDeviationScaledChanged)'),scaledValueToEmit)
+        QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
+
+        'Uniselector parameters'
+        
+#        self.uniselector.allValueChanged()
+        
+ 
+    
     "properties with setter and getter methods for external access"
     
     def getCriticalDeviation(self):
