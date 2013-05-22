@@ -27,7 +27,8 @@ class HomeoUnitNewtonian(HomeoUnit):
     def __init__(self):
         '''
         The mass of the needle unit is directly responsible for the unit's inertia and, 
-        therefore, for its sensitivity to external forces (inputs). We initialize it 
+        therefore, for its sensitivity to external forces (inputs). The default value is stored
+        in the superclass (HomeoUnit) dictionary. We need to initialize it 
         to a rather large value (expressed in internal units) to ensure a minimum
         of stability 
         '''
@@ -35,7 +36,6 @@ class HomeoUnitNewtonian(HomeoUnit):
         "initialize according to superclass first"
         super(HomeoUnitNewtonian, self).__init__()
 
-        self.needleUnit.mass = 1000
 
     def clearFutureValues(self):
         "sets to 0 the internal values used for computing future states. "
