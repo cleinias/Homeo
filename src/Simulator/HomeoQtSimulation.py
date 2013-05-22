@@ -363,9 +363,17 @@ class HomeoQtSimulation(QObject):
         self._dataAreSaved = True
         self._homeostatFilename = self.createDefaultHomeostatFilename()
         self.initializeLiveData()
+        self.allUnitValuesChanged()
+    
+    def allUnitValuesChanged(self):
+        '''forces each unit to send out update signals for all their relevant parameters, 
+        so the GUI can update itself'''
+        for unit in self.homeostat.homeoUnits:
+            unit.allValuesChanged()
     
     def toggleLivedataOn(self):
         self.liveDataOn = not self.liveDataOn
+        
 
         
 #===============================================================================
