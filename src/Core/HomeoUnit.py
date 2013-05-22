@@ -200,7 +200,8 @@ class HomeoUnit(object):
         self.setDefaultOutputAndDeviation()
         
     def initializeBasicParameters(self):
-        pass
+        '''Reset uniselector to its default parameters, but do not change its type'''
+        self.uniselector.setDefaults()
     
     def initializeUniselector(self):
         pass
