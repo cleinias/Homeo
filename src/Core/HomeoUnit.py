@@ -282,8 +282,9 @@ class HomeoUnit(object):
         QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
 
         'Uniselector parameters'
+        QObject.emit(emitter(self), SIGNAL("uniselectorTimeIntervalChangedLineEdit"), str(int(self.uniselectorTimeInterval)))
         
-#        self.uniselector.allValueChanged()
+#        self.uniselector.allValuesChanged()
         
  
     
@@ -751,7 +752,7 @@ class HomeoUnit(object):
         finally:
             QObject.emit(emitter(self), SIGNAL('massChanged'),  self.mass)
             QObject.emit(emitter(self), SIGNAL('massChangedLineEdit'), str(int( self.mass)))
-            sys.stderr.write('%s emitted signals mass    Changed with value %f\n' % (self._name, self.mass))
+#            sys.stderr.write('%s emitted signals mass    Changed with value %f\n' % (self._name, self.mass))
             
         
     mass = property(fget = lambda self: self.getMass(),
