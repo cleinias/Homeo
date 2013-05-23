@@ -10,6 +10,7 @@ from datetime import datetime
 import os, pickle
 from PyQt4.QtCore import  *
 from PyQt4.QtGui import QApplication 
+from collections import deque
 
 class HomeoQtSimulation(QObject):
     '''
@@ -33,6 +34,9 @@ class HomeoQtSimulation(QObject):
         simulDelay                  <anInteger>        Delay, in milliseconds, between two simulation steps
         liveData                    <aDictionary>      aDictionary holding the critiDev and uniselector activation data for al the units 
         liveDataOn                  <aBoolean>         enables live charting
+        liveDataWindow              <aDictionary>      a Dictionary holding double-ended queues holding only the last maxDataPoints number of datapoints
+        maxDataPoints               <anInteger>        the maximum dataPoints to hold for live charting
+        panningCharts               <aBoolean>         whether charts should show the complete history or only the last MaxDataPoints
     '''
 
 #===============================================================================
@@ -139,6 +143,9 @@ class HomeoQtSimulation(QObject):
         self.liveData = {}
         self.liveDataOn = False
         self._homeostat.collectsData = False
+        self.maxDataPoints = 500
+        self.liveDataWindow = {}
+        self.panningCharts = True       # default is to use panning charts. Can be changed in the Gui
         
         
     def initializeAshbySimulation(self):
@@ -168,8 +175,11 @@ class HomeoQtSimulation(QObject):
     def initializeLiveData(self):
         "set up the liveData dictionary for live graphing"
         for unit in  self._homeostat.homeoUnits:
-            self.liveData[unit] = []             # add empty list to hold critDev data for unit
-            self.liveData[unit.uniselector] = []   # add empty list to hold uniselector activation data for unit
+            self.liveData[unit] = []                         # add empty list to hold critDev data for unit
+            self.liveData[unit.uniselector] = []             # add empty list to hold uniselector activation data for unit
+            self.liveDataWindow[unit] = deque(maxlen=self.maxDataPoints)              # add empty queue to hold critDev data for unit
+            self.liveDataWindow[unit.uniselector] = deque(maxlen=self.maxDataPoints)        # add empty queue to hold uniselector activation data for unit
+
 
 #===============================================================================
 # Running methods
@@ -218,6 +228,9 @@ class HomeoQtSimulation(QObject):
         for unit in self._homeostat.homeoUnits:
             self.liveData[unit].append(unit.criticalDeviation)
             self.liveData[unit.uniselector].append(unit.uniselectorActivated)
+            self.liveDataWindow[unit].append(unit.criticalDeviation)
+            self.liveDataWindow[unit.uniselector].append(unit.uniselectorActivated)
+            
 #            if unit.uniselectorActivated <> 0:
 #                sys.stderr.write("Uniselector activated for unit %s at time %u and value %u\n" % (unit.name, self._homeostat.time, unit.uniselectorActivated))
             if self.liveDataOn:
@@ -378,6 +391,8 @@ class HomeoQtSimulation(QObject):
     def toggleLivedataOn(self):
         self.liveDataOn = not self.liveDataOn
         
+    def toggleLivedataWindow(self):
+        self.panningCharts = not self.panningCharts
 
         
 #===============================================================================
