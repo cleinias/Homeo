@@ -99,3 +99,6 @@ class HomeoUniselector(object):
         
         raise SubclassResponsibility()
     
+    def allValuesChanged(self):
+        "Signals back to GUI that all its relevant values have changed"
+        pass

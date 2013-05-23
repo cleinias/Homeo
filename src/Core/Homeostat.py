@@ -231,6 +231,7 @@ class Homeostat(object):
                     if self.collectsData:
                         self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
                     unit.time =  self.time
+#                    sys.stderr.write("the status of %s in the function is %s and in the ivar is %s \n" % (unit.name, unit.isActive(), unit._status))
                     if unit.isActive():
                         unit.selfUpdate()
                 self.time +=  1
