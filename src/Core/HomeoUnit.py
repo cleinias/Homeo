@@ -283,6 +283,8 @@ class HomeoUnit(object):
 
         'Uniselector parameters'
         QObject.emit(emitter(self), SIGNAL("uniselectorTimeIntervalChangedLineEdit"), str(int(self.uniselectorTimeInterval)))
+        QObject.emit(emitter(self), SIGNAL("unitUniselOnChanged"), self.uniselectorActive)
+
         
 #        self.uniselector.allValuesChanged()
         
