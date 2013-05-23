@@ -209,6 +209,10 @@ class HomeoQtSimulation(QObject):
         if self._homeostat.time  < self._maxRuns:
 #            print "I am running cycle number: %u" % self._homeostat.time
             self._homeostat.runOnce()
+            self.updateLiveData()
+#            time.sleep(self._simulDelay / 1000)
+            QApplication.processEvents() 
+
     
     def updateLiveData(self):
         for unit in self._homeostat.homeoUnits:
