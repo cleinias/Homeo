@@ -317,7 +317,7 @@ class HomeoSimulationControllerGui(QDialog):
             colorFaded = [self.minusXifPlus(170,x)  for x in color]
             self.pgChartsAndItems[unit] = []
             plotItemCritDev = plotsWindow.addPlot(row=dataPlotRow, col=0, rowspan=1, colspan=4,  name=(unit.name))
-            plotItemCritDev.addLine(y=0)
+            plotItemCritDev.addLine(y=0, pen ={'color' : '#E6E6AF'})  #pale muted yellow color in hex RGB value
             plotItemCritDev.setRange(rect=None, xRange=None, yRange=(unit.minDeviation, unit.maxDeviation),
                                padding=None, update=True, disableAutoRange=True)
             plotItemCritDev.hideAxis('bottom')
