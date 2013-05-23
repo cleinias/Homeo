@@ -423,7 +423,7 @@ class HomeoSimulationControllerGui(QDialog):
             widget.addItems(('Active', 'Non Active'))
             widget.setEditable(False)
             widget.setCurrentIndex(("Active", "Non Active").index(self._simulation.homeostat.homeoUnits[i].status))            
-            slot = getattr(self._simulation.homeostat.homeoUnits[i], 'toggleStatus')
+            slot = getattr(self._simulation.homeostat.homeoUnits[i], 'setStatus')
             widget.currentIndexChanged[str].connect(slot)
             signalFromUnit = 'unitActiveIndexchanged'
             QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL(signalFromUnit), widget.setCurrentIndex) 

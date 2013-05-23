@@ -202,6 +202,7 @@ class HomeoUnit(object):
         
         "turn the unit on"
         self._status= 'Active'
+#        sys.stderr.write("At time %u unit %s status is in the ivar is: %s in the property is: %s and in the function is: %s\n" % (self.time, self.name, self._status, self.status, self.isActive()))
         self._debugMode = False
 
         "sets default uniselector settings."
@@ -211,8 +212,8 @@ class HomeoUnit(object):
         self.setDefaultOutputAndDeviation()
     
     def initializeUniselector(self):
-         '''Reset uniselector to its default parameters, but do not change its type'''
-         self.uniselector.setDefaults()
+        '''Reset uniselector to its default parameters, but do not change its type'''
+        self.uniselector.setDefaults()
 
     
     def allValuesChanged(self):
@@ -226,6 +227,7 @@ class HomeoUnit(object):
 
 
         'Active'
+        QObject.emit(emitter(self), SIGNAL('unitActiveIndexchanged'), ("Active", "Non Active").index(self.status))
         
         'Output'
         QObject.emit(emitter(self), SIGNAL("currentOutputChanged"), self._currentOutput)
@@ -284,9 +286,6 @@ class HomeoUnit(object):
         'Uniselector parameters'
         QObject.emit(emitter(self), SIGNAL("uniselectorTimeIntervalChangedLineEdit"), str(int(self.uniselectorTimeInterval)))
         QObject.emit(emitter(self), SIGNAL("unitUniselOnChanged"), self.uniselectorActive)
-
-        
-#        self.uniselector.allValuesChanged()
         
  
     
