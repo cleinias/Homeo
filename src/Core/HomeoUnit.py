@@ -112,7 +112,8 @@ class HomeoUnit(object):
                               uniselectorActivated = 0,
                               density = 1,                      # density of water
                               maxViscosity = (10^6),
-                              critThreshold = 0.9)              # the ration of max deviation beyond which a unit's essential variable's value  is considered critical 
+                              critThreshold = 0.9,              # the ratio of max deviation beyond which a unit's essential variable's value  is considered critical
+                              mass = 1000)                      # the mass of the needle unit, representing the inertia of the unit. A low value will make it very unstable
 
     '''The value of the precision need for a correct working of PyQt sliders (which only allow integers). 
     Must be equal to same parameter set in HomeoStandardGui>>setupHomeostatGuiUnitsStandardCritDevSlider'''
@@ -139,6 +140,15 @@ class HomeoUnit(object):
     #  INITIALIZATIONS AND GETTERS, SETTERS, PROPERTIES
     #===========================================================================
     def __init__(self):
+
+        "creates the connection collection and connects the unit to itself in manual mode with a negative feedback"
+        self.initializeBasicParameters()
+        self._inputConnections = []
+        self.setDefaultSelfConnection()
+
+        
+    def initializeBasicParameters(self):
+        '''Reset uniselector to its default parameters, but do not change its type'''
         '''
         Initialize the HomeoUnit with the default parameters found in the Class variable 
         DefaultParameters. Assign a random but unique name and sets the output to 
@@ -146,6 +156,7 @@ class HomeoUnit(object):
         These values are supposed to be overridden in normal practice, because the values are set by the simulation 
         (an instance of HomeoSimulation or by the graphic interface)
         '''
+        self._showUniselectorAction = False
         self._viscosity = HomeoUnit.DefaultParameters['viscosity']
         self._maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
         self._outputRange = HomeoUnit.DefaultParameters['outputRange']
@@ -159,7 +170,7 @@ class HomeoUnit(object):
         self._uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
         self._critThreshold = HomeoUnit.DefaultParameters['critThreshold']
         self.density = HomeoUnit.DefaultParameters['density']
-
+        
         '''A new unit is turned off, hence its velocity is 0, and 
           its criticalDeviation and nextDeviation are 0, and
           its inputTorque (from other units) is 0, and
@@ -170,7 +181,6 @@ class HomeoUnit(object):
         self._inputTorque = 0
         self._currentOutput = 0 
         
-        self.needleUnit = HomeoNeedleUnit()
 
 
         "sets the correspondence between the simulation units and real physical units"
@@ -182,25 +192,20 @@ class HomeoUnit(object):
         self._name = None
         self.setDefaultName()
 
+        'Set the mass of the needle unit. Its value must be rather high (~= 1000) to avoid instability)'
+        self._needleUnit = HomeoNeedleUnit()
+        self.mass = HomeoUnit.DefaultParameters['mass']
+
         
         "turn the unit on"
         self._status= 'Active'
         self._debugMode = False
-        self._showUniselectorAction = False
-
-        "creates the connection collection and connects the unit to itself in manual mode with a negative feedback"
-        self._inputConnections = []
-        self.setDefaultSelfConnection()
 
         "sets default uniselector settings."
         self.setDefaultUniselectorSettings()
-        
-        
+                
         "generates a random output to set the unit close to equilibrium"
         self.setDefaultOutputAndDeviation()
-        
-    def initializeBasicParameters(self):
-        '''Reset uniselector to its default parameters, but do not change its type'''
     
     def initializeUniselector(self):
          '''Reset uniselector to its default parameters, but do not change its type'''
