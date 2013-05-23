@@ -189,7 +189,10 @@ class HomeoUnit(object):
                                       massEquivalence = 0.001)        # 1 unit of mass equals one gram, or 0.001 kg"
     
         "give the unit  a default name"
-        self._name = None
+        try:
+            HomeoUnit.allNames.discard(self.name)
+        except AttributeError:
+            self._name = None
         self.setDefaultName()
 
         'Set the mass of the needle unit. Its value must be rather high (~= 1000) to avoid instability)'
@@ -697,7 +700,9 @@ class HomeoUnit(object):
     
     def setName(self, aString):
         "aString must be a new name not present in HomeoUnit.allNames"
-        if aString not in HomeoUnit.allNames:
+
+        if aString not in HomeoUnit.allNames: 
+            HomeoUnit.allNames.discard(self._name)
             self._name = aString
             HomeoUnit.allNames.add(aString)
             QObject.emit(emitter(self), SIGNAL("nameChanged"),self._name)
@@ -786,7 +791,6 @@ class HomeoUnit(object):
     
     def setDefaultName(self):
         '''Assign a default unique name to the unit with the help of an auxiliary method'''
-        
         self.name = self.produceNewName()
         
     def setDefaultOutputAndDeviation(self):
