@@ -18,7 +18,6 @@ from StringIO import StringIO
 from Simulator.Four_units_Homeostat_Standard_UI import Ui_ClassicHomeostat
 from math import floor
 from itertools import cycle
-from dbus.decorators import signal
 
 
 class HomeoSimulationControllerGui(QDialog):    
@@ -197,9 +196,11 @@ class HomeoSimulationControllerGui(QDialog):
         self.saveDataButton = QPushButton("Save all data")
         self.saveGraphDataButton = QPushButton("Save plot data")
         self.graphButton = QPushButton("Graph")
-        "checkBoxes"
-        self.liveDataOnCheckbox = QCheckBox("Live Charting")
+#        self.dataWindow = QLineEdit()
 
+        "checkBoxes"
+        self.liveDataOnCheckbox = QCheckBox("Charts on")
+        self.liveDataWindowCheckBox = QCheckBox('Panning data')
         
 
         "layout"
@@ -235,7 +236,9 @@ class HomeoSimulationControllerGui(QDialog):
         homeostatPaneLayout.addWidget(self.graphButton,7,1)
         
         'Row 8'
-        homeostatPaneLayout.addWidget(self.liveDataOnCheckbox, 8,0,1,2)
+        homeostatPaneLayout.addWidget(self.liveDataOnCheckbox, 8,0,1,1)
+        homeostatPaneLayout.addWidget(self.liveDataWindowCheckBox, 8, 1,1,1)
+#        homeostatPaneLayout.addWidget(self.dataWindow, 8,2,1,1)
         
         self.vertSeparator = QFrame()
         self.vertSeparator.setFrameShape(QFrame.VLine)
@@ -246,6 +249,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.homeostatLineEdit.setText(self._simulation.homeostatFilename)
         self.noOfUnitsLineEdit.setText(str(len(self._simulation.homeostat.homeoUnits)))
         self.noOfUnitsLineEdit.setReadOnly(True)
+        self.liveDataWindowCheckBox.setChecked(self._simulation.panningCharts)
                                        
         "Connections"
         self.homeostatLineEdit.returnPressed.connect(self._simulation.setHomeostatFilename)
@@ -258,6 +262,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.saveGraphDataButton.clicked.connect(self.savePlotData)
         self.graphButton.clicked.connect(self.graphData)
         self.liveDataOnCheckbox.stateChanged.connect(self._simulation.toggleLivedataOn)
+        self.liveDataWindowCheckBox.stateChanged.connect(self.toggleLiveDataWindow)
         
         
         #=======================================================================
@@ -309,6 +314,10 @@ class HomeoSimulationControllerGui(QDialog):
         
         plotsWindow = pg.GraphicsLayoutWidget()
         plotLayout=QVBoxLayout()
+        if self._simulation.panningCharts ==True:
+            self._plotData = getattr(self._simulation,'liveDataWindow')
+        else:
+            self._plotData = getattr(self._simulation,'liveData')
         colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,255)]
         for unit, color, dataPlotRow, uniselPlotRow in  zip(self._simulation.homeostat.homeoUnits, 
                                                            cycle(colors),
@@ -321,7 +330,7 @@ class HomeoSimulationControllerGui(QDialog):
             plotItemCritDev.setRange(rect=None, xRange=None, yRange=(unit.minDeviation, unit.maxDeviation),
                                padding=None, update=True, disableAutoRange=True)
             plotItemCritDev.hideAxis('bottom')
-            plotDataItemCritDev = plotItemCritDev.plot(self._simulation.liveData[unit], pen = color)
+            plotDataItemCritDev = plotItemCritDev.plot(self._plotData[unit], pen = color)
             self.pgChartsAndItems[unit].append(plotItemCritDev)
             self.pgChartsAndItems[unit].append(plotDataItemCritDev)
 #            plotItem.setTitle(unit.name)
@@ -332,7 +341,7 @@ class HomeoSimulationControllerGui(QDialog):
                                padding=None, update=True, disableAutoRange=True)
             plotItemUnisel.hideAxis('bottom')
             plotItemUnisel.hideAxis('left')
-            plotDataItemUnisel = plotItemUnisel.plot(self._simulation.liveData[unit.uniselector], pen = colorFaded)
+            plotDataItemUnisel = plotItemUnisel.plot(self._plotData[unit.uniselector], pen = colorFaded)
             self.pgChartsAndItems[unit].append(plotItemUnisel)
             self.pgChartsAndItems[unit].append(plotDataItemUnisel)
             
@@ -345,8 +354,8 @@ class HomeoSimulationControllerGui(QDialog):
         return plotLayout
  
     def updateCritDevChart(self, unitRef):
-        self.pgChartsAndItems[unitRef][1].setData(self._simulation.liveData[unitRef])
-        self.pgChartsAndItems[unitRef][3].setData(self._simulation.liveData[unitRef.uniselector])
+        self.pgChartsAndItems[unitRef][1].setData(self._plotData[unitRef])
+        self.pgChartsAndItems[unitRef][3].setData(self._plotData[unitRef.uniselector])
 #             
 #===============================================================================
 #   Homeostat Gui setup        
@@ -658,6 +667,14 @@ class HomeoSimulationControllerGui(QDialog):
         for unitRef in self._simulation._homeostat.homeoUnits:
             self.pgChartsAndItems[unitRef][1].clear()
             self.pgChartsAndItems[unitRef][3].clear()
+            
+    def toggleLiveDataWindow(self):
+        self._simulation.toggleLivedataWindow()
+        if self._simulation.panningCharts ==True:
+            self._plotData = getattr(self._simulation,'liveDataWindow')
+        else:
+            self._plotData = getattr(self._simulation,'liveData')
+
             
         
 

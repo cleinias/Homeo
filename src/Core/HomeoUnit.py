@@ -594,7 +594,7 @@ class HomeoUnit(object):
         try:
             if int(aNumber) in acceptedValues:
                 newWeight = abs(oldWeight) * int(aNumber)
-                self.inputConnections[0].newWeight(newWeight)
+                self.inputConnections[0].toggleSwitch()
                 self._switch = int(aNumber)
 #                sys.stderr.write("Unit %s's new weight is %f: with switch equal to %f\n" % (self.name, self.inputConnections[0].weight, self.switch))
             else: 
@@ -604,7 +604,8 @@ class HomeoUnit(object):
         finally:
             QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
             QObject.emit(emitter(self), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
-#            sys.stderr.write('%s emitted signals switchChanged with value %f\n' % (self._name, self._switch))
+            QObject.emit(emitter(self.inputConnections[0]), SIGNAL('switchChanged'),self._switch) 
+            sys.stderr.write('%s emitted signals switchChanged with value %f the object emitting the signal was %s\n' % (self._name, self._switch, emitter(self.inputConnections[0])))
             
     
     def getSwitch(self):
