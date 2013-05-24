@@ -496,8 +496,8 @@ class HomeoUnit(object):
         finally:
             QObject.emit(emitter(self), SIGNAL('uniselectorTimeIntervalChanged'), self._uniselectorTimeInterval)
             QObject.emit(emitter(self), SIGNAL('uniselectorTimeIntervalChangedLineEdit'), str(self._uniselectorTimeInterval))
-            sys.stderr.write('%s emitted signals UniselectorTimeIntervalChanged with value %f\n' 
-                             % (self._name,self._uniselectorTimeInterval))
+#            sys.stderr.write('%s emitted signals UniselectorTimeIntervalChanged with value %f\n' 
+#                             % (self._name,self._uniselectorTimeInterval))
             
     def getUniselectorTimeInterval(self):
         return self._uniselectorTimeInterval
@@ -605,7 +605,7 @@ class HomeoUnit(object):
             QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
             QObject.emit(emitter(self), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
             QObject.emit(emitter(self.inputConnections[0]), SIGNAL('switchChanged'),self._switch) 
-            sys.stderr.write('%s emitted signals switchChanged with value %f the object emitting the signal was %s\n' % (self._name, self._switch, emitter(self.inputConnections[0])))
+#            sys.stderr.write('%s emitted signals switchChanged with value %f the object emitting the signal was %s\n' % (self._name, self._switch, emitter(self.inputConnections[0])))
             
     
     def getSwitch(self):
@@ -639,7 +639,7 @@ class HomeoUnit(object):
             scaledValueToEmit = int(floor(- self._maxDeviation * HomeoUnit.precision))
             QObject.emit(emitter(self), SIGNAL('minDeviationScaledChanged)'), scaledValueToEmit)
             QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
-            sys.stderr.write('%s emitted signals maxDeviation with value %f, MinDeviation changed to %f\n' % (self._name, self._maxDeviation, - self._maxDeviation))
+#            sys.stderr.write('%s emitted signals maxDeviation with value %f, MinDeviation changed to %f\n' % (self._name, self._maxDeviation, - self._maxDeviation))
  
     
     minDeviation = property(fget = lambda self: self.getMinDeviation(),

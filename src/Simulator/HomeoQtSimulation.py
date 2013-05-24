@@ -143,7 +143,7 @@ class HomeoQtSimulation(QObject):
         self.liveData = {}
         self.liveDataOn = False
         self._homeostat.collectsData = False
-        self.maxDataPoints = 500
+        self.maxDataPoints = 50
         self.liveDataWindow = {}
         self.panningCharts = True       # default is to use panning charts. Can be changed in the Gui
         

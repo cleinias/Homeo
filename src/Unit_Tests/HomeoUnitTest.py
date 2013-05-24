@@ -14,6 +14,7 @@ class HomeoUnitTest(unittest.TestCase):
         """Set up a Homeounit for all tests in the suite"""
         self.unit = HomeoUnit()
         self.unit.setRandomValues()
+        self.unit.mass = 1
         
     def tearDown(self):
         pass
