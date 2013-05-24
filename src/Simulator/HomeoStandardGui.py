@@ -510,9 +510,10 @@ class HomeoSimulationControllerGui(QDialog):
                     widget = getattr(self._homeostat_gui, 'unit' + str(incomingUnit + 1) + 
                                      'Unit' + str(outgoingUnit+1)+ (spinBox[0].upper()) + spinBox[1:] + type[0] + 'SpinBox')
                     attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], spinBox)
-                    slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], type[1])
+                    slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], type[1])                    
                     signalFromUnit = spinBox + "Changed"
                     widget.setValue(attribute)
+#                    widget.realSlot = slot
 #                    widget.valueChanged.connect(slot)
                     widget.editingFinished.connect(slot)
                     QObject.connect(emitter(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit]), SIGNAL(signalFromUnit), widget.setValue)
@@ -675,8 +676,6 @@ class HomeoSimulationControllerGui(QDialog):
             self._plotData = getattr(self._simulation,'liveDataWindow')
         else:
             self._plotData = getattr(self._simulation,'liveData')
-
-            
         
 
 class Classic_Homeostat(QDialog, Ui_ClassicHomeostat):
