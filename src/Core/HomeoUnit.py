@@ -1347,15 +1347,15 @@ class HomeoUnit(object):
         "We save the values about the units that have changed weights, old weights and new weight for debugging"
         weightChanges = []
         for conn in self.inputConnections:
-            if not conn.incomingUnit == self:
-                if conn.state ==  'uniselector' and conn.active:
-                    change = []
-                    change.append(conn.incomingUnit.name)
-                    change.append(conn.weight)
-                    changedWeight = self.uniselector.produceNewValue()
-                    change.append(changedWeight)
-                    weightChanges.append(change)
-                    conn.newWeight(changedWeight)
+#            if not conn.incomingUnit == self:                  #This is not necessary. Even though the default is 'manual' it issometimes useful to operate on the self-connection "
+            if conn.state ==  'uniselector' and conn.active:
+                change = []
+                change.append(conn.incomingUnit.name)
+                change.append(conn.weight)
+                changedWeight = self.uniselector.produceNewValue()
+                change.append(changedWeight)
+                weightChanges.append(change)
+                conn.newWeight(changedWeight)
         self.uniselector.advance()
 
 
