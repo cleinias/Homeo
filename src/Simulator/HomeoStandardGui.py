@@ -513,7 +513,8 @@ class HomeoSimulationControllerGui(QDialog):
                     slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], type[1])
                     signalFromUnit = spinBox + "Changed"
                     widget.setValue(attribute)
-                    widget.valueChanged.connect(slot)
+#                    widget.valueChanged.connect(slot)
+                    widget.editingFinished.connect(slot)
                     QObject.connect(emitter(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit]), SIGNAL(signalFromUnit), widget.setValue)
 
                 
