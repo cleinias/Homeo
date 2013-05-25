@@ -503,7 +503,7 @@ class HomeoSimulationControllerGui(QDialog):
         
                 'spinboxes'
                 'setup a dictionary with spinboxes names, types, and setter methods'
-                spinBoxes = {'weight':('Double', 'newWeight'), 
+                spinBoxes = {'weight':('Double', 'setAbsoluteWeight'), 
                              'switch':('','toggleSwitch'), 
                              'noise':('Double', 'setNoise')}
                 for spinBox, type in iteritems(spinBoxes):
