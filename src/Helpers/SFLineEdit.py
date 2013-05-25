@@ -5,7 +5,7 @@ class SFLineEdit(QLineEdit):
     '''
     Modified LineEdit Widget that emits a textModified signal passing the new text
     only after the editing has finished. Basically, it combines 
-    the  editingFinished and textEdited signale of QLineEdit'''
+    the  editingFinished and textEdited signals of QLineEdit'''
      
     textModified = pyqtSignal(str) # (after)
 

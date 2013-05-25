@@ -202,9 +202,17 @@ class HomeoConnection(object):
                 raise(ConnectionError, "A HomeoConnection weight must be between -1 and 1")
         QObject.emit(emitter(self), SIGNAL('weightChanged'), self._weight)
         QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
-#        if hasattr(self, 'outgoingUnit')  and hasattr(self, 'incomingUnit'):
-#            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal switchChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._switch))
-#            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal weightChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._weight))
+        
+        "Signaling back to the incoming unit's potentiometer and switch in case of a self-connection"
+        try:
+            if self.incomingUnit == self.outgoingUnit:
+                QObject.emit(emitter(self.incomingUnit), SIGNAL('potentiometerChangedLineEdit'), str(round(self._weight, 4)))
+                QObject.emit(emitter(self.incomingUnit), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
+        except AttributeError:
+            sys.stderr.write("Initializing connection, no incoming unit assigned yet\n")
+        if hasattr(self, 'outgoingUnit')  and hasattr(self, 'incomingUnit'):
+            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal switchChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._switch))
+            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal weightChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._weight))
 
 
     def outgoingUnit(self):
