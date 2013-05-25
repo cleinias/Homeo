@@ -214,7 +214,22 @@ class HomeoConnection(object):
             sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal switchChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._switch))
             sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal weightChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._weight))
 
-
+    def setAbsoluteWeight(self, aPositiveValue):
+        'Utility function that changes the weight of a connection without changing its sign (i.e. the switch)'
+        if aPositiveValue == 0:
+            self._switch = 1
+            self._weight = 0
+        else:
+            if 0 < aPositiveValue <= 1:
+                self._weight= aPositiveValue
+#            QObject.emit(emitter(self), SIGNAL('weightChanged'), self._weight)
+        "signal back to unit's potentiometer in case of self-connections"
+        if self.incomingUnit == self.outgoingUnit:
+            QObject.emit(emitter(self.incomingUnit), SIGNAL('potentiometerChangedLineEdit'), str(round(self._weight, 4)))
+                
+        
+        
+    
     def outgoingUnit(self):
         ''' the "outgoingUnit" is the unit the signal is going *to*. 
             It is typically the HomeoUnit holding on to the connection''' 
