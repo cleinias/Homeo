@@ -758,7 +758,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit2Unit1WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit2Unit1WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -800,7 +800,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit2Unit2WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit2Unit2WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -842,7 +842,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit2Unit3WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit2Unit3WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -884,7 +884,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit2Unit4WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit2Unit4WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -963,7 +963,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit2Unit1SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit2Unit1SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1008,7 +1008,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit2Unit2SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit2Unit2SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1053,7 +1053,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit2Unit3SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit2Unit3SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1098,7 +1098,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit2Unit4SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit2Unit4SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1180,7 +1180,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit2Unit1NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit2Unit1NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1222,7 +1222,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit2Unit2NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit2Unit2NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1264,7 +1264,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit2Unit3NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit2Unit3NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1306,7 +1306,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit2Unit4NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit2Unit4NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -1980,7 +1980,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit1WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit3Unit1WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2022,7 +2022,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit2WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit3Unit2WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2064,7 +2064,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit3WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit3Unit3WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2106,7 +2106,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit4WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit3Unit4WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2185,7 +2185,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit3Unit1SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit3Unit1SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2230,7 +2230,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit3Unit2SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit3Unit2SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2275,7 +2275,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit3Unit3SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit3Unit3SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2320,7 +2320,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit3Unit4SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit3Unit4SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2402,7 +2402,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit1NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit3Unit1NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2444,7 +2444,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit2NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit3Unit2NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2486,7 +2486,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit3NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit3Unit3NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2528,7 +2528,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit3Unit4NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit3Unit4NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -2554,6 +2554,9 @@
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="decimals">
+         <number>4</number>
         </property>
        </widget>
       </item>
@@ -3274,7 +3277,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit1WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit4Unit1WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3316,7 +3319,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit2WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit4Unit2WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3358,7 +3361,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit3WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit4Unit3WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3400,7 +3403,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit4WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit4Unit4WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3479,7 +3482,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit4Unit1SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit4Unit1SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3524,7 +3527,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit4Unit2SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit4Unit2SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3569,7 +3572,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit4Unit3SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit4Unit3SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3614,7 +3617,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit4Unit4SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit4Unit4SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3696,7 +3699,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit1NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit4Unit1NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3738,7 +3741,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit2NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit4Unit2NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3780,7 +3783,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit3NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit4Unit3NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -3822,7 +3825,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit4Unit4NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit4Unit4NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4500,7 +4503,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit1Unit1WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit1Unit1WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4542,7 +4545,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit1Unit2WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit1Unit2WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4584,7 +4587,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit1Unit3WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit1Unit3WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4626,7 +4629,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit1Unit4WeightDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit1Unit4WeightDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4705,7 +4708,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit1Unit1SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit1Unit1SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4747,52 +4750,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit1Unit2SwitchSpinBox">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>41</width>
-          <height>16</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>41</width>
-          <height>16</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>8</pointsize>
-         </font>
-        </property>
-        <property name="wrapping">
-         <bool>true</bool>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-        <property name="minimum">
-         <number>-1</number>
-        </property>
-        <property name="maximum">
-         <number>1</number>
-        </property>
-        <property name="singleStep">
-         <number>2</number>
-        </property>
-        <property name="value">
-         <number>-1</number>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QSpinBox" name="unit1Unit3SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit1Unit2SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4837,7 +4795,52 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="unit1Unit4SwitchSpinBox">
+       <widget class="SFSpinBox" name="unit1Unit3SwitchSpinBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>41</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>41</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+         </font>
+        </property>
+        <property name="wrapping">
+         <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="minimum">
+         <number>-1</number>
+        </property>
+        <property name="maximum">
+         <number>1</number>
+        </property>
+        <property name="singleStep">
+         <number>2</number>
+        </property>
+        <property name="value">
+         <number>-1</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="SFSpinBox" name="unit1Unit4SwitchSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4919,7 +4922,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit1Unit1NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit1Unit1NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -4961,7 +4964,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit1Unit2NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit1Unit2NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -5003,7 +5006,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit1Unit3NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit1Unit3NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -5045,7 +5048,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="unit1Unit4NoiseDoubleSpinBox">
+       <widget class="SFDoubleSpinBox" name="unit1Unit4NoiseDoubleSpinBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -8424,6 +8427,16 @@
    <class>SFLineEdit</class>
    <extends>QLineEdit</extends>
    <header>Helpers.SFLineEdit</header>
+  </customwidget>
+  <customwidget>
+   <class>SFSpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>Helpers.CustomWidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>SFDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header location="global">Helpers.CustomWidgets</header>
   </customwidget>
  </customwidgets>
  <resources/>

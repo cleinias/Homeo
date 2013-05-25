@@ -379,11 +379,11 @@ class HomeoUnit(object):
            in the inputConnections list)'''
         try:
             self._potentiometer = float(aValue)
-            self._inputConnections[0].newWeight(float(aValue))
+            self._inputConnections[0].newWeight(float(aValue)*self._inputConnections[0].switch) # Keep the old sign
         except ValueError:
             sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Potentiometer. The value was: %s\n" % (self.name, aValue))
         finally:
-            QObject.emit(emitter(self), SIGNAL('potentiometerDeviationChanged'), self._potentiometer)
+            QObject.emit(emitter(self), SIGNAL('potentiometerChanged'), self._potentiometer)
             QObject.emit(emitter(self), SIGNAL('potentiometerChangedLineEdit'), str(round(self._potentiometer, 4)))
 
 

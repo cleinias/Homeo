@@ -373,7 +373,7 @@ class HomeoSimulationControllerGui(QDialog):
     def setupHomeostatGuiUnitsLineEdits(self):
         "Set up the line edit widgets for the units (not for the connections)"
         
-        '''1. Set up a dictionary with homeoUnits properties corresponding (shortened) widget names, 
+        '''1. Set up a dictionary with homeoUnits properties corresponding to (shortened) widget names, 
         desired visualized precision (if needed), and range (if needed)'''
         lineEditsNames = {'name':('Name', '', 'LineEdit'), 
                           'currentOutput':('Output', 5, 'LineEdit', ()), 
@@ -515,7 +515,7 @@ class HomeoSimulationControllerGui(QDialog):
                     widget.setValue(attribute)
 #                    widget.realSlot = slot
 #                    widget.valueChanged.connect(slot)
-                    widget.editingFinished.connect(slot)
+                    widget.editingValueFinished.connect(slot)                  #uses a custom signal produced by SFSpinBox and SFDoubleSpinBox
                     QObject.connect(emitter(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit]), SIGNAL(signalFromUnit), widget.setValue)
 
                 
