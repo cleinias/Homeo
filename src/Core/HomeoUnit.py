@@ -590,13 +590,16 @@ class HomeoUnit(object):
 
         acceptedValues = (-1,1)
         oldWeight = self.inputConnections[0].weight
+        oldSwitch = self.inputConnections[0].switch
+        oldUnitSwitch = self.switch
         
         try:
             if int(aNumber) in acceptedValues:
                 newWeight = abs(oldWeight) * int(aNumber)
-                self.inputConnections[0].toggleSwitch()
+                self.inputConnections[0].newWeight(newWeight)
                 self._switch = int(aNumber)
-#                sys.stderr.write("Unit %s's new weight is %f: with switch equal to %f\n" % (self.name, self.inputConnections[0].weight, self.switch))
+#                sys.stderr.write("Unit %s's new weight is %f: with switch equal to %f. The value passed from the GUI was %f . \nThe old weight was %f and the old switch was %f, and the old unit's switch was %f\n" 
+#                                 % (self.name, self.inputConnections[0].weight, self.switch, int(aNumber), oldWeight, oldSwitch, oldUnitSwitch))
             else: 
                 raise  ConnectionError
         except ValueError:
