@@ -110,16 +110,35 @@ class HomeoConnection(object):
         return self._switch
     
     def setSwitch(self, aSwitch):
-        '''Raise an exception: switch is only set through the newWeight  or toggleSwitch methods'''
+        '''Raise an exception: switch is only set through the newWeight or toggleSwitch methods'''
         raise ConnectionError("A HomeoConnection's switch can only be set through the newWeight method")
     
     switch = property(fget = lambda self: self.getSwitch(),
                           fset = lambda self, value: self.setSwitch(value))
     
-    def toggleSwitch(self):
-        "reverses the polarity of the connection"
-        self.newWeight(self.weight * -1)
-        QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
+    def toggleSwitch(self, aNumber):
+        "Change the polarity of the connection to aNumber"
+#        self.newWeight(self.weight * -1)
+#        QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
+        acceptedValues = (-1,1)
+        oldWeight = self.weight
+        oldSwitch = self.switch     
+        try:
+            if int(aNumber) in acceptedValues:
+                newWeight = abs(oldWeight) * int(aNumber)
+                self.newWeight(newWeight)
+                self._switch = int(aNumber)
+#                sys.stderr.write("Unit %s's new weight is %f: with switch equal to %f. The value passed from the GUI was %f . \nThe old weight was %f and the old switch was %f, and the old unit's switch was %f\n" 
+#                                 % (self.name, self.inputConnections[0].weight, self.switch, int(aNumber), oldWeight, oldSwitch, oldUnitSwitch))
+            else: 
+                raise  ConnectionError
+        except ValueError:
+            sys.stderr.write("Tried to assign a non-numeric value to the switch of the connection from %s to %s The value was: %s\n" % (self.outgoingUnit.name, self.incomingUnit.name, aNumber))
+        finally:
+            QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
+            QObject.emit(emitter(self), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
+            QObject.emit(emitter(self.incomingUnit), SIGNAL('switchChangedLineEdit'),str(int(self._switch))) 
+#            sys.stderr.write('%s emitted signals switchChanged with value %f the object emitting the signal was %s\n' % (self._name, self._switch, emitter(self.inputConnections[0])))
    
 
     def getWeight(self):
@@ -189,13 +208,13 @@ class HomeoConnection(object):
     
  
     def newWeight(self, aWeight):
-        "updates weight and switch on the basis -1 >=  aWeight <= 1"
+        "updates weight and switch on the basis -1 <=  aWeight <= 1"
         
         if aWeight == 0:
             self._switch = 1
             self._weight = 0
         else:
-            if aWeight <= 1 and aWeight >= -1:
+            if -1 <= aWeight <= 1:
                 self._weight= abs(aWeight)
                 self._switch = np.sign(aWeight)
             else:
