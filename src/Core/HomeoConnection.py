@@ -159,7 +159,7 @@ class HomeoConnection(object):
         '''
         Must be between 0 and 1 included
         '''
-        if aNoise <= 1 and aNoise >=0:
+        if  0 <=  aNoise <= 1:
             self._noise = aNoise
         else:
             raise ConnectionError("Noise must be between 0 and 1")
@@ -229,9 +229,9 @@ class HomeoConnection(object):
                 QObject.emit(emitter(self.incomingUnit), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
         except AttributeError:
             sys.stderr.write("Initializing connection, no incoming unit assigned yet\n")
-        if hasattr(self, 'outgoingUnit')  and hasattr(self, 'incomingUnit'):
-            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal switchChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._switch))
-            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal weightChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._weight))
+#        if hasattr(self, 'outgoingUnit')  and hasattr(self, 'incomingUnit'):
+#            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal switchChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._switch))
+#            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal weightChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._weight))
 
     def setAbsoluteWeight(self, aPositiveValue):
         'Utility function that changes the weight of a connection without changing its sign (i.e. the switch)'

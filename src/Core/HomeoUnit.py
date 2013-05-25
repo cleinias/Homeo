@@ -100,7 +100,7 @@ class HomeoUnit(object):
     DefaultParameters  = dict(viscosity = 0,
                               maxDeviation=10,
                               outputRange = unitRange,
-                              noise = 0,
+                              noise = 0,                        # Initially set noise on self to 0, will change to a random value later 
                               potentiometer= 1,
                               time = 0,
                               switch = -1,                      # This value is used to control the polarity of a unit's self-connection
@@ -259,6 +259,8 @@ class HomeoUnit(object):
         'Noise'
         QObject.emit(emitter(self), SIGNAL('noiseChanged'), self._noise)
         QObject.emit(emitter(self), SIGNAL('noiseChangedLineEdit'), str(round(self._noise, 4)))
+        
+        'SelfConnNoise'
 
         
         'Density'
@@ -410,7 +412,7 @@ class HomeoUnit(object):
         return self._noise
     noise = property(fget = lambda self: self.getNoise(),
                      fset = lambda self, value: self.setNoise(value))  
-    
+        
     def setTime(self, aValue):
         self._time = aValue
     def getTime(self):
@@ -469,7 +471,6 @@ class HomeoUnit(object):
         return self._outputRange
     outputRange = property(fget = lambda self: self.getOutputRange(),
                            fset = lambda self, minOut, maxOut: self.setOutputRange(minOut,maxOut))  
-
     def setUniselectorActive(self,aBoolean):
         self._uniselectorActive = aBoolean
     def getUniselectorActive(self):
@@ -770,10 +771,11 @@ class HomeoUnit(object):
 
     def setDefaultSelfConnection(self):
         '''
-        Connect the unit to itself in manual mode with the default feedback and no noise
+        Connect the unit to itself in manual mode with the default feedback and low random noise
         Update value of self.switch
         '''
-        self.addConnectionUnitWeightPolarityNoiseState(self,self.potentiometer,HomeoUnit.DefaultParameters['switch'],0,'manual')
+        self_connection_noise = np.random.uniform(0,0.05)
+        self.addConnectionUnitWeightPolarityNoiseState(self,self.potentiometer,HomeoUnit.DefaultParameters['switch'],self_connection_noise,'manual')
         
 
 #===============================================================================
@@ -809,14 +811,14 @@ class HomeoUnit(object):
 
     def randomizeAllConnectionValues(self):
         '''Reset the weight, switch, and noise of all connections to random values 
-           (see HomeoConnection for details).
-           Do not touch the self connection of the unit to itself.  
+           (see HomeoConnection for details),
+           including the self connection of the unit to itself.  
            Do not change the uniselector operation.
            Reset Input Torque to 0'''
 
         for conn in self._inputConnections:  
-                if not conn.incomingUnit == self:
-                    conn.randomizeConnectionValues()
+#                if not conn.incomingUnit == self:
+                conn.randomizeConnectionValues()
         self.inputTorque = 0
         
         
