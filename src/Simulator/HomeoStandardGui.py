@@ -102,7 +102,8 @@ class HomeoSimulationControllerGui(QDialog):
         self.showUniselActionButton.setCheckable(True)
         self.discardDataButton = QPushButton("Discard data")
         self.discardDataButton.setCheckable(True)
-        self.discardDataButton.setChecked(not self._simulation.homeostat.collectsData)  
+        self.discardDataButton.setChecked(not self._simulation.homeostat.collectsData)
+        self.clearChartsButton = QPushButton("Clear charts")
         
         'Spinboxes and lineEdits'
         self.maxRunSpinBox = QSpinBox()
@@ -156,6 +157,7 @@ class HomeoSimulationControllerGui(QDialog):
                 
         'Row 8'
         simulationPaneLayout.addWidget(self.resetTimeButton,8,0)
+        simulationPaneLayout.addWidget(self.clearChartsButton,8,1)
         simulationPaneLayout.addWidget(self.showUniselActionButton, 8,2)
         
         "Initial values"
@@ -175,6 +177,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.debugModeButton.clicked.connect(self._simulation.toggleDebugMode)
         self.showUniselActionButton.clicked.connect(self.toggleShowUniselAction)
         self.discardDataButton.clicked.connect(self.toggleDiscardData)
+        self.clearChartsButton.clicked.connect(self.resetCharts)
 
 
         QObject.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged"), self.currentTimeSpinBox.setValue)
@@ -577,6 +580,11 @@ class HomeoSimulationControllerGui(QDialog):
         self.pauseButton.setEnabled(False)
         self.stepButton.setEnabled(True)
         self.resumeButton.setEnabled(True)
+    
+    def resetCharts(self):
+        "Clear the charts and the data, reset time to 0"
+        self.clearLiveCharts()
+        self.timeReset()
                  
     def toggleShowUniselAction(self):
         self._simulation.toggleShowUniselectorAction()
