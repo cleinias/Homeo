@@ -103,7 +103,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.discardDataButton = QPushButton("Discard data")
         self.discardDataButton.setCheckable(True)
         self.discardDataButton.setChecked(not self._simulation.homeostat.collectsData)
-        self.clearChartsButton = QPushButton("Clear charts")
+        self.resetChartsButton = QPushButton("Clear charts")
         
         'Spinboxes and lineEdits'
         self.maxRunSpinBox = QSpinBox()
@@ -157,7 +157,7 @@ class HomeoSimulationControllerGui(QDialog):
                 
         'Row 8'
         simulationPaneLayout.addWidget(self.resetTimeButton,8,0)
-        simulationPaneLayout.addWidget(self.clearChartsButton,8,1)
+        simulationPaneLayout.addWidget(self.resetChartsButton,8,1)
         simulationPaneLayout.addWidget(self.showUniselActionButton, 8,2)
         
         "Initial values"
@@ -177,7 +177,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.debugModeButton.clicked.connect(self._simulation.toggleDebugMode)
         self.showUniselActionButton.clicked.connect(self.toggleShowUniselAction)
         self.discardDataButton.clicked.connect(self.toggleDiscardData)
-        self.clearChartsButton.clicked.connect(self.resetCharts)
+        self.resetChartsButton.clicked.connect(self.resetCharts)
 
 
         QObject.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged"), self.currentTimeSpinBox.setValue)
@@ -584,6 +584,7 @@ class HomeoSimulationControllerGui(QDialog):
     def resetCharts(self):
         "Clear the charts and the data, reset time to 0"
         self.clearLiveCharts()
+        self._simulation.initializeLiveData()
         self.timeReset()
                  
     def toggleShowUniselAction(self):
@@ -658,10 +659,13 @@ class HomeoSimulationControllerGui(QDialog):
     def graphData(self):
         "Chart essential data (crit dev and uniselector ticks) with matplotlib"
 
-        dataArray = np.genfromtxt(StringIO(self._simulation.essentialSimulationData()), delimiter = ',', skiprows = 3,  names = True)
+#        dataArray = np.genfromtxt(StringIO(self._simulation.essentialSimulationData()), delimiter = ',', skiprows = 3,  names = True)
         plt.figure()
-        for col_name in dataArray.dtype.names:
-            plt.plot(dataArray[col_name], label=col_name)
+        for unit in self._simulation.homeostat.homeoUnits:
+#            dataArray = np.genfromtxt(StringIO(self._simulation.liveData[unit]))
+            plt.plot(self._simulation.liveData[unit], label = unit.name)
+#            uniselArray = np.genfromtxt(StringIO(self._simulation.liveData[unit.uniselector]))
+            plt.plot(self._simulation.liveData[unit.uniselector], label = (unit.name + '-un'))
         plt.legend(loc=3, fontsize = 8)
         plt.ylabel('Critical Deviation')
         plt.xlabel('Time')
