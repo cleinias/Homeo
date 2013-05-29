@@ -106,14 +106,14 @@ class HomeoUnit(object):
                               switch = -1,                      # This value is used to control the polarity of a unit's self-connection
                               inputValue=0,
                               uniselectorTime= 0,               # How often the uniselector checks the thresholds, in number of ticks
-                              uniselectorTimeInterval = 10,
+                              uniselectorTimeInterval = 100,
                               needleCompMethod= 'linear',       # switches between linear and proportional computation of displacement
                               uniselectorActive = True,
                               uniselectorActivated = 0,
                               density = 1,                      # density of water
                               maxViscosity = (10^6),
                               critThreshold = 0.9,              # the ratio of max deviation beyond which a unit's essential variable's value  is considered critical
-                              mass = 1000)                      # the mass of the needle unit, representing the inertia of the unit. A low value will make it very unstable
+                              mass = 100)                      # the mass of the needle unit, representing the inertia of the unit. A low value will make it very unstable
 
     '''The value of the precision need for a correct working of PyQt sliders (which only allow integers). 
     Must be equal to same parameter set in HomeoStandardGui>>setupHomeostatGuiUnitsStandardCritDevSlider'''
