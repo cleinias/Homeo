@@ -9,6 +9,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
 from Core.Homeostat import *
 from Helpers.QtSeparator import Separator
+from Helpers.General_Helper_Functions import rchop
 from Simulator.HomeoQtSimulation import *
 from Helpers.QObjectProxyEmitter import emitter
 from Helpers.SimulationThread import SimulationThread
@@ -70,7 +71,9 @@ class HomeoSimulationControllerGui(QDialog):
         self._simulThread = SimulationThread()
         self._simulation.moveToThread(self._simulThread)
         self._simulThread.started.connect(self._simulation.go)
-
+        
+        "set windows titles"
+        self.changeWindowsTitles(self._simulation.homeostatFilename)
 
 
     def setupSimulationDialog(self):
@@ -255,7 +258,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.liveDataWindowCheckBox.setChecked(self._simulation.panningCharts)
                                        
         "Connections"
-        self.homeostatLineEdit.returnPressed.connect(self._simulation.setHomeostatFilename)
+        self.homeostatLineEdit.textChanged.connect(self.changedHomeostatName)
         QObject.connect(self._simulation, SIGNAL("homeostatFilenameChanged"), self.homeostatLineEdit.setText)
 
         self.newHomeostatButton.clicked.connect(self.newHomeostat)
@@ -302,7 +305,7 @@ class HomeoSimulationControllerGui(QDialog):
 
         completeLayout.addLayout(self.setupPgChartWidget())  
         self.setLayout(completeLayout)
-        self.setWindowTitle("Homeo Simulation")
+        self.setWindowTitle(self._simulation.homeostatFilename)
 
     def minusXifPlus(self, x, number):
         if number >= x:
@@ -601,6 +604,7 @@ class HomeoSimulationControllerGui(QDialog):
         if len(filename) > 0:
             try:
                 self._simulation.loadNewHomeostat(filename)
+                self.changeWindowsTitles(self._simulation.homeostatFilename)
                 QObject.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged"), self.currentTimeSpinBox.setValue)
                 self._simulation.timeReset()
                 self.stepButton.setEnabled(True)
@@ -630,6 +634,7 @@ class HomeoSimulationControllerGui(QDialog):
     def newHomeostat(self):
         self._simulation.fullReset()
         self.homeostatLineEdit.setText(self._simulation.homeostatFilename)
+        self.changeWindowsTitles(self._simulation.homeostatFilename)
         self.noOfUnitsLineEdit.setText(str(len(self._simulation.homeostat.homeoUnits)))
         self.pauseButton.setEnabled(False)
         self.stepButton.setEnabled(True)
@@ -697,6 +702,17 @@ class HomeoSimulationControllerGui(QDialog):
             self._plotData = getattr(self._simulation,'liveDataWindow')
         else:
             self._plotData = getattr(self._simulation,'liveData')
+    
+    def changeWindowsTitles(self,aString):
+        "Change title of all window to aString"
+        aString = rchop(aString, '.pickled')
+        self.setWindowTitle(aString)
+        self._homeostat_gui.setWindowTitle(aString)
+        
+    def changedHomeostatName(self,aString):
+        "User changed the homeostat name. Change window titles and default filename accordingly"
+        self.changeWindowsTitles(aString)
+        self._simulation.setHomeostatFilename(aString)
         
 
 class Classic_Homeostat(QDialog, Ui_ClassicHomeostat):
@@ -743,6 +759,7 @@ class OutLog(object):
 
         if self.out:
             self.out.write(msg)
+
 
 
 if __name__ == '__main__':
