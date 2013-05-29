@@ -306,7 +306,28 @@ class HomeoQtSimulation(QObject):
         '''Ask the datacollector of the homeostat 
            to save only the essential data on dataFilename'''
 
-        self.homeostat.dataCollector.saveEssentialDataOnFile(aFilename)
+#        self.homeostat.dataCollector.saveEssentialDataOnFile(aFilename)
+        "Print a header with general information at the top of the file"
+        headerText = ''
+        headerText += ('# Simulation data produced by HOMEO---the homeostat simulation program\n')
+        headerText +=  ('# Data printed on: ')
+        headerText += (str(datetime.now()))
+        headerText += ("\n")
+        headerText += ('# There were exactly %u units in this simulation' % len(self.homeostat.homeoUnits))
+        headerText += ("\n")
+        "Create an array with the time indexes and update header text and format string" 
+        npDataArray = np.arange(len(self.liveData[self.homeostat.homeoUnits[0]]))
+        listOfFormatStrings = ['%u']                    # First column: unsigned integers for the time indexes
+        formatForUnitsAndUnisel = '%10.8f'              # Float values for all successive columns
+        for unit in self.homeostat.homeoUnits:
+            headerText += (unit.name + ','+unit.name + '_unisel'+',')
+            npDataArray = np.vstack((npDataArray,self.liveData[unit]))
+            listOfFormatStrings.append(formatForUnitsAndUnisel)
+            npDataArray = np.vstack((npDataArray,self.liveData[unit.uniselector]))
+            listOfFormatStrings.append(formatForUnitsAndUnisel)
+        npDataArray = np.transpose(npDataArray)
+        np.savetxt(str(aFilename), npDataArray, fmt = listOfFormatStrings, delimiter = ',', comments = '',header = headerText)
+  
         
     def essentialSimulationData(self):
         "Ask the DataCollector to teturn a string with the essential data about the simulaiton"
