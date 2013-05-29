@@ -262,7 +262,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.loadHomeostatButton.clicked.connect(self.loadHomeostat)
         self.saveHomeostatButton.clicked.connect(self.saveHomeostat)
         self.saveDataButton.clicked.connect(self.saveAllData)
-        self.saveGraphDataButton.clicked.connect(self.savePlotData)
+        self.saveGraphDataButton.clicked.connect(self.choosePlotDataAndSave)
         self.graphButton.clicked.connect(self.graphData)
         self.liveDataOnCheckbox.stateChanged.connect(self._simulation.toggleLivedataOn)
         self.liveDataWindowCheckBox.stateChanged.connect(self.toggleLiveDataWindow)
@@ -646,15 +646,24 @@ class HomeoSimulationControllerGui(QDialog):
         self._simulation.saveCompleteRunOnFile(filename)
         self._simulation.dataAreSaved = True
                 
-    def savePlotData(self):
+    def savePlotData(self, withWeights):
         filename = QFileDialog.getSaveFileName(parent = self, 
                                                        caption = "Save simulation's essential data", 
                                                        directory = (self._simulation.dataFilename + "-essential.txt"))    #QFileDialog.GetSave returns a QString
         print filename
         if len(filename) <= 0:                            # Change the filename to the newly selected one
             filename = (self._simulation.dataFilename + "-essential.txt") 
-        self._simulation.saveEssentialDataOnFile(filename)
+        self._simulation.saveEssentialDataOnFile(filename, withWeights)
 
+    def choosePlotDataAndSave(self):
+        reply = QMessageBox.question(self,
+                                          "Saving units' plot data",
+                                          "Save weights of self-connections?",
+                                          QMessageBox.No|QMessageBox.Yes|QMessageBox.Cancel)
+        if reply == QMessageBox.No:
+            self.savePlotData(False)
+        else:
+            self.savePlotData(True) 
 
     def graphData(self):
         "Chart essential data (crit dev and uniselector ticks) with matplotlib"

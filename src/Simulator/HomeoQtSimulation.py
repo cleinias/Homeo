@@ -32,7 +32,8 @@ class HomeoQtSimulation(QObject):
         homeostatFilename           <aString>          The filename used to save the homeostat
         homeostatIsSaved            <aBoolean>         Whether the homeostat being simulated has been saved        
         simulDelay                  <anInteger>        Delay, in milliseconds, between two simulation steps
-        liveData                    <aDictionary>      aDictionary holding the critiDev and uniselector activation data for al the units 
+        liveData                    <aDictionary>      aDictionary holding the critDev and uniselector activation data for all the units 
+        unitsSelfWeights             <aDictionary>      aDictionary holding the weights for the units' self-connections
         liveDataOn                  <aBoolean>         enables live charting
         liveDataWindow              <aDictionary>      a Dictionary holding double-ended queues holding only the last maxDataPoints number of datapoints
         maxDataPoints               <anInteger>        the maximum dataPoints to hold for live charting
@@ -141,6 +142,7 @@ class HomeoQtSimulation(QObject):
         self._simulDelay = 10           # in milliseconds
         self._isRunning = False
         self.liveData = {}
+        self.unitsSelfWeights = {}
         self.liveDataOn = False
         self._homeostat.collectsData = False
         self.maxDataPoints = 50
@@ -179,6 +181,7 @@ class HomeoQtSimulation(QObject):
             self.liveData[unit.uniselector] = []             # add empty list to hold uniselector activation data for unit
             self.liveDataWindow[unit] = deque(maxlen=self.maxDataPoints)              # add empty queue to hold critDev data for unit
             self.liveDataWindow[unit.uniselector] = deque(maxlen=self.maxDataPoints)        # add empty queue to hold uniselector activation data for unit
+            self.unitsSelfWeights[unit] = []
 
 
 #===============================================================================
@@ -230,6 +233,7 @@ class HomeoQtSimulation(QObject):
             self.liveData[unit.uniselector].append(unit.uniselectorActivated)
             self.liveDataWindow[unit].append(unit.criticalDeviation)
             self.liveDataWindow[unit.uniselector].append(unit.uniselectorActivated)
+            self.unitsSelfWeights[unit].append(unit.inputConnections[0].weight)
             
 #            if unit.uniselectorActivated <> 0:
 #                sys.stderr.write("Uniselector activated for unit %s at time %u and value %u\n" % (unit.name, self._homeostat.time, unit.uniselectorActivated))
@@ -302,11 +306,21 @@ class HomeoQtSimulation(QObject):
         self.homeostat.dataCollector.saveCompleteDataOnFile(aFilename)
         self._dataAreSaved = True
 
-    def saveEssentialDataOnFile(self,aFilename):
-        '''Ask the datacollector of the homeostat 
-           to save only the essential data on dataFilename'''
+    def saveEssentialDataOnFile(self,aFilename, withWeights):
+#===============================================================================
+#        '''Ask the datacollector of the homeostat 
+#           to save only the essential data on dataFilename'''
+# 
+# #        self.homeostat.dataCollector.saveEssentialDataOnFile(aFilename)
+#===============================================================================
+        """FIXME: Following code uses the class's own liveData instead of relying on the dataCollector.
+        It should eventually be moved into the dataCollector class.
+        
+        Save the data about unit's critical deviation and uniselector activation on file.
+        If withWeights = True, saves also values of units' self-connection weights 
+        """
 
-#        self.homeostat.dataCollector.saveEssentialDataOnFile(aFilename)
+
         "Print a header with general information at the top of the file"
         headerText = ''
         headerText += ('# Simulation data produced by HOMEO---the homeostat simulation program\n')
@@ -320,11 +334,16 @@ class HomeoQtSimulation(QObject):
         listOfFormatStrings = ['%u']                    # First column: unsigned integers for the time indexes
         formatForUnitsAndUnisel = '%10.8f'              # Float values for all successive columns
         for unit in self.homeostat.homeoUnits:
-            headerText += (unit.name + ','+unit.name + '_unisel'+',')
             npDataArray = np.vstack((npDataArray,self.liveData[unit]))
             listOfFormatStrings.append(formatForUnitsAndUnisel)
             npDataArray = np.vstack((npDataArray,self.liveData[unit.uniselector]))
             listOfFormatStrings.append(formatForUnitsAndUnisel)
+            if withWeights == True:
+                npDataArray = np.vstack((npDataArray, self.unitsSelfWeights[unit]))
+                headerText += (unit.name + ','+unit.name + '_unisel'+','+unit.name +'_weight')
+                listOfFormatStrings.append(formatForUnitsAndUnisel)
+            else:
+                headerText += (unit.name + ','+unit.name + '_unisel'+',')
         npDataArray = np.transpose(npDataArray)
         np.savetxt(str(aFilename), npDataArray, fmt = listOfFormatStrings, delimiter = ',', comments = '',header = headerText)
   
