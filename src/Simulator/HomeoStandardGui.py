@@ -706,8 +706,8 @@ class HomeoSimulationControllerGui(QDialog):
     def changeWindowsTitles(self,aString):
         "Change title of all window to aString"
         aString = rchop(aString, '.pickled')
-        self.setWindowTitle(aString)
-        self._homeostat_gui.setWindowTitle(aString)
+        self.setWindowTitle(os.path.basename(aString))
+        self._homeostat_gui.setWindowTitle(os.path.basename(aString))
         
     def changedHomeostatName(self,aString):
         "User changed the homeostat name. Change window titles and default filename accordingly"
