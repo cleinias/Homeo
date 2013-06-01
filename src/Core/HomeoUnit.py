@@ -1056,6 +1056,11 @@ class HomeoUnit(object):
             i += 1
         else:
             return ('Unit-' + str(i))
+        
+    def disactivateSelfConn(self):
+        '''Convenience method that disactivates a unit self-connection 
+        (always at 0 in self.inputConnections'''
+        self.inputConnections[0].status = False
             
 
     #===========================================================================

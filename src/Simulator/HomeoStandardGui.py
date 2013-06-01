@@ -20,7 +20,6 @@ from Simulator.Four_units_Homeostat_Standard_UI import Ui_ClassicHomeostat
 from math import floor
 from itertools import cycle
 
-
 class HomeoSimulationControllerGui(QDialog):    
     '''
     Part of a complete GUI for  a HomeoSimulation. 
@@ -43,8 +42,7 @@ class HomeoSimulationControllerGui(QDialog):
         super(HomeoSimulationControllerGui,self).__init__(parent)
         
         self._simulation = HomeoQtSimulation()
-        self._simulation.initializeAshbySimulation()
-#        self._simulation.initializeAshbyFirstExperiment()
+        self._simulation.initializeExperSetup()
         self._simulation.initializeLiveData()
         
         'Construct the dialog in code, and initialize and connect its widgets'
@@ -512,11 +510,11 @@ class HomeoSimulationControllerGui(QDialog):
                 spinBoxes = {'weight':('Double', 'setAbsoluteWeight'), 
                              'switch':('','toggleSwitch'), 
                              'noise':('Double', 'setNoise')}
-                for spinBox, type in iteritems(spinBoxes):
+                for spinBox, spinBoxType in iteritems(spinBoxes):
                     widget = getattr(self._homeostat_gui, 'unit' + str(incomingUnit + 1) + 
-                                     'Unit' + str(outgoingUnit+1)+ (spinBox[0].upper()) + spinBox[1:] + type[0] + 'SpinBox')
+                                     'Unit' + str(outgoingUnit+1)+ (spinBox[0].upper()) + spinBox[1:] + spinBoxType[0] + 'SpinBox')
                     attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], spinBox)
-                    slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], type[1])                    
+                    slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], spinBoxType[1])                    
                     signalFromUnit = spinBox + "Changed"
                     widget.setValue(attribute)
 #                    widget.realSlot = slot

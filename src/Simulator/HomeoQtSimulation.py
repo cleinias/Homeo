@@ -11,6 +11,7 @@ import os, pickle
 from PyQt4.QtCore import  *
 from PyQt4.QtGui import QApplication 
 from collections import deque
+#from Core.HomeoUnit import setRandomValues
 
 class HomeoQtSimulation(QObject):
     '''
@@ -38,6 +39,7 @@ class HomeoQtSimulation(QObject):
         liveDataWindow              <aDictionary>      a Dictionary holding double-ended queues holding only the last maxDataPoints number of datapoints
         maxDataPoints               <anInteger>        the maximum dataPoints to hold for live charting
         panningCharts               <aBoolean>         whether charts should show the complete history or only the last MaxDataPoints
+        currentExperiment           <aMethod>          holds a reference to the initialization procedure for the current experimental setup
     '''
 
 #===============================================================================
@@ -132,6 +134,13 @@ class HomeoQtSimulation(QObject):
         '''
         Initialize the instance with a new homeostat and a default number of runs."
         '''
+#=======================================================================
+# FIXME Currently setting the initialization method of the 
+#       experimental set up in __init__. Should rather have a default value
+#       and then be chosen from the GUI application  
+#=======================================================================
+        self.currentExperiment = 'initialize_1minus_2xExperiment'
+        
         super(HomeoQtSimulation,self).__init__()
         self._homeostat = Homeostat()
         self._maxRuns = 10
@@ -148,32 +157,7 @@ class HomeoQtSimulation(QObject):
         self.maxDataPoints = 50
         self.liveDataWindow = {}
         self.panningCharts = True       # default is to use panning charts. Can be changed in the Gui
-        
-        
-    def initializeAshbySimulation(self):
-        '''Adds four fully connected units with random values to the simulator 
-           (as per Ashby basic design)'''
- 
-        for i in xrange(4):
-            unit = HomeoUnitNewtonian()
-            unit.setRandomValues()
-            self._homeostat.addFullyConnectedUnit(unit)
-    
-    def initializeAshbyFirstExperiment(self):
-        '''Initialize a 2-Unit Homeostat as per Ashby's first experiment (The Homeostat as an adaptor):
-           2 Units, one (called "Agent") self-connected with negative feedback, 
-           the second one ("Environment") not self-connected'''
-        unit1 = HomeoUnitNewtonian()
-        unit1.setRandomValues()
-        unit1.name = "Agent"
-        unit2 = HomeoUnitNewtonian()
-        unit2.setRandomValues()
-        unit2.name = "Environment"
-        self._homeostat.addFullyConnectedUnit(unit1)
-        self._homeostat.addFullyConnectedUnit(unit2)
-        self._homeostat.removeConnectionFromUnit1ToUnit2(unit2, unit2)        # Environment unit is not self-connected"
-        self._homeostat.unitWithName("Environment").uniselectorActive = False # Environment unit has no uniselector working"
-        
+                
     def initializeLiveData(self):
         "set up the liveData dictionary for live graphing"
         for unit in  self._homeostat.homeoUnits:
@@ -183,7 +167,12 @@ class HomeoQtSimulation(QObject):
             self.liveDataWindow[unit.uniselector] = deque(maxlen=self.maxDataPoints)        # add empty queue to hold uniselector activation data for unit
             self.unitsSelfWeights[unit] = []
 
-
+    def initializeExperSetup(self):
+        '''Initialize the homeostat to the current experimental set up using the 
+           method stored in self.currentExperiment'''
+        initializeMethod = getattr(self, self.currentExperiment)
+        initializeMethod()
+    
 #===============================================================================
 # Running methods
 #===============================================================================
@@ -411,14 +400,16 @@ class HomeoQtSimulation(QObject):
         """
         Start a new simulation:
         - fully reset the homeostat
+        - reinitialize to the current simulation experiment
         - clear the simulation data
         - set dataAreSaved to true
         - pick a new name
         """
         self._homeostat.fullReset()
+        self._homeostatFilename = self.createDefaultHomeostatFilename()
+        self.initializeExperSetup()
         self._homeostat.flushData()
         self._dataAreSaved = True
-        self._homeostatFilename = self.createDefaultHomeostatFilename()
         self.initializeLiveData()
         self.allUnitValuesChanged()
     
@@ -434,7 +425,161 @@ class HomeoQtSimulation(QObject):
     def toggleLivedataWindow(self):
         self.panningCharts = not self.panningCharts
 
+#==========================================================================
+# Various experiments initialization methods
+# FIXME: Should be moved to their own class, and each method should return
+#        a properly configured homeostat
+#==========================================================================
         
+    def initializeAshbySimulation(self):
+        '''Adds four fully connected units with random values to the simulator 
+           (as per Ashby basic design)'''
+ 
+        for i in xrange(4):
+            unit = HomeoUnitNewtonian()
+            unit.setRandomValues()
+            self._homeostat.addFullyConnectedUnit(unit)
+    
+
+    def initialize_1minus_2xExperiment(self):
+        '''
+        Initialize a standard Homeostat to have 2 2-units 1-, 2x standard settings for 1- 2x experiment (Agent-Environment)
+        with fixed parameters to improve repeated runs
+        '''
+        
+        'Standard parameters'
+        agent_visc = 0.9
+        env_visc = 0.9
+        agent_mass = 100
+        env_mass = 100
+        agent_self_noise = 0.05
+        env_self_noise = 0.05
+        agent_density = 1
+        env_density = 1
+        agent_uniselector_timing= 100
+        
+        agent_self_connection_active = 'active'
+        agent_self_connection_uniselector = 'manual'
+        agent_self_connection_switch = -1
+        agent_self_connection_potentiomenter = 0.1
+        agent_self_connection_noise = 0.05
+                
+        agent_incoming_conn_weight = 0.5
+        agent_incoming_conn_noise = 0.05
+        agent_incoming_connection_polarity = 1
+        agent_incoming_connection_uniselector = 'uniselector' 
+        
+        env_incoming_connection_weight = 0.5
+        env_incoming_connection_noise = 0.05
+        env_incoming_connection_polarity = 1
+        env_incoming_connection_uniselector = 'manual' 
+
+
+        'Setup a standard Homeostat if none exists. Then change the parameters'
+         
+        if len(self._homeostat.homeoUnits) == 0 :                 # check if the homeostat is set up already"
+            for i in xrange(4):
+                unit = HomeoUnitNewtonian()
+                unit.setRandomValues()
+                self._homeostat.addFullyConnectedUnit(unit)
+        
+        'change homeostat and dataFile names'
+        self.homeostatFilename = '1-minus-2x-experiment'
+        self._dataFilename = '1-minus-2x-experiment-Plot-Data'
+        
+        'disable all connections except self-connections'
+        for unit in self.homeostat.homeoUnits:
+            for i in xrange(1, len(self.homeostat.homeoUnits)):
+                unit.inputConnections[i].status = 0
+        
+        homeo1_unit1_minus = self.homeostat.homeoUnits[0]
+        homeo1_unit2x = self.homeostat.homeoUnits[1]
+        homeo2_unit1_minus = self.homeostat.homeoUnits[2]
+        homeo2_unit2x = self.homeostat.homeoUnits[3]
+        
+        'Agent for Homeostat 1'
+        homeo1_unit1_minus.name = 'H1_Agent'
+        homeo1_unit1_minus.mass = agent_mass
+        homeo1_unit1_minus.viscosity = agent_visc
+        homeo1_unit1_minus.density = agent_density
+        homeo1_unit1_minus.noise  = agent_self_noise
+        homeo1_unit1_minus.uniselectorTimeInterval = agent_uniselector_timing
+        
+        'self-connection'
+        homeo1_unit1_minus.potentiometer = agent_self_connection_potentiomenter
+        homeo1_unit1_minus.switch = agent_self_connection_switch
+        homeo1_unit1_minus.inputConnections[0].noise = agent_self_connection_noise
+        
+        
+        'Environment for Homeostat 1'
+        homeo1_unit2x.name = 'H1_Env'
+        homeo1_unit2x.mass - env_mass
+        homeo1_unit2x.viscosity = env_visc
+        homeo1_unit2x.density = env_density
+        homeo1_unit2x.noise = env_self_noise
+        'self-connection disabled'
+        homeo1_unit2x.disactivateSelfConn()
+
+
+        'set up first homeostat'
+        for connection in homeo1_unit1_minus.inputConnections:
+            if connection.incomingUnit.name == 'H1_Env':
+                connection.newWeight(agent_incoming_conn_weight * agent_incoming_connection_polarity)
+                connection.noise = agent_incoming_conn_noise
+                connection.state = agent_incoming_connection_uniselector
+                connection.status = True
+        
+        
+        
+        for connection in homeo1_unit2x.inputConnections:
+            if connection.incomingUnit.name == 'H1_Agent':
+                connection.newWeight(env_incoming_connection_weight * env_incoming_connection_polarity)
+                connection.noise = env_incoming_connection_noise
+                connection.state = env_incoming_connection_uniselector
+                connection.status = True
+        
+       
+        'Second Homeostat'
+        
+        'Agent for Homeostat 2'
+        homeo2_unit1_minus.name = 'H2_Agent'
+        homeo2_unit1_minus.mass = agent_mass
+        homeo2_unit1_minus.viscosity = agent_visc
+        homeo2_unit1_minus.density = agent_density
+        homeo2_unit1_minus.noise  = agent_self_noise
+        homeo2_unit1_minus.uniselectorTimeInterval = agent_uniselector_timing
+        
+        'self-connection'
+        homeo2_unit1_minus.potentiometer = agent_self_connection_potentiomenter
+        homeo2_unit1_minus.switch = agent_self_connection_switch
+        homeo2_unit1_minus.inputConnections[0].noise = agent_self_connection_noise
+        
+        
+        'Environment for Homeostat 2'
+        homeo2_unit2x.name = 'H2_Env'
+        homeo2_unit2x.mass - env_mass
+        homeo2_unit2x.viscosity = env_visc
+        homeo2_unit2x.density = env_density
+        homeo2_unit2x.noise = env_self_noise
+        'self-connection disabled'
+        homeo2_unit2x.disactivateSelfConn()
+        
+
+        'set up second homeostat'
+        for connection in homeo2_unit1_minus.inputConnections:
+            if connection.incomingUnit.name == 'H2_Env':
+                connection.newWeight(agent_incoming_conn_weight * agent_incoming_connection_polarity)
+                connection.noise = agent_incoming_conn_noise
+                connection.state = agent_incoming_connection_uniselector
+                connection.status = True        
+        
+        for connection in homeo2_unit2x.inputConnections:
+            if connection.incomingUnit.name == 'H2_Agent':
+                connection.newWeight(env_incoming_connection_weight * agent_incoming_connection_polarity)
+                connection.noise = env_incoming_connection_noise
+                connection.state = env_incoming_connection_uniselector
+                connection.status = True         
+
 #===============================================================================
 # Debugging methods
 #===============================================================================
