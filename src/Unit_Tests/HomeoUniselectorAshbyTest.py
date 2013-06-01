@@ -8,7 +8,7 @@ from   Core.HomeoUniselectorAshby import *
 from   Core.Homeostat import *
 import scipy.stats as stats
 import unittest, numpy
-from copy import copy, deepcopy
+from copy import copy
 
 class HomeoUniselectorAshbyTest(unittest.TestCase):
     '''
