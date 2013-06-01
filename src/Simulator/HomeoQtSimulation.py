@@ -509,6 +509,7 @@ class HomeoQtSimulation(QObject):
         homeo1_unit1_minus.potentiometer = agent_self_connection_potentiomenter
         homeo1_unit1_minus.switch = agent_self_connection_switch
         homeo1_unit1_minus.inputConnections[0].noise = agent_self_connection_noise
+        homeo1_unit1_minus.inputConnections[0].state = agent_self_connection_uniselector
         
         
         'Environment for Homeostat 1'
@@ -553,6 +554,8 @@ class HomeoQtSimulation(QObject):
         homeo2_unit1_minus.potentiometer = agent_self_connection_potentiomenter
         homeo2_unit1_minus.switch = agent_self_connection_switch
         homeo2_unit1_minus.inputConnections[0].noise = agent_self_connection_noise
+        homeo2_unit1_minus.inputConnections[0].state = agent_self_connection_uniselector
+
         
         
         'Environment for Homeostat 2'
