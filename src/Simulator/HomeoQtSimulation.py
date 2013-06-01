@@ -139,8 +139,8 @@ class HomeoQtSimulation(QObject):
 #       experimental set up in __init__. Should rather have a default value
 #       and then be chosen from the GUI application  
 #=======================================================================
-        self.currentExperiment = 'initialize_1minus_2xExperiment'
-        
+#        self.currentExperiment = 'initialize_1minus_2xExperiment'
+        self.currentExperiment = 'initialize_1minus_2_minus_3xExperiment'        
         super(HomeoQtSimulation,self).__init__()
         self._homeostat = Homeostat()
         self._maxRuns = 10
@@ -581,7 +581,130 @@ class HomeoQtSimulation(QObject):
                 connection.newWeight(env_incoming_connection_weight * agent_incoming_connection_polarity)
                 connection.noise = env_incoming_connection_noise
                 connection.state = env_incoming_connection_uniselector
-                connection.status = True         
+                connection.status = True      
+                
+                
+                
+    def initialize_1minus_2_minus_3xExperiment(self):
+        """Initialize a homeostat to replicate a 3-unit
+           homeostat roughly similar to DiPaolo's ocular inversion
+           experiment:
+           2 self-connected units representing the 'eyes' or 'sensors'
+           1 unconnected nit representing the environment 
+        """
+        'Standard parameters'
+        agent_visc = 0.9
+        env_visc = 0.9
+        agent_mass = 100
+        env_mass = 100
+        agent_self_noise = 0.05
+        env_self_noise = 0.05
+        agent_density = 1
+        env_density = 1
+        agent_uniselector_timing= 100
+        
+        agent_self_connection_active = 'active'
+        agent_self_connection_uniselector = 'manual'
+        agent_self_connection_switch = -1
+        agent_self_connection_potentiomenter = 0.1
+        agent_self_connection_noise = 0.05
+                
+        agent_incoming_conn_weight = 0.5
+        agent_incoming_conn_noise = 0.05
+        agent_incoming_connection_polarity = 1
+        agent_incoming_connection_uniselector = 'uniselector' 
+        
+        env_incoming_connection_weight = 0.5
+        env_incoming_connection_noise = 0.05
+        env_incoming_connection_polarity = 1
+        env_incoming_connection_uniselector = 'manual'
+        
+        'Setup a standard Homeostat if none exists. Then change the parameters'
+         
+        if len(self._homeostat.homeoUnits) == 0 :                 # check if the homeostat is set up already"
+            for i in xrange(4):
+                unit = HomeoUnitNewtonian()
+                unit.setRandomValues()
+                self._homeostat.addFullyConnectedUnit(unit)
+
+        'change homeostat and dataFile names'
+        self.homeostatFilename = '1-minus-2-minus--3x-experiment'
+        self._dataFilename = '1-minus-2-minus--3x--Plot-Data'
+        
+        'disable all connections except self-connections'
+        for unit in self.homeostat.homeoUnits:
+            for i in xrange(1, len(self.homeostat.homeoUnits)):
+                unit.inputConnections[i].status = 0
+        
+        homeo1_unit1_minus = self.homeostat.homeoUnits[0]
+        homeo1_unit2_minus = self.homeostat.homeoUnits[1]
+        homeo1_unit3x = self.homeostat.homeoUnits[2]
+        homeo1_inactive_unit = self.homeostat.homeoUnits[3]
+        
+        'First Agent or sensor'
+        homeo1_unit1_minus.name = '1_Agent'
+        homeo1_unit1_minus.mass = agent_mass
+        homeo1_unit1_minus.viscosity = agent_visc
+        homeo1_unit1_minus.density = agent_density
+        homeo1_unit1_minus.noise  = agent_self_noise
+        homeo1_unit1_minus.uniselectorTimeInterval = agent_uniselector_timing
+        
+        'self-connection'
+        homeo1_unit1_minus.potentiometer = agent_self_connection_potentiomenter
+        homeo1_unit1_minus.switch = agent_self_connection_switch
+        homeo1_unit1_minus.inputConnections[0].noise = agent_self_connection_noise
+        homeo1_unit1_minus.inputConnections[0].state = agent_self_connection_uniselector
+        
+        'Second Agent or sensor'
+        homeo1_unit2_minus.name = '2_Agent'
+        homeo1_unit2_minus.mass = agent_mass
+        homeo1_unit2_minus.viscosity = agent_visc
+        homeo1_unit2_minus.density = agent_density
+        homeo1_unit2_minus.noise  = agent_self_noise
+        homeo1_unit2_minus.uniselectorTimeInterval = agent_uniselector_timing
+        
+        'self-connection'
+        homeo1_unit2_minus.potentiometer = agent_self_connection_potentiomenter
+        homeo1_unit2_minus.switch = agent_self_connection_switch
+        homeo1_unit2_minus.inputConnections[0].noise = agent_self_connection_noise
+        homeo1_unit2_minus.inputConnections[0].state = agent_self_connection_uniselector
+        
+        
+        'Environment '
+        homeo1_unit3x.name = 'Env'
+        homeo1_unit3x.mass - env_mass
+        homeo1_unit3x.viscosity = env_visc
+        homeo1_unit3x.density = env_density
+        homeo1_unit3x.noise = env_self_noise
+        'self-connection disabled'
+        homeo1_unit3x.disactivateSelfConn()
+
+        'fourth unit is inactive'
+        homeo1_inactive_unit.name= 'UNUSED'
+        homeo1_inactive_unit.disactivate()
+
+        'set up homeostat'
+        for connection in homeo1_unit1_minus.inputConnections:
+            if not (connection.incomingUnit.name == 'UNUSED' or connection.incomingUnit == connection.outgoingUnit):
+                connection.newWeight(agent_incoming_conn_weight * agent_incoming_connection_polarity)
+                connection.noise = agent_incoming_conn_noise
+                connection.state = agent_incoming_connection_uniselector
+                connection.status = True
+        
+        for connection in homeo1_unit2_minus.inputConnections:
+            if not (connection.incomingUnit.name == 'UNUSED'  or connection.incomingUnit == connection.outgoingUnit):
+                connection.newWeight(agent_incoming_conn_weight * agent_incoming_connection_polarity)
+                connection.noise = agent_incoming_conn_noise
+                connection.state = agent_incoming_connection_uniselector
+                connection.status = True
+        
+        
+        for connection in homeo1_unit3x.inputConnections:
+            if not (connection.incomingUnit.name == 'UNUSED'  or connection.incomingUnit == connection.outgoingUnit):
+                connection.newWeight(env_incoming_connection_weight * env_incoming_connection_polarity)
+                connection.noise = env_incoming_connection_noise
+                connection.state = env_incoming_connection_uniselector
+                connection.status = True
 
 #===============================================================================
 # Debugging methods
