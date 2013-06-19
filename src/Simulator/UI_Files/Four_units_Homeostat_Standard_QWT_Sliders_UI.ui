@@ -7575,7 +7575,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>614</x>
@@ -7744,7 +7744,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>611</x>
@@ -7916,7 +7916,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>611</x>
@@ -8088,7 +8088,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>611</x>
@@ -8295,10 +8295,6 @@
   <zorder>line_12</zorder>
   <zorder>label_79</zorder>
   <zorder>layoutWidget</zorder>
-  <zorder>unit1CritDevSlider</zorder>
-  <zorder>unit2CritDevSlider</zorder>
-  <zorder>unit3CritDevSlider</zorder>
-  <zorder>unit4CritDevSlider</zorder>
  </widget>
  <customwidgets>
   <customwidget>

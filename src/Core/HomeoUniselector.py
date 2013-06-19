@@ -5,7 +5,10 @@ Created on Feb 19, 2013
 '''
 
 from Helpers.General_Helper_Functions  import SubclassResponsibility, withAllSubclasses
+from Helpers.QObjectProxyEmitter import emitter
 import numpy
+from PyQt4.QtCore import QObject, SIGNAL
+
 
 class HomeoUniselectorError(Exception):
     pass
@@ -39,18 +42,15 @@ class HomeoUniselector(object):
     
     def __init__(self):
         "Initialize the HomeoUniselector instance"
+  
+        '''sets the defaults for the uniselector weights. 
+        Can be (and usually is) overridden by subclasses'''
         
-        self.setDefaults()
-        
-    def setDefaults(self):
-        ''''sets the defaults for the uniselector weights. 
-        Can be (and usually is) overidden by subclasses'''
-
         self._lowerBound = 0
         self._upperBound = 1
-
         self._beeps = False
-     
+        QObject.emit(emitter(self), SIGNAL('uniselSoundChanged'), self._beeps)
+             
     def getLowerBound(self):
         return self._lowerBound
     
@@ -74,6 +74,7 @@ class HomeoUniselector(object):
     
     def toggleBeeping(self):
         self._beeps = not self._beeps 
+        QObject.emit(emitter(self), SIGNAL('unitUniselSoundChanged'), self._beeps)
     
     beeps = property(fget= lambda self: self.getBeeps(),
                      fset = lambda self: self.toggleBeeping)
@@ -98,3 +99,6 @@ class HomeoUniselector(object):
         
         raise SubclassResponsibility()
     
+    def allValuesChanged(self):
+        "Signals back to GUI that all its relevant values have changed"
+        pass

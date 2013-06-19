@@ -8,6 +8,11 @@ def withAllSubclasses(aClass):
     return subs
 
     
+def rchop(aString, ending):
+  if str(aString).endswith(ending):
+    return str(aString)[:-len(ending)]
+  return str(aString)    
+    
 class SubclassResponsibility(Exception):
     pass
 

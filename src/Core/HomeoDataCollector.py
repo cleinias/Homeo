@@ -10,7 +10,7 @@ from cherrypy._cpcompat import iteritems
 
 
 class HomeoDataCollector(object):
-    '''DataCollector collects the data for the Homestat simulation. It can output them 
+    '''DataCollector collects the data for the Homeostat simulation. It can output them 
        on different media (file, screen, etc) and formats, write them to file or read 
        them from file. DataCollector DOES NOT collect the data about the homeostat 
        itself---i.e. the engine that has produced the data. 

@@ -6,7 +6,7 @@ Created on Mar 13, 2013
 from Core.HomeoDataCollector import  *
 from Helpers.General_Helper_Functions import withAllSubclasses
 import time, sys, pickle
-from PyQt4.QtCore import  *
+from PyQt4.QtCore import  QObject, SIGNAL
 from Helpers.QObjectProxyEmitter import emitter
 
 class HomeostatError(Exception):
@@ -196,10 +196,12 @@ class Homeostat(object):
 #===============================================================================
 
     def fullReset(self):
-        '''Reset the values of the units and their connections to random values. 
+        '''Reset the values of the units and their connections to default values  for basic parameters
+           and to random values for deviation, weights, etc. 
            Reset time to 0.'''
 
         self.timeReset()
+        self.restoreDefaultValuesForAllUnits()
         self.randomizeValuesforAllUnits()
 
     def runFor(self,ticks):
@@ -228,9 +230,10 @@ class Homeostat(object):
                 for unit in self.homeoUnits:
                     if self.collectsData:
                         self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
-                        unit.time =  self.time
-                        if unit.isActive():
-                            unit.selfUpdate()
+                    unit.time =  self.time
+#                    sys.stderr.write("the status of %s in the function is %s and in the ivar is %s \n" % (unit.name, unit.isActive(), unit._status))
+                    if unit.isActive():
+                        unit.selfUpdate()
                 self.time +=  1
                 QObject.emit(emitter(self), SIGNAL('homeostatTimeChanged'), self.time)
                 time.sleep(sleepTime / 1000)               # sleep accepts seconds, slowingFactor is in milliseconds
@@ -287,7 +290,7 @@ class Homeostat(object):
     def timeReset(self):
         '''Reset time to 0. Does not change the external values of the units 
            or their connections, but do change their internal computational values: 
-           input, nextdeviation, etcetera'''
+           input, nextDeviation, etcetera'''
 
         self.time = 0
         for unit in self.homeoUnits:
@@ -367,6 +370,12 @@ class Homeostat(object):
         for unit in self.homeoUnits:
             unit.setRandomValues()
             unit.randomizeAllConnectionValues()
+            
+    def restoreDefaultValuesForAllUnits(self):
+        "Restore default values for a unit's basic parameters"
+        for unit in self.homeoUnits:
+            unit.initializeBasicParameters()
+            unit.initializeUniselector()
             
     def unitWithName(self,aString):
         '''Return the Unit with name aString, if it exists,
