@@ -1,0 +1,704 @@
+#VRML_SIM V6.0 utf8
+WorldInfo {
+  info [
+    "A Khepera robot equipped with a gripper"
+    "Author: Olivier Michel - www.cyberbotics.com"
+    "Modified by: Yvan Bourquin - www.cyberbotics.com"
+    "Date: November 9, 2009"
+  ]
+  title "Khepera Gripper"
+  CFM 0.001
+  ERP 0.4
+  basicTimeStep 10
+  contactProperties [
+    ContactProperties {
+      material1 "gripper"
+      material2 "stick"
+      coulombFriction 10
+    }
+    ContactProperties {
+      material1 "khepera"
+      coulombFriction 0.1
+    }
+  ]
+}
+Viewpoint {
+  orientation 0.227248 0.96039 0.161276 4.89882
+  position -0.281467 0.163949 0.167035
+}
+Background {
+  skyColor [
+    0.4 0.7 1
+  ]
+}
+DirectionalLight {
+  ambientIntensity 1.5
+  direction 0.2 -0.5 0.2
+  intensity 0.7
+  castShadows TRUE
+}
+DEF FLOOR Solid {
+  translation -0.5 0 -0.5
+  children [
+    Shape {
+      geometry ElevationGrid {
+        color Color {
+          color [
+            0.803922 0.498039 0.298039, 1 1 0
+          ]
+        }
+        colorPerVertex FALSE
+        xDimension 11
+        xSpacing 0.1
+        zDimension 11
+        zSpacing 0.1
+      }
+    }
+  ]
+  boundingObject Transform {
+    translation 0.5 0 0.5
+    children [
+      Plane {
+      }
+    ]
+  }
+}
+DEF WALL Solid {
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 1 0.1 0.3
+        }
+      }
+      geometry DEF WALL_GEOMETRY IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.5 0 0.5, 0.5 0 -0.5
+            -0.5 0 -0.5, -0.5 0 0.5
+            -0.49 0 0.5, -0.49 0 -0.49
+            0.49 0 -0.49, 0.49 0 0.49
+            -0.4899 0 0.49, -0.4899 0 0.5
+            0.5 0 0.5, 0.5 0.02 0.5
+            0.5 0.02 -0.5, -0.5 0.02 -0.5
+            -0.5 0.02 0.5, -0.49 0.02 0.5
+            -0.49 0.02 -0.49, 0.49 0.02 -0.49
+            0.49 0.02 0.49, -0.4899 0.02 0.49
+            -0.4899 0.02 0.5, 0.5 0.02 0.5
+          ]
+        }
+        coordIndex [
+          10 9 8 7 6 5 4 3 2 1 0 -1 11 12 13 14 15 16 17 18 19 20 21 -1 0 1 12 11 -1 
+          1 2 13 12 -1 2 3 14 13 -1 3 4 15 14 -1 
+          4 5 16 15 -1 5 6 17 16 -1 6 7 18 17 -1 
+          7 8 19 18 -1 8 9 20 19 -1 9 10 21 20 -1 
+        ]
+      }
+    }
+  ]
+  name "wall"
+  boundingObject Group {
+    children [
+      Transform {
+        translation 0.495 0.01 0
+        children [
+          DEF WALL_SHAPE Shape {
+            appearance Appearance {
+              material Material {
+              }
+            }
+            geometry Box {
+              size 0.01 0.02 1
+            }
+          }
+        ]
+      }
+      Transform {
+        translation -0.495 0.01 0
+        children [
+          USE WALL_SHAPE
+        ]
+      }
+      Transform {
+        translation 0 0.01 0.495
+        rotation 0 1 0 1.57
+        children [
+          USE WALL_SHAPE
+        ]
+      }
+      Transform {
+        translation 0 0.01 -0.495
+        rotation 0 1 0 1.57
+        children [
+          USE WALL_SHAPE
+        ]
+      }
+    ]
+  }
+  locked TRUE
+}
+DEF RED_STICK Solid {
+  translation 0.00613218 0.03 0.120228
+  rotation 0 -1 0 3.53867
+  children [
+    DEF STICK_SHAPE Shape {
+      appearance Appearance {
+        material Material {
+          ambientIntensity 0.4
+          diffuseColor 1 0.155604 0.246125
+          shininess 0
+          specularColor 0.435294 0.146981 0
+        }
+      }
+      geometry Cylinder {
+        height 0.06
+        radius 0.008
+      }
+    }
+  ]
+  name "red stick"
+  contactMaterial "stick"
+  boundingObject Box {
+    size 0.013 0.06 0.013
+  }
+  physics Physics {
+    density 100
+  }
+}
+DEF KHEPERA DifferentialWheels {
+  translation 0.0245671 0 0.0745528
+  rotation 0 1 0 -28.6581
+  children [
+    DEF LIFT_HINGE_JOINT HingeJoint {
+      jointParameters HingeJointParameters {
+        axis -1 0 0
+        anchor 0 0.032 0.01
+        position -1.4
+      }
+      device RotationalMotor {
+        name "motor"
+      }
+      endPoint Solid {
+        translation 0 0.032 0.01
+        rotation -1 0 0 -1.4
+        children [
+          DEF RIGHT_GRIP SliderJoint {
+            device LinearMotor {
+              name "right grip"
+              maxVelocity 0.1
+              maxPosition 0.029
+              maxForce 100
+            }
+            jointParameters JointParameters {
+              axis -1 0 3.67321e-06
+            }
+            endPoint Solid {
+              translation 0 0 -0.048
+              rotation 0 1 0 1.5708
+              children [
+                Shape {
+                  appearance Appearance {
+                    material Material {
+                    }
+                  }
+                  geometry IndexedFaceSet {
+                    coord Coordinate {
+                      point [
+                        0 -0.004 0.004, 0.03 -0.004 0.002
+                        0.03 -0.004 0.0001, 0 -0.004 0.0001
+                        0 -0.004 0.004, 0 0.004 0.004
+                        0.03 0.004 0.002, 0.03 0.004 0.0001
+                        0 0.004 0.0001, 0 0.004 0.004
+                      ]
+                    }
+                    coordIndex [
+                      4 3 2 1 0 -1 5 6 7 8 9 -1 0 1 6 5 -1 
+                      1 2 7 6 -1 2 3 8 7 -1 3 4 9 8 -1 
+                    ]
+                  }
+                }
+                DistanceSensor {
+                  translation 0.015 0 0
+                  rotation 0 1 0 1.5708
+                  name "ds"
+                  lookupTable [
+                    0 0 0, 0.05 1000 0
+                  ]
+                  type "infra-red"
+                }
+              ]
+              contactMaterial "gripper"
+              boundingObject Transform {
+                translation 0.015 0 0.003
+                children [
+                  Box {
+                    size 0.028 0.007 0.005
+                  }
+                ]
+              }
+              physics Physics {
+                density 100
+                centerOfMass [
+                  0.01 0 0
+                ]
+              }
+            }
+          }
+          DEF LEFT_GRIP SliderJoint {
+            device LinearMotor {
+              name "left grip"
+              maxVelocity 0.1
+              maxPosition 0.029
+              maxForce 100
+            }
+            jointParameters JointParameters {
+              axis 1 0 3.67321e-06
+            }
+            endPoint Solid {
+              translation 0 0 -0.048
+              rotation 0 1 0 -1.5708
+              children [
+                Shape {
+                  appearance Appearance {
+                    material Material {
+                    }
+                  }
+                  geometry IndexedFaceSet {
+                    coord Coordinate {
+                      point [
+                        0 -0.004 0.0001, -0.03 -0.004 0.0001
+                        -0.03 -0.004 0.002, 0 -0.004 0.004
+                        0 -0.004 0.0001, 0 0.004 0.0001
+                        -0.03 0.004 0.0001, -0.03 0.004 0.002
+                        0 0.004 0.004, 0 0.004 0.0001
+                      ]
+                    }
+                    coordIndex [
+                      4 3 2 1 0 -1 5 6 7 8 9 -1 0 1 6 5 -1 
+                      1 2 7 6 -1 2 3 8 7 -1 3 4 9 8 -1 
+                    ]
+                  }
+                }
+              ]
+              contactMaterial "gripper"
+              boundingObject Transform {
+                translation -0.015 0 0.003
+                children [
+                  Box {
+                    size 0.028 0.007 0.005
+                  }
+                ]
+              }
+              physics Physics {
+                density 100
+                centerOfMass [
+                  -0.01 0 0
+                ]
+              }
+            }
+          }
+          Shape {
+            appearance Appearance {
+              material Material {
+              }
+            }
+            geometry IndexedFaceSet {
+              coord Coordinate {
+                point [
+                  0.035 -0.004 0.006, 0.035 -0.004 -0.048
+                  -0.035 -0.004 -0.048, -0.035 -0.004 0.006
+                  -0.025 -0.004 0.006, -0.025 -0.004 -0.03
+                  -0.016 -0.004 -0.04, 0.016 -0.004 -0.04
+                  0.025 -0.004 -0.03, 0.025 -0.004 0.006
+                  0.035 -0.004 0.006, 0.035 0.004 0.006
+                  0.035 0.004 -0.048, -0.035 0.004 -0.048
+                  -0.035 0.004 0.006, -0.025 0.004 0.006
+                  -0.025 0.004 -0.03, -0.016 0.004 -0.04
+                  0.016 0.004 -0.04, 0.025 0.004 -0.03
+                  0.025 0.004 0.006, 0.035 0.004 0.006
+                ]
+              }
+              coordIndex [
+                10 9 8 7 6 5 4 3 2 1 0 -1 11 12 13 14 15 16 17 18 19 20 21 -1 0 1 12 11 -1 
+                1 2 13 12 -1 2 3 14 13 -1 3 4 15 14 -1 
+                4 5 16 15 -1 5 6 17 16 -1 6 7 18 17 -1 
+                7 8 19 18 -1 8 9 20 19 -1 9 10 21 20 -1 
+              ]
+            }
+          }
+        ]
+        boundingObject Transform {
+          translation 0 0 -0.021
+          children [
+            Box {
+              size 0.068 0.008 0.052
+            }
+          ]
+        }
+        physics Physics {
+          density 100
+          centerOfMass [
+            0 0 -0.02
+          ]
+        }
+      }
+    }
+    DEF GRIPPER_BASE Transform {
+      translation 0 0.033 0.01
+      children [
+        Shape {
+          appearance Appearance {
+            material Material {
+            }
+          }
+          geometry Box {
+            size 0.05 0.01 0.01
+          }
+        }
+      ]
+    }
+    DEF BODY Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor 0.0539951 0.505576 0.0897663
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.0276 0.0025 -0.009, 0.0215 0.0025 -0.0194
+            0.0118 0.0025 -0.0265, 0 0.0025 -0.029
+            -0.0118 0.0025 -0.0265, -0.0215 0.0025 -0.0194
+            -0.0276 0.0025 -0.009, -0.0236 0.02 -0.009
+            -0.0236 0.02 0.009, 0.0236 0.02 0.009
+            0.0236 0.02 -0.009, -0.0276 0.0025 0.009
+            -0.0215 0.0025 0.0194, -0.0118 0.0025 0.0265
+            0 0.0025 0.029, 0.0118 0.0025 0.0265
+            0.0215 0.0025 0.0194, 0.0276 0.0025 0.009
+            0.0276 0.001 -0.009, 0.0215 0.001 -0.0194
+            0.0118 0.001 -0.0265, 0 0.001 -0.029
+            -0.0118 0.001 -0.0265, -0.0215 0.001 -0.0194
+            -0.0276 0.001 -0.009, -0.0236 0.001 -0.009
+            -0.0236 0.001 0.009, 0.0236 0.001 0.009
+            0.0236 0.001 -0.009, -0.0276 0.001 0.009
+            -0.0215 0.001 0.0194, -0.0118 0.001 0.0265
+            0 0.001 0.029, 0.0118 0.001 0.0265
+            0.0215 0.001 0.0194, 0.0276 0.001 0.009
+          ]
+        }
+        coordIndex [
+          0 1 2 3 4 5 6 -1 11 12 13 14 15 16 17 -1 24 23 22 21 20 19 18 -1 
+          35 34 33 32 31 30 29 -1 1 0 18 19 -1 2 1 19 20 -1 
+          3 2 20 21 -1 4 3 21 22 -1 5 4 22 23 -1 
+          6 5 23 24 -1 0 6 24 18 -1 17 16 34 35 -1 
+          16 15 33 34 -1 15 14 32 33 -1 14 13 31 32 -1 
+          13 12 30 31 -1 12 11 29 30 -1 11 17 35 29 -1 
+          7 10 28 25 -1 9 8 26 27 -1 8 7 25 26 -1 
+          10 9 27 28 -1 28 27 26 25 -1 
+        ]
+        creaseAngle 0.5
+      }
+    }
+    DEF LEFT_WHEEL Solid {
+      translation -0.026 0.0075 0
+      rotation 1 0 0 0
+      children [
+        DEF WHEEL_TRANS Transform {
+          rotation 0 0 1 -1.5707
+          children [
+            Shape {
+              appearance Appearance {
+                material Material {
+                  diffuseColor 0.778497 0.793743 0.8
+                }
+              }
+              geometry Cylinder {
+                height 0.003
+                radius 0.0075
+              }
+            }
+          ]
+        }
+      ]
+      name "left wheel"
+      boundingObject USE WHEEL_TRANS
+      physics Physics {
+      }
+    }
+    DEF RIGHT_WHEEL Solid {
+      translation 0.026 0.0075 0
+      rotation 1 0 0 0
+      children [
+        USE WHEEL_TRANS
+      ]
+      name "right wheel"
+      boundingObject USE WHEEL_TRANS
+      physics Physics {
+      }
+    }
+    DEF TOP_PLATE Transform {
+      translation 0 0.024 0
+      children [
+        Shape {
+          appearance Appearance {
+            material Material {
+              diffuseColor 0.015 0.48 0.1796
+            }
+          }
+          geometry Cylinder {
+            height 0.008
+            radius 0.028
+          }
+        }
+      ]
+    }
+    DEF DS0 DistanceSensor {
+      translation -0.0245 0.0145 -0.012
+      rotation 0 1 0 3.0543
+      children [
+        DEF SFH900 Group {
+          children [
+            Shape {
+              appearance Appearance {
+                material Material {
+                  diffuseColor 0.3 0.2 0.2
+                }
+              }
+              geometry Box {
+                size 0.002 0.003 0.006
+              }
+            }
+            Shape {
+              appearance Appearance {
+                material Material {
+                  diffuseColor 0.0223048 0.0223048 0.0223048
+                }
+              }
+              geometry IndexedLineSet {
+                coord Coordinate {
+                  point [
+                    0 0 0, 0 -0.013 0
+                    0 0 0.0015, 0 -0.013 0.0015
+                    0 0 -0.0015, 0 -0.013 -0.0015
+                  ]
+                }
+                coordIndex [
+                  0 1 -1 2 3 -1 4 5 -1 
+                ]
+              }
+            }
+          ]
+        }
+      ]
+      name "ds0"
+      model "SFH900"
+      description "infra-red"
+      lookupTable [
+        0 1023 0, 0.05 0 0.01
+      ]
+      type "infra-red"
+    }
+    DEF DS1 DistanceSensor {
+      translation -0.0185 0.0145 -0.021
+      rotation 0 1 0 2.3562
+      children [
+        USE SFH900
+      ]
+      name "ds1"
+      model "SFH900"
+      description "infra-red"
+      lookupTable [
+        0 1023 0, 0.05 0 0.01
+      ]
+      type "infra-red"
+    }
+    DEF DS2 DistanceSensor {
+      translation -0.0075 0.0145 -0.027
+      rotation 0 1 0 1.5708
+      children [
+        USE SFH900
+      ]
+      name "ds2"
+      lookupTable [
+        0 1023 0, 0.05 0 0.01
+      ]
+      type "infra-red"
+    }
+    DEF DS3 DistanceSensor {
+      translation 0.0075 0.0145 -0.027
+      rotation 0 1 0 1.5708
+      children [
+        USE SFH900
+      ]
+      name "ds3"
+      lookupTable [
+        0 1023 0, 0.05 0 0.01
+      ]
+      type "infra-red"
+    }
+    DEF DS4 DistanceSensor {
+      translation 0.0185 0.0145 -0.021
+      rotation 0 1 0 0.7854
+      children [
+        USE SFH900
+      ]
+      name "ds4"
+      lookupTable [
+        0 1023 0, 0.05 0 0.01
+      ]
+      type "infra-red"
+    }
+    DEF DS5 DistanceSensor {
+      translation 0.0245 0.0145 -0.012
+      rotation 0 1 0 0.0873
+      children [
+        USE SFH900
+      ]
+      name "ds5"
+      lookupTable [
+        0 1023 0, 0.05 0 0.01
+      ]
+      type "infra-red"
+    }
+    DEF DS6 DistanceSensor {
+      translation 0.009 0.0145 0.026
+      rotation 0 1 0 -1.5708
+      children [
+        USE SFH900
+      ]
+      name "ds6"
+      lookupTable [
+        0 1023 0, 0.05 0 0.01
+      ]
+      type "infra-red"
+    }
+    DEF DS7 DistanceSensor {
+      translation -0.009 0.0145 0.026
+      rotation 0 1 0 -1.5708
+      children [
+        USE SFH900
+      ]
+      name "ds7"
+      lookupTable [
+        0 1023 0, 0.05 0 0.01
+      ]
+      type "infra-red"
+    }
+    DEF LS0 LightSensor {
+      translation -0.0245 0.0144 -0.012
+      rotation 0 1 0 3.0543
+      name "ls0"
+      lookupTable [
+        0 500 0.1, 0.2 10 0.1
+      ]
+    }
+    DEF LS1 LightSensor {
+      translation -0.0185 0.0144 -0.021
+      rotation 0 1 0 2.3562
+      name "ls1"
+      lookupTable [
+        0 500 0.1, 0.2 10 0.1
+      ]
+    }
+    DEF LS2 LightSensor {
+      translation -0.0075 0.0144 -0.027
+      rotation 0 1 0 1.5708
+      name "ls2"
+      lookupTable [
+        0 500 0.1, 0.2 10 0.1
+      ]
+    }
+    DEF LS3 LightSensor {
+      translation 0.0075 0.0144 -0.027
+      rotation 0 1 0 1.5708
+      name "ls3"
+      lookupTable [
+        0 500 0.1, 0.2 10 0.1
+      ]
+    }
+    DEF LS4 LightSensor {
+      translation 0.0185 0.0144 -0.021
+      rotation 0 1 0 0.7854
+      name "ls4"
+      lookupTable [
+        0 500 0.1, 0.2 10 0.1
+      ]
+    }
+    DEF LS5 LightSensor {
+      translation 0.0245 0.0144 -0.012
+      rotation 0 1 0 0.0873
+      name "ls5"
+      lookupTable [
+        0 500 0.1, 0.2 10 0.1
+      ]
+    }
+    DEF LS6 LightSensor {
+      translation 0.009 0.0144 0.026
+      rotation 0 1 0 -1.5708
+      name "ls6"
+      lookupTable [
+        0 500 0.1, 0.2 10 0.1
+      ]
+    }
+    DEF LS7 LightSensor {
+      translation -0.009 0.0144 0.026
+      rotation 0 1 0 -1.5708
+      name "ls7"
+      lookupTable [
+        0 500 0.1, 0.2 10 0.1
+      ]
+    }
+    DEF LED0 LED {
+      translation 0.013 0.021 -0.022
+      children [
+        Shape {
+          appearance Appearance {
+            material Material {
+              diffuseColor 0.501961 0.501961 0.501961
+            }
+          }
+          geometry Box {
+            size 0.002 0.002 0.002
+          }
+        }
+      ]
+      name "led0"
+    }
+    DEF LED1 LED {
+      translation 0.01 0.021 -0.024
+      children [
+        Shape {
+          appearance Appearance {
+            material Material {
+              diffuseColor 0.501961 0.501961 0.501961
+            }
+          }
+          geometry Box {
+            size 0.002 0.002 0.002
+          }
+        }
+      ]
+      name "led1"
+    }
+  ]
+  name "khepera"
+  model "Khepera"
+  contactMaterial "khepera"
+  boundingObject Transform {
+    translation 0 0.014 0
+    children [
+      Cylinder {
+        height 0.026
+        radius 0.0285
+      }
+    ]
+  }
+  physics Physics {
+    centerOfMass [
+      0 0.005 0
+    ]
+  }
+  controller "khepera_gripper"
+  axleLength 0.053
+  wheelRadius 0.008
+}

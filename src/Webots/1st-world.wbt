@@ -1,0 +1,44 @@
+#VRML_SIM V6.0 utf8
+WorldInfo {
+  info [
+    "Description"
+    "Author: first name last name <e-mail>"
+    "Date: DD MMM YYYY"
+  ]
+  basicTimeStep 16
+}
+Viewpoint {
+  orientation 0.999333 0.0326273 -0.0163947 4.70069
+  position -0.208197 3.9887 -0.248166
+}
+Background {
+  skyColor [
+    0.4 0.7 1
+  ]
+}
+PointLight {
+  color 0 1 0
+  intensity 5
+  location -0.4 0.4 -0.4
+}
+PointLight {
+  color 0 0 1
+  intensity 5
+  location 0.4 0.4 0.4
+}
+PointLight {
+  color 1 0 0
+  intensity 5
+  location -0.4 0.4 0.4
+}
+PointLight {
+  color 1 1 0
+  intensity 5
+  location 0.4 0.4 -0.4
+}
+DEF FLOOR CheckeredFloor {
+  colors [
+    1 1 1
+    1 1 1
+  ]
+}
