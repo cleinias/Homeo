@@ -185,6 +185,14 @@ lights
  (fiducial sources) 
 \end_layout
 
+\begin_deeper
+\begin_layout Standard
+There are no lights in player-stage, nor light sensors.
+ One possibility is to used fiducials and then compute an inverse square
+ root decay of of the signal.
+\end_layout
+
+\end_deeper
 \begin_layout Enumerate
 setup config file
 \end_layout
@@ -221,12 +229,97 @@ test setup from console (use provided tcpip client)
 Add input and output transducers to Homeo
 \end_layout
 
+\begin_deeper
+\begin_layout Enumerate
+input transducers could be just homeo units with a simplified self-update
+ routine that simply reads from an interface.
+ It would be nice to keep the interface agnostic to the simulation environment,
+ in order to switch between the different options if needed.
+\end_layout
+
+\begin_layout Enumerate
+Similarly for output transducers
+\end_layout
+
+\end_deeper
 \begin_layout Enumerate
 Change simulation routines to include reading/writing from/to transducers
 \end_layout
 
 \begin_layout Enumerate
 Connect python homeo simulation to robotic environment
+\end_layout
+
+\begin_layout Section
+In order:
+\end_layout
+
+\begin_layout Enumerate
+Webots setup in client/server config
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Setup world/robot for phototaxis on Webots
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+setup a single motor and differential wheel robot
+\end_layout
+
+\begin_layout Enumerate
+setup a simple world with one light source
+\end_layout
+
+\begin_layout Enumerate
+Look into using fast 2D plugin
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Test directly within Webots
+\end_layout
+
+\begin_layout Enumerate
+Add tcpip server that comes with Webots
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Look into rewriting the server in python for more flexibility
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Write simple client in python, text only
+\end_layout
+
+\begin_layout Enumerate
+Test python client from from command line, server on laptop
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Extend Homeo to support transducers
+\end_layout
+
+\begin_layout Enumerate
+Connect transducers to Webots
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+integrate client code
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Integrates transducers to a homeostat
+\end_layout
+
+\begin_layout Enumerate
+Test simulation in client/server setting
 \end_layout
 
 \end_body
