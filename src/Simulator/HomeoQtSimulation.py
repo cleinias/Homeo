@@ -6,6 +6,7 @@ Created on Mar 19, 2013
 from Core.Homeostat import *
 from Core.HomeoDataCollector  import *
 from Core.HomeoUnitNewtonian  import *
+import Simulator.HomeoExperiments
 from datetime import datetime
 import os, pickle
 from PyQt4.QtCore import  *
@@ -130,7 +131,7 @@ class HomeoQtSimulation(QObject):
     def units(self):
         return self.homeostat.homeoUnits
     
-    def __init__(self):
+    def __init__(self, experiment=None):
         '''
         Initialize the instance with a new homeostat and a default number of runs."
         '''
@@ -139,9 +140,11 @@ class HomeoQtSimulation(QObject):
 #       experimental set up in __init__. Should rather have a default value
 #       and then be chosen from the GUI application  
 #=======================================================================
-        self.currentExperiment = 'initialize_1minus_2xExperiment'
+#        self.currentExperiment = 'initialize_1minus_2xExperiment'
 #        self.currentExperiment = 'initialize_1minus_2_minus_3xExperiment'    
-        self.currentExperiment = 'initialize_Ashby_2nd_Experiment'
+        if experiment == None:
+            self.currentExperiment = 'initialize_Ashby_2nd_Experiment'
+            
     
         super(HomeoQtSimulation,self).__init__()
         self._homeostat = Homeostat()
@@ -170,11 +173,15 @@ class HomeoQtSimulation(QObject):
             self.unitsSelfWeights[unit] = []
 
     def initializeExperSetup(self):
-        '''Initialize the homeostat to the current experimental set up using the 
-           method stored in self.currentExperiment'''
-        initializeMethod = getattr(self, self.currentExperiment)
-        initializeMethod()
-    
+        '''Initialize the homeostat to the current experimental set up by calling the class
+           method of HomeoExperiment corresponding to the string stored in self.currentExperiment'''
+        self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)()
+        self._dataFilename = self.currentExperiment + '--Plot-Data'
+#----------------------------------------------------------------------------- #
+# FIXME 
+# Need to properly set up the homeostat filename according to the kind of experiment being run
+#------------------------------------------------------------------------------ 
+
 #===============================================================================
 # Running methods
 #===============================================================================
@@ -426,429 +433,7 @@ class HomeoQtSimulation(QObject):
         
     def toggleLivedataWindow(self):
         self.panningCharts = not self.panningCharts
-
-#==========================================================================
-# Various experiments initialization methods
-# FIXME: Should be moved to their own class, and each method should return
-#        a properly configured homeostat
-#==========================================================================
-        
-    def initializeAshbySimulation(self):
-        '''Adds four fully connected units with random values to the simulator 
-           (as per Ashby basic design)'''
- 
-        for i in xrange(4):
-            unit = HomeoUnitNewtonian()
-            unit.setRandomValues()
-            self._homeostat.addFullyConnectedUnit(unit)
-    
-    def initialize_Ashby_2nd_Experiment(self):
-        """
-           Initialize a standard homeostat with 3 active units connected in a cricle, as per 
-           Ashby's experiment in Design for a brain, pp. 106-107.
-           In detail: connections are 1-->2-->3-->1
-           connection 1-->2 is uniselector controlled
-           connection 2-->3 is hand-controlled
-           connection 3--> is always negative
-           
-           We start with:
-           1 (possibly representing Motor/Agent) with negative, fixed, self-connection
-           2 (possibly representing Environment) with no self-connection
-           3 (possibly representing Sensor/Agent) with negative, fixed self-connection           
-           """
-        'Standard parameters'
-        agent_visc = 0.9
-        env_visc = 0.9
-        agent_mass = 100
-        env_mass = 100
-        agent_self_noise = 0.05
-        env_self_noise = 0.05
-        agent_density = 1
-        env_density = 1
-        agent_uniselector_timing= 100
-        
-        agent_self_connection_active = 'active'
-        agent_self_connection_uniselector = 'manual'
-        agent_self_connection_switch = -1
-        agent_self_connection_potentiomenter = 0.5
-        agent_self_connection_noise = 0.05
-                
-        agent_incoming_conn_weight = 0.5
-        agent_incoming_conn_noise = 0.05
-        agent_incoming_connection_polarity = 1
-        agent_incoming_connection_uniselector = 'uniselector' 
-        
-        env_incoming_connection_weight = 0.5
-        env_incoming_connection_noise = 0.05
-        env_incoming_connection_polarity = 1
-        env_incoming_connection_uniselector = 'manual'
-        
-        'Setup a standard Homeostat if none exists. Then change the parameters'
-         
-        if len(self._homeostat.homeoUnits) == 0 :                 # check if the homeostat is set up already"
-            for i in xrange(4):
-                unit = HomeoUnitNewtonian()
-                unit.setRandomValues()
-                self._homeostat.addFullyConnectedUnit(unit)
-
-        'change homeostat and dataFile names'
-        self.homeostatFilename = 'Ashby-2_nd_experiment'
-        self._dataFilename = 'Ashby-2_nd_experiment--Plot-Data'
-        
-        'disable all connections except self-connections'
-        for unit in self.homeostat.homeoUnits:
-            for i in xrange(1, len(self.homeostat.homeoUnits)):
-                unit.inputConnections[i].status = 0
-                
-        homeo1_unit1_minus = self.homeostat.homeoUnits[0]
-        homeo1_unit2_minus = self.homeostat.homeoUnits[1]
-        homeo1_unit3x = self.homeostat.homeoUnits[2]
-        homeo1_inactive_unit = self.homeostat.homeoUnits[3]
-
-        'First Agent or sensor'
-        homeo1_unit1_minus.name = 'Agent_Motor'
-        homeo1_unit1_minus.mass = agent_mass
-        homeo1_unit1_minus.viscosity = agent_visc
-        homeo1_unit1_minus.density = agent_density
-        homeo1_unit1_minus.noise  = agent_self_noise
-        homeo1_unit1_minus.uniselectorTimeInterval = agent_uniselector_timing
-        
-        'self-connection'
-        homeo1_unit1_minus.potentiometer = agent_self_connection_potentiomenter
-        homeo1_unit1_minus.switch = agent_self_connection_switch
-        homeo1_unit1_minus.inputConnections[0].noise = agent_self_connection_noise
-        homeo1_unit1_minus.inputConnections[0].state = agent_self_connection_uniselector
-           
-        'Second Agent or sensor'
-        homeo1_unit2_minus.name = 'Agent_Sensor'
-        homeo1_unit2_minus.mass = agent_mass
-        homeo1_unit2_minus.viscosity = agent_visc
-        homeo1_unit2_minus.density = agent_density
-        homeo1_unit2_minus.noise  = agent_self_noise
-        homeo1_unit2_minus.uniselectorTimeInterval = agent_uniselector_timing
-        'disactivate uniselector'
-        homeo1_unit2_minus.uniselectorActive = False
-        
-        'self-connection'
-        homeo1_unit2_minus.potentiometer = agent_self_connection_potentiomenter
-        homeo1_unit2_minus.switch = agent_self_connection_switch
-        homeo1_unit2_minus.inputConnections[0].noise = agent_self_connection_noise
-        homeo1_unit2_minus.inputConnections[0].state = agent_self_connection_uniselector
-
-        'Environment '
-        homeo1_unit3x.name = 'Env'
-        homeo1_unit3x.mass - env_mass
-        homeo1_unit3x.viscosity = env_visc
-        homeo1_unit3x.density = env_density
-        homeo1_unit3x.noise = env_self_noise
-        'self-connection disabled'
-        homeo1_unit3x.disactivateSelfConn()
-        'disactivate uniselector'
-        homeo1_unit3x.uniselectorActive = False
-        
-        'fourth unit is inactive'
-        homeo1_inactive_unit.name= 'UNUSED'
-        homeo1_inactive_unit.disactivate()
-
-        "set up homeostat's connection"
-        "homeo1_unit_1_minus receives input only from sensor, i.e. homeo1_unit_2_minus"
-        "connection is always negative polarity"
-        for connection in homeo1_unit1_minus.inputConnections:
-            if not (connection.incomingUnit.name == 'UNUSED' or 
-                    connection.incomingUnit == connection.outgoingUnit or 
-                    connection.incomingUnit.name == 'Env'):
-                incomingWeight = -0.5
-                connection.newWeight(incomingWeight)
-                connection.noise = agent_incoming_conn_noise
-                connection.state = agent_incoming_connection_uniselector
-                connection.status = True
-        
-        "homeo1_unit_2_minus receives input only from env"
-        for connection in homeo1_unit2_minus.inputConnections:
-            if not (connection.incomingUnit.name == 'UNUSED' or 
-                    connection.incomingUnit == connection.outgoingUnit or
-                    connection.incomingUnit.name == 'Agent_Motor'):
-                connection.newWeight(agent_incoming_conn_weight * agent_incoming_connection_polarity)
-                connection.noise = agent_incoming_conn_noise
-                connection.state = agent_incoming_connection_uniselector
-                connection.status = True
-        
-        "Homeo1_unit_3x receive input only from motor, i.e. homeo1_unit_1_minus"
-        for connection in homeo1_unit3x.inputConnections:
-            if not (connection.incomingUnit.name == 'UNUSED'  or 
-                    connection.incomingUnit == connection.outgoingUnit or
-                    connection.incomingUnit.name == 'Agent_Sensor'):
-                connection.newWeight(env_incoming_connection_weight * env_incoming_connection_polarity)
-                connection.noise = env_incoming_connection_noise
-                connection.state = env_incoming_connection_uniselector
-                connection.status = True
-        
-            
-    def initialize_1minus_2xExperiment(self):
-        '''
-        Initialize a standard Homeostat to have 2 2-units 1-, 2x standard settings for 1- 2x experiment (Agent-Environment)
-        with fixed parameters to improve repeated runs
-        '''
-        
-        'Standard parameters'
-        agent_visc = 0.9
-        env_visc = 0.9
-        agent_mass = 100
-        env_mass = 100
-        agent_self_noise = 0.05
-        env_self_noise = 0.05
-        agent_density = 1
-        env_density = 1
-        agent_uniselector_timing= 100
-        
-        agent_self_connection_active = 'active'
-        agent_self_connection_uniselector = 'manual'
-        agent_self_connection_switch = -1
-        agent_self_connection_potentiomenter = 0.1
-        agent_self_connection_noise = 0.05
-                
-        agent_incoming_conn_weight = 0.5
-        agent_incoming_conn_noise = 0.05
-        agent_incoming_connection_polarity = 1
-        agent_incoming_connection_uniselector = 'uniselector' 
-        
-        env_incoming_connection_weight = 0.5
-        env_incoming_connection_noise = 0.05
-        env_incoming_connection_polarity = 1
-        env_incoming_connection_uniselector = 'manual' 
-
-
-        'Setup a standard Homeostat if none exists. Then change the parameters'
-         
-        if len(self._homeostat.homeoUnits) == 0 :                 # check if the homeostat is set up already"
-            for i in xrange(4):
-                unit = HomeoUnitNewtonian()
-                unit.setRandomValues()
-                self._homeostat.addFullyConnectedUnit(unit)
-        
-        'change homeostat and dataFile names'
-        self.homeostatFilename = '1-minus-2x-experiment'
-        self._dataFilename = '1-minus-2x-experiment-Plot-Data'
-        
-        'disable all connections except self-connections'
-        for unit in self.homeostat.homeoUnits:
-            for i in xrange(1, len(self.homeostat.homeoUnits)):
-                unit.inputConnections[i].status = 0
-        
-        homeo1_unit1_minus = self.homeostat.homeoUnits[0]
-        homeo1_unit2x = self.homeostat.homeoUnits[1]
-        homeo2_unit1_minus = self.homeostat.homeoUnits[2]
-        homeo2_unit2x = self.homeostat.homeoUnits[3]
-        
-        'Agent for Homeostat 1'
-        homeo1_unit1_minus.name = 'H1_Agent'
-        homeo1_unit1_minus.mass = agent_mass
-        homeo1_unit1_minus.viscosity = agent_visc
-        homeo1_unit1_minus.density = agent_density
-        homeo1_unit1_minus.noise  = agent_self_noise
-        homeo1_unit1_minus.uniselectorTimeInterval = agent_uniselector_timing
-        
-        'self-connection'
-        homeo1_unit1_minus.potentiometer = agent_self_connection_potentiomenter
-        homeo1_unit1_minus.switch = agent_self_connection_switch
-        homeo1_unit1_minus.inputConnections[0].noise = agent_self_connection_noise
-        homeo1_unit1_minus.inputConnections[0].state = agent_self_connection_uniselector
-        
-        
-        'Environment for Homeostat 1'
-        homeo1_unit2x.name = 'H1_Env'
-        homeo1_unit2x.mass - env_mass
-        homeo1_unit2x.viscosity = env_visc
-        homeo1_unit2x.density = env_density
-        homeo1_unit2x.noise = env_self_noise
-        'self-connection disabled'
-        homeo1_unit2x.disactivateSelfConn()
-
-
-        'set up first homeostat'
-        for connection in homeo1_unit1_minus.inputConnections:
-            if connection.incomingUnit.name == 'H1_Env':
-                connection.newWeight(agent_incoming_conn_weight * agent_incoming_connection_polarity)
-                connection.noise = agent_incoming_conn_noise
-                connection.state = agent_incoming_connection_uniselector
-                connection.status = True
-        
-        
-        
-        for connection in homeo1_unit2x.inputConnections:
-            if connection.incomingUnit.name == 'H1_Agent':
-                connection.newWeight(env_incoming_connection_weight * env_incoming_connection_polarity)
-                connection.noise = env_incoming_connection_noise
-                connection.state = env_incoming_connection_uniselector
-                connection.status = True
-        
-       
-        'Second Homeostat'
-        
-        'Agent for Homeostat 2'
-        homeo2_unit1_minus.name = 'H2_Agent'
-        homeo2_unit1_minus.mass = agent_mass
-        homeo2_unit1_minus.viscosity = agent_visc
-        homeo2_unit1_minus.density = agent_density
-        homeo2_unit1_minus.noise  = agent_self_noise
-        homeo2_unit1_minus.uniselectorTimeInterval = agent_uniselector_timing
-        
-        'self-connection'
-        homeo2_unit1_minus.potentiometer = agent_self_connection_potentiomenter
-        homeo2_unit1_minus.switch = agent_self_connection_switch
-        homeo2_unit1_minus.inputConnections[0].noise = agent_self_connection_noise
-        homeo2_unit1_minus.inputConnections[0].state = agent_self_connection_uniselector
-
-        
-        
-        'Environment for Homeostat 2'
-        homeo2_unit2x.name = 'H2_Env'
-        homeo2_unit2x.mass - env_mass
-        homeo2_unit2x.viscosity = env_visc
-        homeo2_unit2x.density = env_density
-        homeo2_unit2x.noise = env_self_noise
-        'self-connection disabled'
-        homeo2_unit2x.disactivateSelfConn()
-        
-
-        'set up second homeostat'
-        for connection in homeo2_unit1_minus.inputConnections:
-            if connection.incomingUnit.name == 'H2_Env':
-                connection.newWeight(agent_incoming_conn_weight * agent_incoming_connection_polarity)
-                connection.noise = agent_incoming_conn_noise
-                connection.state = agent_incoming_connection_uniselector
-                connection.status = True        
-        
-        for connection in homeo2_unit2x.inputConnections:
-            if connection.incomingUnit.name == 'H2_Agent':
-                connection.newWeight(env_incoming_connection_weight * agent_incoming_connection_polarity)
-                connection.noise = env_incoming_connection_noise
-                connection.state = env_incoming_connection_uniselector
-                connection.status = True      
-                
-                
-                
-    def initialize_1minus_2_minus_3xExperiment(self):
-        """Initialize a homeostat to replicate a 3-unit
-           homeostat roughly similar to DiPaolo's ocular inversion
-           experiment:
-           2 self-connected units representing the 'eyes' or 'sensors'
-           1 unconnected nit representing the environment 
-        """
-        'Standard parameters'
-        agent_visc = 0.9
-        env_visc = 0.9
-        agent_mass = 100
-        env_mass = 100
-        agent_self_noise = 0.05
-        env_self_noise = 0.05
-        agent_density = 1
-        env_density = 1
-        agent_uniselector_timing= 100
-        
-        agent_self_connection_active = 'active'
-        agent_self_connection_uniselector = 'manual'
-        agent_self_connection_switch = -1
-        agent_self_connection_potentiomenter = 0.1
-        agent_self_connection_noise = 0.05
-                
-        agent_incoming_conn_weight = 0.5
-        agent_incoming_conn_noise = 0.05
-        agent_incoming_connection_polarity = 1
-        agent_incoming_connection_uniselector = 'uniselector' 
-        
-        env_incoming_connection_weight = 0.5
-        env_incoming_connection_noise = 0.05
-        env_incoming_connection_polarity = 1
-        env_incoming_connection_uniselector = 'manual'
-        
-        'Setup a standard Homeostat if none exists. Then change the parameters'
-         
-        if len(self._homeostat.homeoUnits) == 0 :                 # check if the homeostat is set up already"
-            for i in xrange(4):
-                unit = HomeoUnitNewtonian()
-                unit.setRandomValues()
-                self._homeostat.addFullyConnectedUnit(unit)
-
-        'change homeostat and dataFile names'
-        self.homeostatFilename = '1-minus-2-minus--3x-experiment'
-        self._dataFilename = '1-minus-2-minus--3x--Plot-Data'
-        
-        'disable all connections except self-connections'
-        for unit in self.homeostat.homeoUnits:
-            for i in xrange(1, len(self.homeostat.homeoUnits)):
-                unit.inputConnections[i].status = 0
-        
-        homeo1_unit1_minus = self.homeostat.homeoUnits[0]
-        homeo1_unit2_minus = self.homeostat.homeoUnits[1]
-        homeo1_unit3x = self.homeostat.homeoUnits[2]
-        homeo1_inactive_unit = self.homeostat.homeoUnits[3]
-        
-        'First Agent or sensor'
-        homeo1_unit1_minus.name = '1_Agent'
-        homeo1_unit1_minus.mass = agent_mass
-        homeo1_unit1_minus.viscosity = agent_visc
-        homeo1_unit1_minus.density = agent_density
-        homeo1_unit1_minus.noise  = agent_self_noise
-        homeo1_unit1_minus.uniselectorTimeInterval = agent_uniselector_timing
-        
-        'self-connection'
-        homeo1_unit1_minus.potentiometer = agent_self_connection_potentiomenter
-        homeo1_unit1_minus.switch = agent_self_connection_switch
-        homeo1_unit1_minus.inputConnections[0].noise = agent_self_connection_noise
-        homeo1_unit1_minus.inputConnections[0].state = agent_self_connection_uniselector
-        
-        'Second Agent or sensor'
-        homeo1_unit2_minus.name = '2_Agent'
-        homeo1_unit2_minus.mass = agent_mass
-        homeo1_unit2_minus.viscosity = agent_visc
-        homeo1_unit2_minus.density = agent_density
-        homeo1_unit2_minus.noise  = agent_self_noise
-        homeo1_unit2_minus.uniselectorTimeInterval = agent_uniselector_timing
-        
-        'self-connection'
-        homeo1_unit2_minus.potentiometer = agent_self_connection_potentiomenter
-        homeo1_unit2_minus.switch = agent_self_connection_switch
-        homeo1_unit2_minus.inputConnections[0].noise = agent_self_connection_noise
-        homeo1_unit2_minus.inputConnections[0].state = agent_self_connection_uniselector
-        
-        
-        'Environment '
-        homeo1_unit3x.name = 'Env'
-        homeo1_unit3x.mass - env_mass
-        homeo1_unit3x.viscosity = env_visc
-        homeo1_unit3x.density = env_density
-        homeo1_unit3x.noise = env_self_noise
-        'self-connection disabled'
-        homeo1_unit3x.disactivateSelfConn()
-
-        'fourth unit is inactive'
-        homeo1_inactive_unit.name= 'UNUSED'
-        homeo1_inactive_unit.disactivate()
-
-        'set up homeostat'
-        for connection in homeo1_unit1_minus.inputConnections:
-            if not (connection.incomingUnit.name == 'UNUSED' or connection.incomingUnit == connection.outgoingUnit):
-                connection.newWeight(agent_incoming_conn_weight * agent_incoming_connection_polarity)
-                connection.noise = agent_incoming_conn_noise
-                connection.state = agent_incoming_connection_uniselector
-                connection.status = True
-        
-        for connection in homeo1_unit2_minus.inputConnections:
-            if not (connection.incomingUnit.name == 'UNUSED'  or connection.incomingUnit == connection.outgoingUnit):
-                connection.newWeight(agent_incoming_conn_weight * agent_incoming_connection_polarity)
-                connection.noise = agent_incoming_conn_noise
-                connection.state = agent_incoming_connection_uniselector
-                connection.status = True
-        
-        
-        for connection in homeo1_unit3x.inputConnections:
-            if not (connection.incomingUnit.name == 'UNUSED'  or connection.incomingUnit == connection.outgoingUnit):
-                connection.newWeight(env_incoming_connection_weight * env_incoming_connection_polarity)
-                connection.noise = env_incoming_connection_noise
-                connection.state = env_incoming_connection_uniselector
-                connection.status = True
-
+      
 #===============================================================================
 # Debugging methods
 #===============================================================================
