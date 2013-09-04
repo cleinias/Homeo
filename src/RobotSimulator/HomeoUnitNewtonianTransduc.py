@@ -4,42 +4,47 @@ Created on Sep 3, 2013
 @author: stefano
 '''
 from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
+from numpy import sign
 
-
-class HomeoUnitNewtonianTransducer(HomeoUnitNewtonian):
+class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
     '''
-    HomeoUnitNewtonianTransducer is a HomeoUnitNewtonian Unit with 
-    an added transducer. Whe it self updates, it also transmits
-    its own value to the transducer.
-    Notice that proper setup of the transducer is responsibility 
+    HomeoUnitNewtonianActuator is a HomeoUnitNewtonian unit with 
+    an added actuator. When it self updates, it also transmits
+    its own critical deviation value to the actuator.
+    The critical deviation value is scaled to the actuator range
+    Notice that proper setup of the actuator is responsibility 
     of the calling class/instance
+    
     Instance variable:
-    transducer <aTransducer> an instance of Transducer or a subclass thereof 
+    actuator <anActuator> an instance of an actuator subclass of Transducer 
     '''
 
 
-    def __init__(selfparams):
+    def __init__(self):
         '''
         Initialize according to superclass
         '''
-        super(HomeoUnitNewtonianTransducer, self).__init__()
+        super(HomeoUnitNewtonianActuator, self).__init__()
     
-    def setTransducer(self, aTransducer):
-        self._transducer = aTransducer
-    def getTransducer(self):
-        return self._transducer
-    transducer = property(fget = lambda self: self.getTransducer(),
-                          fset = lambda self, aValue: self.setTransducer(aValue))
+    def setActuator(self, anActuator):
+        self._actuator = anActuator
+    def getActuator(self):
+        return self._actuator
+    actuator = property(fget = lambda self: self.getActuator(),
+                          fset = lambda self, aValue: self.setActuator(aValue))
     
     def selfUpdate(self):
         '''First run the self-update function of superclass, 
             then convert unit-value to actuator value,
             then operate actuator'''
-        super(HomeoUnitNewtonianTransducer, self).selfUpdate()
-#===============================================================================
-# 
-# to finish from here on        
-#        
-#        self._transducer.func??????????????
-#        self._transducer.runOnce()
-#===============================================================================
+        super(HomeoUnitNewtonianActuator, self).selfUpdate()
+        self.actuator.act(self.scaleCritDevToActValue())
+    
+    def scaleCritDevToActValue(self):
+        '''
+        Convert the unit's critical deviation value to an equivalent number expressing
+        the same ratio in the actuator's range            
+        '''
+        return  sign(self.criticalDeviation * 
+                     (abs(self.criticalDeviation) / self.maxDeviation) *
+                     self.actuator.range[1])
