@@ -1,0 +1,644 @@
+### Generic Makefile.include for Webots controllers, physics plugins, robot
+### window libraries, remote control libraries and other libraries
+### to be used with GNU make
+###
+### Platforms: Windows, Mac OS X, Linux
+### Languages: C, C++, Java
+###
+### Authors: Olivier Michel, Yvan Bourquin, Fabien Rohrer
+###          Edmund Ronald, Sergei Poskriakov
+###
+###-----------------------------------------------------------------------------
+###
+### This file is meant to be included from the Makefile files located in the
+### Webots projects subdirectories. It is possible to set a number of variables
+### to customize the build process, i.e., add source files, compilation flags,
+### include paths, libraries, etc. These variables should be set in your local
+### Makefile just before including this Makefile.include. This Makefile.include
+### should never be modified.
+###
+### Here is a description of the variables you may set in your local Makefile:
+###
+### ---- C Sources ----
+### if your program uses several C source files:
+### C_SOURCES = my_plugin.c my_clever_algo.c my_graphics.c
+###
+### ---- C++ Sources ----
+### if your program uses several C++ source files:
+### CXX_SOURCES = my_plugin.cc my_clever_algo.cpp my_graphics.c++
+###
+### ---- Compilation options ----
+### if special compilation flags are necessary:
+### CFLAGS = -Wno-unused-result
+###
+### ---- Linked libraries ----
+### if your program needs additional libraries:
+### INCLUDE = -I"/my_library_path/include"
+### LIBRARIES = -L"/path/to/my/library" -lmy_library -lmy_other_library
+###
+### --- Webots included libraries ---
+### In your C++ program, if you want to use the C API, add
+### USE_C_API = true
+### or if you want to link with the Qt framework embedded in Webots:
+### QT = core gui widgets network
+###
+### ----- Java -----
+### if your program uses several C source files:
+### JAVA_SOURCES = my_plugin.java my_clever_algo.java
+###
+### if your Java controller needs additional libraries, you should define
+### the CLASSPATH environment variable as explained in the Webots User Guide
+### CLASSPATH=relative/mylib.jar
+###
+###-----------------------------------------------------------------------------
+
+###-----------------------------------------------------------------------------
+### OS determination and OS specific commands
+###-----------------------------------------------------------------------------
+
+# find out the operating system between Windows, Linux and Mac OS X
+ifeq ($(OS),Windows_NT)
+ OSTYPE = windows
+endif
+
+ifndef OSTYPE
+ OSTYPE = $(shell uname)
+endif
+
+ifeq ($(OSTYPE),Linux)
+ OSTYPE = linux
+endif
+
+ifeq ($(OSTYPE),linux-gnu)
+ OSTYPE = linux
+endif
+
+ifeq ($(OSTYPE),)
+ OSTYPE = windows
+endif
+
+ifeq ($(OSTYPE),msys)
+ OSTYPE = windows
+endif
+
+ifneq ($(findstring MINGW,$(OSTYPE)),)
+ OSTYPE = windows
+endif
+
+ifneq ($(findstring CYGWIN,$(OSTYPE)),)
+ OSTYPE = windows
+endif
+
+ifeq ($(OSTYPE),Darwin)
+ OSTYPE = darwin
+endif
+
+
+###-----------------------------------------------------------------------------
+### Paths
+###-----------------------------------------------------------------------------
+
+ifndef WEBOTS_HOME
+ #assuming we are compiling controller in the installation directory
+ export WEBOTS_HOME = ../../../..
+else
+ WEBOTS_HOME := $(WEBOTS_HOME)
+endif
+
+# compiler
+ifeq ($(CC),cc)
+ CC = gcc
+endif
+
+# compute the current directory, the CURDIR variable may be already set
+ifndef CURDIR
+ CURDIR = $(shell pwd)
+endif
+
+# compute the name of the controller from its directory (i.e. braiten)
+BAD_NAME = $(basename $(notdir $(CURDIR)))
+
+# this is a hack to work around a problem with spaces in dir names
+NAME = $(word $(words $(BAD_NAME)),$(BAD_NAME))
+
+# compute BUILD_TYPE (either controllers, physics, robot_windows, remote_controls or libraries)
+SPLIT_PATH = $(subst /, ,$(dir $(CURDIR)))
+BUILD_TYPE = $(word $(words $(SPLIT_PATH)),$(SPLIT_PATH))
+
+# extenstions and prefixes
+ifeq ($(OSTYPE),windows)
+ EXE_EXTENSION = .exe
+ LIB_EXTENSION = .dll
+else
+ LIB_PREFIX = lib
+ ifeq ($(OSTYPE),linux)
+  LIB_EXTENSION = .so
+ else # Mac OS X
+  LIB_EXTENSION = .dylib
+ endif
+endif
+
+# backward compatibility
+ifdef CC_SOURCES
+ $(warning Please use CXX_SOURCES instead of CC_SOURCES to define the C++ sources)
+endif
+ifdef CPP_SOURCES
+ $(warning Please use CXX_SOURCES instead of CPP_SOURCES to define the C++ sources)
+endif
+CXX_SOURCES += $(CC_SOURCES) $(CPP_SOURCES)
+
+# if the source files were not explicitly defined, we try to find
+# the *.c, *.cc, *.c++, *.cpp or *.java source files.
+ifeq ($(C_SOURCES),)
+ ifeq ($(strip $(CXX_SOURCES)),)
+  C_SOURCES = $(shell ls $(NAME).c 2> /dev/null)
+  CXX_SOURCES = $(shell ls $(NAME).cpp 2> /dev/null)
+  ifeq ($(CXX_SOURCES),)
+   CXX_SOURCES = $(shell ls $(NAME).cc 2> /dev/null)
+   ifeq ($(CXX_SOURCES),)
+    CXX_SOURCES = $(shell ls $(NAME).c++ 2> /dev/null)
+   endif
+  endif
+ endif
+endif
+
+ifneq ($(strip $(CXX_SOURCES)),)
+ USE_CXX = true
+endif
+ifneq ($(strip $(C_SOURCES)),)
+ USE_C = true
+endif
+
+ifndef JAVA_SOURCE
+ JAVA_SOURCE = $(shell ls $(NAME).java 2> /dev/null)
+endif
+ifneq ($(JAVA_SOURCE),)
+ USE_JAVA = true
+ TARGETS += $(NAME).class
+endif
+
+# the objects files result from the C or C++ sources
+SOURCES_DIRECTORIES = $(sort $(dir $(C_SOURCES) $(CXX_SOURCES)))
+OBJECTS = $(addprefix $(BUILD_GOAL_DIR)/,$(patsubst %.c,%.o, $(patsubst %.cc,%.o, $(patsubst %.c++,%.o, $(patsubst %.cpp,%.o, $(notdir $(C_SOURCES) $(CXX_SOURCES)))))))
+
+# automatic flags settings
+ifeq ($(BUILD_TYPE),physics)
+ USE_ODE = true
+endif
+ifeq ($(BUILD_TYPE),controllers)
+ BUILD_EXECUTABLE = true
+else
+ BUILD_SHARED_LIBRARY = true
+endif
+
+# target
+ifneq ($(C_SOURCES)$(CXX_SOURCES),)
+ ifdef BUILD_EXECUTABLE
+  MAIN_TARGET = $(NAME)$(EXE_EXTENSION)
+ else
+  MAIN_TARGET = $(LIB_PREFIX)$(NAME)$(LIB_EXTENSION)
+ endif
+endif
+TARGETS += $(MAIN_TARGET) $(EXTRA_TARGETS)
+
+# goal
+SUPPORTED_TARGETS = all release debug profile
+ifeq ($(MAKECMDGOALS),)
+ GOAL = release
+else
+ ifdef MAIN_TARGET
+  ifeq ($(MAKECMDGOALS),$(MAIN_TARGET))
+   GOAL_TMP = true
+  endif
+ endif
+ ifeq ($(MAKECMDGOALS),all)
+  GOAL_TMP = true
+ endif
+
+ ifdef GOAL_TMP
+   GOAL = release
+ else
+  ifneq ($(filter $(SUPPORTED_TARGETS),$(MAKECMDGOALS)),)
+   GOAL = $(MAKECMDGOALS)
+  endif
+ endif
+endif
+
+# build directory
+BUILD_DIR = build
+BUILD_GOAL_DIR = $(BUILD_DIR)/$(GOAL)
+ifdef GOAL
+ $(shell mkdir $(BUILD_DIR) $(BUILD_DIR)/$(GOAL) 2> /dev/null)
+endif
+
+# files to remove
+FILES_TO_REMOVE += $(MAIN_TARGET)
+ifeq ($(OSTYPE),windows)
+ ifdef $(MAIN_TARGET)
+  FILES_TO_REMOVE += $(MAIN_TARGET)_webots
+ endif
+endif
+
+# remove the target in any case in order
+# to force the final copy from $(BUILD_GOAL_DIR)
+$(shell rm -fr $(MAIN_TARGET) > /dev/null 2>&1)
+
+
+###-----------------------------------------------------------------------------
+### Compilation flags
+###-----------------------------------------------------------------------------
+
+# global flags
+INCLUDE += -I.
+CFLAGS += -Wall
+
+# goal dependent flags
+ifeq ($(GOAL),debug)
+ CFLAGS += -g
+endif
+
+ifeq ($(GOAL),release)
+ # -O3 has the advantage also to prevents a false positive trojan alert from avast and Kapersky antivirus
+ CFLAGS += -O3
+ ifneq ($(OSTYPE),darwin)
+  LFLAGS += -s
+ endif
+endif
+
+ifeq ($(GOAL),profile)
+ CFLAGS += -pg
+endif
+
+# platform dependent flags
+ifeq ($(OSTYPE),windows)
+ GCC_VERSION = $(shell gcc -dumpversion)
+ OSFLAGS += -DWIN32
+ INCLUDE += -I"$(WEBOTS_HOME)\mingw\include" -I"$(WEBOTS_HOME)\mingw\lib\gcc\mingw32\$(GCC_VERSION)\include"
+ CFLAGS += -mwindows -Wl,-subsystem,windows
+ LIBRARIES += -lmingw32 -B"$(WEBOTS_HOME)\mingw\lib\gcc\mingw32\$(GCC_VERSION)"
+endif
+
+ifeq ($(OSTYPE),linux)
+ OSFLAGS += -DLINUX
+ LIBRARIES += -lm
+endif
+
+ifeq ($(OSTYPE),darwin)
+ OSFLAGS += -DMACOS
+ CFLAGS += -mmacosx-version-min=10.7
+ LFLAGS += -mmacosx-version-min=10.7
+endif
+
+ifdef USE_CXX
+ LINKER = $(CXX)
+ ifneq ($(BUILD_TYPE),physics)
+  LIBRARIES += -L"$(WEBOTS_HOME)/lib"
+  ifdef USE_C_API
+   LIBRARIES += -lController
+   INCLUDE += -I"$(WEBOTS_HOME)/include/controller/c"
+  else
+   LIBRARIES += -lCppController -lController
+   INCLUDE += -I"$(WEBOTS_HOME)/include/controller/cpp"
+  endif
+  ifeq ($(OSTYPE),windows)
+   LFLAGS += -Wl,--enable-auto-import
+  endif
+ endif
+else
+ LINKER = $(CC)
+ ifeq ($(OSTYPE),windows)
+  # Shame fix of the robot windows crash when quitting (i.e. quitting the simulation)
+  # It occurs when calling exit(0) from libController after having created and correctly destroyed a QGuiApplication instance
+  # Only the C controllers are crashing in this case
+  # Introduced with these versions: MinGW 4.8.1 and Qt 5.1.0
+  LFLAGS += -lstdc++
+ endif
+ ifneq ($(BUILD_TYPE),physics)
+  INCLUDE += -I"$(WEBOTS_HOME)/include/controller/c"
+  LIBRARIES += -L"$(WEBOTS_HOME)/lib" -lController
+ endif
+endif
+
+ifdef BUILD_SHARED_LIBRARY
+ LFLAGS += -shared
+ ifeq ($(OSTYPE),linux)
+  CFLAGS += -fPIC
+ endif
+ ifeq ($(OSTYPE),darwin)
+  LFLAGS += -dynamiclib -compatibility_version 1.0 -current_version 1.0.0
+ endif
+endif
+
+
+###-----------------------------------------------------------------------------
+### ODE
+###-----------------------------------------------------------------------------
+
+ifdef USE_ODE
+ LIBRARIES += -L"$(WEBOTS_HOME)/lib" -lode "$(WEBOTS_HOME)/resources/projects/default/plugins/physics/physics.o"
+ ifeq ($(OSTYPE),windows)
+  LIBRARIES += -lOpenGL32
+ endif
+ ifeq ($(OSTYPE),linux)
+  LIBRARIES += -lGL
+ endif
+ ifeq ($(OSTYPE),darwin)
+  LFLAGS += -flat_namespace -undefined suppress -install_name $(MAIN_TARGET)
+ endif
+ INCLUDE += -I"$(WEBOTS_HOME)/include/ode" -I"$(WEBOTS_HOME)/include"
+ CFLAGS += -DdDOUBLE
+endif
+
+
+###-----------------------------------------------------------------------------
+### Qt
+###-----------------------------------------------------------------------------
+
+# Qt linking
+ifneq ($(strip $(QT)),)
+ USE_QT = true
+endif
+
+ifdef USE_QT
+ MOC = "$(WEBOTS_HOME)/bin/qt/moc"
+ MOC_SOURCES = $(addprefix $(BUILD_DIR)/,$(notdir $(HPP_FILES_TO_MOC:.hpp=.moc.cpp)))
+ MOC_DIRECTORIES = $(sort $(dir $(HPP_FILES_TO_MOC)))
+ OBJECTS += $(addprefix $(BUILD_GOAL_DIR)/,$(notdir $(MOC_SOURCES:.cpp=.o)))
+
+ .PRECIOUS: $(MOC_SOURCES)
+
+ CFLAGS += -DQT_NO_DEBUG
+
+ ifeq ($(OSTYPE),windows)
+  QT_INCLUDE_DIR = $(WEBOTS_HOME)/include/qt
+  QT_LIB_DIR = $(WEBOTS_HOME)/lib
+  LIBRARIES += -L"$(QT_LIB_DIR)"
+
+  ifneq ($(filter concurrent,$(QT)),)
+   LIBRARIES += -lQt5Concurrent
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtConcurrent"
+  endif
+  ifneq ($(filter core,$(QT)),)
+   LIBRARIES += -lQt5Core
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtCore"
+  endif
+  ifneq ($(filter gui,$(QT)),)
+   LIBRARIES += -lQt5Gui
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtGui"
+  endif
+  ifneq ($(filter network,$(QT)),)
+   LIBRARIES += -lQt5Network
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtNetwork"
+  endif
+  ifneq ($(filter opengl,$(QT)),)
+   LIBRARIES += -lQt5OpenGL
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtOpenGL"
+  endif
+  ifneq ($(filter printsupport,$(QT)),)
+   LIBRARIES += -lQt5PrintSupport
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtPrintSupport"
+  endif
+  ifneq ($(filter svg,$(QT)),)
+   LIBRARIES += -lQt5Svg
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtSvg"
+  endif
+  ifneq ($(filter widgets,$(QT)),)
+   LIBRARIES += -lQt5Widgets
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtWidgets"
+  endif
+  ifneq ($(filter xml,$(QT)),)
+   LIBRARIES += -lQt5Xml
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtXml"
+  endif
+ endif
+
+ ifeq ($(OSTYPE),linux)
+  QT_INCLUDE_DIR = $(WEBOTS_HOME)/include/qt
+  QT_LIB_DIR = $(WEBOTS_HOME)/lib
+  LIBRARIES += -L"$(QT_LIB_DIR)"
+
+  ifneq ($(filter concurrent,$(QT)),)
+   LIBRARIES += -lQt5Concurrent
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtConcurrent"
+  endif
+  ifneq ($(filter core,$(QT)),)
+   LIBRARIES += -lQt5Core
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtCore"
+  endif
+  ifneq ($(filter gui,$(QT)),)
+   LIBRARIES += -lQt5Gui
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtGui"
+  endif
+  ifneq ($(filter network,$(QT)),)
+   LIBRARIES += -lQt5Network
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtNetwork"
+  endif
+  ifneq ($(filter opengl,$(QT)),)
+   LIBRARIES += -lQt5OpenGL
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtOpenGL"
+  endif
+  ifneq ($(filter printsupport,$(QT)),)
+   LIBRARIES += -lQt5PrintSupport
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtPrintSupport"
+  endif
+  ifneq ($(filter svg,$(QT)),)
+   LIBRARIES += -lQt5Svg
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtSvg"
+  endif
+  ifneq ($(filter widgets,$(QT)),)
+   LIBRARIES += -lQt5Widgets
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtWidgets"
+  endif
+  ifneq ($(filter xml,$(QT)),)
+   LIBRARIES += -lQt5Xml
+   INCLUDE += -I"$(QT_INCLUDE_DIR)/QtXml"
+  endif
+ endif
+
+ ifeq ($(OSTYPE),darwin)
+  CFLAGS += -Wno-unknown-pragmas
+  FRAMEWORKS_DIR = $(WEBOTS_HOME)/webots.app/Contents/Frameworks
+  INCLUDE += -F"$(FRAMEWORKS_DIR)"
+  FRAMEWORKS += -F"$(FRAMEWORKS_DIR)"
+  LIBRARIES += -bind_at_load $(FRAMEWORKS)
+
+  ifneq ($(filter concurrent,$(QT)),)
+   FRAMEWORKS += -framework QtConcurrent
+  endif
+  ifneq ($(filter core,$(QT)),)
+   FRAMEWORKS += -framework QtCore
+  endif
+  ifneq ($(filter gui,$(QT)),)
+   FRAMEWORKS += -framework QtGui
+  endif
+  ifneq ($(filter network,$(QT)),)
+   FRAMEWORKS += -framework QtNetwork
+  endif
+  ifneq ($(filter opengl,$(QT)),)
+   FRAMEWORKS += -framework QtOpenGL
+  endif
+  ifneq ($(filter printsupport,$(QT)),)
+   FRAMEWORKS += -framework QtPrintSupport
+  endif
+  ifneq ($(filter svg,$(QT)),)
+   FRAMEWORKS += -framework QtSvg
+  endif
+  ifneq ($(filter widgets,$(QT)),)
+   FRAMEWORKS += -framework QtWidgets
+  endif
+  ifneq ($(filter xml,$(QT)),)
+   FRAMEWORKS += -framework QtXml
+  endif
+
+ endif
+
+endif
+
+
+###-----------------------------------------------------------------------------
+### Makefile setup
+###-----------------------------------------------------------------------------
+
+# clear out all suffixes for implicit rules to speed up Makefile
+.SUFFIXES:
+MAKEFLAGS += -r
+
+# vpath
+vpath %.d $(BUILD_DIR)
+# find source files
+vpath %.c $(SOURCES_DIRECTORIES)
+vpath %.cc $(SOURCES_DIRECTORIES)
+vpath %.c++ $(SOURCES_DIRECTORIES)
+vpath %.cpp $(SOURCES_DIRECTORIES)
+# moc files:
+ifdef USE_QT
+ vpath %.cpp $(BUILD_DIR)
+ ifdef MOC_DIRECTORIES
+  vpath %.hpp $(MOC_DIRECTORIES)
+ endif
+endif
+
+# phony
+.PHONY : clean $(SUPPORTED_TARGETS) jar
+
+
+###-----------------------------------------------------------------------------
+### Rules
+###-----------------------------------------------------------------------------
+
+$(SUPPORTED_TARGETS): $(TARGETS)
+
+# we need to be able to execute a make clean inside subdirectories targets (defined as EXTRA_TARGET)
+clean: $(EXTRA_TARGETS)
+
+ifdef MAIN_TARGET
+ # rules to do the final copy
+ $(MAIN_TARGET): $(BUILD_GOAL_DIR)/$(MAIN_TARGET)
+
+ # copy the binary from the build directory
+ # Note: It's not important if the copy fails, because
+ #       Webots do this systematically before running the simulation.
+ #       However it's convenient to do it because:
+ #       1. it's more user-friendly
+ #       2. compiling controllers from a terminal should generate the root file
+ #          (mainly to create the release packages)
+	cp $< $@ > /dev/null 2>&1 || :
+
+ # rule to make the executable file from C/C++ objects
+ $(BUILD_GOAL_DIR)/$(MAIN_TARGET): $(OBJECTS) $(LINK_DEPENDENCIES)
+	$(LINKER) $(LFLAGS) -o $@ $(BUILD_GOAL_DIR)/*.o $(LIBRARIES)
+	$(EXTRA_FINAL_CMD)
+endif
+
+# rule to make automatic dependencies
+# adapted from the GNU make info file
+$(BUILD_DIR)/%.d:%.c
+	$(CC) $(INCLUDE) $(CFLAGS) $(OSFLAGS) -MM $< -MT $(addprefix $(BUILD_GOAL_DIR)/,$(notdir $(<:.c=.o))) > $@
+
+$(BUILD_DIR)/%.d:%.cc
+	$(CXX) $(INCLUDE) $(CFLAGS) $(OSFLAGS) -MM $< -MT $(addprefix $(BUILD_GOAL_DIR)/,$(notdir $(<:.cc=.o))) > $@
+
+$(BUILD_DIR)/%.d:%.c++
+	$(CXX) $(INCLUDE) $(CFLAGS) $(OSFLAGS) -MM $< -MT $(addprefix $(BUILD_GOAL_DIR)/,$(notdir $(<:.c++=.o))) > $@
+
+$(BUILD_DIR)/%.d:%.cpp
+	$(CXX) $(INCLUDE) $(CFLAGS) $(OSFLAGS) -MM $< -MT $(addprefix $(BUILD_GOAL_DIR)/,$(notdir $(<:.cpp=.o))) > $@
+
+# dependencies
+ifdef GOAL
+ DEPENDENCIES = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.d) $(CXX_SOURCES:.cpp=.d)))
+ ifneq ($(DEPENDENCIES),)
+  -include $(DEPENDENCIES)
+ endif
+endif
+
+# generic rule to make the object files
+$(BUILD_GOAL_DIR)/%.o:%.c
+	$(CC) -c $(CFLAGS) $(OSFLAGS) $(INCLUDE) $< -o $@
+
+$(BUILD_GOAL_DIR)/%.o:%.cc
+	$(CXX) -c $(CFLAGS) $(OSFLAGS) $(INCLUDE) $< -o $@
+
+$(BUILD_GOAL_DIR)/%.o:%.c++
+	$(CXX) -c $(CFLAGS) $(OSFLAGS) $(INCLUDE) $< -o $@
+
+$(BUILD_GOAL_DIR)/%.o:%.cpp
+	$(CXX) -c $(CFLAGS) $(OSFLAGS) $(INCLUDE) $< -o $@
+
+$(BUILD_DIR)/%.moc.cpp: %.hpp
+	$(MOC) $(OSFLAGS) $(INCLUDE) $< -o $@
+
+# how to clean up the directory
+clean:
+	@rm -fr $(FILES_TO_REMOVE) $(BUILD_DIR) > /dev/null 2>&1 || :
+
+###-----------------------------------------------------------------------------
+### Java
+###-----------------------------------------------------------------------------
+
+ifdef USE_JAVA
+
+ # set JAVAC to the standard Java compiler
+ JAVAC = javac
+
+ # to remove
+ FILES_TO_REMOVE += *.class *.jar
+
+ # jar
+ ifndef JAR_FILE
+  JAR_FILE = $(NAME).jar
+ endif
+
+ # set the Java compiler options
+ ifneq ($(strip $(CLASSPATH)),)
+  ifeq ($(OSTYPE),windows)
+   JAVAC_OPTS += -Xlint -classpath "$(WEBOTS_HOME)/lib/Controller.jar;$(CLASSPATH);."
+  else
+   JAVAC_OPTS += -Xlint -classpath "$(WEBOTS_HOME)/lib/Controller.jar:$(CLASSPATH):."
+  endif
+ else
+  ifeq ($(OSTYPE),windows)
+   JAVAC_OPTS += -Xlint -classpath "$(WEBOTS_HOME)/lib/Controller.jar;."
+  else
+   JAVAC_OPTS += -Xlint -classpath "$(WEBOTS_HOME)/lib/Controller.jar":.
+  endif
+ endif
+
+ # Java "Compile" rule
+ %.class: %.java
+	$(JAVAC) $(JAVAC_OPTS) $<
+
+ # Java "Build" rule
+ $(NAME).class: *.java
+	@rm -fr *.class > /dev/null 2>&1
+	$(JAVAC) $(JAVAC_OPTS) $(NAME).java
+
+ # Java "Make JAR file" rule
+ $(JAR_FILE): *.java
+	@rm -fr *.class > /dev/null 2>&1
+	$(JAVAC) $(JAVAC_OPTS) $(NAME).java
+	jar cf $@ *.class
+
+ jar: $(JAR_FILE)
+
+endif
