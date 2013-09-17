@@ -22,7 +22,7 @@ class Transducer(object):
     It has just three instance variables:
 
     robot          <aRef>        a ref to the robot whose actuator it operates
-    transdFunction    <aString>    the name of the robot's function to operate the actuator
+    transdFunction <aString>    the name of the robot's function to operate the actuator
     parameters     <aList>      a list of  parameters to be passed to the function
 
     The basic methods (all defined in subclasses) are 
@@ -130,8 +130,138 @@ class WebotsLightSensor(Transducer):
        
     def range(self):
         '''Returns the range of the light sensor.
-           FIXME Webots actually has now access to the light sensor maximum value (its min is 0).
+           FIXME Webots actually has now access to the light sensor maximum value (its minimum value is 0).
            Raise an exception for now'''
         raise TransducerException("Webots does not give access to a sensor's max value")
+    
+    
+class TransducerTCP(object):
+    '''
+    TransduceTCP is an abstract class. Its subclasses control a robot's input /output interfaces
+    through a TCP connection to a server running on the robot. 
+    It has just four instance variables:
+
+    robotSocket    <aString>    the socket conneted to the robot server
+    transdFunction <aString>    the string corresponding to the transducer command. Acceptable strings are defined by the server protocol 
+                                and detailed in class WebotsTCPClient
+    parameters     <aString>    a string containing a list of  parameters to be passed to the command
+    transducRange  <aList>      the min and max range of the transducer. Cached here for efficiency reasons
+
+    The basic methods (all defined in subclasses) are 
+    
+    act  ---  which activates the actuator by running robot.function(parameters)
+    sense --- which read the sensor by running robot.function(parameters) and returning a value
+    range --- which returns a 2 value list containing the minimum and maximum values of the transducer 
+    
+    '''
+
+
+    def __init__(self):
+        '''
+        Basic setup
+        '''
+    #=================================================================
+    # Class properties
+    #=================================================================
+    
+    def setRobotSocket(self, aValue):
+        self._robotSocket = aValue
+    def getRobotSocket(self):
+        return self.robotSocket
+    robotSocket = property(fget = lambda self: self.getRobotSocket(),
+                    fset = lambda self, value: self._setRobotSocket(value))  
+    
+    def setTransdFunction(self, aValue):
+        self._transdFunction = aValue
+    def getTransdFunction(self):
+        return self._transdFunction
+    transdFunction = property(fget = lambda self: self.getTransdFunction(),
+                    fset = lambda self, value: self.setTransdFunction(value))
+    
+    def setFuncParameters(self, aValue):
+        self._funcParameters = aValue
+    def getFuncParameters(self):
+        return self._funcParameters
+    funcParameters = property(fget = lambda self: self.getFuncParameters(),
+                    fset = lambda self, value: self.setFuncParameters(value))  
+  
+
+    #======================================================================
+    #  Running methods
+    #======================================================================
+    
+    def act(self, parameters):
+        '''act method is implemented only by Transducer's subclasses'''
+        raise SubclassResponsibility()
+    
+    def read(self):
+        '''read method is implemented only by Transducer's subclasses'''
+        raise SubclassResponsibility()
+        
+    def range(self):
+        '''range method is implemented only by Transducer's subclasses'''
+        raise SubclassResponsibility()
+
+class WebotsDiffMotorTCP(TransducerTCP): 
+    '''
+     webotsDiffMotor is the interface to the wheels of a Webots'
+     Differential Wheel robot controlled by a server. 
+     Its "_wheel" variable specifies which wheel (right or left)
+     it controls. It defines the transdFunction name and redefines
+     setFuncParameters to modify only one of the values (corresponding to the right or left motor) 
+     '''   
+    
+    def __init__(self, wheel):
+        " initialize instance to Webots values and sets the right or left wheel accordingly"
+        self._transdFunction = "D"
+        if wheel not in ["right","left"]:
+            raise TransducerException("Wheel must either be 'right' or 'left'")
+        else:
+            self._wheel = wheel
+        
+        self._functParameters = "0"
+                    
+    def act(self):
+        '''activates the wheel motor by calling the actuator function with the passed parameters'''
+        command = self.transdFunction + self.funcParameters
+        self._robotSocket.send(command)
+        "Discard reply from receive buffer"
+        discard = self._robotSocket.recv(100)
+                
+    def range(self):
+        '''return a list containing the min and max speed of the motor.
+           notice that the min speed is always = to minus maxspeed in webots
+           and the both wheels have identical maxspeed'''
+        
+        if self.transducRange is not None:
+            self.robotSocket.send('M')
+            commandReturn = self._robotSocket.recv(1024).rstrip('\r\n').split(',')
+            self._transducRange = [-commandReturn[1], commandReturn[1]]
+        
+        return self.transducRange
+        
+class WebotsLightSensorTCP(TransducerTCP):
+    '''Interface to a Webots' robot light sensor'''
+    
+    def __init__(self, aNumber):
+        '''Initialize the sensor with the Webots function name and the number of the sensor.
+           Notice that it is the caller class responsibility to make sure that there is actually 
+           such a sensor in the robot and that the robot tcp server controller returns an approporate string'''
+        self._transdFunction = "O"
+        self._funcParameters = aNumber
+        
+    def read(self):
+        '''returns the light value by reading the nth element of 
+           the list of values returned by the read command'''
+        self.robotSocket.send(self.transducFunction)
+        light_values = self.robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]  
+        return light_values[self._funcParameters + 1]
+       
+    def range(self):
+        '''Returns the range of the light sensor.
+           FIXME Webots actually has no access to the light sensor maximum value (its minimum value is 0).
+           return 1000'''
+#        raise TransducerException("Webots does not give access to a sensor's max value")
+        return [0,1000]   
         
     
