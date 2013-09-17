@@ -256,10 +256,12 @@ class WebotsLightSensorTCP(TransducerTCP):
         
     def read(self):
         '''returns the light value by reading the nth element of 
-           the list of values returned by the read command'''
+           the list of values returned by the read command.
+           Convert the value to its complement to Max Value, because Webots
+           use Max for the minimum stimulus and 0 for the max stimulus'''
         self._robotSocket.send(self._transducFunction)
         light_values = self._robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]  
-        return light_values[self._funcParameters]
+        return self.range()[1] - float(light_values[self._funcParameters])
        
     def range(self):
         '''Returns the range of the light sensor.
