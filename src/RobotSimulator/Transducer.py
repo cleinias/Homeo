@@ -144,7 +144,7 @@ class TransducerTCP(object):
     robotSocket    <aString>    the socket conneted to the robot server
     transdFunction <aString>    the string corresponding to the transducer command. Acceptable strings are defined by the server protocol 
                                 and detailed in class WebotsTCPClient
-    parameters     <aString>    a string containing a list of  parameters to be passed to the command
+    funcParameters     <aString>    a string containing a list of  parameters to be passed to the command
     transducRange  <aList>      the min and max range of the transducer. Cached here for efficiency reasons
 
     The basic methods (all defined in subclasses) are 
@@ -169,7 +169,7 @@ class TransducerTCP(object):
     def getRobotSocket(self):
         return self.robotSocket
     robotSocket = property(fget = lambda self: self.getRobotSocket(),
-                    fset = lambda self, value: self._setRobotSocket(value))  
+                    fset = lambda self, value: self.setRobotSocket(value))  
     
     def setTransdFunction(self, aValue):
         self._transdFunction = aValue
@@ -179,7 +179,7 @@ class TransducerTCP(object):
                     fset = lambda self, value: self.setTransdFunction(value))
     
     def setFuncParameters(self, aValue):
-        self._funcParameters = aValue
+        self._funcParameters = str(aValue)
     def getFuncParameters(self):
         return self._funcParameters
     funcParameters = property(fget = lambda self: self.getFuncParameters(),
@@ -213,17 +213,21 @@ class WebotsDiffMotorTCP(TransducerTCP):
     
     def __init__(self, wheel):
         " initialize instance to Webots values and sets the right or left wheel accordingly"
-        self._transdFunction = "D"
         if wheel not in ["right","left"]:
             raise TransducerException("Wheel must either be 'right' or 'left'")
         else:
             self._wheel = wheel
+            if self._wheel == 'right':
+                self._transdFunction = "R"
+            else:
+                self._transdFunction = 'L'
+
         
         self._functParameters = "0"
                     
     def act(self):
         '''activates the wheel motor by calling the actuator function with the passed parameters'''
-        command = self.transdFunction + self.funcParameters
+        command = self.transdFunction + ',' + self.funcParameters
         self._robotSocket.send(command)
         "Discard reply from receive buffer"
         discard = self._robotSocket.recv(100)
@@ -247,15 +251,15 @@ class WebotsLightSensorTCP(TransducerTCP):
         '''Initialize the sensor with the Webots function name and the number of the sensor.
            Notice that it is the caller class responsibility to make sure that there is actually 
            such a sensor in the robot and that the robot tcp server controller returns an approporate string'''
-        self._transdFunction = "O"
+        self._transducFunction = "O"
         self._funcParameters = aNumber
         
     def read(self):
         '''returns the light value by reading the nth element of 
            the list of values returned by the read command'''
-        self.robotSocket.send(self.transducFunction)
-        light_values = self.robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]  
-        return light_values[self._funcParameters + 1]
+        self._robotSocket.send(self._transducFunction)
+        light_values = self._robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]  
+        return light_values[self._funcParameters]
        
     def range(self):
         '''Returns the range of the light sensor.
