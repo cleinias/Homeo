@@ -15,3 +15,4 @@ if __name__ == "__main__":
     dialog = Dialog()
     dialog.show()
     app.exec_()
+    
