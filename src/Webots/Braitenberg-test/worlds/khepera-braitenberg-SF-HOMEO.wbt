@@ -205,7 +205,7 @@ DEF KHEPERA DifferentialWheels {
       }
     ]
   }
-  controller "lightSensorTest"
+  controller "server-diff-2-l-sensors"
   robotWindow "generic_window"
   axleLength 0.053
   wheelRadius 0.008
