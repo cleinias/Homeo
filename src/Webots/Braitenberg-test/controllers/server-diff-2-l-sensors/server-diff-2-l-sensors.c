@@ -10,12 +10,14 @@
  * Copyright (c) 2006 Cyberbotics - www.cyberbotics.com and 2013 Stefano Franchi
  */
 
-/* The protocol used in this example is taken from the Khepera serial       
+/* The protocol used in this example is modified from the Khepera serial       
  * communication protocol. It controls a Khepera-like robot
- * with only 2 light sensors, and it supports only 2 commands:                              
+ * with only 2 light sensors, and it supports the following commands:
  *                                                                           
- * D: set speed                                                              
- * O: read ambient light sensors                                             
+ * L; set left wheel speed
+ * R: set right wheel speed
+ * O: read ambient light sensors
+ * M: read max speed                                             
  *                                                                           
  * Additionally, the server understands the string "exit", which terminates the connections                                                                         
  *                                                                           
@@ -152,8 +154,15 @@ static void run()
     buffer[n] = '\0';
 //    printf("Received %d bytes: %s\n", n, buffer);
 
-    if (buffer[0] == 'D') {     /* set the speed of the motors */
-        sscanf(buffer, "D,%d,%d", &left_speed, &right_speed);
+    if (buffer[0] == 'L') {     /* set the speed of the left motor */
+        sscanf(buffer, "L,%d", &left_speed);
+        double right_speed = wb_differential_wheels_get_right_speed();
+        wb_differential_wheels_set_speed(left_speed, right_speed);
+        send(fd, "d\r\n", 3, 0);
+
+    } else if (buffer[0] == 'R') {  /* set the speed of the right motor */
+        sscanf(buffer, "R,%d", &right_speed);
+        double left_speed = wb_differential_wheels_get_left_speed();
         wb_differential_wheels_set_speed(left_speed, right_speed);
         send(fd, "d\r\n", 3, 0);
 
@@ -161,6 +170,11 @@ static void run()
         sprintf(buffer, "o,%d,%d\r\n",
                 (int)wb_light_sensor_get_value(ambient[0]),
                 (int)wb_light_sensor_get_value(ambient[1]));
+        send(fd, buffer, strlen(buffer), 0);
+
+    } else if (buffer[0] == 'M') {  /* read the max speed */
+        sprintf(buffer, "m,%d\r\n",
+                (int)wb_differential_wheels_get_max_speed()),
         send(fd, buffer, strlen(buffer), 0);
 
     } else if (strncmp(buffer, "exit", 4) == 0) {
