@@ -167,7 +167,7 @@ class TransducerTCP(object):
     def setRobotSocket(self, aValue):
         self._robotSocket = aValue
     def getRobotSocket(self):
-        return self.robotSocket
+        return self._robotSocket
     robotSocket = property(fget = lambda self: self.getRobotSocket(),
                     fset = lambda self, value: self.setRobotSocket(value))  
     
@@ -237,12 +237,14 @@ class WebotsDiffMotorTCP(TransducerTCP):
            notice that the min speed is always = to minus maxspeed in webots
            and the both wheels have identical maxspeed'''
         
-        if self.transducRange is not None:
+        try:
+            return self._transducRange
+        except AttributeError:
             self.robotSocket.send('M')
             commandReturn = self._robotSocket.recv(1024).rstrip('\r\n').split(',')
-            self._transducRange = [-commandReturn[1], commandReturn[1]]
-        
-        return self.transducRange
+            print commandReturn
+            self._transducRange = [-float(commandReturn[1]), float(commandReturn[1])]
+            return self._transducRange
         
 class WebotsLightSensorTCP(TransducerTCP):
     '''Interface to a Webots' robot light sensor'''
