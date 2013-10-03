@@ -27,34 +27,36 @@ leftSensor = WebotsLightSensorTCP(1)
 rightSensor = WebotsLightSensorTCP(0)
 leftSensor.robotSocket = testSocket
 rightSensor.robotSocket = testSocket
-
-
-for i in xrange(100):
-    """Convert light values into a sensed value going from 
-       10 (max value) to 0.01 (min value)
+leftSensorMaxRange = leftSensor.range()[1]
+rightSensorMaxRange = rightSensor.range()[1]
+leftWheelMaxRange = rightWheelMaxRange = rightWheel.range()[1]
+DAMPING = .1
+for i in xrange(1000):
+    """Convert light values into a sensed value going from motors' minSpeed to maxSpeed.
+       Notice that minSpeed is always = -maxSpeed in Webots, and the two motors of a differential
+       robots have identical minSpeed and MaxSpeed.
+       Sensors, instead, always go from 0 to a maxRange    
     """
     r =  rightSensor.read()
-    if r  == 0:
-        right_eye = 1
-    else:
-        right_eye = r
+    right_eye = (r * ((rightWheelMaxRange * 2)/rightSensorMaxRange))  - rightWheelMaxRange
     
     l = leftSensor.read()
-    if l == 0:
-        left_eye = 1
-    else:
-        left_eye = l
+    left_eye = (l * ((leftWheelMaxRange * 2 )/leftSensorMaxRange)) - leftWheelMaxRange
     
-    """ Scale perceived lights to 0 - 100 and set them to speed of opposite wheel"""
-    rightSpeed = left_eye / 100
-    leftSpeed = right_eye / 100
+    
+    """ Scale perceived lights by a damping factor set them to speed of opposite wheel"""
+    rightSpeed = left_eye  * DAMPING
+    leftSpeed = right_eye  * DAMPING
     rightWheel.funcParameters = rightSpeed
     leftWheel.funcParameters = leftSpeed
     rightWheel.act()
     leftWheel.act()    
-    print "right_eye: %d, left_eye: %d, rightSpeed: %d, leftSpeed: %d" % (right_eye,
-                                                                          rightSpeed,
+    print "r_sensor: %d, right_eye: %d, l_sensor: %d, left_eye: %d, rightSpeed: %d, leftSpeed: %d" % (
+                                                                          r,
+                                                                          right_eye,
+                                                                          l,
                                                                           left_eye,
+                                                                          rightSpeed,
                                                                           leftSpeed)
 
 testClient.close()

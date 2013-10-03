@@ -1,6 +1,6 @@
 '''
 Created on Sep 17, 2013
-
+Simple tests to check that the connection to webots works
 @author: stefano
 '''
 
