@@ -77,14 +77,6 @@ def initialize_Ashby_2nd_Experiment():
             unit = HomeoUnitNewtonian()
             unit.setRandomValues()
             hom.addFullyConnectedUnit(unit)
-#--------------------------------------------------------------------------- 
-# FIXME: Needs to be brought back to HomeoQtSimulation
-#--------------------------------------------------------------------------- 
-
-    'change homeostat and dataFile names'
-#    self.homeostatFilename = 'Ashby-2_nd_experiment'
-#    self._dataFilename = 'Ashby-2_nd_experiment--Plot-Data'
-#--------------------------------------------------------------------------- 
 
     'disable all connections except self-connections'
     for unit in hom.homeoUnits:
@@ -219,16 +211,7 @@ def initialize_1minus_2xExperiment():
             unit = HomeoUnitNewtonian()
             unit.setRandomValues()
             hom.addFullyConnectedUnit(unit)
-    
-#--------------------------------------------------------------------------- 
-# FIXME: Needs to be brought back to HomeoQtSimulation
-#--------------------------------------------------------------------------- 
-    'change homeostat and dataFile names'
-#    self.homeostatFilename = '1-minus-2x-experiment'
-#    self._dataFilename = '1-minus-2x-experiment-Plot-Data'
-
-#--------------------------------------------------------------------------- 
-    
+        
     'disable all connections except self-connections'
     for unit in hom.homeoUnits:
         for i in xrange(1, len(hom.homeoUnits)):
@@ -373,14 +356,6 @@ def initialize_1minus_2_minus_3xExperiment():
             unit.setRandomValues()
             hom.addFullyConnectedUnit(unit)
 
-#--------------------------------------------------------------------------- 
-# FIXME: Needs to be brought back to HomeoQtSimulation
-#--------------------------------------------------------------------------- 
-    'change homeostat and dataFile names'
-#    self.homeostatFilename = '1-minus-2-minus--3x-experiment'
-#    self._dataFilename = '1-minus-2-minus--3x--Plot-Data'
-#--------------------------------------------------------------------------- 
-
     'disable all connections except self-connections'
     for unit in hom.homeoUnits:
         for i in xrange(1, len(hom.homeoUnits)):
@@ -458,3 +433,36 @@ def initialize_1minus_2_minus_3xExperiment():
 
     'Return the properly configured homeostat'
     return hom        
+
+
+def initializeBraiten1_1():
+    '''
+    Initialize a Homeostat to replicate a Braitenberg type-1 vehicle with
+    1 real unit for both  motor and sensor, plus one HomeoInput unit to connect to the outside world
+    ''' 
+    hom = Homeostat()
+    
+    
+def initializeBraiten1_2():
+    '''
+    Initialize a Homeostat to replicate a Braitenberg type-1 vehicle with
+    2 real units: one for the Motor and one for the sensor, plus one HomeoInput unit
+    to interface to the outside world
+    ''' 
+    hom = Homeostat()
+ 
+def initializeBraiten2_1():
+    '''
+    Initialize a Homeostat to replicate a Braitenberg type-2 vehicle with
+    3 real units: two for either Motor and one for the sensor, plus one HomeoInput unit
+    to interface to the outside world
+    ''' 
+    hom = Homeostat()
+
+def initializeBraiten2_2():
+    '''
+    Initialize a Homeostat to replicate a Braitenberg type-2 vehicle with
+    4 real units: two for either Motor and two for the sensors, plus one HomeoInput Unit
+    to interface to the outside world
+    ''' 
+    hom = Homeostat()

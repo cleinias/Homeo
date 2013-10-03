@@ -35,7 +35,7 @@ class HomeoQtSimulation(QObject):
         homeostatIsSaved            <aBoolean>         Whether the homeostat being simulated has been saved        
         simulDelay                  <anInteger>        Delay, in milliseconds, between two simulation steps
         liveData                    <aDictionary>      aDictionary holding the critDev and uniselector activation data for all the units 
-        unitsSelfWeights             <aDictionary>      aDictionary holding the weights for the units' self-connections
+        unitsSelfWeights             <aDictionary>     aDictionary holding the weights for the units' self-connections
         liveDataOn                  <aBoolean>         enables live charting
         liveDataWindow              <aDictionary>      a Dictionary holding double-ended queues holding only the last maxDataPoints number of datapoints
         maxDataPoints               <anInteger>        the maximum dataPoints to hold for live charting

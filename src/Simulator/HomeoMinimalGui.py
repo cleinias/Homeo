@@ -39,7 +39,7 @@ class HomeoMinimalGui(QDialog):
         
         self._simulation = HomeoQtSimulation()
 #        self._simulation.initializeAshbySimulation()
-        self._simulation.initializeAshbyFirstExperiment()
+        self._simulation.initializeExperSetup()
         
         self._simulThread = SimulationThread()
         self._simulation.moveToThread(self._simulThread)

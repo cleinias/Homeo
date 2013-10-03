@@ -44,7 +44,7 @@ class HomeoTestGui(QDialog):
         super(HomeoTestGui,self).__init__(parent)
         
         self._simulation = HomeoQtSimulation()
-        self._simulation.initializeAshbySimulation()
+        self._simulation.initializeExperSetup()
         
         self._simulThread = SimulationThread()
         self._simulation.moveToThread(self._simulThread)

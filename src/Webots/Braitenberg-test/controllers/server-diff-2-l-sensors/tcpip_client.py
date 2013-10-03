@@ -9,8 +9,6 @@ Sample client for tcp/ip robot controller
 from __future__ import division
 from time import sleep
 
-#!/usr/bin/env python
-
 import socket
 
 
