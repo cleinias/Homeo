@@ -144,7 +144,7 @@ class TransducerTCP(object):
     robotSocket    <aString>    the socket conneted to the robot server
     transdFunction <aString>    the string corresponding to the transducer command. Acceptable strings are defined by the server protocol 
                                 and detailed in class WebotsTCPClient
-    funcParameters     <aString>    a string containing a list of  parameters to be passed to the command
+    funcParameters <aString>    a string containing a list of  parameters to be passed to the command
     transducRange  <aList>      the min and max range of the transducer. Cached here for efficiency reasons
 
     The basic methods (all defined in subclasses) are 
