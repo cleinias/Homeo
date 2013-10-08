@@ -4,7 +4,9 @@ Created on Sep 3, 2013
 @author: stefano
 '''
 from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
+from Core.HomeoUnit import HomeoUnit
 from numpy import sign
+from Helpers.General_Helper_Functions import scaleTo
 
 class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
     '''
@@ -13,7 +15,7 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
     its own critical deviation value to the actuator.
     The critical deviation value is scaled to the actuator range
     Notice that proper setup of the actuator is responsibility 
-    of the calling class/instance
+    of the calling class/instance.  
     
     Instance variable:
     actuator <anActuator> an instance of an actuator subclass of Transducer 
@@ -36,15 +38,44 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
     def selfUpdate(self):
         '''First run the self-update function of superclass, 
             then convert unit-value to actuator value,
-            then operate actuator'''
+            then operate actuator on the unit value scaled 
+            to the actuator range'''
         super(HomeoUnitNewtonianActuator, self).selfUpdate()
-        self.actuator.act(self.scaleCritDevToActValue())
+        self.actuator.funcParameters = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)
+        self.actuator.act()
     
-    def scaleCritDevToActValue(self):
+        
+class HomeoUnitInput(HomeoUnit):
+    '''
+    HomeoUnitInput is a HomeoUnit which
+    reads its value from a sensory transducer. When it self updates, 
+    it reads the value from the sensor and scales it to its own deviation 
+    range.
+    HomeoUnitInput is thus not a "proper" HomeoUnit but rather a "dummy" unit that merely
+    reads input values from the environment and transmit them to the connected unit(s).
+    It has no defended value, uniselector action, etc. 
+    Notice that proper setup of the transducer is responsibility 
+    of the calling class/instance
+    
+    Instance variable:
+    sensor <aTransducer> an instance of an sensory subclass of Transducer 
+    '''
+
+    def __init__(self):
         '''
-        Convert the unit's critical deviation value to an equivalent number expressing
-        the same ratio in the actuator's range            
+        Initialize according to superclass
         '''
-        return  sign(self.criticalDeviation * 
-                     (abs(self.criticalDeviation) / self.maxDeviation) *
-                     self.actuator.range[1])
+        super(HomeoUnitInput, self).__init__()
+    
+    def setSensor(self, aTransducer):
+        self._sensor = aTransducer
+    def getSensor(self):
+        return self._sensor
+    sensor = property(fget = lambda self: self.getSensor(),
+                          fset = lambda self, aValue: self.setSensor(aValue))
+    
+    def selfUpdate(self):
+        self.critDeviation = scaleTo(self.actuator.range(), [-self.maxDeviation, self.maxDeviation], self.actuator.read())
+            
+    
+    
