@@ -157,6 +157,11 @@
 
 \begin_layout Title
 To do list for Homeo robotic simulations
+\begin_inset Newline newline
+\end_inset
+
+ALL DONE.
+ Ready to Start with Experiments
 \end_layout
 
 \begin_layout Enumerate
@@ -244,10 +249,11 @@ Similarly for output transducers
 \end_deeper
 \begin_layout Enumerate
 Change simulation routines to include reading/writing from/to transducers
+ [DONE]
 \end_layout
 
 \begin_layout Enumerate
-Connect python homeo simulation to robotic environment
+Connect python homeo simulation to robotic environment [DONE]
 \end_layout
 
 \begin_layout Section
@@ -305,7 +311,7 @@ Test python client from from command line, server on laptop
 \end_layout
 
 \begin_layout Enumerate
-Connect transducers to Webots
+[DONE] Connect transducers to Webots
 \end_layout
 
 \begin_deeper
@@ -315,11 +321,11 @@ integrate client code
 
 \end_deeper
 \begin_layout Enumerate
-Integrates transducers to a homeostat
+[DONE] Integrates transducers to a homeostat
 \end_layout
 
 \begin_layout Enumerate
-Test simulation in client/server setting
+[DONE] Test simulation in client/server setting
 \end_layout
 
 \end_body
