@@ -144,7 +144,8 @@ class HomeoQtSimulation(QObject):
 #        self.currentExperiment = 'initialize_1minus_2_minus_3xExperiment'    
         if experiment == None:
 #            self.currentExperiment = 'initialize_Ashby_2nd_Experiment'
-            self.currentExperiment = 'initializeBraiten1_1'
+#            self.currentExperiment = 'initializeBraiten1_1'
+            self.currentExperiment = 'initializeBraiten1_2'
             
     
         super(HomeoQtSimulation,self).__init__()
