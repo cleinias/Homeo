@@ -6,12 +6,19 @@ Created on Sep 4, 2013
 
 from Core.Homeostat import *
 from Core.HomeoUnitNewtonian import *
-from Core.HomeoConnection import  * 
-
+from Core.HomeoConnection import * 
+from RobotSimulator.HomeoUnitNewtonianTransduc import *
+from RobotSimulator.WebotsTCPClient import *
+from subprocess import check_output
+from subprocess import call as subCall
+from RobotSimulator.Transducer import  *
+from RobotSimulator.HomeoInputUnit import HomeoInputUnit
 
 '''
 Module HomeoExperiments provides initializations data for various experiments to be conducted with the homeo package.
 The module's methods return a properly configured homeostat to be used in the simulations.
+The functions setting up robotics experiments also launch Webots and set up communication
+parameters between Webots and Homeo. 
 '''
 
 
@@ -30,12 +37,12 @@ def initializeAshbySimulation():
 
 def initialize_Ashby_2nd_Experiment():
     """
-       Return a standard homeostat with 3 active units connected in a cricle, as per 
+       Return a standard homeostat with 3 active units connected in a circle, as per 
        Ashby's experiment in Design for a brain, pp. 106-107.
        In detail: connections are 1-->2-->3-->1
-       connection 1-->2 is uniselector controlled
-       connection 2-->3 is hand-controlled
-       connection 3--> is always negative
+       connection 1--> 2 is uniselector controlled
+       connection 2--> 3 is hand-controlled
+       connection 3--> 1 is always negative
        
        We start with:
        1 (possibly representing Motor/Agent) with negative, fixed, self-connection
@@ -317,7 +324,7 @@ def initialize_1minus_2_minus_3xExperiment():
        homeostat roughly similar to DiPaolo's ocular inversion
        experiment:
        2 self-connected units representing the 'eyes' or 'sensors'
-       1 unconnected nit representing the environment 
+       1 unconnected unit representing the environment 
     """
     hom = Homeostat()
     
@@ -438,10 +445,129 @@ def initialize_1minus_2_minus_3xExperiment():
 def initializeBraiten1_1():
     '''
     Initialize a Homeostat to replicate a Braitenberg type-1 vehicle with
-    1 real unit for both  motor and sensor, plus one HomeoInput unit to connect to the outside world
+    1 real unit for both  motor and sensor, plus one HomeoInput unit to connect to the outside world.
+    Set up Webots accordingly and pass Webots parameters (port #) to the units
     ''' 
+ 
+    "1. setup webots"
+    "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
+    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-1-1-HOMEO.wbt'   
+    '''Webots parameters for tcp/ip communication
+       (Defined in webots world specified above) '''
+    kheperaPort = 10020
+    supervisorPort = 10021
+    
+    startWebots(webotsWorld)
+    
+    "2. set up connection and create client and socket, etc."
+    client = WebotsTCPClient()
+    client._clientPort = kheperaPort
+    socket = client.getClientSocket()
+    
+       
+    '3.1 Setup robotic communication parameters in actuator and sensor'
+    'motor'
+    wheel = WebotsDiffMotorTCP('right')
+    wheel.robotSocket = socket
+    wheel.funcParameters = 10
+    
+    'sensor'
+    sensorTransd = WebotsLightSensorTCP(0)
+    sensorTransd._clientPort = kheperaPort
+    sensorTransd.robotSocket = socket
+    
+    '3.2 initialize motor and sensor units with properly setup motor and sensor '
+    motor = HomeoUnitNewtonianActuator(actuator = wheel)
+    sensor = HomeoUnitInput(sensor=sensorTransd)
+    
+    "4. Set up Homeostat"   
     hom = Homeostat()
     
+    'Setup standard homeo parameters'
+    motor_visc = 0.9
+    sensor_visc = 0.9
+    
+    motor_mass = 100
+    sensor_mass = 100
+    
+    motor_self_noise = 0.05
+    sensor_self_noise = 0.05
+    
+    motor_density = 1
+    sensor_density = 1
+    
+    motor_uniselector_timing= 100
+    
+    motor_self_connection_active = 'active'
+    motor_self_connection_uniselector = 'manual'
+    motor_self_connection_switch = -1
+    motor_self_connection_potentiomenter = 0.1
+    motor_self_connection_noise = 0.05
+            
+    motor_incoming_conn_weight = 0.5
+    motor_incoming_conn_noise = 0.05
+    motor_incoming_connection_polarity = 1
+    motor_incoming_connection_uniselector = 'uniselector' 
+    
+    sensor_incoming_connection_weight = 0.5
+    sensor_incoming_connection_noise = 0.05
+    sensor_incoming_connection_polarity = 1
+    sensor_incoming_connection_uniselector = 'manual'
+    
+    'Setup a 1 unit Homeostat with an additional input unit. Then change the parameters'
+    if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
+            motor.setRandomValues()
+            hom.addFullyConnectedUnit(motor)
+            hom.addFullyConnectedUnit(sensor)
+
+     
+    'Disable all connections except self-connections'
+    for unit in hom.homeoUnits:
+        for i in xrange(1, len(hom.homeoUnits)):
+            unit.inputConnections[i].status = 0
+
+    'Agent unit or motor'
+    motor.name = 'Motor'
+    motor.mass = motor_mass
+    motor.viscosity = motor_visc
+    motor.density = motor_density
+    motor.noise = motor_self_noise
+    motor.uniselectorTimeInterval = motor_uniselector_timing
+    
+    'self-connection'
+    motor.potentiometer = motor_self_connection_potentiomenter
+    motor.switch = motor_self_connection_switch
+    motor.inputConnections[0].noise = motor_self_connection_noise
+    motor.inputConnections[0].state = motor_self_connection_uniselector
+
+    'Sensor unit'
+    sensor.name = 'Sensor'
+    sensor.mass = sensor_mass
+    sensor.viscosity = sensor_visc
+    sensor.density = sensor_density
+    sensor.noise = sensor_self_noise
+
+    'disactivate uniselector'
+    sensor.uniselectorActive = False
+    
+    'disactivate self-connection'
+    sensor.inputConnections[0].status = 0
+
+    "Set up homeostat's connection."
+    'Motor is connected to (receives input from) sensor'
+    for connection in motor.inputConnections:
+        if connection.incomingUnit.name == 'Sensor':
+            connection.newWeight(motor_incoming_conn_weight)
+            connection.noise = motor_incoming_conn_noise
+            connection.state = motor_incoming_connection_uniselector
+            connection.status = True
+    
+    'Sensor is not connected to (does not received input from) any other unit'
+    for connection in sensor.inputConnections:
+        connection.status = False
+    'Return the properly configured homeostat'
+    return hom
+
     
 def initializeBraiten1_2():
     '''
@@ -462,7 +588,19 @@ def initializeBraiten2_1():
 def initializeBraiten2_2():
     '''
     Initialize a Homeostat to replicate a Braitenberg type-2 vehicle with
-    4 real units: two for either Motor and two for the sensors, plus one HomeoInput Unit
+    4 real units: two for either Motor and two for the sensors, plus 2  HomeoInput Unit
     to interface to the outside world
     ''' 
     hom = Homeostat()
+
+def isWebotsRunning():
+    'Check if Webots is running'
+    webots_running = False
+    if 'webots-bin' in check_output(['ps','ax']):
+            webots_running = True
+    return webots_running
+   
+def startWebots(world = None):
+    if not isWebotsRunning():
+        subCall(["webots", world, '&'])         
+    
