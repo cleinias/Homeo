@@ -22,11 +22,16 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
     '''
 
 
-    def __init__(self):
+    def __init__(self, actuator = None):
         '''
         Initialize according to superclass
         '''
         super(HomeoUnitNewtonianActuator, self).__init__()
+        
+        'Initialize actuator, if passed'
+        if actuator is not None:
+            self._actuator = actuator
+
     
     def setActuator(self, anActuator):
         self._actuator = anActuator
@@ -54,18 +59,22 @@ class HomeoUnitInput(HomeoUnit):
     HomeoUnitInput is thus not a "proper" HomeoUnit but rather a "dummy" unit that merely
     reads input values from the environment and transmit them to the connected unit(s).
     It has no defended value, uniselector action, etc. 
+    
     Notice that proper setup of the transducer is responsibility 
     of the calling class/instance
     
     Instance variable:
-    sensor <aTransducer> an instance of an sensory subclass of Transducer 
+    sensor <aTransducer> an instance of a sensory subclass of Transducer 
     '''
 
-    def __init__(self):
+    def __init__(self, sensor = None):
         '''
         Initialize according to superclass
         '''
         super(HomeoUnitInput, self).__init__()
+        'Initialize sensor, if passed'
+        if sensor is not None:
+            self._sensor = sensor
     
     def setSensor(self, aTransducer):
         self._sensor = aTransducer
@@ -75,7 +84,9 @@ class HomeoUnitInput(HomeoUnit):
                           fset = lambda self, aValue: self.setSensor(aValue))
     
     def selfUpdate(self):
-        self.critDeviation = scaleTo(self.actuator.range(), [-self.maxDeviation, self.maxDeviation], self.actuator.read())
-            
+        self.criticalDeviation = scaleTo(self.sensor.range(), [-self.maxDeviation, self.maxDeviation], self.sensor.read())
+        print "Raw value read: %d scaled Value: %d self critDev: %d)" %(self.sensor.read(),
+                                                                        scaleTo(self.sensor.range(), [-self.maxDeviation, self.maxDeviation], self.sensor.read()),
+                                                                        self.criticalDeviation )    
     
     

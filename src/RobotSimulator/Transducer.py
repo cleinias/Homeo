@@ -252,7 +252,7 @@ class WebotsLightSensorTCP(TransducerTCP):
     def __init__(self, aNumber):
         '''Initialize the sensor with the Webots function name and the number of the sensor.
            Notice that it is the caller class responsibility to make sure that there is actually 
-           such a sensor in the robot and that the robot tcp server controller returns an approporate string'''
+           such a sensor in the robot and that the robot tcp server controller returns an appropriate string'''
         self._transducFunction = "O"
         self._funcParameters = aNumber
         
