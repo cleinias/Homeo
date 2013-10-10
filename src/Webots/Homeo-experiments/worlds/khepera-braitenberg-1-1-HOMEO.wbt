@@ -11,7 +11,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation -0.998719 -0.0505913 -0.000237646 0.6881
-  position 4.29497 0.439321 3.87838
+  position 5.45908 3.42144 7.69207
 }
 Background {
   skyColor [
@@ -58,7 +58,7 @@ DEF GROUND Transform {
   ]
 }
 DEF KHEPERA DifferentialWheels {
-  translation 4.25142 2.30926e-14 3.35325
+  translation 5.64854 2.13162e-14 5.08299
   children [
     Shape {
       appearance Appearance {

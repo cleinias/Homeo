@@ -203,30 +203,30 @@ test setup from playerv
 
 \end_deeper
 \begin_layout Enumerate
-Webots
+Webots [DONE]
 \end_layout
 
 \begin_deeper
 \begin_layout Enumerate
-choose a simple khepera-like robots
+choose a simple khepera-like robots [DONE]
 \end_layout
 
 \begin_layout Enumerate
-setup a world with light sources
+setup a world with light sources [DONE]
 \end_layout
 
 \begin_layout Enumerate
-perhaps: setup a tcpip controller for khepera-like robot
+perhaps: setup a tcpip controller for khepera-like robot [DONE]
 \end_layout
 
 \begin_layout Enumerate
-test setup from console (use provided tcpip client)
+test setup from console (use provided tcpip client) [DONE]
 \end_layout
 
 \end_deeper
 \end_deeper
 \begin_layout Enumerate
-Add input and output transducers to Homeo
+Add input and output transducers to Homeo [DONE]
 \end_layout
 
 \begin_deeper
@@ -255,7 +255,7 @@ In order:
 \end_layout
 
 \begin_layout Enumerate
-Webots setup in client/server config
+[DONE] Webots setup in client/server config
 \end_layout
 
 \begin_deeper
@@ -301,7 +301,7 @@ Test python client from from command line, server on laptop
 
 \end_deeper
 \begin_layout Enumerate
-Extend Homeo to support transducers
+[DONE] Extend Homeo to support transducers
 \end_layout
 
 \begin_layout Enumerate
