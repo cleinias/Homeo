@@ -12,7 +12,7 @@ from RobotSimulator.WebotsTCPClient import *
 from subprocess import check_output
 from subprocess import call as subCall
 from RobotSimulator.Transducer import  *
-from RobotSimulator.HomeoInputUnit import HomeoInputUnit
+
 
 '''
 Module HomeoExperiments provides initializations data for various experiments to be conducted with the homeo package.
