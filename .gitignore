@@ -27,3 +27,6 @@
 *.sql
 *.sqlite
 
+# Backup files #
+################
+*.lyx~
