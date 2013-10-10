@@ -10,8 +10,8 @@ WorldInfo {
   FPS 10
 }
 Viewpoint {
-  orientation -0.567385 0.597263 0.566879 2.04386
-  position 1.50036 8.08257 1.28789
+  orientation -0.999925 -0.0122339 1.21275e-05 1.49725
+  position 2.80708 10.3569 4.10521
 }
 Background {
   skyColor [
@@ -19,22 +19,23 @@ Background {
   ]
 }
 PointLight {
-  attenuation 0 0 12.5657
+  attenuation 0 1 0
   color 0 1 0
-  intensity 0.6
-  location 0.5 0.11 1.5
+  intensity 20
+  location 1.7 0.11 5.3
 }
 PointLight {
-  attenuation 0 0 12.5657
+  attenuation 0 1 0
   color 0 1 0
-  intensity 0.6
-  location 1.8 0.1 0.1
+  intensity 20
+  location 6.2 0.1 1.8
 }
 PointLight {
   ambientIntensity 1
   attenuation 0 0 12.5657
   intensity 12
   location 0 1.8 0
+  on FALSE
 }
 DEF GROUND Transform {
   translation -0.5 0 -0.5
@@ -48,17 +49,17 @@ DEF GROUND Transform {
           ]
         }
         colorPerVertex FALSE
-        xDimension 31
+        xDimension 88
         xSpacing 0.1
-        zDimension 31
+        zDimension 84
         zSpacing 0.1
       }
     }
   ]
 }
 DEF KHEPERA DifferentialWheels {
-  translation 0.699976 0 1.50056
-  rotation 0.0433412 0.998752 -0.0248192 16.3445
+  translation 4.20785 2.30926e-14 3.38039
+  rotation 0 1 0 8.41994
   children [
     Shape {
       appearance Appearance {
@@ -127,7 +128,7 @@ DEF KHEPERA DifferentialWheels {
     }
     Solid {
       translation -0.026 0.0075 0
-      rotation 1 0 0 -5676.64
+      rotation 1 0 0 -79943.1
       children [
         DEF WHEEL Transform {
           rotation 0 0 1 -1.5707
@@ -150,7 +151,7 @@ DEF KHEPERA DifferentialWheels {
     }
     Solid {
       translation 0.026 0.0075 0
-      rotation 1 0 0 -5334.32
+      rotation 1 0 0 -55619.9
       children [
         USE WHEEL
       ]
@@ -177,8 +178,8 @@ DEF KHEPERA DifferentialWheels {
       rotation 0 1 0 2.3562
       name "ls0"
       lookupTable [
-        0 500 0.1
-        0.2 10 0.1
+        0 1000 0.05
+        10 10 0.05
       ]
       colorFilter 0 1 0
     }
@@ -187,8 +188,8 @@ DEF KHEPERA DifferentialWheels {
       rotation 0 1 0 0.8
       name "ls1"
       lookupTable [
-        0 500 0.1
-        0.2 10 0.1
+        0 1000 0.05
+        10 10 0.05
       ]
       colorFilter 0 1 0
     }
