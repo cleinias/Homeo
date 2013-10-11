@@ -85,6 +85,10 @@ class HomeoUnitInput(HomeoUnit):
     
     def selfUpdate(self):
         self.criticalDeviation = scaleTo(self.sensor.range(), [-self.maxDeviation, self.maxDeviation], self.sensor.read())
+        self.computeOutput()
+        if self.debugMode:
+            print "%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput)
+
         #=======================================================================
         # "for debugging"
         # print "Raw value read: %d scaled Value: %d self critDev: %d)" %(self.sensor.read(),

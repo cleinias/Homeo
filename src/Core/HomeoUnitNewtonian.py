@@ -189,6 +189,8 @@ class HomeoUnitNewtonian(HomeoUnit):
         self.criticalDeviation =  newDeviation
         self.computeOutput()
         nextDeviation = 0
+        if self.debugMode:
+            print "%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput)
 
     def stokesLawDrag(self):
         '''Compute the physical drag on the needle according to Stokes equation: 
