@@ -11,7 +11,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation -0.998719 -0.0505913 -0.000237646 0.6881
-  position 5.45908 3.42144 7.69207
+  position 2.56824 36.8106 49.0277
 }
 Background {
   skyColor [
@@ -58,7 +58,8 @@ DEF GROUND Transform {
   ]
 }
 DEF KHEPERA DifferentialWheels {
-  translation 5.64854 2.13162e-14 5.08299
+  translation 4.28317 2.30926e-14 52.9146
+  rotation 0 1 0 6.39915
   children [
     Shape {
       appearance Appearance {
@@ -127,7 +128,7 @@ DEF KHEPERA DifferentialWheels {
     }
     Solid {
       translation -0.026 0.0075 0
-      rotation 1 0 0 -79943.1
+      rotation 1 0 0 17942.4
       children [
         DEF WHEEL Transform {
           rotation 0 0 1 -1.5707
@@ -150,7 +151,7 @@ DEF KHEPERA DifferentialWheels {
     }
     Solid {
       translation 0.026 0.0075 0
-      rotation 1 0 0 -55619.9
+      rotation 1 0 0 42226.8
       children [
         USE WHEEL
       ]
@@ -200,7 +201,7 @@ DEF KHEPERA DifferentialWheels {
   robotWindow "generic_window"
   axleLength 0.053
   wheelRadius 0.008
-  maxSpeed 100
+  maxSpeed 5
   maxAcceleration 1e+06
   encoderNoise 0
   encoderResolution 100

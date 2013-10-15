@@ -144,8 +144,8 @@ class HomeoQtSimulation(QObject):
 #        self.currentExperiment = 'initialize_1minus_2_minus_3xExperiment'    
         if experiment == None:
 #            self.currentExperiment = 'initialize_Ashby_2nd_Experiment'
-#            self.currentExperiment = 'initializeBraiten1_1'
-            self.currentExperiment = 'initializeBraiten1_2'
+            self.currentExperiment = 'initializeBraiten1_1'
+#            self.currentExperiment = 'initializeBraiten1_2'
             
     
         super(HomeoQtSimulation,self).__init__()
@@ -179,10 +179,10 @@ class HomeoQtSimulation(QObject):
            method of HomeoExperiment corresponding to the string stored in self.currentExperiment'''
         self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)()
         self._dataFilename = self.currentExperiment + '--Plot-Data'
-#----------------------------------------------------------------------------- #
-# FIXME 
-# Need to properly set up the homeostat filename according to the kind of experiment being run
-#------------------------------------------------------------------------------ 
+        #----------------------------------------------------------------------------- #
+        # FIXME 
+        # Need to properly set up the homeostat filename according to the kind of experiment being run
+        #------------------------------------------------------------------------------ 
 
 #===============================================================================
 # Running methods
