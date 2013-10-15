@@ -1,0 +1,2318 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass memoir-article
+\begin_preamble
+\usepackage[backend=biber]{biblatex}
+
+
+%biblatex new bib loading commands
+\addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
+\addbibresource{/home/stefano/Documents/Books/Dissertation.as.latex/Dissertation-references.bib}
+\addbibresource{/home/stefano/Documents/Projects/Homeostat/Biblios/Homeostat-Jurabib.bib}
+\addbibresource{/home/stefano/Documents/Projects/Homeostat/Biblios/Recurrent-Neural-Network-Biblios-Lee-Giles-up-to-1991.bib}
+\addbibresource{/home/stefano/Documents/Books/Passivity-book/Biblios/Passivity.bib}
+\addbibresource{/home/stefano/Documents/Biblios/additional-refs-for-Il-Pensiero-Vivente.bib}
+\addbibresource{/home/stefano/Documents/Biblios/Italian-philosophy.bib}
+\addbibresource{/home/stefano/Documents/Projects/Digital-humanities/Start-up-Grant-proposal/Digital-Humanities.bib}
+\addbibresource{/home/stefano/Documents/Papers/Teoria-dei-giochi-Matteuzzi-2012/Teoria-dei-Giochi-Matteuzzi-2012.bib}
+\end_preamble
+\options article, 11pt
+\use_default_options false
+\begin_modules
+biblatex
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding utf8-plain
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format pdf5
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing onehalf
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine natbib_authoryear
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Description of a 2-Unit Homeostat and its translation to a 
+\begin_inset Quotes eld
+\end_inset
+
+real world
+\begin_inset Quotes erd
+\end_inset
+
+ environment
+\end_layout
+
+\begin_layout Standard
+The goal of this note is to show how to translate into a real (or simulated)
+ environment the physico-biological setup that the simplest, non-trivial
+ Homeostat represents.
+ We take as our starting point the classic 2-Unit Homeostat featured in
+ Ashby's first experiment (demonstrating 
+\begin_inset Quotes eld
+\end_inset
+
+The Homeostat as an Adaptor
+\begin_inset Quotes erd
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Chapter
+A 2-Unit Homeostat and Ashby's setup
+\end_layout
+
+\begin_layout Standard
+\begin_inset Wrap figure
+lines 0
+placement o
+overhang 0col%
+width "50col%"
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/2-units-Homeostat-diagram.pdf
+	scale 70
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:2-Units-Homeo"
+
+\end_inset
+
+Graphic representation of a 2-Unit Homeostat, A stands for the 
+\begin_inset Quotes eld
+\end_inset
+
+Agent,
+\begin_inset Quotes erd
+\end_inset
+
+ while E stands for the 
+\begin_inset Quotes eld
+\end_inset
+
+Environment
+\begin_inset Quotes erd
+\end_inset
+
+ parts of the system represented by the Homeostat.
+ Stepping mechanisms (
+\begin_inset Quotes eld
+\end_inset
+
+uniselectors
+\begin_inset Quotes erd
+\end_inset
+
+) are not represented.
+\end_layout
+
+\end_inset
+
+
+\begin_inset VSpace -10bp
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ Figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:2-Units-Homeo"
+
+\end_inset
+
+ shows a graphic representation of the setup.
+ The connection between the agent and the environment (A
+\begin_inset Formula $\rightarrow$
+\end_inset
+
+E) represent the agent's capacity to affect (or manipulate) its environment.
+ More precisely, it represents the agent's capacity to manipulate its relationsh
+ip to the environment, including its location in it.
+ Hence it stands for the agent's motor skills (of whichever kind and very
+ broadly conceived).
+ In perhaps the simplest possible case, it may stand for the agent's capacity
+ to move around and therefore change its relative position within a given
+ environment.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+This definition is so general to actually include any kind of relative movement,
+ whether the agent is endowed with locomotion or not.
+ For instance a plant's leaf capacity to turn in the direction of the incoming
+ light during phototropism is as valid a 
+\begin_inset Quotes eld
+\end_inset
+
+motor action
+\begin_inset Quotes erd
+\end_inset
+
+ as a bacterium's flagellate action during chemotaxis.
+\end_layout
+
+\end_inset
+
+ Conversely, the connection between the environment and the agent (E
+\begin_inset Formula $\rightarrow$
+\end_inset
+
+A) represents the environment's capacity to affect or, more generally, somewhat
+ influence the agent.
+ To be more precise, E
+\begin_inset Formula $\rightarrow$
+\end_inset
+
+A represents the possible action of the environment upon the agent from
+ the 
+\emph on
+agent's point of view
+\emph default
+.
+ In other words, it represents those changes in the environment that the
+ agent is open to: it stands for some kind of sensory channel, very broadly
+ conceived.
+ The A
+\begin_inset Formula $\rightarrow$
+\end_inset
+
+A connection represents some kind of self-limiting (if its value is negative)
+ or self-amplifying (if positive) control of the agent upon itself and its
+ value may be zero (i.e.
+ it may not exist).
+ Similarly, the E
+\begin_inset Formula $\rightarrow$
+\end_inset
+
+E connection represents some kind of self-limiting/self-amplifying control
+ of the environment upon itself, as it were (or, in an alternate reading,
+ of the agent's sensitivity to the environment.
+ See below section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:2-unit-equivalent"
+
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Wrap table
+lines 0
+placement o
+overhang 0col%
+width "50col%"
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+footnotesize{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="5">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0.5in">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0pt">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Conn.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Weight
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Regulates
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Unis.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A's 1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $A\rightarrow A$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $w_{A\rightarrow A}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+agent's activity
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $U_{A\rightarrow A}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $A\rightarrow E$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $w_{A\rightarrow E}$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+motor action
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $U_{A\rightarrow E}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $E\rightarrow E$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $w_{E\rightarrow E}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+environ's activity
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $U_{E\rightarrow E}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $E\rightarrow A$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $w_{E\rightarrow A}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+sensory action
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $U_{E\rightarrow A}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:2-Units-Homeo-params"
+
+\end_inset
+
+Summary of the parameters affecting
+\begin_inset Newline newline
+\end_inset
+
+ the behavior of a 2-Units Homeostat
+\end_layout
+
+\end_inset
+
+
+\begin_inset VSpace -10bp
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+There are 4 parameters describing this simple 2 units setup, corresponding
+ to the weights of the four connections just listed.
+ Additionally, there is another set of 2nd order parameters describing how
+ the previous 4 may be modified.
+ For simplicity, and in or order to stay close to Ashby's original experiment,
+ we consider this second set of parameters to consist of just a series of
+ binary values specifying whether each one of the 4 possible connection
+ is subject to an automatic resetting when the unit's value exceed its limits.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+In general, this is not necessarily the case.
+ The second-order feedback loop that modifies the values of the first-order
+ connection may be controlled by numerous parameters, such as the amount
+ of time-delay (how often the unit's variable is checked), the function
+ used to change the first-order parameters, and so on.
+ However, these parameters were hard-wired in Ashby's physical machine,
+ hence the reduction of this second-order parameters to a binary value.
+\end_layout
+
+\end_inset
+
+ In summary, the weight of the 
+\begin_inset Formula $A\rightarrow E$
+\end_inset
+
+ connection modulates the agent's motor action, while the weight of the
+ 
+\begin_inset Formula $E\rightarrow A$
+\end_inset
+
+ modulates the sensory action 
+\emph on
+upon
+\emph default
+ the agent.
+ The remaining two connections, 
+\begin_inset Formula $A\rightarrow A$
+\end_inset
+
+ and 
+\begin_inset Formula $E\rightarrow E$
+\end_inset
+
+, modulate, respectively, the agent's and the environment's overall reaction
+ (i.e.
+ acting as either a damping factor or as an amplifier).
+ 
+\begin_inset Note Greyedout
+status open
+
+\begin_layout Plain Layout
+Insert here a discussion of the respective meanings of the 
+\begin_inset Quotes eld
+\end_inset
+
+zero
+\begin_inset Quotes erd
+\end_inset
+
+ values for either unit.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Table 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "tab:2-Units-Homeo-params"
+
+\end_inset
+
+ summarizes the overall setup and indicates the second-order values for
+ Ashby's experimental setup in the fist experiment he presents in 
+\emph on
+Design for a Brain
+\emph default
+.
+ 
+\end_layout
+
+\begin_layout Chapter
+Translation to a 
+\begin_inset Quotes eld
+\end_inset
+
+real
+\begin_inset Quotes erd
+\end_inset
+
+ physical setting
+\end_layout
+
+\begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:One-unit-equivalent"
+
+\end_inset
+
+One unit equivalent
+\end_layout
+
+\begin_layout Standard
+When converting Ashby's setup to a real physical setting, the first choice
+ is to to eliminate the unit corresponding to the Environment and to replace
+ it with environment itself.
+ The choice seems natural because it takes the equilibrium value of the
+ Agent unit as the only meaningful equilibrium in the system, therefore
+ eliminating the Environment unit and its associated equilibrium.
+ On the other hand, the choice is not without its problems.
+ First, the Homeostat did indeed have two units and 2 associated equilibrium
+ values---it seems we are discarding some important element that was perhaps
+ not properly discussed earlier.
+ Second, this choice seem to run into an obvious issue when scaled up.
+ Imagine a system with several motor and input channels all connected to
+ an agent.
+ In a classic Ashbian representation, the system would be modeled as a Homeostat
+ comprising several units.
+ In this translation, however, all the units except the agent would disappear,
+ and we would have a one unit Homeostat.
+ This seems unsatisfactory and needs further discussion.
+ This section explores this choice before moving to a discussion of an alternati
+ve.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Wrap figure
+lines 0
+placement o
+overhang 0col%
+width "50col%"
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/2-units-Homeostat-translation-HOMEO.pdf
+	lyxscale 150
+	scale 70
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Real-world-translation"
+
+\end_inset
+
+
+\begin_inset Quotes eld
+\end_inset
+
+Real
+\begin_inset Quotes erd
+\end_inset
+
+ world translation of the 2-units Homeostat.
+ The gray boxes stand are the input and output units, the open semicircle
+ representing the sensory link to the environment, and the dark circle the
+ motor action upon it.
+\end_layout
+
+\end_inset
+
+
+\begin_inset VSpace -10bp
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+The Agent unit is therefore the only unit left.
+ The 
+\begin_inset Formula $A\rightarrow E$
+\end_inset
+
+ connection is some form of motor action capable of modifying the relationship
+ between the agent and the environment.
+ The 
+\begin_inset Formula $E\rightarrow A$
+\end_inset
+
+ connection, in turn, is some form of sensory input from the environment.
+ What about the other 2 connections in the original Homeostat? The 
+\begin_inset Formula $A\rightarrow A$
+\end_inset
+
+ connection remain.
+ It represents the self-control of the agent.
+ The 
+\begin_inset Formula $E\rightarrow E$
+\end_inset
+
+ connection, instead, should be gone as well.
+ It could be interpreted as a feedback loop on the sensory input source,
+ roughly acting as a self-amplifier or self-damping factor.
+ But in that case it would be a second 
+\noun on
+Homeo
+\noun default
+ unit, the first one representing a 
+\begin_inset Quotes eld
+\end_inset
+
+motor neuron
+\begin_inset Quotes erd
+\end_inset
+
+ and the second one representing a 
+\begin_inset Quotes eld
+\end_inset
+
+sensor neuron.
+\begin_inset Quotes erd
+\end_inset
+
+ This possibility is discussed below.
+ Notice that this possibility seems to correspond, in Ashby's terms, to
+ a 3-Unit Homeostat connected in series, and not to to a 2-Unit one.
+ 
+\end_layout
+
+\begin_layout Standard
+In general, the outgoing, 
+\begin_inset Quotes eld
+\end_inset
+
+motor
+\begin_inset Quotes erd
+\end_inset
+
+ outputs of a unit corresponds to 
+\begin_inset Quotes eld
+\end_inset
+
+open
+\begin_inset Quotes erd
+\end_inset
+
+ connections.
+ That is, they correspond to connections that go outside of the homeostat.
+ Similarly, the 
+\begin_inset Quotes eld
+\end_inset
+
+sensory
+\begin_inset Quotes erd
+\end_inset
+
+ inputs correspond to open connections that 
+\emph on
+come from
+\emph default
+ outside the homeostat.
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+The scare quotes are needed because the designated 
+\begin_inset Quotes eld
+\end_inset
+
+outside
+\begin_inset Quotes erd
+\end_inset
+
+ is always relative to the specific system the homeostat is modeling and
+ can be the organism's environment as well as another system of the organism
+ itself.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+Motor output
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+sensory input
+\begin_inset Quotes erd
+\end_inset
+
+ must be interpreted as any kind of action exerted upon or, respectively,
+ input coming from the outside.
+\end_layout
+
+\end_inset
+
+ Now for the implementation of this setup in the 
+\noun on
+Homeo
+\noun default
+ system.
+ Open-ended connections such as the 
+\begin_inset Quotes eld
+\end_inset
+
+motor
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+sensory
+\begin_inset Quotes erd
+\end_inset
+
+ ones are not currently possible in 
+\noun on
+Homeo
+\noun default
+, all connections requiring a unit to connect to.
+ That means that we need to introduce a special kind of 
+\begin_inset Quotes eld
+\end_inset
+
+output and 
+\begin_inset Quotes eld
+\end_inset
+
+input
+\begin_inset Quotes erd
+\end_inset
+
+ units, which correspond to sensory input and motor outlets.
+ In other words, they correspond to real motor drivers and sensory apparatus
+ in a robotic setup (real or virtual).
+ They have no uniselectors, but they do have connections.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Quotes eld
+\end_inset
+
+Input units
+\begin_inset Quotes erd
+\end_inset
+
+ must be connected to the units they give the input to, obviously.
+ In the current 
+\noun on
+Homeo
+\noun default
+ setup, this means that they must be connectable from the receiving unit
+ and that at every cycle they must produce a value to pass on.
+ As this value must come from the 
+\begin_inset Quotes eld
+\end_inset
+
+real world
+\begin_inset Quotes erd
+\end_inset
+
+ itself, each input unit must contain an interface to a 
+\begin_inset Quotes eld
+\end_inset
+
+sensory organ
+\begin_inset Quotes erd
+\end_inset
+
+ of some kind that reads that value from the world.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Quotes eld
+\end_inset
+
+Output units,
+\begin_inset Quotes erd
+\end_inset
+
+ similarly, must be connected in order to receive a value to pass on the
+ output equipment.
+ They must as well contain an interface to 
+\begin_inset Quotes eld
+\end_inset
+
+real world.
+\begin_inset Quotes erd
+\end_inset
+
+ At each cycle, this interface will simply transmit to the world the unit's
+ value.
+ Figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:Real-world-translation"
+
+\end_inset
+
+ summarizes the set-up.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Wrap table
+lines 0
+placement o
+overhang 0in
+width "55col%"
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+footnotesize{
+\end_layout
+
+\end_inset
+
+
+\begin_inset Tabular
+<lyxtabular version="3" rows="4" columns="5">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0.5in">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0pt">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Conn.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Weight
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Regulates
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Unis.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A's 1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $A\rightarrow A$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $w_{A\rightarrow A}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+agent's activity
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $U_{A\rightarrow A}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $A\rightarrow E$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $w_{A\rightarrow E}$
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+motor action
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $U_{A\rightarrow E}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $\rightarrow A$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+sensory action
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:2-Units-Homeo-physical-params"
+
+\end_inset
+
+Summary of the parameters affecting
+\begin_inset Newline newline
+\end_inset
+
+ the behavior of a 2-Units Homeostat once translated into its physical counterpa
+rt.
+\end_layout
+
+\end_inset
+
+
+\begin_inset VSpace -20bp
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+The output value of a sensory unit is simply the value read from the sensor
+ (of whichever kind) it contains, with no computations carried out, since
+ a sensory unit has no incoming or self- connections, as well as no 
+\begin_inset Quotes eld
+\end_inset
+
+needle,
+\begin_inset Quotes erd
+\end_inset
+
+ 
+\begin_inset Quotes eld
+\end_inset
+
+drag,
+\begin_inset Quotes erd
+\end_inset
+
+ etc.
+ It may, however, have a noise factor, similarly to the standard units.
+ The output of the motor unit is always nil, while the input it receives
+ is directly transmitted to the 
+\begin_inset Quotes eld
+\end_inset
+
+motor
+\begin_inset Quotes erd
+\end_inset
+
+ it contains.
+ The only computation it needs to carry out is the sum of its inputs followed
+ by the transmission of the corresponding value to the 
+\begin_inset Quotes eld
+\end_inset
+
+motor.
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:2-unit-equivalent"
+
+\end_inset
+
+Two-unit equivalent
+\end_layout
+
+\begin_layout Standard
+The second possible translation would see a 
+\noun on
+Homeo
+\noun default
+ unit correspond to a 
+\begin_inset Quotes eld
+\end_inset
+
+motor neurons
+\begin_inset Quotes erd
+\end_inset
+
+ and a second fully fledged 
+\noun on
+Homeo
+\noun default
+ unit correspond to a 
+\begin_inset Quotes eld
+\end_inset
+
+sensory neuron.
+\begin_inset Quotes erd
+\end_inset
+
+ Since both are fully-fledged units, they both have self-connections and
+ uniselector action.
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Possibly.
+ While it is natural to assume that a sensor neuron would have self-damping/self
+-amplifying mechanisms, it is not so clear which kind of system would correspond
+ to the uniselector in a motor neuron and which kind of function it would
+ have.
+\end_layout
+
+\end_inset
+
+ The motor output unit would be connected to the motor neuron and, conversely,
+ the sensory input unit would be converted to the sensor neuron, as shown
+ in the figure.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Wrap figure
+lines 0
+placement o
+overhang 0in
+width "35col%"
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/2-units-Homeostat-translation-2nd-option.pdf
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Real-world-translation-2nd-option"
+
+\end_inset
+
+ Alternative 
+\begin_inset Quotes eld
+\end_inset
+
+real world
+\begin_inset Quotes erd
+\end_inset
+
+ translation of the 2-Units Homeostat.
+ The two units represent the 
+\emph on
+M
+\emph default
+otor and 
+\emph on
+S
+\emph default
+ensory neurons, 
+\emph on
+E
+\emph default
+ is the environment.
+ 
+\end_layout
+
+\end_inset
+
+
+\begin_inset VSpace -10bp
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ There are a few difficulties in this translation.
+ First of all, and perhaps most importantly, it is not clear at all what
+ the 
+\begin_inset Formula $M\rightarrow S$
+\end_inset
+
+ connection may stand for.
+ The action must be mediated by the environment---or rather, it must be
+ a 
+\begin_inset Quotes eld
+\end_inset
+
+real
+\begin_inset Quotes erd
+\end_inset
+
+ action affecting the environment, and that is already taken care by the
+ connection of 
+\begin_inset Formula $M$
+\end_inset
+
+ to the output unit.
+ It seems obvious that the 
+\begin_inset Formula $M\rightarrow S$
+\end_inset
+
+ 
+\emph on
+direct 
+\emph default
+connection must be eliminated.
+ But this, in turn, seems to break the full-connection of the network, which
+ may be seen as an important part of Ashby's model (it certainly is an important
+ part of 
+\noun on
+ctrnn
+\noun default
+'s).
+ Unless we consider the 
+\begin_inset Formula $M\rightarrow output\: unit$
+\end_inset
+
+ as a part of the network, which it is from a 
+\begin_inset Quotes eld
+\end_inset
+
+substantial
+\begin_inset Quotes erd
+\end_inset
+
+ point of view, but it is 
+\emph on
+formally 
+\emph default
+not.
+ Indeed, this arrangement, once the 
+\begin_inset Formula $M\rightarrow S$
+\end_inset
+
+ 
+\emph on
+direct 
+\emph default
+connection is removed, looks remarkably similar to a Braitenberg type-1
+ vehicle, with the addition of self-connections and uniselectors.
+ At least it is closer to a Braitenberg's than to a standard 
+\noun on
+ctrnn
+\noun default
+ network.
+ In short, the network in figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:Real-world-translation-2nd-option"
+
+\end_inset
+
+ is 
+\begin_inset Quotes eld
+\end_inset
+
+fully connected
+\begin_inset Quotes erd
+\end_inset
+
+ only if we assume that a connection could go through the environment, as
+ the indirect 
+\begin_inset Formula $M\rightarrow S$
+\end_inset
+
+ does.
+ Mathematically, this means that the isomorphism between a homeostat must
+ be modified to account for such 
+\begin_inset Quotes eld
+\end_inset
+
+indirect
+\begin_inset Quotes erd
+\end_inset
+
+ connections.
+\end_layout
+
+\begin_layout Standard
+The second problem concerns the interpretation of the uniselector on the
+ 
+\begin_inset Formula $S$
+\end_inset
+
+ unit.
+ On the one hand, according to Ashby's theory, an organism's unit must be
+ ultrastable, hence it must have the capacity to randomly reset its own
+ connection weights.
+ It follows that it must have a uniselector.
+ On the other hand, what would be its function? If we remove the incoming
+ 
+\begin_inset Formula $M\rightarrow S$
+\end_inset
+
+ 
+\emph on
+direct 
+\emph default
+connection, as suggested above, 
+\begin_inset Formula $S$
+\end_inset
+
+'s two 
+\emph on
+modifiable
+\emph default
+ connections are the self-connection 
+\begin_inset Formula $S\rightarrow S$
+\end_inset
+
+ and the outgoing 
+\begin_inset Formula $S\rightarrow M$
+\end_inset
+
+ (since the 
+\begin_inset Quotes eld
+\end_inset
+
+sensor unit
+\begin_inset Quotes erd
+\end_inset
+
+ is just a transducer that transmits the full input coming from the environment
+ with no modification possible).
+ As the only real input to 
+\begin_inset Formula $S$
+\end_inset
+
+ comes from the outside world (the 
+\begin_inset Formula $S\rightarrow S$
+\end_inset
+
+ being a modulator of the external input), it follows that 
+\begin_inset Formula $S$
+\end_inset
+
+ can only enter a critical status and therefore trigger its uniselector
+ if the external input is too low or too high.
+ Suppose it is too high, meaning the organism is too close to the input
+ source.
+ The value could be brought back within normal range by:
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:damping-the-input"
+
+\end_inset
+
+damping the input by changing the weight of 
+\begin_inset Formula $S\rightarrow S$
+\end_inset
+
+; 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:change-ougoing-weight"
+
+\end_inset
+
+changing its relationship to the source by modifying the weight of 
+\begin_inset Formula $S\rightarrow M$
+\end_inset
+
+ and hoping that the resulting action would decrease 
+\begin_inset Formula $S$
+\end_inset
+
+'s input value; or 
+\end_layout
+
+\begin_layout Enumerate
+both.
+\end_layout
+
+\begin_layout Standard
+The converse would apply if 
+\begin_inset Formula $S$
+\end_inset
+
+'s value is below its minimal value.
+ In 
+\begin_inset Quotes eld
+\end_inset
+
+physico-biological
+\begin_inset Quotes erd
+\end_inset
+
+ terms, 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "enu:damping-the-input"
+
+\end_inset
+
+ corresponds to a sensory neuron getting 
+\begin_inset Quotes erd
+\end_inset
+
+numbed
+\begin_inset Quotes erd
+\end_inset
+
+ or, respectively, 
+\begin_inset Quotes eld
+\end_inset
+
+sensitized,
+\begin_inset Quotes erd
+\end_inset
+
+ while 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "enu:change-ougoing-weight"
+
+\end_inset
+
+ would correspond to a 
+\begin_inset Quotes eld
+\end_inset
+
+faster
+\begin_inset Quotes erd
+\end_inset
+
+ (resp., 
+\begin_inset Quotes eld
+\end_inset
+
+slower
+\begin_inset Quotes erd
+\end_inset
+
+) action.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Wrap figure
+lines 0
+placement o
+overhang 0in
+width "35col%"
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/2-units-Homeostat-translation-2nd-option-Ashby.pdf
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Real-World-Ashby-1"
+
+\end_inset
+
+Alternative 
+\begin_inset Quotes eld
+\end_inset
+
+real world
+\begin_inset Quotes erd
+\end_inset
+
+ translation equivalent to Ashby's setup in the first experiment of 
+\emph on
+Design for a Brain
+\emph default
+.
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+With respect to Ashby's first experiment, it should be noted that he expressly
+ stated that only unit 
+\begin_inset Formula $M$
+\end_inset
+
+ has a uniselector.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Ashby says that the 
+\begin_inset Quotes eld
+\end_inset
+
+diagram of immediate effects was 
+\begin_inset Formula $1\rightleftarrows2$
+\end_inset
+
+, the effect 
+\begin_inset Formula $1\rightarrow2$
+\end_inset
+
+ was hand-controlled, the effect 
+\begin_inset Formula $2\rightarrow1$
+\end_inset
+
+ was uniselector-controlled
+\begin_inset Quotes erd
+\end_inset
+
+ (DoB, 2nd ed., p.105).
+ I take it that he means the unit 
+\begin_inset Formula $1$
+\end_inset
+
+has a uniselector, and unit 
+\begin_inset Formula $2$
+\end_inset
+
+ does not, as the diagram he has on the same page indicates.
+\end_layout
+
+\end_inset
+
+ This would mean that none of the three options listed above actually obtains
+ in Ashby's model, and would thereby suggest that the translation closer
+ to his setup is the one-unit option we detailed in the previous section.
+ This can be verified by noticing that if we remove the self-connection,
+ as it was done in figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:Real-World-Ashby-1"
+
+\end_inset
+
+, we obtain a diagram that is virtually identical to the option depicted
+ in figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:Real-world-translation"
+
+\end_inset
+
+.
+ (In reality, we do not really need to remove it: we can still assume that
+ the unit may be self-connected.
+ However, since the value of the self-connection is fixed, the uniselector
+ being missing, it is equivalent to a constant value added or subtracted
+ from the only input coming into the unit.
+ In other words, a fixed self-connection is equivalent to a constant being
+ added to the weight of the only incoming connection.
+ Functionally speaking, it is absent)
+\end_layout
+
+\begin_layout Section
+Conclusion
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Greyedout
+status open
+
+\begin_layout Plain Layout
+A conclusion wrapping up the two translations is still missing.
+ In brief: translation 1 seems closer to Ashby's spirit, but it is rather
+ far from the spirit of modern 
+\noun on
+ctrnn
+\noun default
+'s and neural networks in general.
+ Translation 2, conversely, is closer to 
+\noun on
+ctrnn
+\noun default
+'s and 
+\noun on
+nn
+\noun default
+'s but, in its complete form, has elements (such as a uniselector-controlled
+ self-connection) that seem physico-biologically implausible or at least
+ of difficult interpretation.
+ Once the second translation has been simplified as per Ashby's text in
+ example 1, it reduced to the first one.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Chapter
+A type-1 Braitenberg vehicle
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+\begin_inset Wrap figure
+lines 0
+placement o
+overhang 0in
+width "35col%"
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/vehicle1-Homeo.pdf
+	scale 70
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:type-1-Braiten-Homeo"
+
+\end_inset
+
+Ashby's experimental setup converted to a Braitenberg vehicle 1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/vehicle1-slanted.pdf
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Braitenberg's vehicle 1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/vehicle1-Homeo-3.pdf
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:First-translation"
+
+\end_inset
+
+First translation 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset space \hfill{}
+\end_inset
+
+
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/vehicle1-Homeo.pdf
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Second-translation"
+
+\end_inset
+
+Second translation
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:2-Unit-H-to-Braitenb"
+
+\end_inset
+
+2 Conversions of a 2-Units Homeostat into a Braitenberg vehicle 1.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+Either of the two translations sketched above can be converted into a Braitenber
+g vehicle 1 to be used in 
+\begin_inset Quotes eld
+\end_inset
+
+real world
+\begin_inset Quotes erd
+\end_inset
+
+ experiments, as shown in figure 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "fig:2-Unit-H-to-Braitenb"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Chapter
+A type-2 Braitenberg's vehicle
+\end_layout
+
+\begin_layout Chapter
+Additional notes
+\end_layout
+
+\begin_layout Enumerate
+I need to consider the possibility---already hinted at by Ashby---that the
+ 
+\begin_inset Quotes eld
+\end_inset
+
+unit
+\begin_inset Quotes erd
+\end_inset
+
+ represents not a neuron but some kind of higher functional unit.
+ This would mean, in terms of implementation, that a Homeo unit could be
+ translated to 
+\emph on
+several 
+\emph default
+\noun on
+ctrnn
+\noun default
+'s neurons, even though the overall behavior of the net would have to follow
+ the ultrastability/general homestasis principles the real homeostat follows.
+ Check out, for instance, the early description by Beer and Gallagher 
+\begin_inset CommandInset citation
+LatexCommand citeyearpar
+key "BeerGallagher1992"
+
+\end_inset
+
+, where the agent performing the chemotaxis task they describe is implemented
+ in terms of 6 neurons: 2 sensory neurons, two motor neurons and 
+\emph on
+two fully connected internal neurons
+\emph default
+.
+ In Ashby's terms, we would have to decide which of the subcollections of
+ neurons actually represents an ultrastable homeostat 
+\begin_inset Quotes eld
+\end_inset
+
+unit.
+\begin_inset Quotes erd
+\end_inset
+
+ The internal 2-neurons network? The whole assemblage? The 2+2 subunit of
+ effectors+internal neurons?
+\end_layout
+
+\begin_layout Enumerate
+Consider the one-neuron first translation depicted in figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:First-translation"
+
+\end_inset
+
+.
+ This organism will only receive an input from the outside world and will
+ try to minimize it at all costs, operating on its effector.
+ Since the input represents some stimulus from the outside (intensity of
+ a chemical gradient, or of a light gradient, etcetera), the organism will
+ run away from it and be a 
+\begin_inset Quotes eld
+\end_inset
+
+gradient darkness-seeker
+\begin_inset Quotes erd
+\end_inset
+
+ or, in Braitenberg's terms, a 
+\begin_inset Quotes eld
+\end_inset
+
+shy creature.
+\begin_inset Quotes erd
+\end_inset
+
+ Viceversa, if the stimulus consists in a proximity value (e.g.
+ from a proximity sensor), the organism will be a very primitive 
+\begin_inset Quotes eld
+\end_inset
+
+roamer
+\begin_inset Quotes erd
+\end_inset
+
+: it will try to move away from obstacles (in a very limited fashion, of
+ course, given the unidimensionality of its effector).
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+However, consider that it is impossible to design an organism with the opposite
+ behavior and identical setup.
+ In other words: no change of parameters will ever turn a (gradient) 
+\begin_inset Quotes eld
+\end_inset
+
+darkness-seeker
+\begin_inset Quotes erd
+\end_inset
+
+ into a (gradient) 
+\begin_inset Quotes eld
+\end_inset
+
+light seeker.
+\begin_inset Quotes erd
+\end_inset
+
+ Given that the input from a chemical/light sensor is positive, the creature
+ will always run away from it.
+ Viceversa for the 
+\begin_inset Quotes eld
+\end_inset
+
+roamer
+\begin_inset Quotes erd
+\end_inset
+
+: it is impossible to turn into a 
+\begin_inset Quotes eld
+\end_inset
+
+sticker
+\begin_inset Quotes erd
+\end_inset
+
+ that will look for objects and cling to them.
+ The only way to change the behavior of the organism is to change the physical/b
+iological nature of the sensory input coming into it.
+ 
+\end_layout
+
+\begin_layout Standard
+This conclusion may mean that an increase in flexibility may require a different
+ and more complex setup.
+ For instance, it may mean that the sensitivity to chemical/photo stimuli
+ must first be converted into a 
+\begin_inset Quotes eld
+\end_inset
+
+proximity
+\begin_inset Quotes erd
+\end_inset
+
+ measure (which may just be the reciprocal of the stimulus, roughly speaking).
+ And this means that a neural apparatus (perhaps a self-standing homeostat?)
+ has to be devoted to it.
+ Perhaps a 2-neuron agent such as the one depicted in figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Second-translation"
+
+\end_inset
+
+, equivalent to a 3-unit homeostat, will be sufficient?
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\begin_inset Newpage clearpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+printbibliography
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "/home/stefano/Documents/Projects/Homeostat/Biblios/Homeostat-Jurabib,/home/stefano/Documents/Books/Passivity-book/Biblios/Passivity,/home/stefano/Documents/Books/Dissertation.as.latex/Dissertation-references,/home/stefano/Documents/Projects/Homeostat/Biblios/Recurrent-Neural-Network-Biblios-Lee-Giles-up-to-1991,/home/stefano/Documents/Projects/Digital-humanities/Start-up-Grant-proposal/Digital-Humanities,/home/stefano/Documents/Biblios/additional-refs-for-Il-Pensiero-Vivente,/home/stefano/Documents/Biblios/Italian-philosophy,/home/stefano/Documents/Biblios/Stefano-Franchi-Works,/home/stefano/Documents/Papers/Teoria-dei-giochi-Matteuzzi-2012/Teoria-dei-Giochi-Matteuzzi-2012"
+options "plain"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

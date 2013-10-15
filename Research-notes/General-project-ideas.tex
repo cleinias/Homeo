@@ -1,0 +1,218 @@
+%% LyX 2.0.5 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[french,ngerman,english]{scrartcl}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+
+\makeatletter
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\usepackage{colortbl} 
+\usepackage{tabularx}
+\usepackage[greek, italian, german, french, english]{babel}
+\languageattribute{greek}{polutoniko} 
+\usepackage[T1]{fontenc}
+\usepackage[oxford=true]{jurabib}
+\jurabibsetup{
+     authorformat=and,
+     titleformat=italic,
+     citefull=first
+}
+\renewcommand{\bibapifont}[1]{``#1''}
+
+% To use Jurabib idem or ibidem uncomment next line
+%\jbuseidemhrule
+
+% To convert all endnotes to endnotes uncomment the next TWO lines
+%\usepackage{endnotes}
+%\let\footnote=\endnote
+
+% To eliminate the date on first page uncomment the next line
+%\date{}
+
+% To eliminate the final bibliography replace \thebibliography
+% with \nobibliography (and the correct arguments) at the end of 
+% the file. You will have to do it on the LaTeX source, though
+
+% The following allows to change the paragraph spacing
+% in the printout without changing the screen spacing
+% Note: the value set here will override (not be added to) 
+% LyX's settings in  Layout>Document>Layout
+%
+%\usepackage{setspace}
+%\onehalfspace
+ 
+% The next bit shows the comment environment inside a grey box
+% Comment it out for final print 
+% show my Comments?
+%\RequirePackage{colortbl, tabularx}
+%\renewenvironment{comment}
+%{% replaces \begin{comment}
+%\noindent
+%\tabularx{\textwidth}{|>{\columncolor[gray]{0.9}}X|}
+%\hline
+%\emph{\textbf{Comment:}}
+%}
+%{% replaces \end{comment}
+%\endtabularx\hrule
+%}
+%
+% End of comment printing bit
+% 
+
+%
+% This bit changes the heading numbering:
+%
+% It removes the chapter number and it removes all the dots after
+% the subsection numbers. It produces numbers "Wittgenstein style":
+% for instance the first section of chapter 2 becomes 1 and not 2.1 as 
+% standard LaTeX wouldl have it. In general, we have numbering of the
+% form 1.2345 instead of 1.1.2.3.4.5 
+%
+\renewcommand\thesection{\arabic{section}}
+\renewcommand\thesubsection{\thesection.\arabic{subsection}}
+\renewcommand\thesubsubsection{\thesubsection\arabic{subsubsection}}
+\renewcommand\theparagraph{\thesubsubsection\arabic{paragraph}}
+\renewcommand\thesubparagraph{\theparagraph\arabic{subparagraph}}
+\AtBeginDocument{\selectlanguage{english}}
+
+\makeatother
+
+\usepackage{babel}
+\makeatletter
+\addto\extrasfrench{%
+   \providecommand{\og}{\leavevmode\flqq~}%
+   \providecommand{\fg}{\ifdim\lastskip>\z@\unskip\fi~\frqq}%
+}
+
+\makeatother
+\begin{document}
+
+\title{Notes on various lines of inquiry (and deliverables) on the Homeostat
+project (with tasks when appropriate).}
+
+
+\author{Stefano Franchi}
+
+\maketitle
+
+\section{General}
+
+This documents lists the various lines of inquiry possibly to be pursued
+in the Homeostat project. It mainly serves as a reminder to myself
+of the various open possibilities, as well as a document tracking
+the open tasks and the scheduling of jobs.
+
+
+\section{Specific lines of inquiry}
+
+
+\subsection{Main philosophical point}
+
+
+\subsubsection{Passivity versus activity as the basic interpretation of the Homeostat's
+operations}
+
+
+\paragraph{Various points to consider }
+\begin{itemize}
+\item Freud's interpretation (\foreignlanguage{ngerman}{\emph{Triebe}}\emph{
+and }\foreignlanguage{ngerman}{\emph{Triebeschicksalen}}) of drives
+(``\foreignlanguage{french}{pulsions}'') and the psychic apparatus's
+function as minimizing the incoming stimuli (the \emph{constancy }principle,
+to see in the context of the pleasure principle) DONE
+\item Spinoza's doctrine of the \emph{conatus}, recently reinterpreted (DiPaolo
+following Varela), as an alternative viewpoint to be considered and
+rejected.
+\item Jonas's criticism of classic cybernetics, and Varela's recover of
+a different kind of cybernetics (Ashby/British inspired) as escaping
+Jonas's criticism and being instead aligned with his philosophy of
+biology (i.e. teleologism) DONE
+\item Contingency as the twin brother of passivity (the passive is contingent,
+the active is teleological)
+\end{itemize}
+
+\subsection{Technical/Simulations}
+\begin{itemize}
+\item Redo (my own redo of) Ashby's seven experiments on the basis of the
+newly redesigned Homeo package (with Newtonian units, etc).
+\item Some experiments on connectivity on large-scale homeostats with $n$
+units to test Ashby's original hypothesis about low connectivity as
+necessary to stability (and necessarily mediated by the environment).
+\item Experiments on ``biological'' simulations with the homeostat. This
+will require input and/or output (motor) units. Thus, either a simulated
+environment (explorations needed) or an embedded Homeo package.
+\end{itemize}
+
+\subsection{\label{sub:Theoretical-explorations}Theoretical explorations}
+
+Following the notes of 3/22-26/08, explore the Homeostat in more general
+term as a ``differential machine'' of sorts, i.e. as a simulator
+of various families of biological simulators distinguished by the
+differential equation descriptions of the basic unit.
+
+
+\section{Papers}
+
+This are very preliminary ideas on 4 papers to write on the Homeo
+experience (or perhaps it is 4 categories of papers, with at least
+(and at most?) one instance per class)
+
+
+\subsection{A semi-technical paper (\emph{Constructivist Foundations}) describing:}
+\begin{itemize}
+\item The reasons suggesting the development of a homeostat general simulator
+(i.e. the Ashby's renaissance, the strange convergence between very
+different strands of philosophy (Jonas's Phenomenology, naturalistic-inspired
+Phil of mind, AI, etc) around the Homeostat, as well as the generally
+``shallow'' (from my point of view, of course) \emph{overall} discussions
+of the Homeostat
+\item The package itself, emphasizing its very general approach as prerequisite
+to a broad range of experiments that start from Ashby's original experiences,
+but are meant to go beyond them
+\item The results of the replication of Ashby's experiments, perhaps a first
+sample of the DiPaolo-like experiments
+\item A conclusion on further work
+\end{itemize}
+
+\subsection{A Non-Technical, but ``heavy'' philosophical paper (for \emph{Archeo
+of AI}) \emph{DONE}}
+\begin{itemize}
+\item This is a paper expanding in much greater detail the first of the
+bulleted item in the semi-technical paper described above. The main
+focus is on Varela/DiPaolo revival of the Homeostat in the context
+of Jonas's philosophy of biology vs. a different interpretation of
+the Homeostat as a fundamentally passive machine (a \emph{machina
+sopora}) that actually forces a deep reconceptualization of the conception
+of passivity and the associate notion of the contingent
+\end{itemize}
+
+\subsection{An application and/or study of the theses above to a real environment}
+\begin{itemize}
+\item The move here is from a general discussion limited, at best, to Ashby's
+experiments as example of practical implementation, to a more concrete
+set of tests in ``real'' environments. The real environments could
+actually be ``real real'' (requiring real robots) or ``real simulated''
+(requiring a simulation platform)
+\end{itemize}
+
+\subsection{A discussion of a generalized Homeo platform for the exploration
+of various homeostatic ``implementations''}
+\begin{itemize}
+\item See \ref{sub:Theoretical-explorations} above. This of course can
+only be done after the actual explorations have been carried out.
+\end{itemize}
+
+\section{Details}
+
+
+\section{Work to do}
+
+
+\subsection{General}
+\begin{enumerate}
+\item Complete unit testing of Homeo Package
+\item Carry out Ashby experiments
+\item Explore robotic simulation packages DONE
+\item Explore khepera packages DONE\end{enumerate}
+
+\end{document}

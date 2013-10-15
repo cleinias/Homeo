@@ -1,0 +1,457 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass scrartcl
+\begin_preamble
+\usepackage{colortbl} 
+\usepackage{tabularx}
+\usepackage[greek, italian, german, french, english]{babel}
+\languageattribute{greek}{polutoniko} 
+\usepackage[T1]{fontenc}
+\usepackage[oxford=true]{jurabib}
+\jurabibsetup{
+     authorformat=and,
+     titleformat=italic,
+     citefull=first
+}
+\renewcommand{\bibapifont}[1]{``#1''}
+
+% To use Jurabib idem or ibidem uncomment next line
+%\jbuseidemhrule
+
+% To convert all endnotes to endnotes uncomment the next TWO lines
+%\usepackage{endnotes}
+%\let\footnote=\endnote
+
+% To eliminate the date on first page uncomment the next line
+%\date{}
+
+% To eliminate the final bibliography replace \thebibliography
+% with \nobibliography (and the correct arguments) at the end of 
+% the file. You will have to do it on the LaTeX source, though
+
+% The following allows to change the paragraph spacing
+% in the printout without changing the screen spacing
+% Note: the value set here will override (not be added to) 
+% LyX's settings in  Layout>Document>Layout
+%
+%\usepackage{setspace}
+%\onehalfspace
+ 
+% The next bit shows the comment environment inside a grey box
+% Comment it out for final print 
+% show my Comments?
+%\RequirePackage{colortbl, tabularx}
+%\renewenvironment{comment}
+%{% replaces \begin{comment}
+%\noindent
+%\tabularx{\textwidth}{|>{\columncolor[gray]{0.9}}X|}
+%\hline
+%\emph{\textbf{Comment:}}
+%}
+%{% replaces \end{comment}
+%\endtabularx\hrule
+%}
+%
+% End of comment printing bit
+% 
+
+%
+% This bit changes the heading numbering:
+%
+% It removes the chapter number and it removes all the dots after
+% the subsection numbers. It produces numbers "Wittgenstein style":
+% for instance the first section of chapter 2 becomes 1 and not 2.1 as 
+% standard LaTeX wouldl have it. In general, we have numbering of the
+% form 1.2345 instead of 1.1.2.3.4.5 
+%
+\renewcommand\thesection{\arabic{section}}
+\renewcommand\thesubsection{\thesection.\arabic{subsection}}
+\renewcommand\thesubsubsection{\thesubsection\arabic{subsubsection}}
+\renewcommand\theparagraph{\thesubsubsection\arabic{paragraph}}
+\renewcommand\thesubparagraph{\theparagraph\arabic{subparagraph}}
+\AtBeginDocument{\selectlanguage{english}}
+\end_preamble
+\use_default_options false
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Notes on various lines of inquiry (and deliverables) on the Homeostat project
+ (with tasks when appropriate).
+\end_layout
+
+\begin_layout Author
+Stefano Franchi
+\end_layout
+
+\begin_layout Section
+General
+\end_layout
+
+\begin_layout Standard
+This documents lists the various lines of inquiry possibly to be pursued
+ in the Homeostat project.
+ It mainly serves as a reminder to myself of the various open possibilities,
+ as well as a document tracking the open tasks and the scheduling of jobs.
+\end_layout
+
+\begin_layout Section
+Specific lines of inquiry
+\end_layout
+
+\begin_layout Subsection
+Main philosophical point
+\end_layout
+
+\begin_layout Subsubsection
+Passivity versus activity as the basic interpretation of the Homeostat's
+ operations
+\end_layout
+
+\begin_layout Paragraph
+Various points to consider 
+\end_layout
+
+\begin_layout Itemize
+Freud's interpretation (
+\emph on
+\lang ngerman
+Triebe
+\lang english
+ and 
+\lang ngerman
+Triebeschicksalen
+\emph default
+\lang english
+) of drives (
+\begin_inset Quotes eld
+\end_inset
+
+
+\lang french
+pulsions
+\lang english
+
+\begin_inset Quotes erd
+\end_inset
+
+) and the psychic apparatus's function as minimizing the incoming stimuli
+ (the 
+\emph on
+constancy 
+\emph default
+principle, to see in the context of the pleasure principle) DONE
+\end_layout
+
+\begin_layout Itemize
+Spinoza's doctrine of the 
+\emph on
+conatus
+\emph default
+, recently reinterpreted (DiPaolo following Varela), as an alternative viewpoint
+ to be considered and rejected.
+\end_layout
+
+\begin_layout Itemize
+Jonas's criticism of classic cybernetics, and Varela's recover of a different
+ kind of cybernetics (Ashby/British inspired) as escaping Jonas's criticism
+ and being instead aligned with his philosophy of biology (i.e.
+ teleologism) DONE
+\end_layout
+
+\begin_layout Itemize
+Contingency as the twin brother of passivity (the passive is contingent,
+ the active is teleological)
+\end_layout
+
+\begin_layout Subsection
+Technical/Simulations
+\end_layout
+
+\begin_layout Itemize
+Redo (my own redo of) Ashby's seven experiments on the basis of the newly
+ redesigned Homeo package (with Newtonian units, etc).
+\end_layout
+
+\begin_layout Itemize
+Some experiments on connectivity on large-scale homeostats with 
+\begin_inset Formula $n$
+\end_inset
+
+ units to test Ashby's original hypothesis about low connectivity as necessary
+ to stability (and necessarily mediated by the environment).
+\end_layout
+
+\begin_layout Itemize
+Experiments on 
+\begin_inset Quotes eld
+\end_inset
+
+biological
+\begin_inset Quotes erd
+\end_inset
+
+ simulations with the homeostat.
+ This will require input and/or output (motor) units.
+ Thus, either a simulated environment (explorations needed) or an embedded
+ Homeo package.
+\end_layout
+
+\begin_layout Subsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:Theoretical-explorations"
+
+\end_inset
+
+Theoretical explorations
+\end_layout
+
+\begin_layout Standard
+Following the notes of 3/22-26/08, explore the Homeostat in more general
+ term as a 
+\begin_inset Quotes eld
+\end_inset
+
+differential machine
+\begin_inset Quotes erd
+\end_inset
+
+ of sorts, i.e.
+ as a simulator of various families of biological simulators distinguished
+ by the differential equation descriptions of the basic unit.
+\end_layout
+
+\begin_layout Section
+Papers
+\end_layout
+
+\begin_layout Standard
+This are very preliminary ideas on 4 papers to write on the Homeo experience
+ (or perhaps it is 4 categories of papers, with at least (and at most?)
+ one instance per class)
+\end_layout
+
+\begin_layout Subsection
+A semi-technical paper (
+\emph on
+Constructivist Foundations
+\emph default
+) describing: 
+\emph on
+DONE
+\end_layout
+
+\begin_layout Itemize
+The reasons suggesting the development of a homeostat general simulator
+ (i.e.
+ the Ashby's renaissance, the strange convergence between very different
+ strands of philosophy (Jonas's Phenomenology, naturalistic-inspired Phil
+ of mind, AI, etc) around the Homeostat, as well as the generally 
+\begin_inset Quotes eld
+\end_inset
+
+shallow
+\begin_inset Quotes erd
+\end_inset
+
+ (from my point of view, of course) 
+\emph on
+overall
+\emph default
+ discussions of the Homeostat
+\end_layout
+
+\begin_layout Itemize
+The package itself, emphasizing its very general approach as prerequisite
+ to a broad range of experiments that start from Ashby's original experiences,
+ but are meant to go beyond them
+\end_layout
+
+\begin_layout Itemize
+The results of the replication of Ashby's experiments, perhaps a first sample
+ of the DiPaolo-like experiments
+\end_layout
+
+\begin_layout Itemize
+A conclusion on further work
+\end_layout
+
+\begin_layout Subsection
+A Non-Technical, but 
+\begin_inset Quotes eld
+\end_inset
+
+heavy
+\begin_inset Quotes erd
+\end_inset
+
+ philosophical paper (for 
+\emph on
+Archeo of AI
+\emph default
+) 
+\emph on
+DONE
+\end_layout
+
+\begin_layout Itemize
+This is a paper expanding in much greater detail the first of the bulleted
+ item in the semi-technical paper described above.
+ The main focus is on Varela/DiPaolo revival of the Homeostat in the context
+ of Jonas's philosophy of biology vs.
+ a different interpretation of the Homeostat as a fundamentally passive
+ machine (a 
+\emph on
+machina sopora
+\emph default
+) that actually forces a deep reconceptualization of the conception of passivity
+ and the associate notion of the contingent
+\end_layout
+
+\begin_layout Subsection
+An application and/or study of the theses above to a real environment
+\end_layout
+
+\begin_layout Itemize
+The move here is from a general discussion limited, at best, to Ashby's
+ experiments as example of practical implementation, to a more concrete
+ set of tests in 
+\begin_inset Quotes eld
+\end_inset
+
+real
+\begin_inset Quotes erd
+\end_inset
+
+ environments.
+ The real environments could actually be 
+\begin_inset Quotes eld
+\end_inset
+
+real real
+\begin_inset Quotes erd
+\end_inset
+
+ (requiring real robots) or 
+\begin_inset Quotes eld
+\end_inset
+
+real simulated
+\begin_inset Quotes erd
+\end_inset
+
+ (requiring a simulation platform)
+\end_layout
+
+\begin_layout Subsection
+A discussion of a generalized Homeo platform for the exploration of various
+ homeostatic 
+\begin_inset Quotes eld
+\end_inset
+
+implementations
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+See 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Theoretical-explorations"
+
+\end_inset
+
+ above.
+ This of course can only be done after the actual explorations have been
+ carried out.
+\end_layout
+
+\begin_layout Section
+Details
+\end_layout
+
+\begin_layout Section
+Work to do
+\end_layout
+
+\begin_layout Subsection
+General
+\end_layout
+
+\begin_layout Enumerate
+Complete unit testing of Homeo Package DONE
+\end_layout
+
+\begin_layout Enumerate
+Carry out Ashby experiments DONE
+\end_layout
+
+\begin_layout Enumerate
+Explore robotic simulation packages DONE
+\end_layout
+
+\begin_layout Enumerate
+Explore khepera packages DONE
+\end_layout
+
+\end_body
+\end_document

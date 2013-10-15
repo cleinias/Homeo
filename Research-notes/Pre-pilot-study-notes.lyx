@@ -1,0 +1,597 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+%\addbibresource{/home/stefano/Documents/Biblios/Italian-philosophy.bib}
+%\addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
+%\addbibresource{/home/stefano/Documents/Books/Play-and-Passivity/Dissertation-references.bib}
+%\addbibresource{/home/stefano/Documents/Biblios/additional-refs-for-Il-Pensiero-Vivente.bib}
+\end_preamble
+\options article, 11pt
+\use_default_options false
+\begin_modules
+biblatex
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding utf8-plain
+\fontencoding global
+\font_roman times
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format pdf2
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine natbib_authoryear
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Homeo-robot pre-pilot study
+\end_layout
+
+\begin_layout Abstract
+A brief (or perhaps no so brief) note on how to translate Ashby's experiments
+ with the homeostat in 
+\emph on
+Design for a Brain 
+\emph default
+into robotic experiments to carry out in a simulated robotic environment.
+ The pre-pilot project addresses the translation of Ashby's Experiment 1
+ (
+\begin_inset Quotes eld
+\end_inset
+
+The Homeostat as an Adaptor
+\begin_inset Quotes erd
+\end_inset
+
+) into an elementary chemotaxis task for an elementary robot similar to
+ a Braitenberg type-1 vehicle.
+\begin_inset VSpace bigskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The proposal for the CLLA seed grant fund described a pilot study in which
+ Di Paolo's (2000) phototaxis experiment with inverted vision would be replicate
+d with an elementary robot based on a strictly Ashbian architecture.
+ Such a creature would have two light sensors (corresponding to the two
+ 
+\begin_inset Quotes eld
+\end_inset
+
+eyes
+\begin_inset Quotes erd
+\end_inset
+
+) and two actuators (two motors controlling a differential drive robot).
+ The envisioned robot is structurally similar to a Braitenberg's type-2
+ vehicle, although very different in internal architecture.
+\end_layout
+
+\begin_layout Standard
+The pre-pilot study described in this note sets the ground for the pilot
+ study by addressing a simpler configuration.
+ It uses a type-1 Braitenberg vehicle (instead of a type 2), which has just
+ one sensor and one actuator.
+ The goal of this pre-pilot study is to sketch out on a simpler case the
+ general methodology that will used in the more complex study (or studies)
+ to follow.
+ In general terms, the 
+\begin_inset Quotes eld
+\end_inset
+
+creature
+\begin_inset Quotes erd
+\end_inset
+
+ described and built in this study will a gradient-seeking (or gradient-avoiding
+) robot.
+ 
+\end_layout
+
+\begin_layout Standard
+The description uses the following terminology to refer to the various creatures
+ it deals with:
+\end_layout
+
+\begin_layout Description
+\begin_inset Formula $A_{n}$
+\end_inset
+
+ It refers to an Ashby-like Homeostat with 
+\emph on
+n 
+\emph default
+units.
+ The connections between the units and the status of the units' 
+\begin_inset Quotes eld
+\end_inset
+
+uniselectors
+\begin_inset Quotes erd
+\end_inset
+
+ are unspecified.
+ 
+\end_layout
+
+\begin_layout Description
+
+\emph on
+\begin_inset Formula $B_{n}$
+\end_inset
+
+
+\emph default
+ It refers to a Braitenberg vehicle of type 
+\emph on
+n.
+\end_layout
+
+\begin_layout Description
+
+\emph on
+\begin_inset Formula $H_{n}$
+\end_inset
+
+ 
+\emph default
+It refers to a vehicle using an Homeostat-like architecture equivalent to
+ a Braitenberg vehicle of type 
+\emph on
+n
+\end_layout
+
+\begin_layout Standard
+The pre-pilot study goes through 5 steps.
+ 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:describe-translation"
+
+\end_inset
+
+Describe a translation from a Ashby 2-unit homeostat (
+\begin_inset Formula $A_{2}$
+\end_inset
+
+) to a robot (
+\begin_inset Formula $H_{1}$
+\end_inset
+
+, a Homeostat-equivalent Braitenberg type-1 vehicle).
+\begin_inset Newline newline
+\end_inset
+
+Possibly generalize the methodology to the general case
+\emph on
+ 
+\emph default
+of a 
+\begin_inset Formula $A_{n}\Rightarrow H_{m}$
+\end_inset
+
+ translations.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:def-equilibrium"
+
+\end_inset
+
+Formally define equilibrium conditions for the behavior of of 
+\begin_inset Formula $H_{1}$
+\end_inset
+
+, equivalent to the normal behavior of 
+\begin_inset Formula $B_{1}$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:Evolve-conditions"
+
+\end_inset
+
+"Evolve" real conditions (= parameters) of 
+\begin_inset Formula $H_{1}$
+\end_inset
+
+ to equivalent conditions as described at step 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "enu:def-equilibrium"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:Verify-conditions"
+
+\end_inset
+
+Verify real conditions/parameters defined/evolved at step 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "enu:Evolve-conditions"
+
+\end_inset
+
+ in real world
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:Disrupt-behavior"
+
+\end_inset
+
+Systematically disrupt the behavior of a 
+\begin_inset Formula $H_{1}$
+\end_inset
+
+ robot implementing conditions defined at 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "enu:Evolve-conditions"
+
+\end_inset
+
+ to verify that equilibrium is maintained.
+\end_layout
+
+\begin_layout Standard
+Here is a detailed description of each step that specifies their respective
+ outcomes.
+ This is a work in progress that will be periodically updated as work gets
+ done.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Translation
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+A specific homeostat configuration 
+\begin_inset Formula $A_{n}$
+\end_inset
+
+ includes units for both the organism and the environment---it simulates
+ the whole system.
+ Translating a configuration 
+\begin_inset Formula $A_{n}$
+\end_inset
+
+ to an equivalent 
+\begin_inset Formula $H_{n}$
+\end_inset
+
+organism implies deciding how to subdivide the 
+\begin_inset Formula $n$
+\end_inset
+
+ units in 
+\begin_inset Formula $A_{n}$
+\end_inset
+
+ in organism and environment.
+ It also requires to specify the connections (including self-connections
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+connections through the environment
+\begin_inset Quotes erd
+\end_inset
+
+) and uniselector rigging of the resulting 
+\begin_inset Formula $H_{n}$
+\end_inset
+
+ robot.
+\end_layout
+
+\begin_layout Standard
+
+\noun on
+Work done
+\end_layout
+
+\begin_layout Standard
+This work has been completed and detailed in another note.
+ It may however require further work, since the result is that there are
+ two possible 
+\begin_inset Formula $A_{n}\Rightarrow H_{m}$
+\end_inset
+
+ translations.
+ In the first one, 
+\begin_inset Formula $A_{2}\Rightarrow H_{1}$
+\end_inset
+
+, the homeostat gets converted to a 1-unit robot plus transducers (sensors
+ and actuators).
+ In the second one, 
+\begin_inset Formula $A_{2}\Rightarrow H_{2}$
+\end_inset
+
+, resulting robot has 2 full-fledged units plus transducers
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Equilibrium definition
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+In qualitative terms, any 
+\begin_inset Formula $A_{n}$
+\end_inset
+
+ system will be in equilibrium whenever the values of its units are within
+ acceptable ranges.
+ It is a consequence of Ashby's setup and design that 
+\emph on
+any 
+\begin_inset Formula $A_{n}$
+\end_inset
+
+ 
+\emph default
+will always reach equilibrium (although it may take a long time to do so).
+ A 
+\begin_inset Formula $B_{1}$
+\end_inset
+
+ set in a gradient field will be in equilibrium whenever it reaches the
+ highest (resp., lower) point of the gradient, depending on whether the connectio
+n between sensor and actuator is positive or negative (see figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:B1-eq-behavior"
+
+\end_inset
+
+).
+ A qualitative description of the equilibrium conditions of 
+\begin_inset Formula $H_{1}$
+\end_inset
+
+(translated from 
+\begin_inset Formula $A_{2}$
+\end_inset
+
+according to the first method listed above) will specify its connection
+ setup in order to achieve the behavior of 
+\begin_inset Formula $B_{1}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/Chemotaxis-1.pdf
+	scale 60
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:B1-eq-behavior"
+
+\end_inset
+
+Behavior of stimulus-seeking and stimulus-avoiding 
+\begin_inset Formula $B_{1}$
+\end_inset
+
+ vehicles in a gradient field, with initial and final position indicated.
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+GO ON FROM HERE, MOVING ON TO MORE QUANTITATIVE DEFINITION OF EQUILIBRIUM
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Real condition evolution
+\end_layout
+
+\begin_layout Enumerate
+Real condition verification
+\end_layout
+
+\begin_layout Enumerate
+Systematic disruption
+\end_layout
+
+\begin_layout Section
+Additional notes
+\end_layout
+
+\begin_layout Enumerate
+Chemotaxis is the pre-pilot study should be used in scare quotes, given
+ the complexity of real chemotactic behavior in simple organism (E.
+ Coli, Vibrio Ch., etc)
+\end_layout
+
+\begin_layout Enumerate
+See the downloaded paper and the book on E.
+ coli for a first recognition of the field, including detailed descriptions
+ of of the chemical processes involved in the detection of the gradient,
+ the activation of the flagella (or flagellum, in the case of Vibrio), and
+ especially, the self-regulatory capacity of the sensing mechanism
+\end_layout
+
+\begin_layout Enumerate
+Related to 2 above: Compare the self-regulating capacity of the sensory
+ circuit to the ultrastable mechanism of a Ashby Homeostat
+\end_layout
+
+\begin_layout Enumerate
+Notice that looking at actual chemotaxis process would in fact solve the
+ ambiguity in the preparatory note between the two translations of A2.
+ It would because it would show that in fact even a very simple (so to speak)
+ chemotactic process would require modulation (or, p/h, even ultrastability)
+ both at the sensory as well as at the motor level.
+ Therefore, a simple chemotactic process requires 2 units for the organism
+ (plus 1 or more for the envronment).
+ In other words, the correct translation of A2 is H1, not H2.
+ However, H1 is insufficient to model even a simple chemotactic process.
+ We need H2 to do that, but H2, in turn, is equivalent to a more complex
+ A unit.
+ Most likely a A3.
+ In short, let's call Cn an Chemotactic organism of type n (analogous to
+ a Braitenberg vehicle, but closer to the biological models, inclusing the
+ presence of sensory modulators.
+ Still it's similar to a B1 vehicle in that it moves in one dimension).
+ Then, the reasoning is as follows:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+The correct translation is A2-->H1.
+ 
+\end_layout
+
+\begin_layout Enumerate
+But H1<>C1.
+ 
+\end_layout
+
+\begin_layout Enumerate
+So we need to switch to a more complex Homeostat, namely A3, and translate
+ it to H2, 
+\end_layout
+
+\begin_layout Enumerate
+Which should be equivalent to C1 
+\end_layout
+
+\begin_layout Enumerate
+Although the correct "wiring" and connection setup remains to be specified
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Notice that locomotion performed during chemotaxis in E.
+ Coli is carried out on a different kind of "motor" from the simple device
+ present in B1.
+ Namely, the flagella have 2 modes of operation: CW (resulting in forward
+ motion) and CCW (resulting in random "tumbling").
+ The combination of these mechanism generate a biased random walk that achieves
+ chemotaxis.
+ Moreover bacteria (investigate further), they can modulate the amount of
+ time they operate in CW mode (i.e.
+ the impulse forward).
+ See how this can be translated into an output unit.
+ Need more details on the E.
+ coli, though
+\end_layout
+
+\begin_layout Enumerate
+Finally, look into the An, Bn, and Hn functional equivalents of "real" E.
+ Coli, with their multiplicity of input channels.
+ 
+\end_layout
+
+\end_body
+\end_document

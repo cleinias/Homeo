@@ -1,0 +1,688 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass memoir-article
+\begin_preamble
+\addbibresource{/home/stefano/Documents/Biblios/Italian-philosophy.bib}
+\addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
+\addbibresource{/home/stefano/Documents/Books/Play-and-Passivity/Dissertation-references.bib}
+\addbibresource{/home/stefano/Documents/Biblios/additional-refs-for-Il-Pensiero-Vivente.bib}
+\end_preamble
+\options article, 11pt
+\use_default_options false
+\begin_modules
+biblatex
+ShortInsetNames
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding utf8-plain
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format pdf5
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing onehalf
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine natbib_authoryear
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Discussion of Homeo Robotic Experiments and expected results
+\end_layout
+
+\begin_layout Author
+Stefano Franchi
+\end_layout
+
+\begin_layout Abstract
+A note to myself detailing the homeostatic architectures of the different
+ vehicle involved in the Homeo robotic experiments, together with expected
+ results (and, eventually, actual results)
+\end_layout
+
+\begin_layout Chapter
+Introduction
+\end_layout
+
+\begin_layout Standard
+This series of notes discusses the various experiments to be carried with
+ Homeo joined to a simulated robotic environment (Webots).
+ Its main goal is to clearly identify, for each experimental setup, the
+ environmental setup (the Webots world, and what it stands for), the homeostatic
+ architecture (number and type of units), the expected behaviors, and, if
+ possible, the expected dynamics.
+ It will start with the 
+\begin_inset Quotes eld
+\end_inset
+
+simplest possible
+\begin_inset Quotes erd
+\end_inset
+
+ homeostatic creature: a Braitenberg-like type 1 vehicle with one sensory
+ opening to the world and one actuator (motor).
+ With some approximation, it may resemble a biological agent carrying out
+ chemotaxis.
+ These notes will then discuss Brainteberg-like type 2 vehicles carrying
+ out phototaxis, and multimodal creatures.
+\end_layout
+
+\begin_layout Chapter
+Type-1 taxes
+\end_layout
+
+\begin_layout Section
+Environment 
+\end_layout
+
+\begin_layout Standard
+It is a flat world with no obstacle and no perturbations (i.e.
+ no buffeting from external forces such as those that a living organism
+ carrying out chemotaxis may experience).
+ The environment presents a stimulus gradient of an unspecified kind which
+ is simulated by one or more light sources.
+ The organism/vehicle has 
+\emph on
+one 
+\emph default
+sensory input tuned to the stimulus (i.e.
+ a light sensor) and one actuator allowing one dimensional translation (i.e.
+ a motor connected to a wheel that can spin either forward or backward).
+\end_layout
+
+\begin_layout Section
+Homeostatic setup
+\end_layout
+
+\begin_layout Standard
+As discussed in other notes, there are two possible setups: a 2 unit setup
+ with a sensor unit and a motor/actuator unit and a 1 unit setup with only
+ a motor unit connected to a sensory interface (these two setups corresponds
+ to Ashby second and, respectively, first experiment in 
+\emph on
+Design for a Brain
+\emph default
+).
+ The main difference between the two setups is that the 2-unit architecture
+ allows 
+\begin_inset Quotes eld
+\end_inset
+
+input-modulation,
+\begin_inset Quotes erd
+\end_inset
+
+ so to speak: the organism may change its sensitivity to the external stimulus
+ by changing the parameter controlling the the percentage of the input that
+ is transmitted to the other unit.
+ No such input modulation exists for the alternative setup.
+ 
+\end_layout
+
+\begin_layout Subsection
+Overall features of the described setups
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename Images/2-units-Homeostat-translation-3rd-option.pdf
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:2-unit-setup-for-type-1"
+
+\end_inset
+
+2-unit setup for type-1 vehicle.
+ 
+\emph on
+M
+\emph default
+ is the motor unit, 
+\emph on
+S
+\emph default
+ is the sensory unit, and 
+\emph on
+E
+\emph default
+ is the environment.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+Let us analyze the behavior of the vehicle by first reducing it to its simplest
+ possible setup, and then gradually adding additional features:
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Simplest setup: no self-connections
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+If we remove from the setup in figure 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:2-unit-setup-for-type-1"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ the self-connections (
+\begin_inset Formula $S\rightarrow S$
+\end_inset
+
+ and 
+\begin_inset Formula $M\rightarrow M$
+\end_inset
+
+), we obtain an approximation of a Braitenberg type-1 vehicle (see point
+ below for why it is an approximation).
+ This vehicle will transmit directly its input to to its output motor.
+ If the 
+\emph on
+perceived
+\emph default
+ stimulus is directly proportional to the stimulus source, it will therefore
+ move 
+\emph on
+away 
+\emph default
+from it.
+ If on the contrary, the perceived stimulus is 
+\emph on
+inversely
+\emph default
+ proportional to the source, it will move 
+\emph on
+toward 
+\emph default
+it.
+ Put it differently, the direct proportional setup vehicle will 
+\emph on
+climb down
+\emph default
+ a gradient, while its inversely proportional counterpart will 
+\emph on
+climb up 
+\emph default
+a gradient.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Why units without self-loops only approximate Braitenberg architectures
+\emph default
+.
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Because a HomeoUnit is a 
+\begin_inset Quotes eld
+\end_inset
+
+Newtonian
+\begin_inset Quotes erd
+\end_inset
+
+ object: the input is a force (torque) that changes its velocity, not its
+ position.
+ A true Braitenberg vehicle would have to be 
+\begin_inset Quotes eld
+\end_inset
+
+Aristotelian,
+\begin_inset Quotes erd
+\end_inset
+
+ with input affecting its position, not its velocity.
+ As a Newtonian physical laws approximate Aristotelian laws whenever friction
+ forces are high, and the equivalent of friction forces in Homeo units is
+ the viscosity of the medium the needle moves in, it follows that by increasing
+ the viscosity we would come closer to a 
+\begin_inset Quotes eld
+\end_inset
+
+true
+\begin_inset Quotes erd
+\end_inset
+
+ Braitenberg setup.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Actually, there are two parameters affecting needle's physical movement:
+ viscosity and density.
+ Both need to be tuned to obtain the desired 
+\begin_inset Quotes eld
+\end_inset
+
+Aristotelian
+\begin_inset Quotes erd
+\end_inset
+
+ result.
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+There is another important difference between the Homeo setup and Braitenberg's.
+ The range of values of a Homeo unit is centered around 0, whereas the range
+ of values of a Braitenberg's vehicle is always positive.
+ If, as in the current setup, the Homeo unit's is directly transmitted to
+ the output (just scaled), then the robot's actuator may receive both positive
+ and negative values, which would translate in the robot moving forward
+ or, respectively, backward.
+ A truly analogous Braitenberg vehicle would convert the value of the motor
+ unit to positive actuator commands instead of simply scaling them to the
+ appropriate range.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\emph on
+Expected observable behavior
+\emph default
+s.
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename Images/Braiten-1-gradient.pdf
+	lyxscale 150
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset Flex ShortLabel
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Brait-like-type-1-gradient"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+Braitenberg-like Type 1 vehicle in an environmental stimulus gradient.
+ The spherical gradient identified the environmental stimulus, centered
+ on the red dot.
+ The external green circle represent the minimum possible stimulus.
+ This will be equal to zero in a traditional Braitenberg vehicle, whereas
+ it will be negative and equal to the minimum possible value (which is always
+ negative) of the sensory unit in the standard Homeo setup.
+ The red circle indicates the threshold value equal to exactly half the
+ value of the stimulus, which is equivalent to exactly 0 in the standard
+ Homeo setup.
+ Notice that the red circle may not be halfway between the center of the
+ gradient and the green line, and its position depends on the chosen stimulus's
+ decay rule (which, for light, is inversely quadratic).
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Assuming the perceived stimulus is directly proportional to the input stimulus,
+ we would observe the following behaviors.
+\end_layout
+
+\begin_layout Enumerate
+A true Braitenberg vehicle---and a true 
+\begin_inset Quotes eld
+\end_inset
+
+Aristotelian
+\begin_inset Quotes erd
+\end_inset
+
+ Homeo unit with always positive actuator commands, as discussed above---will
+ keep moving straight until its input is zero (or sufficiently close to
+ zero, tasking into account that the Webots software does provide some simulatio
+n for frictional forces acting on the robot).
+ The robot will keep moving until the gradient's value is 0, where it'll
+ stop.
+ If the gradient never reaches zero, it'll keep moving forward (at least,
+ until the sensory input's falls below the minimal threshold needed to overcome
+ frictional forces/inertia).
+\end_layout
+
+\begin_layout Enumerate
+A Newtonian unit will behave differently.
+ A damped Newtonian unit will not stop as soon as the input reaches 0.
+ It will gradually slow down under the effect of its internal friction (i.e.
+ the viscosity of the medium).
+ In practice, it will overshoot the target by a distance inversely proportional
+ to its viscosity parameter.
+\end_layout
+
+\begin_layout Enumerate
+Finally, an 
+\emph on
+undamped
+\emph default
+ Newtonian unit (a unity with no viscosity) will never stop.
+ It will keep going indefinitely with a theoretical 
+\begin_inset Quotes eld
+\end_inset
+
+terminal
+\begin_inset Quotes erd
+\end_inset
+
+ velocity dependent on the accumulated input.
+ However, given that the value of a unit (and, hence, the value of its actuator,
+ i.e.
+ the value of the motor command) is constrained within a Max/Min band, its
+ terminal velocity will be equal to the unit's maximum value.
+\end_layout
+
+\begin_layout Enumerate
+If, instead, the setup is 
+\begin_inset Quotes eld
+\end_inset
+
+Aristotelian,
+\begin_inset Quotes erd
+\end_inset
+
+ but the actuator commands are either positive or negative as in the standard
+ Homeo configuration, the behavior will be different and it will depend
+ on the unit's initial position with respect to the gradient.
+ Consider vehicle A in figure 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Brait-like-type-1-gradient"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+ Its initial input will be less than 0, since it lies outside the red circle.
+ Hence it will immediately move away from the input source, i.
+ e.
+ backward (to the left, in the diagram).
+ In the absence of other stimulus sources, it will keep moving backward
+ indefinitely.
+ Consider instead vehicle B.
+ It start within the red circle, hence its input will be positive and it
+ will move forward until it crosses the red circle on the right side of
+ the diagram, when its input will reach 0 and the vehicle will stop.
+ In other words, the behavior is sensitive to initial conditions.
+ If the starting point is past the half-way point of the gradient's value,
+ the vehicle will effectively seek such a halfway point, otherwise it will
+ move away from the gradient indefinitely.
+\end_layout
+
+\begin_layout Enumerate
+Similar consideration applies to non-Aristotelian setups.
+ A damped Newtonian vehicle starting outside the red circle (case A in the
+ diagram) will accelerate away and reach terminal velocity.
+ A similar vehicle starting inside the red circle (case B), will overshoot
+ the red circle on the opposite side, then correct backward, etcetera.
+ In short it will converge harmonically on the red line on the right side
+ of the diagram.
+\end_layout
+
+\begin_layout Enumerate
+Finally an undamped unit will accelerate away (backward) in case A, whereas
+ in case B it will accelerate rigthward (forward), then reverse acceleration
+ when it crosses the red line.
+ It should converge on the red line as in the previous case, but with a
+ much less stable behavior (i.e.
+ ampler oscillations).
+\end_layout
+
+\begin_layout Standard
+If, on the contrary, the perceived stimulus is inversely proportional to
+ the input, we would observe the reverse behavior.
+ That is, the behavior will be analogous except that the target respectively
+ reached or overshot will be the point in the vehicle's path where the value
+ is equal to zero:
+\end_layout
+
+\begin_layout Itemize
+A true Braitenberg vehicle will keep moving as long as the input is 
+\emph on
+not 
+\emph default
+zero.
+ It will effectively climb up the gradient.
+\end_layout
+
+\begin_layout Itemize
+A damped Newtonian unit will overshoot its gradient equal to zero target
+\end_layout
+
+\begin_layout Itemize
+Finally, an undamped unit will keep going---whether it reaches the terminal
+ velocity equal to its max value depends on the initial distance between
+ units and gradient's maximum value.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\emph on
+Experimental observations
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+GO HERE.
+ STILL MISSING
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Enumerate
+
+\emph on
+Self-connected motor unit
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Let us now focus on the standard case of a damped Newtonian unit and add
+ to it the self-connection 
+\begin_inset Formula $M\rightarrow M$
+\end_inset
+
+, while still leaving out the uniselector mechanism.
+ Let us also stipulate that the value of the self-connection will be moderately
+ negative (of the order of 
+\begin_inset Formula $-0.1)$
+\end_inset
+
+, as that is the most common occurrence as discussed elsewhere.
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+See my 
+\emph on
+Constructivist Foundations 
+\emph default
+paper and preparatory work therewith.
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\emph on
+Self-connected sensory unit
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Motor and sensory unit both self-connected 
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Adding uniselector action to motor unit
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+
+\emph on
+\begin_inset Graphics
+	filename Images/Braiten-1-with-2-gradients.pdf
+	scale 77
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Three Braitenberg-like Type 1 vehicles in an environment with a slightly
+ more complex gradient landscape.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

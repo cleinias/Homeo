@@ -1,0 +1,309 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass scrartcl
+\begin_preamble
+\usepackage{colortbl} 
+\usepackage{tabularx}
+\usepackage[greek, italian, german, french, english]{babel}
+\languageattribute{greek}{polutoniko} 
+\usepackage[T1]{fontenc}
+\usepackage[oxford=true]{jurabib}
+\jurabibsetup{
+     authorformat=and,
+     titleformat=italic,
+     citefull=first
+}
+\renewcommand{\bibapifont}[1]{``#1''}
+
+% To use Jurabib idem or ibidem uncomment next line
+%\jbuseidemhrule
+
+% To convert all endnotes to endnotes uncomment the next TWO lines
+%\usepackage{endnotes}
+%\let\footnote=\endnote
+
+% To eliminate the date on first page uncomment the next line
+%\date{}
+
+% To eliminate the final blbliography replace \thebibliography
+% with \nobibliography (and the correct arguments) at the end of 
+% the file. You will have to do it on the LaTeX source, though
+
+% The following allows to change the paragraph spacing
+% in the printout without changing the screen spacing
+% Note: the value set here will override (not be added to) 
+% LyX's settings in  Layout>Document>Layout
+%
+%\usepackage{setspace}
+%\onehalfspace
+ 
+% The next bit shows the comment environment inside a grey box
+% Comment it out for final print 
+% show my Comments?
+\RequirePackage{colortbl,tabularx,ifthen}
+\@ifundefined{comment}{}
+{
+\renewenvironment{comment}{
+  \par\medskip\noindent
+  \tabularx{\textwidth}{|>{\columncolor[gray]{0.9}}X|}
+  \hline
+  \emph{Comment:}
+  }{
+  \endtabularx\hrule\par\medskip
+  }
+}
+%
+% End of comment printing bit
+% 
+
+%
+% This bit changes the heading numbering:
+%
+% It removes the chapter number and it removes all the dots after
+% the subsection numbers. It produces numbers "Wittgenstein style":
+% for instance the first section of chapter 2 becomes 1 and not 2.1 as 
+% standard LaTeX wouldl have it. In general, we have numbering of the
+% form 1.2345 instead of 1.1.2.3.4.5 
+%
+\renewcommand\thesection{\arabic{section}}
+\renewcommand\thesubsection{\thesection.\arabic{subsection}}
+\renewcommand\thesubsubsection{\thesubsection\arabic{subsubsection}}
+\renewcommand\theparagraph{\thesubsubsection\arabic{paragraph}}
+\renewcommand\thesubparagraph{\theparagraph\arabic{subparagraph}}
+\end_preamble
+\options chapterprefix
+\use_default_options false
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman times
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing onehalf
+\use_hyperref false
+\papersize letterpaper
+\use_geometry false
+\use_amsmath 1
+\use_esint 0
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 5
+\tocdepth 5
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle headings
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Main theses defended by WR Ashby in 
+\emph on
+Design for a Brain
+\end_layout
+
+\begin_layout Section
+Ashby's theses
+\end_layout
+
+\begin_layout Standard
+Ashby defends a very small number of theses in 
+\emph on
+Design for a Brain
+\emph default
+.
+ They can be summarized as follows:
+\end_layout
+
+\begin_layout Enumerate
+A complex behavior is generated when a complex system runs to equilibrium
+\end_layout
+
+\begin_layout Enumerate
+A system runs to equilibrium through ultrastability: that is, by randomly
+ stepping through sets of parameters affecting the way its subparts are
+ connected
+\end_layout
+
+\begin_layout Enumerate
+A system with many parts (subsystems) fully connected to each other will
+ need an exceedingly long time to reach equilibrium
+\end_layout
+
+\begin_layout Enumerate
+A real system will therefore need weak connections between its parts
+\end_layout
+
+\begin_layout Enumerate
+Typically, the subsystems will not be mutually connected on the organism's
+ side: communication among subsystem is mediated by (its interactions with)
+ the environment.
+ 
+\end_layout
+
+\begin_layout Standard
+All the points above are illustrated through the Homeostat, 
+\emph on
+with the exception of the first one
+\emph default
+.
+ That is, the first thesis is the principle around which the Homeostat is
+ built: the axiom behind its construction, whereas the other principles
+ are conclusions directly derived from the Homeostat's behavior.
+ In other words, the first thesis is the philosophical (and philosophically
+ very unorthodox) foundation for everything else.
+ Ashby wants to prove point 1, which constitutes a very general and broad
+ thesis about 
+\emph on
+life
+\emph default
+, by effectively building a simplified system (the Homeostat) that illustrates
+ its plausibility.
+ It is easy to see why the first thesis is so unorthodox, and why it encountered
+ such resistance in the cybernetic community when the Homeostat was first
+ presented at the Macy foundation's meetings:
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Need reference for this.
+ See, for instance, Julian Bigelow: 
+\begin_inset Quotes eld
+\end_inset
+
+It may be a beautiful replica of something, but heaven only knows what,
+\begin_inset Quotes erd
+\end_inset
+
+ quoted by 
+\begin_inset CommandInset citation
+LatexCommand cite
+after " p. 8"
+key "Eldridge2002"
+
+\end_inset
+
+ from the Proceedings of the 1952 Macy Conferences.
+ 
+\end_layout
+
+\end_inset
+
+ Ashby claims that life is a fundamentally a process (or series of processes)
+ aiming at minimizing the impact of external disturbances on the organism.
+ The nickname devised by Grey Walter seems quite apt: Ashby's Homeostat
+ is a 
+\emph on
+machina sopora
+\emph default
+, he claimed, because its ideal function is to go back to sleep as quickly
+ as possible.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+See 
+\begin_inset CommandInset citation
+LatexCommand cite
+after " p. 111"
+key "Walter1961"
+
+\end_inset
+
+.
+ Walter concluded his brief review of Ashby's homeostat by saying that 
+\begin_inset Quotes eld
+\end_inset
+
+judging 
+\emph on
+Machina sopora
+\emph default
+ entirely by its behavior, the naturalist would classify it as a plant.
+\begin_inset Quotes erd
+\end_inset
+
+ (112) 
+\end_layout
+
+\end_inset
+
+ Walter's characterization is rather superficial, though, because it does
+ not take into account Ashby's insistence on the complexity of behavior
+ that can be produced by the systems he discusses.
+ Walter's remark, however, does indicate where the main source of resistance
+ to Ashby's thesis about life lies: in its effort to derive action from
+ non-action.
+ In other words, in Ashby's homeostatic organism, philosophical and theoretical
+ preeminence is accorded to non-action---or to sleep, in Walter's mocking
+ words.
+ This does not mean that the Homeostat will always be sleeping.
+ Rather, it means something philosophically far more disturbing: the Homeostat
+ will act as much as it is needed in order to go back to sleep.
+ It will go to extraordinary lengths, it will take whatever action it can---just
+ in order to go back to rest (i.e to equilibrium).
+ Moreover, its always possible failure to do so will necessarily result
+ in the Homeostat's death.
+ In other words: the Ashbian organism will always be trying to accommodate
+ itself to environment by whatever means necessary: it is essentially a
+ passive machine for which action is a by-product of its search for non-action.
+ 
+\emph on
+That
+\emph default
+ is the disturbing thesis.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "/Users/stefano/Documents/Projects/Homeostat/Biblios/Homeostat-Project-Unicode"
+options "jox"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
