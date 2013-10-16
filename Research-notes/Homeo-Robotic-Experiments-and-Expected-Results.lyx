@@ -8,6 +8,7 @@
 \addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
 \addbibresource{/home/stefano/Documents/Books/Play-and-Passivity/Dissertation-references.bib}
 \addbibresource{/home/stefano/Documents/Biblios/additional-refs-for-Il-Pensiero-Vivente.bib}
+\usepackage{float}
 \end_preamble
 \options article, 11pt
 \use_default_options false
@@ -177,7 +178,7 @@ status open
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/2-units-Homeostat-translation-3rd-option.pdf
+	filename Images/2-units-Homeostat-translation-3rd-option.pdf
 
 \end_inset
 
@@ -297,7 +298,7 @@ Why units without self-loops only approximate Braitenberg architectures
 \end_layout
 
 \begin_deeper
-\begin_layout Standard
+\begin_layout Enumerate
 Because a HomeoUnit is a 
 \begin_inset Quotes eld
 \end_inset
@@ -351,7 +352,7 @@ Aristotelian
  
 \end_layout
 
-\begin_layout Standard
+\begin_layout Enumerate
 There is another important difference between the Homeo setup and Braitenberg's.
  The range of values of a Homeo unit is centered around 0, whereas the range
  of values of a Braitenberg's vehicle is always positive.
@@ -374,7 +375,7 @@ s.
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 
@@ -383,7 +384,7 @@ status open
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/Braiten-1-gradient.pdf
+	filename Images/Braiten-1-gradient.pdf
 	lyxscale 150
 
 \end_inset
@@ -438,8 +439,8 @@ Braitenberg-like Type 1 vehicle in an environmental stimulus gradient.
 
 \begin_deeper
 \begin_layout Standard
-Assuming the perceived stimulus is directly proportional to the input stimulus,
- we would observe the following behaviors.
+Let us discuss the case in which the perceived stimulus is directly proportional
+ to the input stimulus, before looking at the opposite one.
 \end_layout
 
 \begin_layout Enumerate
@@ -452,12 +453,28 @@ Aristotelian
 \end_inset
 
  Homeo unit with always positive actuator commands, as discussed above---will
- keep moving straight until its input is zero (or sufficiently close to
- zero, tasking into account that the Webots software does provide some simulatio
-n for frictional forces acting on the robot).
- The robot will keep moving until the gradient's value is 0, where it'll
- stop.
- If the gradient never reaches zero, it'll keep moving forward (at least,
+ keep moving straight (and backward, in the case of figure 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Brait-like-type-1-gradient"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+) until its input is zero (or sufficiently close to zero, tasking into account
+ that the Webots software does provide some simulation for frictional forces
+ acting on the robot).
+ The robot will keep moving until the gradient's value is equal to zero,
+ where it will stop.
+ If the gradient never reaches zero, it'll keep moving backward (at least,
  until the sensory input's falls below the minimal threshold needed to overcome
  frictional forces/inertia).
 \end_layout
@@ -472,6 +489,21 @@ A Newtonian unit will behave differently.
 \end_layout
 
 \begin_layout Enumerate
+\begin_inset Flex ShortLabel
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:Newton-unconn-damped"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
 Finally, an 
 \emph on
 undamped
@@ -538,11 +570,43 @@ reference "fig:Brait-like-type-1-gradient"
 \end_layout
 
 \begin_layout Enumerate
-Similar consideration applies to non-Aristotelian setups.
- A damped Newtonian vehicle starting outside the red circle (case A in the
- diagram) will accelerate away and reach terminal velocity.
- A similar vehicle starting inside the red circle (case B), will overshoot
- the red circle on the opposite side, then correct backward, etcetera.
+\begin_inset Flex ShortLabel
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:Newton-damped-pos-neg"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+Similar considerations apply to non-Aristotelian setups.
+ A damped Newtonian vehicle starting outside the red circle (case A in figure
+ 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Brait-like-type-1-gradient"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+) will accelerate away and reach terminal velocity.
+ A similar vehicle starting inside the red circle (case B in the figure),
+ will overshoot the red circle on the opposite side, then correct backward,
+ etcetera.
  In short it will converge harmonically on the red line on the right side
  of the diagram.
 \end_layout
@@ -556,16 +620,13 @@ Finally an undamped unit will accelerate away (backward) in case A, whereas
  ampler oscillations).
 \end_layout
 
-\begin_layout Standard
+\begin_layout Enumerate
 If, on the contrary, the perceived stimulus is inversely proportional to
  the input, we would observe the reverse behavior.
  That is, the behavior will be analogous except that the target respectively
  reached or overshot will be the point in the vehicle's path where the value
- is equal to zero:
-\end_layout
-
-\begin_layout Itemize
-A true Braitenberg vehicle will keep moving as long as the input is 
+ is equal to zero.
+ A true Braitenberg vehicle will keep moving as long as the input is 
 \emph on
 not 
 \emph default
@@ -573,14 +634,302 @@ zero.
  It will effectively climb up the gradient.
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Enumerate
 A damped Newtonian unit will overshoot its gradient equal to zero target
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Enumerate
 Finally, an undamped unit will keep going---whether it reaches the terminal
  velocity equal to its max value depends on the initial distance between
  units and gradient's maximum value.
+\end_layout
+
+\begin_layout Enumerate
+The last three cases involve a vehicle with inverse input-output connection
+ and standard Homeo setup (actuator may have both positive and negative
+ values).
+ An Aristotelian vehicle starting with input below zero (vehicle A in figure
+ 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Brait-like-type-1-gradient"
+
+\end_inset
+
+) 
+\end_layout
+
+\end_inset
+
+) will moves forward until it reaches the area where the input equal zero
+ (i.e.
+ as soon as it crosses the first red line in the same figure).
+ If the vehicle starts with input greater than zero (vehicle B in the figure),
+ it will move backward to the red line and then stop.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang latin
+\begin_inset Flex ShortLabel
+status collapsed
+
+\begin_layout Plain Layout
+
+\lang latin
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:Newton-damped-pos-neg-reverse"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\lang english
+A Newtonian damped vehicle starting with input below zero (vehicle A) will
+ overshoot the same red line in the figure, and then converge back onto
+ it.
+ If the vehicle starts with input greater than zero (vehicle B) will move
+ backward, overshoot and then converge onto the same read line as in the
+ previous case.
+\end_layout
+
+\begin_layout Enumerate
+An undamped Newtonian vehicle will overshoot the line, then move backward
+ and converge back with ampler oscillations.
+ If the vehicle starts with input greater than zero (vehicle B), it will
+ move backward, overshoot, then converge back with ampler oscillations.
+\end_layout
+
+\begin_layout Standard
+Notice, however, that there is a complication here.
+ Imagine a vehicle starting with input less than zero (like vehicle A in
+ the figure) but on the right side of the gradient (i.e.
+ in the area between the red line and the green line on the right side of
+ figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Brait-like-type-1-gradient"
+
+\end_inset
+
+).
+ The vehicle will start moving forward, never cross a region with input
+ equal to zero, and then will keep moving forward indefinitely.
+ Similar behaviors (with terminal velocities) will be observed for Newtonian
+ vehicles.
+ This observation brings us to the following point.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+\begin_inset Flex ShortLabel
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:Generalized-environment"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+If we slightly complicate the environmental setup as in figure 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:2-gradients-setup"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+, we will observe a slightly different behavior.
+ Vehicles A and B will behave as detailed above: they will, respectively,
+ keep moving backward indefinitely (A) or move forward and eventually stop
+ on the red line to the right of the diagram (B).
+ Vehicle C's behavior is different.
+ It will start moving backward (leftward) as it input is negative, like
+ vehicle A.
+ However, once it crosses the red circle at point X, its input will be reversed
+ (
+\begin_inset Formula $>0$
+\end_inset
+
+) and it will start moving forward (rightward).
+ Eventually it will converge on the red line at X.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+The previous environmental setup can be generalized to an environment 
+\begin_inset Quotes eld
+\end_inset
+
+filled
+\begin_inset Quotes erd
+\end_inset
+
+ with gradients: an environment, that is, that extends indefinitely in all
+ directions and is always 
+\begin_inset Quotes eld
+\end_inset
+
+textured
+\begin_inset Quotes erd
+\end_inset
+
+ by gradients (as an analogy, think of a spatiotemporal continuum with mass-prod
+uced gravitational distortions).
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Notice that such an environmantl setup could be effectively simulated by
+ a toroidal environment with only a few gradient (indeed, even just 1 gradient
+ would suffice).
+\end_layout
+
+\end_inset
+
+ In such a a generalized environment, the expected behaviors listed above
+ will be simplified considerably, because a vehicle's movement will 
+\emph on
+always
+\emph default
+ end up in the vehicle entering another gradient.
+ Therefore, even the 
+\begin_inset Quotes eld
+\end_inset
+
+Newtonian
+\begin_inset Quotes erd
+\end_inset
+
+ vehicles will not reach 
+\begin_inset Quotes eld
+\end_inset
+
+terminal velocities,
+\begin_inset Quotes erd
+\end_inset
+
+ nor will they exhibit indefinite movements in either directions.
+ At most, there will be oscillatory behaviors with the vehicle moving back
+ and forth in a 
+\begin_inset Quotes eld
+\end_inset
+
+comfort area
+\begin_inset Quotes erd
+\end_inset
+
+ within a gradient.
+ Consider, for instance, the (relatively extreme) case of an un undamped
+ Newtonian vehicle with direct input-output connection and always positive
+ actuator output (case 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "enu:Newton-unconn-damped"
+
+\end_inset
+
+ above).
+ The vehicle will move away from the stimulus and perhaps reach terminal
+ velocity, but, in the generalized environment, it will sooner or later
+ encounter another positive gradient, which will reverse its direction,
+ thereby moving forward toward its original spot, where it will start moving
+ backward again.
+ In short, its movement will be confined (more or less, that is, allowing
+ for overshoots) within the area where the input value is minimum.
+ Similarly, and perhaps more interestingly, the setups described at 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "enu:Newton-damped-pos-neg"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "enu:Newton-damped-pos-neg-reverse"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ above will not be (so) sensitive to initial conditions.
+ The vehicle in case 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "enu:Newton-damped-pos-neg"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ will always converge on the area with input value equal to zero.
+ This would be red line on the right side of the diagram or an equivalent
+ area with similar value for a gradient that we assume will exist on the
+ left side of the world (this behavior is clear if we imagine the world
+ represented in in figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Brait-like-type-1-gradient"
+
+\end_inset
+
+ to be a thorus, in which case the vehicle will exit the world on the left,
+ reenter on the right, and stop around the red line).
+ There is actually another option we are not considering here: consider
+ vehicle C in the diagram, which is positioned higher up, that is higher
+ then the red line.
+ In this case, what would happen? The vehicle would never cross any red
+ line (input = 0) in its path, and therefore would never come to a stop.
+ It would, instead, orbit endlessly, accelerating when it is farther away
+ from the gradient's max, and slowing down when it comes closer.
+ 
 \end_layout
 
 \end_deeper
@@ -619,7 +968,7 @@ Let us now focus on the standard case of a damped Newtonian unit and add
 
 , as that is the most common occurrence as discussed elsewhere.
 \begin_inset Foot
-status open
+status collapsed
 
 \begin_layout Plain Layout
 See my 
@@ -631,9 +980,123 @@ paper and preparatory work therewith.
 
 \end_inset
 
+ I will start from 
+\begin_inset Quotes eld
+\end_inset
+
+true Brainteberg
+\begin_inset Quotes erd
+\end_inset
+
+ setup with outputs always positive and directly proportional input-output
+ connections, before moving to Homeo setups with output in a range centered
+ around zero, and finally Homeo setups with inverse input-output connections.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Expected behaviors
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Let us start again from Aristotelian units.
+ The output will be directly proportional to the input stimulus 
+\emph on
+minus 
+\emph default
+a value directly proportional to the output which is proportional to the
+ input stimulus as just stated.
+ Hence, the unit will move away from the stimulus source as in the case
+ of an unconnected unit, but its movement will be slightly different.
+ Instead of moving linearly with velocity proportional to the input, it
+ will move relatively more slowly when it is closer to the source and relatively
+ faster when it is farther away.
+ In other words, the vehicle will have a certain 
+\begin_inset Quotes eld
+\end_inset
+
+inertia
+\begin_inset Quotes erd
+\end_inset
+
+ to overcome (even though it is 
+\begin_inset Quotes eld
+\end_inset
+
+Aristotelian,
+\begin_inset Quotes erd
+\end_inset
+
+ hence no dynamics are in play).
+\end_layout
+
+\begin_layout Enumerate
+A damped Newtonian unit will behave similarly.
+ The acceleration away from the source will be lower but it will decrease
+ proportionally less as its input decreases.
+ In fact, it should still overshoot the target (i.e, the border region where
+ input reaches zero), but it will overshoot it less.
+\end_layout
+
+\begin_layout Enumerate
+An undamped unit will, contrary to the unconnected unit, eventually slow
+ down to zero, as a fraction of the vehicle's output is constantly fed back,
+ with sign reversed, to the motor unit.
+ In other words, the unit will speed away, cross the boundary region, then
+ slowly come to a stop.
  
 \end_layout
 
+\begin_layout Enumerate
+Let us now look at Homeo setups, starting with the Aristotelian case and
+ with reference to figure 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Brait-like-type-1-gradient"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+ Nothing much changes from the not self-connected case: vehicle A will continue
+ moving backward indefinitely with the same slightly different dynamics
+ (slower initial velocity and progressively less so) as in the previous
+ case.
+ Vehicle B will, similarly, converge on the zero threshold line (the red
+ circle to the left), with the same slightly different dynamics.
+\end_layout
+
+\begin_layout Enumerate
+A damped self-connected Newtonian vehicle A, will move backward and reach
+ a terminal velocity as in the non self-connected case, but the velocity
+ will be lower, as it is constantly reduced by a value equal to a fraction
+ of its output.
+ Vehicle B will converge upon the threshold area with a better approximation
+ (fewer oscillations) as it will accelerate less at the beginning.
+\end_layout
+
+\begin_layout Enumerate
+Same behavior will be observed for an undamped unit: vehicle A will move
+ backward indefinitely with terminal velocity, vehicle B will reach the
+ threshold area with less precision than in the case discussed just above.
+\end_layout
+
+\begin_layout Enumerate
+Let us now look at connection with reverse polarity (i.e.
+ the input is the reverse of the iput source's stimulus)
+\end_layout
+
+\end_deeper
 \end_deeper
 \begin_layout Enumerate
 
@@ -654,14 +1117,15 @@ Adding uniselector action to motor unit
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
 
 \emph on
 \begin_inset Graphics
-	filename /home/stefano/Documents/Projects/Homeostat/Papers/Images-and-diagrams/Braiten-1-with-2-gradients.pdf
+	filename Images/Braiten-1-with-2-gradients.pdf
+	lyxscale 150
 	scale 77
 
 \end_inset
@@ -670,8 +1134,2971 @@ status open
 \begin_inset Caption
 
 \begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:2-gradients-setup"
+
+\end_inset
+
 Three Braitenberg-like Type 1 vehicles in an environment with a slightly
  more complex gradient landscape.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage clearpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways true
+status open
+
+\begin_layout Plain Layout
+\begin_inset Tabular
+<lyxtabular version="3" rows="13" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="middle" width="0pt">
+<column alignment="center" valignment="middle" width="1.3in">
+<column alignment="center" valignment="middle" width="3in">
+<column alignment="center" valignment="middle" width="3in">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+#
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Basic Setup
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+\emph on
+Unconnected
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Experimental results
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian,
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\size footnotesize
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Moves backward until gradient reaches zero and stops
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Moves backward 
+\emph on
+past
+\emph default
+ zero region (overshoots) and stops
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Moves backward until it reaches another gradient, then reverses and so on
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+If starting point above 0 (case C) orbits indefinitely, otherwise stops
+ when it crosses a a 0 region
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+As in case 4 above, but will converge harmonically on zero region in second
+ case
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+As in case 5 above, but convergence will take longer
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Will move forward and stop when gradient is max
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, inverse, positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Will move forward and overshoot gradient = max then stop
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+9
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Will move forward, overshoot max gradient and probably reach terminal velocity
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+10
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+If starting point above 0 (case C), will start forward and orbit indefinitely,
+ otherwise will stop on first crossed 0 region
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+11
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+As in case 10 above, with harmonic behavior in second case
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+12
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+As in case 10 above, with longer harmonic behavior in second case
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset Flex ShortLabel
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:Unconnected-summary"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+Summary of experimental setups and expected results for a type-1 Braitenberg-lik
+e vehicle in Homeo 
+\emph on
+with no self-connections
+\emph default
+.
+\begin_inset Newline newline
+\end_inset
+
+In the descriptions, 
+\begin_inset Quotes eld
+\end_inset
+
+forward
+\begin_inset Quotes erd
+\end_inset
+
+ means 
+\begin_inset Quotes eld
+\end_inset
+
+up the gradient
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+to the right
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+backward
+\begin_inset Quotes erd
+\end_inset
+
+ means 
+\begin_inset Quotes eld
+\end_inset
+
+down the gradient
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+to the left
+\begin_inset Quotes erd
+\end_inset
+
+ (see figure 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Brait-like-type-1-gradient"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+).
+ We assume a 
+\begin_inset Quotes eld
+\end_inset
+
+filled
+\begin_inset Quotes erd
+\end_inset
+
+ environment as detailed at 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "enu:Generalized-environment"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ above.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways true
+status open
+
+\begin_layout Plain Layout
+\begin_inset Tabular
+<lyxtabular version="3" rows="13" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="middle" width="0pt">
+<column alignment="center" valignment="middle" width="1.3in">
+<column alignment="center" valignment="middle" width="3in">
+<column alignment="center" valignment="middle" width="3in">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+#
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Basic Setup
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $M\rightarrow M$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Experimental results
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian,
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\size footnotesize
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, inverse, positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+9
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+10
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+11
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+12
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Summary of experimental setups and expected results for a type-1 Braitenberg-lik
+e vehicle in Homeo 
+\emph on
+with a self-connection in the Motor unit
+\emph default
+.
+ See caption to table 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Unconnected-summary"
+
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+ for environmental details.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways true
+status open
+
+\begin_layout Plain Layout
+\begin_inset Tabular
+<lyxtabular version="3" rows="13" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="middle" width="0pt">
+<column alignment="center" valignment="middle" width="1.3in">
+<column alignment="center" valignment="middle" width="3in">
+<column alignment="center" valignment="middle" width="3in">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+#
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Basic Setup
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $S\rightarrow S$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Experimental results
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian,
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\size footnotesize
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, inverse, positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+9
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+10
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+11
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+12
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Summary of experimental setups and expected results for a type-1 Braitenberg-lik
+e vehicle in Homeo 
+\emph on
+with a self-connection in the Sensor unit
+\emph default
+.
+ See caption to table 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Unconnected-summary"
+
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+ for environmental details.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways true
+status open
+
+\begin_layout Plain Layout
+\begin_inset Tabular
+<lyxtabular version="3" rows="13" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="middle" width="0pt">
+<column alignment="center" valignment="middle" width="1.3in">
+<column alignment="center" valignment="middle" width="3in">
+<column alignment="center" valignment="middle" width="3in">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+#
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Basic Setup
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Formula $M\rightarrow M$
+\end_inset
+
+ and 
+\begin_inset Formula $S\rightarrow S$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Experimental results
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian,
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\size footnotesize
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+direct, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+7
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, inverse, positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+9
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+10
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Aristotelian, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+11
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian damped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+12
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\size footnotesize
+Newtonian undamped, 
+\begin_inset Newline newline
+\end_inset
+
+inverse, 
+\begin_inset Newline newline
+\end_inset
+
+pos-neg
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Summary of experimental setups and expected results for a type-1 Braitenberg-lik
+e vehicle in Homeo 
+\emph on
+with self-connections in both the Motor unit
+\emph default
+ 
+\emph on
+and the Sensor unit
+\emph default
+.
+ See caption to table 
+\begin_inset Flex ShortXRef
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Unconnected-summary"
+
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+ for environmental details.
 \end_layout
 
 \end_inset
