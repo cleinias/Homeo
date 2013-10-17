@@ -73,7 +73,7 @@ ShortInsetNames
 \begin_body
 
 \begin_layout Title
-Discussion of Homeo Robotic Experiments and expected results
+Discussion of Homeo robotic experiments and expected results
 \end_layout
 
 \begin_layout Author
@@ -93,10 +93,31 @@ Introduction
 \begin_layout Standard
 This series of notes discusses the various experiments to be carried with
  Homeo joined to a simulated robotic environment (Webots).
- Its main goal is to clearly identify, for each experimental setup, the
- environmental setup (the Webots world, and what it stands for), the homeostatic
- architecture (number and type of units), the expected behaviors, and, if
- possible, the expected dynamics.
+ Its main goal is to clearly identify, for each 
+\emph on
+experimental
+\emph default
+ setup, the 
+\emph on
+environmental
+\emph default
+ 
+\emph on
+setup
+\emph default
+ (the Webots world, and what it stands for), the 
+\emph on
+homeostatic architecture
+\emph default
+ (number and type of units), the 
+\emph on
+expected behaviors
+\emph default
+, and, if possible, the 
+\emph on
+expected dynamics
+\emph default
+.
  It will start with the 
 \begin_inset Quotes eld
 \end_inset
@@ -109,7 +130,7 @@ simplest possible
  opening to the world and one actuator (motor).
  With some approximation, it may resemble a biological agent carrying out
  chemotaxis.
- These notes will then discuss Brainteberg-like type 2 vehicles carrying
+ These notes will then discuss Braitenberg-like type 2 vehicles carrying
  out phototaxis, and multimodal creatures.
 \end_layout
 
@@ -165,11 +186,15 @@ input-modulation,
  
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Overall features of the described setups
 \end_layout
 
 \begin_layout Standard
+Let us analyze the behavior of the vehicle by first reducing it to its simplest
+ possible setup, and then gradually adding additional features.
+ A preliminary discussion of the difference between true Braitenberg setups
+ and Homeo setups is necessary as it will be referenced in what follows.
 \begin_inset Float figure
 wide false
 sideways false
@@ -213,23 +238,95 @@ E
 
 \end_layout
 
-\begin_layout Plain Layout
+\end_inset
 
+
+\end_layout
+
+\begin_layout Subsection
+
+\emph on
+Why units without self-loops only approximate Braitenberg architectures
+\emph default
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Because a HomeoUnit is a 
+\begin_inset Quotes eld
+\end_inset
+
+Newtonian
+\begin_inset Quotes erd
+\end_inset
+
+ object: the input is a force (torque) that changes its velocity, not its
+ position.
+ A true Braitenberg vehicle would have to be 
+\begin_inset Quotes eld
+\end_inset
+
+Aristotelian,
+\begin_inset Quotes erd
+\end_inset
+
+ with input affecting its position, not its velocity.
+ As a Newtonian physical laws approximate Aristotelian laws whenever friction
+ forces are high, and the equivalent of friction forces in Homeo units is
+ the viscosity of the medium the needle moves in, it follows that by increasing
+ the viscosity we would come closer to a 
+\begin_inset Quotes eld
+\end_inset
+
+true
+\begin_inset Quotes erd
+\end_inset
+
+ Braitenberg setup.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Actually, there are two parameters affecting needle's physical movement:
+ viscosity and density.
+ Both need to be tuned to obtain the desired 
+\begin_inset Quotes eld
+\end_inset
+
+Aristotelian
+\begin_inset Quotes erd
+\end_inset
+
+ result.
 \end_layout
 
 \end_inset
 
-Let us analyze the behavior of the vehicle by first reducing it to its simplest
- possible setup, and then gradually adding additional features:
+ 
 \end_layout
 
+\begin_deeper
 \begin_layout Enumerate
+There is another important difference between the Homeo setup and Braitenberg's.
+ The range of values of a Homeo unit is centered around 0, whereas the range
+ of values of a Braitenberg's vehicle is always positive.
+ If, as in the current setup, the Homeo unit's is directly transmitted to
+ the output (just scaled), then the robot's actuator may receive both positive
+ and negative values, which would translate in the robot moving forward
+ or, respectively, backward.
+ A truly analogous Braitenberg vehicle would convert the value of the motor
+ unit to positive actuator commands instead of simply scaling them to the
+ appropriate range.
+\end_layout
+
+\end_deeper
+\begin_layout Section
 
 \emph on
 Simplest setup: no self-connections
 \end_layout
 
-\begin_deeper
 \begin_layout Standard
 If we remove from the setup in figure 
 \begin_inset Flex ShortXRef
@@ -288,98 +385,19 @@ climb up
 a gradient.
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Subsection
 
 \emph on
-Why units without self-loops only approximate Braitenberg architectures
-\emph default
-.
- 
+Expected observable behaviors
 \end_layout
 
-\begin_deeper
-\begin_layout Enumerate
-Because a HomeoUnit is a 
-\begin_inset Quotes eld
-\end_inset
-
-Newtonian
-\begin_inset Quotes erd
-\end_inset
-
- object: the input is a force (torque) that changes its velocity, not its
- position.
- A true Braitenberg vehicle would have to be 
-\begin_inset Quotes eld
-\end_inset
-
-Aristotelian,
-\begin_inset Quotes erd
-\end_inset
-
- with input affecting its position, not its velocity.
- As a Newtonian physical laws approximate Aristotelian laws whenever friction
- forces are high, and the equivalent of friction forces in Homeo units is
- the viscosity of the medium the needle moves in, it follows that by increasing
- the viscosity we would come closer to a 
-\begin_inset Quotes eld
-\end_inset
-
-true
-\begin_inset Quotes erd
-\end_inset
-
- Braitenberg setup.
-\begin_inset Foot
-status collapsed
-
-\begin_layout Plain Layout
-Actually, there are two parameters affecting needle's physical movement:
- viscosity and density.
- Both need to be tuned to obtain the desired 
-\begin_inset Quotes eld
-\end_inset
-
-Aristotelian
-\begin_inset Quotes erd
-\end_inset
-
- result.
-\end_layout
-
-\end_inset
-
- 
-\end_layout
-
-\begin_layout Enumerate
-There is another important difference between the Homeo setup and Braitenberg's.
- The range of values of a Homeo unit is centered around 0, whereas the range
- of values of a Braitenberg's vehicle is always positive.
- If, as in the current setup, the Homeo unit's is directly transmitted to
- the output (just scaled), then the robot's actuator may receive both positive
- and negative values, which would translate in the robot moving forward
- or, respectively, backward.
- A truly analogous Braitenberg vehicle would convert the value of the motor
- unit to positive actuator commands instead of simply scaling them to the
- appropriate range.
-\end_layout
-
-\end_deeper
-\begin_layout Enumerate
-
-\emph on
-Expected observable behavior
-\emph default
-s.
+\begin_layout Standard
+Let us discuss the case in which the perceived stimulus is directly proportional
+ to the input stimulus, before looking at the opposite one.
 \begin_inset Float figure
 wide false
 sideways false
 status collapsed
-
-\begin_layout Plain Layout
-
-\end_layout
 
 \begin_layout Plain Layout
 \align center
@@ -409,14 +427,14 @@ name "fig:Brait-like-type-1-gradient"
 \end_inset
 
 Braitenberg-like Type 1 vehicle in an environmental stimulus gradient.
- The spherical gradient identified the environmental stimulus, centered
+ The spherical gradient identifies the environmental stimulus, centered
  on the red dot.
- The external green circle represent the minimum possible stimulus.
+ The external green circle represents the minimum possible stimulus.
  This will be equal to zero in a traditional Braitenberg vehicle, whereas
  it will be negative and equal to the minimum possible value (which is always
  negative) of the sensory unit in the standard Homeo setup.
  The red circle indicates the threshold value equal to exactly half the
- value of the stimulus, which is equivalent to exactly 0 in the standard
+ value of the stimulus, which is equivalent to exactly zero in the standard
  Homeo setup.
  Notice that the red circle may not be halfway between the center of the
  gradient and the green line, and its position depends on the chosen stimulus's
@@ -428,19 +446,9 @@ Braitenberg-like Type 1 vehicle in an environmental stimulus gradient.
 
 \end_layout
 
-\begin_layout Plain Layout
-
-\end_layout
-
 \end_inset
 
  
-\end_layout
-
-\begin_deeper
-\begin_layout Standard
-Let us discuss the case in which the perceived stimulus is directly proportional
- to the input stimulus, before looking at the opposite one.
 \end_layout
 
 \begin_layout Enumerate
@@ -613,7 +621,7 @@ reference "fig:Brait-like-type-1-gradient"
 
 \begin_layout Enumerate
 Finally an undamped unit will accelerate away (backward) in case A, whereas
- in case B it will accelerate rigthward (forward), then reverse acceleration
+ in case B it will accelerate rightward (forward), then reverse acceleration
  when it crosses the red line.
  It should converge on the red line as in the previous case, but with a
  much less stable behavior (i.e.
@@ -709,6 +717,7 @@ An undamped Newtonian vehicle will overshoot the line, then move backward
  move backward, overshoot, then converge back with ampler oscillations.
 \end_layout
 
+\begin_deeper
 \begin_layout Standard
 Notice, however, that there is a complication here.
  Imagine a vehicle starting with input less than zero (like vehicle A in
@@ -730,7 +739,49 @@ reference "fig:Brait-like-type-1-gradient"
 \end_layout
 
 \end_deeper
-\begin_layout Enumerate
+\begin_layout Standard
+
+\emph on
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+
+\emph on
+\begin_inset Graphics
+	filename Images/Braiten-1-with-2-gradients.pdf
+	lyxscale 150
+	scale 77
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:2-gradients-setup"
+
+\end_inset
+
+Three Braitenberg-like Type 1 vehicles in an environment with a slightly
+ more complex gradient landscape.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\emph default
+
 \begin_inset Flex ShortLabel
 status collapsed
 
@@ -778,7 +829,6 @@ reference "fig:2-gradients-setup"
  Eventually it will converge on the red line at X.
 \end_layout
 
-\begin_deeper
 \begin_layout Standard
 The previous environmental setup can be generalized to an environment 
 \begin_inset Quotes eld
@@ -803,7 +853,7 @@ uced gravitational distortions).
 status collapsed
 
 \begin_layout Plain Layout
-Notice that such an environmantl setup could be effectively simulated by
+Notice that such an environmental setup could be effectively simulated by
  a toroidal environment with only a few gradient (indeed, even just 1 gradient
  would suffice).
 \end_layout
@@ -843,9 +893,9 @@ comfort area
 \end_inset
 
  within a gradient.
- Consider, for instance, the (relatively extreme) case of an un undamped
- Newtonian vehicle with direct input-output connection and always positive
- actuator output (case 
+ Consider, for instance, the (relatively extreme) case of an undamped Newtonian
+ vehicle with direct input-output connection and always positive actuator
+ output (case 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "enu:Newton-unconn-damped"
@@ -932,28 +982,23 @@ reference "fig:Brait-like-type-1-gradient"
  
 \end_layout
 
-\end_deeper
-\begin_layout Enumerate
+\begin_layout Subsection
 
 \emph on
 Experimental observations
 \end_layout
 
-\begin_deeper
 \begin_layout Standard
 GO HERE.
  STILL MISSING
 \end_layout
 
-\end_deeper
-\end_deeper
-\begin_layout Enumerate
+\begin_layout Section
 
 \emph on
 Self-connected motor unit
 \end_layout
 
-\begin_deeper
 \begin_layout Standard
 Let us now focus on the standard case of a damped Newtonian unit and add
  to it the self-connection 
@@ -984,7 +1029,7 @@ paper and preparatory work therewith.
 \begin_inset Quotes eld
 \end_inset
 
-true Brainteberg
+true Braitenberg
 \begin_inset Quotes erd
 \end_inset
 
@@ -993,13 +1038,12 @@ true Brainteberg
  around zero, and finally Homeo setups with inverse input-output connections.
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Subsection
 
 \emph on
 Expected behaviors
 \end_layout
 
-\begin_deeper
 \begin_layout Enumerate
 Let us start again from Aristotelian units.
  The output will be directly proportional to the input stimulus 
@@ -1093,65 +1137,65 @@ Same behavior will be observed for an undamped unit: vehicle A will move
 
 \begin_layout Enumerate
 Let us now look at connection with reverse polarity (i.e.
- the input is the reverse of the iput source's stimulus)
+ the input is the reverse of the input source's stimulus)
 \end_layout
 
-\end_deeper
-\end_deeper
-\begin_layout Enumerate
+\begin_layout Section
 
 \emph on
 Self-connected sensory unit
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Subsection
+Expected behaviors
+\end_layout
+
+\begin_layout Subsection
+Experimental observations
+\end_layout
+
+\begin_layout Section
 
 \emph on
 Motor and sensory unit both self-connected 
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Subsection
+Expected behaviors
+\end_layout
+
+\begin_layout Subsection
+Experimental observations
+\end_layout
+
+\begin_layout Section
+Full connected network (including 
+\emph on
+both
+\emph default
+ 
+\begin_inset Formula $S\rightarrow M$
+\end_inset
+
+ and 
+\begin_inset Formula $M\rightarrow S$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Section
 
 \emph on
 Adding uniselector action to motor unit
-\begin_inset Float figure
-wide false
-sideways false
-status collapsed
-
-\begin_layout Plain Layout
-\align center
-
-\emph on
-\begin_inset Graphics
-	filename Images/Braiten-1-with-2-gradients.pdf
-	lyxscale 150
-	scale 77
-
-\end_inset
-
-
-\begin_inset Caption
-
-\begin_layout Plain Layout
-\begin_inset CommandInset label
-LatexCommand label
-name "fig:2-gradients-setup"
-
-\end_inset
-
-Three Braitenberg-like Type 1 vehicles in an environment with a slightly
- more complex gradient landscape.
 \end_layout
 
-\end_inset
-
-
+\begin_layout Subsection
+Expected behaviors
 \end_layout
 
-\end_inset
-
-
+\begin_layout Subsection
+Experimental observations
 \end_layout
 
 \begin_layout Standard
@@ -1165,7 +1209,7 @@ Three Braitenberg-like Type 1 vehicles in an environment with a slightly
 \begin_inset Float table
 wide false
 sideways true
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Tabular
@@ -1992,7 +2036,7 @@ reference "enu:Generalized-environment"
 \begin_inset Float table
 wide false
 sideways true
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Tabular
@@ -2697,7 +2741,7 @@ reference "tab:Unconnected-summary"
 \begin_inset Float table
 wide false
 sideways true
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Tabular
@@ -3402,7 +3446,7 @@ reference "tab:Unconnected-summary"
 \begin_inset Float table
 wide false
 sideways true
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Tabular
@@ -4109,6 +4153,10 @@ reference "tab:Unconnected-summary"
 \end_inset
 
 
+\end_layout
+
+\begin_layout Chapter
+Type-2 taxes
 \end_layout
 
 \end_body
