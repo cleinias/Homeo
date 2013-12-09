@@ -64,10 +64,11 @@ class HomeoUnitInput(HomeoUnit):
     of the calling class/instance
     
     Instance variable:
-    sensor <aTransducer> an instance of a sensory subclass of Transducer 
+    sensor <aTransducer> an instance of a sensory subclass of Transducer
+    alway_pos <Boolean>  whether the scaled transducer value is always positive or centered around zero  
     '''
 
-    def __init__(self, sensor = None):
+    def __init__(self, sensor = None, always_pos=True):
         '''
         Initialize according to superclass
         '''
@@ -84,7 +85,16 @@ class HomeoUnitInput(HomeoUnit):
                           fset = lambda self, aValue: self.setSensor(aValue))
     
     def selfUpdate(self):
-        self.criticalDeviation = scaleTo(self.sensor.range(), [-self.maxDeviation, self.maxDeviation], self.sensor.read())
+        '''
+        Read the value from the external transducer (self.sensor) and scale it to the unit's deviation. 
+        NOTICE that the sensor's value is always positive WHILE the scaled unit's deviation value 
+        MAY BE positive is the ivar always_pos is set to true (default) OR  centered at 0 (zero), 
+        (hence either positive or negative) if the ivar always_pos is set to False'''
+        
+        if self.always_pos == True:
+            self.criticalDeviation = scaleTo(self.sensor.range(), [0, self.maxDeviation], self.sensor.read())
+        else:
+            self.criticalDeviation = scaleTo(self.sensor.range(), [-self.maxDeviation, self.maxDeviation], self.sensor.read())
         self.computeOutput()
         if self.debugMode:
             print "%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput)
@@ -96,4 +106,4 @@ class HomeoUnitInput(HomeoUnit):
         #                                                                 self.criticalDeviation )    
         #=======================================================================
     
-    
+    def 
