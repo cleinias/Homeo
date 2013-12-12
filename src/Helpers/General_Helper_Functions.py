@@ -1,3 +1,5 @@
+from __future__ import division
+
 def withAllSubclasses(aClass):
     """
     Return a list with aClass and all its first-level subclasses

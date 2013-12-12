@@ -73,9 +73,12 @@ class HomeoUnitInput(HomeoUnit):
         Initialize according to superclass
         '''
         super(HomeoUnitInput, self).__init__()
-        'Initialize sensor, if passed'
+        'Initialize sensor and always_pos, if passed'
         if sensor is not None:
             self._sensor = sensor
+        if always_pos == False:
+             self.always_pos = False
+        else: self.always_pos = True   
     
     def setSensor(self, aTransducer):
         self._sensor = aTransducer
@@ -101,9 +104,15 @@ class HomeoUnitInput(HomeoUnit):
 
         #=======================================================================
         # "for debugging"
-        # print "Raw value read: %d scaled Value: %d self critDev: %d)" %(self.sensor.read(),
-        #                                                                 scaleTo(self.sensor.range(), [-self.maxDeviation, self.maxDeviation], self.sensor.read()),
-        #                                                                 self.criticalDeviation )    
+        # if self.always_pos == True:
+        #     print_scaled_value = scaleTo(self.sensor.range(), [0, self.maxDeviation], self.sensor.read())
+        # else:
+        #     print_scaled_value = scaleTo(self.sensor.range(), [-self.maxDeviation, self.maxDeviation], self.sensor.read())
+        # print "Sensor range min: %f  max: %f raw value read: %f scaled Value: %f self critDev: %f)" %(self.sensor.range()[0],
+        #                                                                                              self.sensor.range()[1],
+        #                                                                                              self.sensor.read(),
+        #                                                                                              print_scaled_value,
+        #                                                                                              self.criticalDeviation )    
+        # 
         #=======================================================================
-    
-    def 
+
