@@ -498,7 +498,7 @@ def initializeBraiten1_1():
     
     motor_uniselector_timing= 100
     
-    motor_self_connection_active = 'active'
+    motor_self_connection_active = False  # Set to either True or False to (dis-)active uniselector 
     motor_self_connection_uniselector = 'manual'
     motor_self_connection_switch = -1
     motor_self_connection_potentiomenter = 0.1
@@ -531,9 +531,12 @@ def initializeBraiten1_1():
     motor.viscosity = motor_visc
     motor.density = motor_density
     motor.noise = motor_self_noise
+    motor.uniselectorActive = motor_self_connection_active
     motor.uniselectorTimeInterval = motor_uniselector_timing
     
     'self-connection'
+    'disactivate self-connection'
+    motor.inputConnections[0].status = 0
     motor.potentiometer = motor_self_connection_potentiomenter
     motor.switch = motor_self_connection_switch
     motor.inputConnections[0].noise = motor_self_connection_noise
