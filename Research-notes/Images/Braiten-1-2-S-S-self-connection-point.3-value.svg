@@ -1,0 +1,874 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.2"
+   id="svg2"
+   inkscape:version="0.48.4 r9939"
+   width="635.92017"
+   height="286.20416"
+   sodipodi:docname="Braiten-1-2-S-S-self-connection-point.3-value.svg">
+  <metadata
+     id="metadata260">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1026"
+     id="namedview258"
+     showgrid="false"
+     inkscape:zoom="1.2685914"
+     inkscape:cx="-6.7485366"
+     inkscape:cy="321.47611"
+     inkscape:window-x="1047"
+     inkscape:window-y="-3"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <title
+     id="title4">pyqtgraph SVG export</title>
+  <desc
+     id="desc6">Generated with Qt and pyqtgraph</desc>
+  <defs
+     id="defs8">
+    <clipPath
+       id="ViewBox_1_clip-9">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 45,5 616,0 0,73.3333 -616,0 L 45,5"
+         vector-effect="non-scaling-stroke"
+         id="path60-0" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_2_clip-2">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 5,84.3333 656,0 0,73.3337 -656,0 0,-73.3337"
+         vector-effect="non-scaling-stroke"
+         id="path83-7" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_3_clip-3">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 45,163.667 616,0 0,73.333 -616,0 0,-73.333"
+         vector-effect="non-scaling-stroke"
+         id="path142-8" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_4_clip-7">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 5,243 656,0 0,73.333 -656,0 L 5,243"
+         vector-effect="non-scaling-stroke"
+         id="path165-7" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_5_clip-5">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 45,322.333 616,0 0,73.334 -616,0 0,-73.334"
+         vector-effect="non-scaling-stroke"
+         id="path224-4" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_6_clip-4">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 5,401.667 656,0 0,73.333 -656,0 0,-73.333"
+         vector-effect="non-scaling-stroke"
+         id="path247-9" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_1_clip-8">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 45,5 616,0 0,73.3333 -616,0 L 45,5"
+         vector-effect="non-scaling-stroke"
+         id="path60-6" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_2_clip-8">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 5,84.3333 656,0 0,73.3337 -656,0 0,-73.3337"
+         vector-effect="non-scaling-stroke"
+         id="path83-6" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_3_clip-36">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 45,163.667 616,0 0,73.333 -616,0 0,-73.333"
+         vector-effect="non-scaling-stroke"
+         id="path142-6" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_4_clip-0">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 5,243 656,0 0,73.333 -656,0 L 5,243"
+         vector-effect="non-scaling-stroke"
+         id="path165-5" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_5_clip-9">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 45,322.333 616,0 0,73.334 -616,0 0,-73.334"
+         vector-effect="non-scaling-stroke"
+         id="path224-8" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_6_clip-6">
+      <path
+         style="fill-rule:evenodd"
+         inkscape:connector-curvature="0"
+         d="m 5,401.667 656,0 0,73.333 -656,0 0,-73.333"
+         vector-effect="non-scaling-stroke"
+         id="path247-4" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_1_clip-0">
+      <path
+         d="m 45,5 616,0 0,73.3333 -616,0 L 45,5"
+         vector-effect="non-scaling-stroke"
+         id="path60-3"
+         inkscape:connector-curvature="0" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_2_clip">
+      <path
+         d="m 5,84.3333 656,0 0,73.3337 -656,0 0,-73.3337"
+         vector-effect="non-scaling-stroke"
+         id="path83"
+         inkscape:connector-curvature="0" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_3_clip-0">
+      <path
+         d="m 45,163.667 616,0 0,73.333 -616,0 0,-73.333"
+         vector-effect="non-scaling-stroke"
+         id="path142-4"
+         inkscape:connector-curvature="0" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_4_clip">
+      <path
+         d="m 5,243 656,0 0,73.333 -656,0 L 5,243"
+         vector-effect="non-scaling-stroke"
+         id="path165"
+         inkscape:connector-curvature="0" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_5_clip-4">
+      <path
+         d="m 45,322.333 616,0 0,73.334 -616,0 0,-73.334"
+         vector-effect="non-scaling-stroke"
+         id="path224-9"
+         inkscape:connector-curvature="0" />
+    </clipPath>
+    <clipPath
+       id="ViewBox_6_clip">
+      <path
+         d="m 5,401.667 656,0 0,73.333 -656,0 0,-73.333"
+         vector-effect="non-scaling-stroke"
+         id="path247"
+         inkscape:connector-curvature="0" />
+    </clipPath>
+  </defs>
+  <g
+     id="PlotItem_1"
+     style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel"
+     transform="translate(-25.079834,-1.5723166)">
+    <g
+       id="AxisItem_1"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g14"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+        <polyline
+           points="45.0,5.0 45.0,79.113566312"
+           vector-effect="non-scaling-stroke"
+           id="polyline16"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g18"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+        <polyline
+           points="45.5,42.056833688 50.5,42.056833688"
+           vector-effect="non-scaling-stroke"
+           id="polyline20"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g22"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:0.49803904;font-family:Sans Serif">
+        <polyline
+           points="45.5,77.688361784 48.8333,77.688361784"
+           vector-effect="non-scaling-stroke"
+           id="polyline24"
+           style="fill:none" />
+        <polyline
+           points="45.5,6.4252651664 48.8333,6.4252651664"
+           vector-effect="non-scaling-stroke"
+           id="polyline26"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g28"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:0.33333297;font-family:Sans Serif">
+        <polyline
+           points="45.5,70.562035952 48.0,70.562035952"
+           vector-effect="non-scaling-stroke"
+           id="polyline30"
+           style="fill:none" />
+        <polyline
+           points="45.5,63.43571012 48.0,63.43571012"
+           vector-effect="non-scaling-stroke"
+           id="polyline32"
+           style="fill:none" />
+        <polyline
+           points="45.5,56.309384288 48.0,56.309384288"
+           vector-effect="non-scaling-stroke"
+           id="polyline34"
+           style="fill:none" />
+        <polyline
+           points="45.5,49.183058456 48.0,49.183058456"
+           vector-effect="non-scaling-stroke"
+           id="polyline36"
+           style="fill:none" />
+        <polyline
+           points="45.5,34.930507856 48.0,34.930507856"
+           vector-effect="non-scaling-stroke"
+           id="polyline38"
+           style="fill:none" />
+        <polyline
+           points="45.5,27.804182024 48.0,27.804182024"
+           vector-effect="non-scaling-stroke"
+           id="polyline40"
+           style="fill:none" />
+        <polyline
+           points="45.5,20.677856192 48.0,20.677856192"
+           vector-effect="non-scaling-stroke"
+           id="polyline42"
+           style="fill:none" />
+        <polyline
+           points="45.5,13.5515707856 48.0,13.5515707856"
+           vector-effect="non-scaling-stroke"
+           id="polyline44"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         transform="matrix(1,0,0,1.01064,5.5,5)"
+         id="g46"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+        <text
+           font-size="11.875"
+           font-style="normal"
+           font-weight="400"
+           x="31"
+           xml:space="preserve"
+           y="40.6562"
+           id="text48"
+           style="font-size:11.875px;font-style:normal;font-weight:400;fill:#969696;fill-opacity:1;stroke:none">0</text>
+        <text
+           font-size="11.875"
+           font-style="normal"
+           font-weight="400"
+           x="19"
+           xml:space="preserve"
+           y="75.921898"
+           id="text50"
+           style="font-size:11.875px;font-style:normal;font-weight:400;fill:#969696;fill-opacity:1;stroke:none">-10</text>
+        <text
+           font-size="11.875"
+           font-style="normal"
+           font-weight="400"
+           x="23"
+           xml:space="preserve"
+           y="5.4218798"
+           id="text52"
+           style="font-size:11.875px;font-style:normal;font-weight:400;fill:#969696;fill-opacity:1;stroke:none">10</text>
+      </g>
+    </g>
+    <g
+       id="ViewBox_1"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g55"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:none;font-family:Sans Serif">
+        <path
+           d="m 45,5 616,0 0,73.3333 -616,0 L 45,5"
+           vector-effect="non-scaling-stroke"
+           id="path57"
+           inkscape:connector-curvature="0" />
+      </g>
+      <clipPath
+         id="ViewBox_1_clip">
+        <path
+           d="m 45,5 616,0 0,73.3333 -616,0 L 45,5"
+           vector-effect="non-scaling-stroke"
+           id="path60"
+           inkscape:connector-curvature="0" />
+      </clipPath>
+      <g
+         clip-path="url(#ViewBox_1_clip)"
+         id="g62">
+        <g
+           id="ChildGroup_1"
+           style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+          <g
+             id="InfiniteLine_1"
+             style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+            <g
+               font-size="11.875"
+               font-style="normal"
+               font-weight="400"
+               id="g66"
+               style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#e6e6af;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+              <polyline
+                 points="661.00268021,41.6667 44.999982536,41.6667"
+                 vector-effect="non-scaling-stroke"
+                 id="polyline68"
+                 style="fill:none" />
+            </g>
+          </g>
+          <g
+             id="PlotDataItem_1">
+            <g
+               id="PlotCurveItem_1"
+               style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+              <g
+                 font-size="11.875"
+                 font-style="normal"
+                 font-weight="400"
+                 id="g72"
+                 style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#ff0000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+                <path
+                   d="m 29.4743,41.667229 1.21667,-0.05535 1.21667,0.03219 1.21667,0.02383 1.21667,-0.02098 1.21667,0.02887 1.21667,-0.09033 1.21667,-0.01939 1.21667,-0.01798 1.21667,-0.138099 1.21667,0.0086 1.21667,-0.06501 1.21667,-0.02246 1.21667,-0.01611 1.21667,0.0575 1.21667,-0.06233 1.21667,-0.0893 1.21667,0.03487 1.21667,-0.04065 1.21667,-0.0073 1.21667,-0.04862 1.21667,-0.09988 1.21667,-0.02239 1.21667,-0.02828 1.21667,0.04178 1.21667,-0.0519 1.21667,-0.04573 1.21667,-0.03459 1.21667,0.05578 1.21667,0.01576 1.21667,0.0831 1.21667,-0.08525 1.21667,-0.07326 1.21667,-0.03755 1.21667,0.126712 1.21667,-0.02059 1.21667,0.0032 1.21667,-0.07739 1.21667,-0.05817 1.21667,-0.0011 1.21667,-0.05045 1.21667,0.06004 1.21667,-0.01029 1.21667,0.04601 1.21667,-0.03071 1.21667,0.09889 1.21667,-0.05514 1.21667,-0.04234 1.21667,0.01237 1.21667,-0.02739 1.21667,-0.117722 1.21667,0.01696 1.21667,-0.04153 1.21667,-0.173955 1.21667,-0.122481 1.21667,-0.05574 1.21667,-0.01971 1.21667,0.02101 1.21667,-0.0183 1.21667,0.03356 1.21667,-0.0043 1.21667,-0.02531 1.21667,-0.08437 1.21667,0.01928 1.21667,-0.05172 1.21667,-0.101045 1.21667,-0.06325 1.21667,0.01417 1.21667,0.0195 1.21667,-0.04199 1.21667,-0.134468 1.21667,-0.05775 1.21667,-0.02866 1.21667,-0.0017 1.21667,-0.09195 1.21667,-0.115746 1.21667,-0.02591 1.21667,0.0598 1.21667,-0.125901 1.21667,0.08934 1.21667,-0.05066 1.21667,0.111057 1.21667,0.01393 1.21667,0.02362 1.21667,0.05955 1.21667,-0.110775 1.21667,0.04136 1.21667,-0.116417 1.21667,-0.03483 1.21667,-0.07048 1.21667,-0.0117 1.21667,-0.08359 1.21667,0.0042 1.21667,0.0012 1.21667,0.105981 1.21667,-0.03529 1.21667,-0.02687 1.21667,-0.101186 1.21667,0.04185 1.21667,-0.04449 1.21667,-0.01375 1.21667,-0.0011 1.21667,-0.06738 1.21667,-0.175224 1.21667,-0.04548 1.21667,-0.009 1.21667,0.03963 1.21667,-0.0018 1.21667,0.05154 1.21667,0.132564 1.21667,-0.05084 1.21667,-0.0065 1.21667,-0.118532 1.21667,-0.02817 1.21667,-0.05944 1.21667,0.02817 1.21667,-0.142789 1.21667,-0.131295 1.21667,-0.04619 1.21667,-0.03741 1.21667,-0.06004 1.21667,-0.04456 1.21667,-0.08479 1.21667,-0.03772 1.21667,-0.118004 1.21667,-0.168948 1.21667,-0.137606 1.21667,0.03261 1.21667,-0.108237 1.21667,0.03575 1.21667,0.0057 1.21667,-0.116169 1.21667,-0.06297 1.21667,-0.0788 1.21667,0.02404 1.21667,-0.06882 1.21667,5.99e-4 1.21667,-0.04587 1.21667,-0.09622 1.21667,-0.07975 1.21667,-0.119061 1.21667,-0.08539 1.21667,-0.0599 1.21667,-0.153331 1.21667,-0.03667 1.21667,-0.03917 1.21667,-0.03631 1.21667,-0.09671 1.21667,0.08687 1.21667,-0.08416 1.21667,-0.05884 1.21667,-0.07182 1.21667,-0.06586 1.21667,-1.76e-4 1.21667,-0.04322 1.21667,-0.134855 1.21667,-0.08017 1.21667,-0.10785 1.21667,-0.148641 1.21667,-0.0636 1.21667,-0.07051 1.21667,-0.01685 1.21667,0.02584 1.21667,-0.03561 1.21667,-0.121669 1.21667,-0.03261 1.21667,-0.07354 1.21667,-0.120472 1.21667,-0.114089 1.21667,-0.135068 1.21667,0.05433 1.21667,-0.01548 1.21667,-0.05024 1.21667,0.06723 1.21667,-0.02003 1.21667,-0.01343 1.21667,-0.08081 1.21667,-0.06551 1.21667,0.02937 1.21667,0.02267 1.21667,-0.145997 1.21667,-0.121529 1.21667,-0.04555 1.21667,-0.140779 1.21667,0.0062 1.21667,-0.126183 1.21667,0.02806 1.21667,-0.141625 1.21667,-0.04291 1.21667,-0.115429 1.21667,-0.06114 1.21667,-0.11557 1.21667,-0.06688 1.21667,-0.104641 1.21667,-0.111198 1.21667,-0.03596 1.21667,-0.08877 1.21667,-0.140109 1.21667,-0.175895 1.21667,-0.17057 1.21667,-0.08426 1.21667,-0.03832 1.21667,-0.06914 1.21667,-0.03966 1.21667,-0.05482 1.21667,-0.0659 1.21667,-0.08077 1.21667,-0.11818 1.21667,-0.118637 1.21667,-0.127664 1.21667,-0.03617 1.21667,-0.09223 1.21667,-0.134961 1.21667,-0.02718 1.21667,-0.03596 1.21667,-0.02352 1.21667,0.03892 1.21667,-0.05842 1.21667,-0.0537 1.21667,-0.126182 1.21667,-0.09858 1.21667,-0.05729 1.21667,-0.142118 1.21667,-0.07185 1.21667,-0.130766 1.21667,-0.132705 1.21667,-0.17117 1.21667,-0.0053 1.21667,-0.08994 1.21667,-0.146631 1.21667,-0.09043 1.21667,-0.07915 1.21667,-0.15132 1.21667,-0.08528 1.21667,-0.07323 1.21667,-0.104429 1.21667,-0.157138 1.21667,-0.09759 1.21667,-0.09949 1.21667,-0.06635 1.21667,-0.06554 1.21667,-0.02701 1.21667,-0.217285 1.21667,-0.145785 1.21667,-0.08448 1.21667,-0.03265 1.21667,-0.123362 1.21667,0.01943 1.21667,-0.0667 1.21667,-0.07584 1.21667,-0.07228 1.21667,-0.105487 1.21667,-0.143106 1.21667,-0.135667 1.21667,-0.109718 1.21667,0.04033 1.21667,-0.03878 1.21667,-0.0593 1.21667,-0.03371 1.21667,-0.210234 1.21667,-0.228003 1.21667,-0.03607 1.21667,-0.03152 1.21667,-0.182805 1.21667,-0.117298 1.21667,-0.138769 1.21667,-0.12301 1.21667,-0.03568 1.21667,-0.0196 1.21667,-0.05162 1.21667,-0.07013 1.21667,-0.08842 1.21667,-0.08885 1.21667,0.0082 1.21667,-0.09308 1.21667,-0.121352 1.21667,-0.158019 1.21667,-0.11342 1.21667,-0.242494 1.21667,-0.02528 1.21667,-0.192499 1.21667,-0.05222 1.21667,-0.137853 1.21667,-0.105381 1.21667,-0.153295 1.21667,-0.09861 1.21667,-0.07827 1.21667,-0.20142 1.21667,-0.22691 1.21667,-0.183157 1.21667,-0.148782 1.21667,-0.141132 1.21667,-0.231423 1.21667,-0.08405 1.21667,-0.174237 1.21667,-0.08208 1.21667,-0.174766 1.21667,-0.140461 1.21667,-0.134151 1.21667,-0.169971 1.21667,-0.179773 1.21667,-0.103124 1.21667,-0.09061 1.21667,-0.243728 1.21667,-0.13616 1.21667,-0.09188 1.21667,-0.141907 1.21667,-0.01929 1.21667,-0.138134 1.21667,-0.0507 1.21667,-0.111445 1.21667,-0.104712 1.21667,-0.11959 1.21667,-0.156115 1.21667,-0.183968 1.21667,-0.115218 1.21667,-0.128545 1.21667,-0.120012 1.21667,-0.136971 1.21667,-0.164084 1.21667,-0.135102 1.21667,-0.209494 1.21667,-0.214958 1.21667,-0.206744 1.21667,-0.142471 1.21667,-0.201913 1.21667,-0.09946 1.21667,-0.04802 1.21667,-0.144022 1.21667,-0.06293 1.21667,-0.101291 1.21667,-0.11201 1.21667,-0.132317 1.21667,-0.128686 1.21667,-0.225324 1.21667,-0.140849 1.21667,-0.138663 1.21667,-0.04633 1.21667,-0.154106 1.21667,-0.109048 1.21667,-0.07453 1.21667,-0.02962 1.21667,-0.126041 1.21667,-0.242635 1.21667,-0.163942 1.21667,-0.146032 1.21667,-0.124173 1.21667,-0.168526 1.21667,-0.05934 1.21667,-0.155516 1.21667,-0.104253 1.21667,-0.229308 1.21667,-0.146525 1.21667,0.04086 1.21667,-0.150369 1.21667,-0.194192 1.21667,-0.130414 1.21667,-0.08881 1.21667,-0.111657 1.21667,-0.197084 1.21667,-0.142224 1.21667,-0.09882 1.21667,-0.05147 1.21667,-0.233644 1.21667,-0.186295 1.21667,-0.09251 1.21667,-0.131965 1.21667,-0.125724 1.21667,-0.04767 1.21667,-0.123608 1.21667,-0.165071 1.21667,-0.135561 1.21667,-0.06811 1.21667,-0.155833 1.21667,-0.107885 1.21667,-0.152272 1.21667,-0.09819 1.21667,-0.153013 1.21667,-0.05814 1.21667,-0.240343 1.21667,-0.08116 1.21667,-0.132705 1.21667,-0.03184 1.21667,-0.04051 1.21667,-0.09794 1.21667,-0.06544 1.21667,-0.01685 1.21667,-0.07887 1.21667,-0.04301 1.21667,-0.09833 1.21667,-0.04234 1.21667,-0.127733 1.21667,-0.135526 1.21667,-0.12583 1.21667,-0.113667 1.21667,-0.161791 1.21667,-0.09583 1.21667,-0.101856 1.21667,-0.121811 1.21667,-0.08595 1.21667,-0.02782 1.21667,-0.166481 1.21667,-0.0831 1.21667,-0.02623 1.21667,-0.06639 1.21667,-0.08366 1.21667,-0.102138 1.21667,-0.03956 1.21667,0.04724 1.21667,-0.07168 1.21667,-0.06554 1.21667,-0.16158 1.21667,-0.03977 1.21667,-0.01051 1.21667,-0.01178 1.21667,-0.06293 1.21667,-0.09121 1.21667,-0.08151 1.21667,-0.129356 1.21667,-0.1349615 1.21667,-0.108766 1.21667,-0.00744 1.21667,-0.055458 1.21667,-0.1148654 1.21667,-0.1430352 1.21667,-0.1294615 1.21667,-0.1275224 1.21667,-0.076048 1.21667,-0.050663 1.21667,-0.1330224 1.21667,-0.1577371 1.21667,-0.1076731 1.21667,-0.065788 1.21667,-0.113032 1.21667,-0.1117628 1.21667,-0.01717 1.21667,0.015548 1.21667,-0.030461 1.21667,-0.1140192 1.21667,-0.1950384 1.21667,-0.1088365 1.21667,-0.1989872 1.21667,-0.053907 1.21667,-0.038218 1.21667,2.115e-4 1.21667,-0.095016 1.21667,-0.062686 1.21667,-0.1353846 1.21667,-0.1360897 1.21667,-0.052567 1.21667,-0.00878 1.21667,-0.020872 1.21667,-0.056058 1.21667,-0.1626377 1.21667,-0.173391 1.21667,-0.080385 1.21667,0.029968 1.21667,-0.033811 1.21667,-0.049817 1.21667,-0.048619 1.21667,-0.00173 1.21667,-3.878e-4 1.21667,0.014913 1.21667,-0.014913 1.21667,0 1.21667,0 1.21667,0 1.21667,0.01724 1.21667,-0.01724 1.21667,0 1.21667,0 1.21667,0 1.21667,0.018192 1.21667,0.029615 1.21667,-0.047808 1.21667,0.037231 1.21667,0 1.21667,-0.017064 1.21667,0.038888 1.21667,0.021894 1.21667,0.013961 1.21667,0.050875 1.21667,-0.044564 1.21667,0.010436 1.21667,0.014526 1.21667,-0.022247 1.21667,0.00374 1.21667,-0.036385 1.21667,-0.051192 1.21667,-0.012869 1.21667,-0.00723 1.21667,0 1.21667,0.078445 1.21667,0.1189551 1.21667,-0.043189 1.21667,0.00599 1.21667,-0.072135 1.21667,0.02891 1.21667,0.019955 1.21667,0.039205"
+                   vector-effect="non-scaling-stroke"
+                   id="path74"
+                   inkscape:connector-curvature="0" />
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     id="PlotItem_3"
+     style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel"
+     transform="translate(-25.079834,-71.572317)">
+    <g
+       id="AxisItem_2"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g96"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+        <polyline
+           points="45.0,163.667 45.0,237.780566312"
+           vector-effect="non-scaling-stroke"
+           id="polyline98"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g100"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+        <polyline
+           points="45.5,200.723833688 50.5,200.723833688"
+           vector-effect="non-scaling-stroke"
+           id="polyline102"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g104"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:0.49803904;font-family:Sans Serif">
+        <polyline
+           points="45.5,236.355361784 48.8333,236.355361784"
+           vector-effect="non-scaling-stroke"
+           id="polyline106"
+           style="fill:none" />
+        <polyline
+           points="45.5,165.092265166 48.8333,165.092265166"
+           vector-effect="non-scaling-stroke"
+           id="polyline108"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g110"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:0.33333297;font-family:Sans Serif">
+        <polyline
+           points="45.5,229.229035952 48.0,229.229035952"
+           vector-effect="non-scaling-stroke"
+           id="polyline112"
+           style="fill:none" />
+        <polyline
+           points="45.5,222.10271012 48.0,222.10271012"
+           vector-effect="non-scaling-stroke"
+           id="polyline114"
+           style="fill:none" />
+        <polyline
+           points="45.5,214.976384288 48.0,214.976384288"
+           vector-effect="non-scaling-stroke"
+           id="polyline116"
+           style="fill:none" />
+        <polyline
+           points="45.5,207.850058456 48.0,207.850058456"
+           vector-effect="non-scaling-stroke"
+           id="polyline118"
+           style="fill:none" />
+        <polyline
+           points="45.5,193.597507856 48.0,193.597507856"
+           vector-effect="non-scaling-stroke"
+           id="polyline120"
+           style="fill:none" />
+        <polyline
+           points="45.5,186.471182024 48.0,186.471182024"
+           vector-effect="non-scaling-stroke"
+           id="polyline122"
+           style="fill:none" />
+        <polyline
+           points="45.5,179.344856192 48.0,179.344856192"
+           vector-effect="non-scaling-stroke"
+           id="polyline124"
+           style="fill:none" />
+        <polyline
+           points="45.5,172.218570786 48.0,172.218570786"
+           vector-effect="non-scaling-stroke"
+           id="polyline126"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         transform="matrix(1,0,0,1.01064,5.5,163.667)"
+         id="g128"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+        <text
+           font-size="11.875"
+           font-style="normal"
+           font-weight="400"
+           x="31"
+           xml:space="preserve"
+           y="40.6562"
+           id="text130"
+           style="font-size:11.875px;font-style:normal;font-weight:400;fill:#969696;fill-opacity:1;stroke:none">0</text>
+        <text
+           font-size="11.875"
+           font-style="normal"
+           font-weight="400"
+           x="19"
+           xml:space="preserve"
+           y="75.921898"
+           id="text132"
+           style="font-size:11.875px;font-style:normal;font-weight:400;fill:#969696;fill-opacity:1;stroke:none">-10</text>
+        <text
+           font-size="11.875"
+           font-style="normal"
+           font-weight="400"
+           x="23"
+           xml:space="preserve"
+           y="5.4218798"
+           id="text134"
+           style="font-size:11.875px;font-style:normal;font-weight:400;fill:#969696;fill-opacity:1;stroke:none">10</text>
+      </g>
+    </g>
+    <g
+       id="ViewBox_3"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g137"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:none;font-family:Sans Serif">
+        <path
+           d="m 45,163.667 616,0 0,73.3333 -616,0 0,-73.3333"
+           vector-effect="non-scaling-stroke"
+           id="path139"
+           inkscape:connector-curvature="0" />
+      </g>
+      <clipPath
+         id="ViewBox_3_clip">
+        <path
+           d="m 45,163.667 616,0 0,73.333 -616,0 0,-73.333"
+           vector-effect="non-scaling-stroke"
+           id="path142"
+           inkscape:connector-curvature="0" />
+      </clipPath>
+      <g
+         clip-path="url(#ViewBox_3_clip)"
+         id="g144">
+        <g
+           id="ChildGroup_3"
+           style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+          <g
+             id="InfiniteLine_2"
+             style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+            <g
+               font-size="11.875"
+               font-style="normal"
+               font-weight="400"
+               id="g148"
+               style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#e6e6af;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+              <polyline
+                 points="661.00268021,200.333 44.999982536,200.333"
+                 vector-effect="non-scaling-stroke"
+                 id="polyline150"
+                 style="fill:none" />
+            </g>
+          </g>
+          <g
+             id="PlotDataItem_3">
+            <g
+               id="PlotCurveItem_3"
+               style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+              <g
+                 font-size="11.875"
+                 font-style="normal"
+                 font-weight="400"
+                 id="g154"
+                 style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#00ff00;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+                <path
+                   d="m 29.4743,200.35126 1.21667,-0.10566 1.21667,-0.0642 1.21667,-0.0343 1.21667,0.0473 1.21667,-0.0889 1.21667,0.0975 1.21667,0.0384 1.21667,-0.0637 1.21667,0.0555 1.21667,0.0302 1.21667,-0.0333 1.21667,0.0248 1.21667,0.0137 1.21667,-0.0447 1.21667,-0.0704 1.21667,-0.0311 1.21667,0.0497 1.21667,-0.11243 1.21667,-0.0402 1.21667,-0.0103 1.21667,-0.098 1.21667,-0.0944 1.21667,-0.009 1.21667,-0.13281 1.21667,-0.0552 1.21667,-0.0716 1.21667,-0.0179 1.21667,-0.15488 1.21667,-0.0148 1.21667,-0.13478 1.21667,-0.0884 1.21667,0.0231 1.21667,-0.0259 1.21667,-0.10196 1.21667,-0.097 1.21667,-0.10094 1.21667,-0.18724 1.21667,0.003 1.21667,-0.0828 1.21667,-0.0591 1.21667,-0.0854 1.21667,-0.14321 1.21667,-0.0758 1.21667,-0.0683 1.21667,0.0241 1.21667,-0.005 1.21667,0.0478 1.21667,-0.0332 1.21667,0.0426 1.21667,0.034 1.21667,-0.095 1.21667,-0.12128 1.21667,-0.13563 1.21667,-0.0307 1.21667,-0.0101 1.21667,-0.007 1.21667,-0.007 1.21667,-0.1211 1.21667,-0.0165 1.21667,0.008 1.21667,0.0523 1.21667,-0.0519 1.21667,0.0112 1.21667,-0.0885 1.21667,-0.16676 1.21667,0.12276 1.21667,-0.0611 1.21667,-0.0532 1.21667,-0.0546 1.21667,-0.0386 1.21667,-0.014 1.21667,-0.0498 1.21667,-0.13345 1.21667,0.0778 1.21667,-0.0294 1.21667,-0.0249 1.21667,-0.0781 1.21667,-0.0219 1.21667,-0.1515 1.21667,-0.0929 1.21667,-0.0366 1.21667,-0.0672 1.21667,0.0739 1.21667,-0.03 1.21667,-0.0904 1.21667,-0.0724 1.21667,-0.0123 1.21667,-0.11123 1.21667,0.008 1.21667,-0.0752 1.21667,-0.0977 1.21667,-0.0296 1.21667,-0.025 1.21667,-0.0875 1.21667,-0.0312 1.21667,-0.0346 1.21667,-0.10218 1.21667,0.0223 1.21667,-0.14017 1.21667,-0.18221 1.21667,-0.10559 1.21667,-0.033 1.21667,-0.20121 1.21667,-0.0132 1.21667,-0.0265 1.21667,-0.0743 1.21667,-0.0551 1.21667,-0.0998 1.21667,-0.028 1.21667,0.021 1.21667,0.0244 1.21667,-0.0602 1.21667,-0.17724 1.21667,-0.0811 1.21667,-0.064 1.21667,-0.1033 1.21667,-0.0528 1.21667,-0.0342 1.21667,-0.0912 1.21667,-0.0491 1.21667,0.0499 1.21667,-0.0719 1.21667,0.0198 1.21667,-0.0789 1.21667,3.6e-4 1.21667,-0.0261 1.21667,-0.008 1.21667,-0.0356 1.21667,-0.1967 1.21667,0.0171 1.21667,-0.0208 1.21667,-0.14021 1.21667,-0.0652 1.21667,0.0232 1.21667,0.0638 1.21667,0.003 1.21667,-0.0494 1.21667,-0.0154 1.21667,-0.0459 1.21667,-0.13598 1.21667,-0.0554 1.21667,0.0329 1.21667,-0.0724 1.21667,0.0292 1.21667,-0.0248 1.21667,-0.028 1.21667,-0.0579 1.21667,-0.0964 1.21667,0.005 1.21667,0.0162 1.21667,0.0222 1.21667,-0.14603 1.21667,-0.006 1.21667,0.0158 1.21667,0.0154 1.21667,0.0374 1.21667,-0.12964 1.21667,-0.0737 1.21667,0.0655 1.21667,-0.18728 1.21667,-0.009 1.21667,-0.0709 1.21667,-0.002 1.21667,-0.0111 1.21667,-0.0574 1.21667,-0.0116 1.21667,-0.0288 1.21667,0.0709 1.21667,0.002 1.21667,0.038 1.21667,-0.0174 1.21667,-0.10408 1.21667,0.0643 1.21667,0.0163 1.21667,0.0266 1.21667,-0.0432 1.21667,0.0214 1.21667,0.0818 1.21667,0.0282 1.21667,0.0225 1.21667,0.0493 1.21667,-0.0486 1.21667,-0.11297 1.21667,-0.0417 1.21667,-0.0602 1.21667,0.004 1.21667,-0.0749 1.21667,-0.0786 1.21667,0.0238 1.21667,-0.0141 1.21667,-0.13098 1.21667,0.0385 1.21667,-0.10986 1.21667,0.0556 1.21667,-0.0577 1.21667,-0.0204 1.21667,-0.13182 1.21667,-0.0896 1.21667,-0.0271 1.21667,-0.0453 1.21667,-0.12474 1.21667,0.0721 1.21667,-0.0459 1.21667,0.0194 1.21667,-0.0184 1.21667,-0.0806 1.21667,-0.0401 1.21667,-0.11684 1.21667,-0.0436 1.21667,-0.0806 1.21667,0.0172 1.21667,0.008 1.21667,-0.18488 1.21667,-0.0922 1.21667,-0.14498 1.21667,-0.009 1.21667,-0.0799 1.21667,-0.0377 1.21667,-0.0397 1.21667,-0.0445 1.21667,-0.0704 1.21667,0.007 1.21667,-0.0805 1.21667,-0.0601 1.21667,-0.0745 1.21667,-0.0406 1.21667,-0.0429 1.21667,-0.0703 1.21667,0.0795 1.21667,-0.06 1.21667,-0.10623 1.21667,0.0661 1.21667,-0.0521 1.21667,-3.6e-4 1.21667,-0.0433 1.21667,-0.16757 1.21667,-0.0491 1.21667,-0.0585 1.21667,0.0816 1.21667,-0.15425 1.21667,0.0167 1.21667,-0.0248 1.21667,-0.11113 1.21667,-0.0329 1.21667,-0.0231 1.21667,-0.14219 1.21667,-0.089 1.21667,0.0406 1.21667,-0.0359 1.21667,-0.15386 1.21667,-0.13457 1.21667,-0.0372 1.21667,-0.0704 1.21667,-0.15142 1.21667,-0.14769 1.21667,-0.0154 1.21667,-0.0647 1.21667,-0.0473 1.21667,-0.0673 1.21667,-0.0945 1.21667,-0.13926 1.21667,-0.15559 1.21667,-0.0894 1.21667,-0.0923 1.21667,-0.0254 1.21667,-0.0661 1.21667,-0.12157 1.21667,-0.14998 1.21667,-0.0413 1.21667,-0.064 1.21667,-0.23833 1.21667,-0.16137 1.21667,-0.0634 1.21667,-0.2237 1.21667,-0.0615 1.21667,-0.15266 1.21667,-0.15668 1.21667,-0.15692 1.21667,-0.0959 1.21667,-0.15238 1.21667,-0.0655 1.21667,-0.12389 1.21667,-0.26967 1.21667,-0.19113 1.21667,-0.20893 1.21667,-0.24394 1.21667,-0.18791 1.21667,-0.12675 1.21667,3e-5 1.21667,-0.19754 1.21667,-0.0929 1.21667,-0.0646 1.21667,-0.0566 1.21667,-0.0763 1.21667,-0.10013 1.21667,-0.0945 1.21667,-0.11578 1.21667,0.002 1.21667,0.003 1.21667,-0.0259 1.21667,0.0459 1.21667,0.0441 1.21667,0.11589 1.21667,0.0472 1.21667,-0.0336 1.21667,0.0474 1.21667,0.0306 1.21667,0.0401 1.21667,0.0188 1.21667,0.0759 1.21667,0.0719 1.21667,0.0742 1.21667,-0.0384 1.21667,0.0821 1.21667,0.0799 1.21667,0.0595 1.21667,0.0237 1.21667,0.0857 1.21667,0.0447 1.21667,-0.0139 1.21667,-0.021 1.21667,-0.007 1.21667,0.0681 1.21667,0.0365 1.21667,0.078 1.21667,0.0117 1.21667,0.0424 1.21667,-0.061 1.21667,0.0838 1.21667,0.0973 1.21667,0.13034 1.21667,0.0803 1.21667,0.10513 1.21667,0.0436 1.21667,0.12865 1.21667,0.0672 1.21667,0.054 1.21667,0.0863 1.21667,0.21961 1.21667,0.16274 1.21667,0.12904 1.21667,0.0939 1.21667,0.13782 1.21667,0.0962 1.21667,0.1309 1.21667,0.17632 1.21667,0.0959 1.21667,0.0993 1.21667,0.0301 1.21667,0.15477 1.21667,0.0758 1.21667,0.0471 1.21667,-0.008 1.21667,0.10908 1.21667,0.0818 1.21667,0.01 1.21667,0.0336 1.21667,0.17184 1.21667,0.0826 1.21667,0.049 1.21667,0.0179 1.21667,0.12621 1.21667,0.0843 1.21667,0.0413 1.21667,0.0778 1.21667,0.0942 1.21667,0.0842 1.21667,0.027 1.21667,0.004 1.21667,0.17156 1.21667,0.13891 1.21667,0.0404 1.21667,-0.006 1.21667,0.0588 1.21667,-0.0103 1.21667,-0.0444 1.21667,0.0737 1.21667,0.13648 1.21667,0.15636 1.21667,0.0221 1.21667,0.0881 1.21667,0.12851 1.21667,0.0359 1.21667,0.13542 1.21667,0.11546 1.21667,-0.0162 1.21667,0.0892 1.21667,-0.003 1.21667,0.0648 1.21667,0.0377 1.21667,0.12385 1.21667,0.11811 1.21667,0.0625 1.21667,0.0589 1.21667,0.0377 1.21667,0.0251 1.21667,-0.0266 1.21667,-0.028 1.21667,0.0682 1.21667,0.12259 1.21667,0.2163 1.21667,0.0775 1.21667,0.0606 1.21667,0.0252 1.21667,-0.0637 1.21667,0.0708 1.21667,0.0287 1.21667,-0.007 1.21667,-0.0227 1.21667,-0.0553 1.21667,-0.01 1.21667,0.06 1.21667,-0.0459 1.21667,0.0585 1.21667,0.0484 1.21667,0.0514 1.21667,-0.0287 1.21667,0.11983 1.21667,0.0623 1.21667,-0.005 1.21667,0.0468 1.21667,-0.007 1.21667,0.0339 1.21667,0.0103 1.21667,-0.0154 1.21667,0.10855 1.21667,0.0839 1.21667,0.009 1.21667,-0.009 1.21667,0.0845 1.21667,-0.006 1.21667,0.0657 1.21667,-0.0284 1.21667,0.0104 1.21667,0.07 1.21667,0.10923 1.21667,0.0786 1.21667,0.0511 1.21667,0.10429 1.21667,0.12259 1.21667,0.11976 1.21667,0.15488 1.21667,0.0361 1.21667,0.0568 1.21667,0.13267 1.21667,0.0619 1.21667,0.0461 1.21667,0.071 1.21667,0.0918 1.21667,0.0595 1.21667,0.0677 1.21667,0.0995 1.21667,0.16405 1.21667,-0.0334 1.21667,-0.0673 1.21667,0.0524 1.21667,-8.1e-4 1.21667,0.0412 1.21667,-0.0755 1.21667,0.16302 1.21667,0.046 1.21667,0.0265 1.21667,-0.0201 1.21667,0.0699 1.21667,0.01 1.21667,0.0222 1.21667,0.0457 1.21667,0.0815 1.21667,-0.0501 1.21667,0.007 1.21667,0.0783 1.21667,0.0133 1.21667,0.069 1.21667,0.009 1.21667,0.004 1.21667,-0.0625 1.21667,0.0861 1.21667,0.0476 1.21667,0.19712 1.21667,0.0608 1.21667,0.14367 1.21667,0.0339 1.21667,0.0184 1.21667,0.0713 1.21667,0.0383 1.21667,0.0136 1.21667,-0.0394 1.21667,0.0616 1.21667,-0.0116 1.21667,-0.0148 1.21667,0.0139 1.21667,0.019 1.21667,0.0546 1.21667,0.12714 1.21667,0.0872 1.21667,0.0478 1.21667,0.0764 1.21667,-0.0119 1.21667,0.0936"
+                   vector-effect="non-scaling-stroke"
+                   id="path156"
+                   inkscape:connector-curvature="0" />
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     id="PlotItem_5"
+     style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel"
+     transform="translate(-25.079834,-143.57232)">
+    <g
+       id="AxisItem_3"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g178"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+        <polyline
+           points="45.0,322.333 45.0,396.446566312"
+           vector-effect="non-scaling-stroke"
+           id="polyline180"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g182"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+        <polyline
+           points="45.5,359.389833688 50.5,359.389833688"
+           vector-effect="non-scaling-stroke"
+           id="polyline184"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g186"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:0.49803904;font-family:Sans Serif">
+        <polyline
+           points="45.5,395.021361784 48.8333,395.021361784"
+           vector-effect="non-scaling-stroke"
+           id="polyline188"
+           style="fill:none" />
+        <polyline
+           points="45.5,323.758265166 48.8333,323.758265166"
+           vector-effect="non-scaling-stroke"
+           id="polyline190"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g192"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:0.33333297;font-family:Sans Serif">
+        <polyline
+           points="45.5,387.895035952 48.0,387.895035952"
+           vector-effect="non-scaling-stroke"
+           id="polyline194"
+           style="fill:none" />
+        <polyline
+           points="45.5,380.76871012 48.0,380.76871012"
+           vector-effect="non-scaling-stroke"
+           id="polyline196"
+           style="fill:none" />
+        <polyline
+           points="45.5,373.642384288 48.0,373.642384288"
+           vector-effect="non-scaling-stroke"
+           id="polyline198"
+           style="fill:none" />
+        <polyline
+           points="45.5,366.516058456 48.0,366.516058456"
+           vector-effect="non-scaling-stroke"
+           id="polyline200"
+           style="fill:none" />
+        <polyline
+           points="45.5,352.263507856 48.0,352.263507856"
+           vector-effect="non-scaling-stroke"
+           id="polyline202"
+           style="fill:none" />
+        <polyline
+           points="45.5,345.137182024 48.0,345.137182024"
+           vector-effect="non-scaling-stroke"
+           id="polyline204"
+           style="fill:none" />
+        <polyline
+           points="45.5,338.010856192 48.0,338.010856192"
+           vector-effect="non-scaling-stroke"
+           id="polyline206"
+           style="fill:none" />
+        <polyline
+           points="45.5,330.884570786 48.0,330.884570786"
+           vector-effect="non-scaling-stroke"
+           id="polyline208"
+           style="fill:none" />
+      </g>
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         transform="matrix(1,0,0,1.01064,5.5,322.333)"
+         id="g210"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#969696;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+        <text
+           font-size="11.875"
+           font-style="normal"
+           font-weight="400"
+           x="31"
+           xml:space="preserve"
+           y="40.6562"
+           id="text212"
+           style="font-size:11.875px;font-style:normal;font-weight:400;fill:#969696;fill-opacity:1;stroke:none">0</text>
+        <text
+           font-size="11.875"
+           font-style="normal"
+           font-weight="400"
+           x="19"
+           xml:space="preserve"
+           y="75.921898"
+           id="text214"
+           style="font-size:11.875px;font-style:normal;font-weight:400;fill:#969696;fill-opacity:1;stroke:none">-10</text>
+        <text
+           font-size="11.875"
+           font-style="normal"
+           font-weight="400"
+           x="23"
+           xml:space="preserve"
+           y="5.4218798"
+           id="text216"
+           style="font-size:11.875px;font-style:normal;font-weight:400;fill:#969696;fill-opacity:1;stroke:none">10</text>
+      </g>
+    </g>
+    <g
+       id="ViewBox_5"
+       style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+      <g
+         font-size="11.875"
+         font-style="normal"
+         font-weight="400"
+         id="g219"
+         style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:none;font-family:Sans Serif">
+        <path
+           d="m 45,322.333 616,0 0,73.3333 -616,0 0,-73.3333"
+           vector-effect="non-scaling-stroke"
+           id="path221"
+           inkscape:connector-curvature="0" />
+      </g>
+      <clipPath
+         id="ViewBox_5_clip">
+        <path
+           d="m 45,322.333 616,0 0,73.334 -616,0 0,-73.334"
+           vector-effect="non-scaling-stroke"
+           id="path224"
+           inkscape:connector-curvature="0" />
+      </clipPath>
+      <g
+         clip-path="url(#ViewBox_5_clip)"
+         id="g226">
+        <g
+           id="ChildGroup_5"
+           style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+          <g
+             id="InfiniteLine_3"
+             style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+            <g
+               font-size="11.875"
+               font-style="normal"
+               font-weight="400"
+               id="g230"
+               style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#e6e6af;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+              <polyline
+                 points="661.00268021,359.0 44.999982536,359.0"
+                 vector-effect="non-scaling-stroke"
+                 id="polyline232"
+                 style="fill:none" />
+            </g>
+          </g>
+          <g
+             id="PlotDataItem_5">
+            <g
+               id="PlotCurveItem_5"
+               style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel">
+              <g
+                 font-size="11.875"
+                 font-style="normal"
+                 font-weight="400"
+                 id="g236"
+                 style="font-size:11.875px;font-style:normal;font-weight:400;fill:none;stroke:#0000ff;stroke-width:1;stroke-linecap:square;stroke-linejoin:bevel;stroke-opacity:1;font-family:Sans Serif">
+                <path
+                   d="m 29.4743,351.94872 1.21667,-2.53846 1.21667,1.26923 1.21667,1.65705 1.21667,-1.48077 1.21667,3.59615 1.21667,-2.36217 1.21667,0.49359 1.21667,-1.69231 1.21667,-1.51603 1.21667,0.38782 1.21667,3.84295 1.21667,-1.26923 1.21667,-1.37496 1.21667,-0.0705 1.21667,-0.59939 1.21667,2.5032 1.21667,-3.20833 1.21667,3.70192 1.21667,-1.90384 1.21667,1.62179 1.21667,-3.13782 1.21667,0.77564 1.21667,2.36218 1.21667,-1.65705 1.21667,2.11539 1.21667,-2.71475 1.21667,-0.91666 1.21667,2.15064 1.21667,-1.26923 1.21667,0.49359 1.21667,1.62179 1.21667,-0.59936 1.21667,-0.31727 1.21667,0.70509 1.21667,-1.26923 1.21667,1.90385 1.21667,-4.19551 1.21667,1.05769 1.21667,0.84619 1.21667,1.16342 1.21667,-1.09291 1.21667,0.59932 1.21667,-1.62176 1.21667,2.46792 1.21667,-3.34936 1.21667,3.38461 1.21667,-1.16346 1.21667,0.56414 1.21667,0.35253 1.21667,-2.29167 1.21667,0.17632 1.21667,1.8333 1.21667,0.49359 1.21667,-0.95193 1.21667,2.04487 1.21667,-1.72752 1.21667,0.56406 1.21667,-4.01923 1.21667,2.82052 1.21667,1.97435 1.21667,-0.14102 1.21667,-0.63462 1.21667,1.02244 1.21667,-0.52885 1.21667,-2.11538 1.21667,0.5641 1.21667,1.02244 1.21667,-0.56411 1.21667,-0.7756 1.21667,1.12817 1.21667,-2.89103 1.21667,3.45513 1.21667,0.17628 1.21667,-1.16346 1.21667,-2.11538 1.21667,2.46795 1.21667,-1.44552 1.21667,-1.1282 1.21667,3.63141 1.21667,-3.45513 1.21667,3.10256 1.21667,-1.55128 1.21667,0.35257 1.21667,-2.08013 1.21667,4.23077 1.21667,-0.35257 1.21667,-2.67948 1.21667,0.38782 1.21667,-0.84616 1.21667,-0.38782 1.21667,0.35257 1.21667,4.05448 1.21667,-2.96154 1.21667,-1.83333 1.21667,0.49359 1.21667,0.45833 1.21667,-1.72756 1.21667,0.74039 1.21667,4.16025 1.21667,-1.76278 1.21667,-1.02244 1.21667,3.2083 1.21667,0.35256 1.21667,-2.57372 1.21667,-1.58653 1.21667,0.17628 1.21667,3.98397 1.21667,-1.86859 1.21667,1.05769 1.21667,-1.76282 1.21667,1.12821 1.21667,-0.52885 1.21667,1.33975 1.21667,-0.88141 1.21667,0.81089 1.21667,-1.55128 1.21667,-0.49359 1.21667,1.26923 1.21667,-1.51602 1.21667,0.17628 1.21667,-0.8109 1.21667,-0.21154 1.21667,1.93911 1.21667,-0.42308 1.21667,-0.95192 1.21667,2.22115 1.21667,-0.0705 1.21667,-0.91667 1.21667,-0.52885 1.21667,-1.19871 1.21667,1.23401 1.21667,-0.63465 1.21667,1.55128 1.21667,-1.33975 1.21667,0.17629 1.21667,1.23397 1.21667,-1.26923 1.21667,-0.66984 1.21667,1.2692 1.21667,-1.48077 1.21667,1.30449 1.21667,-2.08013 1.21667,3.24359 1.21667,-1.26923 1.21667,-0.63462 1.21667,-1.16342 1.21667,1.09291 1.21667,0.70513 1.21667,-1.41026 1.21667,0.98718 1.21667,1.79808 1.21667,-3.73718 1.21667,1.90384 1.21667,-0.35256 1.21667,1.55128 1.21667,-2.92628 1.21667,1.65705 1.21667,2.11539 1.21667,-1.41026 1.21667,-0.14099 1.21667,-0.17632 1.21667,0.70513 1.21667,-1.65705 1.21667,0.63461 1.21667,1.26923 1.21667,-2.46794 1.21667,-0.31731 1.21667,0.1058 1.21667,2.82048 1.21667,-2.39744 1.21667,0.14103 1.21667,1.48077 1.21667,-0.88141 1.21667,0.24679 1.21667,2.82052 1.21667,-1.76282 1.21667,-0.31731 1.21667,0.42308 1.21667,-0.52885 1.21667,-0.45833 1.21667,-0.77561 1.21667,-1.83337 1.21667,1.02247 1.21667,3.63138 1.21667,-2.15064 1.21667,-1.58654 1.21667,2.46795 1.21667,2.25641 1.21667,-2.39744 1.21667,-3.52564 1.21667,4.23077 1.21667,-1.0224 1.21667,-0.17632 1.21667,2.15064 1.21667,-2.46795 1.21667,-0.88141 1.21667,2.15064 1.21667,-0.98714 1.21667,-0.8109 1.21667,0.74035 1.21667,-3.52564 1.21667,5.04167 1.21667,-2.00962 1.21667,-0.38782 1.21667,0.0706 1.21667,-0.52888 1.21667,-1.65705 1.21667,3.77243 1.21667,-2.25637 1.21667,0.0705 1.21667,0.21153 1.21667,-1.02243 1.21667,0.10577 1.21667,1.16346 1.21667,-0.31731 1.21667,-0.84615 1.21667,0.10577 1.21667,-0.31731 1.21667,-1.19872 1.21667,-0.28205 1.21667,1.33974 1.21667,0.10577 1.21667,-0.66987 1.21667,-0.5641 1.21667,-2.1859 1.21667,1.97436 1.21667,0.8109 1.21667,-0.21154 1.21667,-1.97436 1.21667,-1.09295 1.21667,3.20834 1.21667,-0.74039 1.21667,-0.95192 1.21667,0.95192 1.21667,-0.59936 1.21667,-2.53842 1.21667,3.5256 1.21667,-1.76282 1.21667,0.28205 1.21667,-0.24679 1.21667,-1.05769 1.21667,-1.58654 1.21667,0.88141 1.21667,0.1058 1.21667,-0.84619 1.21667,1.16346 1.21667,-1.76282 1.21667,0.0353 1.21667,-0.0353 1.21667,0.56414 1.21667,-0.59939 1.21667,0.0705 1.21667,-0.42308 1.21667,-0.52884 1.21667,-1.23398 1.21667,0.49359 1.21667,-1.72756 1.21667,1.9391 1.21667,-1.72756 1.21667,-0.8109 1.21667,1.05769 1.21667,-2.67948 1.21667,2.15064 1.21667,-3.06731 1.21667,0.70513 1.21667,0.0353 1.21667,-2.82052 1.21667,-0.98718 1.21667,0.14103 1.21667,-1.41026 1.21667,-1.23397 1.21667,-2.32692 1.21667,-1.6218 1.21667,-1.93906 1.21667,-1.30453 1.21667,0 1.21667,-0.0353 1.21667,0.0353 1.21667,-0.0353 1.21667,0 1.21667,4.37179 1.21667,13.04487 1.21667,4.23077 1.21667,13.18589 1.21667,-0.98718 1.21667,0.77564 1.21667,3.87821 1.21667,-5.18269 1.21667,0.66987 1.21667,0.66987 1.21667,-0.84615 1.21667,-0.56411 1.21667,2.04487 1.21667,0.17629 1.21667,0.66987 1.21667,-0.63462 1.21667,-2.85577 1.21667,2.25641 1.21667,-1.16346 1.21667,-1.30448 1.21667,2.89102 1.21667,0.2468 1.21667,1.55128 1.21667,0.17628 1.21667,-5.11218 1.21667,1.33974 1.21667,0.35257 1.21667,2.99683 1.21667,-0.28209 1.21667,0.8109 1.21667,-2.22112 1.21667,-1.97439 1.21667,-0.28202 1.21667,1.55125 1.21667,4.58333 1.21667,-3.17308 1.21667,1.65705 1.21667,-3.45512 1.21667,-3.13779 1.21667,4.0192 1.21667,0.0353 1.21667,0.52885 1.21667,-3.24359 1.21667,3.13785 1.21667,-1.44554 1.21667,-0.35257 1.21667,2.75 1.21667,-1.83333 1.21667,-1.19872 1.21667,2.32692 1.21667,-4.47756 1.21667,4.3718 1.21667,-1.58654 1.21667,1.65705 1.21667,-1.09295 1.21667,1.79808 1.21667,-1.93911 1.21667,-0.45833 1.21667,1.375 1.21667,-2.57372 1.21667,1.19872 1.21667,0.28205 1.21667,3.49039 1.21667,-1.51603 1.21667,-0.8109 1.21667,-5.99358 1.21667,7.72115 1.21667,-0.56411 1.21667,-2.43269 1.21667,2.25641 1.21667,-2.46791 1.21667,-0.0353 1.21667,2.78525 1.21667,-4.83012 1.21667,1.30448 1.21667,0.10577 1.21667,1.19872 1.21667,-0.95192 1.21667,1.05769 1.21667,3.98397 1.21667,-2.36218 1.21667,-0.74035 1.21667,-1.234 1.21667,2.11538 1.21667,-0.52885 1.21667,-1.26923 1.21667,-0.49359 1.21667,2.67949 1.21667,-2.25641 1.21667,-0.63461 1.21667,-0.66988 1.21667,0.35257 1.21667,-0.8109 1.21667,0.52885 1.21667,0.35256 1.21667,1.76282 1.21667,-2.08013 1.21667,2.15064 1.21667,1.19872 1.21667,0.14103 1.21667,-2.00962 1.21667,0.91667 1.21667,-0.28205 1.21667,-0.63462 1.21667,1.16346 1.21667,0.70513 1.21667,-1.1282 1.21667,-1.16347 1.21667,-0.84615 1.21667,3.66667 1.21667,-0.98718 1.21667,1.19872 1.21667,-3.63141 1.21667,2.25641 1.21667,-2.00962 1.21667,3.98397 1.21667,-1.6923 1.21667,-1.33975 1.21667,0.63462 1.21667,0.38785 1.21667,-2.39747 1.21667,1.65709 1.21667,0.59932 1.21667,0.45834 1.21667,-0.17629 1.21667,-2.5032 1.21667,2.46795 1.21667,0.10577 1.21667,-4.6891 1.21667,4.16025 1.21667,-1.62179 1.21667,-0.14103 1.21667,2.60898 1.21667,-0.42308 1.21667,-3.59615 1.21667,1.58653 1.21667,-4.23076 1.21667,10.22435 1.21667,-7.65064 1.21667,3.70192 1.21667,2.04488 1.21667,-1.58654 1.21667,-1.97436 1.21667,-4.33654 1.21667,3.77244 1.21667,3.49038 1.21667,-5.11218 1.21667,7.58013 1.21667,-6.875 1.21667,4.9359 1.21667,-6.3109 1.21667,1.375 1.21667,4.75961 1.21667,0.0705 1.21667,-3.63141 1.21667,-0.91667 1.21667,3.49039 1.21667,3.56089 1.21667,-2.60897 1.21667,-4.47756 1.21667,1.79807 1.21667,-1.05769 1.21667,2.22115 1.21667,-2.39743 1.21667,-0.59936 1.21667,1.26923 1.21667,0.0705 1.21667,-0.14102 1.21667,-1.86859 1.21667,5.95833 1.21667,-2.39744 1.21667,-2.64423 1.21667,1.83334 1.21667,-2.71475 1.21667,-1.09294 1.21667,1.26923 1.21667,0.0353 1.21667,1.86859 1.21667,0.31731 1.21667,0.49359 1.21667,0.95192 1.21667,-0.45833 1.21667,2.75003 1.21667,-0.0706 1.21667,-2.15064 1.21667,-4.05448 1.21667,1.9391 1.21667,1.4808 1.21667,0.52882 1.21667,-1.375 1.21667,0.3173 1.21667,1.09295 1.21667,-1.44551 1.21667,4.54807 1.21667,-5.95833 1.21667,2.25641 1.21667,-2.92628 1.21667,0.14103 1.21667,-2.60898 1.21667,4.125 1.21667,-0.70509 1.21667,2.22112 1.21667,0.35256 1.21667,-2.85577 1.21667,3.27888 1.21667,1.2692 1.21667,-1.16346 1.21667,-4.65385 1.21667,1.97436 1.21667,1.65705 1.21667,1.09295 1.21667,-0.0353 1.21667,-3.34935 1.21667,0.28205 1.21667,0.74038 1.21667,-0.84615 1.21667,-0.31731 1.21667,0.10577 1.21667,5.67628"
+                   vector-effect="non-scaling-stroke"
+                   id="path238"
+                   inkscape:connector-curvature="0" />
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <path
+     style="fill:none;stroke:#000000;stroke-width:0.56202096;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:0.56202098, 1.68606294;stroke-dashoffset:0"
+     d="m 343.71295,8.6271374 0,266.4810926 0,0 0,-0.22152"
+     id="path3237"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cccc" />
+  <text
+     xml:space="preserve"
+     style="font-size:9px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:TeX Gyre Termes;-inkscape-font-specification:TeX Gyre Termes"
+     x="311.78052"
+     y="283.16614"
+     id="text4007"
+     sodipodi:linespacing="125%"><tspan
+       sodipodi:role="line"
+       id="tspan4009"
+       x="311.78052"
+       y="283.16614"
+       style="font-size:14px">Vehicle at point A</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:9px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:TeX Gyre Termes;-inkscape-font-specification:TeX Gyre Termes"
+     x="2.1622429"
+     y="283.16614"
+     id="text4011"
+     sodipodi:linespacing="125%"><tspan
+       sodipodi:role="line"
+       id="tspan4013"
+       x="2.1622429"
+       y="283.16614"
+       style="font-size:14px">Initial position</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:TeX Gyre Termes;-inkscape-font-specification:TeX Gyre Termes"
+     x="23.897961"
+     y="157.14928"
+     id="text4023"
+     sodipodi:linespacing="125%"><tspan
+       sodipodi:role="line"
+       id="tspan4025"
+       x="23.897961"
+       y="157.14928">Sensor unit </tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:TeX Gyre Termes;-inkscape-font-specification:TeX Gyre Termes"
+     x="24.317974"
+     y="75.129227"
+     id="text4027"
+     sodipodi:linespacing="125%"><tspan
+       sodipodi:role="line"
+       id="tspan4029"
+       x="24.317974"
+       y="75.129227">Motor unit</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:TeX Gyre Termes;-inkscape-font-specification:TeX Gyre Termes"
+     x="24.233959"
+     y="251.22786"
+     id="text4031"
+     sodipodi:linespacing="125%"><tspan
+       sodipodi:role="line"
+       id="tspan4033"
+       x="24.233959"
+       y="251.22786">Input transducer</tspan></text>
+</svg>
