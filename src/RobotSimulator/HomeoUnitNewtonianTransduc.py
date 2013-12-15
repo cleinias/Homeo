@@ -5,6 +5,7 @@ Created on Sep 3, 2013
 '''
 from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
 from Core.HomeoUnit import HomeoUnit
+from Core.HomeoUnitAristotelian import HomeoUnitAristotelian
 from numpy import sign
 from Helpers.General_Helper_Functions import scaleTo
 
@@ -49,6 +50,46 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
         self.actuator.funcParameters = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)
         self.actuator.act()
     
+class HomeoUnitAristotelianActuator(HomeoUnitAristotelian):
+    '''
+    HomeoUnitAristotelianActuator is a HomeoUnitAristotelian unit with 
+    an added actuator. When it self updates, it also transmits
+    its own critical deviation value to the actuator.
+    The critical deviation value is scaled to the actuator range
+    Notice that proper setup of the actuator is responsibility 
+    of the calling class/instance.  
+    
+    Instance variable:
+    actuator <anActuator> an instance of an actuator subclass of Transducer 
+    '''
+
+
+    def __init__(self, actuator = None):
+        '''
+        Initialize according to superclass
+        '''
+        super(HomeoUnitAristotelianActuator, self).__init__()
+        
+        'Initialize actuator, if passed'
+        if actuator is not None:
+            self._actuator = actuator
+
+    
+    def setActuator(self, anActuator):
+        self._actuator = anActuator
+    def getActuator(self):
+        return self._actuator
+    actuator = property(fget = lambda self: self.getActuator(),
+                          fset = lambda self, aValue: self.setActuator(aValue))
+    
+    def selfUpdate(self):
+        '''First run the self-update function of superclass, 
+            then convert unit-value to actuator value,
+            then operate actuator on the unit value scaled 
+            to the actuator range'''
+        super(HomeoUnitAristotelianActuator, self).selfUpdate()
+        self.actuator.funcParameters = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)
+        self.actuator.act()
         
 class HomeoUnitInput(HomeoUnit):
     '''
