@@ -247,7 +247,10 @@ class WebotsDiffMotorTCP(TransducerTCP):
             return self._transducRange
         
 class WebotsLightSensorTCP(TransducerTCP):
-    '''Interface to a Webots' robot light sensor'''
+    '''Interface to a Webots' robot light sensor. 
+       Converts the raw value read from the sensor to its complement, 
+       since webots uses a light sensor's maximum value for the 
+       minimum stimulus and 0 for the maximum possible stimulus'''
     
     def __init__(self, aNumber):
         '''Initialize the sensor with the Webots function name and the number of the sensor.
@@ -272,4 +275,24 @@ class WebotsLightSensorTCP(TransducerTCP):
 #        raise TransducerException("Webots does not give access to a sensor's max value")
         return [0,1000]   
         
+class WebotsLightSensorRawTCP(WebotsLightSensorTCP):
+    '''Interface to a Webots' robot light sensor. 
+       DOES NOT convert the raw value read from the sensor to its complement, 
+       and respects Webots's conventions: 0 is the maximum value
+       and Max is the minimum.
+       The class overrides only the read function of its superclass'''
     
+    def __init__(self, aNumber):
+        '''Initialize according to superclass'''
+        super(WebotsLightSensorRawTCP, self).__init__(aNumber)
+
+        
+    def read(self):
+        '''returns the light value by reading the nth element of 
+           the list of values returned by the read command.
+           '''
+        self._robotSocket.send(self._transducFunction)
+        light_values = self._robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]  
+        return float(light_values[self._funcParameters])
+       
+   
