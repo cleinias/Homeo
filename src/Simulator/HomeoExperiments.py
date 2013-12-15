@@ -570,15 +570,36 @@ def initializeBraiten1_1():
     'Return the properly configured homeostat'
     return hom
 
+def initializeBraiten1_2Pos():
+    '''Utility function to choose a  Braitenberg type-1 vehicle with
+    2 real units and a positive connection between actual stimulus and sensory 
+    input (the higher the world's value, the higher the stimulus'''
+    return initializeBraiten1_2(False)
+
+def initializeBraiten1_2Neg():
+    '''Utility function to choose a  Braitenberg type-1 vehicle with
+    2 real units and a negative connection between actual stimulus and sensory 
+    input (the higher the world's value, the lower the stimulus'''
+
+    return initializeBraiten1_2(True)
     
-def initializeBraiten1_2():
+def initializeBraiten1_2(raw=False):
     '''
     Initialize a Homeostat to replicate a Braitenberg type-1 vehicle with
     2 real units: one for the Motor and one for the sensor, plus one HomeoUnitInput
     to interface to the outside world         
-                          
+    
+    The initialization variable 'raw' controls the type of sensory tranducer. 
+    If it is set to 'False" (default) the raw sensory input from webot is reversed: high sensory values correspond 
+    to high actual stimuli, and viceversa.
+    If the 'raw' variable is set to True, the sensory transducer reads webots raw values, 
+    which are minimum for maximum stimulus and maximal for minimun stimulus                      
+                      
     ''' 
-     
+    if raw == None:
+            raw = False
+            
+             
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
     webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-1-1-HOMEO.wbt'   
@@ -604,7 +625,11 @@ def initializeBraiten1_2():
     wheel.funcParameters = 10
     
     'sensor'
-    sensorTransd = WebotsLightSensorTCP(0)
+    if raw == False:
+        sensorTransd = WebotsLightSensorTCP(0)
+    else:
+        sensorTransd = WebotsLightSensorRawTCP(0)
+        
     sensorTransd._clientPort = kheperaPort
     sensorTransd.robotSocket = socket
     
@@ -723,6 +748,7 @@ def initializeBraiten1_2():
 
     'Return the properly configured homeostat'
     return hom
+
 
 def initializeBraiten1_3():
     '''
