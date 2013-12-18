@@ -21,7 +21,15 @@ The functions setting up robotics experiments also launch Webots and set up comm
 parameters between Webots and Homeo. 
 '''
 
-
+def initialize10UnitHomeostat():
+    "Returns a homeostat with N units. Used for testing UI"
+    hom = Homeostat()
+    for i in xrange(10):
+        unit = HomeoUnitNewtonian()
+        unit.setRandomValues()
+        hom.addFullyConnectedUnit(unit)
+    return hom
+    
 def initializeAshbySimulation():
     '''Returns a Homeostat with
        four fully connected units with random values to the simulator 
