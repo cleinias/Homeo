@@ -712,6 +712,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.changeWindowsTitles(aString)
         self._simulation.setHomeostatFilename(aString)
         
+            
 
 class Classic_Homeostat(QDialog, Ui_ClassicHomeostat):
     """Interface to a classic 4-unit Homeostat showing all the parameters of each units
