@@ -58,7 +58,7 @@ DEF GROUND Transform {
   ]
 }
 DEF KHEPERA DifferentialWheels {
-  translation 4.25142 2.30926e-14 3.35325
+  translation 5 0 5
   children [
     Shape {
       appearance Appearance {
