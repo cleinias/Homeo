@@ -10,8 +10,8 @@ WorldInfo {
   FPS 10
 }
 Viewpoint {
-  orientation -0.435924 0.611432 0.660395 1.69048
-  position 2.83863 5.30202 2.95204
+  orientation -0.476426 0.540121 0.693749 1.80611
+  position 1.87059 5.37538 2.88669
 }
 Background {
   skyColor [
@@ -205,7 +205,7 @@ DEF KHEPERA DifferentialWheels {
       }
     ]
   }
-  controller "braitenberg"
+  controller "server-diff-2-light-sensors-2-motors"
   robotWindow "generic_window"
   axleLength 0.053
   wheelRadius 0.008

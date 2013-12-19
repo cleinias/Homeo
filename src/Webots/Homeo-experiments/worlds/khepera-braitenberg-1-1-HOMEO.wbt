@@ -10,8 +10,8 @@ WorldInfo {
   FPS 10
 }
 Viewpoint {
-  orientation -0.998719 -0.0505913 -0.000237646 0.6881
-  position 2.56824 36.8106 49.0277
+  orientation -0.57085 -0.603453 -0.556754 2.07776
+  position 4.42315 39.0332 7.4919
 }
 Background {
   skyColor [
@@ -22,13 +22,14 @@ PointLight {
   attenuation 0 1 0
   color 0 1 0
   intensity 20
-  location 1.7 0.11 5.3
+  location 6.5 0.11 5.3
 }
 PointLight {
   attenuation 0 1 0
   color 0 1 0
   intensity 20
-  location 6.2 0.1 1.8
+  location 11.6 0.1 12.3
+  on FALSE
 }
 PointLight {
   ambientIntensity 1
@@ -49,17 +50,17 @@ DEF GROUND Transform {
           ]
         }
         colorPerVertex FALSE
-        xDimension 88
+        xDimension 200
         xSpacing 0.1
-        zDimension 84
+        zDimension 200
         zSpacing 0.1
       }
     }
   ]
 }
 DEF KHEPERA DifferentialWheels {
-  translation 4.28317 2.30926e-14 52.9146
-  rotation 0 1 0 6.39915
+  translation 4 3.55271e-14 3.5
+  rotation 0 1 0 3.93497
   children [
     Shape {
       appearance Appearance {
@@ -128,7 +129,7 @@ DEF KHEPERA DifferentialWheels {
     }
     Solid {
       translation -0.026 0.0075 0
-      rotation 1 0 0 17942.4
+      rotation 1 0 0 -11124.8
       children [
         DEF WHEEL Transform {
           rotation 0 0 1 -1.5707
@@ -151,7 +152,7 @@ DEF KHEPERA DifferentialWheels {
     }
     Solid {
       translation 0.026 0.0075 0
-      rotation 1 0 0 42226.8
+      rotation 1 0 0 13160.3
       children [
         USE WHEEL
       ]
@@ -207,4 +208,5 @@ DEF KHEPERA DifferentialWheels {
   encoderResolution 100
 }
 Supervisor {
+  controller "supervisor-trajectory"
 }
