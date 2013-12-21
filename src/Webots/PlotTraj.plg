@@ -1,0 +1,23 @@
+# Simple gnuplot script to plot the first and second column of a 
+# data file containing x and y position data for a vehicle's
+# trajectory, including starting point and center of gradient.
+#
+# Notice that these last 2items are hard-coded in the scripts, 
+# the values come from the Webots world file.
+
+# Use: $>gnuplot -e "filename='DATAFILE'" PlotTraj.plg 
+
+
+set title "Vehicle's trajectory"
+# draw a circle to represent the gradient
+set object 1 circle at 6.5,5.3 size first 2.6 fc rgb "navy"
+
+# draw center of gradient
+set label 1 "" at 6.5,5.3 point pointtype 7
+
+# draw initial position of vehicle
+set label 2 "" at 4,3.5 point pointtype 6
+
+# plot trajectory 
+plot [0:20] [0:20] filename  with lines notitle
+pause -1 "Hit any key to continue"   
