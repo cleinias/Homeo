@@ -6,7 +6,7 @@
 # Modifications: 
 
 from controller import Supervisor
-import time
+import time 
 import os
 
 class supervisorTrajectory(Supervisor):
@@ -14,10 +14,26 @@ class supervisorTrajectory(Supervisor):
      "Main loop"
      "Get the translation node of the robot by its definition"
      curDateTime = time.strftime('%h-%d-%Y-%H-%M-%S')
-     posFile = open('trajectoryData'+curDateTime+'.txt', 'w')
+     posFile = open('trajectoryData-'+curDateTime+'.txt', 'w')
      print "opened data file %s at location %s" % (posFile.name, os.getcwd())
      myKhepera = self.getFromDef("KHEPERA")
      transField = myKhepera.getField("translation")
+     " Get vehicle's initial position"
+     initialPos = transField.getSFVec3f()
+     "Get position of the main light"
+     firstLight = self.getFromDef("LIGHT1")
+     firstLightPosField = firstLight.getField("location")
+     firstLightPos = firstLightPosField.getSFVec3f()
+     '''Write data file header with General info, followed
+        by location of light and initial position of vehicle'''
+     posFile.write("# Position data for Homeo simulation run\n#\n#\n")
+     posFile.write("# Light source positioned at:\n")
+     posFile.write('%f\t%f\n\n\n' % (firstLightPos[0],
+                                    firstLightPos[2]))
+     posFile.write("# Vehicle's initial position at:\n")
+     posFile.write('%f\t%f\n\n\n' % (initialPos[0],
+                                    initialPos[2]))
+     posFile.write("# Vehicle's coordinates (x and z in Webots term, as y is the vertical axis\n")   
      while True:
         "Perform a simulation step of 32 milliseconds"
         "and leave the loop when the simulation is over"
