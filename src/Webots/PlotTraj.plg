@@ -9,15 +9,28 @@
 
 
 set title "Vehicle's trajectory"
-# draw a circle to represent the gradient
-set object 1 circle at 6.5,5.3 size first 2.6 fc rgb "navy"
+# Draw a circle to represent the appr. area of the light intensity gradient
+# The center of the circle (i.e. the location of the light point) 
+# is in the datafile's *first* data set 
+# Read the location of the center:
 
-# draw center of gradient
-set label 1 "" at 6.5,5.3 point pointtype 7
+set term unknown # This terminal will not attempt to plot anything
+#plot filename index 0 every 1:1:0:0:0:0 u (xCenter=$1,yCenter=$2):1
+plot filename index 0 every ::0::0 u (xCenter=$1,yCenter=$2):2
+# Set the circle
+set object 1 circle at xCenter,yCenter size first 2.6 fc rgb "navy"
 
-# draw initial position of vehicle
+# Set the center of the circle 
+set label 1 "" at xCenter,yCenter point pointtype 7
+
+# Draw initial position of vehicle
+# Position's data is taken from the *second* data set in the
+# data file 
+plot filename index 1 every ::0::0 u (xInitial=$1,yInitial=$2):2
+
 set label 2 "" at 4,3.5 point pointtype 6
 
-# plot trajectory 
-plot [0:20] [0:20] filename  with lines notitle
+# plot trajectory, with data taken from the *third* dataset
+set terminal x11 
+plot [0:20] [0:20] filename index 2 using 1:2 with lines notitle
 pause -1 "Hit any key to continue"   
