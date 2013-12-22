@@ -143,7 +143,7 @@ class HomeoQtSimulation(QObject):
 #        self.currentExperiment = 'initialize_1minus_2xExperiment'
 #        self.currentExperiment = 'initialize_1minus_2_minus_3xExperiment'    
         if experiment == None:
-             self.currentExperiment = 'initialize10UnitHomeostat'
+#             self.currentExperiment = 'initialize10UnitHomeostat'
 #            self.currentExperiment = 'initialize_Ashby_2nd_Experiment'
 #            self.currentExperiment = 'initializeBraiten1_1Arist'
 #            self.currentExperiment = 'initializeBraiten1_1Pos'
@@ -151,6 +151,8 @@ class HomeoQtSimulation(QObject):
 #            self.currentExperiment = 'initializeBraiten1_2Pos'
 #            self.currentExperiment = 'initializeBraiten1_2Neg'
 #            self.currentExperiment = 'initializeBraiten1_3'
+            self.currentExperiment = 'initializeBraiten2_2Pos'
+            self.currentExperiment = 'initializeBraiten2_2Neg'
     
         super(HomeoQtSimulation,self).__init__()
         self._homeostat = Homeostat()
