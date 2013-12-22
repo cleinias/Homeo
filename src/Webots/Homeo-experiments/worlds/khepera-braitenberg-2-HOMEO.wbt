@@ -10,21 +10,21 @@ WorldInfo {
   FPS 10
 }
 Viewpoint {
-  orientation -0.476426 0.540121 0.693749 1.80611
-  position 1.87059 5.37538 2.88669
+  orientation -0.4422 -0.587491 -0.677727 1.76886
+  position -1.38287 6.23566 3.94259
 }
 Background {
   skyColor [
     0.4 0.7 1
   ]
 }
-PointLight {
+DEF LIGHT1 PointLight {
   attenuation 0 0 12.5657
   color 0 1 0
   intensity 20
   location 0.5 0.11 1.5
 }
-PointLight {
+DEF LIGHT1_LIGHT2 PointLight {
   attenuation 0 0 12.5657
   color 0 1 0
   intensity 20
@@ -57,8 +57,8 @@ DEF GROUND Transform {
   ]
 }
 DEF KHEPERA DifferentialWheels {
-  translation 2.22315 -4.52971e-14 1.88414
-  rotation 0 -1 0 -1.43685
+  translation 0.0212043 0 0.00525615
+  rotation 0 -1 0 -13599.6
   children [
     Shape {
       appearance Appearance {
@@ -127,7 +127,7 @@ DEF KHEPERA DifferentialWheels {
     }
     Solid {
       translation -0.026 0.0075 0
-      rotation 1 0 0 -32254
+      rotation 1 0 0 -87572.2
       children [
         DEF WHEEL Transform {
           rotation 0 0 1 -1.5707
@@ -150,7 +150,7 @@ DEF KHEPERA DifferentialWheels {
     }
     Solid {
       translation 0.026 0.0075 0
-      rotation 1 0 0 -7872.11
+      rotation 1 0 0 26965.5
       children [
         USE WHEEL
       ]
@@ -176,6 +176,7 @@ DEF KHEPERA DifferentialWheels {
       translation -0.0185 0.0144 -0.021
       rotation 0 1 0 2.3562
       name "ls0"
+      description "Left Eye"
       lookupTable [
         0 1000 0.05
         10 10 0.05
@@ -186,6 +187,7 @@ DEF KHEPERA DifferentialWheels {
       translation 0.0185 0.0144 -0.021
       rotation 0 1 0 0.8
       name "ls1"
+      description "Right Eye"
       lookupTable [
         0 1000 0.05
         10 10 0.05
@@ -215,4 +217,5 @@ DEF KHEPERA DifferentialWheels {
   encoderResolution 100
 }
 Supervisor {
+  controller "supervisorTrajectory"
 }
