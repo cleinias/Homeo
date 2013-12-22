@@ -41,8 +41,8 @@
 #include <unistd.h>             /* definition of close */
 
 #define SOCKET_PORT 10020
-#define NB_IR_SENSOR 1
-#define TIMESTEP 250
+#define NB_IR_SENSOR 2
+#define TIMESTEP 32
 
 static WbDeviceTag ambient[NB_IR_SENSOR];
 static int fd;
