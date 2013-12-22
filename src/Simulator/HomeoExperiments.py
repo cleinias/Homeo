@@ -916,7 +916,7 @@ def initializeBraiten1_2(raw=False):
             connection.state = motor_incoming_connection_uniselector
             connection.status = True    
             
-    'SensorOnly is not connected (does not receive input from) any other unit'
+    'SensorOnly is not connected to (does not receive input from) any other unit'
     for connection in sensorOnly.inputConnections:
         connection.status = False
 
@@ -1095,13 +1095,253 @@ def initializeBraiten2_1():
     ''' 
     hom = Homeostat()
 
-def initializeBraiten2_2():
+def initializeBraiten2_2(raw=False):
     '''
     Initialize a Homeostat to replicate a Braitenberg type-2 vehicle with
-    4 real units: two for either Motor and two for the sensors, plus 2  HomeoInput Unit
+    4 real units: two for either Motor and two for the sensors, plus 2  HomeoInput Units
     to interface to the outside world
-    ''' 
+    
+    The initialization variable 'raw' controls the type of sensory tranducer. 
+    If it is set to 'False" (default) the raw sensory input from webot is reversed: high sensory values correspond 
+    to high actual stimuli, and viceversa.
+    If the 'raw' variable is set to True, the sensory transducer reads webots raw values, 
+    which are minimum for maximum stimulus and maximal for minimun stimulus                      
+                      
+''' 
+    if raw == None:
+        raw = False
+            
+             
+    "1. setup webots"
+    "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
+    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
+       
+
+    '''Webots parameters for tcp/ip communication
+       (Defined in webots world specified above)
+    '''
+    kheperaPort = 10020
+    supervisorPort = 10021
+    
+    startWebots(webotsWorld)
+    
+    "2. set up connection and create client and socket, etc."
+    client = WebotsTCPClient()
+    client._clientPort = kheperaPort
+    socket = client.getClientSocket()
+    
+       
+    '3.1 Setup robotic communication parameters in actuator and sensor'
+    'motors'
+    rightWheel = WebotsDiffMotorTCP('right')
+    leftWheel = WebotsDiffMotorTCP('left')
+    rightWheel.robotSocket = socket
+    rightWheel.funcParameters = 10
+    leftWheel.robotSocket = socket
+    leftWheel.funcParameters = 10
+
+    
+    'sensors'
+    if raw == False:
+        leftEyeSensorTransd  = WebotsLightSensorTCP(0)
+        rightEyeSensorTransd = WebotsLightSensorTCP(1)
+    else:
+        leftEyeSensorTransd  = WebotsLightSensorRawTCP(0)
+        rightEyeSensorTransd = WebotsLightSensorRawTCP(1)
+
+        
+    leftEyeSensorTransd._clientPort = kheperaPort
+    leftEyeSensorTransd.robotSocket = socket
+    rightEyeSensorTransd._clientPort = kheperaPort
+    rightEyeSensorTransd.robotSocket = socket
+    
+    '3.2 initialize motors and sensors units with properly setup motors and sensors'    
+    rightMotor = HomeoUnitNewtonianActuator(actuator = rightWheel)
+    leftMotor = HomeoUnitNewtonianActuator(actuator = leftWheel)
+    
+    leftEye = HomeoUnitNewtonian()
+    rightEye = HomeoUnitNewtonian()
+    leftEyeSensorOnly = HomeoUnitInput(sensor=leftEyeSensorTransd)
+    rightEyeSensorOnly = HomeoUnitInput(sensor=rightEyeSensorTransd)
+    
+        
+    '3. Setup standard homeo parameters'
+    motor_visc = 0.9
+    sensor_visc = 0.9
+    
+    motor_mass = 100
+    sensor_mass = 100
+    
+    motor_self_noise = 0.05
+    sensor_self_noise = 0.05
+    
+    motor_density = 1
+    sensor_density = 1
+    
+    motor_uniselector_timing= 100
+    
+    motor_self_connection_active = 'active'
+    motor_self_connection_uniselector = 'manual'
+    motor_self_connection_switch = -1
+    motor_self_connection_potentiomenter = 0.1
+    motor_self_connection_noise = 0.05
+            
+    motor_incoming_conn_weight = 0.5
+    motor_incoming_conn_noise = 0.05
+    motor_incoming_connection_polarity = 1
+    motor_incoming_connection_uniselector = 'uniselector' 
+    
+    sensor_incoming_connection_weight = 0.5
+    sensor_incoming_connection_noise = 0.05
+    sensor_incoming_connection_polarity = 1
+    sensor_incoming_connection_uniselector = 'manual'
+    
+    "4. Set up Homeostat"   
     hom = Homeostat()
+
+    'Setup a 4 unit Homeostat with 2 additional input unit. Then change the parameters'
+    if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
+            hom.addFullyConnectedUnit(rightMotor)
+            hom.addFullyConnectedUnit(leftMotor)
+            hom.addFullyConnectedUnit(leftEye)
+            hom.addFullyConnectedUnit(rightEye)
+            hom.addFullyConnectedUnit(leftEyeSensorOnly)
+            hom.addFullyConnectedUnit(rightEyeSensorOnly)
+
+
+     
+    'Disable all connections except self-connections'
+    for unit in hom.homeoUnits:
+        for i in xrange(1, len(hom.homeoUnits)):
+            unit.inputConnections[i].status = 0
+
+    '4.1 Agent units or motors parameters setting'
+    leftMotor.name = 'Left Motor'
+    leftMotor.mass = motor_mass
+    leftMotor.viscosity = motor_visc
+    leftMotor.density = motor_density
+    leftMotor.noise = motor_self_noise
+    leftMotor.uniselectorTimeInterval = motor_uniselector_timing
+
+    rightMotor.name = 'Right Motor'
+    rightMotor.mass = motor_mass
+    rightMotor.viscosity = motor_visc
+    rightMotor.density = motor_density
+    rightMotor.noise = motor_self_noise
+    rightMotor.uniselectorTimeInterval = motor_uniselector_timing
+    
+    'self-connection'
+    leftMotor.potentiometer = motor_self_connection_potentiomenter
+    leftMotor.switch = motor_self_connection_switch
+    leftMotor.inputConnections[0].noise = motor_self_connection_noise
+    leftMotor.inputConnections[0].state = motor_self_connection_uniselector
+
+    rightMotor.potentiometer = motor_self_connection_potentiomenter
+    rightMotor.switch = motor_self_connection_switch
+    rightMotor.inputConnections[0].noise = motor_self_connection_noise
+    rightMotor.inputConnections[0].state = motor_self_connection_uniselector
+
+    '4.2 Sensor units parameters setting'
+    leftEye.name = 'Left Eye'
+    leftEye.mass = sensor_mass
+    leftEye.viscosity = sensor_visc
+    leftEye.density = sensor_density
+    leftEye.noise = sensor_self_noise
+
+    rightEye.name = 'Right Eye'
+    rightEye.mass = sensor_mass
+    rightEye.viscosity = sensor_visc
+    rightEye.density = sensor_density
+    rightEye.noise = sensor_self_noise
+
+    'Activate uniselector'
+    leftEye.uniselectorActive = True
+    rightEye.uniselectorActive = True
+    
+    'Activate self-connection'
+    leftEye.inputConnections[0].status = 1
+    rightEye.uniselectorActive = True
+
+    '4.3 SensorOnly units parameters setting'
+    leftEyeSensorOnly.name = 'Left Sensor'
+    leftEyeSensorOnly.mass = sensor_mass
+    leftEyeSensorOnly.viscosity = sensor_visc
+    leftEyeSensorOnly.density = sensor_density
+    leftEyeSensorOnly.noise = sensor_self_noise
+
+    rightEyeSensorOnly.name = 'Right Sensor'
+    rightEyeSensorOnly.mass = sensor_mass
+    rightEyeSensorOnly.viscosity = sensor_visc
+    rightEyeSensorOnly.density = sensor_density
+    rightEyeSensorOnly.noise = sensor_self_noise
+
+    'disactivate uniselector'
+    leftEyeSensorOnly.uniselectorActive = False
+    rightEyeSensorOnly.uniselectorActive = False
+    
+    'disactivate self-connection'
+    leftEyeSensorOnly.inputConnections[0].status = 0
+    rightEyeSensorOnly.inputConnections[0].status = 0
+
+
+    '''Set up homeostat's initial connections,
+       according to a Braitenberg's cross-connection scheme'''
+    'Right motor is connected to (receives input from) left eye sensor'
+    for connection in rightMotor.inputConnections:
+        if connection.incomingUnit.name == 'Left Eye':
+            connection.newWeight(motor_incoming_conn_weight)
+            connection.noise = motor_incoming_conn_noise
+            connection.state = motor_incoming_connection_uniselector
+            connection.status = True
+            
+    'Left motor is connected to (receives input from) right eye sensor'
+    for connection in leftMotor.inputConnections:
+        if connection.incomingUnit.name == 'Right Eye':
+            connection.newWeight(motor_incoming_conn_weight)
+            connection.noise = motor_incoming_conn_noise
+            connection.state = motor_incoming_connection_uniselector
+            connection.status = True
+
+    
+    'The Right Eye is only connected to (receives input from) Right Sensor'
+    for connection in rightEye.inputConnections:
+        if connection.incomingUnit.name == 'Right Sensor':
+            connection.newWeight(motor_incoming_conn_weight)
+            connection.noise = motor_incoming_conn_noise
+            connection.state = motor_incoming_connection_uniselector
+            connection.status = True    
+            
+    'The Left Eye  is only connected to (receives input from) Left Sensor'
+    for connection in leftEye.inputConnections:
+        if connection.incomingUnit.name == 'Left Sensor':
+            connection.newWeight(motor_incoming_conn_weight)
+            connection.noise = motor_incoming_conn_noise
+            connection.state = motor_incoming_connection_uniselector
+            connection.status = True    
+
+    'Sensors are not connected (does not receive input from) any other unit'
+    for connection in leftEyeSensorOnly.inputConnections:
+        connection.status = False
+    for connection in rightEyeSensorOnly.inputConnections:
+        connection.status = False
+
+    'Return the properly configured homeostat'
+    return hom
+
+def initializeBraiten2_2Pos():
+    '''Utility function to choose a  Braitenberg type-2 vehicle with
+    4 real units and 2 positive connections between actual stimulus and sensory 
+    input (the higher the world's value, the higher the stimulus'''
+    return initializeBraiten2_2(False)
+
+def initializeBraiten2_2Neg():
+    '''Utility function to choose a  Braitenberg type-2 vehicle with
+    4 real units and 2 negative connections between actual stimulus and sensory 
+    input (the higher the world's value, the lower the stimulus'''
+
+    return initializeBraiten2_2(True)
+
+
 
 def isWebotsRunning():
     'Check if Webots is running'
