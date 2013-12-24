@@ -256,7 +256,7 @@ class WebotsLightSensorTCP(TransducerTCP):
         '''Initialize the sensor with the Webots function name and the number of the sensor.
            Notice that it is the caller class responsibility to make sure that there is actually 
            such a sensor in the robot and that the robot tcp server controller returns an appropriate string'''
-        self._transducFunction = "O"
+        self._transdFunction = "O"
         self._funcParameters = aNumber
         
     def read(self):
@@ -264,8 +264,8 @@ class WebotsLightSensorTCP(TransducerTCP):
            the list of values returned by the read command.
            Convert the value to its complement to Max Value, because Webots
            use Max for the minimum stimulus and 0 for the max stimulus'''
-        self._robotSocket.send(self._transducFunction)
-        light_values = self._robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]  
+        self._robotSocket.send(self._transdFunction)
+        light_values = self._robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]
         return self.range()[1] - float(light_values[self._funcParameters])
        
     def range(self):
