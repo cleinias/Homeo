@@ -10,8 +10,8 @@ WorldInfo {
   FPS 10
 }
 Viewpoint {
-  orientation -0.4422 -0.587491 -0.677727 1.76886
-  position -1.38287 6.23566 3.94259
+  orientation -0.57085 -0.603453 -0.556754 2.07776
+  position 3.74705 51.2106 7.1863
 }
 Background {
   skyColor [
@@ -19,22 +19,23 @@ Background {
   ]
 }
 DEF LIGHT1 PointLight {
-  attenuation 0 0 12.5657
+  attenuation 0 1 0
   color 0 1 0
   intensity 20
-  location 0.5 0.11 1.5
+  location 6.5 0.11 5.3
 }
-DEF LIGHT1_LIGHT2 PointLight {
-  attenuation 0 0 12.5657
+DEF LIGHT2 PointLight {
+  attenuation 0 1 0
   color 0 1 0
   intensity 20
-  location 1.8 0.1 0.1
+  location 11.6 0.1 12.3
 }
 PointLight {
   ambientIntensity 1
   attenuation 0 0 12.5657
   intensity 12
   location 0 1.8 0
+  on FALSE
 }
 DEF GROUND Transform {
   translation -0.5 0 -0.5
@@ -48,17 +49,17 @@ DEF GROUND Transform {
           ]
         }
         colorPerVertex FALSE
-        xDimension 31
+        xDimension 200
         xSpacing 0.1
-        zDimension 31
+        zDimension 200
         zSpacing 0.1
       }
     }
   ]
 }
 DEF KHEPERA DifferentialWheels {
-  translation 0.0212043 0 0.00525615
-  rotation 0 -1 0 -13599.6
+  translation 4 3.55271e-14 3.5
+  rotation 0 1 0 3.93497
   children [
     Shape {
       appearance Appearance {
