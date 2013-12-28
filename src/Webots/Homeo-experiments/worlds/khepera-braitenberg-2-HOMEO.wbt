@@ -58,8 +58,8 @@ DEF GROUND Transform {
   ]
 }
 DEF KHEPERA DifferentialWheels {
-  translation 4 3.55271e-14 3.5
-  rotation 0 1 0 3.93497
+  translation 4.18817 3.55271e-14 4.30836
+  rotation 0 1 0 173.542
   children [
     Shape {
       appearance Appearance {
@@ -128,7 +128,7 @@ DEF KHEPERA DifferentialWheels {
     }
     Solid {
       translation -0.026 0.0075 0
-      rotation 1 0 0 -87572.2
+      rotation 1 0 0 -88152.6
       children [
         DEF WHEEL Transform {
           rotation 0 0 1 -1.5707
@@ -151,7 +151,7 @@ DEF KHEPERA DifferentialWheels {
     }
     Solid {
       translation 0.026 0.0075 0
-      rotation 1 0 0 26965.5
+      rotation 1 0 0 25261.4
       children [
         USE WHEEL
       ]
@@ -208,7 +208,8 @@ DEF KHEPERA DifferentialWheels {
       }
     ]
   }
-  controller "server-diff-2-light-sensors-2-motors"
+  controller "server-cpp"
+  controllerArgs "10020"
   robotWindow "generic_window"
   axleLength 0.053
   wheelRadius 0.008
