@@ -291,7 +291,7 @@ class WebotsLightSensorRawTCP(WebotsLightSensorTCP):
         '''returns the light value by reading the nth element of 
            the list of values returned by the read command.
            '''
-        self._robotSocket.send(self._transducFunction)
+        self._robotSocket.send(self._transdFunction)
         light_values = self._robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]  
         return float(light_values[self._funcParameters])
        
