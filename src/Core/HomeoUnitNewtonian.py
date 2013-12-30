@@ -188,7 +188,7 @@ class HomeoUnitNewtonian(HomeoUnit):
     
         self.criticalDeviation =  newDeviation
         self.computeOutput()
-        nextDeviation = 0
+        self.nextDeviation = 0
         if self.debugMode:
             print "%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput)
 
