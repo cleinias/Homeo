@@ -7,7 +7,7 @@
 
 from controller import Supervisor
 import time 
-import os
+import os  
 
 class supervisorTrajectory(Supervisor):
     def run(self):
@@ -20,24 +20,37 @@ class supervisorTrajectory(Supervisor):
      transField = myKhepera.getField("translation")
      " Get vehicle's initial position"
      initialPos = transField.getSFVec3f()
-     "Get position of the main light"
-     firstLight = self.getFromDef("LIGHT1")
-     firstLightPosField = firstLight.getField("location")
-     firstLightPos = firstLightPosField.getSFVec3f()
+     "Get position of the light sources"
      '''Write data file header with General info, followed
-        by location of light and initial position of vehicle'''
+        by position of light sources and initial position of vehicle'''
      posFile.write("# Position data for Homeo simulation run\n#\n#\n")
-     posFile.write("# Light source positioned at:\n")
-     posFile.write('%f\t%f\n\n\n' % (firstLightPos[0],
-                                    firstLightPos[2]))
+     posFile.write("# Light sources positioned at:\n")
+     "Loop through  all light sources of name (DEF) of the form LIGHTx and write their positions to file"
+     "The radius of the light sources is provisionally set to 2.5"
+     lightRadius = 2.5
+     for i in xrange(10):
+         try:
+             light = self.getFromDef("LIGHT" + str(i+1))
+             lightPosField = light.getField("location")
+             lightPos = lightPosField.getSFVec3f()
+             posFile.write('%f \t %f \t %f \n' % (lightPos[0],
+                                             lightPos[2],
+                                             lightRadius))
+             print "Point light number %u is at %f \t %f\n" % (i+1,
+                                                          lightPos[0],
+                                                          lightPos[2])
+         except: 
+             print "There are exactly %u point lights in this simulation" % (i)
+             posFile.write("\n\n")
+             break
      posFile.write("# Vehicle's initial position at:\n")
      posFile.write('%f\t%f\n\n\n' % (initialPos[0],
                                     initialPos[2]))
-     posFile.write("# Vehicle's coordinates (x and z in Webots term, as y is the vertical axis\n")   
+     posFile.write("# Vehicle's coordinates (x and z in Webots term, as y is the vertical axis)\n")   
      while True:
         "Perform a simulation step of 32 milliseconds"
         "and leave the loop when the simulation is over"
-        if self.step(32) == -1:
+        if self.step(64) == -1:
            posFile.close()
            print "closed data file: %s" % posFile.name
            break
