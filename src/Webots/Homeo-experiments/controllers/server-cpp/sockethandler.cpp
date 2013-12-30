@@ -36,7 +36,7 @@ void SocketHandler::clientReadyRead() {
     }
 
     QByteArray data = m_client->readAll();
-    qDebug() << "Server read:" << data;
+//    qDebug() << "Server read:" << data;
     emit clientCommand(data);
 }
 
@@ -46,7 +46,7 @@ void SocketHandler::sendCommand(const QByteArray &cmd) {
         return;
     }
 
-    qDebug() << "Sending reply:" << cmd;
+//    qDebug() << "Sending reply:" << cmd;
     m_client->write(cmd);
     m_client->flush();
 }
