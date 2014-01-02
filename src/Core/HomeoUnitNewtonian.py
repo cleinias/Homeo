@@ -66,9 +66,19 @@ class HomeoUnitNewtonian(HomeoUnit):
     def dragEquationDrag(self):
         '''Compute the drag on the needle according to the drag equation 
            for high Reynolds numbers: 
-           D = 1/2  C A rho  v^2.
-           Outputs a number representing the drag expressed as force measured in Newtons'''
+           
+           D = 1/2  C A rho  v^2, where:
+           
+           D = Drag                                  (in Newton)
+           C = drag coefficient                      (dimensionless---set to 1 as default by NeedleUnit)
+           rho = mass density of fluid               (kg/m^3 --- density of the fluid)
+           A = reference area                        ( ---cross-sectional area of the needle)
+           v = velocity of object relative to fluid  (m/s ---)
+           
+           Return a number representing the drag expressed as force measured in Newtons'''
 
+        if self.debugMode == True:
+            print "Computing drag's equation drag"
 
         return  1/2.  * self.density * self.needleUnit.dragCoefficient * pow(self.physicalVelocity(),2) * (self.needleUnit.surfaceArea)
 
@@ -133,17 +143,19 @@ class HomeoUnitNewtonian(HomeoUnit):
            Re = 2 a rho v / eta'''
 
         viscosityInSiUnits = self.viscosity / 1000  # convert viscosity from centiPoise to Pascal/second"
+        if self.debugMode == True:
+            print "Computing Reynolds number"
+        
 
         return  (2 * self.needleUnit.surfaceArea * self.density * self. physicalVelocity) / viscosityInSiUnits
 
     def selfUpdate(self):
         '''This is the master loop for the unit. It goes through the following sequence:
            1. compute new needle's deviation (nextDeviation (includes reading inputs))
-           2. updates the current output on the basis of the deviation.
-           3. check whether it's time to check the essential value and if so do it and 
+           2. check whether it's time to check the essential value and if so do it and 
               update the counter (uniselectorTime) [this might change the weight of the connections]
-           4. Compute the new velocity on the basis of the displacement
-           5. Move the needle to new position and compute new output'''
+           3. Compute the new velocity on the basis of the displacement
+           4. Move the needle to new position and compute new output'''
 
         
         "1. compute where the needle should move to"
@@ -197,5 +209,9 @@ class HomeoUnitNewtonian(HomeoUnit):
            D = 6 pi r eta v.
           Output is negated, since Drag's sign is always  opposite  to velocity.
           Instead of the radius of the sphere (as in Stokes' law), it uses the surface area of the needle.'''
+
+        if self.debugMode == True:
+            print "Computing Stokes law's Drag"
+
 
         return - 6 * np.pi * (sqrt(self.needleUnit.surfaceArea / np.pi) * self.viscosity * self.currentVelocity) 

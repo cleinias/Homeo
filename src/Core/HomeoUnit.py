@@ -33,51 +33,51 @@ class HomeoUnit(object):
     by Alice Eldridge in "Ashby's Homeostat in Simulation," unpublished, 2002, 
     available at: http://www.informatics.sussex.ac.uk/users/alicee/NEWSITE/ecila_files/content/papers/ACEhom.pdf 
 
-     Instance Variables:
-     criticalDeviation        <Float>    Deviation of the needle from equilibrium (0 state). In Ashby's original electromechanical model, 
-                                          this value is a function of the input current applied to the magnet that operates
-                                          the needle AND the possible manual operation on the needle itself
-     currentOutput            <Float>    The current  the unit outputs at time t. This value is proportional to criticalDeviation and typically between 0 and 1.
-     inputConnections         <List>     A collection of HomeoConnections storing the units the presents unit is connected to and the associated weights. 
-                                         It includes a connection to itself. 
-     maxDeviation             <Float>    Maximum deviation from equilibrium
-     nextDeviation            <Float>    The needle's deviation the unit will assume at at t+1. This is a function of criticalDeviation, 
-                                         of viscosity (as a dampener), and potentiometer. It is limited at both ends by maxDeviation
-                                         (i.e. maxDeviation negated < nextDeviation < maxDeviation)
-     outputRange              <Dict>     The range of the output current, keyed as low and high. Default is -1 to 1.
-     viscosity                <Float>    The viscosity of the medium in which the metallic needle of the original Ashbian unit is free to move. 
-                                         It acts as a dampening agent on the change of output. Min is 0 (no effect), max is 1 (no movement)
-     density                  <Float>    The density  of the medium in which the metallic needle of the original Ashbian unit is free to move. 
-                                         Used to compute the drag at high velocities, if needed
-     noise                    <Float>    Represents the **internal** noise of the  unit affecting the value of its critical deviation.
-                                         The default value is np.random.uniform(0, 0.1): a uniformly distributed value between 0 and 0.1
-                                         The actual noise on each iteration is a *normally distributed value* centered around 0,  with 
-                                         standard deviation = to 1/3 of the noise value, and proportional to the absolute magnitude of noise's value.
-                                         In other words, noise is modeled as a kind of "static" distortion of fixed max magnitude
-     potentiometer             <Float>   As per Ashby's implementation, it represents the weight of the unit's connection to itself. 
-                                         In our implementation it is always identical to the weight of a unit's 
-                                         first connection,---Check Design for a Brain, chp.8  for details
-                                         Notice that the polarity of the self-connection (the switch, in Ashby terminology, which we follow)
-                                         is **not** held in an instance variable. In our implementation it is always identical 
-                                         to the polarity of a unit's first connection, that is: self.inputConnections[0].switch,
-     time                       <Integer>  The internal tick counter
-     uniselectorTime            <Integer> The internal tick counter for activation of the uniselector
-     uniselectorTimeInterval    <Integer> The number of ticks that specifies how often to check that the output is in range and eventually activate uniselector
-     uniselector                <HomeoUniselector> The uniselector that can modify the weights of input values coming from other units
-     uniselectorActive          <Boolean>  Whether the uniselector mechanism is  active or not
-     uniselectorActivated       <Integer>  Whether the Uniselector has just been activated
-     needleCompMethod           <String>    Whether the unit's needle's displacement depends of the sum of its input, 
-                                          or on the ratio between the sum of the inputs and the maxDeviation. 
-                                          Possible values are 'linear' and 'proportional', default is 'linear'.
-    inputTorque                <Float>    It represents the input force derived from the weighed sum of the inputs (as computed by computeTorque)
-    active                     <String>   Whether the unit is active or not (on or off)
-    status                     <String>   Active, Non Active, or other possible status
-    debugMode                  <Boolean>  It control whether the running methods print out debugging information
-    showUniselectorAction      <Boolean>  It controls whether the running methods print out when the uniselector kicks into action
-    currentVelocity            <Float>    The current velocity of the needle moving in the trough
-    needleUnit                 <HomeoNeedleUnit>  Holds an instance of HomeoNeedleUnit, the class containing the parameters 
-                                          of the needle used by the unit (mass, area, etc.)
-    _physicalParameters        <Dict>      A dictionary containing equivalence factors between the simulation units and real physical parameters
+    Instance Variables:
+    criticalDeviation        <Float>                Deviation of the needle from equilibrium (0 state). In Ashby's original electromechanical model, 
+                                                    this value is a function of the input current applied to the magnet that operates
+                                                    the needle AND the possible manual operation on the needle itself
+    currentOutput            <Float>                The current  the unit outputs at time t. This value is proportional to criticalDeviation and typically between 0 and 1.
+    inputConnections         <List>                 A collection of HomeoConnections storing the units the presents unit is connected to and the associated weights. 
+                                                    It includes a connection to itself. 
+    maxDeviation             <Float>                Maximum deviation from equilibrium
+    nextDeviation            <Float>                The needle's deviation the unit will assume at at t+1. This is a function of criticalDeviation, 
+                                                    of viscosity (as a dampener), and potentiometer. It is limited at both ends by maxDeviation
+                                                    (i.e. maxDeviation negated < nextDeviation < maxDeviation)
+    outputRange              <Dict>                 The range of the output current, keyed as low and high. Default is -1 to 1.
+    viscosity                <Float>                The viscosity of the medium in which the metallic needle of the original Ashbian unit is free to move. 
+                                                    It acts as a dampening agent on the change of output. Min is 0 (no effect), max is 1 (no movement)
+    density                  <Float>                The density  of the medium in which the metallic needle of the original Ashbian unit is free to move. 
+                                                    Used to compute the drag at high velocities, if needed
+    noise                    <Float>                Represents the **internal** noise of the  unit affecting the value of its critical deviation.
+                                                    The default value is np.random.uniform(0, 0.1): a uniformly distributed value between 0 and 0.1
+                                                    The actual noise on each iteration is a *normally distributed value* centered around 0,  with 
+                                                    standard deviation = to 1/3 of the noise value, and proportional to the absolute magnitude of noise's value.
+                                                    In other words, noise is modeled as a kind of "static" distortion of fixed max magnitude
+    potentiometer             <Float>               As per Ashby's implementation, it represents the weight of the unit's connection to itself. 
+                                                    In our implementation it is always identical to the weight of a unit's 
+                                                    first connection,---Check Design for a Brain, chp.8  for details
+                                                    Notice that the polarity of the self-connection (the switch, in Ashby terminology, which we follow)
+                                                    is **not** held in an instance variable. In our implementation it is always identical 
+                                                    to the polarity of a unit's first connection, that is: self.inputConnections[0].switch,
+    time                       <Integer>            The internal tick counter
+    uniselectorTime            <Integer>            The internal tick counter for activation of the uniselector
+    uniselectorTimeInterval    <Integer>            The number of ticks that specifies how often to check that the output is in range and eventually activate uniselector
+    uniselector                <HomeoUniselector>   The uniselector that can modify the weights of input values coming from other units
+    uniselectorActive          <Boolean>            Whether the uniselector mechanism is  active or not
+    uniselectorActivated       <Integer>            Whether the Uniselector has just been activated
+    needleCompMethod           <String>              Whether the unit's needle's displacement depends of the sum of its input, 
+                                                    or on the ratio between the sum of the inputs and the maxDeviation. 
+                                                    Possible values are 'linear' and 'proportional', default is 'linear'.
+    inputTorque                <Float>              It represents the input force derived from the weighed sum of the inputs (as computed by computeTorque)
+    active                     <String>             Whether the unit is active or not (on or off)
+    status                     <String>             Active, Non Active, or other possible status
+    debugMode                  <Boolean>            It control whether the running methods print out debugging information
+    showUniselectorAction      <Boolean>            It controls whether the running methods print out when the uniselector kicks into action
+    currentVelocity            <Float>              The current velocity of the needle moving in the trough
+    needleUnit                 <HomeoNeedleUnit>    Holds an instance of HomeoNeedleUnit, the class containing the parameters 
+                                                    of the needle used by the unit (mass, area, etc.)
+    _physicalParameters        <Dict>               A dictionary containing equivalence factors between the simulation units and real physical parameters
 
 
     A HomeoUnit knows how to:
@@ -1092,9 +1092,10 @@ class HomeoUnit(object):
     
     def selfUpdate(self):
         '''This is the master loop for the HomeoUnit. It goes through the following sequence:
-        1. compute new needle's deviation (nextDeviation (includes reading inputs))
-        2. update the current output on the basis of the deviation.
-        3. check whether it's time to check the essential value and if so does it and  update the counter (uniselectorTime) [this might change the weight of the connections]
+        1. Compute new needle's deviation (nextDeviation (includes reading inputs))
+        2. Update times
+        3. Check whether it's time to check the essential value and if so do it 
+           and  update the counter (uniselectorTime) [this might change the weight of the connections]
         4. Move the needle to new position and compute new output'''
 
         "1. compute where the needle should move to"
@@ -1132,57 +1133,17 @@ class HomeoUnit(object):
         self.nextDeviation = 0
     
     def computeNextDeviation(self):
-        '''Computes the output current at time t+1 on the basis of the current input 
+        '''Compute the value of the needle's deviation at time t+1 on the basis of the current input 
         and the various parameters of the unit.
         This basic function mimicks Asbhy's original device by the following procedure:
 
-        1. Try to move the needle to a new position (on the basis of  the input values
-           computed by computeTorque) 
-           (the details of this operation are in method HomeoUnit >> newNeedlePosition: aValue and in HomeoUnit>>computeTorque
-        2. clip value if it is outside maxRange
-        3. put new value in criticalDeviation
-
-        One alternative  possibility would have been  to use a minimal function like
-        the one used by A Eldridge in her simulation (see Eldridge 2000, p.20): 
-        nextOutput := (input(j) * weight(j) * ) + noise  (with j ranging over  all units connected to the current unit)
-
-        This approach simplifies considerably the simulation, but has the disadvantage
-        of  reducing the role of the unit to nil. In fact, (in Eldridge's simulation) 
-        all the work is done by the system, which reads, for every tick of time, the
-        outputs from the various connected units, computes new outputs, and updates 
-        the units. In other words, this approach reduces the homeostat's units 
-        to simple data structures (which is literally what they are in her C program),
-        deprived of any possibility of 'action', i.e. of any behavior. 
-        Our approach here will be different, by allowing a partial separation 
-        between homeostat, units, and connections. It follows that the computation 
-        of the unit's next value is internal to unit itself, even if it considers 
-        values (obtained from inputConnections) that may have been deposited from the
-        outside. 
-        This approach allows the possibility that different units may have 
-        different behaviors, etc. and it also allows for the possibility of 
-        having the units being operated upon by means other than the inputs coming
-        from other homeoUnits. For instance, input coming directly from the environment,
-        like the direct manipulation of the needles. It also forces the simulation 
-        to provide a closer resemblance of Ashby's original electro-mechanical device. 
-        Furthermore, Eldridge's simple approach can be easily recovered by reducing the
-        computation of the unit's next output to the sum of values stored 
-        in inputConnections, and by setting the range of the needles' deviation 
-        (maxDeviation) to 1. 
-        In short: Eldridge's model as reimplemented here would have the following method: 
-        self.computeNextOuput 
-        self.nextOutput = sum([conn.output() for conn in inputsCollection])
-
-        Our method is close to hers and basically reduces to this behavior when 
-        all the parameters specific to the unit are uninfluent. That is, when: 
-        noise = 0, viscosity = 0, and  there is no direct outside influence. 
-        Nonetheless, encapsulating the computation inside the unit allows for a  
-        more flexible system that can be easily extended to encompass more 
-        sophisticated behavior.'''
+        1. Apply noise to the current value of the unit's deviation
+        2. Compute the value of the torque affecting the unit's needle
+        3. Compute the value for the unit's new deviation by on the basis of the computed torque value
+        4. Store the new value in an internal variable  
+        '''
     
-        '''1. first update the current value of critical deviation with 
-        the unit's internal noise'''
         self.updateDeviationWithNoise()
-        "2. then update the deviation"
         self.computeTorque()
         self.nextDeviation  = self.newNeedlePosition(self.inputTorque)
 
@@ -1417,9 +1378,9 @@ class HomeoUnit(object):
         
         self.uniselectorTime = self.uniselectorTime + 1
 
- #==============================================================================
- # Printing
- #==============================================================================
+#==============================================================================
+# Printing
+#==============================================================================
  
     def printDescription(self):
         '''Return a string containing a text representation of 
