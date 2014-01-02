@@ -48,7 +48,7 @@ class HomeoUnitAristotelian(HomeoUnit):
 
 
         '''Compute the net force acting on the needle by adding the 
-        (negative) force produduced by the drag and/ or frictional forces)'''
+        (negative) force produced by the drag and/ or frictional forces)'''
         
         totalForce = aTorqueValue + self.dragOn(aTorqueValue)              
 

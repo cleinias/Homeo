@@ -22,7 +22,7 @@ parameters between Webots and Homeo.
 '''
 
 def initialize10UnitHomeostat():
-    "Returns a homeostat with N units. Used for testing UI"
+    "Returns a homeostat with 10 units. Used for testing UI"
     hom = Homeostat()
     for i in xrange(10):
         unit = HomeoUnitNewtonian()
@@ -1110,7 +1110,6 @@ def initializeBraiten2_2(raw=False):
 ''' 
     if raw == None:
         raw = False
-            
              
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
@@ -1199,7 +1198,7 @@ def initializeBraiten2_2(raw=False):
     "4. Set up Homeostat"   
     hom = Homeostat()
 
-    'Setup a 4 unit Homeostat with 2 additional input unit. Then change the parameters'
+    'Setup a 4 unit Homeostat with 2 additional input units. Then change the parameters'
     if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
             hom.addFullyConnectedUnit(rightMotor)
             hom.addFullyConnectedUnit(leftMotor)
