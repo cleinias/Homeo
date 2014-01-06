@@ -11,14 +11,15 @@ class HomeoNeedleUnit(object):
     '''
     
     ''' DefaultParameters is a  class variable holding the
-    default values of all the various parameters of future needle units.
+    default values of all the various parameters of a needle unit.
     All 'physical' values are expressed in internal units.  
     Conversion to real physical units, if necessary, is done by Physical parameters dictionary in HomeoUnit
     HomeoUnit initialize'''
 
     DefaultParameters = dict(mass = 1.,                  # mass expressed in internal units
-                             surfaceArea = 1/pi,   # in internal units, eq. to a circle of radius 1 unit
-                             dragCoefficient = 1.        # dimensionless. used to compute drag acc to drag law for high velocities
+                             surfaceArea = pi,           # in internal units, equivalent to cross-section of a sphere of radius 1 unit
+                             dragCoefficient = 1.        # dimensionless. used to compute drag acc to drag law for high Reynolds number
+                                                         # 1 is the drag coefficient of a cube. A typical value  for a sphere is 0.47
                              )
 
     def __init__(self):
