@@ -1,0 +1,481 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass memoir-article
+\begin_preamble
+\addbibresource{/home/stefano/Documents/Biblios/Italian-philosophy.bib}
+\addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
+\addbibresource{/home/stefano/Documents/Books/Play-and-Passivity/Dissertation-references.bib}
+\addbibresource{/home/stefano/Documents/Biblios/additional-refs-for-Il-Pensiero-Vivente.bib}
+\end_preamble
+\options article, 11pt
+\use_default_options false
+\begin_modules
+biblatex
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding utf8-plain
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing onehalf
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine natbib_authoryear
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Note to self: Homeo transition to GA support
+\end_layout
+
+\begin_layout Chapter
+Genetic algorithms libraries in Python
+\end_layout
+
+\begin_layout Standard
+Here the available packages.
+ Notes are from http://stackoverflow.com/questions/16739118/genetic-algorithms-an
+d-multi-objectives-optimization-on-python-libraries-tools
+\end_layout
+
+\begin_layout Itemize
+PyGene
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+https://github.com/blaa/PyGene
+\end_layout
+
+\begin_layout Itemize
+From SX: Well documented but doesn't include multi objective 
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+PyEvolve
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+url: http://pyevolve.sourceforge.net/
+\end_layout
+
+\begin_layout Itemize
+Doesn't seem to include multi objective.
+ SF: Documentation incomplete
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+inspyred
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+http://inspyred.github.io/
+\end_layout
+
+\begin_layout Itemize
+seems ok-documented, includes multi objective
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Deap
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+http://code.google.com/p/deap/
+\end_layout
+
+\begin_layout Itemize
+Seems well documented, includes multi objective
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+PyBrain
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+http://pybrain.org/
+\end_layout
+
+\begin_layout Itemize
+Seems more of a general ANN framework rather than a GA (although it does
+ include some GA classes)
+\end_layout
+
+\end_deeper
+\begin_layout Chapter
+On the 
+\begin_inset Quotes eld
+\end_inset
+
+genome
+\begin_inset Quotes erd
+\end_inset
+
+ of a Homeostat and of a HomeoUnit
+\end_layout
+
+\begin_layout Section
+Unit-related
+\end_layout
+
+\begin_layout Standard
+A HomeoUnit is initialized with the following parameters:
+\end_layout
+
+\begin_layout Enumerate
+Viscosity
+\end_layout
+
+\begin_layout Enumerate
+Density
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+The previous two parameters need to be combined.
+ See related note
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Mass
+\end_layout
+
+\begin_layout Enumerate
+Potentiometer
+\end_layout
+
+\begin_layout Enumerate
+Switch
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+The previous two parameters are actually just one: a signed weight for the
+ self-connection
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+MaxDeviation
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Unsure if this is really necessary, as all input/output is renormalized
+ to the 
+\begin_inset Formula $[0-1]$
+\end_inset
+
+ interval.
+ However: it is true that maxDeviation has a role, since the sum of the
+ inputs (all <1) constitutes a unit's deviation.
+ Hence, a higher max deviation will make it much more difficult for a unit
+ to become critical.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+UniselectorTiming
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+
+\emph on
+Crucial
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Noise
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+This parameter does not seem to be really a unit's parameter as much as
+ an environmental constraint.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+UniselectorActive
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+This should probably be on by default
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+UniselectorMethod
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Not really a parameter as much as an architectural choice
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+NeedleCompMethod
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Is this really needed? Need to check the implementation details and find
+ out if different computation methods are really used, especially in Newtonian
+ units
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+CritThreshold
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Unsure whether this should be considered a unit's parameter or a general
+ constraint of the architecture.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+OutputRange
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+See previous discussion of MaxDeviation.
+ The two parameters are related.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+Other parameters used by needle unit:
+\end_layout
+
+\begin_layout Enumerate
+MaxViscosity
+\end_layout
+
+\begin_layout Enumerate
+SurfaceArea
+\end_layout
+
+\begin_layout Enumerate
+DragCoefficient
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+See note on density and viscosity on why these three parameters could be
+ eliminated in favor of a single 
+\begin_inset Quotes eld
+\end_inset
+
+viscosity
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+density
+\begin_inset Quotes erd
+\end_inset
+
+ parameter.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+In summary, the parameters could be grouped as follows:
+\end_layout
+
+\begin_layout Itemize
+Absolutely essential
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Viscosity
+\end_layout
+
+\begin_layout Enumerate
+Mass
+\end_layout
+
+\begin_layout Enumerate
+Potentiometer
+\end_layout
+
+\begin_layout Enumerate
+UniselectorTiming
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Possibly useful
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+MaxDeviation
+\end_layout
+
+\begin_layout Enumerate
+CritThreshold
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Architecture related
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Noise
+\end_layout
+
+\begin_layout Enumerate
+UniselectorActive
+\end_layout
+
+\begin_layout Enumerate
+UniselectorMethod
+\end_layout
+
+\begin_layout Enumerate
+NeedleCompMethod
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+Summary of Homeounit parameters
+\end_layout
+
+\begin_layout Standard
+a
+\end_layout
+
+\begin_layout Section
+Connection-related
+\end_layout
+
+\begin_layout Standard
+In addition to the previous parameters, every unit has, for each connection,
+ the following parameters:
+\end_layout
+
+\begin_layout Enumerate
+noise
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+This parameter is more a constraint.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+weight
+\end_layout
+
+\begin_layout Enumerate
+switch
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+The last two can actually be combined into a single signed weight
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+Thus, there seem to be a single parameter for each connection
+\end_layout
+
+\begin_layout Section
+Homeostat
+\end_layout
+
+\begin_layout Standard
+Assuming a unit has 
+\begin_inset Formula $m$
+\end_inset
+
+ parameters (including the weight and sign of its self-connection), a 
+\begin_inset Formula $n$
+\end_inset
+
+-units 
+\emph on
+fully connected 
+\emph default
+homeostat would have 
+\begin_inset Formula $n(m+n-1)$
+\end_inset
+
+ parameters.
+ 
+\end_layout
+
+\end_body
+\end_document
