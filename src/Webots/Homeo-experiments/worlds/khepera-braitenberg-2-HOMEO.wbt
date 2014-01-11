@@ -10,8 +10,8 @@ WorldInfo {
   FPS 10
 }
 Viewpoint {
-  orientation -0.57085 -0.603453 -0.556754 2.07776
-  position 3.74705 51.2106 7.1863
+  orientation -0.56289 -0.6129 -0.554534 2.07204
+  position 4.85664 56.7577 7.28337
 }
 Background {
   skyColor [
@@ -29,6 +29,7 @@ DEF LIGHT2 PointLight {
   color 0 1 0
   intensity 20
   location 11.6 0.1 12.3
+  on FALSE
 }
 PointLight {
   ambientIntensity 1
@@ -219,5 +220,10 @@ DEF KHEPERA DifferentialWheels {
   encoderResolution 100
 }
 Supervisor {
+  name "trajRecorder"
   controller "supervisorTrajectory"
+}
+DEF lightmover Supervisor {
+  name "lightmover"
+  controller "lightMover"
 }
