@@ -18,20 +18,20 @@ Background {
     0.4 0.7 1
   ]
 }
-PointLight {
+DEF LIGHT1 PointLight {
   attenuation 0 1 0
   color 0 1 0
   intensity 20
   location 6.5 0.11 5.3
 }
-PointLight {
+DEF LIGHT2 PointLight {
   attenuation 0 1 0
   color 0 1 0
   intensity 20
   location 11.6 0.1 12.3
   on FALSE
 }
-PointLight {
+DEF LIGHT3 PointLight {
   ambientIntensity 1
   attenuation 0 0 12.5657
   intensity 12
@@ -208,5 +208,8 @@ DEF KHEPERA DifferentialWheels {
   encoderResolution 100
 }
 Supervisor {
-  controller "supervisor-trajectory"
+  controller "supervisorTrajectory"
+}
+Supervisor {
+  controller "lightMover"
 }
