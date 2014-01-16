@@ -11,14 +11,14 @@ Created on Jan 10, 2014
 '''
 
 from controller import Supervisor
-# import time 
-# import os  
+from random import random
 
 class LightMover(Supervisor):
     def run(self):
      "Main loop"
      simulationStep = 32
-     timeInterval = 8000 # in milliseconds
+     simMinute = 60000  # in milliseconds. 1 minute = 60000
+     timeInterval = 10 * simMinute
      
      "Get position of the first light source"
      light = self.getFromDef("LIGHT1")
@@ -31,7 +31,10 @@ class LightMover(Supervisor):
         "Perform a simulation step"
         "and leave the loop when the simulation is over"
         self.step(timeInterval)  #wait for the time interval to elapse
-        lightPosField.setSFVec3f([lightPos[0]+2,lightPos[1], lightPos[2]+2])  #move light
+        lightPosField.setSFVec3f([lightPos[0]+(random()*2),lightPos[1], lightPos[2]+(random()*2)])  #move light
+        print "Light source is currently at %f\t %f" % (lightPos[0],
+                                                        lightPos[2])
+
         lightPos =  lightPosField.getSFVec3f()
         if self.step(simulationStep) == -1:
            print "Light source is currently at %f\t %f" % (lightPos[0],
