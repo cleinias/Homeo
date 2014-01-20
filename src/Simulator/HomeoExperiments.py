@@ -43,6 +43,26 @@ def initializeAshbySimulation():
     'Return the properly configured homeostat'
     return hom
 
+def initializeAshbyNoNoiseSimulation():
+    '''Returns a Homeostat with
+       four fully connected units with random values to the simulator 
+       (as per Ashby basic design)
+       Set all noises values to 0 for testing purposes'''
+    hom = Homeostat()
+    for i in xrange(4):
+        unit = HomeoUnitNewtonian()
+        unit.setRandomValues()
+        hom.addFullyConnectedUnit(unit)
+    for unit in hom.homeoUnits:
+        unit.noise = 0
+        for conn in unit.inputConnections:
+            conn.noise = 0
+
+    'Return the properly configured homeostat'
+    return hom
+
+
+
 def initialize_Ashby_2nd_Experiment():
     """
        Return a standard homeostat with 3 active units connected in a circle, as per 
@@ -59,8 +79,8 @@ def initialize_Ashby_2nd_Experiment():
        """
     hom = Homeostat()
     'Standard parameters'
-    agent_visc = 0.9
-    env_visc = 0.9
+    agent_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
+    env_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
     agent_mass = 100
     env_mass = 100
     agent_self_noise = 0.05
@@ -96,7 +116,7 @@ def initialize_Ashby_2nd_Experiment():
     'disable all connections except self-connections'
     for unit in hom.homeoUnits:
         for i in xrange(1, len(hom.homeoUnits)):
-            unit.inputConnections[i].status = 0
+            unit.inputConnections[i].status = False
             
     homeo1_unit1_minus = hom.homeoUnits[0]
     homeo1_unit2_minus = hom.homeoUnits[1]
@@ -148,7 +168,7 @@ def initialize_Ashby_2nd_Experiment():
     homeo1_inactive_unit.name= 'UNUSED'
     homeo1_inactive_unit.disactivate()
 
-    "set up homeostat's connection"
+    "set up homeostat's connections"
     "homeo1_unit_1_minus receives input only from sensor, i.e. homeo1_unit_2_minus"
     "connection is always negative polarity"
     for connection in homeo1_unit1_minus.inputConnections:
@@ -192,8 +212,8 @@ def initialize_1minus_2xExperiment():
     hom = Homeostat()
     
     'Standard parameters'
-    agent_visc = 0.9
-    env_visc = 0.9
+    agent_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
+    env_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
     agent_mass = 100
     env_mass = 100
     agent_self_noise = 0.05
@@ -230,7 +250,7 @@ def initialize_1minus_2xExperiment():
     'disable all connections except self-connections'
     for unit in hom.homeoUnits:
         for i in xrange(1, len(hom.homeoUnits)):
-            unit.inputConnections[i].status = 0
+            unit.inputConnections[i].status = False
     
     homeo1_unit1_minus = hom.homeoUnits[0]
     homeo1_unit2x = hom.homeoUnits[1]
@@ -337,8 +357,8 @@ def initialize_1minus_2_minus_3xExperiment():
     hom = Homeostat()
     
     'Standard parameters'
-    agent_visc = 0.9
-    env_visc = 0.9
+    agent_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
+    env_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
     agent_mass = 100
     env_mass = 100
     agent_self_noise = 0.05
@@ -374,7 +394,7 @@ def initialize_1minus_2_minus_3xExperiment():
     'disable all connections except self-connections'
     for unit in hom.homeoUnits:
         for i in xrange(1, len(hom.homeoUnits)):
-            unit.inputConnections[i].status = 0
+            unit.inputConnections[i].status = False
     
     homeo1_unit1_minus = hom.homeoUnits[0]
     homeo1_unit2_minus = hom.homeoUnits[1]
@@ -504,8 +524,8 @@ def initializeBraiten1_1Arist(raw=True):
     hom = Homeostat()
     
     'Setup standard homeo parameters'
-    motor_visc = 0.9
-    sensor_visc = 0.9
+    motor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
+    sensor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
     
     motor_mass = 100
     sensor_mass = 100
@@ -543,7 +563,7 @@ def initializeBraiten1_1Arist(raw=True):
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
         for i in xrange(1, len(hom.homeoUnits)):
-            unit.inputConnections[i].status = 0
+            unit.inputConnections[i].status = False
 
     'Agent unit or motor'
     motor.name = 'Motor'
@@ -556,7 +576,7 @@ def initializeBraiten1_1Arist(raw=True):
     
     'self-connection'
     'disactivate self-connection'
-    motor.inputConnections[0].status = 0
+    motor.inputConnections[0].status = False
     motor.potentiometer = motor_self_connection_potentiomenter
     motor.switch = motor_self_connection_switch
     motor.inputConnections[0].noise = motor_self_connection_noise
@@ -573,7 +593,7 @@ def initializeBraiten1_1Arist(raw=True):
     sensor.uniselectorActive = False
     
     'disactivate self-connection'
-    sensor.inputConnections[0].status = 0
+    sensor.inputConnections[0].status = False
 
     "Set up homeostat's connection."
     'Motor is connected to (receives input from) sensor'
@@ -658,8 +678,8 @@ def initializeBraiten1_1(raw=False):
     hom = Homeostat()
     
     'Setup standard homeo parameters'
-    motor_visc = 0.9
-    sensor_visc = 0.9
+    motor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
+    sensor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
     
     motor_mass = 100
     sensor_mass = 100
@@ -697,7 +717,7 @@ def initializeBraiten1_1(raw=False):
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
         for i in xrange(1, len(hom.homeoUnits)):
-            unit.inputConnections[i].status = 0
+            unit.inputConnections[i].status = False
 
     'Agent unit or motor'
     motor.name = 'Motor'
@@ -710,7 +730,7 @@ def initializeBraiten1_1(raw=False):
     
     'self-connection'
     'disactivate self-connection'
-    motor.inputConnections[0].status = 0
+    motor.inputConnections[0].status = False
     motor.potentiometer = motor_self_connection_potentiomenter
     motor.switch = motor_self_connection_switch
     motor.inputConnections[0].noise = motor_self_connection_noise
@@ -727,7 +747,7 @@ def initializeBraiten1_1(raw=False):
     sensor.uniselectorActive = False
     
     'disactivate self-connection'
-    sensor.inputConnections[0].status = 0
+    sensor.inputConnections[0].status = False
 
     "Set up homeostat's connection."
     'Motor is connected to (receives input from) sensor'
@@ -813,8 +833,8 @@ def initializeBraiten1_2(raw=False):
     sensorOnly = HomeoUnitInput(sensor=sensorTransd)
         
     '3. Setup standard homeo parameters'
-    motor_visc = 0.9
-    sensor_visc = 0.9
+    motor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
+    sensor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
     
     motor_mass = 100
     sensor_mass = 100
@@ -856,7 +876,7 @@ def initializeBraiten1_2(raw=False):
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
         for i in xrange(1, len(hom.homeoUnits)):
-            unit.inputConnections[i].status = 0
+            unit.inputConnections[i].status = False
 
     '4.1 Agent unit or motor parameters setting'
     motor.name = 'Motor'
@@ -883,7 +903,7 @@ def initializeBraiten1_2(raw=False):
     sensor.uniselectorActive = True
     
     'Activate self-connection'
-    sensor.inputConnections[0].status = 1
+    sensor.inputConnections[0].status = True
 
     '4.3 SensorOnly unit parameters setting'
     sensorOnly.name = 'SensorOnly'
@@ -896,7 +916,7 @@ def initializeBraiten1_2(raw=False):
     sensorOnly.uniselectorActive = False
     
     'disactivate self-connection'
-    sensorOnly.inputConnections[0].status = 0
+    sensorOnly.inputConnections[0].status = False
 
 
     "Set up homeostat's connections"
@@ -968,8 +988,8 @@ def initializeBraiten1_3():
     sensorOnly = HomeoUnitInput(sensor=sensorTransd)
         
     '3. Setup standard homeo parameters'
-    motor_visc = 0.9
-    sensor_visc = 0.9
+    motor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
+    sensor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
     
     motor_mass = 100
     sensor_mass = 100
@@ -1012,7 +1032,7 @@ def initializeBraiten1_3():
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
         for i in xrange(1, len(hom.homeoUnits)):
-            unit.inputConnections[i].status = 0
+            unit.inputConnections[i].status = False
 
     '4.1 Agent unit or motor parameters setting'
     motor.name = 'Motor'
@@ -1039,7 +1059,7 @@ def initializeBraiten1_3():
     sensor.uniselectorActive = True
     
     'Activate self-connection'
-    sensor.inputConnections[0].status = 1
+    sensor.inputConnections[0].status = True
 
     '4.3 SensorOnly unit parameters setting'
     sensorOnly.name = 'SensorOnly'
@@ -1052,7 +1072,7 @@ def initializeBraiten1_3():
     sensorOnly.uniselectorActive = False
     
     'disactivate self-connection'
-    sensorOnly.inputConnections[0].status = 0
+    sensorOnly.inputConnections[0].status = False
     
     '4.4 hidden unit paramter setting'
     hidden.name = 'Hidden'
@@ -1165,8 +1185,8 @@ def initializeBraiten2_2(raw=False):
     
         
     '3. Setup standard homeo parameters'
-    motor_visc = 0.9
-    sensor_visc = 0.9
+    motor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
+    sensor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
     
     motor_mass = 100
     sensor_mass = 100
@@ -1212,7 +1232,7 @@ def initializeBraiten2_2(raw=False):
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
         for i in xrange(1, len(hom.homeoUnits)):
-            unit.inputConnections[i].status = 0
+            unit.inputConnections[i].status = False
 
     '4.1 Agent units or motors parameters setting'
     leftMotor.name = 'Left Motor'
@@ -1258,7 +1278,7 @@ def initializeBraiten2_2(raw=False):
     rightEye.uniselectorActive = True
     
     'Activate self-connection'
-    leftEye.inputConnections[0].status = 1
+    leftEye.inputConnections[0].status = True
     rightEye.uniselectorActive = True
 
     '4.3 SensorOnly units parameters setting'
@@ -1279,8 +1299,8 @@ def initializeBraiten2_2(raw=False):
     rightEyeSensorOnly.uniselectorActive = False
     
     'disactivate self-connection'
-    leftEyeSensorOnly.inputConnections[0].status = 0
-    rightEyeSensorOnly.inputConnections[0].status = 0
+    leftEyeSensorOnly.inputConnections[0].status = False
+    rightEyeSensorOnly.inputConnections[0].status = False
 
 
     '''Set up homeostat's initial connections,

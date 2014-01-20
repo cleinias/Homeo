@@ -111,7 +111,7 @@ class HomeoUnit(object):
                               uniselectorActive = True,
                               uniselectorActivated = 0,
                               density = 1,                      # density of water
-                              maxViscosity = (10^6),
+                              maxViscosity = (10**1),            # Used to set the initial random values of viscosity and to validate user input in forms 
                               critThreshold = 0.9,              # the ratio of max deviation beyond which a unit's essential variable's value  is considered critical
                               mass = 100)                      # the mass of the needle unit, representing the inertia of the unit. A low value will make it very unstable
 
@@ -343,12 +343,13 @@ class HomeoUnit(object):
 
     def setViscosity(self, aValue):
         ''''Viscosity must be between 0 (zero effect)
-        and 1 (all force canceled out)'''
+        and maxViscosity (set in class's default parameters)'''
         
         try:
             aValue = float(aValue)
-            if aValue < 0 or aValue > 1:
-                raise(HomeoUnitError, "The value of viscosity must always be between 0 and 1 (included)")
+            if aValue < 0 or aValue > HomeoUnit.DefaultParameters['maxViscosity']:
+                sys.stderr.write("The current value for maxViscosity is %f . Trying to set it to %f\n" % (HomeoUnit.DefaultParameters['maxViscosity'], aValue))  
+                raise(HomeoUnitError, "The value of viscosity must always be between 0 and maxViscosity (included)")
             else: 
                 self._viscosity = aValue
         except ValueError:
@@ -995,7 +996,7 @@ class HomeoUnit(object):
     def setRandomValues(self):
         "sets up the unit with random values"
 
-        self.viscosity = np.random.uniform(0.8,1)
+        self.viscosity = np.random.uniform(0.8,HomeoUnit.DefaultParameters['maxViscosity'])
         self.noise = np.random.uniform(0, 0.1)
         self.potentiometer = np.random.uniform(0, 1)
 
@@ -1174,9 +1175,18 @@ class HomeoUnit(object):
 
         activeConnections = [conn for conn in self.inputConnections if (conn.isActive() and 
                                                                         conn.incomingUnit.isActive())]
-
+        #------------ print "For Unit %s the active connections are" % self.name
+        #---------------------------------------- for conn in activeConnections:
+            #------------------------ print "%s, %s " % (conn.incomingUnit.name,
+                           #----------------------------------- conn.isActive())
+        # print "The active connections list for unit %s has exactly %u units, with outputs" % (self.name, len(activeConnections))
+        #-------------------------------------------------------- runningSum = 0
+        #---------------------------------------- for conn in activeConnections:
+            # print "Output of connection coming from unit %s is %f and the running total  is %f " % (conn.incomingUnit.name, conn.output(), runningSum)
+            #--------------------------------------- runningSum += conn.output()
+        #------------------------------- print "and the sum is %f " % runningSum
         self.inputTorque = sum([conn.output() for conn in activeConnections])
-
+        # print "the computed input torque is %f and the delta is %f" % (self.inputTorque, self.inputTorque - runningSum)
         "Testing"
         if self._debugMode:
             sys.stderr.write('Current torque at time: %s for unit %s is %f' %
@@ -1198,12 +1208,13 @@ class HomeoUnit(object):
         
         Only subclasses of HomeoUnit do that. Here we simply consider the viscosity 
         of the medium as a fractional multiplier of the torque.
-        Viscosity is max at 1 (All force canceled out) and minimum at 0 (no effect)   
+        Viscosity is max at HomeoUnit.DefaultParameters['maxViscosity']  (All force canceled out) and minimum at 0 (no effect)   
         It is a proxy for the more sophisticated computation of drag carried out
         in subclasses'''
         
+        normalizedViscosity = self.viscosity / HomeoUnit.DefaultParameters['maxViscosity']
         "Applying the viscosity "
-        totalForce = totalForce * (1 - self.viscosity)
+        totalForce = totalForce * (1 - normalizedViscosity)
         
         newVelocity = totalForce / self.needleUnit.mass    
         '''In an Aristotelian model, the change in displacement (= the velocity) 
@@ -1269,7 +1280,7 @@ class HomeoUnit(object):
         See Ashby, Design for a Brain, chps. 19-22 for a mathematical treatment of the 
         Homeostat and Capehart 1967 for suggestions on a possible implementation 
         (which requires a Runge-Kutta diff solution routine or equivalent and 
-        Hutwitz convergence test on the coefficient matrix)
+        Hurwitz convergence test on the coefficient matrix)
         
         Our method(s) assumes:
         
@@ -1308,8 +1319,10 @@ class HomeoUnit(object):
         '''See method newNeedlePosition for an extended comment on how 
         to compute the displacement of the needle'''
 
+        normalizedViscosity = self.viscosity / HomeoUnit.DefaultParameters['maxViscosity']
+        
         totalForce = aTorque  / (self.maxDeviation  * 2.)
-        totalForce = totalForce * (1- self.viscosity)
+        totalForce = totalForce * (1- normalizedViscosity)
         newVelocity = totalForce / self.needleUnit.mass   
         return self.criticalDeviation + newVelocity
     
