@@ -54,9 +54,16 @@ class HomeoUnitNewtonian(HomeoUnit):
         '''Output the drag force acting on the unit as
            a result of the viscosity in the trough and 
            the velocity of the needle.'''
-
+        #=======================================================================
+        # sys.stderr.write("The dragEquation drag for unit %s is %e\n The velocity is %f and the physical velocity is %f\n" % (self.name, 
+        #                                                                                                                    self.dragEquationDrag(),
+        #                                                                                                                    self.currentVelocity,
+        #                                                                                                                    self.physicalVelocity()))
+        # sys.stderr.write("The stokesLawDrag is %f\n" % self.stokesLawDrag())
+        # sys.stderr.write("The delta between dragEquation drag and stokesLawDrag is %f\n" % (self.stokesLawDrag() - self.dragEquationDrag()))
+        #=======================================================================
+#        return self.dragEquationDrag()
         return self.stokesLawDrag()
-
 
     def dragDummy(self):
         "Used for testing purposes"
@@ -64,8 +71,7 @@ class HomeoUnitNewtonian(HomeoUnit):
         return  0
 
     def dragEquationDrag(self):
-        '''Compute the drag on the needle according to the drag equation 
-           for high Reynolds numbers: 
+        '''The drag equation for high Reynolds numbers: 
            
            D = 1/2  C A rho  v^2, where:
            
@@ -75,13 +81,32 @@ class HomeoUnitNewtonian(HomeoUnit):
            A = reference area                        ( ---cross-sectional area of the needle)
            v = velocity of object relative to fluid  (m/s ---)
            
-           Return a number representing the drag expressed as force measured in Newtons'''
+           Considering that drag coefficient, reference area and 1/2 are all constants, we include all of them into the 
+           density parameters and simply return a force equal to the density times the square of velocity. We also
+           use viscosity instead of density, since the physical difference between the two is irrelevant in the context
+           of our model.
+           Output is negated, since Drag's sign is always  opposite  to velocity.
+        '''
 
         if self.debugMode == True:
             print "Computing drag's equation drag"
 
-        return  1/2.  * self.density * self.needleUnit.dragCoefficient * pow(self.physicalVelocity(),2) * (self.needleUnit.surfaceArea)
+        return  - self.viscosity * pow(self.currentVelocity,2)
 
+
+    def stokesLawDrag(self):
+        '''The  physical drag on the needle is, according to Stokes equation: 
+           D = 6 pi r eta v.
+           Output is negated, since Drag's sign is always  opposite  to velocity.
+           We compact all the constant parameters (6, pi, r, and eta) into the single viscosity parameter
+           and simply return the product of viscosity and current velocity
+        '''
+        if self.debugMode == True:
+            print "Computing Stokes law's Drag"
+
+        return - self.viscosity * self.currentVelocity 
+
+    
     def newLinearNeedlePosition(self, aTorqueValue):
         '''Computes the new position of the needle taking into consideration 
            (a simplified version of) the forces acting on the needle'''
@@ -204,14 +229,3 @@ class HomeoUnitNewtonian(HomeoUnit):
         if self.debugMode:
             print "%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput)
 
-    def stokesLawDrag(self):
-        '''Compute the physical drag on the needle according to Stokes equation: 
-           D = 6 pi r eta v.
-          Output is negated, since Drag's sign is always  opposite  to velocity.
-          Instead of the radius of the sphere (as in Stokes' law), it uses the surface area of the needle.'''
-
-        if self.debugMode == True:
-            print "Computing Stokes law's Drag"
-
-
-        return - 6 * np.pi * (sqrt(self.needleUnit.surfaceArea / np.pi) * self.viscosity * self.currentVelocity) 
