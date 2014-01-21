@@ -441,7 +441,6 @@ class HomeoSimulationControllerGui(QDialog):
                           'uniselectorTimeInterval':('UniselTiming', 0, 'LineEdit', (0,1000),unitTimingLineEditSize,defaultColor,Qt.AlignRight), 
                           'maxDeviation':('MaxCritDev', 0, 'LineEdit', (),unitCritDevMinMaxLineEditSize,defaultColor,Qt.AlignRight), 
                           'minDeviation':('MinCritDev', 0, 'LineEdit', (),unitCritDevMinMaxLineEditSize,defaultColor,Qt.AlignRight), 
-                          'density':('Density', 0, 'LineEdit',(),unitGeneralParamsLineEditSize,defaultColor,Qt.AlignRight),
                           'criticalDeviation':('CritDev', 5, 'LineEdit', (),unitCritDevValueLineEditSize,defaultColor,Qt.AlignRight)}
         
         '2. create and setup the widgets'
@@ -721,15 +720,11 @@ class HomeoSimulationControllerGui(QDialog):
             unitGridParamLayout.addWidget(viscLabel,1,2)
             unitGridParamLayout.addWidget(homeostatGuiUnitWidgets['unit'+str(i+1)+'ViscosityLineEdit'],1,3)
             
-            'Third (and last) row: Noise and Density (with their labels)'
+            'Third (and last) row: Noise (with its label)'
             noiseLabel = QLabel('Noise')
             noiseLabel.setFont(guiFont)
-            densityLabel = QLabel('Density')
-            densityLabel.setFont(guiFont)
             unitGridParamLayout.addWidget(noiseLabel,2,0)
             unitGridParamLayout.addWidget(homeostatGuiUnitWidgets['unit'+str(i+1)+'NoiseLineEdit'],2,1)
-            unitGridParamLayout.addWidget(densityLabel,2,2)
-            unitGridParamLayout.addWidget(homeostatGuiUnitWidgets['unit'+str(i+1)+'DensityLineEdit'],2,3)
             
             'Combining unit name, status, input and output with the general parameters'
             unitNameStatusInOutParamsLayout.addLayout(unitNameStatusInOutLayout)

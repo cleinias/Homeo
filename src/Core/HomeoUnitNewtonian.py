@@ -85,7 +85,7 @@ class HomeoUnitNewtonian(HomeoUnit):
            density parameters and simply return a force equal to the density times the square of velocity. We also
            use viscosity instead of density, since the physical difference between the two is irrelevant in the context
            of our model.
-           Output is negated, since Drag's sign is always  opposite  to velocity.
+           Output is negated, since Drag's sign is always opposite  to velocity.
         '''
 
         if self.debugMode == True:
@@ -161,18 +161,6 @@ class HomeoUnitNewtonian(HomeoUnit):
 
         return aTorqueValue * (self.physicalParameters['massEquivalent'] * 
                                self.physicalParameters['lengthEquivalent']) / (pow(self.physicalParameters['timeEquivalent'],2))
-
-    def reynoldsNumber(self):
-        '''Compute the Reynolds number of the physical flow (the needle in the trough), 
-           according to the formula:
-           Re = 2 a rho v / eta'''
-
-        viscosityInSiUnits = self.viscosity / 1000  # convert viscosity from centiPoise to Pascal/second"
-        if self.debugMode == True:
-            print "Computing Reynolds number"
-        
-
-        return  (2 * self.needleUnit.surfaceArea * self.density * self. physicalVelocity) / viscosityInSiUnits
 
     def selfUpdate(self):
         '''This is the master loop for the unit. It goes through the following sequence:

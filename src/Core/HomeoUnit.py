@@ -47,8 +47,6 @@ class HomeoUnit(object):
     outputRange              <Dict>                 The range of the output current, keyed as low and high. Default is -1 to 1.
     viscosity                <Float>                The viscosity of the medium in which the metallic needle of the original Ashbian unit is free to move. 
                                                     It acts as a dampening agent on the change of output. Min is 0 (no effect), max is 1 (no movement)
-    density                  <Float>                The density  of the medium in which the metallic needle of the original Ashbian unit is free to move. 
-                                                    Used to compute the drag at high velocities, if needed
     noise                    <Float>                Represents the **internal** noise of the  unit affecting the value of its critical deviation.
                                                     The default value is np.random.uniform(0, 0.1): a uniformly distributed value between 0 and 0.1
                                                     The actual noise on each iteration is a *normally distributed value* centered around 0,  with 
@@ -110,7 +108,6 @@ class HomeoUnit(object):
                               needleCompMethod= 'linear',       # switches between linear and proportional computation of displacement
                               uniselectorActive = True,
                               uniselectorActivated = 0,
-                              density = 1,                      # density of water
                               maxViscosity = (10**1),            # Used to set the initial random values of viscosity and to validate user input in forms 
                               critThreshold = 0.9,              # the ratio of max deviation beyond which a unit's essential variable's value  is considered critical
                               mass = 100)                      # the mass of the needle unit, representing the inertia of the unit. A low value will make it very unstable
@@ -169,7 +166,6 @@ class HomeoUnit(object):
         self._uniselectorActive = HomeoUnit.DefaultParameters['uniselectorActive']
         self._uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
         self._critThreshold = HomeoUnit.DefaultParameters['critThreshold']
-        self.density = HomeoUnit.DefaultParameters['density']
         
         '''A new unit is turned off, hence its velocity is 0, and 
           its criticalDeviation and nextDeviation are 0, and
@@ -263,9 +259,6 @@ class HomeoUnit(object):
         'SelfConnNoise'
 
         
-        'Density'
-        QObject.emit(emitter(self), SIGNAL('densityChanged'), self._density)
-        QObject.emit(emitter(self), SIGNAL('densityChangedLineEdit'), str(round(self._density, 5)))
         
         'Critical deviation, including min and max'        
         QObject.emit(emitter(self), SIGNAL('criticalDeviationChanged'), self._criticalDeviation)
@@ -649,23 +642,6 @@ class HomeoUnit(object):
     
     minDeviation = property(fget = lambda self: self.getMinDeviation(),
                             fset= lambda self, aValue: self.setMinDeviation(aValue))
-
-    def getDensity(self):
-        return self._density
-
-    def setDensity(self,aValue):
-        try:
-            aValue = float(aValue)
-            self._density = aValue
-        except ValueError:
-            sys.stderr.write("Unit %s tried to assign a non numeric value to density. Value was %s\n" % (self.name, aValue))
-        finally:
-            QObject.emit(emitter(self), SIGNAL('densityChanged'), self._density)
-            QObject.emit(emitter(self), SIGNAL('densityChangedLineEdit'), str(round(self._density, 5)))
-
-        
-    density = property(fget = lambda self: self.getDensity(),
-                           fset = lambda self,aValue: self.setDensity(aValue))
     
     def getStatus(self):
         return self._status
