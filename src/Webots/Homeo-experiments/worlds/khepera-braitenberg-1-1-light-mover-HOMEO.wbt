@@ -5,7 +5,7 @@ WorldInfo {
     "Author: Stefano Franchi"
     "Date: 26 August 2013"
   ]
-  title "SF-Homeo - Braitenberg-like Type-1 vehicle"
+  title "SF-Homeo - Test Khepera Fast2D example"
   fast2d "enki"
   FPS 10
 }

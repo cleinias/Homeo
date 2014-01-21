@@ -393,7 +393,7 @@ class HomeoSimulationControllerGui(QDialog):
         fixedSizePolicy.setVerticalStretch(0)
         
         'size of window'
-        homeoGuiSize = (720,710)
+        homeoGuiSize = (780,800)
         
         'size of unit connections subwindow'
         unitConnectionsSize = (520,120)
@@ -435,7 +435,7 @@ class HomeoSimulationControllerGui(QDialog):
                           'inputTorque':('Input', 5, 'LineEdit', (),unitInputOutputLineEditSize,defaultColor,Qt.AlignRight), 
                           'mass':('Mass', 0, 'LineEdit',(1,100000),unitGeneralParamsLineEditSize,defaultColor,Qt.AlignRight), 
                           'potentiometer':('Potent', 4, 'LineEdit',(0,1),unitGeneralParamsLineEditSize,defaultColor,Qt.AlignRight), 
-                          'viscosity':('Viscosity', 4,'LineEdit', (0,1),unitGeneralParamsLineEditSize,defaultColor,Qt.AlignRight),
+                          'viscosity':('Viscosity', 4,'LineEdit', (0,HomeoUnit.DefaultParameters['maxViscosity']),unitGeneralParamsLineEditSize,defaultColor,Qt.AlignRight),
                           'noise':('Noise', 4, 'LineEdit', (0,1),unitGeneralParamsLineEditSize,defaultColor,Qt.AlignRight), 
                           'switch':('Switch', 0, 'LineEdit', (),unitGeneralParamsLineEditSize,defaultColor,Qt.AlignRight), 
                           'uniselectorTimeInterval':('UniselTiming', 0, 'LineEdit', (0,1000),unitTimingLineEditSize,defaultColor,Qt.AlignRight), 
@@ -573,7 +573,7 @@ class HomeoSimulationControllerGui(QDialog):
             
         
 
-            " Set up, initialize, and connect the line edits for all the units' connections's lineEdits widgets"
+        "Set up, initialize, and connect the line edits for all the units' connections's lineEdits widgets"
         
         for incomingUnit in xrange(len(self._simulation.homeostat.homeoUnits)):
             for outgoingUnit in xrange(len(self._simulation.homeostat.homeoUnits)):
@@ -643,6 +643,9 @@ class HomeoSimulationControllerGui(QDialog):
                     attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], attrName)
                     values = attrData[0].keys()
                     slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], attrData[2])
+                    # print "The slot of the incoming connection for unit %s coming from connection to unit %s comboboxes is set to %s" % (self._simulation.homeostat.homeoUnits[incomingUnit].name,
+                                                                                                                                         # self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit].incomingUnit.name,
+                                                                                                                                         # slot.__name__)
                     index = attrData[0].values().index(getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit],attrName))
                     widget.addItems(values)
                     widget.setEditable(False)
