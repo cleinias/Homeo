@@ -110,7 +110,6 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
                 velocityDelta = 0
             else:
                 velocityDelta = abs(self.unit.currentVelocity - computedVelocity)
-
             self.assertTrue(velocityDelta < errorTolerance)
    
     def testDragEquationDrag(self):
@@ -118,7 +117,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         The Drag equation computes drag force on a surface of area A as
         Drag = Area * 1/2 * DragCoefficient * density * velocity^2
         We actually need to convert the unit's current velocity
-        to real physical units to have a minimun of plausibility.
+        to real physical units to have a minimum of plausibility.
         HomeoUnit>>physicalVelocity does that on the basis of conversion parameters
         stored in the iVar physicalParameters
         """

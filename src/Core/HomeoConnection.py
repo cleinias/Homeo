@@ -196,13 +196,6 @@ class HomeoConnection(object):
     def toggleStatus(self):
         self.status = not self.status
 
-#    def getActive(self):
-#        return self._active
-#    
-#    def setActive(self, aBoolean):
-#        ""
-#        self._active = aBoolean
-#    
     active = property(fget = lambda self: self.getStatus(),
                           fset = lambda self, value: self.setStatus(value))   
     
@@ -229,9 +222,6 @@ class HomeoConnection(object):
                 QObject.emit(emitter(self.incomingUnit), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
         except AttributeError:
             sys.stderr.write("Initializing connection, no incoming unit assigned yet\n")
-#        if hasattr(self, 'outgoingUnit')  and hasattr(self, 'incomingUnit'):
-#            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal switchChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._switch))
-#            sys.stderr.write("HomeoConnection FROM %s TO %s emitted signal weightChanged with value: %f\n" % (self.incomingUnit.name, self.outgoingUnit.name, self._weight))
 
     def setAbsoluteWeight(self, aPositiveValue):
         'Utility function that changes the weight of a connection without changing its sign (i.e. the switch)'
