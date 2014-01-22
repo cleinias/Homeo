@@ -12,10 +12,22 @@ import os
 class supervisorTrajectory(Supervisor):
     def run(self):
      "Main loop"
+     '''Assume that the current directory is under a "src" directory
+        and that a data folder called 'SimulationsData will exist
+        at the same level as "src"
+        Save file with filename equal to resulting path + an identifier '''
+
+     curDateTime = time.strftime('%h-%d-%Y-%H-%M-%S')    
+     trajFilename = 'trajectoryData-'+curDateTime+'.txt'
+     
+     addedPath = 'SimulationsData'
+     datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
+     fullPathTrajFilename = os.path.join(datafilePath, trajFilename)
+     print "The computed filename name with path is: ", fullPathTrajFilename
+     posFile = open(fullPathTrajFilename,"a")
+     print "opened data file %s at location %s" % (posFile.name, datafilePath)
+
      "Get the translation node of the robot by its definition"
-     curDateTime = time.strftime('%h-%d-%Y-%H-%M-%S')
-     posFile = open('trajectoryData-'+curDateTime+'.txt', 'w')
-     print "opened data file %s at location %s" % (posFile.name, os.getcwd())
      myKhepera = self.getFromDef("KHEPERA")
      transField = myKhepera.getField("translation")
      " Get vehicle's initial position"
@@ -33,22 +45,26 @@ class supervisorTrajectory(Supervisor):
              light = self.getFromDef("LIGHT" + str(i+1))
              lightPosField = light.getField("location")
              lightPos = lightPosField.getSFVec3f()
-             posFile.write('%f \t %f \t %f \n' % (lightPos[0],
+             posFile.write('%f\7%f\t %f \n' % (lightPos[0],
                                              lightPos[2],
                                              lightRadius))
+             posFile.flush()
              print "Point light number %u is at %f \t %f\n" % (i+1,
                                                           lightPos[0],
                                                           lightPos[2])
          except: 
              print "There are exactly %u point lights in this simulation" % (i)
              posFile.write("\n\n")
+             posFile.flush()
              break
      posFile.write("# Vehicle's initial position at:\n")
-     posFile.write('%f\t%f\n\n\n' % (initialPos[0],
+     posFile.write('%f\t %f\n\n\n' % (initialPos[0],
                                     initialPos[2]))
-     posFile.write("# Vehicle's coordinates (x and z in Webots term, as y is the vertical axis)\n")   
+     posFile.write("# Vehicle's coordinates (x and z in Webots term, as y is the vertical axis)\n")
+     posFile.flush()
+   
      while True:
-        "Perform a simulation step of 32 milliseconds"
+        "Perform a simulation step"
         "and leave the loop when the simulation is over"
         if self.step(64) == -1:
            posFile.close()
@@ -64,6 +80,8 @@ class supervisorTrajectory(Supervisor):
 #        print float(trans[1])
         posFile.write('%f\t%f\n' % (trans[0],
                                     trans[2]))
+        posFile.flush()
+
         self.step(32)
 
 controller = supervisorTrajectory()

@@ -16,6 +16,7 @@ from Helpers.SimulationThread import SimulationThread
 from Helpers.SFLineEdit import SFLineEdit
 from Helpers.CustomWidgets import SFDoubleSpinBox,SFSpinBox
 import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
 import pyqtgraph as pg
 from StringIO import StringIO
 from Simulator.Four_units_Homeostat_Standard_UI import Ui_ClassicHomeostat
@@ -112,6 +113,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.discardDataButton.setCheckable(True)
         self.discardDataButton.setChecked(not self._simulation.homeostat.collectsData)
         self.resetChartsButton = QPushButton("Clear charts")
+        self.graphTrajectoryButton = QPushButton("Chart trajectory")
         
         'Spinboxes and lineEdits'
         self.maxRunSpinBox = QSpinBox()
@@ -150,6 +152,7 @@ class HomeoSimulationControllerGui(QDialog):
         'Row 4'
         simulationPaneLayout.addWidget(self.currentTimeLabel,4,0)
         simulationPaneLayout.addWidget(self.currentTimeSpinBox,4,1)
+        simulationPaneLayout.addWidget(self.graphTrajectoryButton,4,2)
         
         'Row 5'
         simulationPaneLayout.addWidget(self.slowingFactorLabel, 5,0)
@@ -186,6 +189,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.showUniselActionButton.clicked.connect(self.toggleShowUniselAction)
         self.discardDataButton.clicked.connect(self.toggleDiscardData)
         self.resetChartsButton.clicked.connect(self.resetCharts)
+        self.graphTrajectoryButton.clicked.connect(self.graphTrajectory)
 
 
         QObject.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged"), self.currentTimeSpinBox.setValue)
@@ -975,18 +979,41 @@ class HomeoSimulationControllerGui(QDialog):
 
     def graphTrajectory(self):
         "Chart the vehicle's trajectory with matplotlib"
-
-#        dataArray = np.genfromtxt(StringIO(self._simulation.essentialSimulationData()), delimiter = ',', skiprows = 3,  names = True)
-        plt.figure()
-        for unit in self._simulation.homeostat.homeoUnits:
-            plt.plot(self._simulation.liveData[unit], label = unit.name)
-            plt.plot(self._simulation.liveData[unit.uniselector], label = (unit.name + '-un'))
-        plt.legend(loc=3, fontsize = 8)
+        
+        '''Assume that the current directory is under a "src" directory
+        and that a data folder called 'SimulationsData will exist
+        at the same level as "src"
+        Assume also that the trajectory data filename will start with 
+        the string filenamePattern and will include date and time info in the filename
+        so they properly sort in time order
+        Get the most recent file fulfilling the criteria''' 
+     
+        addedPath = 'SimulationsData'
+        datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
+        fileNamepattern = 'trajectoryData'
+        try:
+            trajDataFilename = max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)])
+        except ValueError:
+            print "The file I tried to open was:", os.path.join(datafilePath, max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)]))
+            messageBox =  QMessageBox.warning(self, 'No data file', 'There are no trajectory data to visualize', QMessageBox.Cancel)
+        trajData = np.loadtxt(os.path.join(datafilePath, trajDataFilename), skiprows=13)
+        fig = plt.figure()
+        plt.plot(trajData[:,0],trajData[:,1]) 
         plt.ylabel('y')
         plt.xlabel('x')
-        plt.title(self._simulation.dataFilename+'-trajectory')
-        plt.grid(b=True, which='both', color='0.65',linestyle='-')
-        plt.axis(ymin=self._simulation.homeostat.homeoUnits[0].minDeviation, ymax= self._simulation.homeostat.homeoUnits[0].maxDeviation)
+        plt.title(trajDataFilename)
+        ax = fig.add_subplot(111)
+        lightPos = (15,15)   # Provisional. Need to read from trajectory data file
+        lightRadius = 1.5      # Provisional. Need to read from trajectory data file
+        ax.add_artist(Circle(lightPos, 0.05,alpha=1,color = 'black')) # marks the center of the light cone
+        ax.add_artist(Circle(lightPos, lightRadius, alpha = 0.25, color = 'yellow')) # light cone
+        startPose = (trajData[0][0],trajData[0][1])
+        startMark = Circle(startPose, 0.05, alpha =1, color = 'green')
+        ax.add_artist(startMark) #draw starting position in green
+        endPose = (trajData[-1][0],trajData[-1][1])
+        endMark = Circle(endPose, 0.05, alpha =1, color = 'red')
+        ax.add_artist(endMark)   #draw starting position in green
+        ax.axis('equal')     # Otherwise circle comes out as an ellipse
         plt.show()
 
 
