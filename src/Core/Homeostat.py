@@ -32,6 +32,7 @@ class Homeostat(object):
         collectsData         <aBoolean>       whether or not the homeostat collects data about its run
         slowingFactor:       <milliseconds>   it slows down the simulation by inserting a slowingFactor wait after each cycle.
         isRunning            <aBoolean>       whether the homeostat is running
+        usesSocket           <aBoolean>       whther the homeostat uses Socket and therefore cannot be pickled
     '''
 
 #===============================================================================
@@ -70,6 +71,7 @@ class Homeostat(object):
         self._collectsData = True                       # default is to collect data. Can be turned off via accessor."
         self._slowingFactor = 10                        # Default slowing time is 10 milliseconds 
         self._isRunning = False                         # a new homeostat is not running 
+        self._usesSocket = False
 
     def getTime(self):
         return self._time
