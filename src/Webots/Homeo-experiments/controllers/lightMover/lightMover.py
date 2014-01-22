@@ -18,7 +18,8 @@ class LightMover(Supervisor):
      "Main loop"
      simulationStep = 32
      simMinute = 60000  # in milliseconds. 1 minute = 60000
-     timeInterval = 10 * simMinute
+     timeInterval = int(0.1 * simMinute)
+     print timeInterval
      
      "Get position of the first light source"
      light = self.getFromDef("LIGHT1")
@@ -31,7 +32,9 @@ class LightMover(Supervisor):
         "Perform a simulation step"
         "and leave the loop when the simulation is over"
         self.step(timeInterval)  #wait for the time interval to elapse
-        lightPosField.setSFVec3f([lightPos[0]+(random()*2),lightPos[1], lightPos[2]+(random()*2)])  #move light
+        newX = (lightPos[0]+(random()*0.1))%10
+        newY = (lightPos[2]+(random()*0.1))%10
+        lightPosField.setSFVec3f([newX,lightPos[1], newY])  #move light
         print "Light source is currently at %f\t %f" % (lightPos[0],
                                                         lightPos[2])
 
