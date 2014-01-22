@@ -607,6 +607,8 @@ def initializeBraiten1_1Arist(raw=True):
     'Sensor is not connected to (does not receive input from) any other unit'
     for connection in sensor.inputConnections:
         connection.status = False
+        
+    hom._usesSocket = True
     'Return the properly configured homeostat'
     return hom
 
@@ -761,6 +763,9 @@ def initializeBraiten1_1(raw=False):
     'Sensor is not connected to (does not receive input from) any other unit'
     for connection in sensor.inputConnections:
         connection.status = False
+    
+    hom._usesSocket = True
+
     'Return the properly configured homeostat'
     return hom
 
@@ -940,6 +945,8 @@ def initializeBraiten1_2(raw=False):
     for connection in sensorOnly.inputConnections:
         connection.status = False
 
+    hom._usesSocket = True
+
     'Return the properly configured homeostat'
     return hom
 
@@ -1103,6 +1110,8 @@ def initializeBraiten1_3():
     for connection in sensorOnly.inputConnections:
         connection.status = False
 
+    hom._usesSocket = True
+
     'Return the properly configured homeostat'
     return hom
 
@@ -1124,8 +1133,13 @@ def initializeBraiten2_2(raw=False):
     The initialization variable 'raw' controls the type of sensory tranducer. 
     If it is set to 'False" (default) the raw sensory input from webot is reversed: high sensory values correspond 
     to high actual stimuli, and viceversa.
+    This setting is equivalent to a classic Braitenberg vehicle: a high (e.g.)
+    light intensity in the world will translate into a high sensor reading.
+     
     If the 'raw' variable is set to True, the sensory transducer reads webots raw values, 
-    which are minimum for maximum stimulus and maximal for minimun stimulus                      
+    which are minimum for maximum stimulus and maximal for minimun stimulus.
+    This is the **reverse** of the classical Braitenberg case: a high intensity in the world
+    will translate into a low sensor value.  
                       
 ''' 
     if raw == None:
@@ -1343,6 +1357,8 @@ def initializeBraiten2_2(raw=False):
         connection.status = False
     for connection in rightEyeSensorOnly.inputConnections:
         connection.status = False
+
+    hom._usesSocket = True
 
     'Return the properly configured homeostat'
     return hom
