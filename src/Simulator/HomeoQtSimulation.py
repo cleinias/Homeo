@@ -30,6 +30,7 @@ class HomeoQtSimulation(QObject):
         homeostat                   <aHomeostat>       The Homeostat being run in the simulation
         maxRuns                     <anInteger>        The maximum number of simulation steps 
         dataFilename                <aString>          The filename used to save the simulation data
+        trajectoryFilename          <aString>          The filename used to save the trajectory data
         dataAreSaved                <aBoolean>         Whether the simnulation run data have been saved
         homeostatFilename           <aString>          The filename used to save the homeostat
         homeostatIsSaved            <aBoolean>         Whether the homeostat being simulated has been saved        
@@ -71,6 +72,15 @@ class HomeoQtSimulation(QObject):
 
     dataFilename = property(fget = lambda self: self.getDataFilename(),
                         fset = lambda self, aString: self.setDataFilename(aString))
+
+    def getTrajectoryFilename(self):
+        return self._trajectoryFilename
+    
+    def setTrajectoryFilename(self, aString):
+        self._trajectoryFilename = aString
+
+    trajectoryFilename = property(fget = lambda self: self.getTrajectoryFilename(),
+                        fset = lambda self, aString: self.setTrajectoryFilename(aString))
 
     def getHomeostatFilename(self):
         return self._homeostatFilename
@@ -159,6 +169,7 @@ class HomeoQtSimulation(QObject):
         self._homeostat = Homeostat()
         self._maxRuns = 10
         self._dataFilename = self.createDefaultDataFilename()
+        self._trajectoryFilename = self.createDefaultTrajectoryFilename()        
         self._homeostatFilename = self.createDefaultHomeostatFilename()
         self._dataAreSaved = True       # There are no data to save yet
         self._homeostatIsSaved = False  # A new simulation has a new random Homeostat, unless is loaded form file
@@ -288,6 +299,15 @@ class HomeoQtSimulation(QObject):
             completeName = name + '-' + dateString  + '-' + str(number)+'.txt'
     
         return completeName
+
+    def createDefaultTrajectoryFilename(self):
+        '''Create a default string corresponding to the trajectoryFilename. 
+           
+           Uses a default filename that the webots trajectory controller will use
+           FIXME: a more robust solution would coordinate between the webots controller
+           and the simulation and insure that no file with the same name exists'''
+        
+        return  'HomeoSimulationTrajectory.csv'
 
     def createDefaultHomeostatFilename(self):
         '''Create a default string corresponding to the dataFilename. 
