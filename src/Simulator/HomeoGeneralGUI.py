@@ -32,7 +32,7 @@ class HomeoSimulationControllerGui(QDialog):
     The simulation itself is run in a separate thread held in simulThread. 
 
     Instance Variables:
-        simulation                 <aHomeoQtSimulation>  The simulation being controlled
+        simulation                 <aHomeoQtSimulation>   The simulation being controlled
         simulThread                <aSimulationThread>    The QT thread holding the simulation run
     '''
     def __init__(self, parent = None):
@@ -898,18 +898,23 @@ class HomeoSimulationControllerGui(QDialog):
 
     
     def saveHomeostat(self):
-        filename = QFileDialog.getSaveFileName(parent = self, 
-                                                       caption = 'Choose the file to save the Homeostat to', 
-                                                       directory = self._simulation.homeostatFilename)    #QFileDialog.GetSave returns a QString
-        print filename
-        if len(filename) > 0:                            # Change the filename to the newly selected one
-            self._simulation.homeostatFilename = filename
-            #if #Check that files exists here"
-            self._simulation.save()
-            self._simulation.homeostatIsSaved = True
-        else:                                               # Use the current filename
-            self._simulation.save()
-            self._simulation.homeostatIsSaved = True
+        '''Can only save a "pure" homeostat. Homeostat using tcp/socket connections to webots 
+           cannot be saved (because socket cannot be pickled '''
+        if self._simulation.usesSocket():
+            "pop up a warning: homeostat cannot be saved"
+            messageBox =  QMessageBox.warning(self, 'The Homeostat cannot be saved', 'Homeostats using sockets cannot be saved', QMessageBox.Cancel)
+        else:
+            filename = QFileDialog.getSaveFileName(parent = self,
+                                                   caption = 'Choose the file to save the Homeostat to', 
+                                                   directory = self._simulation.homeostatFilename)    #QFileDialog.GetSave returns a QString
+            if len(filename) > 0:                            # Change the filename to the newly selected one
+                self._simulation.homeostatFilename = filename
+                #if #Check that files exists here"
+                self._simulation.save()
+                self._simulation.homeostatIsSaved = True
+            else:                                               # Use the current filename
+                self._simulation.save()
+                self._simulation.homeostatIsSaved = True
 
     def newHomeostat(self):
         self._simulation.fullReset()
@@ -967,6 +972,23 @@ class HomeoSimulationControllerGui(QDialog):
         plt.grid(b=True, which='both', color='0.65',linestyle='-')
         plt.axis(ymin=self._simulation.homeostat.homeoUnits[0].minDeviation, ymax= self._simulation.homeostat.homeoUnits[0].maxDeviation)
         plt.show()
+
+    def graphTrajectory(self):
+        "Chart the vehicle's trajectory with matplotlib"
+
+#        dataArray = np.genfromtxt(StringIO(self._simulation.essentialSimulationData()), delimiter = ',', skiprows = 3,  names = True)
+        plt.figure()
+        for unit in self._simulation.homeostat.homeoUnits:
+            plt.plot(self._simulation.liveData[unit], label = unit.name)
+            plt.plot(self._simulation.liveData[unit.uniselector], label = (unit.name + '-un'))
+        plt.legend(loc=3, fontsize = 8)
+        plt.ylabel('y')
+        plt.xlabel('x')
+        plt.title(self._simulation.dataFilename+'-trajectory')
+        plt.grid(b=True, which='both', color='0.65',linestyle='-')
+        plt.axis(ymin=self._simulation.homeostat.homeoUnits[0].minDeviation, ymax= self._simulation.homeostat.homeoUnits[0].maxDeviation)
+        plt.show()
+
 
     def changeUniselectorTypeForUnit(self, aUnitNumber, aUniselectorType):
         pass
