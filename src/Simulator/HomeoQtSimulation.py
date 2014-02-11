@@ -162,9 +162,13 @@ class HomeoQtSimulation(QObject):
 #            self.currentExperiment = 'initializeBraiten1_2Pos'
 #           self.currentExperiment = 'initializeBraiten1_2Neg'
 #            self.currentExperiment = 'initializeBraiten1_3'
-#            self.currentExperiment = 'initializeBraiten2_2Pos'
-            self.currentExperiment = 'initializeBraiten2_2Neg'
-    
+#           self.currentExperiment = 'initializeBraiten2_2Pos'
+#            self.currentExperiment = 'initializeBraiten2_2Neg'
+#            self.currentExperiment = 'initializeBraiten2_2_Full_Neg'
+#            self.currentExperiment = 'initializeBraiten2_2_Full_Pos'
+#            self.currentExperiment = 'initializeBraiten2_7_Full'
+            self.currentExperiment = 'initializeBraiten2_2Aristotelian'
+            
         super(HomeoQtSimulation,self).__init__()
         self._homeostat = Homeostat()
         self._maxRuns = 10
