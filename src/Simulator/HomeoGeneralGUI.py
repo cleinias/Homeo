@@ -28,7 +28,7 @@ class HomeoSimulationControllerGui(QDialog):
     Part of a complete GUI for  a HomeoSimulation. 
     It provides access to starting and stopping the simulation and to saving and graphing data.
     Real-time interactive access to the homeostat is provided by class Classic_Homeostat,
-    which this class instantiates and then modify.
+    which this class instantiates and then modifies it.
     
     The simulation itself is run in a separate thread held in simulThread. 
 
@@ -987,7 +987,8 @@ class HomeoSimulationControllerGui(QDialog):
         the string filenamePattern and will include date and time info in the filename
         so they properly sort in time order
         Get the most recent file fulfilling the criteria''' 
-     
+        
+        headerLength = 13 #FIXME: compute the header length from the data file 
         addedPath = 'SimulationsData'
         datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
         fileNamepattern = 'trajectoryData'
@@ -996,24 +997,49 @@ class HomeoSimulationControllerGui(QDialog):
         except ValueError:
             print "The file I tried to open was:", os.path.join(datafilePath, max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)]))
             messageBox =  QMessageBox.warning(self, 'No data file', 'There are no trajectory data to visualize', QMessageBox.Cancel)
-        trajData = np.loadtxt(os.path.join(datafilePath, trajDataFilename), skiprows=13)
+        trajData = np.loadtxt(os.path.join(datafilePath, trajDataFilename), skiprows=headerLength)
         fig = plt.figure()
         plt.plot(trajData[:,0],trajData[:,1]) 
         plt.ylabel('y')
         plt.xlabel('x')
         plt.title(trajDataFilename)
         ax = fig.add_subplot(111)
-        lightPos = (15,15)   # Provisional. Need to read from trajectory data file
-        lightRadius = 1.5      # Provisional. Need to read from trajectory data file
-        ax.add_artist(Circle(lightPos, 0.05,alpha=1,color = 'black')) # marks the center of the light cone
-        ax.add_artist(Circle(lightPos, lightRadius, alpha = 0.25, color = 'yellow')) # light cone
+        xmin = ymin = 0         # chart boundaries
+        xmax =  ymax = 18
+        # read light positions"
+        dataFileHeader = []
+        dataFile = open(os.path.join(datafilePath, trajDataFilename))
+        for i, line in enumerate(dataFile):
+            if i < headerLength:
+                dataFileHeader.append(line)
+            else:
+                break
+        dataFile.close()
+        lightPosList = []
+        for line in dataFileHeader:
+            if "Pointlight" in line:
+                lightPosList.append(line)
+        lightsOn = [] 
+        for line in lightPosList:
+            if "True" in line:
+                splitValues = line.split("\t")
+                lightsOn .append(([float(splitValues[2]),float(splitValues[3]),float(splitValues[4])])) #list of turned on lights, each represented as a list including x, y coordinates and light intensity
+        cMap = plt.get_cmap('Blues')  # Use a matplotlib color map to map lights' intensity
+        for light in lightsOn:
+            lightPos = (light[0],light[1])  
+            lightRadius = 1.5      # FIXME Provisional. Need to read from trajectory data file
+            ax.add_artist(Circle(lightPos, 0.05, alpha=1,color = 'black')) # marks the center of the light cone
+            print "the light intensity is %f/n", light[2]
+            # parametrize color value to light intensity 
+            ax.add_artist(Circle(lightPos, lightRadius, alpha = 0.25, color = cMap(light[2]))) # light cone
         startPose = (trajData[0][0],trajData[0][1])
         startMark = Circle(startPose, 0.05, alpha =1, color = 'green')
         ax.add_artist(startMark) #draw starting position in green
         endPose = (trajData[-1][0],trajData[-1][1])
         endMark = Circle(endPose, 0.05, alpha =1, color = 'red')
         ax.add_artist(endMark)   #draw starting position in green
-        ax.axis('equal')     # Otherwise circle comes out as an ellipse
+        ax.axis('equal')         # Otherwise circle comes out as an ellipse
+        ax.axis([xmin,xmax,ymin,ymax])
         plt.show()
 
 
