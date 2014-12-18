@@ -17,8 +17,9 @@ class supervisorTrajectory(Supervisor):
         at the same level as "src"
         Save file with filename equal to resulting path + an identifier '''
 
-     curDateTime = time.strftime('%h-%d-%Y-%H-%M-%S')    
+     curDateTime = time.strftime("%Y%m%d%H%M%S")    
      trajFilename = 'trajectoryData-'+curDateTime+'.txt'
+
      
      addedPath = 'SimulationsData'
      datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
@@ -38,20 +39,24 @@ class supervisorTrajectory(Supervisor):
      posFile.write("# Position data for Homeo simulation run\n#\n#\n")
      posFile.write("# Light sources positioned at:\n")
      "Loop through  all light sources of name (DEF) of the form LIGHTx and write their positions to file"
-     "The radius of the light sources is provisionally set to 2.5"
-     lightRadius = 2.5
      for i in xrange(10):
          try:
              light = self.getFromDef("LIGHT" + str(i+1))
              lightPosField = light.getField("location")
              lightPos = lightPosField.getSFVec3f()
-             posFile.write('%f\7%f\t %f \n' % (lightPos[0],
-                                             lightPos[2],
-                                             lightRadius))
+             lightIsOnField = light.getField("on")
+             lightIsOn=lightIsOnField.getSFBool()
+             lightIntensity=(light.getField("intensity")).getSFFloat()
+             posFile.write('Pointlight\t %s\t%f\t%f\t%f\t%s\n' % (i,
+                                                              lightPos[0],
+                                                              lightPos[2],
+                                                              lightIntensity,
+                                                              lightIsOn))
              posFile.flush()
-             print "Point light number %u is at %f \t %f\n" % (i+1,
+             print "Point light number %u is at %f \t %f and it is %s \n" % (i+1,
                                                           lightPos[0],
-                                                          lightPos[2])
+                                                          lightPos[2],
+                                                          lightIsOn)
          except: 
              print "There are exactly %u point lights in this simulation" % (i)
              posFile.write("\n\n")
