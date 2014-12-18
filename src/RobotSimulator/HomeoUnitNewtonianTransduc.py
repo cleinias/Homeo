@@ -8,6 +8,7 @@ from Core.HomeoUnit import HomeoUnit
 from Core.HomeoUnitAristotelian import HomeoUnitAristotelian
 from numpy import sign
 from Helpers.General_Helper_Functions import scaleTo
+from math import exp
 
 class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
     '''
@@ -32,7 +33,15 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
         'Initialize actuator, if passed'
         if actuator is not None:
             self._actuator = actuator
-
+            self.rightSpeed = 0
+            self.leftSpeed = 0
+            self.maxDelta = 0
+        
+        '''Initialize default parameters for sigmoid function used to convert
+           unit's deviation to motor commands'''
+        self._maxSpeedFraction = 0.2  # The maximum speed of a motor as a fraction of the actuator speed
+        self._switchingRate = .1       # The speed at which the function switches from positive to negative, or the slope of the curve     
+        self._maxSpeed = self._actuator.range()[1]* self._maxSpeedFraction
     
     def setActuator(self, anActuator):
         self._actuator = anActuator
@@ -47,7 +56,28 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
             then operate actuator on the unit value scaled 
             to the actuator range'''
         super(HomeoUnitNewtonianActuator, self).selfUpdate()
-        self.actuator.funcParameters = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)
+        #=======================================================================
+        # '''For testing'''
+        # if self.actuator._wheel == 'right':
+        #     self.rightSpeed = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)
+        # else:
+        #     self.leftSpeed = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)
+        # delta = self.leftSpeed - self.rightSpeed 
+        # if abs(delta) > self.maxDelta:
+        #     self.maxDelta = abs(delta)
+        # print "The unit value is %f and its scaled value is %f. The delta b/w wheels is %f and maxDelta is %f" % (self.criticalDeviation,
+        #                                                            scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation),
+        #                                                            delta,
+        #                                                            self.maxDelta)
+        # 'end testing'
+        #=======================================================================
+
+#        setSpeed = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)        
+#        setSpeed = self.criticalDeviation
+        ''' Use logistic function to normalize speed to [-1,1]'''        
+        setSpeed = float(-self._maxSpeed) + ((2 * self._maxSpeed)/ (1+exp(- self._switchingRate * self.criticalDeviation)))
+        print "Speed of %s wheel is %f " % (self.actuator._wheel, setSpeed)
+        self.actuator.funcParameters = setSpeed
         self.actuator.act()
     
 class HomeoUnitAristotelianActuator(HomeoUnitAristotelian):
