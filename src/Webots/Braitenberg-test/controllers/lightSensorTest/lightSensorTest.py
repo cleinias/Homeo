@@ -1,6 +1,6 @@
 #################################################################
 # First test controlling a khepera robot in a simple Webots world
-# simulating a Bretinteberg environment with a type 2 vehicle
+# simulating a Braitenberg environment with a type 2 vehicle
 #
 # Stefano Franchi 2013
 #################################################################
