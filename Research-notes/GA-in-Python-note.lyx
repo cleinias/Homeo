@@ -8,6 +8,16 @@
 \addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
 \addbibresource{/home/stefano/Documents/Books/Play-and-Passivity/Dissertation-references.bib}
 \addbibresource{/home/stefano/Documents/Biblios/additional-refs-for-Il-Pensiero-Vivente.bib}
+
+\AtEveryBibitem{%
+ \clearfield{eprint}
+ \clearfield{isbn}
+ \clearfield{issn}
+ \clearfield{doi}
+ \clearfield{note}
+ \clearlist{location}
+ \clearfield{month}
+ \clearfield{series}}
 \end_preamble
 \options article, 11pt
 \use_default_options false
@@ -79,7 +89,7 @@ Genetic algorithms libraries in Python
 \end_layout
 
 \begin_layout Standard
-Here the available packages.
+Here are the available packages.
  Notes are from http://stackoverflow.com/questions/16739118/genetic-algorithms-an
 d-multi-objectives-optimization-on-python-libraries-tools
 \end_layout
@@ -90,7 +100,8 @@ PyGene
 
 \begin_deeper
 \begin_layout Itemize
-https://github.com/blaa/PyGene
+https://github.com/blaa/PyGeneSciPy GA module: http://www.scipy.org/documentation/a
+pidocs/scipy/scipy.ga.html
 \end_layout
 
 \begin_layout Itemize
@@ -119,7 +130,7 @@ inspyred
 
 \begin_deeper
 \begin_layout Itemize
-http://inspyred.github.io/
+http://aarongarrett.github.io/inspyred/
 \end_layout
 
 \begin_layout Itemize
@@ -153,6 +164,31 @@ http://pybrain.org/
 \begin_layout Itemize
 Seems more of a general ANN framework rather than a GA (although it does
  include some GA classes)
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Ecspy
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+http://pypi.python.org/pypi/ecspy
+\end_layout
+
+\begin_layout Itemize
+Deprecated.
+ Webpage recommends to use Inspyred: https://github.com/aarongarrett/inspyred
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+pyStep
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+http://pystep.sourceforge.net/
 \end_layout
 
 \end_deeper
@@ -212,19 +248,18 @@ The previous two parameters are actually just one: a signed weight for the
 \end_deeper
 \begin_layout Enumerate
 MaxDeviation
-\end_layout
+\begin_inset Newline newline
+\end_inset
 
-\begin_deeper
-\begin_layout Standard
 Unsure if this is really necessary, as all input/output is renormalized
  to the 
 \begin_inset Formula $[0-1]$
 \end_inset
 
  interval.
- 
 \end_layout
 
+\begin_deeper
 \begin_layout Standard
 
 \emph on
@@ -378,16 +413,16 @@ Potentiometer
 UniselectorTiming
 \end_layout
 
+\begin_layout Enumerate
+MaxDeviation
+\end_layout
+
 \end_deeper
 \begin_layout Itemize
 Possibly useful
 \end_layout
 
 \begin_deeper
-\begin_layout Enumerate
-MaxDeviation
-\end_layout
-
 \begin_layout Enumerate
 CritThreshold
 \end_layout
@@ -492,6 +527,12 @@ Thus, there seem to be a single parameter for each connection
 \end_layout
 
 \begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:Homeostat-Genome"
+
+\end_inset
+
 Homeostat
 \end_layout
 
@@ -509,7 +550,7 @@ Assuming a unit has
 fully connected 
 \emph default
 homeostat would have 
-\begin_inset Formula $n(m+n-1)$
+\begin_inset Formula $n(m+n)$
 \end_inset
 
  parameters.
@@ -521,7 +562,7 @@ reference "sub:Summary-of-Homeounit"
 \end_inset
 
 , we have 5 unit-related parameters, for a total of 
-\begin_inset Formula $n(5+n-1)=n(4+n)$
+\begin_inset Formula $n(5+n)=n(5+n)$
 \end_inset
 
  parameters describing a homeostat.
@@ -530,10 +571,197 @@ reference "sub:Summary-of-Homeounit"
 \end_inset
 
  would be described by 
-\begin_inset Formula $32$
+\begin_inset Formula $34$
 \end_inset
 
  parameters.
+\end_layout
+
+\begin_layout Chapter
+GA setup in Homeo
+\end_layout
+
+\begin_layout Section
+Overall machinery
+\end_layout
+
+\begin_layout Standard
+The overall setup needed to manage GA simulations in Homeo requires:
+\end_layout
+
+\begin_layout Enumerate
+A GA-simulation manager
+\end_layout
+
+\begin_layout Enumerate
+GA helpers classes for individual type, fitness function, breeding, selection
+ strategies, etc.
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+These helpers classes will be provided by the GA library used.
+ Currently investigating the use of the DEAP library (see above)
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+More details on the two previous points follow.
+\end_layout
+
+\begin_layout Subsection
+GA-simulation manager
+\end_layout
+
+\begin_layout Standard
+The manager needs to take care of the following:
+\end_layout
+
+\begin_layout Enumerate
+Initialize a population of individuals as represented by the parameters
+ of their homeostats.
+\end_layout
+
+\begin_layout Enumerate
+For each member of the population, execute a robotic simulation (in fast-mode,
+ obviously), stop it after a predefinite time and/or result achieved, and
+ record the result.
+\end_layout
+
+\begin_layout Enumerate
+Breed, select, and repeat.
+\end_layout
+
+\begin_layout Standard
+Obviously all the steps above must be automatized (i.e.
+ batch-executed), although regular reports should be written.
+\end_layout
+
+\begin_layout Section
+Simulations
+\end_layout
+
+\begin_layout Standard
+TODO
+\end_layout
+
+\begin_layout Section
+Genome type
+\end_layout
+
+\begin_layout Standard
+As described above at 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:Homeostat-Genome"
+
+\end_inset
+
+, the genome of a fully-connected Homeostat includes 
+\begin_inset Formula $n(m+n)$
+\end_inset
+
+ parameters, with 
+\begin_inset Formula $m$
+\end_inset
+
+ being the essential parameters (most likely 5, see 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Summary-of-Homeounit"
+
+\end_inset
+
+) and 
+\begin_inset Formula $n$
+\end_inset
+
+ being the number of units.
+ The data types of the parameters are mixed, both real and integer numbers
+ (even though they could all be reduced to real).
+\end_layout
+
+\begin_layout Section
+Fitness function(s)
+\end_layout
+
+\begin_layout Standard
+The fitness function depends on the task, of course.
+ for the DiPaolo/Braitenberg inspired experiment it could just be the distance
+ from the target (if the selection procedure is minimizing, or the negative
+ of the distance, i.e.
+ assuming a maximizing function)
+\end_layout
+
+\begin_layout Section
+GA-specific choices
+\end_layout
+
+\begin_layout Standard
+TODO
+\end_layout
+
+\begin_layout Chapter
+Tasks
+\end_layout
+
+\begin_layout Section
+Running a single-run simulation from a homeostat's parametric description
+ and an experiment's description
+\end_layout
+
+\begin_layout Enumerate
+Write a procedure to create a homeostat on the basis of its basic parameters
+\end_layout
+
+\begin_layout Enumerate
+Write a procedure to start a batch-simulation given a homeostat/experiment
+\end_layout
+
+\begin_layout Enumerate
+Write a procedure to record the result of a simulation
+\end_layout
+
+\begin_layout Enumerate
+Wrap the the previous procedures in a class managing a homeostat's single-run
+\end_layout
+
+\begin_layout Section
+Running the simulation of a population
+\end_layout
+
+\begin_layout Enumerate
+Write a procedure to create a population of homeostat-descriptions
+\end_layout
+
+\begin_layout Enumerate
+Write a procedure to run repeated one-run simulations
+\end_layout
+
+\begin_layout Enumerate
+Collect (and write) the results
+\end_layout
+
+\begin_layout Enumerate
+Collect (and possibly write) the homeostat-descriptions
+\end_layout
+
+\begin_layout Section
+Running a whole GA-experiment
+\end_layout
+
+\begin_layout Enumerate
+Write a class to manage the breeding and selection of individuals
+\end_layout
+
+\begin_layout Section
+Add an interface to manage the simulation process
+\end_layout
+
+\begin_layout Enumerate
+Create a simple interface to select GA-simulation parameters (population
+ size, GA-related parameters, etc) and start/stop simulation.
 \end_layout
 
 \end_body
