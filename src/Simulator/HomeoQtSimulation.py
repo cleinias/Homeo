@@ -141,7 +141,7 @@ class HomeoQtSimulation(QObject):
     def units(self):
         return self.homeostat.homeoUnits
     
-    def __init__(self, experiment=None):
+    def __init__(self, experiment=None, experimentParams=None):
         '''
         Initialize the instance with a new homeostat and a default number of runs."
         '''
@@ -154,20 +154,20 @@ class HomeoQtSimulation(QObject):
 #        self.currentExperiment = 'initialize_1minus_2_minus_3xExperiment'    
         if experiment == None:
 #            self.currentExperiment = 'initialize10UnitHomeostat'
-#            self.currentExperiment = 'initialize_Ashby_2nd_Experiment'
+#           self.currentExperiment = 'initialize_Ashby_2nd_Experiment'
 #            self.currentExperiment = 'initializeAshbyNoNoiseSimulation'
 #            self.currentExperiment = 'initializeBraiten1_1Arist'
 #            self.currentExperiment = 'initializeBraiten1_1Pos'
 #            self.currentExperiment = 'initializeBraiten1_1Neg'
 #            self.currentExperiment = 'initializeBraiten1_2Pos'
-#           self.currentExperiment = 'initializeBraiten1_2Neg'
+#            self.currentExperiment = 'initializeBraiten1_2Neg'
 #            self.currentExperiment = 'initializeBraiten1_3'
-#           self.currentExperiment = 'initializeBraiten2_2Pos'
+            self.currentExperiment = 'initializeBraiten2_2Pos'
 #            self.currentExperiment = 'initializeBraiten2_2Neg'
 #            self.currentExperiment = 'initializeBraiten2_2_Full_Neg'
 #            self.currentExperiment = 'initializeBraiten2_2_Full_Pos'
 #            self.currentExperiment = 'initializeBraiten2_7_Full'
-            self.currentExperiment = 'initializeBraiten2_2Aristotelian'
+#            self.currentExperiment = 'initializeBraiten2_2Aristotelian'
             
         super(HomeoQtSimulation,self).__init__()
         self._homeostat = Homeostat()
@@ -196,10 +196,13 @@ class HomeoQtSimulation(QObject):
             self.liveDataWindow[unit.uniselector] = deque(maxlen=self.maxDataPoints)        # add empty queue to hold uniselector activation data for unit
             self.unitsSelfWeights[unit] = []
 
-    def initializeExperSetup(self):
-        '''Initialize the homeostat to the current experimental set up by calling the class
-           method of HomeoExperiment corresponding to the string stored in self.currentExperiment'''
-        self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)()
+    def initializeExperSetup(self, params=None):
+        '''Initialize the homeostat to the current experimental set up by calling the function
+           in module HomeoExperiment corresponding to the string stored in self.currentExperiment'''
+        if params == None:
+            self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)()
+        else:
+            self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)(params)
         self._dataFilename = self.currentExperiment + '--Plot-Data'
         #----------------------------------------------------------------------------- #
         # FIXME 
@@ -292,7 +295,7 @@ class HomeoQtSimulation(QObject):
         
         dateString = ''
         now_ = datetime.now()
-        dateString += str(now_.month) + '-' + str(now_.day) + '-' + str(now_.year)
+        dateString += now_.strftime("%Y%m%d%H%M%S")
         name = 'HomeoSimulationData'
     
         number = 1
@@ -380,7 +383,7 @@ class HomeoQtSimulation(QObject):
   
         
     def essentialSimulationData(self):
-        "Ask the DataCollector to teturn a string with the essential data about the simulaiton"
+        "Ask the DataCollector to return a string with the essential data about the simulaiton"
         return self.homeostat.dataCollector.printPlottingDataForROnAString('')
 
     def saveEssentialDataOnFileWithSeparator(self, aCharacter):
