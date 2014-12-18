@@ -109,9 +109,13 @@ class HomeoUnit(object):
                               uniselectorActive = True,
                               uniselectorActivated = 0,
                               maxViscosity = (10**1),            # Used to set the initial random values of viscosity and to validate user input in forms 
-                              critThreshold = 0.9,              # the ratio of max deviation beyond which a unit's essential variable's value  is considered critical
-                              mass = 100)                      # the mass of the needle unit, representing the inertia of the unit. A low value will make it very unstable
-
+                              critThreshold = 0.9,               # the ratio of max deviation beyond which a unit's essential variable's value  is considered critical
+                              mass = 100,                        # the mass of the needle unit, representing the inertia of the unit. A low value will make it very unstable
+                              maxUniselectorTimeInterval = 1000, # Used in GA settings to pick a random value
+                              maxTheoreticalDeviation = 1000,    # Used in GA settings to pick a random value
+                              maxMass = 10000,                   # Used in GA settings to pick a random value
+                              minMass = 10)                      # Used in GA settings to pick a random value
+    
     '''The value of the precision need for a correct working of PyQt sliders (which only allow integers). 
     Must be equal to same parameter set in HomeoStandardGui>>setupHomeostatGuiUnitsStandardCritDevSlider'''
     precision = 10**5  
@@ -142,6 +146,7 @@ class HomeoUnit(object):
         self.initializeBasicParameters()
         self._inputConnections = []
         self.setDefaultSelfConnection()
+        self.unit_essential_parameters = 5
 
         
     def initializeBasicParameters(self):
@@ -210,6 +215,59 @@ class HomeoUnit(object):
     def initializeUniselector(self):
         '''Reset uniselector to its default parameters, but do not change its type'''
         self.uniselector.setDefaults()
+
+   #============================================================================
+   # GA-methods for Genetic algorithms simulations
+   #============================================================================
+        
+    def initialize_GA(self, essent_params):                
+        '''
+        The initialize_GA method sets the unit's essential parameters.
+        essent_params is a list containing numeric values 
+        for the unit's essential parameters, which must be passed to the class in this order:
+        
+        1 Mass
+        2 Viscosity
+        3 Potentiometer (aka self-weight) (float, [0,1])
+        4 UniselectorTiming (integer)
+        5 maxDeviation (integer)
+        
+        All parameters are in the [0,1) interval and are scaled appropriately by
+        the respective functions.
+        
+        Subclasses of HomeoUnit may override this method and add parameters
+        '''
+        if essent_params.length <> self.unit_essential_parameters:
+            raise (HomeoUnitError, "The number of parameters needed to initialize the unit is incorrect.")
+         
+        self.setMassGA(essent_params[0])
+        self.setViscosityGA(essent_params[1])
+        self.setPotentiometerGA(essent_params[2])
+        self.setUniselectorTimeInterval(essent_params[3])
+        self.setMaxDeviation(essent_params[4])
+        
+    def setUniselectorTimeIntervalGA(self,uniselParam):
+        '''Set UniselectorTimeInterval by scaling a GA parameter in the [0,1) range'''
+        self.uniselectorTimeInterval = uniselParam * self.DefaultParameters['maxUniselectorTimeInterval'] 
+    
+    def setViscosityGA(self, viscParam):
+        '''Set viscosity by scaling a GA parameter in the [0,1) range'''        
+        self.viscosity = viscParam * self.HomeoUnit.DefaultParameters['maxViscosity']
+    
+    def setPotentiometerGA(self,potenParam):
+        '''Set the potentiometer by scaling a GA parameter in the [0,1) range'''
+        self.potentiometer = -1 + (potenParam * 2)
+
+    def setMaxDeviationGA(self,maxDevParam):
+        '''Set maxDeviation by scaling a GA parameter in the [0,1) range'''
+        self.maxDeviation = maxDevParam * self.DefaultParameters['maxTheoreticalDeviation']
+        
+    def setMassGA(self,massParam):
+        '''Set mass by scaling a GA parameter in the [0,1) range'''
+        self.mass = ((self.DefaultParameters['maxMass']-self.DefaultParameters['maxMass']) * massParam) + self.DefaultParameters['minMass']
+               
+    #===============================================================================   
+        
 
     
     def allValuesChanged(self):
@@ -359,7 +417,7 @@ class HomeoUnit(object):
     
     viscosity = property(fget = lambda self: self.getViscosity(),
                          fset = lambda self, value: self.setViscosity(value))
-      
+    
     def setNeedleUnit(self, aValue):
         self._needleUnit = aValue
         
@@ -381,8 +439,6 @@ class HomeoUnit(object):
         finally:
             QObject.emit(emitter(self), SIGNAL('potentiometerChanged'), self._potentiometer)
             QObject.emit(emitter(self), SIGNAL('potentiometerChangedLineEdit'), str(round(self._potentiometer, 4)))
-
-
 
     def getPotentiometer(self):
         return self._potentiometer
@@ -450,7 +506,6 @@ class HomeoUnit(object):
             QObject.emit(emitter(self), SIGNAL('maxDeviationScaledChanged)'),scaledValueToEmit)
             QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
 #            sys.stderr.write('%s emitted signals maxDeviation with value %f, MinDeviation changed to %f\n' % (self._name, self._maxDeviation, self.minDeviation))
-            
             
     def getMaxDeviation(self):
         return self._maxDeviation
