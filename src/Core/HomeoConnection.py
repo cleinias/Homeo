@@ -1,3 +1,25 @@
+#===============================================================================
+#     This file is part of Homeo, a homeostat simulator.
+#     Copyright Stefano Franchi 2012-2014
+# 
+#     Homeo is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+# 
+#     Homeo is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with Homeo.  If not, see <http://www.gnu.org/licenses/>.
+#===============================================================================
+
+
+
+
+
 from __future__ import  division
 from Helpers.HomeoNoise import *
 import numpy as np
@@ -222,6 +244,11 @@ class HomeoConnection(object):
                 QObject.emit(emitter(self.incomingUnit), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
         except AttributeError:
             sys.stderr.write("Initializing connection, no incoming unit assigned yet\n")
+            
+    def newWeightGA(self, aWeightParam):
+        ''''updates weight and switch by scaling aWeightParam (0,1) to the
+        interval (-1,1)'''
+        self.newWeight(-1 + (aWeightParam * 2))
 
     def setAbsoluteWeight(self, aPositiveValue):
         'Utility function that changes the weight of a connection without changing its sign (i.e. the switch)'
