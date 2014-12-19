@@ -9,21 +9,22 @@ from Simulator.HomeoQtSimulation import HomeoQtSimulation
 from Helpers.SimulationThread import SimulationThread
 from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
-
+import sys
 import numpy as np
 
-class HomeoGASimulation(object):
+class HomeoGASimulation(QWidget):
     '''
     Class managing a Genetic Algorithm simulation, with GUI interface
     '''
-
-    def __init__(self, maxRun=1000):
+    
+    def __init__(self, maxRun=1000, parent=None):
         '''
         Create a HomeoQTSimulation object to hold the actual simulation and initialize it. 
         Notice that the GA experiment must be set from within the HomeoQTSimulation class (FIXME).
         Instance variable maxRun holds the number of steps the single simulations should be run
         
         '''
+        super(HomeoGASimulation,self).__init__(parent)
         self._simulation = HomeoQtSimulation()             # instance variable holding the real simulation
         self._simulation.initializeExperSetup(self.createRandomHomeostatGenome())
         self._maxRun = maxRun
@@ -33,6 +34,52 @@ class HomeoGASimulation(object):
         self._simulThread = SimulationThread()
         self._simulation.moveToThread(self._simulThread)
         self._simulThread.started.connect(self._simulation.go)
+        
+        "construct the interface"
+        self.setWindowTitle('Homeo GA simulation')
+        self.setMinimumWidth(400)
+
+        self.buildGui()
+        
+    def buildGui(self):
+        '''
+        Build the general GUI for the GA simulation
+        '''
+        
+        #mainGui = QDialog()
+        'layouts'
+        self.controlLayout = QGridLayout()
+        self.overallLayout = QVBoxLayout()
+        self.textLayout = QVBoxLayout()
+
+        
+        'widgets'
+        self.initializePopButton = QPushButton("Initialize Population")
+        self.noIndividualsSpinBox = QSpinBox()
+        self.noIndividualsLabel = QLabel("No of individuals")
+        self.startPushButton = QPushButton("Start")
+        self.stopPushButton = QPushButton("Stop")
+        self.quitPushButton = QPushButton("Quit")
+        self.currentFitnessLineEdit = QLineEdit()
+        self.currentFitnessLabel = QLabel("Current Fitness")
+        self.outputPane = QTextEdit()
+        
+        self.controlLayout.addWidget(self.initializePopButton,0,0)
+        self.controlLayout.addWidget(self.noIndividualsLabel,0,2)
+        self.controlLayout.addWidget(self.noIndividualsSpinBox, 0,3)
+        self.controlLayout.addWidget(self.currentFitnessLabel, 1,2)
+        self.controlLayout.addWidget(self.currentFitnessLineEdit, 1,3)
+        self.controlLayout.addWidget(self.startPushButton, 2,0)
+        self.controlLayout.addWidget(self.stopPushButton,2,2)
+        self.controlLayout.addWidget(self.quitPushButton,2,3)
+        
+        'text pane'
+        self.textLayout.addWidget(self.outputPane)
+        
+        self.overallLayout.addLayout(self.controlLayout)
+        self.overallLayout.addLayout(self.textLayout)
+        self.setLayout(self.overallLayout)
+        #return mainGui
         
 
     def createRandomHomeostatGenome(self,noUnits=4, essentParams=5):
@@ -55,6 +102,6 @@ class HomeoGASimulation(object):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-#    simul = HomeoSimulationControllerGui()
-#    simul.show()
+    simul = HomeoGASimulation()
+    simul.show()
     app.exec_()
