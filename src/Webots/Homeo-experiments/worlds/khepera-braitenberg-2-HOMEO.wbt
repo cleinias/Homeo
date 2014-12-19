@@ -1,7 +1,7 @@
-#VRML_SIM V6.0 utf8
+#VRML_SIM V7.4.3 utf8
 WorldInfo {
   info [
-    "Test for Braitenberg world"
+    "A Braitenberg-like world with a type-2 vehicle"
     "Author: Stefano Franchi"
     "Date: 26 August 2013"
   ]
@@ -11,7 +11,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation -0.56289 -0.6129 -0.554534 2.07204
-  position 4.85664 56.7577 7.28337
+  position 3.74111 71.5109 6.90973
 }
 Background {
   skyColor [
@@ -21,20 +21,16 @@ Background {
 DEF LIGHT1 PointLight {
   attenuation 0 1 0
   color 0 1 0
-  intensity 20
-  location 6.5 0.11 5.3
+  location 15 0.11 15
 }
 DEF LIGHT2 PointLight {
   attenuation 0 1 0
   color 0 1 0
-  intensity 20
+  intensity 0.4
   location 11.6 0.1 12.3
-  on FALSE
 }
 PointLight {
-  ambientIntensity 1
   attenuation 0 0 12.5657
-  intensity 12
   location 0 1.8 0
   on FALSE
 }
@@ -225,5 +221,4 @@ Supervisor {
 }
 DEF lightmover Supervisor {
   name "lightmover"
-  controller "lightMover"
 }
