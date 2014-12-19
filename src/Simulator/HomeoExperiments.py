@@ -12,6 +12,9 @@ from RobotSimulator.WebotsTCPClient import *
 from subprocess import check_output
 from subprocess import call as subCall
 from RobotSimulator.Transducer import  *
+from os import system
+from time import sleep 
+
 
 
 '''
@@ -2376,5 +2379,7 @@ def isWebotsRunning():
    
 def startWebots(world = None):
     if not isWebotsRunning():
-        subCall(["webots", world, '&'])         
-    
+        callString = "/usr/local/webots/webots " + world + " &"
+        system(callString)
+        'Wait for webots to start listening to commands (in seconds)'
+        sleep(2)         
