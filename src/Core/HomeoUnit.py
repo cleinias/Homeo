@@ -146,7 +146,7 @@ class HomeoUnit(object):
         self.initializeBasicParameters()
         self._inputConnections = []
         self.setDefaultSelfConnection()
-        self.unit_essential_parameters = 5
+        self.unit_essential_parameters = 4
 
         
     def initializeBasicParameters(self):
@@ -228,23 +228,23 @@ class HomeoUnit(object):
         
         1 Mass
         2 Viscosity
-        3 Potentiometer (aka self-weight) (float, [0,1])
-        4 UniselectorTiming (integer)
-        5 maxDeviation (integer)
+        3 UniselectorTiming (integer)
+        4 maxDeviation (integer)
+        
+        (the potentiometer (aka self-weight) is also an essential parameter, but it is set when connections are set))
         
         All parameters are in the [0,1) interval and are scaled appropriately by
         the respective functions.
         
         Subclasses of HomeoUnit may override this method and add parameters
         '''
-        if essent_params.length <> self.unit_essential_parameters:
+        if essent_params.size <> self.unit_essential_parameters:
             raise (HomeoUnitError, "The number of parameters needed to initialize the unit is incorrect.")
          
         self.setMassGA(essent_params[0])
         self.setViscosityGA(essent_params[1])
-        self.setPotentiometerGA(essent_params[2])
-        self.setUniselectorTimeInterval(essent_params[3])
-        self.setMaxDeviation(essent_params[4])
+        self.setUniselectorTimeIntervalGA(essent_params[2])
+        self.setMaxDeviationGA(essent_params[3])
         
     def setUniselectorTimeIntervalGA(self,uniselParam):
         '''Set UniselectorTimeInterval by scaling a GA parameter in the [0,1) range'''
@@ -252,7 +252,7 @@ class HomeoUnit(object):
     
     def setViscosityGA(self, viscParam):
         '''Set viscosity by scaling a GA parameter in the [0,1) range'''        
-        self.viscosity = viscParam * self.HomeoUnit.DefaultParameters['maxViscosity']
+        self.viscosity = viscParam * self.DefaultParameters['maxViscosity']
     
     def setPotentiometerGA(self,potenParam):
         '''Set the potentiometer by scaling a GA parameter in the [0,1) range'''
@@ -264,7 +264,7 @@ class HomeoUnit(object):
         
     def setMassGA(self,massParam):
         '''Set mass by scaling a GA parameter in the [0,1) range'''
-        self.mass = ((self.DefaultParameters['maxMass']-self.DefaultParameters['maxMass']) * massParam) + self.DefaultParameters['minMass']
+        self.mass = ((self.DefaultParameters['maxMass']-self.DefaultParameters['minMass']) * massParam) + self.DefaultParameters['minMass']
                
     #===============================================================================   
         

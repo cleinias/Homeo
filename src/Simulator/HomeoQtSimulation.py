@@ -168,6 +168,8 @@ class HomeoQtSimulation(QObject):
 #            self.currentExperiment = 'initializeBraiten2_2_Full_Pos'
 #            self.currentExperiment = 'initializeBraiten2_7_Full'
 #            self.currentExperiment = 'initializeBraiten2_2Aristotelian'
+        else:
+            self.currentExperiment = experiment
             
         super(HomeoQtSimulation,self).__init__()
         self._homeostat = Homeostat()
