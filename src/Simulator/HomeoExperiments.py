@@ -2131,7 +2131,7 @@ def initializeBraiten2_2Neg(params=None):
 #===============================================================================
 # Genetic Algorithms experiments
 #===============================================================================
-def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
+def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
     '''
     Initialization of a Braitenberg-like homeostat for use in GA simulations.
     
@@ -2139,18 +2139,23 @@ def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
     4 real units: two for either Motor and two for the sensors, plus 2 HomeoInput Units
     to interface to the outside world.
     
-    The single units' essential values (mass, viscosity, potentiometer, uniselector timing, etc.) 
+    The homeoGenome parameter contains values in the (-1,1) range for all 6 units plus
+    all their connections (for a total of 60 values in the default case), even though only 32 "genes" 
+    are used: the essential parameters for the first 4 units (4 * 4) and the connection parameters 
+    for the 4 real units (4*4)
+    
+    The single units' essential values (mass, viscosity, uniselector timing, maxDeviation, etc.) 
     and the weights of *all* the connections are passed to the method in the homeoGenome list.
     
     In general, the length of homeoGenome must be equal to 
     no_units*(no_essent_params + no_units) 
     
-    In this experiments no_units = 4, hence the length of homeoGenome is
-    4*(no_essent_params + 4)
+    In this experiments no_units = 6, hence the length of homeoGenome is
+    6*(no_essent_params + 6)
     
     The array is structured as follows:
-    1. 0 to no_units * no_essent_params     (= 0 to 4 * no_essent_params - 1)
-       contain the essential parameters of units 1 to 4.
+    1. 0 to no_units * no_essent_params     (= 0 to 6 * no_essent_params - 1)
+       contain the essential parameters of units 1 to 6.
     
     2. (no_units * no_essent_params) - 1 to end of array
        contain the weights of the single units's connections (excepts self connections)
@@ -2161,9 +2166,10 @@ def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
     2. Right Motor
     3. Left Sensor
     4. Right sensor
-       
+    5. Right HomeoInput Unit
+    6. Left HomeoInput Unit   
     
-    Initialize the homeostat to be **fully connected**
+    Initialize the homeostat to be **fully connected** (real units only)
     
     The initialization variable 'raw' controls the type of sensory tranducer. 
     If it is set to 'False" (default) the raw sensory input from webot is reversed: high sensory values correspond 
@@ -2183,7 +2189,7 @@ def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
     webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
-       
+    webotsMode = "fast"              "for GA experiments, run simulation as fast as possible"  
 
     '''Webots parameters for tcp/ip communication
        (Defined in webots world specified above)
@@ -2191,7 +2197,7 @@ def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
     kheperaPort = 10020
     supervisorPort = 10021
     
-    startWebots(webotsWorld)
+    startWebots(world=webotsWorld, mode=webotsMode)
     
     "2. set up connection and create client and socket, etc."
     client = WebotsTCPClient()
@@ -2233,9 +2239,9 @@ def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
     
     '3.3 initialize units essential parameters according to slices of input list'
     leftMotor.initialize_GA(homeoGenome[0:4])
-    rightMotor.initialize_GA(homeoGenome[5:9])
-    leftEye.initialize_GA(homeoGenome[10:14])
-    rightEye.initialize_GA(homeoGenome[15:19])
+    rightMotor.initialize_GA(homeoGenome[4:8])
+    leftEye.initialize_GA(homeoGenome[8:12])
+    rightEye.initialize_GA(homeoGenome[12:16])
                                
         
     '3.4. Setup *non-essential* homeo parameters'
@@ -2320,10 +2326,10 @@ def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
 
     '''Set up homeostat's initial connections,
        according to input list.'''
-    "Left motor's connections are contained in the input list at positions 20:23"
+    "Left motor's connections are contained in the input list at positions 24:29"
     incoming_conn_noise = 0.05           # General constraint
     
-    offset = 20
+    offset = 24
     for connection in leftMotor.inputConnections:
         connection.newWeightGA(homeoGenome[offset:offset+1])
         connection.noise = incoming_conn_noise
@@ -2331,7 +2337,7 @@ def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
         connection.status = True
         offset += 1
 
-    "Right motor's connections are contained in the input list at positions 24:27"
+    "Right motor's connections are contained in the input list at positions 30:35"
     for connection in rightMotor.inputConnections:
         connection.newWeightGA(homeoGenome[offset:offset+1])
         connection.noise = incoming_conn_noise
@@ -2339,7 +2345,7 @@ def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
         connection.status = True
         offset += 1
     
-    "Left eye's connections are contained in the input list at positions 28:31"
+    "Left eye's connections are contained in the input list at positions 36:41"
     for connection in leftEye.inputConnections:
         connection.newWeightGA(homeoGenome[offset:offset+1])
         connection.noise = incoming_conn_noise
@@ -2347,7 +2353,7 @@ def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
         connection.status = True    
         offset += 1
 
-    "Left eye's connections are contained in the input list at positions 32:35"
+    "Left eye's connections are contained in the input list at positions 42:47"
     for connection in rightEye.inputConnections:
         connection.newWeightGA(homeoGenome[offset:offset+1])
         connection.noise = incoming_conn_noise
@@ -2362,7 +2368,41 @@ def initializeBraiten2_2_Full_GA(noHomeoParameters, homeoGenome, raw=False):
         connection.status = False
 
     hom._usesSocket = True
+    
+    #===========================================================================
+    # Debugging 
+    #===========================================================================
+    from tabulate import tabulate
+    for i in xrange(homeoGenome.size):
+        print "param %d  is:\t%f" % (i,homeoGenome[i])
+    homUnitsData = []
+    k = 0
+    for i in hom.homeoUnits:
 
+        singleUnitdata = []
+        singleUnitdata.append(k)
+        singleUnitdata.append(i.name)
+        singleUnitdata.append(homeoGenome[0+k])
+        singleUnitdata.append(i.mass)
+        singleUnitdata.append(homeoGenome[1+k])
+        singleUnitdata.append(i.viscosity)
+        singleUnitdata.append(homeoGenome[2+k])
+        singleUnitdata.append(i.uniselectorTimeInterval)
+        singleUnitdata.append(homeoGenome[3+k])
+        singleUnitdata.append(i.maxDeviation)
+        homUnitsData.append(singleUnitdata)
+        
+        k += 4
+
+    headers = ["k","Unit", "mass-param",  "mass", "Visc-param", "Visc.","Unisel-time-param", "Unisel-timing", "maxDev-param", "maxDev"]      
+    print tabulate(homUnitsData,headers,tablefmt='orgtbl')
+                                                                                                                                                               
+                                                                                                                                                               
+       
+    
+    #===========================================================================
+    # End debugging
+    #===========================================================================
     'Return the properly configured homeostat'
     return hom
 
@@ -2377,9 +2417,15 @@ def isWebotsRunning():
             webots_running = True
     return webots_running
    
-def startWebots(world = None):
+def startWebots(world = None, mode = "realtime"):
+    """
+    Start a webots instance with the given world and at the specified speed (mode).
+    Mode can be one of realtime, run, or fast 
+    """
+    print mode
     if not isWebotsRunning():
-        callString = "/usr/local/webots/webots " + world + " &"
+        callString = "/usr/local/webots/webots " +"--mode="+ mode+ " " +world + " &"
+        print callString
         system(callString)
         'Wait for webots to start listening to commands (in seconds)'
         sleep(2)         

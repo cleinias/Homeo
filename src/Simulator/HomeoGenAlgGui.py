@@ -11,6 +11,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
 import sys
 import numpy as np
+from Simulator.HomeoExperiments import initializeBraiten2_2_Full_GA
 
 class HomeoGASimulation(QWidget):
     '''
@@ -25,7 +26,7 @@ class HomeoGASimulation(QWidget):
         
         '''
         super(HomeoGASimulation,self).__init__(parent)
-        self._simulation = HomeoQtSimulation()             # instance variable holding the real simulation
+        self._simulation = HomeoQtSimulation(experiment="initializeBraiten2_2_Full_GA")             # instance variable holding the real simulation
         self._simulation.initializeExperSetup(self.createRandomHomeostatGenome())
         self._maxRun = maxRun
         
@@ -40,6 +41,7 @@ class HomeoGASimulation(QWidget):
         self.setMinimumWidth(400)
 
         self.buildGui()
+        self.connectSlots()
         
     def buildGui(self):
         '''
@@ -80,9 +82,11 @@ class HomeoGASimulation(QWidget):
         self.overallLayout.addLayout(self.textLayout)
         self.setLayout(self.overallLayout)
         #return mainGui
-        
 
-    def createRandomHomeostatGenome(self,noUnits=4, essentParams=5):
+    def connectSlots(self):
+        pass
+
+    def createRandomHomeostatGenome(self,noUnits=6, essentParams=4):
         '''Create a list containing the essential parameters for every
            units in a fully  connected Homeostat and the weights of
            all the connections.
@@ -90,15 +94,31 @@ class HomeoGASimulation(QWidget):
            the Homeostat- and connections-instantiating method to scale these 
            values to the Units' appropriate ranges.
            
-           Basic essential parameters are 5: mass, viscosity, potentiometer,
+           Basic essential parameters are 5: mass, viscosity,
            uniselectorTiming, and maxDeviation.
+           
+           (The potentiometer is also an essential parameter, but it is specified as one of the unit's
+            connections)
         '''          
         return np.random.uniform(size=(noUnits * (essentParams + noUnits)))
+
+    def runOneShotSimulation(self, genome, steps = 1000):
+        'Run a complete simulation of a robot instantiated to given genome'
         
-    def runOneShotSimulation(self):
+        '1. Initialize robot to given genome'
+        
+        '2. Reset simulation environment'
+         
+        '3. Run simulation'
+        
+        '4. Return fitness value'
         pass
 
-
+    def resetRobot(self):
+        'Reset the robotic simulation to initial conditions'
+        pass
+    
+    
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
