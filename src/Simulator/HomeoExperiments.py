@@ -2189,7 +2189,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
     webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
-    webotsMode = "fast"              "for GA experiments, run simulation as fast as possible"  
+    webotsMode = "fast"              #for GA experiments, run simulation as fast as possible 
 
     '''Webots parameters for tcp/ip communication
        (Defined in webots world specified above)
@@ -2261,8 +2261,8 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
 
     'Setup a 4 unit Homeostat with 2 additional input units. Then change the parameters'
     if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
-            hom.addFullyConnectedUnit(rightMotor)
             hom.addFullyConnectedUnit(leftMotor)
+            hom.addFullyConnectedUnit(rightMotor)
             hom.addFullyConnectedUnit(leftEye)
             hom.addFullyConnectedUnit(rightEye)
             hom.addFullyConnectedUnit(leftEyeSensorOnly)
@@ -2331,7 +2331,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
     
     offset = 24
     for connection in leftMotor.inputConnections:
-        connection.newWeightGA(homeoGenome[offset:offset+1])
+        connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
         connection.state = motor_incoming_connection_uniselector
         connection.status = True
@@ -2339,7 +2339,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
 
     "Right motor's connections are contained in the input list at positions 30:35"
     for connection in rightMotor.inputConnections:
-        connection.newWeightGA(homeoGenome[offset:offset+1])
+        connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
         connection.state = motor_incoming_connection_uniselector
         connection.status = True
@@ -2347,15 +2347,15 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
     
     "Left eye's connections are contained in the input list at positions 36:41"
     for connection in leftEye.inputConnections:
-        connection.newWeightGA(homeoGenome[offset:offset+1])
+        connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
         connection.state = motor_incoming_connection_uniselector
         connection.status = True    
         offset += 1
 
-    "Left eye's connections are contained in the input list at positions 42:47"
+    "Right eye's connections are contained in the input list at positions 42:47"
     for connection in rightEye.inputConnections:
-        connection.newWeightGA(homeoGenome[offset:offset+1])
+        connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
         connection.state = motor_incoming_connection_uniselector
         connection.status = True    
@@ -2366,19 +2366,21 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
         connection.status = False
     for connection in rightEyeSensorOnly.inputConnections:
         connection.status = False
-
+    
     hom._usesSocket = True
     
     #===========================================================================
     # Debugging 
     #===========================================================================
     from tabulate import tabulate
-    for i in xrange(homeoGenome.size):
-        print "param %d  is:\t%f" % (i,homeoGenome[i])
+    #===========================================================================
+    # for i in xrange(homeoGenome.size):
+    #     print "param %d  is:\t%f" % (i,homeoGenome[i])
+    #===========================================================================
+    " Checking HomeoUnits values"
     homUnitsData = []
     k = 0
     for i in hom.homeoUnits:
-
         singleUnitdata = []
         singleUnitdata.append(k)
         singleUnitdata.append(i.name)
@@ -2390,16 +2392,38 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
         singleUnitdata.append(i.uniselectorTimeInterval)
         singleUnitdata.append(homeoGenome[3+k])
         singleUnitdata.append(i.maxDeviation)
-        homUnitsData.append(singleUnitdata)
-        
+        homUnitsData.append(singleUnitdata)        
         k += 4
-
     headers = ["k","Unit", "mass-param",  "mass", "Visc-param", "Visc.","Unisel-time-param", "Unisel-timing", "maxDev-param", "maxDev"]      
     print tabulate(homUnitsData,headers,tablefmt='orgtbl')
-                                                                                                                                                               
-                                                                                                                                                               
-       
+    print
+    print
+              
+    "Checking connections"                                                                                                                                                 
+    homConnectionsData = []
+    k = 0
+    offset = 24
+    for unit in hom.homeoUnits:
+        for conn in unit.inputConnections:
+            unitConnData = []
+            unitConnData.append(offset)
+            unitConnData.append(unit.name)
+            unitConnData.append(conn.incomingUnit.name)
+            unitConnData.append(homeoGenome[offset])
+            unitConnData.append(conn.weight)
+            unitConnData.append(abs((2*homeoGenome[offset])-1))
+            unitConnData.append(conn.weight-(abs((2*homeoGenome[offset])-1)))
+            unitConnData.append(conn.switch)            
+            unitConnData.append(np.sign(((2*homeoGenome[offset])-1)))
+            unitConnData.append(conn.switch - (np.sign(((2*homeoGenome[offset])-1))))
+            unitConnData.append(conn.status)
+            offset += 1
+            homConnectionsData.append(unitConnData)
+
+    headers = ["Genome offset","To unit", "From unit", "weight param", "weight", "weight comp.", "weight delta", "switch", "switch comp.", "switch delta", "status"]
+    print tabulate(homConnectionsData, headers, tablefmt='orgtbl')
     
+            
     #===========================================================================
     # End debugging
     #===========================================================================
