@@ -3,7 +3,8 @@ Created on Sep 17, 2013
 
 @author: stefano
 '''
-import socket
+import socket  
+from time import sleep
 
 class WebotsTCPClient(object):
     '''WebotsTCPClient manages a connection to a Webots robot running a server controller
@@ -65,21 +66,30 @@ class WebotsTCPClient(object):
 
     
     def clientConnect(self):
-        'create a connection if not connected already and store the returned socket in clientSocket'
-        print "just entered the connect method"
+        'Try a few times to create a connection if not connected already. Store the returned socket in clientSocket'
+        connected = False
+        connectAttempts = 10
+        sleepTime = 1
         if self._clientSocket is not None:
             print 'Already connected! Use the socket stored in clientSocket'
         else:
-            try:
-                self._clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self._clientSocket.connect((self._ip_address, self._clientPort))
-                print 'Connected!'
-            except:
-                print 'Cannot connect to server at %s at port %u' % (self._ip_address, self._clientPort)
+            for i in xrange(connectAttempts):
+                try:
+                    self._clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self._clientSocket.connect((self._ip_address, self._clientPort))
+                    print 'Success! Connected to server at %s at port %u' % (self._ip_address, self._clientPort)
+                    connected = True
+                    break
+                except socket.error:
+                    print 'Cannot connect to server at %s at port %u' % (self._ip_address, self._clientPort)
+                    print "Waiting %d seconds and then going for attempt number %d" % (sleepTime,i+2)
+                    sleep(sleepTime)
+            if connected == False:
+                print " I could not connect to server at %s at port %u after %d attempts" % (self._ip_address, self._clientPort, connectAttempts)
                 print 'Destroying socket'
                 self._clientSocket = None
-                
-                
+                raise socket.error
+                             
     def close(self):
         'Closes the connection and set socket to None'
         if self._clientSocket is not None:
