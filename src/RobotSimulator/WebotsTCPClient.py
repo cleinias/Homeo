@@ -22,46 +22,12 @@ class WebotsTCPClient(object):
         self._clientPort = port
         print 'set clientPort'
          
-    #===========================================================================
-    # def setPort(self,aNumber):
-    #     self._clientPort=aNumber
-    #     print 'Set clientPort to %u' % aNumber
-    # def getPort(self):
-    #     return self._clientPort
-    # clientPort = property(fget = lambda self: self.getPort(),
-    #                       fset = lambda self, aNumber: self.setPort(aNumber))
-    # 
-    # def getClientSocket(self):
-    #     'return a socket if present, otherwise try to connect and create one'
-    #     try:
-    #         if self._clientSocket is not None:
-    #             return self._clientSocket
-    #     except AttributeError:
-    #         try:
-    #             print 'Moving to connect method'
-    #             self.clientConnect()
-    #             print 'Exiting connect method'
-    #             return self._clientSocket
-    #         except socket.error:
-    #             print 'Cannot connect to server at %s : %u' % (self._ip_address, self._clientPort)
-    #             print 'Destroying socket'
-    # 
-    # def setClientSocket(self, aValue):
-    #     'Does nothing, since the socket can only  be set by the getClientSocket method'
-    #     return
-    # 
-    # clientSocket = property(fget = lambda self: self.getClientSocket(),
-    #                         fset = lambda self, aValue: self.setClientSocket(aValue))
-    #===========================================================================
-
     def getClientSocket(self):
         'return a socket if present, otherwise try to connect and create one'
         if self._clientSocket is not None:
                 return self._clientSocket
         else:
-            print 'Moving to connect method'
             self.clientConnect()
-            print 'Exiting connect method'
             return self._clientSocket
 
     
