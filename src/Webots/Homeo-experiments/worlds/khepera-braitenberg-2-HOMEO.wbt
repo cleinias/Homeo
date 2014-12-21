@@ -215,9 +215,13 @@ DEF KHEPERA DifferentialWheels {
   encoderNoise 0
   encoderResolution 100
 }
-Supervisor {
+DEF TRAJECTORY Supervisor {
   name "trajRecorder"
   controller "supervisorTrajectory"
+}
+DEF SIMULSUPER Supervisor {
+  controller "server-supervisor-cpp"
+  controllerArgs "10021"
 }
 DEF lightmover Supervisor {
   name "lightmover"
