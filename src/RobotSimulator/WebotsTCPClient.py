@@ -35,7 +35,7 @@ class WebotsTCPClient(object):
         'Try a few times to create a connection if not connected already. Store the returned socket in clientSocket'
         connected = False
         connectAttempts = 10
-        sleepTime = 1
+        sleepTime = 0.5
         if self._clientSocket is not None:
             print 'Already connected! Use the socket stored in clientSocket'
         else:
@@ -48,7 +48,7 @@ class WebotsTCPClient(object):
                     break
                 except socket.error:
                     print 'Cannot connect to server at %s at port %u' % (self._ip_address, self._clientPort)
-                    print "Waiting %d seconds and then going for attempt number %d" % (sleepTime,i+2)
+                    print "Waiting %f seconds and then going for attempt number %d" % (sleepTime,i+2)
                     sleep(sleepTime)
             if connected == False:
                 print " I could not connect to server at %s at port %u after %d attempts" % (self._ip_address, self._clientPort, connectAttempts)
