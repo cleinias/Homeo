@@ -12,23 +12,34 @@ from PyQt4.QtGui import *
 import sys
 import numpy as np
 from Simulator.HomeoExperiments import initializeBraiten2_2_Full_GA
+import RobotSimulator.WebotsTCPClient
+from RobotSimulator.WebotsTCPClient import WebotsTCPClient
+from socket import error as SocketError
+
+class GA_ConnectionError(Exception):
+    def __init__(self, value):
+            self.value = value
+    def __str__(self):
+         return repr(self.value)
 
 class HomeoGASimulation(QWidget):
     '''
     Class managing a Genetic Algorithm simulation, with GUI interface
     '''
     
-    def __init__(self, maxRun=1000, parent=None):
+    def __init__(self, maxRun=1000, parent=None, supervisor_host = '127.0.0.1', supervisor_port = 10021):
         '''
         Create a HomeoQTSimulation object to hold the actual simulation and initialize it. 
         Notice that the GA experiment must be set from within the HomeoQTSimulation class (FIXME).
         Instance variable maxRun holds the number of steps the single simulations should be run
-        
+        _supervisor is the socket used to control the Webots supervisor 
+                    that allows resetting the Webots simulation
         '''
         super(HomeoGASimulation,self).__init__(parent)
         self._simulation = HomeoQtSimulation(experiment="initializeBraiten2_2_Full_GA")             # instance variable holding the real simulation
         self._simulation.initializeExperSetup(self.createRandomHomeostatGenome())
         self._maxRun = maxRun
+        self._supervisor = WebotsTCPClient(port=supervisor_port)
         
 
         "prepare to run the simulation itself in a thread"
@@ -42,6 +53,7 @@ class HomeoGASimulation(QWidget):
 
         self.buildGui()
         self.connectSlots()
+        self._supervisor.clientConnect()
         
     def buildGui(self):
         '''
@@ -102,6 +114,31 @@ class HomeoGASimulation(QWidget):
         '''          
         return np.random.uniform(size=(noUnits * (essentParams + noUnits)))
 
+    def simulationReset(self):
+        "Reset webots simulation"
+        try:
+            self._supervisor._clientSocket.send("R")
+            print "reset Webots simulation"
+        except SocketError:
+            raise GA_ConnectionError("Could not reset Webots simulation")
+        
+    def simulationResetPhysics(self):
+        "Reset Webots simulation physics"
+        try:
+            self._supervisor._clientSocket.send("P")
+            print "Reset Webots simulation physics"
+        except SocketError:
+            raise GA_ConnectionError("Could not reset Webots simulation's physics")
+            
+    
+    def quitWebots(self):
+        "Quit Webots application"
+        try:
+            self._supervisor._clientSocket.send("Q")
+            print "Quit Webots"
+        except SocketError:
+            raise GA_ConnectionError("Could not quit Webots")
+        
     def runOneShotSimulation(self, genome, steps = 1000):
         'Run a complete simulation of a robot instantiated to given genome'
         
@@ -112,10 +149,6 @@ class HomeoGASimulation(QWidget):
         '3. Run simulation'
         
         '4. Return fitness value'
-        pass
-
-    def resetRobot(self):
-        'Reset the robotic simulation to initial conditions'
         pass
     
     
