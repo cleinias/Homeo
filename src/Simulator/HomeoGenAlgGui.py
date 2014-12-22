@@ -164,6 +164,18 @@ class HomeoGASimulation(QWidget):
         Get the most recent file fulfilling the criteria
         """ 
         
+#===============================================================================
+#         FIXME: The method read the robot's final distance from the last of the most 
+#         recent trajectory log. It would be more robust to ask the C++ supervisor 
+#         controlling the simulation to return the robot's final position.
+# 
+#         FIXME 2: The target is currently specified in the Homeo GA general interface. 
+#         It would be more robust to indicate the target within Webots itself, and then 
+#         ask the C++ supervisor to return the distance. 
+#===============================================================================
+
+
+        
         curDateTime = strftime("%Y%m%d%H%M%S")    
         trajFilename = 'trajectoryData-'+curDateTime+'.txt'
         addedPath = 'SimulationsData'
