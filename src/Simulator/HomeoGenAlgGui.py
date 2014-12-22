@@ -15,6 +15,9 @@ from Simulator.HomeoExperiments import initializeBraiten2_2_Full_GA
 import RobotSimulator.WebotsTCPClient
 from RobotSimulator.WebotsTCPClient import WebotsTCPClient
 from socket import error as SocketError
+import os
+from math import sqrt
+from time import sleep, strftime
 
 class GA_ConnectionError(Exception):
     def __init__(self, value):
@@ -54,6 +57,11 @@ class HomeoGASimulation(QWidget):
         self.buildGui()
         self.connectSlots()
         self._supervisor.clientConnect()
+        "debugging code"
+        sleep(2)
+        target = [15.0,15.0]
+        self.finalDisFromTarget(target)
+        "end debugging code"
         
     def buildGui(self):
         '''
@@ -139,6 +147,44 @@ class HomeoGASimulation(QWidget):
         except SocketError:
             raise GA_ConnectionError("Could not quit Webots")
         
+    def finalDisFromTarget(self, target):
+        """ Compute the distance between robot and target at
+        the end of the simulation.
+        
+        Target must be passed to function as a list of 2 floats (x-coord, y-coord)
+        
+        Read the robot's final position from the trajectory data file
+        
+        Assume that the current directory is under a "src" directory
+        and that a data folder called 'SimulationsData will exist
+        at the same level as "src"
+        Assume also that the trajectory data filename will start with 
+        the string filenamePattern and will include date and time info in the filename
+        so they properly sort in time order
+        Get the most recent file fulfilling the criteria
+        """ 
+        
+        curDateTime = strftime("%Y%m%d%H%M%S")    
+        trajFilename = 'trajectoryData-'+curDateTime+'.txt'
+        addedPath = 'SimulationsData'
+        datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
+        fileNamepattern = 'trajectoryData'
+        try:
+            trajDataFilename = max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern) ])
+        except ValueError:
+            print "The file I tried to open was:", os.path.join(datafilePath, max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)]))
+            messageBox =  QMessageBox.warning(self, 'No data file', 'There are no trajectory data to visualize', QMessageBox.Cancel)
+        fullPathTrajFilename = os.path.join(datafilePath, trajDataFilename)
+        robotFinalPos =os.popen("tail --lines=1 " + fullPathTrajFilename).read()
+        robotX = float(robotFinalPos.split('\t')[0])
+        robotY = float(robotFinalPos.split('\t')[1])
+        #=======================================================================
+        # print "Robot's final position is at x: %f\t y:%d" % (robotX,robotY)
+        # print "Target is at x: %f\t y: %f" % (target[0],target[1])
+        # print "Distance to target is: ", sqrt((target[0]-robotX)**2 + (target[1]-robotY)**2)
+        #=======================================================================
+        return sqrt((target[0]-robotX)**2 + (target[1]-robotY)**2)
+    
     def runOneShotSimulation(self, genome, steps = 1000):
         'Run a complete simulation of a robot instantiated to given genome'
         
