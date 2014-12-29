@@ -4,7 +4,7 @@ Created on Sep 3, 2013
 @author: stefano
 '''
 from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
-from Core.HomeoUnit import HomeoUnit
+from Core.HomeoUnit import HomeoUnit,  HomeoUnitError
 from Core.HomeoUnitAristotelian import HomeoUnitAristotelian
 from numpy import sign
 from Helpers.General_Helper_Functions import scaleTo
@@ -24,30 +24,35 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
     '''
 
 
-    def __init__(self, actuator = None):
+    def __init__(self, transducer = None):
         '''
         Initialize according to superclass
         '''
         super(HomeoUnitNewtonianActuator, self).__init__()
         
         'Initialize actuator, if passed'
-        if actuator is not None:
-            self._actuator = actuator
+        if transducer is not None:
+            self._transducer = transducer
             self.rightSpeed = 0
             self.leftSpeed = 0
             self.maxDelta = 0
-        
+            try:
+                self._maxSpeed = self._transducer.range()[1]* self._maxSpeedFraction
+            except: 
+                print "Transducer still unconnected to network or socket stale"
+            
         '''Initialize default parameters for sigmoid function used to convert
            unit's deviation to motor commands'''
-        self._maxSpeedFraction = 0.2  # The maximum speed of a motor as a fraction of the actuator speed
+        self._maxSpeedFraction = 0.2   # The maximum speed of a motor as a fraction of the actuator speed
         self._switchingRate = .1       # The speed at which the function switches from positive to negative, or the slope of the curve     
-        self._maxSpeed = self._actuator.range()[1]* self._maxSpeedFraction
+        self._maxSpeed = 100
     
-    def setActuator(self, anActuator):
-        self._actuator = anActuator
-    def getActuator(self):
-        return self._actuator
-    actuator = property(fget = lambda self: self.getActuator(),
+    def setTransducer(self, aTransducer):
+        self._transducer = aTransducer
+        
+    def getTransducer(self):
+        return self._transducer
+    transducer = property(fget = lambda self: self.getTransducer(),
                           fset = lambda self, aValue: self.setActuator(aValue))
     
     def selfUpdate(self):
@@ -59,26 +64,32 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
         #=======================================================================
         # '''For testing'''
         # if self.actuator._wheel == 'right':
-        #     self.rightSpeed = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)
+        #     self.rightSpeed = scaleTo([-self.maxDeviation,self.maxDeviation],self.transducer.range(),self.criticalDeviation)
         # else:
-        #     self.leftSpeed = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)
+        #     self.leftSpeed = scaleTo([-self.maxDeviation,self.maxDeviation],self.transducer.range(),self.criticalDeviation)
         # delta = self.leftSpeed - self.rightSpeed 
         # if abs(delta) > self.maxDelta:
         #     self.maxDelta = abs(delta)
         # print "The unit value is %f and its scaled value is %f. The delta b/w wheels is %f and maxDelta is %f" % (self.criticalDeviation,
-        #                                                            scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation),
+        #                                                            scaleTo([-self.maxDeviation,self.maxDeviation],self.transducer.range(),self.criticalDeviation),
         #                                                            delta,
         #                                                            self.maxDelta)
         # 'end testing'
         #=======================================================================
 
-#        setSpeed = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)        
+#        setSpeed = scaleTo([-self.maxDeviation,self.maxDeviation],self.transducer.range(),self.criticalDeviation)        
 #        setSpeed = self.criticalDeviation
         ''' Use logistic function to normalize speed to [-1,1]'''        
+        if self._maxSpeed is None:
+            try:
+                self._maxSpeed = self._transducer.range()[1]* self._maxSpeedFraction
+            except:
+                raise HomeoUnitError("Cannot get max speed from Transducer")
+                          
         setSpeed = float(-self._maxSpeed) + ((2 * self._maxSpeed)/ (1+exp(- self._switchingRate * self.criticalDeviation)))
-        print "Speed of %s wheel is %f " % (self.actuator._wheel, setSpeed)
-        self.actuator.funcParameters = setSpeed
-        self.actuator.act()
+        #print "Speed of %s wheel is %f " % (self.actuator._wheel, setSpeed)
+        self.transducer.funcParameters = setSpeed
+        self.transducer.act()
     
 class HomeoUnitAristotelianActuator(HomeoUnitAristotelian):
     '''
@@ -90,36 +101,36 @@ class HomeoUnitAristotelianActuator(HomeoUnitAristotelian):
     of the calling class/instance.  
     
     Instance variable:
-    actuator <anActuator> an instance of an actuator subclass of Transducer 
+    transducer <aTransducer> an instance of an actuator subclass of Transducer 
     '''
 
 
-    def __init__(self, actuator = None):
+    def __init__(self, transducer = None):
         '''
         Initialize according to superclass
         '''
         super(HomeoUnitAristotelianActuator, self).__init__()
         
         'Initialize actuator, if passed'
-        if actuator is not None:
-            self._actuator = actuator
+        if transducer is not None:
+            self.transducer = transducer
 
     
-    def setActuator(self, anActuator):
-        self._actuator = anActuator
-    def getActuator(self):
-        return self._actuator
-    actuator = property(fget = lambda self: self.getActuator(),
-                          fset = lambda self, aValue: self.setActuator(aValue))
+    def setTransducer(self, aTransducer):
+        self._transducer = aTransducer
+    def getTransducer(self):
+        return self._transducer
+    actuator = property(fget = lambda self: self.getTransducer(),
+                          fset = lambda self, aValue: self.setTransducer(aValue))
     
     def selfUpdate(self):
         '''First run the self-update function of superclass, 
             then convert unit-value to actuator value,
-            then operate actuator on the unit value scaled 
-            to the actuator range'''
+            then operate transducer on the unit value scaled 
+            to the transducer range'''
         super(HomeoUnitAristotelianActuator, self).selfUpdate()
-        self.actuator.funcParameters = scaleTo([-self.maxDeviation,self.maxDeviation],self.actuator.range(),self.criticalDeviation)
-        self.actuator.act()
+        self.transducer.funcParameters = scaleTo([-self.maxDeviation,self.maxDeviation],self.transducer.range(),self.criticalDeviation)
+        self.transducer.act()
         
 class HomeoUnitInput(HomeoUnit):
     '''
@@ -135,28 +146,28 @@ class HomeoUnitInput(HomeoUnit):
     of the calling class/instance
     
     Instance variable:
-    sensor <aTransducer> an instance of a sensory subclass of Transducer
+    transducer <aTransducer> an instance of a sensory subclass of Transducer
     alway_pos <Boolean>  whether the scaled transducer value is always positive or centered around zero  
     '''
 
-    def __init__(self, sensor = None, always_pos=True):
+    def __init__(self, transducer = None, always_pos=True):
         '''
         Initialize according to superclass
         '''
         super(HomeoUnitInput, self).__init__()
-        'Initialize sensor and always_pos, if passed'
-        if sensor is not None:
-            self._sensor = sensor
+        'Initialize transducer and always_pos, if passed'
+        if transducer is not None:
+            self._transducer = transducer
         if always_pos == False:
              self.always_pos = False
         else: self.always_pos = True   
     
-    def setSensor(self, aTransducer):
-        self._sensor = aTransducer
-    def getSensor(self):
-        return self._sensor
-    sensor = property(fget = lambda self: self.getSensor(),
-                          fset = lambda self, aValue: self.setSensor(aValue))
+    def setTransducer(self, aTransducer):
+        self._Transducer = aTransducer
+    def getTransducer(self):
+        return self._transducer
+    transducer = property(fget = lambda self: self.getTransducer(),
+                          fset = lambda self, aValue: self.setTransducer(aValue))
     
     def selfUpdate(self):
         '''
@@ -166,9 +177,9 @@ class HomeoUnitInput(HomeoUnit):
         (hence either positive or negative) if the ivar always_pos is set to False'''
         
         if self.always_pos == True:
-            self.criticalDeviation = scaleTo(self.sensor.range(), [0, self.maxDeviation], self.sensor.read())
+            self.criticalDeviation = scaleTo(self.transducer.range(), [0, self.maxDeviation], self.transducer.read())
         else:
-            self.criticalDeviation = scaleTo(self.sensor.range(), [-self.maxDeviation, self.maxDeviation], self.sensor.read())
+            self.criticalDeviation = scaleTo(self.transducer.range(), [-self.maxDeviation, self.maxDeviation], self.transducer.read())
         self.computeOutput()
         if self.debugMode:
             print "%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput)

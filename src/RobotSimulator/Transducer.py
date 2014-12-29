@@ -7,7 +7,7 @@ a robot's actuators (motors, etc). The basic class is fairly abstract
 and may be subclassed to operate concrete robotic simulation environments
 (player/Stage, Webots, etc) 
 '''
-
+from socket import error as SocketError
 from Helpers.General_Helper_Functions import SubclassResponsibility
 
 class TransducerException(Exception):
@@ -141,7 +141,7 @@ class TransducerTCP(object):
     through a TCP connection to a server running on the robot. 
     It has just four instance variables:
 
-    robotSocket    <aString>    the socket conneted to the robot server
+    robotSocket    <aString>    the socket connected to the robot server
     transdFunction <aString>    the string corresponding to the transducer command. Acceptable strings are defined by the server protocol 
                                 and detailed in class WebotsTCPClient
     funcParameters <aString>    a string containing a list of  parameters to be passed to the command
@@ -218,19 +218,30 @@ class WebotsDiffMotorTCP(TransducerTCP):
         else:
             self._wheel = wheel
             if self._wheel == 'right':
-                self._transdFunction = "R"
+                self._transdFunction = 'R'
             else:
                 self._transdFunction = 'L'
 
         
-        self._functParameters = "0"
+        self._functParameters = "0"        #parameter specifying the wheel's speed in radiant per second
                     
     def act(self):
         '''activates the wheel motor by calling the actuator function with the passed parameters'''
         command = self.transdFunction + ',' + self.funcParameters
-        self._robotSocket.send(command)
-        "Discard reply from receive buffer"
-        discard = self._robotSocket.recv(100)
+        #print "Executing command: %s for transducer %s" % (command, type(self).__name__)
+        try:
+            #print "Motor transducer %s is connected to socket %s" % (type(self).__name__, type(self._robotSocket).__name__)
+            self._robotSocket.send(command)
+            "Discard reply from receive buffer"
+            discard = self._robotSocket.recv(1024)
+            #===================================================================
+            # if len(discard) == 0:
+            #     print "CONNECTION INTERRUPTED! I received 0 bytes back"
+            # else:
+            #     print "I received %u bytes back, the message was: %s" % (len(discard), discard)
+            #===================================================================
+        except SocketError as e:
+            print "FAILED! cannot connect to socket with command %s for actuator %s:  %s" % ( command, type(self).__name__, e)
                 
     def range(self):
         '''return a list containing the min and max speed of the motor.
@@ -240,11 +251,16 @@ class WebotsDiffMotorTCP(TransducerTCP):
         try:
             return self._transducRange
         except AttributeError:
-            self.robotSocket.send('M')
-            commandReturn = self._robotSocket.recv(1024).rstrip('\r\n').split(',')
-            print commandReturn
-            self._transducRange = [-float(commandReturn[1]), float(commandReturn[1])]
-            return self._transducRange
+            try:
+                self.robotSocket.send('M')
+                commandReturn = self._robotSocket.recv(1024).rstrip('\r\n').split(',')
+                #print commandReturn
+                self._transducRange = [-float(commandReturn[1]), float(commandReturn[1])]
+                return self._transducRange
+            except SocketError as e:
+                print "FAILED! cannot connect to socket %s for actuator %s:  %s" % (type(self.robotSocket).__name__, type(self).__name__, e)
+
+                
         
 class WebotsLightSensorTCP(TransducerTCP):
     '''Interface to a Webots' robot light sensor. 
@@ -260,13 +276,34 @@ class WebotsLightSensorTCP(TransducerTCP):
         self._funcParameters = aNumber
         
     def read(self):
-        '''returns the light value by reading the nth element of 
+        '''Return the light value by reading the nth element of 
            the list of values returned by the read command.
            Convert the value to its complement to Max Value, because Webots
            use Max for the minimum stimulus and 0 for the max stimulus'''
-        self._robotSocket.send(self._transdFunction)
-        light_values = self._robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]
+        #print "Unit %s sending command: %s" %(type(self).__name__,self._transdFunction)
+        #try:
+        i = 0
+        while i<20:
+            #print "inside try clause of read function: send command"
+            self._robotSocket.send(self._transdFunction)
+            #print "   after send command has been sent in read function"
+            receivedData = self._robotSocket.recv(1024)
+            #print "      Received: %s on try no.: %u" % (receivedData, i)
+            #===================================================================
+            # if i > 0:
+            #     print "      HAD TO RESEND A READ COMMAND: ", i
+            #===================================================================
+            i  += 1
+            if receivedData[0] == 'o':
+                break
+    #except:
+        #print "Comm error with robot light transducer"
+        
+        #light_values = self._robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]
+        light_values = receivedData.rstrip('\r\n').split(',')[1:]
         return self.range()[1] - float(light_values[self._funcParameters])
+        #except SocketError as e:
+            #print "FAILED! cannot connect to socket with actuator %s: %s" % (type(self).__name__, e)
        
     def range(self):
         '''Returns the range of the light sensor.
