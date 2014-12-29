@@ -2,6 +2,7 @@
 #define ROBOTTHREAD_H
 
 #include <webots/Supervisor.hpp>
+#include <webots/Node.hpp>
 
 #include <QtCore/QObject>
 #include <QtCore/QQueue>
@@ -27,8 +28,11 @@ public slots:
 private:
     QList<webots::LightSensor*> m_sensors;
 
-    QQueue<QByteArray> m_commandsQueue;
-    QMutex m_commandMutex;
+    webots::Node* m_targetNode;
+    double m_targetX, m_targetY, m_targetZ;
+
+    QQueue<QByteArray> m_supervisorCommandsQueue;
+    QMutex m_supervisorCommandMutex;
 };
 
 #endif // ROBOTTHREAD_H

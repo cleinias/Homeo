@@ -18,6 +18,7 @@ void SocketHandler::newConnection() {
     QTcpSocket *socket = m_server->nextPendingConnection();
 
     connect(socket, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
+    qDebug() << "Got a connection";
 
     if (m_client != 0) {
         qDebug() << "HELP! Already have a client but I have a new connection";
@@ -27,16 +28,17 @@ void SocketHandler::newConnection() {
     m_client = socket;
 
     connect(m_client, SIGNAL(readyRead()), this, SLOT(clientReadyRead()));
+    connect(m_client, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(clientError(QAbstractSocket::SocketError)));
 }
 
 void SocketHandler::clientReadyRead() {
     if (m_client->bytesAvailable() == 0) {
-        qDebug() << "ReadyReady but no bytes available";
+        qDebug() << "Ready but no bytes available";
         return;
     }
 
     QByteArray data = m_client->readAll();
-//    qDebug() << "Server read:" << data;
+    //qDebug() << "Server read:" << data;
     emit clientCommand(data);
 }
 
@@ -46,7 +48,7 @@ void SocketHandler::sendCommand(const QByteArray &cmd) {
         return;
     }
 
-//    qDebug() << "Sending reply:" << cmd;
+    //qDebug() << "Sending reply:" << cmd;
     m_client->write(cmd);
     m_client->flush();
 }
@@ -63,4 +65,8 @@ void SocketHandler::clientDisconnected() {
     m_client = 0;
 
     client->deleteLater();
+}
+
+void SocketHandler::clientError(QAbstractSocket::SocketError error) {
+    qDebug() << "Got socket error from connected client:" << error;
 }
