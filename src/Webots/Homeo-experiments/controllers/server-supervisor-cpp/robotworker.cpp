@@ -5,6 +5,7 @@
  * R - Reset the Simulation to initial conditions           --> simulationRevert()
  * P - Reset the Simulation's physics to initial conditions --> simulationResetPhysics()
  * Q - Quit Webots                                          --> simulationQuit(int status);
+ * D - Return distance between robot and target (yet to implement)
 */
 
 
@@ -14,13 +15,19 @@
 #include <QtCore/QThread>
 #include <QtCore/QDebug>
 
+#include <math.h>
+
 using namespace std;
 using namespace webots;
 
 static const int TIME_STEP = 32;
 
 RobotWorker::RobotWorker(QObject *parent) :
-    QObject(parent)
+    QObject(parent),
+    m_targetNode(0),
+    m_targetX(0.0),
+    m_targetY(0.0),
+    m_targetZ(0.0)
 {
 //    QString sensor_name = "ls%1";
 //    for (int i = 0; i < NUM_SENSORS; i++) {
@@ -28,6 +35,19 @@ RobotWorker::RobotWorker(QObject *parent) :
 //        sensor->enable(TIME_STEP);
 //        m_sensors.append(sensor);
 //    }
+    // Find list of targets
+    const QString targetName = "TARGET";
+    m_targetNode = getFromDef(targetName.toStdString());
+    if (!m_targetNode) {
+        qDebug() << "Failed to find target node from def";
+    } else {
+        Field* location = m_targetNode->getField("location");
+        const double *pos = location->getSFVec3f();
+        // qDebug() << "Position of target:" << pos[0] << pos[1] << pos[2];
+        m_targetX = pos[0];
+        m_targetY = pos[1];
+        m_targetZ = pos[2];
+    }
 }
 
 void RobotWorker::run() {
@@ -35,9 +55,9 @@ void RobotWorker::run() {
     while (step(TIME_STEP) != -1)
     {
         {
-            QMutexLocker l(&m_commandMutex);
-            while(!m_commandsQueue.isEmpty()) {
-                const QString cmd = QString::fromLatin1(m_commandsQueue.dequeue());
+            QMutexLocker l(&m_supervisorCommandMutex);
+            while(!m_supervisorCommandsQueue.isEmpty()) {
+                const QString cmd = QString::fromLatin1(m_supervisorCommandsQueue.dequeue());
 
                 if (cmd.size() == 0) {
                     qDebug() << "Got an empty command!";
@@ -57,6 +77,22 @@ void RobotWorker::run() {
                     simulationQuit(EXIT_SUCCESS);
 
                     emit sendCommand("q");
+                } else if (cmd.at(0) == 'D') {
+                    Node *robot = getFromDef("KHEPERA");
+                    if (!robot) {
+                        qDebug() << "Failed to find robot node";
+                        continue;
+                    }
+                    Field* translation = robot->getField("translation");
+                    if (!translation) {
+                        qDebug() << "Failed to find translation field of robot";
+                        continue;
+                    }
+                    const double *pos = translation->getSFVec3f();
+                    qDebug() << "Position of robot:" << pos[0] << pos[1] << pos[2];
+
+                    double distance = sqrt(pow(pos[0] - m_targetX, 2) + pow(pos[2] - m_targetZ, 2));
+                    emit sendCommand(QString("%1").arg(distance).toLatin1());
                 }  else {
                     emit sendCommand("g");
                 }
@@ -70,7 +106,7 @@ void RobotWorker::run() {
 
 
 void RobotWorker::handleCommand(const QByteArray &command) {
-    QMutexLocker l(&m_commandMutex);
+    QMutexLocker l(&m_supervisorCommandMutex);
 
-    m_commandsQueue.enqueue(command);
+    m_supervisorCommandsQueue.enqueue(command);
 }

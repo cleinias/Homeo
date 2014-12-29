@@ -12,13 +12,14 @@ SocketHandler::SocketHandler(int port, QObject *parent) :
     connect(m_server, SIGNAL(newConnection()), this, SLOT(newConnection()));
 
     m_server->listen(QHostAddress::Any, port);
+
 }
 
 void SocketHandler::newConnection() {
     QTcpSocket *socket = m_server->nextPendingConnection();
 
     connect(socket, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
-
+    //qDebug() << "Got a connection";
     if (m_client != 0) {
         qDebug() << "HELP! Already have a client but I have a new connection";
         return;
