@@ -14,6 +14,7 @@ from subprocess import call as subCall
 from RobotSimulator.Transducer import  *
 from os import system
 from time import sleep 
+from docutils.nodes import problematic
 
 
 
@@ -676,8 +677,8 @@ def initializeBraiten1_1(raw=False,params=None):
     sensorTransd.robotSocket = socket
     
     '3.2 initialize motor and sensor units with properly setup motor and sensor '
-    motor = HomeoUnitNewtonianActuator(actuator = wheel)
-    sensor = HomeoUnitInput(sensor=sensorTransd)
+    motor = HomeoUnitNewtonianActuator(transducer = wheel)
+    sensor = HomeoUnitInput(transducer = sensorTransd)
     
     "4. Set up Homeostat"   
     hom = Homeostat()
@@ -836,9 +837,9 @@ def initializeBraiten1_2(raw=False,params=None):
     sensorTransd.robotSocket = socket
     
     '3.2 initialize motor and sensor units with properly setup motor and sensor '
-    motor = HomeoUnitNewtonianActuator(actuator = wheel)
+    motor = HomeoUnitNewtonianActuator(transducer = wheel)
     sensor = HomeoUnitNewtonian()
-    sensorOnly = HomeoUnitInput(sensor=sensorTransd)
+    sensorOnly = HomeoUnitInput(transducer=sensorTransd)
         
     '3. Setup standard homeo parameters'
     motor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
@@ -992,10 +993,10 @@ def initializeBraiten1_3(params=None):
     sensorTransd.robotSocket = socket
     
     '3.2 initialize motor and sensor units with properly setup motor and sensor '
-    motor = HomeoUnitNewtonianActuator(actuator = wheel)
+    motor = HomeoUnitNewtonianActuator(transducer = wheel)
     sensor = HomeoUnitNewtonian()
     hidden = HomeoUnitNewtonian()
-    sensorOnly = HomeoUnitInput(sensor=sensorTransd)
+    sensorOnly = HomeoUnitInput(transducer=sensorTransd)
         
     '3. Setup standard homeo parameters'
     motor_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
@@ -1157,6 +1158,7 @@ def initializeBraiten2_2(raw=False,params=None):
        (Defined in webots world specified above)
     '''
     kheperaPort = 10020
+    #kheperaPort = 50000   # Test server at port 50000 that just echoes commands back
     supervisorPort = 10021
     
     startWebots(webotsWorld)
@@ -1192,13 +1194,13 @@ def initializeBraiten2_2(raw=False,params=None):
     rightEyeSensorTransd.robotSocket = socket
     
     '3.2 initialize motors and sensors units with properly setup motors and sensors'    
-    rightMotor = HomeoUnitNewtonianActuator(actuator = rightWheel)
-    leftMotor = HomeoUnitNewtonianActuator(actuator = leftWheel)
+    rightMotor = HomeoUnitNewtonianActuator(transducer = rightWheel)
+    leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel)
     
     leftEye = HomeoUnitNewtonian()
     rightEye = HomeoUnitNewtonian()
-    leftEyeSensorOnly = HomeoUnitInput(sensor=leftEyeSensorTransd)
-    rightEyeSensorOnly = HomeoUnitInput(sensor=rightEyeSensorTransd)
+    leftEyeSensorOnly = HomeoUnitInput(transducer=leftEyeSensorTransd)
+    rightEyeSensorOnly = HomeoUnitInput(transducer=rightEyeSensorTransd)
     
         
     '3. Setup standard homeo parameters'
@@ -1432,13 +1434,13 @@ def initializeBraiten2_2Aristotelian(raw=True,params=None):
     rightEyeSensorTransd.robotSocket = socket
     
     '3.2 initialize motors and sensors units with properly setup motors and sensors'    
-    rightMotor = HomeoUnitAristotelianActuator(actuator = rightWheel)
-    leftMotor = HomeoUnitAristotelianActuator(actuator = leftWheel)
+    rightMotor = HomeoUnitAristotelianActuator(transducer = rightWheel)
+    leftMotor = HomeoUnitAristotelianActuator(transducer = leftWheel)
     
     leftEye = HomeoUnitAristotelian()
     rightEye = HomeoUnitAristotelian()
-    leftEyeSensorOnly = HomeoUnitInput(sensor=leftEyeSensorTransd)
-    rightEyeSensorOnly = HomeoUnitInput(sensor=rightEyeSensorTransd)
+    leftEyeSensorOnly = HomeoUnitInput(transducer=leftEyeSensorTransd)
+    rightEyeSensorOnly = HomeoUnitInput(transducer=rightEyeSensorTransd)
     
         
     '3. Setup standard homeo parameters'
@@ -1653,9 +1655,9 @@ def initializeBraiten2_2_Full(raw=False,params=None):
     rightWheel = WebotsDiffMotorTCP('right')
     leftWheel = WebotsDiffMotorTCP('left')
     rightWheel.robotSocket = socket
-    rightWheel.funcParameters = 10
+    rightWheel.funcParameters = 100  #wheel speed in rad/s
     leftWheel.robotSocket = socket
-    leftWheel.funcParameters = 10
+    leftWheel.funcParameters = 100   ##wheel speed in rad/s
 
     
     'sensors'
@@ -1673,13 +1675,13 @@ def initializeBraiten2_2_Full(raw=False,params=None):
     rightEyeSensorTransd.robotSocket = socket
     
     '3.2 initialize motors and sensors units with properly setup motors and sensors'    
-    rightMotor = HomeoUnitNewtonianActuator(actuator = rightWheel)
-    leftMotor = HomeoUnitNewtonianActuator(actuator = leftWheel)
+    rightMotor = HomeoUnitNewtonianActuator(transducer = rightWheel)
+    leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel)
     
     leftEye = HomeoUnitNewtonian()
     rightEye = HomeoUnitNewtonian()
-    leftEyeSensorOnly = HomeoUnitInput(sensor=leftEyeSensorTransd)
-    rightEyeSensorOnly = HomeoUnitInput(sensor=rightEyeSensorTransd)
+    leftEyeSensorOnly = HomeoUnitInput(transducer=leftEyeSensorTransd)
+    rightEyeSensorOnly = HomeoUnitInput(transducer=rightEyeSensorTransd)
     
         
     '3. Setup standard homeo parameters'
@@ -1916,13 +1918,13 @@ def initializeBraiten2_7_Full(raw=False):
     rightEyeSensorTransd.robotSocket = socket
     
     '3.2 initialize motors and sensors units with properly setup motors and sensors'    
-    rightMotor = HomeoUnitNewtonianActuator(actuator = rightWheel)
-    leftMotor = HomeoUnitNewtonianActuator(actuator = leftWheel)
+    rightMotor = HomeoUnitNewtonianActuator(transducer = rightWheel)
+    leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel)
     
     leftEye = HomeoUnitNewtonian()
     rightEye = HomeoUnitNewtonian()
-    leftEyeSensorOnly = HomeoUnitInput(sensor=leftEyeSensorTransd)
-    rightEyeSensorOnly = HomeoUnitInput(sensor=rightEyeSensorTransd)
+    leftEyeSensorOnly = HomeoUnitInput(transducer=leftEyeSensorTransd)
+    rightEyeSensorOnly = HomeoUnitInput(transducer=rightEyeSensorTransd)
     
     ' Add internal units'
     interUnit_1 = HomeoUnitNewtonian()
@@ -2194,25 +2196,34 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
     '''Webots parameters for tcp/ip communication
        (Defined in webots world specified above)
     '''
+    
+    #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
+    host = 'localhost'
     kheperaPort = 10020
     supervisorPort = 10021
     
     startWebots(world=webotsWorld, mode=webotsMode)
     
-    "2. set up connection and create client and socket, etc."
-    client = WebotsTCPClient()
-    client._clientPort = kheperaPort
-    socket = client.getClientSocket()
+    "2. set up homeostat, connect it and create client and socket, etc."
+    hom = Homeostat()
+    hom._host = host
+    hom._port = kheperaPort
+
+    '''Clear the class-based set containing the names of all units
+        FIXME: this is a hack that will not work in case of repeated calls to the
+        same experimental setup within the same experiment.
+        Need to give names with incremental integer values'''
+    HomeoUnit.clearNames()
     
        
     '3.1 Setup robotic communication parameters in actuator and sensor'
     'motors'
     rightWheel = WebotsDiffMotorTCP('right')
     leftWheel = WebotsDiffMotorTCP('left')
-    rightWheel.robotSocket = socket
-    rightWheel.funcParameters = 10
-    leftWheel.robotSocket = socket
-    leftWheel.funcParameters = 10
+    #rightWheel.robotSocket = socket
+    rightWheel.funcParameters = 10 #wheel speed in rad/s
+    #leftWheel.robotSocket = socket
+    leftWheel.funcParameters = 10  #wheel speed in rad/s
 
     
     'sensors'
@@ -2225,17 +2236,17 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
 
         
     leftEyeSensorTransd._clientPort = kheperaPort
-    leftEyeSensorTransd.robotSocket = socket
+    #leftEyeSensorTransd.robotSocket = socket
     rightEyeSensorTransd._clientPort = kheperaPort
-    rightEyeSensorTransd.robotSocket = socket
+    #rightEyeSensorTransd.robotSocket = socket
     
     '3.2 initialize motors and sensors units with properly setup motors and sensors'        
-    leftMotor = HomeoUnitNewtonianActuator(actuator = leftWheel)
-    rightMotor = HomeoUnitNewtonianActuator(actuator = rightWheel)
+    leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel)
+    rightMotor = HomeoUnitNewtonianActuator(transducer = rightWheel)
     leftEye = HomeoUnitNewtonian()
     rightEye = HomeoUnitNewtonian()
-    leftEyeSensorOnly = HomeoUnitInput(sensor=leftEyeSensorTransd)
-    rightEyeSensorOnly = HomeoUnitInput(sensor=rightEyeSensorTransd)
+    leftEyeSensorOnly = HomeoUnitInput(transducer=leftEyeSensorTransd)
+    rightEyeSensorOnly = HomeoUnitInput(transducer=rightEyeSensorTransd)
     
     '3.3 initialize units essential parameters according to slices of input list'
     leftMotor.initialize_GA(homeoGenome[0:4])
@@ -2257,8 +2268,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
     sensor_incoming_connection_uniselector = 'manual'
     
     "4. Set up Homeostat"   
-    hom = Homeostat()
-
+    
     'Setup a 4 unit Homeostat with 2 additional input units. Then change the parameters'
     if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
             hom.addFullyConnectedUnit(leftMotor)
@@ -2366,68 +2376,82 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
         connection.status = False
     for connection in rightEyeSensorOnly.inputConnections:
         connection.status = False
+        
+    #===========================================================================
+    # Debugging code to isolate the tcp/ip problem
+    # Removing the light sensors (input units)  
+    #===========================================================================
+    #hom.removeUnit(leftEyeSensorOnly)
+    #hom.removeUnit(rightEyeSensorOnly)
+        
+    #===========================================================================
+    # End of debugging code
+    #===========================================================================
+        
+#===============================================================================
+#     #===========================================================================
+#     # Debugging 
+#     #===========================================================================
+#     from tabulate import tabulate
+#     #===========================================================================
+#     # for i in xrange(homeoGenome.size):
+#     #     print "param %d  is:\t%f" % (i,homeoGenome[i])
+#     #===========================================================================
+#     " Checking HomeoUnits values"
+#     homUnitsData = []
+#     k = 0
+#     for i in hom.homeoUnits:
+#         singleUnitdata = []
+#         singleUnitdata.append(k)
+#         singleUnitdata.append(i.name)
+#         singleUnitdata.append(homeoGenome[0+k])
+#         singleUnitdata.append(i.mass)
+#         singleUnitdata.append(homeoGenome[1+k])
+#         singleUnitdata.append(i.viscosity)
+#         singleUnitdata.append(homeoGenome[2+k])
+#         singleUnitdata.append(i.uniselectorTimeInterval)
+#         singleUnitdata.append(homeoGenome[3+k])
+#         singleUnitdata.append(i.maxDeviation)
+#         homUnitsData.append(singleUnitdata)        
+#         k += 4
+#     headers = ["k","Unit", "mass-param",  "mass", "Visc-param", "Visc.","Unisel-time-param", "Unisel-timing", "maxDev-param", "maxDev"]      
+#     print tabulate(homUnitsData,headers,tablefmt='orgtbl')
+#     print
+#     print
+#               
+#     "Checking connections"                                                                                                                                                 
+#     homConnectionsData = []
+#     k = 0
+#     offset = 24
+#     for unit in hom.homeoUnits:
+#         for conn in unit.inputConnections:
+#             unitConnData = []
+#             unitConnData.append(offset)
+#             unitConnData.append(unit.name)
+#             unitConnData.append(conn.incomingUnit.name)
+#             unitConnData.append(homeoGenome[offset])
+#             unitConnData.append(conn.weight)
+#             unitConnData.append(abs((2*homeoGenome[offset])-1))
+#             unitConnData.append(conn.weight-(abs((2*homeoGenome[offset])-1)))
+#             unitConnData.append(conn.switch)            
+#             unitConnData.append(np.sign(((2*homeoGenome[offset])-1)))
+#             unitConnData.append(conn.switch - (np.sign(((2*homeoGenome[offset])-1))))
+#             unitConnData.append(conn.status)
+#             offset += 1
+#             homConnectionsData.append(unitConnData)
+# 
+#     headers = ["Genome offset","To unit", "From unit", "weight param", "weight", "weight comp.", "weight delta", "switch", "switch comp.", "switch delta", "status"]
+#     print tabulate(homConnectionsData, headers, tablefmt='orgtbl')                
+#     #===========================================================================
+#     # End debugging
+#     #===========================================================================
+#===============================================================================
     
     hom._usesSocket = True
-    
-    #===========================================================================
-    # Debugging 
-    #===========================================================================
-    from tabulate import tabulate
-    #===========================================================================
-    # for i in xrange(homeoGenome.size):
-    #     print "param %d  is:\t%f" % (i,homeoGenome[i])
-    #===========================================================================
-    " Checking HomeoUnits values"
-    homUnitsData = []
-    k = 0
-    for i in hom.homeoUnits:
-        singleUnitdata = []
-        singleUnitdata.append(k)
-        singleUnitdata.append(i.name)
-        singleUnitdata.append(homeoGenome[0+k])
-        singleUnitdata.append(i.mass)
-        singleUnitdata.append(homeoGenome[1+k])
-        singleUnitdata.append(i.viscosity)
-        singleUnitdata.append(homeoGenome[2+k])
-        singleUnitdata.append(i.uniselectorTimeInterval)
-        singleUnitdata.append(homeoGenome[3+k])
-        singleUnitdata.append(i.maxDeviation)
-        homUnitsData.append(singleUnitdata)        
-        k += 4
-    headers = ["k","Unit", "mass-param",  "mass", "Visc-param", "Visc.","Unisel-time-param", "Unisel-timing", "maxDev-param", "maxDev"]      
-    print tabulate(homUnitsData,headers,tablefmt='orgtbl')
-    print
-    print
-              
-    "Checking connections"                                                                                                                                                 
-    homConnectionsData = []
-    k = 0
-    offset = 24
-    for unit in hom.homeoUnits:
-        for conn in unit.inputConnections:
-            unitConnData = []
-            unitConnData.append(offset)
-            unitConnData.append(unit.name)
-            unitConnData.append(conn.incomingUnit.name)
-            unitConnData.append(homeoGenome[offset])
-            unitConnData.append(conn.weight)
-            unitConnData.append(abs((2*homeoGenome[offset])-1))
-            unitConnData.append(conn.weight-(abs((2*homeoGenome[offset])-1)))
-            unitConnData.append(conn.switch)            
-            unitConnData.append(np.sign(((2*homeoGenome[offset])-1)))
-            unitConnData.append(conn.switch - (np.sign(((2*homeoGenome[offset])-1))))
-            unitConnData.append(conn.status)
-            offset += 1
-            homConnectionsData.append(unitConnData)
+    hom.connectUnitsToNetwork()
 
-    headers = ["Genome offset","To unit", "From unit", "weight param", "weight", "weight comp.", "weight delta", "switch", "switch comp.", "switch delta", "status"]
-    print tabulate(homConnectionsData, headers, tablefmt='orgtbl')
-    
-            
-    #===========================================================================
-    # End debugging
-    #===========================================================================
     'Return the properly configured homeostat'
+    print "Homeostat initialized"
     return hom
 
 #===============================================================================
@@ -2446,8 +2470,8 @@ def startWebots(world = None, mode = "realtime"):
     Start a webots instance with the given world and at the specified speed (mode).
     Mode can be one of realtime, run, or fast 
     """
-    print mode
     if not isWebotsRunning():
+        print "Is webots-running: ", isWebotsRunning()
         callString = "/usr/local/webots/webots " +"--mode="+ mode+ " " +world + " &"
         print callString
         system(callString)

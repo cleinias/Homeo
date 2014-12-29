@@ -17,7 +17,8 @@ from RobotSimulator.WebotsTCPClient import WebotsTCPClient
 from socket import error as SocketError
 import os
 from math import sqrt
-from time import sleep, strftime
+from time import sleep, time, strftime
+from tabulate import tabulate
 
 class GA_ConnectionError(Exception):
     def __init__(self, value):
@@ -40,7 +41,7 @@ class HomeoGASimulation(QWidget):
         '''
         super(HomeoGASimulation,self).__init__(parent)
         self._simulation = HomeoQtSimulation(experiment="initializeBraiten2_2_Full_GA")             # instance variable holding the real simulation
-        self._simulation.initializeExperSetup(self.createRandomHomeostatGenome())
+        #self._simulation.initializeExperSetup(self.createRandomHomeostatGenome())
         self._maxRun = maxRun
         self._supervisor = WebotsTCPClient(port=supervisor_port)
         
@@ -50,18 +51,59 @@ class HomeoGASimulation(QWidget):
         self._simulation.moveToThread(self._simulThread)
         self._simulThread.started.connect(self._simulation.go)
         
+        
         "construct the interface"
         self.setWindowTitle('Homeo GA simulation')
         self.setMinimumWidth(400)
-
+ 
         self.buildGui()
         self.connectSlots()
-        self._supervisor.clientConnect()
-        "debugging code"
-        sleep(2)
-        target = [15.0,15.0]
-        self.finalDisFromTarget(target)
-        "end debugging code"
+        #self._supervisor.clientConnect()
+        curDateTime = strftime("%Y%m%d%H%M%S")  
+        statsFilename = 'Ga_Statistics-'+curDateTime+'.txt'
+        addedPath = 'SimulationsData'
+        datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
+        fullPathstatsFilename = os.path.join(datafilePath, statsFilename)
+        statsFile = open(fullPathstatsFilename,'w')
+        self.results = [] 
+        popSize = 150
+        population = []
+        for i in xrange(popSize):
+            population.append(self.createRandomHomeostatGenome())  
+        timeGen = time()               
+        for i in xrange(popSize):
+            timeInd = time()
+            runResults = []
+            runResults.append(str(i+1))
+            runResults.append(round(self.evaluateGenomeFitness(steps = 50000, genome = population[i]),4))
+            runResults.append(str(round((time() - timeInd),2)))
+            for gene in population[i]:
+                runResults.append(gene)
+            for i in runResults:
+                statsFile.write(str(i)+'\t')
+            self.results.append(runResults)
+            statsFile.write('\n')
+            statsFile.flush()
+            os.fsync(statsFile)
+        self.simulationEnvironQuit()
+        statsFile.close()
+        headers = ['Run', 'Final distance','Time in secs']
+        for i in xrange(len(population[0])):
+            headers.append('Gene'+str(i+1))
+        print tabulate(self.results, headers, tablefmt='orgtbl')
+        print "Total time for generation was: %s" % str(round((time() - timeGen),2))
+        
+        
+            
+        #=======================================================================
+        # "debugging code"
+        # print "Simulation starting....."
+        # result = self.finalDisFromTarget(simTarget)
+        # print "Final distance from target was: %f" % result
+        # print "......simulation over."
+        # 
+        # "end debugging code"
+        #=======================================================================
         
     def buildGui(self):
         '''
@@ -122,32 +164,84 @@ class HomeoGASimulation(QWidget):
         '''          
         return np.random.uniform(size=(noUnits * (essentParams + noUnits)))
 
-    def simulationReset(self):
-        "Reset webots simulation"
+    def simulationEnvironReset(self):
+        """Reset webots simulation.
+         Do not return from function until the simulation has really exited 
+         and the previous tcp/ip socket is no longer valid.
+        """
         try:
             self._supervisor._clientSocket.send("R")
-            print "reset Webots simulation"
+            response = self._supervisor._clientSocket.recv(100) 
+            #print "Reset Webots simulation: received back %s from server" %response
+            try:
+                while True:
+                    self._supervisor._clientSocket.send(".")
+                    sleep(0.05)
+            except SocketError:
+                pass
         except SocketError:
-            raise GA_ConnectionError("Could not reset Webots simulation")
+            raise GA_ConnectionError("statsFileCould not reset Webots simulation")
         
-    def simulationResetPhysics(self):
+    def simulationEnvironResetPhysics(self):
         "Reset Webots simulation physics"
         try:
             self._supervisor._clientSocket.send("P")
-            print "Reset Webots simulation physics"
+            response = self._supervisor._clientSocket.recv(100) 
+            print "Reset Webots simulation physics: received back %s from server" %response
         except SocketError:
             raise GA_ConnectionError("Could not reset Webots simulation's physics")
             
     
-    def quitWebots(self):
+    def simulationEnvironQuit(self):
         "Quit Webots application"
         try:
             self._supervisor._clientSocket.send("Q")
-            print "Quit Webots"
+            response = self._supervisor._clientSocket.recv(100) 
+            print "Quit Webots: received back %s from server" %response
         except SocketError:
             raise GA_ConnectionError("Could not quit Webots")
         
-    def finalDisFromTarget(self, target):
+    def evaluateGenomeFitness(self,genome=None, steps = 1000, target=None):
+        """Run a simulation for a given number of steps on the given genome.
+           Return final distance from target"""
+            
+        if genome==None:
+            genome=self.createRandomHomeostatGenome()
+        self._simulation.initializeExperSetup(genome)
+        self._supervisor.clientConnect()
+        self.simulationEnvironReset()
+        self._supervisor.close()
+        self._supervisor.clientConnect()
+        self._simulation.homeostat.connectUnitsToNetwork()
+        self._simulation.maxRuns = steps
+        "Initialize live data recording and display "
+        self._simulation.initializeLiveData()
+
+        self._simulThread.start()
+        timeNow = time()
+        #=======================================================================
+        # print "Simulation started at time: %f" % timeNow  
+        # # print "Steps....",
+        # for i in xrange(steps):
+        #     print "Step: ", str(i+1)
+        #     self._simulation.step()
+        #=======================================================================
+        self._simulation.go()
+        print "Elapsed time in seconds was %s" % str(round((time() - timeNow),3))
+        finalDis =self.finalDisFromTarget()
+        print "Final distance from target was: ", finalDis
+        return finalDis
+        
+    def finalDisFromTarget(self):
+        '''Compute the distance from target by asking the supervisor to
+        evaluate the distance between a node with 'DEF' = 'TARGET'
+        and the KHEPERA robot'''
+        
+        self._supervisor._clientSocket.send("D")
+        response = float(self._supervisor._clientSocket.recv(100)) 
+        return response
+        
+    def finalDisFromTargetFromFile(self, target):
         """ Compute the distance between robot and target at
         the end of the simulation.
         
@@ -172,12 +266,8 @@ class HomeoGASimulation(QWidget):
 #         FIXME 2: The target is currently specified in the Homeo GA general interface. 
 #         It would be more robust to indicate the target within Webots itself, and then 
 #         ask the C++ supervisor to return the distance. 
-#===============================================================================
+#=============================================================================== 
 
-
-        
-        curDateTime = strftime("%Y%m%d%H%M%S")    
-        trajFilename = 'trajectoryData-'+curDateTime+'.txt'
         addedPath = 'SimulationsData'
         datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
         fileNamepattern = 'trajectoryData'
@@ -186,6 +276,7 @@ class HomeoGASimulation(QWidget):
         except ValueError:
             print "The file I tried to open was:", os.path.join(datafilePath, max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)]))
             messageBox =  QMessageBox.warning(self, 'No data file', 'There are no trajectory data to visualize', QMessageBox.Cancel)
+            messageBox.show()
         fullPathTrajFilename = os.path.join(datafilePath, trajDataFilename)
         robotFinalPos =os.popen("tail --lines=1 " + fullPathTrajFilename).read()
         robotX = float(robotFinalPos.split('\t')[0])
@@ -197,22 +288,8 @@ class HomeoGASimulation(QWidget):
         #=======================================================================
         return sqrt((target[0]-robotX)**2 + (target[1]-robotY)**2)
     
-    def runOneShotSimulation(self, genome, steps = 1000):
-        'Run a complete simulation of a robot instantiated to given genome'
-        
-        '1. Initialize robot to given genome'
-        
-        '2. Reset simulation environment'
-         
-        '3. Run simulation'
-        
-        '4. Return fitness value'
-        pass
-    
-    
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     simul = HomeoGASimulation()
-    simul.show()
-    app.exec_()
+    #simul.show()
+    #app.exec_()
