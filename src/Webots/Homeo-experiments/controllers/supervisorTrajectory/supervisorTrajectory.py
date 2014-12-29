@@ -24,9 +24,9 @@ class supervisorTrajectory(Supervisor):
      addedPath = 'SimulationsData'
      datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
      fullPathTrajFilename = os.path.join(datafilePath, trajFilename)
-     print "The computed filename name with path is: ", fullPathTrajFilename
+     # print "The computed filename name with path is: ", fullPathTrajFilename
      posFile = open(fullPathTrajFilename,"a")
-     print "opened data file %s at location %s" % (posFile.name, datafilePath)
+     # print "opened data file %s at location %s" % (posFile.name, datafilePath)
 
      "Get the translation node of the robot by its definition"
      myKhepera = self.getFromDef("KHEPERA")
@@ -38,27 +38,34 @@ class supervisorTrajectory(Supervisor):
         by position of light sources and initial position of vehicle'''
      posFile.write("# Position data for Homeo simulation run\n#\n#\n")
      posFile.write("# Light sources positioned at:\n")
-     "Loop through  all light sources of name (DEF) of the form LIGHTx and write their positions to file"
+     """Loop through  all light sources of name (DEF) of the form LIGHTx (0<x<10) 
+     or of form TARGET and write their positions to file"""
+     lights = []
+     lights.append("TARGET")
      for i in xrange(10):
+         lights.append("LIGHT"+str(i+1))
+     print lights
+     for l in lights:
          try:
-             light = self.getFromDef("LIGHT" + str(i+1))
+             light = self.getFromDef(l)
              lightPosField = light.getField("location")
              lightPos = lightPosField.getSFVec3f()
              lightIsOnField = light.getField("on")
              lightIsOn=lightIsOnField.getSFBool()
              lightIntensity=(light.getField("intensity")).getSFFloat()
-             posFile.write('Pointlight\t %s\t%f\t%f\t%f\t%s\n' % (i,
-                                                              lightPos[0],
-                                                              lightPos[2],
-                                                              lightIntensity,
-                                                              lightIsOn))
-             posFile.flush()
-             print "Point light number %u is at %f \t %f and it is %s \n" % (i+1,
-                                                          lightPos[0],
+             posFile.write(l+'\t%f\t%f\t%f\t%s\n' % (lightPos[0],
                                                           lightPos[2],
-                                                          lightIsOn)
+                                                          lightIntensity,
+                                                          lightIsOn))
+             posFile.flush()
+             #==================================================================
+             # print "Point light number %u is at %f \t %f and it is %s \n" % (i+1,
+             #                                              lightPos[0],
+             #                                              lightPos[2],
+             #                                              lightIsOn)
+             #==================================================================
          except: 
-             print "There are exactly %u point lights in this simulation" % (i)
+            # print "There are exactly %u point lights in this simulation" % (i)
              posFile.write("\n\n")
              posFile.flush()
              break
