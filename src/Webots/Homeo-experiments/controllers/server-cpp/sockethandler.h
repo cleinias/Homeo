@@ -2,6 +2,7 @@
 #define SOCKETHANDLER_H
 
 #include <QtCore/QObject>
+#include <QtNetwork/QAbstractSocket>
 
 class QTcpServer;
 class QTcpSocket;
@@ -19,6 +20,7 @@ public slots:
     void newConnection();
     void clientReadyRead();
     void clientDisconnected();
+    void clientError(QAbstractSocket::SocketError error);
 
     void sendCommand(const QByteArray &cmd);
 
