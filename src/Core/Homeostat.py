@@ -8,6 +8,7 @@ from Helpers.General_Helper_Functions import withAllSubclasses
 import time, sys, pickle
 from PyQt4.QtCore import  QObject, SIGNAL
 from Helpers.QObjectProxyEmitter import emitter
+from RobotSimulator.WebotsTCPClient import *
 
 class HomeostatError(Exception):
     pass
@@ -32,7 +33,10 @@ class Homeostat(object):
         collectsData         <aBoolean>       whether or not the homeostat collects data about its run
         slowingFactor:       <milliseconds>   it slows down the simulation by inserting a slowingFactor wait after each cycle.
         isRunning            <aBoolean>       whether the homeostat is running
-        usesSocket           <aBoolean>       whther the homeostat uses Socket and therefore cannot be pickled
+        usesSocket           <aBoolean>       whether the homeostat uses Socket and therefore cannot be pickled
+        host                 <aString>        a string with the IP address of the host running the simulation, or 'localhost' 
+        port                 <anInteger>      port number accepting robotic commands
+        client               <a WebTCPClient> the cllient holding the network connection, including the socket
     '''
 
 #===============================================================================
@@ -58,7 +62,7 @@ class Homeostat(object):
 # Initialization methods, getters and setters
 #===============================================================================
 
-    def __init__(self):
+    def __init__(self, ip = None, port = None):
         '''Set slowingFactor to 0, and microTime to 0 as well, reflecting the default 
            conditions of a Homeostat. Sets also some physical equivalence parameters'''
 
@@ -72,6 +76,10 @@ class Homeostat(object):
         self._slowingFactor = 10                        # Default slowing time is 10 milliseconds 
         self._isRunning = False                         # a new homeostat is not running 
         self._usesSocket = False
+        if ip != None:
+            self._ip = ip
+        if port != None:
+            self. _port = port
 
     def getTime(self):
         return self._time
@@ -233,7 +241,7 @@ class Homeostat(object):
                     if self.collectsData:
                         self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
                     unit.time =  self.time
-#                    sys.stderr.write("the status of %s in the function is %s and in the ivar is %s \n" % (unit.name, unit.isActive(), unit._status))
+                    # sys.stderr.write("the status of %s in the function is %s and in the ivar is %s \n" % (unit.name, unit.isActive(), unit._status))
                     if unit.isActive():
                         unit.selfUpdate()
                 self.time +=  1
@@ -411,7 +419,37 @@ class Homeostat(object):
         "Trash the dataCollector, effectively flushing all collected data"
 
         self.dataCollector = HomeoDataCollector()
+        
+#===============================================================================
+# Network-related
+#===============================================================================
+    def connectUnitsToNetwork(self):
+        "Connect all transducer-connected units to network"
+        if self._usesSocket == False:
+            raise HomeostatError("Trying to reconnect a homeostat that uses no sockets to network")
+        else:
+            try:
+                self._client.close()
+                self._client = WebotsTCPClient(ip = self._host, port = self._port)
+            except:
+                self._client = WebotsTCPClient(ip = self._host, port = self._port)
+                                                     
+            for unit in self.homeoUnits:
+                try:
+                    unit.transducer.robotSocket = self._client.getClientSocket()
+                    #print "now assigning new socket to transducers for unit %s" % unit.name
+                except:
+                    print "Did not connect: The unit %s of type %s has no transducer" % (unit.name,
+                                                                                         type(unit).__name__)
 
+    
+    def reconnectUnitsToNetworkViaSocket(self,socket):
+        """Reconnect all transducer-connected units
+           by passing a new socket
+        """
+        self._socket = socket
+        self.connectUnitsToNetwork()
+                    
 #===============================================================================
 # Private-saving methods
 #===============================================================================
