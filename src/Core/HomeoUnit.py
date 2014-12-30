@@ -142,6 +142,27 @@ class HomeoUnit(object):
     def clearNames(cls):
         '''Clear the set of HomeoUnits' names'''
         HomeoUnit.allNames = set()
+    
+    @classmethod
+    def uniselectorTimeIntervalFromWeight(cls,uniselParam):
+        '''Convert a GA parameter in the [0,1) range to a valid uniselectorInterval value'''
+        return uniselParam * HomeoUnit.DefaultParameters['maxUniselectorTimeInterval'] 
+    
+    @classmethod
+    def viscosityfromWeight(cls,viscParam):
+        '''Convert a GA parameter in the [0,1) range into a viscosity value'''        
+        return viscParam * HomeoUnit.DefaultParameters['maxViscosity']
+    
+    @classmethod
+    def maxDeviationFromWeight(cls,maxDevParam):
+        '''Convert a GA parameter in the [0,1) range to a valid maxDeviation value'''
+        return maxDevParam * HomeoUnit.DefaultParameters['maxTheoreticalDeviation']
+    
+    @classmethod    
+    def massFromWeight(cls,massParam):
+        '''Convert a GA parameter in the [0,1) range to a valid mass value'''
+        return ((HomeoUnit.DefaultParameters['maxMass']-HomeoUnit.DefaultParameters['minMass']) * massParam) + HomeoUnit.DefaultParameters['minMass']
+
     #===========================================================================
     #  INITIALIZATIONS AND GETTERS, SETTERS, PROPERTIES
     #===========================================================================
@@ -246,31 +267,11 @@ class HomeoUnit(object):
         if essent_params.size <> self.unit_essential_parameters:
             raise (HomeoUnitError, "The number of parameters needed to initialize the unit is incorrect.")
          
-        self.setMassGA(essent_params[0])
-        self.setViscosityGA(essent_params[1])
-        self.setUniselectorTimeIntervalGA(essent_params[2])
-        self.setMaxDeviationGA(essent_params[3])
-        
-    def setUniselectorTimeIntervalGA(self,uniselParam):
-        '''Set UniselectorTimeInterval by scaling a GA parameter in the [0,1) range'''
-        self.uniselectorTimeInterval = uniselParam * self.DefaultParameters['maxUniselectorTimeInterval'] 
+        self.mass = HomeoUnit.massFromWeight(essent_params[0])
+        self.viscosity = HomeoUnit.massFromWeight(essent_params[1])
+        self.uniselectorTimeInterval = HomeoUnit.uniselectorTimeIntervalFromWeight(essent_params[2])
+        self.maxDeviation=HomeoUnit.maxDeviationFromWeight(essent_params[3])                               
     
-    def setViscosityGA(self, viscParam):
-        '''Set viscosity by scaling a GA parameter in the [0,1) range'''        
-        self.viscosity = viscParam * self.DefaultParameters['maxViscosity']
-    
-    def setPotentiometerGA(self,potenParam):
-        '''Set the potentiometer by scaling a GA parameter in the [0,1) range'''
-        self.potentiometer = -1 + (potenParam * 2)
-
-    def setMaxDeviationGA(self,maxDevParam):
-        '''Set maxDeviation by scaling a GA parameter in the [0,1) range'''
-        self.maxDeviation = maxDevParam * self.DefaultParameters['maxTheoreticalDeviation']
-        
-    def setMassGA(self,massParam):
-        '''Set mass by scaling a GA parameter in the [0,1) range'''
-        self.mass = ((self.DefaultParameters['maxMass']-self.DefaultParameters['minMass']) * massParam) + self.DefaultParameters['minMass']
-               
     #===============================================================================   
         
 
