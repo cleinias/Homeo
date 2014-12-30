@@ -2454,6 +2454,20 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
     print "Homeostat initialized"
     return hom
 
+def initializeBraiten2_2_NoUnisel_Full_GA(genome, homeoParameters=4, raw=False):
+    '''
+    Initialize a homeostat according to initializeBraiten2_2_Full_GA, then turn 
+    off all uniselectors.
+    ***No Uniselectors active***
+    
+    See initializeBraiten2_2_Full_GA for details on initialization procedure.'''
+    
+    hom = initializeBraiten2_2_Full_GA(homeoGenome=genome, noHomeoParameters=homeoParameters, raw=False)
+    for unit in hom.homeoUnits:
+        unit.uniselectorActive = False
+    return hom
+
+
 #===============================================================================
 # Utility functions
 #===============================================================================
