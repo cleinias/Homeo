@@ -268,7 +268,7 @@ class HomeoUnit(object):
             raise (HomeoUnitError, "The number of parameters needed to initialize the unit is incorrect.")
          
         self.mass = HomeoUnit.massFromWeight(essent_params[0])
-        self.viscosity = HomeoUnit.massFromWeight(essent_params[1])
+        self.viscosity = HomeoUnit.viscosityfromWeight(essent_params[1])
         self.uniselectorTimeInterval = HomeoUnit.uniselectorTimeIntervalFromWeight(essent_params[2])
         self.maxDeviation=HomeoUnit.maxDeviationFromWeight(essent_params[3])                               
     
