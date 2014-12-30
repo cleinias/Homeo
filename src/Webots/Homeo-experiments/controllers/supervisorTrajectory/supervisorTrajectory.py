@@ -44,7 +44,6 @@ class supervisorTrajectory(Supervisor):
      lights.append("TARGET")
      for i in xrange(10):
          lights.append("LIGHT"+str(i+1))
-     print lights
      for l in lights:
          try:
              light = self.getFromDef(l)
@@ -58,14 +57,7 @@ class supervisorTrajectory(Supervisor):
                                                           lightIntensity,
                                                           lightIsOn))
              posFile.flush()
-             #==================================================================
-             # print "Point light number %u is at %f \t %f and it is %s \n" % (i+1,
-             #                                              lightPos[0],
-             #                                              lightPos[2],
-             #                                              lightIsOn)
-             #==================================================================
          except: 
-            # print "There are exactly %u point lights in this simulation" % (i)
              posFile.write("\n\n")
              posFile.flush()
              break
