@@ -108,6 +108,13 @@ class HomeoConnection(object):
         conn.outgoingUnit =  aHomeoUnit
         conn.incomingUnit =  anotherUnit
         return conn
+    
+    @classmethod
+    def connWeightFromGAWeight(self, aWeightParam):
+        ''''updates weight and switch by scaling aWeightParam (0,1) to the
+        interval (-1,1)'''
+        return -1 + (aWeightParam * 2)
+
 
     def getIncomingUnit(self):
         return self._incomingUnit
@@ -249,7 +256,7 @@ class HomeoConnection(object):
     def newWeightGA(self, aWeightParam):
         ''''updates weight and switch by scaling aWeightParam (0,1) to the
         interval (-1,1)'''
-        self.newWeight(-1 + (aWeightParam * 2))
+        self.newWeight = HomeoConnection.connWeightFromGAWeight(aWeightParam)
 
     def setAbsoluteWeight(self, aPositiveValue):
         'Utility function that changes the weight of a connection without changing its sign (i.e. the switch)'
