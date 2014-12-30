@@ -3,15 +3,20 @@ Created on Dec 16, 2014
 
 @author: stefano
 
-Module with classes and functions needed to run a GA simulation of Homeo experiments
+Module with classes and functions needed to run a GA simulation of Homeo experiments.
+Uses the DEAP GA framework for full GA simulations
 '''
+
+from deap import base
+from deap import creator
+from deap import tools
+
 from Simulator.HomeoQtSimulation import HomeoQtSimulation
 from Helpers.SimulationThread import SimulationThread
 from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
 import sys
 import numpy as np
-from Simulator.HomeoExperiments import initializeBraiten2_2_Full_GA
 import RobotSimulator.WebotsTCPClient
 from RobotSimulator.WebotsTCPClient import WebotsTCPClient
 from socket import error as SocketError
@@ -19,6 +24,7 @@ import os
 from math import sqrt
 from time import sleep, time, strftime
 from tabulate import tabulate
+
 
 class GA_ConnectionError(Exception):
     def __init__(self, value):
@@ -31,19 +37,30 @@ class HomeoGASimulation(QWidget):
     Class managing a Genetic Algorithm simulation, with GUI interface
     '''
     
-    def __init__(self, maxRun=1000, parent=None, supervisor_host = '127.0.0.1', supervisor_port = 10021):
+    def __init__(self,parent=None, stepSize = 1000, 
+                                   popSize=150,
+                                   generSize = 1, 
+                                   noUnits=6, 
+                                   essentParams=4, 
+                                   supervisor_host = 'localhost', 
+                                   supervisor_port = 10021, 
+                                   exp="initializeBraiten2_2_NoUnisel_Full_GA"):
+
+        self.popSize = popSize
+        self.genomeSize = (noUnits*essentParams)+noUnits**2   
+        self.stepsSize = stepSize    
+        self.generSize = generSize
+
         '''
-        Create a HomeoQTSimulation object to hold the actual simulation and initialize it. 
-        Notice that the GA experiment must be set from within the HomeoQTSimulation class (FIXME).
-        Instance variable maxRun holds the number of steps the single simulations should be run
-        _supervisor is the socket used to control the Webots supervisor 
-                    that allows resetting the Webots simulation
+        Create a HomeoQTSimulation object to hold the actual simulation and initialize it.
+        Instance HomeoQTSimulation's variable maxRun holds the number of steps the single simulations should be run       
         '''
+        
         super(HomeoGASimulation,self).__init__(parent)
-        self._simulation = HomeoQtSimulation(experiment="initializeBraiten2_2_Full_GA")             # instance variable holding the real simulation
+        self._simulation = HomeoQtSimulation(experiment=exp)             # instance variable holding the real simulation
+        self._simulation.maxRuns=self.stepsSize
         #self._simulation.initializeExperSetup(self.createRandomHomeostatGenome())
-        self._maxRun = maxRun
-        self._supervisor = WebotsTCPClient(port=supervisor_port)
+        self._supervisor = WebotsTCPClient(ip=supervisor_host, port=supervisor_port)
         
 
         "prepare to run the simulation itself in a thread"
@@ -53,12 +70,38 @@ class HomeoGASimulation(QWidget):
         
         
         "construct the interface"
-        self.setWindowTitle('Homeo GA simulation')
-        self.setMinimumWidth(400)
+        #self.setWindowTitle('Homeo GA simulation')
+        #self.setMinimumWidth(400)
  
-        self.buildGui()
-        self.connectSlots()
+        #self.buildGui()
+        #self.connectSlots()
         #self._supervisor.clientConnect()
+        
+    def initGaRun(self):
+        "1. Create individual types [Homeostat genome], define type of genes, define population"
+        toolbox = base.Toolbox()
+        
+        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))     # GA simulation will minimize fitness (distance from target)
+        creator.create("Individual", list, fitness=creator.FitnessMin)  # Homeostat genome is a list 
+        
+        toolbox.register("gene", np.random.uniform, 0,1)                 # Each gene is a uniform random number in [0,1) interval 
+        toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.gene, n=GENOME_SIZE)  # Define how to create a genome
+        toolbox.register("population", tools.initRepeat, list, toolbox.individual)                         # Population is a list of individuals 
+        
+        sys.stderr.write("Population defined.\nIndividual defined with genome size = " + str(GENOME_SIZE) +"\n")
+        
+        "2. Registering GA operators"
+        
+        toolbox.register("evaluate", self.evaluateGenomeFitness)
+        toolbox.register("mate", tools.cxTwoPoint)
+        toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
+        toolbox.register("select", tools.selTournament, tournsize=3)
+
+        
+    def runOneGenSimulation(self, populationSize=150, steps=1000):
+        """Run a one generation of a GA experiment manually.
+           Record fitness and genome for each individual to file"""
+                
         curDateTime = strftime("%Y%m%d%H%M%S")  
         statsFilename = 'Ga_Statistics-'+curDateTime+'.txt'
         addedPath = 'SimulationsData'
@@ -66,7 +109,7 @@ class HomeoGASimulation(QWidget):
         fullPathstatsFilename = os.path.join(datafilePath, statsFilename)
         statsFile = open(fullPathstatsFilename,'w')
         self.results = [] 
-        popSize = 150
+        popSize = populationSize
         population = []
         for i in xrange(popSize):
             population.append(self.createRandomHomeostatGenome())  
@@ -75,7 +118,7 @@ class HomeoGASimulation(QWidget):
             timeInd = time()
             runResults = []
             runResults.append(str(i+1))
-            runResults.append(round(self.evaluateGenomeFitness(steps = 50000, genome = population[i]),4))
+            runResults.append(round(self.evaluateGenomeFitness(steps=steps, genome = population[i]),4))
             runResults.append(str(round((time() - timeInd),2)))
             for gene in population[i]:
                 runResults.append(gene)
@@ -201,7 +244,7 @@ class HomeoGASimulation(QWidget):
         except SocketError:
             raise GA_ConnectionError("Could not quit Webots")
         
-    def evaluateGenomeFitness(self,genome=None, steps = 1000, target=None):
+    def evaluateGenomeFitness(self,genome=None, steps = 1000):
         """Run a simulation for a given number of steps on the given genome.
            Return final distance from target"""
             
@@ -219,14 +262,12 @@ class HomeoGASimulation(QWidget):
 
         self._simulThread.start()
         timeNow = time()
-        #=======================================================================
-        # print "Simulation started at time: %f" % timeNow  
-        # # print "Steps....",
-        # for i in xrange(steps):
-        #     print "Step: ", str(i+1)
-        #     self._simulation.step()
-        #=======================================================================
-        self._simulation.go()
+        print "Simulation started at time: %f" % timeNow  
+        print "Steps....",
+        for i in xrange(steps):
+            #print "Step: ", str(i+1)
+            self._simulation.step()
+        #self._simulation.go()
         print "Elapsed time in seconds was %s" % str(round((time() - timeNow),3))
         finalDis =self.finalDisFromTarget()
         print "Final distance from target was: ", finalDis
@@ -258,16 +299,6 @@ class HomeoGASimulation(QWidget):
         Get the most recent file fulfilling the criteria
         """ 
         
-#===============================================================================
-#         FIXME: The method read the robot's final distance from the last of the most 
-#         recent trajectory log. It would be more robust to ask the C++ supervisor 
-#         controlling the simulation to return the robot's final position.
-# 
-#         FIXME 2: The target is currently specified in the Homeo GA general interface. 
-#         It would be more robust to indicate the target within Webots itself, and then 
-#         ask the C++ supervisor to return the distance. 
-#=============================================================================== 
-
         addedPath = 'SimulationsData'
         datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
         fileNamepattern = 'trajectoryData'
@@ -290,6 +321,7 @@ class HomeoGASimulation(QWidget):
     
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    simul = HomeoGASimulation()
+    simul = HomeoGASimulation(popSize=10,stepSize=10)
+    simul.runOneGenSimulation(populationSize=simul.popSize, steps=simul.stepsSize)
     #simul.show()
     #app.exec_()
