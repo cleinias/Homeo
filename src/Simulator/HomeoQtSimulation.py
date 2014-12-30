@@ -179,7 +179,7 @@ class HomeoQtSimulation(QObject):
         self._homeostatFilename = self.createDefaultHomeostatFilename()
         self._dataAreSaved = True       # There are no data to save yet
         self._homeostatIsSaved = False  # A new simulation has a new random Homeostat, unless is loaded form file
-        self._simulDelay = 10           # in milliseconds
+        self._simulDelay = 1           # in milliseconds
         self._isRunning = False
         self.liveData = {}
         self.unitsSelfWeights = {}
@@ -231,7 +231,8 @@ class HomeoQtSimulation(QObject):
 #            if self.liveDataOn:
             self.updateLiveData()
             time.sleep(self._simulDelay / 1000)
-            QApplication.processEvents() 
+            QApplication.processEvents()
+        print "Done with simulation: processed %u steps" % self._homeostat.time
 
     def pause(self):
         "Pause the simulation" 
