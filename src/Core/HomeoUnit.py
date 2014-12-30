@@ -113,6 +113,7 @@ class HomeoUnit(object):
                               mass = 100,                        # the mass of the needle unit, representing the inertia of the unit. A low value will make it very unstable
                               maxUniselectorTimeInterval = 1000, # Used in GA settings to pick a random value
                               maxTheoreticalDeviation = 1000,    # Used in GA settings to pick a random value
+                              minTheoreticalDeviation = 0.1,     # Used in GA settings to pick a random value
                               maxMass = 10000,                   # Used in GA settings to pick a random value
                               minMass = 10)                      # Used in GA settings to pick a random value
     
@@ -156,7 +157,7 @@ class HomeoUnit(object):
     @classmethod
     def maxDeviationFromWeight(cls,maxDevParam):
         '''Convert a GA parameter in the [0,1) range to a valid maxDeviation value'''
-        return maxDevParam * HomeoUnit.DefaultParameters['maxTheoreticalDeviation']
+        return ((HomeoUnit.DefaultParameters['maxTheoreticalDeviation'] - HomeoUnit.DefaultParameters['minTheoreticalDeviation']) * maxDevParam) + HomeoUnit.DefaultParameters['minTheoreticalDeviation']
     
     @classmethod    
     def massFromWeight(cls,massParam):
@@ -264,7 +265,7 @@ class HomeoUnit(object):
         
         Subclasses of HomeoUnit may override this method and add parameters
         '''
-        if essent_params.size <> self.unit_essential_parameters:
+        if len(essent_params) <> self.unit_essential_parameters:
             raise (HomeoUnitError, "The number of parameters needed to initialize the unit is incorrect.")
          
         self.mass = HomeoUnit.massFromWeight(essent_params[0])
@@ -502,6 +503,7 @@ class HomeoUnit(object):
                 self._maxDeviation = aNumber
                 self.minDeviation = -aNumber
             else:
+                print "THE VALUE YOU TRIED TO USE FOR MAXDEVIATION WAS: ", aNumber
                 raise(HomeoUnitError, "The value of MaxDeviation must always be positive")
         except ValueError:
             sys.stderr.write('Unit %s tried to  assign a non-numeric value to maxDeviation. Value was %s\n' % (self.name, aNumber))
