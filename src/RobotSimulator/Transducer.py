@@ -9,6 +9,7 @@ and may be subclassed to operate concrete robotic simulation environments
 '''
 from socket import error as SocketError
 from Helpers.General_Helper_Functions import SubclassResponsibility
+from Helpers.ExceptionAndDebugClasses import hDebug
 
 class TransducerException(Exception):
     def __init__(self, value):
@@ -231,6 +232,8 @@ class WebotsDiffMotorTCP(TransducerTCP):
         #print "Executing command: %s for transducer %s" % (command, type(self).__name__)
         try:
             #print "Motor transducer %s is connected to socket %s" % (type(self).__name__, type(self._robotSocket).__name__)
+            hDebug('network',("sending motor command: " + command))
+            print
             self._robotSocket.send(command)
             "Discard reply from receive buffer"
             discard = self._robotSocket.recv(1024)
@@ -284,7 +287,7 @@ class WebotsLightSensorTCP(TransducerTCP):
         #try:
         i = 0
         while i<20:
-            #print "inside try clause of read function: send command"
+            hDebug('network',("inside try clause of read function: sending command" + self._transdFunction))
             self._robotSocket.send(self._transdFunction)
             #print "   after send command has been sent in read function"
             receivedData = self._robotSocket.recv(1024)

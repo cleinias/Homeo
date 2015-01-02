@@ -9,6 +9,8 @@ import time, sys, pickle
 from PyQt4.QtCore import  QObject, SIGNAL
 from Helpers.QObjectProxyEmitter import emitter
 from RobotSimulator.WebotsTCPClient import *
+from Helpers.ExceptionAndDebugClasses import hDebug
+
 
 class HomeostatError(Exception):
     pass
@@ -439,8 +441,8 @@ class Homeostat(object):
                     unit.transducer.robotSocket = self._client.getClientSocket()
                     #print "now assigning new socket to transducers for unit %s" % unit.name
                 except:
-                    print "Did not connect: The unit %s of type %s has no transducer" % (unit.name,
-                                                                                         type(unit).__name__)
+                    hDebug('network', ("Did not connect: The unit %s of type %s has no transducer" % (unit.name,
+                                                                                         type(unit).__name__)))
 
     
     def reconnectUnitsToNetworkViaSocket(self,socket):
