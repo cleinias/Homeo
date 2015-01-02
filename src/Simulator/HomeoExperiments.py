@@ -15,6 +15,7 @@ from RobotSimulator.Transducer import  *
 from os import system
 from time import sleep 
 from docutils.nodes import problematic
+from Helpers.ExceptionAndDebugClasses import hDebug
 
 
 
@@ -1366,7 +1367,7 @@ def initializeBraiten2_2(raw=False,params=None):
     hom._usesSocket = True
 
     'Return the properly configured homeostat'
-    print "Homeostat initialized"
+    hDebug('unit', "Homeostat initialized")
     return hom
 
 def initializeBraiten2_2Aristotelian(raw=True,params=None):
@@ -2451,7 +2452,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
     hom.connectUnitsToNetwork()
 
     'Return the properly configured homeostat'
-    print "Homeostat initialized"
+    hDebug('unit', "Homeostat initialized")
     return hom
 
 def initializeBraiten2_2_NoUnisel_Full_GA(genome, homeoParameters=4, raw=False):
@@ -2485,9 +2486,9 @@ def startWebots(world = None, mode = "realtime"):
     Mode can be one of realtime, run, or fast 
     """
     if not isWebotsRunning():
-        print "Is webots-running: ", isWebotsRunning()
+        hDebug('network',("Is webots-running: " + str(isWebotsRunning())))
         callString = "/usr/local/webots/webots " +"--mode="+ mode+ " " +world + " &"
-        print callString
+        hDebug('network',callString)
         system(callString)
         'Wait for webots to start listening to commands (in seconds)'
         sleep(2)         

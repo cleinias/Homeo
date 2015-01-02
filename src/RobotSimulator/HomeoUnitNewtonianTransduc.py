@@ -9,7 +9,9 @@ from Core.HomeoUnitAristotelian import HomeoUnitAristotelian
 from numpy import sign
 from Helpers.General_Helper_Functions import scaleTo
 from math import exp
+from Helpers.ExceptionAndDebugClasses import hDebug
 
+    
 class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
     '''
     HomeoUnitNewtonianActuator is a HomeoUnitNewtonian unit with 
@@ -39,7 +41,7 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
             try:
                 self._maxSpeed = self._transducer.range()[1]* self._maxSpeedFraction
             except: 
-                print "Transducer still unconnected to network or socket stale"
+                hDebug('unit network', "Transducer still unconnected to network or socket stale")
             
         '''Initialize default parameters for sigmoid function used to convert
            unit's deviation to motor commands'''
@@ -70,10 +72,10 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
         # delta = self.leftSpeed - self.rightSpeed 
         # if abs(delta) > self.maxDelta:
         #     self.maxDelta = abs(delta)
-        # print "The unit value is %f and its scaled value is %f. The delta b/w wheels is %f and maxDelta is %f" % (self.criticalDeviation,
+        # hDebug('unit', ("The unit value is %f and its scaled value is %f. The delta b/w wheels is %f and maxDelta is %f" % (self.criticalDeviation,
         #                                                            scaleTo([-self.maxDeviation,self.maxDeviation],self.transducer.range(),self.criticalDeviation),
         #                                                            delta,
-        #                                                            self.maxDelta)
+        #                                                            self.maxDelta))
         # 'end testing'
         #=======================================================================
 
@@ -87,7 +89,7 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
                 raise HomeoUnitError("Cannot get max speed from Transducer")
                           
         setSpeed = float(-self._maxSpeed) + ((2 * self._maxSpeed)/ (1+exp(- self._switchingRate * self.criticalDeviation)))
-        #print "Speed of %s wheel is %f " % (self.actuator._wheel, setSpeed)
+        #hDebug('unit' ("Speed of %s wheel is %f " % (self.actuator._wheel, setSpeed)))
         self.transducer.funcParameters = setSpeed
         self.transducer.act()
     
