@@ -3,6 +3,8 @@ Created on Dec 16, 2014
 
 @author: stefano
 
+WARNING: INCOMPLETE NON-FUNCTIONAL CODE
+
 Module with classes and functions needed to run a GA simulation of Homeo experiments.
 Uses the DEAP GA framework for full GA simulations
 '''
@@ -10,31 +12,30 @@ Uses the DEAP GA framework for full GA simulations
 from deap import base
 from deap import creator
 from deap import tools
-
+from deap.tools.mutation import mutFlipBit
 from Simulator.HomeoQtSimulation import HomeoQtSimulation
 from Helpers.SimulationThread import SimulationThread
 from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
 import sys
 import numpy as np
-import RobotSimulator.WebotsTCPClient
+#import RobotSimulator.WebotsTCPClient
 from RobotSimulator.WebotsTCPClient import WebotsTCPClient
 from socket import error as SocketError
 import os
 from math import sqrt
 from time import sleep, time, strftime
 from tabulate import tabulate
+from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug
+from Helpers.ExceptionAndDebugClasses import hDebug
 
-
-class GA_ConnectionError(Exception):
-    def __init__(self, value):
-            self.value = value
-    def __str__(self):
-         return repr(self.value)
 
 class HomeoGASimulation(QWidget):
     '''
-    Class managing a Genetic Algorithm simulation, with GUI interface
+    Class managing a Genetic Algorithm simulation, no GUI interface.
+    The debugging parameter is a string containing the name of the error
+    classes HomeoDebug should print. See HomeoDebug class comment for 
+    allowable error classes names. 
     '''
     
     def __init__(self,parent=None, stepSize = 1000, 
@@ -44,8 +45,13 @@ class HomeoGASimulation(QWidget):
                                    essentParams=4, 
                                    supervisor_host = 'localhost', 
                                    supervisor_port = 10021, 
-                                   exp="initializeBraiten2_2_NoUnisel_Full_GA"):
+                                   exp = "initializeBraiten2_2_NoUnisel_Full_GA",
+                                   debugging = None):
 
+        "Tell HomeoDebug which error classes it should print "
+        if debugging:
+            HomeoDebug.addDebugCodes(debugging)
+    
         self.popSize = popSize
         self.genomeSize = (noUnits*essentParams)+noUnits**2   
         self.stepsSize = stepSize    
@@ -63,10 +69,12 @@ class HomeoGASimulation(QWidget):
         self._supervisor = WebotsTCPClient(ip=supervisor_host, port=supervisor_port)
         
 
-        "prepare to run the simulation itself in a thread"
-        self._simulThread = SimulationThread()
-        self._simulation.moveToThread(self._simulThread)
-        self._simulThread.started.connect(self._simulation.go)
+        #=======================================================================
+        # "prepare to run the simulation itself in a thread"
+        # self._simulThread = SimulationThread()
+        # self._simulation.moveToThread(self._simulThread)
+        # self._simulThread.started.connect(self._simulation.go)
+        #=======================================================================
         
         
         "construct the interface"
@@ -77,29 +85,135 @@ class HomeoGASimulation(QWidget):
         #self.connectSlots()
         #self._supervisor.clientConnect()
         
-    def initGaRun(self):
-        "1. Create individual types [Homeostat genome], define type of genes, define population"
-        toolbox = base.Toolbox()
+    def runGaSimulation(self, cxProb = 0.5, mutationProb = 0.2, indivProb = 0.05, tournamentSize = 3):
+        try:
+            """Initialize and run a complete GA simulation with the specified parameters"""
+             
+            "1. Create individual types [Homeostat genome], define type of genes, define population"
+            toolbox = base.Toolbox()
+            
+            'GA simulation will minimize fitness (distance from target)'
+            creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+            
+            'Homeostat genome is a list'     
+            creator.create("Individual", list, fitness=creator.FitnessMin)   
+            
+            'Each gene is a uniform random number in [0,1) interval'
+            toolbox.register("gene", np.random.uniform, 0,1)                  
+            
+            'Define how to create a genome'
+            toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.gene, n=self.genomeSize)  
+            
+            'Population is a list of individual'
+            toolbox.register("population", tools.initRepeat, list, toolbox.individual)                             
+            
+            hDebug('ga',("Population defined.\nIndividual defined with genome size = " + str(self.genomeSize) +"\n"))
+            
+            "1.1 defining statistics tools"
+            stats = tools.Statistics(key=lambda ind: ind.fitness.values)
+            stats.register("avg", np.mean)
+            stats.register("std", np.std)
+            stats.register("min", np.min)
+            stats.register("max", np.max)
+            
+            "2. Registering GA operators"
+            
+            toolbox.register("evaluate", self.evaluateGenomeFitness)
+            toolbox.register("mate", tools.cxTwoPoint)
+            toolbox.register("mutate", tools.mutFlipBit, indpb=indivProb)
+            toolbox.register("select", tools.selTournament, tournsize=tournamentSize)
         
-        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))     # GA simulation will minimize fitness (distance from target)
-        creator.create("Individual", list, fitness=creator.FitnessMin)  # Homeostat genome is a list 
+            "3. Run GA simulation"               
+            np.random.seed(64)   # For repeatable experiments
+            pop = toolbox.population(n=self.popSize)
+                    
+            print("Start of evolution")
+            
+            # Evaluate the entire population
+            print "-- Generation 0 --"
+            fitnesses = list(map(toolbox.evaluate, pop))
+            for ind, fit in zip(pop, fitnesses):
+                ind.fitness.values = fit
+            
+            print("  Evaluated %i individuals" % len(pop))
+            
+            # Begin the evolution
+            # Main loop over generations
+            for g in xrange(self.generSize):
+                print("-- Generation %i --" % g)
+                
+                # Select the next generation individuals with previously defined select function 
+                offspring = toolbox.select(pop, len(pop))
+                # Clone the selected individuals
+                offspring = list(map(toolbox.clone, offspring))
+            
+                # Apply crossover and mutation on the offspring
+                hDebug('ga',"Applying crossover")
+                mated = 0
+                for child1, child2 in zip(offspring[::2], offspring[1::2]):
+                    if np.random.uniform() < cxProb:
+                        mated += 1
+                        toolbox.mate(child1, child2)
+                        del child1.fitness.values
+                        del child2.fitness.values
+                hDebug('ga',str(mated) + " individuals mated")
         
-        toolbox.register("gene", np.random.uniform, 0,1)                 # Each gene is a uniform random number in [0,1) interval 
-        toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.gene, n=GENOME_SIZE)  # Define how to create a genome
-        toolbox.register("population", tools.initRepeat, list, toolbox.individual)                         # Population is a list of individuals 
-        
-        sys.stderr.write("Population defined.\nIndividual defined with genome size = " + str(GENOME_SIZE) +"\n")
-        
-        "2. Registering GA operators"
-        
-        toolbox.register("evaluate", self.evaluateGenomeFitness)
-        toolbox.register("mate", tools.cxTwoPoint)
-        toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
-        toolbox.register("select", tools.selTournament, tournsize=3)
+                hDebug('eval', "Now mutating individuals")
+                mutants = 0
+                for mutant in offspring:                
+                    if np.random.uniform() < mutationProb:
+                        toolbox.mutate(mutant)
+                        del mutant.fitness.values
+                        mutants += 1
+                hDebug('eval', str(mutants)+ "  mutants generated")
+            
+                # Evaluate the individuals with an invalid fitness
+                # (Fitnesses have become invalid for all mutated and crossed-over individuals) 
+                hDebug('eval', "Evaluating individual with invalid fitness")
+                invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+                fitnesses = map(toolbox.evaluate, invalid_ind)
+                for ind, fit in zip(invalid_ind, fitnesses):
+                    ind.fitness.values = fit
+                
+                hDebug('eval', str(len(invalid_ind)) + " individuals evaluated")
+                
+                # The population is entirely replaced by the offspring
+                pop[:] = offspring
+                
+                # Gather all the fitnesses in one list and print the stats
+                #===============================================================
+                # fits = [ind.fitness.values[0] for ind in pop]
+                # 
+                # length = len(pop)
+                # mean = sum(fits) / length
+                # sum2 = sum(x*x for x in fits)
+                # std = abs(sum2 / length - mean**2)**0.5
+                # 
+                # print("  Min %s" % min(fits))
+                # print("  Max %s" % max(fits))
+                # print("  Avg %s" % mean)
+                # print("  Std %s" % std)
+                #===============================================================
+                "Compute stats for generation with the statistics object"
+                record = stats.compile(pop)
+                print record
+                
+            
+            self.simulationEnvironQuit()
+            print("-- End of (successful) evolution --")
+            
+            best_ind = tools.selBest(pop, 1)[0]
+            print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
+        except TCPConnectionError as e:
+            hDebug("network major",("TCP connection error: \n" + e.value + "Cleaning up and quitting...")) 
+            hDebug("network",("Trying to quit webots"))
+            self.simulationEnvironQuit()
+            
+            
 
         
-    def runOneGenSimulation(self, populationSize=150, steps=1000):
-        """Run a one generation of a GA experiment manually.
+    def runOneGenSimulation(self):
+        """Manually Run a one generation of a GA experiment .
            Record fitness and genome for each individual to file"""
                 
         curDateTime = strftime("%Y%m%d%H%M%S")  
@@ -109,18 +223,17 @@ class HomeoGASimulation(QWidget):
         fullPathstatsFilename = os.path.join(datafilePath, statsFilename)
         statsFile = open(fullPathstatsFilename,'w')
         self.results = [] 
-        popSize = populationSize
         population = []
-        for i in xrange(popSize):
-            population.append(self.createRandomHomeostatGenome())  
+        for i in xrange(self.popSize):
+            population.append(self.createRandomHomeostatGenome(self.genomeSize))  
         timeGen = time()               
-        for i in xrange(popSize):
+        for runNumber, indiv in enumerate(population):
             timeInd = time()
             runResults = []
-            runResults.append(str(i+1))
-            runResults.append(round(self.evaluateGenomeFitness(steps=steps, genome = population[i]),4))
+            runResults.append(str(runNumber+1))
+            runResults.append(round((self.evaluateGenomeFitness(genome = indiv)[0]),4))
             runResults.append(str(round((time() - timeInd),2)))
-            for gene in population[i]:
+            for gene in indiv:
                 runResults.append(gene)
             for i in runResults:
                 statsFile.write(str(i)+'\t')
@@ -133,8 +246,8 @@ class HomeoGASimulation(QWidget):
         headers = ['Run', 'Final distance','Time in secs']
         for i in xrange(len(population[0])):
             headers.append('Gene'+str(i+1))
-        print tabulate(self.results, headers, tablefmt='orgtbl')
-        print "Total time for generation was: %s" % str(round((time() - timeGen),2))
+        hDebug('eval',(tabulate(self.results, headers, tablefmt='orgtbl')))
+        hDebug('eval',( "Total time for generation was: "+ str(round((time() - timeGen),2))))
         
         
             
@@ -191,7 +304,7 @@ class HomeoGASimulation(QWidget):
     def connectSlots(self):
         pass
 
-    def createRandomHomeostatGenome(self,noUnits=6, essentParams=4):
+    def createRandomHomeostatGenome(self,genomeSize):
         '''Create a list containing the essential parameters for every
            units in a fully  connected Homeostat and the weights of
            all the connections.
@@ -205,7 +318,7 @@ class HomeoGASimulation(QWidget):
            (The potentiometer is also an essential parameter, but it is specified as one of the unit's
             connections)
         '''          
-        return np.random.uniform(size=(noUnits * (essentParams + noUnits)))
+        return np.random.uniform(size=genomeSize)
 
     def simulationEnvironReset(self):
         """Reset webots simulation.
@@ -215,7 +328,7 @@ class HomeoGASimulation(QWidget):
         try:
             self._supervisor._clientSocket.send("R")
             response = self._supervisor._clientSocket.recv(100) 
-            #print "Reset Webots simulation: received back %s from server" %response
+            hDebug('network',("Reset Webots simulation: received back "+ response + " from server"))
             try:
                 while True:
                     self._supervisor._clientSocket.send(".")
@@ -223,16 +336,16 @@ class HomeoGASimulation(QWidget):
             except SocketError:
                 pass
         except SocketError:
-            raise GA_ConnectionError("statsFileCould not reset Webots simulation")
+            raise TCPConnectionError("Could not reset Webots simulation")
         
     def simulationEnvironResetPhysics(self):
         "Reset Webots simulation physics"
         try:
             self._supervisor._clientSocket.send("P")
             response = self._supervisor._clientSocket.recv(100) 
-            print "Reset Webots simulation physics: received back %s from server" %response
+            hDebug('network', ("Reset Webots simulation physics: received back %s from server" % response))
         except SocketError:
-            raise GA_ConnectionError("Could not reset Webots simulation's physics")
+            raise TCPConnectionError("Could not reset Webots simulation's physics")
             
     
     def simulationEnvironQuit(self):
@@ -240,38 +353,63 @@ class HomeoGASimulation(QWidget):
         try:
             self._supervisor._clientSocket.send("Q")
             response = self._supervisor._clientSocket.recv(100) 
-            print "Quit Webots: received back %s from server" %response
+            hDebug('newtwork', "Quit Webots: received back " + response + " from server")
         except SocketError:
-            raise GA_ConnectionError("Could not quit Webots")
+            hDebug('newtwork',  "Sorry, I lost the connection to Webots and could not could not quit")
         
-    def evaluateGenomeFitness(self,genome=None, steps = 1000):
-        """Run a simulation for a given number of steps on the given genome.
-           Return final distance from target"""
-            
+    def evaluateGenomeFitnessDUMMY(self,genome=None):
+        """For GA testing purposes: initialize experiments and homeostats,
+         but do not run simulation on Webots"""         
+                     
         if genome==None:
-            genome=self.createRandomHomeostatGenome()
+            genome=self.createRandomHomeostatGenome(self.genomeSize)
         self._simulation.initializeExperSetup(genome)
         self._supervisor.clientConnect()
         self.simulationEnvironReset()
         self._supervisor.close()
         self._supervisor.clientConnect()
         self._simulation.homeostat.connectUnitsToNetwork()
-        self._simulation.maxRuns = steps
+        self._simulation.maxRuns = self.stepsSize
+        "Initialize live data recording and display "
+        self._simulation.initializeLiveData()
+        #self._simulThread.start()
+        finalDis =self.finalDisFromTarget()
+        return finalDis,                   # Return a tuple, as required by DEAP
+    
+    def evaluateGenomeFitness(self,genome=None):
+        """Run a simulation for a given number of steps on the given genome.
+           Return final distance from target"""
+            
+        if genome==None:
+            genome=self.createRandomHomeostatGenome(self.genomeSize)
+        self._simulation.initializeExperSetup(genome)
+        hDebug('network', "Trying to connect to supervisor")
+        self._supervisor.clientConnect()
+        hDebug('network', "Connected")
+        hDebug('network', "Resetting Webots")
+        self.simulationEnvironReset()
+        hDebug('network', "Closing connection to supervisor")
+        self._supervisor.close()
+        hDebug('network', "Reconnecting to supervisor")
+        self._supervisor.clientConnect()
+        hDebug('network', "Connecting units to network")
+        self._simulation.homeostat.connectUnitsToNetwork()
+        self._simulation.maxRuns = self.stepsSize
         "Initialize live data recording and display "
         self._simulation.initializeLiveData()
 
-        self._simulThread.start()
+        #self._simulThread.start()
         timeNow = time()
-        print "Simulation started at time: %f" % timeNow  
-        print "Steps....",
-        for i in xrange(steps):
-            #print "Step: ", str(i+1)
+        hDebug('eval' , "Simulation started at time: " +  str(timeNow))  
+        hDebug('eval', ("Now computing exactly " + str(self.stepsSize) + " steps...."))
+        for i in xrange(self.stepsSize):
+            hDebug('eval', ("Step: "+ str(i+1)+"\n"))
             self._simulation.step()
         #self._simulation.go()
-        print "Elapsed time in seconds was %s" % str(round((time() - timeNow),3))
+        hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
         finalDis =self.finalDisFromTarget()
-        print "Final distance from target was: ", finalDis
-        return finalDis
+        hDebug('eval', ("Final distance from target was: " + str(finalDis)))
+        return finalDis,                                       # Return a tuple, as required by DEAP
         
     def finalDisFromTarget(self):
         '''Compute the distance from target by asking the supervisor to
@@ -321,7 +459,8 @@ class HomeoGASimulation(QWidget):
     
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    simul = HomeoGASimulation(popSize=10,stepSize=10)
-    simul.runOneGenSimulation(populationSize=simul.popSize, steps=simul.stepsSize)
-    #simul.show()
-    #app.exec_()
+    simul = HomeoGASimulation(popSize=50, stepSize=10, generSize = 5, debugging = 'major')
+    #simul.runOneGenSimulation()
+    simul.runGaSimulation()
+    simul.show()
+    app.exec_()
