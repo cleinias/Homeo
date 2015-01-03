@@ -125,6 +125,7 @@ class TrajectoryViewer(QWidget):
         for trajectory in self._trajectories():
             item = QListWidgetItem(self.TrajList)
             item.setText(trajectory)
+        self.TrajList.sortItems(order=Qt.DescendingOrder)
     
     def setDirpath(self, dirpath):        
         ''' Set the current trajectory directory and refresh the list. '''
