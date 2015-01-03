@@ -6,10 +6,12 @@ Self-standing script that chart trajectories produced by the Homeo simulation pa
 @author: stefano
 '''
 import matplotlib.pyplot as plt
+#from matplotlib.axes.Axes import text
 from matplotlib.patches import Circle
 import os
 import numpy as np
 import sys
+from math import sqrt
 
 
 def main(argv):
@@ -18,6 +20,7 @@ def main(argv):
     except IndexError:
         print "Usage: TrajectoryGraph filename"
     except:
+            raise
             print "You entered filename: ", sys.argv[1]
             print "File not found"
 
@@ -25,19 +28,37 @@ def main(argv):
 def graphTrajectory(trajDataFilename):
     "Chart the vehicle's trajectory with matplotlib"
     
+    'Read simulation general data from header'
     dataFileHeader = readDataFileHeader(trajDataFilename)
     lightsOnDic = readLightsFromHeader(dataFileHeader)
-    initPos = readInitPosFromHeader(dataFileHeader) 
+    initPos = readInitPosFromHeader(dataFileHeader)
+    
+    'read trajectory data'
     try:
         trajData = np.loadtxt(trajDataFilename, skiprows=len(dataFileHeader))
     except:
         print "cannot open the file"
+    
+    'Compute final distance'
+    finalPos = [trajData[:,0][-1],trajData[:,1][-1]]
+    finalDistance = sqrt((lightsOnDic['TARGET'][0]- finalPos[0])**2+ (lightsOnDic['TARGET'][1] - finalPos[1])**2)
+    
+    'build plot'
     fig = plt.figure()
     plt.plot(trajData[:,0],trajData[:,1]) 
     plt.ylabel('y')
     plt.xlabel('x')
     plt.title(trajDataFilename)
+    
     ax = fig.add_subplot(111)
+
+    'Add final distance to plot'
+    finalDisString = "Final distance: "+ str(round(finalDistance,3))
+    ax.text(0.15, 0.95,finalDisString,
+     horizontalalignment='center',
+     verticalalignment='center',
+     transform = ax.transAxes)
+    
     xmin = float(initPos[0]) - 2         # chart boundaries
     ymin = float(initPos[0]) - 2
     xmax = lightsOnDic['TARGET'][0] + 2.5
@@ -54,9 +75,10 @@ def graphTrajectory(trajDataFilename):
     ax.add_artist(startMark) #draw starting position in green
     endPose = (trajData[-1][0],trajData[-1][1])
     endMark = Circle(endPose, 0.05, alpha =1, color = 'red')
-    ax.add_artist(endMark)   #draw end position in red
+    ax.add_artist(endMark)   # Draw end position in red
     ax.axis('equal')         # Otherwise circle comes out as an ellipse
     ax.axis([xmin,xmax,ymin,ymax])
+    
     plt.show()
     
 def readLightsFromHeader(dataFileHeader):
@@ -97,6 +119,7 @@ def readDataFileHeader(trajDataFilename):
             break
     dataFile.close()
     return dataFileHeader
+
   
 if __name__ == "__main__":
    main(sys.argv[0])
