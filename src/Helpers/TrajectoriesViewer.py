@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 '''
 Created on Jan 2, 2015
 
@@ -86,7 +87,6 @@ class TrajectoryViewer(QWidget):
             return
         else:
             try:
-                print "Trying to visualize: ", os.path.join(self._dirpath, str(self.currentTrajEntry.text()))
                 graphTrajectory(os.path.join(self._dirpath, str(self.currentTrajEntry.text())))
             except:
                 "visualize warning box"
