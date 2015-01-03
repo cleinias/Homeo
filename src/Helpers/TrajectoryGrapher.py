@@ -24,10 +24,12 @@ def main(argv):
 
 def graphTrajectory(trajDataFilename):
     "Chart the vehicle's trajectory with matplotlib"
-     
-    headerLength = 13 #FIXME: compute the header length from the data file 
+    
+    dataFileHeader = readDataFileHeader(trajDataFilename)
+    lightsOnDic = readLightsFromHeader(dataFileHeader)
+    initPos = readInitPosFromHeader(dataFileHeader) 
     try:
-        trajData = np.loadtxt(trajDataFilename, skiprows=headerLength)
+        trajData = np.loadtxt(trajDataFilename, skiprows=len(dataFileHeader))
     except:
         print "cannot open the file"
     fig = plt.figure()
@@ -36,31 +38,15 @@ def graphTrajectory(trajDataFilename):
     plt.xlabel('x')
     plt.title(trajDataFilename)
     ax = fig.add_subplot(111)
-    xmin = ymin = 0         # chart boundaries
-    xmax =  ymax = 18
-    # read light positions"
-    dataFileHeader = []
-    dataFile = open(trajDataFilename,"r")
-    for i, line in enumerate(dataFile):
-        if i < headerLength:
-            dataFileHeader.append(line)
-        else:
-            break
-    dataFile.close()
-    lightPosList = []
-    lightsList = ["LIGHT" + str(i+1) for i in xrange(10)]
-    lightsList.append("TARGET")
-    lightsOn = [] 
-    for line in dataFileHeader:
-        if (any(x in lightsList for x in line.split()) and ("True" in line.split())):
-            lightsAt = [float(line.split()[1]),float(line.split()[2]),float(line.split()[3])]
-            lightsOn.append(lightsAt) #list of turned on lights, each represented as a list including x, y coordinates and light intensity
+    xmin = float(initPos[0]) - 2         # chart boundaries
+    ymin = float(initPos[0]) - 2
+    xmax = lightsOnDic['TARGET'][0] + 2.5
+    ymax = lightsOnDic['TARGET'][1] + 2.5
     cMap = plt.get_cmap('Blues')  # Use a matplotlib color map to map lights' intensity
-    for light in lightsOn:
+    for lightName, light in lightsOnDic.iteritems():
         lightPos = (light[0],light[1])  
         lightRadius = 1.5      # FIXME Provisional. Need to read from trajectory data file
         ax.add_artist(Circle(lightPos, 0.05, alpha=1,color = 'black')) # marks the center of the light cone
-        print "the light intensity is %f/n", light[2]
         # parametrize color value to light intensity 
         ax.add_artist(Circle(lightPos, lightRadius, alpha = 0.25, color = cMap(light[2]))) # light cone
     startPose = (trajData[0][0],trajData[0][1])
@@ -73,5 +59,44 @@ def graphTrajectory(trajDataFilename):
     ax.axis([xmin,xmax,ymin,ymax])
     plt.show()
     
+def readLightsFromHeader(dataFileHeader):
+    """Read the lights position from a trajectory file header""" 
+    
+    lightPosList = []
+    lightsList = ["LIGHT" + str(i+1) for i in xrange(10)]
+    lightsList.append("TARGET")
+    lightsOnDic = {}
+    for line in dataFileHeader:
+        if (any(x in lightsList for x in line.split()) and ("True" in line.split())):
+            lightsAt = [float(line.split()[1]),float(line.split()[2]),float(line.split()[3])]
+            lightsOnDic[line.split()[0]]=lightsAt #dictionary of turned on lights, each represented as a list including x, y coordinates and light intensity
+    return lightsOnDic
+    'read initial position'
+
+def readInitPosFromHeader(dataFileHeader):
+    for lineNo in xrange(len(dataFileHeader)):
+        if ('initial' in dataFileHeader[lineNo].split() and 'position' in dataFileHeader[lineNo].split()):
+            try:
+                return dataFileHeader[lineNo+1].split()
+            except IndexError:
+                return []
+    return []
+
+def readDataFileHeader(trajDataFilename):
+    '''read the file header = the head of the trajectory file
+       until the line with 'coordinates' in it'''
+
+    dataFileHeader = []
+    dataFile = open(trajDataFilename,"r")
+    headerLength = 1
+    for line in dataFile:
+        if not 'coordinates' in line.split():
+            dataFileHeader.append(line)
+            headerLength += 1
+        else:
+            break
+    dataFile.close()
+    return dataFileHeader
+  
 if __name__ == "__main__":
    main(sys.argv[0])
