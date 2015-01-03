@@ -17,8 +17,8 @@ class supervisorTrajectory(Supervisor):
         at the same level as "src"
         Save file with filename equal to resulting path + an identifier '''
 
-     curDateTime = time.strftime("%Y%m%d%H%M%S")    
-     trajFilename = 'trajectoryData-'+curDateTime+'.txt'
+     curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")    
+     trajFilename = 'trajectoryData-'+curDateTime+'.traj'
 
      
      addedPath = 'SimulationsData'
