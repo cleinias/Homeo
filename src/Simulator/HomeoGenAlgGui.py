@@ -3,8 +3,6 @@ Created on Dec 16, 2014
 
 @author: stefano
 
-WARNING: INCOMPLETE NON-FUNCTIONAL CODE
-
 Module with classes and functions needed to run a GA simulation of Homeo experiments.
 Uses the DEAP GA framework for full GA simulations
 '''
@@ -13,6 +11,7 @@ from deap import base
 from deap import creator
 from deap import tools
 from deap.tools.mutation import mutFlipBit
+from pickle import dump
 from Simulator.HomeoQtSimulation import HomeoQtSimulation
 from Helpers.SimulationThread import SimulationThread
 from PyQt4.QtCore import *
@@ -24,10 +23,11 @@ from RobotSimulator.WebotsTCPClient import WebotsTCPClient
 from socket import error as SocketError
 import os
 from math import sqrt
-from time import sleep, time, strftime
+from time import sleep, time, strftime, localtime
 from tabulate import tabulate
 from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug
 from Helpers.ExceptionAndDebugClasses import hDebug
+from Helpers.GenomeDecoder import genomeDecoder
 
 
 class HomeoGASimulation(QWidget):
@@ -95,14 +95,20 @@ class HomeoGASimulation(QWidget):
             'GA simulation will minimize fitness (distance from target)'
             creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
             
-            'Homeostat genome is a list'     
-            creator.create("Individual", list, fitness=creator.FitnessMin)   
+            'Homeostat genome is a list plus an ID'     
+            creator.create("Individual", list, fitness=creator.FitnessMin, ID=None)   
             
-            'Each gene is a uniform random number in [0,1) interval'
-            toolbox.register("gene", np.random.uniform, 0,1)                  
+            def initIndividual(indivClass, genomeSize, ID = None):
+                ind = indivClass(np.random.uniform(0,1) for _ in xrange(genomeSize))
+                ind.ID = ID
+                return ind
+                
             
-            'Define how to create a genome'
-            toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.gene, n=self.genomeSize)  
+            #---------- 'Each gene is a uniform random number in [0,1) interval'
+            #------------------ toolbox.register("gene", np.random.uniform, 0,1)
+            
+            'Define how to create an individual'
+            toolbox.register("individual", initIndividual, creator.Individual, genomeSize=self.genomeSize, ID = 'DummyID')  
             
             'Population is a list of individual'
             toolbox.register("population", tools.initRepeat, list, toolbox.individual)                             
@@ -116,6 +122,10 @@ class HomeoGASimulation(QWidget):
             stats.register("min", np.min)
             stats.register("max", np.max)
             
+            logbook = tools.Logbook()
+            'Record time for naming logbook pickled object and computing time statistics'
+            timeStarted = time()
+            
             "2. Registering GA operators"
             
             toolbox.register("evaluate", self.evaluateGenomeFitness)
@@ -126,6 +136,10 @@ class HomeoGASimulation(QWidget):
             "3. Run GA simulation"               
             np.random.seed(64)   # For repeatable experiments
             pop = toolbox.population(n=self.popSize)
+            gen = 0
+            for i, ind in enumerate(pop):
+                ind.ID = str(gen)+"-"+(str(i+1))
+                
                     
             print("Start of evolution")
             
@@ -134,13 +148,15 @@ class HomeoGASimulation(QWidget):
             fitnesses = list(map(toolbox.evaluate, pop))
             for ind, fit in zip(pop, fitnesses):
                 ind.fitness.values = fit
+                "record the data about the newly evaluated individual's genome in the logbook"
+                logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
             
             print("  Evaluated %i individuals" % len(pop))
             
             # Begin the evolution
             # Main loop over generations
             for g in xrange(self.generSize):
-                print("-- Generation %i --" % g)
+                print("-- Generation %s --" % str(g+1))
                 
                 # Select the next generation individuals with previously defined select function 
                 offspring = toolbox.select(pop, len(pop))
@@ -172,8 +188,14 @@ class HomeoGASimulation(QWidget):
                 hDebug('eval', "Evaluating individual with invalid fitness")
                 invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
                 fitnesses = map(toolbox.evaluate, invalid_ind)
+                for i, ind in enumerate(invalid_ind):
+                    ind.ID = str(g+1) + "-"+str(i+1) 
                 for ind, fit in zip(invalid_ind, fitnesses):
                     ind.fitness.values = fit
+                    
+                    "record the data about the newly evaluated individual's genome in the logbook"
+                    logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
+
                 
                 hDebug('eval', str(len(invalid_ind)) + " individuals evaluated")
                 
@@ -196,11 +218,15 @@ class HomeoGASimulation(QWidget):
                 #===============================================================
                 "Compute stats for generation with the statistics object"
                 record = stats.compile(pop)
-                print record
-                
-            
+                logbook.record(gen=g+1, evaluations = len(invalid_ind), **record)
+                             
+            print genomeDecoder(4, tools.selBest(pop,10)[0])
             self.simulationEnvironQuit()
+            timeElapsed = timeStarted - time()
+            logbook.record(timeElapsed = localtime(timeElapsed))
+            logbook.record(finalPop = len(pop), finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop]) 
             print("-- End of (successful) evolution --")
+            self.saveLogbook(timeStarted, logbook)
             
             best_ind = tools.selBest(pop, 1)[0]
             print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
@@ -211,16 +237,38 @@ class HomeoGASimulation(QWidget):
             
             
 
-        
+    def saveLogbook(self, timeStarted, logbook):
+        """Save the logbook for the GA run to a pickled object
+           for later analysis. Name the file according to the time
+           the simulation started and save it in current directory"""
+        logbookFilename = self.getTimeFormattedCompleteFilename(timeStarted, 'Logbook', 'lgb')   
+        try:
+            dump(logbook, open(logbookFilename, "w"))
+        except IOError as e:
+            sys.stderr.write("Could not save the logbook to file:" + e + "\n")
+           
+    def getTimeFormattedCompleteFilename(self,timeStarted, prefix, extension, path = None):
+        """ Return a string containing a complete filename (including path)
+            that starts with prefix, plus a formatted version of the timeNow string, plus
+            the extension.
+            Uses the "SimulationData" subdir of the src directory is no path is given.
+            TimeStarted is in seconds from the epoch (as returned by time.time())
+        """ 
+        formattedTime = strftime("%Y-%m-%d-%H-%M-%S", localtime(timeStarted))
+        filename = prefix+'-'+formattedTime+ '.' + extension
+        if path == None:
+            addedPath = 'SimulationsData'
+            datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
+        else: datafilePath = path
+        return os.path.join(datafilePath, filename)
+         
+      
+                   
     def runOneGenSimulation(self):
-        """Manually Run a one generation of a GA experiment .
+        """Manually run a one generation of a GA experiment .
            Record fitness and genome for each individual to file"""
-                
-        curDateTime = strftime("%Y%m%d%H%M%S")  
-        statsFilename = 'Ga_Statistics-'+curDateTime+'.txt'
-        addedPath = 'SimulationsData'
-        datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
-        fullPathstatsFilename = os.path.join(datafilePath, statsFilename)
+        
+        fullPathstatsFilename = self.getTimeFormattedCompleteFilename(time(), 'Ga_Statistics', 'txt')       
         statsFile = open(fullPathstatsFilename,'w')
         self.results = [] 
         population = []
@@ -459,7 +507,7 @@ class HomeoGASimulation(QWidget):
     
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    simul = HomeoGASimulation(popSize=50, stepSize=10, generSize = 5, debugging = 'major')
+    simul = HomeoGASimulation(popSize=10, stepSize=10, generSize = 3, debugging = 'major')
     #simul.runOneGenSimulation()
     simul.runGaSimulation()
     simul.show()
