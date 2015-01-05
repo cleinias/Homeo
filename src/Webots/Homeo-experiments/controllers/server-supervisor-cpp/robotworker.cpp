@@ -1,11 +1,12 @@
 /* Simple supervisor worker that responds to a few one-letter commands over a TCP/IP connection
  * Default port is 10021
  *
- * Accepted commmands and corresponding webots functions are:
+ * Accepted commmands and corresponding webots functions (if any) are:
  * R - Reset the Simulation to initial conditions           --> simulationRevert()
  * P - Reset the Simulation's physics to initial conditions --> simulationResetPhysics()
  * Q - Quit Webots                                          --> simulationQuit(int status);
- * D - Return distance between robot and target (yet to implement)
+ * D - Return distance between robot and target
+ * M - Set robot's model field to a string
 */
 
 
@@ -65,7 +66,14 @@ void RobotWorker::run() {
                 }
 
                 if (cmd.at(0) == 'R') {
+                    Node *robot = getFromDef("KHEPERA");
+                    if (!robot) {
+                        qDebug() << "Failed to find robot node";
+                        continue;
+                    }
+
                     simulationRevert();
+
                     emit sendCommand("r");
                 } else if (cmd.at(0) == 'P') {
 
@@ -89,10 +97,29 @@ void RobotWorker::run() {
                         continue;
                     }
                     const double *pos = translation->getSFVec3f();
-                    qDebug() << "Position of robot:" << pos[0] << pos[1] << pos[2];
+                    // qDebug() << "Position of robot:" << pos[0] << pos[1] << pos[2];
 
                     double distance = sqrt(pow(pos[0] - m_targetX, 2) + pow(pos[2] - m_targetZ, 2));
                     emit sendCommand(QString("%1").arg(distance).toLatin1());
+                }  else if (cmd.at(0)== 'M'){
+                    Node *robot = getFromDef("KHEPERA");
+                    if (!robot) {
+                        qDebug() << "Failed to find robot node";
+                        continue;
+                    }
+                    Field *model = robot->getField("model");
+                    if (!model) {
+                        qDebug() << "Failed to find model field of robot";
+                        continue;
+                    }
+                    QString mod = QString::fromStdString(model->getSFString());
+                    // qDebug() << "Robot model is now: " << mod;
+                    // qDebug() << "Resetting...";
+                    const std::string newModelName = cmd.split(',')[1].toStdString();
+                    model->setSFString(newModelName);
+                    mod = QString::fromStdString(model->getSFString());
+                    // qDebug() << "Robot model is now: " << mod;
+                    emit sendCommand("m");
                 }  else {
                     emit sendCommand("g");
                 }

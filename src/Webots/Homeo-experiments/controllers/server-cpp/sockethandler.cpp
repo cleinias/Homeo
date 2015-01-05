@@ -38,7 +38,7 @@ void SocketHandler::clientReadyRead() {
     }
 
     QByteArray data = m_client->readAll();
-    //qDebug() << "Server read:" << data;
+    //qDebug() << "Robot server read:" << data;
     emit clientCommand(data);
 }
 

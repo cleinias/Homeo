@@ -46,6 +46,7 @@ class HomeoGASimulation(QWidget):
                                    supervisor_host = 'localhost', 
                                    supervisor_port = 10021, 
                                    exp = "initializeBraiten2_2_NoUnisel_Full_GA",
+                                   ID_padding = 3,
                                    debugging = None):
 
         "Tell HomeoDebug which error classes it should print "
@@ -57,6 +58,7 @@ class HomeoGASimulation(QWidget):
         self.stepsSize = stepSize    
         self.generSize = generSize
 
+        self.IDPad = ID_padding
         '''
         Create a HomeoQTSimulation object to hold the actual simulation and initialize it.
         Instance HomeoQTSimulation's variable maxRun holds the number of steps the single simulations should be run       
@@ -130,7 +132,8 @@ class HomeoGASimulation(QWidget):
             
             toolbox.register("evaluate", self.evaluateGenomeFitness)
             toolbox.register("mate", tools.cxTwoPoint)
-            toolbox.register("mutate", tools.mutFlipBit, indpb=indivProb)
+            toolbox.register("mutate", tools.mutFlipBit, indpb=indivProb)            
+            #toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 1, indpb=indivProb)            
             toolbox.register("select", tools.selTournament, tournsize=tournamentSize)
         
             "3. Run GA simulation"               
@@ -138,7 +141,7 @@ class HomeoGASimulation(QWidget):
             pop = toolbox.population(n=self.popSize)
             gen = 0
             for i, ind in enumerate(pop):
-                ind.ID = str(gen)+"-"+(str(i+1))
+                ind.ID = str(gen).zfill(self.IDPad)+"-"+str(i+1).zfill(self.IDPad)
                 
                     
             print("Start of evolution")
@@ -151,7 +154,8 @@ class HomeoGASimulation(QWidget):
                 "record the data about the newly evaluated individual's genome in the logbook"
                 logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
             
-            print("  Evaluated %i individuals" % len(pop))
+            print "  Evaluated %i individuals" % len(pop)
+            print "  With ID's ", sorted([ind.ID for ind in pop])
             
             # Begin the evolution
             # Main loop over generations
@@ -187,9 +191,15 @@ class HomeoGASimulation(QWidget):
                 # (Fitnesses have become invalid for all mutated and crossed-over individuals) 
                 hDebug('eval', "Evaluating individual with invalid fitness")
                 invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-                fitnesses = map(toolbox.evaluate, invalid_ind)
+               
+                "Change the ID's of the invalid ind's" 
                 for i, ind in enumerate(invalid_ind):
-                    ind.ID = str(g+1) + "-"+str(i+1) 
+                    print "The old ind's ID was: ", ind.ID
+                    ind.ID = str(g+1).zfill(self.IDPad) + "-"+str(i+1).zfill(self.IDPad) 
+                    print "Now changed to: ", ind.ID
+                
+                'Re-evaluate'
+                fitnesses = map(toolbox.evaluate, invalid_ind)
                 for ind, fit in zip(invalid_ind, fitnesses):
                     ind.fitness.values = fit
                     
@@ -219,6 +229,7 @@ class HomeoGASimulation(QWidget):
                 "Compute stats for generation with the statistics object"
                 record = stats.compile(pop)
                 logbook.record(gen=g+1, evaluations = len(invalid_ind), **record)
+                print "   Generation " + str(g+1) + " with ID's: ", sorted([ind.ID for ind in pop])
                              
             print genomeDecoder(4, tools.selBest(pop,10)[0])
             self.simulationEnvironQuit()
@@ -385,6 +396,18 @@ class HomeoGASimulation(QWidget):
                 pass
         except SocketError:
             raise TCPConnectionError("Could not reset Webots simulation")
+    
+    def simulationSetRobotModel(self,modelName):
+        """Set the name  of the robot's model,
+           which is then used to name the trajectory file"""
+           
+        try:
+            self._supervisor._clientSocket.send("M,"+modelName)
+            response = self._supervisor._clientSocket.recv(100) 
+            hDebug('network',("Reset robot's model to: " + modelName + ". Received back: " + response))
+        except SocketError:
+            raise TCPConnectionError("Could not set model name of Webots robot")
+        
         
     def simulationEnvironResetPhysics(self):
         "Reset Webots simulation physics"
@@ -441,6 +464,7 @@ class HomeoGASimulation(QWidget):
         hDebug('network', "Reconnecting to supervisor")
         self._supervisor.clientConnect()
         hDebug('network', "Connecting units to network")
+        self.simulationSetRobotModel(genome.ID)
         self._simulation.homeostat.connectUnitsToNetwork()
         self._simulation.maxRuns = self.stepsSize
         "Initialize live data recording and display "
@@ -507,7 +531,7 @@ class HomeoGASimulation(QWidget):
     
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    simul = HomeoGASimulation(popSize=10, stepSize=10, generSize = 3, debugging = 'major')
+    simul = HomeoGASimulation(popSize=10, stepSize=10, generSize = 20, debugging = 'major')
     #simul.runOneGenSimulation()
     simul.runGaSimulation()
     simul.show()

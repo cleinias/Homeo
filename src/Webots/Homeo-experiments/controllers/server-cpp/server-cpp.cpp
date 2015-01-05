@@ -12,7 +12,6 @@
 
 #include <webots/DifferentialWheels.hpp>
 #include <webots/LightSensor.hpp>
-
 #include <iostream>
 #include <string>
 #include <algorithm>
