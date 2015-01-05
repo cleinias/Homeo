@@ -104,11 +104,22 @@ class HomeoGASimulation(QWidget):
                 ind = indivClass(np.random.uniform(0,1) for _ in xrange(genomeSize))
                 ind.ID = ID
                 return ind
+            
+            def checkBounds(min, max):
+                def decorator(func):
+                    def wrapper(*args, **kargs):
+                        offspring = func(*args, **kargs)
+                        for child in offspring:
+                            for i in xrange(len(child)):
+                                if child[i] > max:
+                                    child[i] = max
+                                elif child[i] < min:
+                                    child[i] = min
+                        return offspring
+                    return wrapper
+                return decorator
                 
-            
-            #---------- 'Each gene is a uniform random number in [0,1) interval'
-            #------------------ toolbox.register("gene", np.random.uniform, 0,1)
-            
+                        
             'Define how to create an individual'
             toolbox.register("individual", initIndividual, creator.Individual, genomeSize=self.genomeSize, ID = 'DummyID')  
             
@@ -132,9 +143,12 @@ class HomeoGASimulation(QWidget):
             
             toolbox.register("evaluate", self.evaluateGenomeFitness)
             toolbox.register("mate", tools.cxTwoPoint)
-            toolbox.register("mutate", tools.mutFlipBit, indpb=indivProb)            
-            #toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 1, indpb=indivProb)            
+            #toolbox.register("mutate", tools.mutFlipBit, indpb=indivProb)            
+            toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 2, indpb=indivProb)            
             toolbox.register("select", tools.selTournament, tournsize=tournamentSize)
+            
+            toolbox.decorate("mate", checkBounds(0, 1))
+            toolbox.decorate("mutate", checkBounds(0, 1))
         
             "3. Run GA simulation"               
             np.random.seed(64)   # For repeatable experiments
@@ -155,7 +169,7 @@ class HomeoGASimulation(QWidget):
                 logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
             
             print "  Evaluated %i individuals" % len(pop)
-            print "  With ID's ", sorted([ind.ID for ind in pop])
+            #print "  With ID's ", sorted([ind.ID for ind in pop])
             
             # Begin the evolution
             # Main loop over generations
@@ -194,9 +208,9 @@ class HomeoGASimulation(QWidget):
                
                 "Change the ID's of the invalid ind's" 
                 for i, ind in enumerate(invalid_ind):
-                    print "The old ind's ID was: ", ind.ID
+                    #print "The old ind's ID was: ", ind.ID
                     ind.ID = str(g+1).zfill(self.IDPad) + "-"+str(i+1).zfill(self.IDPad) 
-                    print "Now changed to: ", ind.ID
+                    #print "Now changed to: ", ind.ID
                 
                 'Re-evaluate'
                 fitnesses = map(toolbox.evaluate, invalid_ind)
@@ -212,26 +226,12 @@ class HomeoGASimulation(QWidget):
                 # The population is entirely replaced by the offspring
                 pop[:] = offspring
                 
-                # Gather all the fitnesses in one list and print the stats
-                #===============================================================
-                # fits = [ind.fitness.values[0] for ind in pop]
-                # 
-                # length = len(pop)
-                # mean = sum(fits) / length
-                # sum2 = sum(x*x for x in fits)
-                # std = abs(sum2 / length - mean**2)**0.5
-                # 
-                # print("  Min %s" % min(fits))
-                # print("  Max %s" % max(fits))
-                # print("  Avg %s" % mean)
-                # print("  Std %s" % std)
-                #===============================================================
                 "Compute stats for generation with the statistics object"
                 record = stats.compile(pop)
                 logbook.record(gen=g+1, evaluations = len(invalid_ind), **record)
-                print "   Generation " + str(g+1) + " with ID's: ", sorted([ind.ID for ind in pop])
+                #print "   Generation " + str(g+1) + " with ID's: ", sorted([ind.ID for ind in pop])
                              
-            print genomeDecoder(4, tools.selBest(pop,10)[0])
+            #print genomeDecoder(4, tools.selBest(pop,10)[0])
             self.simulationEnvironQuit()
             timeElapsed = timeStarted - time()
             logbook.record(timeElapsed = localtime(timeElapsed))
@@ -240,7 +240,7 @@ class HomeoGASimulation(QWidget):
             self.saveLogbook(timeStarted, logbook)
             
             best_ind = tools.selBest(pop, 1)[0]
-            print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
+            #print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
         except TCPConnectionError as e:
             hDebug("network major",("TCP connection error: \n" + e.value + "Cleaning up and quitting...")) 
             hDebug("network",("Trying to quit webots"))
@@ -531,7 +531,7 @@ class HomeoGASimulation(QWidget):
     
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    simul = HomeoGASimulation(popSize=10, stepSize=10, generSize = 20, debugging = 'major')
+    simul = HomeoGASimulation(popSize=50, stepSize=5000, generSize = 30, debugging = 'major')
     #simul.runOneGenSimulation()
     simul.runGaSimulation()
     simul.show()
