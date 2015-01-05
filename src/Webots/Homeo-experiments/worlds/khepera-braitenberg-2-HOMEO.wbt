@@ -200,7 +200,7 @@ DEF KHEPERA DifferentialWheels {
     }
   ]
   name "khepera"
-  model "Khepera"
+  model "Unspecified"
   description "A mini mobile robot by K-Team SA"
   boundingObject Transform {
     translation 0 0.011 0
