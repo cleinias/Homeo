@@ -21,7 +21,7 @@ def main(argv):
             
 def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2):
     """Read a GA stat file and convert the values in the genome
-       (all in (,1) range) to the actual value used by the units.
+       (all in (0,1) range) to the actual value used by the units.
        
        The GA stat file structure is composed by identical line containing
        Run Number
@@ -90,6 +90,7 @@ def genomeDecoder(noUnits, genome):
         decodedValues.append(HomeoConnection.connWeightFromGAWeight(genome[(4*noUnits)+conn]))
 
     return decodedValues
+
     
 if __name__ == "__main__":
     main(sys.argv[0])
