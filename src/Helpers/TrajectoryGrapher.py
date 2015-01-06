@@ -48,8 +48,8 @@ def graphTrajectory(trajDataFilename):
     plt.plot(trajData[:,0],trajData[:,1]) 
     plt.ylabel('y')
     plt.xlabel('x')
-    plt.title(trajDataFilename)
-    
+    plt.title(os.path.split(trajDataFilename)[1])
+    fig.canvas.set_window_title(os.path.split(trajDataFilename)[1])
     ax = fig.add_subplot(111)
 
     'Add final distance to plot'
