@@ -29,8 +29,68 @@ from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug
 from Helpers.ExceptionAndDebugClasses import hDebug
 from Helpers.GenomeDecoder import genomeDecoder
 
+class HomeoGASimulGUI(QWidget):
+    """GUI to GA simulation"""
 
-class HomeoGASimulation(QWidget):
+    def __init__(self, parent = None):
+        super(HomeoGASimulGUI,self).__init__(parent)
+        
+        "construct the interface"
+        self.setWindowTitle('Homeo GA simulation')
+        self.setMinimumWidth(400)
+ 
+        self.buildGui()
+        self.connectSlots()
+        
+        self.gaSimulation = HomeoGASimulation()
+
+    def buildGui(self):
+        '''
+        Build the general GUI for the GA simulation
+        '''
+        
+        #mainGui = QDialog()
+        'layouts'
+        self.controlLayout = QGridLayout()
+        self.overallLayout = QVBoxLayout()
+        self.textLayout = QVBoxLayout()
+
+        
+        'widgets'
+        self.initializePopButton = QPushButton("Initialize Population")
+        self.noIndividualsSpinBox = QSpinBox()
+        self.noIndividualsLabel = QLabel("No of individuals")
+        self.startPushButton = QPushButton("Start")
+        self.stopPushButton = QPushButton("Stop")
+        self.quitPushButton = QPushButton("Quit")
+        self.currentFitnessLineEdit = QLineEdit()
+        self.currentFitnessLabel = QLabel("Current Fitness")
+        self.outputPane = QTextEdit()
+        
+        self.controlLayout.addWidget(self.initializePopButton,0,0)
+        self.controlLayout.addWidget(self.noIndividualsLabel,0,2)
+        self.controlLayout.addWidget(self.noIndividualsSpinBox, 0,3)
+        self.controlLayout.addWidget(self.currentFitnessLabel, 1,2)
+        self.controlLayout.addWidget(self.currentFitnessLineEdit, 1,3)
+        self.controlLayout.addWidget(self.startPushButton, 2,0)
+        self.controlLayout.addWidget(self.stopPushButton,2,2)
+        self.controlLayout.addWidget(self.quitPushButton,2,3)
+        
+        'text pane'
+        self.textLayout.addWidget(self.outputPane)
+        
+        self.overallLayout.addLayout(self.controlLayout)
+        self.overallLayout.addLayout(self.textLayout)
+        self.setLayout(self.overallLayout)
+        #return mainGui
+
+    def connectSlots(self):
+        pass
+    
+        
+
+
+class HomeoGASimulation(object):
     '''
     Class managing a Genetic Algorithm simulation, no GUI interface.
     The debugging parameter is a string containing the name of the error
@@ -46,6 +106,10 @@ class HomeoGASimulation(QWidget):
                                    supervisor_host = 'localhost', 
                                    supervisor_port = 10021, 
                                    exp = "initializeBraiten2_2_NoUnisel_Full_GA",
+                                   cxProb = 0.5, 
+                                   mutationProb = 0.2, 
+                                   indivProb = 0.05, 
+                                   tournamentSize = 3,
                                    ID_padding = 3,
                                    debugging = None):
 
@@ -57,14 +121,36 @@ class HomeoGASimulation(QWidget):
         self.genomeSize = (noUnits*essentParams)+noUnits**2   
         self.stepsSize = stepSize    
         self.generSize = generSize
+        self.experiment = exp
+        self.cxProb = cxProb 
+        self.mutationProb = mutationProb 
+        self.indivProb = indivProb 
+        self.tournamentSize = tournamentSize
 
         self.IDPad = ID_padding
+        
+        'Statistics and general record keeping variables'
+        self.logbook = tools.Logbook()
+        self.hof = tools.HallOfFame(10, similar = self.indEq)
+        self.hist = tools.History()
+        
+        " Insert general GA simulation parameters into logbook"
+        self.logbook.record(population = self.popSize,
+                            generations = self.generSize,
+                            genomeSize = self.genomeSize,
+                            experiment = exp,
+                            cxProb = cxProb, 
+                            mutationProb = mutationProb, 
+                            indivProb = indivProb, 
+                            tournsize = tournamentSize)
+
+        
+        
         '''
         Create a HomeoQTSimulation object to hold the actual simulation and initialize it.
         Instance HomeoQTSimulation's variable maxRun holds the number of steps the single simulations should be run       
         '''
         
-        super(HomeoGASimulation,self).__init__(parent)
         self._simulation = HomeoQtSimulation(experiment=exp)             # instance variable holding the real simulation
         self._simulation.maxRuns=self.stepsSize
         #self._simulation.initializeExperSetup(self.createRandomHomeostatGenome())
@@ -79,15 +165,37 @@ class HomeoGASimulation(QWidget):
         #=======================================================================
         
         
-        "construct the interface"
-        #self.setWindowTitle('Homeo GA simulation')
-        #self.setMinimumWidth(400)
- 
-        #self.buildGui()
-        #self.connectSlots()
         #self._supervisor.clientConnect()
         
-    def runGaSimulation(self, cxProb = 0.5, mutationProb = 0.2, indivProb = 0.05, tournamentSize = 3):
+    def indEq(self,indA, indB):
+        """Two individuals are equals iff they share the same genome"""
+        #hDebug('ga', "indA is: " + indA)
+        #hDebug('ga', "indB is: " + indB)
+        return indA == indB
+
+    
+    def checkBounds(self, min, max):
+        def decorator(func):
+            def wrapper(*args, **kargs):
+                offspring = func(*args, **kargs)
+                for child in offspring:
+                    for i in xrange(len(child)):
+                        if child[i] > max:
+                            child[i] = max
+                        elif child[i] < min:
+                            child[i] = min
+                return offspring
+            return wrapper
+        return decorator
+    
+    def initIndividual(self, indivClass, genomeSize, ID = None):
+        ind = indivClass(np.random.uniform(0,1) for _ in xrange(genomeSize))
+        ind.ID = ID
+        return ind
+            
+
+
+    def runGaSimulation(self, cxProb ,mutationProb, indivProb, tournamentSize):
         try:
             """Initialize and run a complete GA simulation with the specified parameters"""
              
@@ -100,28 +208,10 @@ class HomeoGASimulation(QWidget):
             'Homeostat genome is a list plus an ID'     
             creator.create("Individual", list, fitness=creator.FitnessMin, ID=None)   
             
-            def initIndividual(indivClass, genomeSize, ID = None):
-                ind = indivClass(np.random.uniform(0,1) for _ in xrange(genomeSize))
-                ind.ID = ID
-                return ind
-            
-            def checkBounds(min, max):
-                def decorator(func):
-                    def wrapper(*args, **kargs):
-                        offspring = func(*args, **kargs)
-                        for child in offspring:
-                            for i in xrange(len(child)):
-                                if child[i] > max:
-                                    child[i] = max
-                                elif child[i] < min:
-                                    child[i] = min
-                        return offspring
-                    return wrapper
-                return decorator
-                
+        
                         
             'Define how to create an individual'
-            toolbox.register("individual", initIndividual, creator.Individual, genomeSize=self.genomeSize, ID = 'DummyID')  
+            toolbox.register("individual", self.initIndividual, creator.Individual, genomeSize=self.genomeSize, ID = 'DummyID')  
             
             'Population is a list of individual'
             toolbox.register("population", tools.initRepeat, list, toolbox.individual)                             
@@ -135,7 +225,6 @@ class HomeoGASimulation(QWidget):
             stats.register("min", np.min)
             stats.register("max", np.max)
             
-            logbook = tools.Logbook()
             'Record time for naming logbook pickled object and computing time statistics'
             timeStarted = time()
             
@@ -147,12 +236,21 @@ class HomeoGASimulation(QWidget):
             toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 2, indpb=indivProb)            
             toolbox.register("select", tools.selTournament, tournsize=tournamentSize)
             
-            toolbox.decorate("mate", checkBounds(0, 1))
-            toolbox.decorate("mutate", checkBounds(0, 1))
+            toolbox.decorate("mate", self.checkBounds(0, 1))
+            toolbox.decorate("mutate", self.checkBounds(0, 1))
+            
+            "2.1 Define Hall of Fame and History operators"
+            
+            
+            'Decorate the variation operators to insert newly created individuals in the GA history'
+            toolbox.decorate("mate", self.hist.decorator)
+            toolbox.decorate("mutate", self.hist.decorator)
+        
         
             "3. Run GA simulation"               
             np.random.seed(64)   # For repeatable experiments
             pop = toolbox.population(n=self.popSize)
+            self.hist.update(pop)
             gen = 0
             for i, ind in enumerate(pop):
                 ind.ID = str(gen).zfill(self.IDPad)+"-"+str(i+1).zfill(self.IDPad)
@@ -166,8 +264,8 @@ class HomeoGASimulation(QWidget):
             for ind, fit in zip(pop, fitnesses):
                 ind.fitness.values = fit
                 "record the data about the newly evaluated individual's genome in the logbook"
-                logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
-            
+                self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
+            self.hof.update(pop)
             print "  Evaluated %i individuals" % len(pop)
             #print "  With ID's ", sorted([ind.ID for ind in pop])
             
@@ -218,7 +316,7 @@ class HomeoGASimulation(QWidget):
                     ind.fitness.values = fit
                     
                     "record the data about the newly evaluated individual's genome in the logbook"
-                    logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
+                    self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
 
                 
                 hDebug('eval', str(len(invalid_ind)) + " individuals evaluated")
@@ -228,16 +326,17 @@ class HomeoGASimulation(QWidget):
                 
                 "Compute stats for generation with the statistics object"
                 record = stats.compile(pop)
-                logbook.record(gen=g+1, evaluations = len(invalid_ind), **record)
+                self.logbook.record(gen=g+1, evaluations = len(invalid_ind), **record)
+                self.hof.update(pop)
                 #print "   Generation " + str(g+1) + " with ID's: ", sorted([ind.ID for ind in pop])
                              
             #print genomeDecoder(4, tools.selBest(pop,10)[0])
             self.simulationEnvironQuit()
             timeElapsed = timeStarted - time()
-            logbook.record(timeElapsed = localtime(timeElapsed))
-            logbook.record(finalPop = len(pop), finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop]) 
+            self.logbook.record(timeElapsed = localtime(timeElapsed))
+            self.logbook.record(finalPop = len(pop), finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop]) 
             print("-- End of (successful) evolution --")
-            self.saveLogbook(timeStarted, logbook)
+            self.saveLogbook(timeStarted, self.logbook)
             
             best_ind = tools.selBest(pop, 1)[0]
             #print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
@@ -252,17 +351,19 @@ class HomeoGASimulation(QWidget):
         """Save the logbook for the GA run to a pickled object
            for later analysis. Name the file according to the time
            the simulation started and save it in current directory"""
-        logbookFilename = self.getTimeFormattedCompleteFilename(timeStarted, 'Logbook', 'lgb')   
+        logbookFilename = self.getTimeFormattedCompleteFilename(timeStarted, 'Logbook', 'lgb')
+        print logbookFilename   
         try:
             dump(logbook, open(logbookFilename, "w"))
-        except IOError as e:
-            sys.stderr.write("Could not save the logbook to file:" + e + "\n")
-           
+        except IOError: #as e:
+            #sys.stderr.write("Could not save the logbook to file:" + e.__str__ + "\n")
+            print "Could not save the logbook to file:" #, e.__str__ 
+   
     def getTimeFormattedCompleteFilename(self,timeStarted, prefix, extension, path = None):
         """ Return a string containing a complete filename (including path)
             that starts with prefix, plus a formatted version of the timeNow string, plus
             the extension.
-            Uses the "SimulationData" subdir of the src directory is no path is given.
+            Uses the "SimulationData" subdir of the src directory if no path is given.
             TimeStarted is in seconds from the epoch (as returned by time.time())
         """ 
         formattedTime = strftime("%Y-%m-%d-%H-%M-%S", localtime(timeStarted))
@@ -270,7 +371,9 @@ class HomeoGASimulation(QWidget):
         if path == None:
             addedPath = 'SimulationsData'
             datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
+            print 
         else: datafilePath = path
+        print os.path.join(datafilePath, filename)
         return os.path.join(datafilePath, filename)
          
       
@@ -320,48 +423,6 @@ class HomeoGASimulation(QWidget):
         # "end debugging code"
         #=======================================================================
         
-    def buildGui(self):
-        '''
-        Build the general GUI for the GA simulation
-        '''
-        
-        #mainGui = QDialog()
-        'layouts'
-        self.controlLayout = QGridLayout()
-        self.overallLayout = QVBoxLayout()
-        self.textLayout = QVBoxLayout()
-
-        
-        'widgets'
-        self.initializePopButton = QPushButton("Initialize Population")
-        self.noIndividualsSpinBox = QSpinBox()
-        self.noIndividualsLabel = QLabel("No of individuals")
-        self.startPushButton = QPushButton("Start")
-        self.stopPushButton = QPushButton("Stop")
-        self.quitPushButton = QPushButton("Quit")
-        self.currentFitnessLineEdit = QLineEdit()
-        self.currentFitnessLabel = QLabel("Current Fitness")
-        self.outputPane = QTextEdit()
-        
-        self.controlLayout.addWidget(self.initializePopButton,0,0)
-        self.controlLayout.addWidget(self.noIndividualsLabel,0,2)
-        self.controlLayout.addWidget(self.noIndividualsSpinBox, 0,3)
-        self.controlLayout.addWidget(self.currentFitnessLabel, 1,2)
-        self.controlLayout.addWidget(self.currentFitnessLineEdit, 1,3)
-        self.controlLayout.addWidget(self.startPushButton, 2,0)
-        self.controlLayout.addWidget(self.stopPushButton,2,2)
-        self.controlLayout.addWidget(self.quitPushButton,2,3)
-        
-        'text pane'
-        self.textLayout.addWidget(self.outputPane)
-        
-        self.overallLayout.addLayout(self.controlLayout)
-        self.overallLayout.addLayout(self.textLayout)
-        self.setLayout(self.overallLayout)
-        #return mainGui
-
-    def connectSlots(self):
-        pass
 
     def createRandomHomeostatGenome(self,genomeSize):
         '''Create a list containing the essential parameters for every
@@ -529,10 +590,27 @@ class HomeoGASimulation(QWidget):
         #=======================================================================
         return sqrt((target[0]-robotX)**2 + (target[1]-robotY)**2)
     
+    def showHallOfFame(self, hof):
+        """ Print the Hall of Fame record in a window"""
+        'FIXME: TO DO'
+        pass
+    
+    def showGenealogyTree(self, history, toolbox):
+        """ Show the GA run genealogy as a tree"""
+        import matplotlib.pyplot as plt
+        import networkx
+
+        graph = networkx.DiGraph(history.genealogy_tree)
+        graph = graph.reverse()     # Make the grah top-down
+        colors = [toolbox.evaluate(self.hist.genealogy_history[i])[0] for i in graph]
+        networkx.draw(graph, node_color=colors)
+        plt.show()
+        
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    simul = HomeoGASimulation(popSize=50, stepSize=5000, generSize = 30, debugging = 'major')
+    #app = QApplication(sys.argv)
+    #simulGUI = HomeoGASimulGUI()
+    simul = HomeoGASimulation(popSize=2, stepSize=100, generSize = 1, debugging = 'major')
     #simul.runOneGenSimulation()
-    simul.runGaSimulation()
-    simul.show()
-    app.exec_()
+    simul.runGaSimulation(simul.cxProb,simul.mutationProb, simul.indivProb, simul.tournamentSize)
+    #simulGUI.show()
+    #app.exec_()
