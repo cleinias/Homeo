@@ -16,20 +16,20 @@ import csv
 
 def main():
     "These function calls are for testing purposes only"  
-    os.chdir("/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/Trajectories-from-GA-Simulation-50x30-NO-UNISEL-1-5-2015")
-    filename = open('Logbook-2015-01-04-19-11-21.lgb','r')
+    os.chdir("/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/")
+    filename = open('Logbook-2015-01-09-16-53-12.lgb','r')
     logbook = pickle.load(filename)
     hDebug('ga',"Logbook loaded")
     indivs = indivsDecodedFromLogbook(logbook)
     fitness_data = minMaxAvgFromLogbook(logbook)
     indID = '001-003'
-    print indID, extractGenomeOfIndI(indID, (os.path.join(os.getcwd(),"Logbook-2015-01-04-19-11-21.lgb")))
+    #print indID, extractGenomeOfIndID(indID, (os.path.join(os.getcwd(),"Logbook-2015-01-04-19-11-21.lgb")))
     #saveGenomeToCSV(extractGenomeOfIndI('001-001', 
     #                                    (os.path.join(os.getcwd(),"Logbook-2015-01-04-19-11-21.lgb"))), 
     #                os.path.join(os.getcwd(),indID+'-genome.gnm'))
-    #hof = hallOfFameInds(indivs, 10, max=False)
-    #genomeAndFitnessPrettyPrinter(hof, noUnits=6)
-    #minMaxAvgFitPlot(fitness_data[0], fitness_data[1],fitness_data[2], fitness_data[3])
+    hof = hallOfFameInds(indivs, 10, max=False)
+    genomeAndFitnessPrettyPrinter(hof, noUnits=6)
+    minMaxAvgFitPlot(fitness_data[0], fitness_data[1],fitness_data[2], fitness_data[3])
     
 def minMaxAvgFitPlot(gen, fit_mins, fit_maxs, fit_avgs):
     "Plot min, max, and average fitnesses per generation"
@@ -76,6 +76,7 @@ def minMaxAvgFromLogbook(logbook):
     'end debugging'
     
     return (gens,fit_mins,fit_maxs,fit_avgs)
+    simul.generatePopOfClones()
 
 def indivsDecodedFromLogbook(logbook, noUnits=6):
     """Extracts all the individual genomes from the logbook, 
@@ -122,7 +123,7 @@ def genomeAndFitnessPrettyPrinter(decodedIndivs, noUnits=6):
         individuals.append(list(ind[1])+b+ind[0])
     print tabulate(individuals, headers, tablefmt='orgtbl')
 
-def extractGenomeOfIndI(indID, logbookFileWithPath):
+def extractGenomeOfIndID(indID, logbookFileWithPath):
     """Extract the genome of individual indID from a DEAP logbook file.
     Return a dictionary with indivId and genome at respective keys"""
     genome = {}
