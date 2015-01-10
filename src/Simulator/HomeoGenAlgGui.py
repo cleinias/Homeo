@@ -18,6 +18,8 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
 import sys
 import numpy as np
+import csv
+
 #import RobotSimulator.WebotsTCPClient
 from RobotSimulator.WebotsTCPClient import WebotsTCPClient
 from socket import error as SocketError
@@ -28,6 +30,7 @@ from tabulate import tabulate
 from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug
 from Helpers.ExceptionAndDebugClasses import hDebug
 from Helpers.GenomeDecoder import genomeDecoder
+from Helpers.StatsAnalyzer import extractGenomeOfIndID
 
 class HomeoGASimulGUI(QWidget):
     """GUI to GA simulation"""
@@ -45,8 +48,7 @@ class HomeoGASimulGUI(QWidget):
         self.gaSimulation = HomeoGASimulation()
 
     def buildGui(self):
-        '''
-        Build the general GUI for the GA simulation
+        '''Build the general GUI for the GA simulation
         '''
         
         #mainGui = QDialog()
@@ -87,8 +89,7 @@ class HomeoGASimulGUI(QWidget):
     def connectSlots(self):
         pass
     
-        
-
+            
 
 class HomeoGASimulation(object):
     '''
@@ -98,7 +99,7 @@ class HomeoGASimulation(object):
     allowable error classes names. 
     '''
     
-    def __init__(self,parent=None, stepSize = 1000, 
+    def __init__(self,parent=None, stepsSize = 1000, 
                                    popSize=150,
                                    generSize = 1, 
                                    noUnits=6, 
@@ -111,6 +112,7 @@ class HomeoGASimulation(object):
                                    indivProb = 0.05, 
                                    tournamentSize = 3,
                                    ID_padding = 3,
+                                   clonableGenome = None,
                                    debugging = None):
 
         "Tell HomeoDebug which error classes it should print "
@@ -119,30 +121,37 @@ class HomeoGASimulation(object):
     
         self.popSize = popSize
         self.genomeSize = (noUnits*essentParams)+noUnits**2   
-        self.stepsSize = stepSize    
+        self.stepsSize = stepsSize    
         self.generSize = generSize
         self.experiment = exp
         self.cxProb = cxProb 
         self.mutationProb = mutationProb 
         self.indivProb = indivProb 
         self.tournamentSize = tournamentSize
+        self.clonableGenome = clonableGenome
+        self.stats = tools.Statistics(key=lambda ind: ind.fitness.values)
+
 
         self.IDPad = ID_padding
         
-        'Statistics and general record keeping variables'
+        'Statistics, tools, and general record keeping variables'
+        self.toolbox = base.Toolbox()
         self.logbook = tools.Logbook()
         self.hof = tools.HallOfFame(10, similar = self.indEq)
         self.hist = tools.History()
         
         " Insert general GA simulation parameters into logbook"
-        self.logbook.record(population = self.popSize,
-                            generations = self.generSize,
-                            genomeSize = self.genomeSize,
-                            experiment = exp,
-                            cxProb = cxProb, 
-                            mutationProb = mutationProb, 
-                            indivProb = indivProb, 
-                            tournsize = tournamentSize)
+        simulationParameters = {'population' : self.popSize,
+                                'generations' : self.generSize,
+                                'genomeSize' : self.genomeSize,
+                                'length' : self.stepsSize,
+                                'experiment' : exp,
+                                'cxProb' : self.cxProb, 
+                                'mutationProb' : self.mutationProb, 
+                                'indivProb' : self.indivProb, 
+                                'tournsize' : self.tournamentSize}
+        
+        self.logbook.record(GaParameters = simulationParameters)
 
         
         
@@ -164,6 +173,55 @@ class HomeoGASimulation(object):
         # self._simulThread.started.connect(self._simulation.go)
         #=======================================================================
         
+        "1. Create individual types [Homeostat genome], define type of genes, define population"
+            
+        'GA simulation will minimize fitness (distance from target)'
+        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+        
+        'Homeostat genome is a list plus an ID'     
+        creator.create("Individual", list, fitness=creator.FitnessMin, ID=None)   
+        
+    
+                    
+        'Register function to create a random individual'
+        self.toolbox.register("individual", self.initIndividual, creator.Individual, genomeSize=self.genomeSize, ID = 'DummyID')  
+        
+        'Register function to create an individual with given genome'
+        self.toolbox.register('individualClone', self.initIndividualClone, creator.Individual, self.clonableGenome)
+        
+        'Population is a list of individual'
+        self.toolbox.register("population", tools.initRepeat, list, self.toolbox.individual) 
+        
+        'Operator to create a list of identical individual of given genome'
+        self.toolbox.register('popClones', tools.initRepeat, list, self.toolbox.individualClone)                            
+        
+        hDebug('ga',("Population defined.\nIndividual defined with genome size = " + str(self.genomeSize) +"\n"))
+        
+        "1.1 defining statistics tools"
+        self.stats.register("avg", np.mean)
+        self.stats.register("std", np.std)
+        self.stats.register("min", np.min)
+        self.stats.register("max", np.max)
+        
+        
+        "2. Registering GA operators"
+        
+        self.toolbox.register("evaluate", self.evaluateGenomeFitness)
+        self.toolbox.register("mate", tools.cxTwoPoint)
+        #toolbox.register("mutate", tools.mutFlipBit, indpb=self.indivProb)            
+        self.toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 2, indpb=self.indivProb)            
+        self.toolbox.register("select", tools.selTournament, tournsize=self.tournamentSize)
+        
+        self.toolbox.decorate("mate", self.checkBounds(0, 1))
+        self.toolbox.decorate("mutate", self.checkBounds(0, 1))
+        
+        "2.1 Define Hall of Fame and History operators"
+        
+        
+        'Decorate the variation operators to insert newly created individuals in the GA history'
+        self.toolbox.decorate("mate", self.hist.decorator)
+        self.toolbox.decorate("mutate", self.hist.decorator)
+
         
         #self._supervisor.clientConnect()
         
@@ -189,78 +247,55 @@ class HomeoGASimulation(object):
         return decorator
     
     def initIndividual(self, indivClass, genomeSize, ID = None):
+        "Generate an individual's random genome"
         ind = indivClass(np.random.uniform(0,1) for _ in xrange(genomeSize))
         ind.ID = ID
         return ind
-            
+    
+    def initIndividualClone(self, indivClass, genome):
+        """Generate an individual with given genome.
+           Assumes 'genome' is a dictionary with keys indivId and genome"""
+        ind = indivClass(genome['genome'])
+        ind.ID = genome["indivId"]        
+        return ind      
 
 
-    def runGaSimulation(self, cxProb ,mutationProb, indivProb, tournamentSize):
+    def generatePopOfClones(self):
+        """Generate a population of identical clones from
+           genome stored in self.clonableGenome""" 
+
+        return self.toolbox.popClones(n=self.popSize)
+        
+        
+    
+    def generateRandomPop(self, randomSeed = 64):
+        """Generate a population of random individual with given random seed"""
+        
+        np.random.seed(randomSeed)   # For repeatable experiments
+        return self.toolbox.population(n=self.popSize)
+
+
+    def runGaSimulation(self, pop):
+        """Execute a complete GA run. Could be either over a population of clones
+           or over a truly randomly generated  population.
+           All parameters (popsize, gen, cxProb, etc.) as well as DEAP-specific tools,
+           are stored in class's ivars.
+           Save fitness data to logbook"""
+
+        'Record time for naming logbook pickled object and computing time statistics'
+        timeStarted = time()        
         try:
-            """Initialize and run a complete GA simulation with the specified parameters"""
-             
-            "1. Create individual types [Homeostat genome], define type of genes, define population"
-            toolbox = base.Toolbox()
-            
-            'GA simulation will minimize fitness (distance from target)'
-            creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-            
-            'Homeostat genome is a list plus an ID'     
-            creator.create("Individual", list, fitness=creator.FitnessMin, ID=None)   
-            
-        
-                        
-            'Define how to create an individual'
-            toolbox.register("individual", self.initIndividual, creator.Individual, genomeSize=self.genomeSize, ID = 'DummyID')  
-            
-            'Population is a list of individual'
-            toolbox.register("population", tools.initRepeat, list, toolbox.individual)                             
-            
-            hDebug('ga',("Population defined.\nIndividual defined with genome size = " + str(self.genomeSize) +"\n"))
-            
-            "1.1 defining statistics tools"
-            stats = tools.Statistics(key=lambda ind: ind.fitness.values)
-            stats.register("avg", np.mean)
-            stats.register("std", np.std)
-            stats.register("min", np.min)
-            stats.register("max", np.max)
-            
-            'Record time for naming logbook pickled object and computing time statistics'
-            timeStarted = time()
-            
-            "2. Registering GA operators"
-            
-            toolbox.register("evaluate", self.evaluateGenomeFitness)
-            toolbox.register("mate", tools.cxTwoPoint)
-            #toolbox.register("mutate", tools.mutFlipBit, indpb=indivProb)            
-            toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 2, indpb=indivProb)            
-            toolbox.register("select", tools.selTournament, tournsize=tournamentSize)
-            
-            toolbox.decorate("mate", self.checkBounds(0, 1))
-            toolbox.decorate("mutate", self.checkBounds(0, 1))
-            
-            "2.1 Define Hall of Fame and History operators"
-            
-            
-            'Decorate the variation operators to insert newly created individuals in the GA history'
-            toolbox.decorate("mate", self.hist.decorator)
-            toolbox.decorate("mutate", self.hist.decorator)
-        
-        
-            "3. Run GA simulation"               
-            np.random.seed(64)   # For repeatable experiments
-            pop = toolbox.population(n=self.popSize)
-            self.hist.update(pop)
             gen = 0
             for i, ind in enumerate(pop):
                 ind.ID = str(gen).zfill(self.IDPad)+"-"+str(i+1).zfill(self.IDPad)
+            self.hist.update(pop)
                 
                     
             print("Start of evolution")
             
             # Evaluate the entire population
             print "-- Generation 0 --"
-            fitnesses = list(map(toolbox.evaluate, pop))
+            fitnesses = list(map(self.toolbox.evaluate, pop))
             for ind, fit in zip(pop, fitnesses):
                 ind.fitness.values = fit
                 "record the data about the newly evaluated individual's genome in the logbook"
@@ -275,17 +310,17 @@ class HomeoGASimulation(object):
                 print("-- Generation %s --" % str(g+1))
                 
                 # Select the next generation individuals with previously defined select function 
-                offspring = toolbox.select(pop, len(pop))
+                offspring = self.toolbox.select(pop, len(pop))
                 # Clone the selected individuals
-                offspring = list(map(toolbox.clone, offspring))
+                offspring = list(map(self.toolbox.clone, offspring))
             
                 # Apply crossover and mutation on the offspring
                 hDebug('ga',"Applying crossover")
                 mated = 0
                 for child1, child2 in zip(offspring[::2], offspring[1::2]):
-                    if np.random.uniform() < cxProb:
+                    if np.random.uniform() < self.cxProb:
                         mated += 1
-                        toolbox.mate(child1, child2)
+                        self.toolbox.mate(child1, child2)
                         del child1.fitness.values
                         del child2.fitness.values
                 hDebug('ga',str(mated) + " individuals mated")
@@ -293,8 +328,8 @@ class HomeoGASimulation(object):
                 hDebug('eval', "Now mutating individuals")
                 mutants = 0
                 for mutant in offspring:                
-                    if np.random.uniform() < mutationProb:
-                        toolbox.mutate(mutant)
+                    if np.random.uniform() < self.mutationProb:
+                        self.toolbox.mutate(mutant)
                         del mutant.fitness.values
                         mutants += 1
                 hDebug('eval', str(mutants)+ "  mutants generated")
@@ -309,9 +344,9 @@ class HomeoGASimulation(object):
                     #print "The old ind's ID was: ", ind.ID
                     ind.ID = str(g+1).zfill(self.IDPad) + "-"+str(i+1).zfill(self.IDPad) 
                     #print "Now changed to: ", ind.ID
-                
+    
                 'Re-evaluate'
-                fitnesses = map(toolbox.evaluate, invalid_ind)
+                fitnesses = map(self.toolbox.evaluate, invalid_ind)
                 for ind, fit in zip(invalid_ind, fitnesses):
                     ind.fitness.values = fit
                     
@@ -325,7 +360,7 @@ class HomeoGASimulation(object):
                 pop[:] = offspring
                 
                 "Compute stats for generation with the statistics object"
-                record = stats.compile(pop)
+                record = self.stats.compile(pop)
                 self.logbook.record(gen=g+1, evaluations = len(invalid_ind), **record)
                 self.hof.update(pop)
                 #print "   Generation " + str(g+1) + " with ID's: ", sorted([ind.ID for ind in pop])
@@ -358,7 +393,7 @@ class HomeoGASimulation(object):
         except IOError: #as e:
             #sys.stderr.write("Could not save the logbook to file:" + e.__str__ + "\n")
             print "Could not save the logbook to file:" #, e.__str__ 
-   
+    
     def getTimeFormattedCompleteFilename(self,timeStarted, prefix, extension, path = None):
         """ Return a string containing a complete filename (including path)
             that starts with prefix, plus a formatted version of the timeNow string, plus
@@ -432,7 +467,7 @@ class HomeoGASimulation(object):
            the Homeostat- and connections-instantiating method to scale these 
            values to the Units' appropriate ranges.
            
-           Basic essential parameters are 5: mass, viscosity,
+           Basic essential parameters are 4: mass, viscosity,
            uniselectorTiming, and maxDeviation.
            
            (The potentiometer is also an essential parameter, but it is specified as one of the unit's
@@ -442,9 +477,9 @@ class HomeoGASimulation(object):
 
     def simulationEnvironReset(self):
         """Reset webots simulation.
-         Do not return from function until the simulation has really exited 
-         and the previous tcp/ip socket is no longer valid.
-        """
+           Do not return from function until the simulation has really exited 
+           and the previous tcp/ip socket is no longer valid. """
+           
         try:
             self._supervisor._clientSocket.send("R")
             response = self._supervisor._clientSocket.recv(100) 
@@ -472,6 +507,7 @@ class HomeoGASimulation(object):
         
     def simulationEnvironResetPhysics(self):
         "Reset Webots simulation physics"
+        
         try:
             self._supervisor._clientSocket.send("P")
             response = self._supervisor._clientSocket.recv(100) 
@@ -482,6 +518,7 @@ class HomeoGASimulation(object):
     
     def simulationEnvironQuit(self):
         "Quit Webots application"
+        
         try:
             self._supervisor._clientSocket.send("Q")
             response = self._supervisor._clientSocket.recv(100) 
@@ -545,16 +582,16 @@ class HomeoGASimulation(object):
         return finalDis,                                       # Return a tuple, as required by DEAP
         
     def finalDisFromTarget(self):
-        '''Compute the distance from target by asking the supervisor to
+        """Compute the distance from target by asking the supervisor to
         evaluate the distance between a node with 'DEF' = 'TARGET'
-        and the KHEPERA robot'''
+        and the KHEPERA robot"""
         
         self._supervisor._clientSocket.send("D")
         response = float(self._supervisor._clientSocket.recv(100)) 
         return response
         
     def finalDisFromTargetFromFile(self, target):
-        """ Compute the distance between robot and target at
+        """Compute the distance between robot and target at
         the end of the simulation.
         
         Target must be passed to function as a list of 2 floats (x-coord, y-coord)
@@ -567,8 +604,8 @@ class HomeoGASimulation(object):
         Assume also that the trajectory data filename will start with 
         the string filenamePattern and will include date and time info in the filename
         so they properly sort in time order
-        Get the most recent file fulfilling the criteria
-        """ 
+        Get the most recent file fulfilling the criteria"""
+
         
         addedPath = 'SimulationsData'
         datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
@@ -591,7 +628,8 @@ class HomeoGASimulation(object):
         return sqrt((target[0]-robotX)**2 + (target[1]-robotY)**2)
     
     def showHallOfFame(self, hof):
-        """ Print the Hall of Fame record in a window"""
+        """ Print the Hall of Fame record in a window,
+            With decoded genomes, ID's, and fitness"""
         'FIXME: TO DO'
         pass
     
@@ -602,15 +640,35 @@ class HomeoGASimulation(object):
 
         graph = networkx.DiGraph(history.genealogy_tree)
         graph = graph.reverse()     # Make the grah top-down
-        colors = [toolbox.evaluate(self.hist.genealogy_history[i])[0] for i in graph]
-        networkx.draw(graph, node_color=colors)
+        "FIX ME: DO NOT REVALUATE THE NODES. RETRIEVE ALREADY COMPUTED FITNESSES"
+        #colors = [self.toolbox.evaluate(self.hist.genealogy_history[i])[0] for i in graph]
+        networkx.draw(graph)# , node_color=colors)
         plt.show()
-        
+
+    def test(self):        
+        logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/"
+        logL = 'Logbook-2015-01-09-16-11-52.lgb'
+        id = '001-001'
+        logF = os.path.join(logD,logL)
+        genome = extractGenomeOfIndID(id,logF)
+        self.clonableGenome = genome
+        print self.clonableGenome
+        self.generatePopOfClones()
+        self.runGaSimulation()
+                
 if __name__ == '__main__':
     #app = QApplication(sys.argv)
     #simulGUI = HomeoGASimulGUI()
-    simul = HomeoGASimulation(popSize=2, stepSize=100, generSize = 1, debugging = 'major')
+    logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/Trajectories-from-GA-Simulation-50x30-NO-UNISEL-1-5-2015"
+    logL = 'Logbook-2015-01-04-19-11-21.lgb'
+    id = '012-021'
+    logF = os.path.join(logD,logL)
+    genome = extractGenomeOfIndID(id,logF)
+    simul = HomeoGASimulation(popSize=10, stepsSize=50000, generSize = 3, clonableGenome=genome, debugging = 'major')
+    simul.runGaSimulation(simul.generatePopOfClones())
+    #simul.test()
     #simul.runOneGenSimulation()
-    simul.runGaSimulation(simul.cxProb,simul.mutationProb, simul.indivProb, simul.tournamentSize)
+    #simul.runGaSimulation(simul.generateRandomPop())
+    #simul.showGenealogyTree(simul.hist, simul.toolbox)
     #simulGUI.show()
     #app.exec_()
