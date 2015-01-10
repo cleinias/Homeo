@@ -1,6 +1,9 @@
 '''
 Created on Jan 4, 2015
 
+Functions that read the logbook produced by a DEAP GA simulation
+and provide info and stats on the GA run
+
 @author: stefano
 '''
 from deap import tools
@@ -16,20 +19,22 @@ import csv
 
 def main():
     "These function calls are for testing purposes only"  
-    os.chdir("/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/")
-    filename = open('Logbook-2015-01-09-16-53-12.lgb','r')
-    logbook = pickle.load(filename)
-    hDebug('ga',"Logbook loaded")
-    indivs = indivsDecodedFromLogbook(logbook)
-    fitness_data = minMaxAvgFromLogbook(logbook)
-    indID = '001-003'
+    dirL='/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/Trajectories-from-repeated-GA-run-on-Cloned-Best-ind-of-1-5-2015/'
+    fileL = 'Logbook-2015-01-09-16-53-12.lgb'
+    filename = os.path.join(dirL,fileL)
+   #logbook = pickle.load(filename)
+    #hDebug('ga',"Logbook loaded")
+    #indivs = indivsDecodedFromLogbook(logbook)
+    #fitness_data = minMaxAvgFromLogbook(logbook)
+    #indID = '001-003'
+    gens = extractAllGenomes(filename)
     #print indID, extractGenomeOfIndID(indID, (os.path.join(os.getcwd(),"Logbook-2015-01-04-19-11-21.lgb")))
     #saveGenomeToCSV(extractGenomeOfIndI('001-001', 
     #                                    (os.path.join(os.getcwd(),"Logbook-2015-01-04-19-11-21.lgb"))), 
     #                os.path.join(os.getcwd(),indID+'-genome.gnm'))
-    hof = hallOfFameInds(indivs, 10, max=False)
-    genomeAndFitnessPrettyPrinter(hof, noUnits=6)
-    minMaxAvgFitPlot(fitness_data[0], fitness_data[1],fitness_data[2], fitness_data[3])
+    #hof = hallOfFameInds(indivs, 10, max=False)
+    #genomeAndFitnessPrettyPrinter(hof, noUnits=6)
+    #minMaxAvgFitPlot(fitness_data[0], fitness_data[1],fitness_data[2], fitness_data[3])
     
 def minMaxAvgFitPlot(gen, fit_mins, fit_maxs, fit_avgs):
     "Plot min, max, and average fitnesses per generation"
@@ -76,7 +81,6 @@ def minMaxAvgFromLogbook(logbook):
     'end debugging'
     
     return (gens,fit_mins,fit_maxs,fit_avgs)
-    simul.generatePopOfClones()
 
 def indivsDecodedFromLogbook(logbook, noUnits=6):
     """Extracts all the individual genomes from the logbook, 
@@ -101,7 +105,7 @@ def genomeAndFitnessPrettyPrinter(decodedIndivs, noUnits=6):
     """Formats and prints a (possibly sorted) list
        of decoded individual genomes passed as a list of
        tuples with genome at [0], fitness at [1], and name at [2].
-       Assumes 4str( essential variables for homeoUnits"""
+       Assumes 4 essential variables for homeoUnits"""
     
     'Construct headers'
     headers = ['Fitness', 'IndivID']
@@ -125,10 +129,9 @@ def genomeAndFitnessPrettyPrinter(decodedIndivs, noUnits=6):
 
 def extractGenomeOfIndID(indID, logbookFileWithPath):
     """Extract the genome of individual indID from a DEAP logbook file.
-    Return a dictionary with indivId and genome at respective keys"""
-    genome = {}
-    genome['indivId'] = indID
-    genome['genome'] = "Not Found"
+    Return a dictionary with indivId and genome found at respective keys,
+    returns 'Not Found' otherwise."""
+    genome = {'indivId' : indID, 'genome': "Not Found"}
     logbookFile = open(logbookFileWithPath, 'r')
     logbook = pickle.load(logbookFile)
     logbookFile.close()
@@ -139,16 +142,22 @@ def extractGenomeOfIndID(indID, logbookFileWithPath):
                 break
         except KeyError:
             pass
-    return genome
-    #===========================================================================
-    # if not genome == 'Not Found':
-    #     filename = 'pippo' + ext
-    #     f = open(filename,'w')
-    #     f.write(genome)
-    #     f.close()    
-    #         
-    #===========================================================================
-    
+    return genome        
+
+def extractAllGenomes(logbookFileWithPath):
+    """Extracts all genomes of a GA given simulation
+       to a set of unique individuals"""
+    inds = set()
+    logbookFile = open(logbookFileWithPath, 'r')
+    logbook = pickle.load(logbookFile)
+    logbookFile.close()
+    for entry in xrange(len(logbook)):
+        try:
+            inds.add(tuple(logbook[entry]['genome']))  # convert genome list to tuple for sets
+        except KeyError:
+            pass
+    return inds        
+
     
 
 def saveGenomeToCSV(genome, filename):
