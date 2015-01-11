@@ -2,7 +2,7 @@
 Created on Jan 4, 2015
 
 Functions that read the logbook produced by a DEAP GA simulation
-and provide info and stats on the GA run
+and provide info, stats, and charts about the GA run
 
 @author: stefano
 '''
@@ -18,23 +18,29 @@ import csv
 
 
 def main():
-    "These function calls are for testing purposes only"  
+    "All function calls in the main() functions are for testing purposes only"  
     dirL='/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/Trajectories-from-repeated-GA-run-on-Cloned-Best-ind-of-1-5-2015/'
     fileL = 'Logbook-2015-01-09-16-53-12.lgb'
     filename = os.path.join(dirL,fileL)
-   #logbook = pickle.load(filename)
+    logbook = pickle.load(open(filename, 'r'))
     #hDebug('ga',"Logbook loaded")
-    #indivs = indivsDecodedFromLogbook(logbook)
+    indivs = indivsDecodedFromLogbook(logbook)
     #fitness_data = minMaxAvgFromLogbook(logbook)
     #indID = '001-003'
-    gens = extractAllGenomes(filename)
+    #gens = extractAllGenomes(filename)
     #print indID, extractGenomeOfIndID(indID, (os.path.join(os.getcwd(),"Logbook-2015-01-04-19-11-21.lgb")))
     #saveGenomeToCSV(extractGenomeOfIndI('001-001', 
     #                                    (os.path.join(os.getcwd(),"Logbook-2015-01-04-19-11-21.lgb"))), 
     #                os.path.join(os.getcwd(),indID+'-genome.gnm'))
-    #hof = hallOfFameInds(indivs, 10, max=False)
-    #genomeAndFitnessPrettyPrinter(hof, noUnits=6)
+    hof = hallOfFameInds(indivs, 10, max=False)
     #minMaxAvgFitPlot(fitness_data[0], fitness_data[1],fitness_data[2], fitness_data[3])
+    
+def plotFitnessesFromLogBook(logbook):
+    """Produce a MatplotLib chart of min, max, and avg fitness
+       from data extracted from the logbook"""
+    
+    fitness_data = minMaxAvgFromLogbook(logbook)
+    minMaxAvgFitPlot(fitness_data[0], fitness_data[1],fitness_data[2], fitness_data[3])    
     
 def minMaxAvgFitPlot(gen, fit_mins, fit_maxs, fit_avgs):
     "Plot min, max, and average fitnesses per generation"
@@ -65,7 +71,7 @@ def minMaxAvgFitPlot(gen, fit_mins, fit_maxs, fit_avgs):
     plt.show()
 
 def minMaxAvgFromLogbook(logbook):
-    """Extract data about min, max, and avg fitness from Deap logbook
+    """Extract data about min, max, and avg fitness from DEAP logbook
        Return a tuple of fitness lists, prefix with a list with the generations"""
     
     fit_records = [x for x in logbook if 'std' in x]
@@ -101,8 +107,17 @@ def hallOfFameInds(indivs, num, max=False):
     a =  sorted(indivs,key=itemgetter(1), reverse = max)
     return a[:num]
 
-def genomeAndFitnessPrettyPrinter(decodedIndivs, noUnits=6):
-    """Formats and prints a (possibly sorted) list
+def hallOfFame(logbook, num=10, max=False):
+    """Return a string containing a formatted and sorted hall of fame list
+       of individuals extracted from the logbook"""
+    
+    return genomeAndFitnessPrettyPrinter(hallOfFameInds(indivsDecodedFromLogbook(logbook),
+                                                        num, max=max))
+                                                         
+
+def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6):
+    """Return a list containing a list of of  headers and 
+       a sorted list (by fitness)
        of decoded individual genomes passed as a list of
        tuples with genome at [0], fitness at [1], and name at [2].
        Assumes 4 essential variables for homeoUnits"""
@@ -119,13 +134,35 @@ def genomeAndFitnessPrettyPrinter(decodedIndivs, noUnits=6):
         for connOut in xrange(noUnits):
             headers.append('Conn-W-'+str(connIn+1)+'-to-'+str(connOut+1))
     
-    'Flattens list of tuples including individual genomes and fitnesses to a list of lists'
+    '''Flattens list of tuples including individual genomes and fitnesses to a list of lists.'''
     individuals = []
     for ind in decodedIndivs:        
         b = []
         b.append(ind[2])
         individuals.append(list(ind[1])+b+ind[0])
-    print tabulate(individuals, headers, tablefmt='orgtbl')
+    
+    if len(individuals)< num:
+        return [headers,sorted(individuals, key=itemgetter(0), reverse=False)]
+    else:
+        return [headers,sorted(individuals, key=itemgetter(0), reverse=False)[:num]]
+
+def genomeAndFitnessPrettyPrinter(individuals, noUnits=6):
+    """Tabulate individuals with their headers """
+    
+    'Construct headers'
+    headers = ['Fitness', 'IndivID']
+    for unit in xrange(noUnits):
+        headers.append('U'+str(unit+1)+'-mass')
+        headers.append('U'+str(unit+1)+'-visc')
+        headers.append('U'+str(unit+1)+'-unis-time')
+        headers.append('U'+str(unit+1)+'-maxDev')
+
+    for connIn in xrange(noUnits):
+        for connOut in xrange(noUnits):
+            headers.append('Conn-W-'+str(connIn+1)+'-to-'+str(connOut+1))
+
+         
+    return tabulate(individuals, headers, tablefmt='orgtbl')
 
 def extractGenomeOfIndID(indID, logbookFileWithPath):
     """Extract the genome of individual indID from a DEAP logbook file.
