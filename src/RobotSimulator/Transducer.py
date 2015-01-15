@@ -10,6 +10,7 @@ and may be subclassed to operate concrete robotic simulation environments
 from socket import error as SocketError
 from Helpers.General_Helper_Functions import SubclassResponsibility
 from Helpers.ExceptionAndDebugClasses import hDebug
+import random
 
 class TransducerException(Exception):
     def __init__(self, value):
@@ -39,7 +40,7 @@ class Transducer(object):
         '''
         Basic setup
         '''
-    #=================================================================
+    #=========================================several========================
     # Class properties
     #=================================================================
     
@@ -67,7 +68,7 @@ class Transducer(object):
 
     #======================================================================
     #  Running methods
-    #======================================================================
+    #=========================================several=============================
     
     def act(self, parameters):
         '''act method is implemented only by Transducer's subclasses'''
@@ -159,7 +160,7 @@ class TransducerTCP(object):
 
     def __init__(self):
         '''
-        Basic setup
+        Basic setupseveral
         '''
     #=================================================================
     # Class properties
@@ -334,5 +335,26 @@ class WebotsLightSensorRawTCP(WebotsLightSensorTCP):
         self._robotSocket.send(self._transdFunction)
         light_values = self._robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]  
         return float(light_values[self._funcParameters])
+       
+class WebotsLightSensorDUMMY(WebotsLightSensorTCP):
+    '''DUMMY Interface to a Webots' robot light sensor,
+       for testing purposes.
+       Return a random, repeatable sequence of random numbers,
+       based on the random seed stored in the instance variable SensorSeed. 
+       The class overrides only the read function of its superclass'''
+    
+    
+    def __init__(self, aNumber, aSeed):
+        '''Initialize according to superclass.
+           Store the seed for random gen initialization and future reseeds'''
+        super(WebotsLightSensorDUMMY, self).__init__(aNumber)
+        self._randomGen = random.Random()
+        self._seed = aSeed
+        self._randomGen.seed(self._seed)
+        
+    def read(self):
+        '''return a fake, random light value in the allowed range.
+           '''
+        return self._randomGen.random() * self.range()[1]  
        
    
