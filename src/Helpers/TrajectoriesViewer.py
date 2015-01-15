@@ -11,9 +11,8 @@ from the related DEAP logbook
 from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
 from Helpers.TrajectoryGrapher import graphTrajectory
-from Helpers.StatsAnalyzer import plotFitnessesFromLogBook, genomeAndFitnessList, indivsDecodedFromLogbook
+from Helpers.StatsAnalyzer import plotFitnessesFromLogBook, genomeAndFitnessList, indivsDecodedFromLogbook, showGenealogyTree
 import sys
-from PyQt4.Qt import QMessageBox
 import os
 from glob import glob
 from sys import stderr
@@ -27,11 +26,12 @@ class TrajectoryViewer(QWidget):
     '''
 
 
-    def __init__(self, dirPath='/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData', parent=None):
+    def __init__(self, dirPath='/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData', parent=None, appRef=None):
         '''
         Constructor
         '''
         super(TrajectoryViewer,self).__init__(parent)
+        self.appRef = appRef
         self._dirpath = dirPath
         self.buidGui()
         self.setDirpath(dirPath)
@@ -64,16 +64,17 @@ class TrajectoryViewer(QWidget):
         self.changeDirPB = QPushButton("Change Dir")             
         self.currentTrajEntry = QLineEdit(self)
         self.currentLogbookLE = QLineEdit(self)
-        self.currentDirLabel = QLabel("Current dir: ")
+        self.currentDirLabel = QLabel("Current dir:          ")
         self.currentDir = QLineEdit(self)
-        self.trajListLabel = QLabel("Trajectories:")
+        self.trajListLabel = QLabel("Trajectories:        ")
         self.TrajList = QListWidget(self)
         self.hallOfFamePB = QPushButton("Hall of Fame")
         self.avgFitnessPB = QPushButton("Average Fitness")
+        self.GAInfoPB = QPushButton("General info")
         self.genealogyPB = QPushButton("Genealogy")
-        self.trajLabel = QLabel("Trajectory:   ")
-        self.logLabel = QLabel("Logbook:     ")
-        #self.listLayout.addWidget(self.QuitButton)
+        self.trajLabel = QLabel("Curr. Trajectory:   ")
+        self.logLabel = QLabel("Curr. Logbook:     ")
+        self.quitPB = QPushButton("Quit")
         self.hofWidget = QTableWidget()
         
         'build layouts'
@@ -88,20 +89,24 @@ class TrajectoryViewer(QWidget):
 
 
         self.buttonsLayout.addWidget(self.changeDirPB)
-        #self.buttonsLayout.addStretch()
+        self.buttonsLayout.addWidget(self.GAInfoPB)
+        self.buttonsLayout.addWidget(self.VisualizePB)        
+        self.buttonsLayout.addStretch()
         self.buttonsLayout.addWidget(self.hallOfFamePB)
         self.buttonsLayout.addWidget(self.avgFitnessPB)
         self.buttonsLayout.addWidget(self.genealogyPB)
         self.buttonsLayout.addStretch()        
-        self.buttonsLayout.addWidget(self.VisualizePB)
+        self.buttonsLayout.addWidget(self.quitPB)
+
 
         self.listLayout.addLayout(self.currentDirLayout)
-        self.listLayout.addLayout(self.trajectoriesLayout)
         self.listLayout.addLayout(self.logLayout)
         self.listLayout.addLayout(self.trajLayout)
+        self.listLayout.addLayout(self.trajectoriesLayout)
 
         self.overallLayout.addLayout(self.listLayout)
         self.overallLayout.addLayout(self.buttonsLayout)
+
         self.setLayout(self.overallLayout)
             
     def connectSlot(self):
@@ -114,7 +119,7 @@ class TrajectoryViewer(QWidget):
         self.genealogyPB.clicked.connect(self.visualizeGen)
         self.hofWidget.cellDoubleClicked.connect(self.onCellDoubleClicked)
         self.hofWidget.cellPressed.connect(self.onCellPressed)
-        #self.QuitButton.clicked.connect(self.quit())
+        self.quitPB.clicked.connect(self.appRef.exit)
     
     def onTrajectoryDoubleClicked(self, curr):
         self.onTrajectoryClicked(curr)
@@ -147,6 +152,7 @@ class TrajectoryViewer(QWidget):
     
     def visualizeGen(self):
         "visualize the individuals' genealogy"
+        #showGenealogyTree(history)
         self.notImplementedYet()
         
     def notImplementedYet(self):
@@ -162,8 +168,7 @@ class TrajectoryViewer(QWidget):
         self.currentLogbookLE.setText(self._currentLogbookName)        
         
     def quit(self):
-        pass
-        #app.quit()
+        self.appRef.exit()
             
     def supportedTrajExtensions(self):
         return  ['traj', 'txt']
@@ -269,11 +274,11 @@ class TrajectoryViewer(QWidget):
             msgBox = QMessageBox()
             msgBox.setText("No logbook data to visualize");
             msgBox.exec_();
-
+    
     
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    viewer = TrajectoryViewer()
+    viewer = TrajectoryViewer(appRef=app)
     viewer.show()
     app.exec_()
