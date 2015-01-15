@@ -57,9 +57,7 @@ class HomeoQtSimulation(QObject):
         newHomeoSimulation.homeostat = newHomeostat
         newHomeoSimulation.homeostatIsSaved = True 
         return newHomeoSimulation
-
-
-
+        
 #===============================================================================
 # Accessing and initialization
 #===============================================================================
@@ -250,7 +248,7 @@ class HomeoQtSimulation(QObject):
         if self._homeostat.time  < self._maxRuns:
 #            print "I am running cycle number: %u" % self._homeostat.time
             self._homeostat.runOnce()
-#            self.updateLiveData()
+            self.updateLiveData()
 #            time.sleep(self._simulDelay / 1000)
             QApplication.processEvents() 
 

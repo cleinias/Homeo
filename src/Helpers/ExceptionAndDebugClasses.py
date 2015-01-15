@@ -18,7 +18,7 @@ class HomeoDebug(object):
     debugging information depending on how the debugging
     parameters are set by the calling application.
     
-    HomeoDebug as no instances, just a class-side collection
+    HomeoDebug has no instances, just a class-side collection
     keeping all the debugging codes and class methods.
     
     Debugging codes are strings. Current codes:
