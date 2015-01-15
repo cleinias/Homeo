@@ -15,16 +15,35 @@ from Helpers.GenomeDecoder import genomeDecoder
 from operator import itemgetter
 from tabulate import tabulate
 import csv
-
+from deap import creator, base
 
 def main():
     "All function calls in the main() functions are for testing purposes only"  
-    dirL='/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/Trajectories-from-repeated-GA-run-on-Cloned-Best-ind-of-1-5-2015/'
-    fileL = 'Logbook-2015-01-09-16-53-12.lgb'
+    dirL='/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/'
+    fileL = 'History-2015-01-11-12-55-19.hist'
     filename = os.path.join(dirL,fileL)
-    logbook = pickle.load(open(filename, 'r'))
+    #logbook = pickle.load(open(filename, 'r'))
+    #---------------------------------------------
+    #
+    # Experiment to see whether I can unpickle the history object in a different environment
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+    
+    'Homeostat genome is a list plus an ID'     
+    creator.create("Individual", list, fitness=creator.FitnessMin, ID=None)   
+
+                
+    'Register function to create a random individual'
+    #toolbox.register("individual", self.initIndividual, creator.Individual, genomeSize=self.genomeSize, ID = 'DummyID')  
+    
+    'Register function to create an individual with given genome'
+    #toolbox.register('individualClone', self.initIndividualClone, creator.Individual, self.clonableGenome)
+    
+    #
+    #---------------------------------------------
+    history = pickle.load(open(filename,'r'))
+    showGenealogyTree(history)
     #hDebug('ga',"Logbook loaded")
-    indivs = indivsDecodedFromLogbook(logbook)
+    #indivs = indivsDecodedFromLogbook(logbook)
     #fitness_data = minMaxAvgFromLogbook(logbook)
     #indID = '001-003'
     #gens = extractAllGenomes(filename)
@@ -32,7 +51,7 @@ def main():
     #saveGenomeToCSV(extractGenomeOfIndI('001-001', 
     #                                    (os.path.join(os.getcwd(),"Logbook-2015-01-04-19-11-21.lgb"))), 
     #                os.path.join(os.getcwd(),indID+'-genome.gnm'))
-    hof = hallOfFameInds(indivs, 10, max=False)
+    #hof = hallOfFameInds(indivs, 10, max=False)
     #minMaxAvgFitPlot(fitness_data[0], fitness_data[1],fitness_data[2], fitness_data[3])
     
 def plotFitnessesFromLogBook(logbook):
@@ -90,7 +109,7 @@ def minMaxAvgFromLogbook(logbook):
 
 def indivsDecodedFromLogbook(logbook, noUnits=6):
     """Extracts all the individual genomes from the logbook, 
-    with associated fitnesses and indivdual's name of form #gen-#"""
+    with associated fitnesses and individual's name of form #gen-#"""
     rawIndivs = [x for x in logbook if "genome" in x]
     indivs = []
     for ind in rawIndivs:
@@ -98,6 +117,7 @@ def indivsDecodedFromLogbook(logbook, noUnits=6):
         decodedInd = genomeDecoder(noUnits,ind["genome"])
         name = ind["indivId"]
         indivs.append((decodedInd, fit, name))
+        print "ind: %s\t has fitness: %.2f" % ( name, fit[0])
     return indivs
 
 def hallOfFameInds(indivs, num, max=False):
@@ -195,6 +215,24 @@ def extractAllGenomes(logbookFileWithPath):
             pass
     return inds        
 
+def showGenealogyTree(history):
+    """ Show the GA run genealogy as a tree on the basis of the GA run's history obiect"""
+    import matplotlib.pyplot as plt
+    import networkx
+
+    "Need to recreate the Individual class used by history, otherwise it cannot be unpickled."
+    "FIXME: the individual class should be imported from an independent module"    
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+    creator.create("Individual", list, fitness=creator.FitnessMin, ID=None)   
+
+    graph = networkx.DiGraph(history.genealogy_tree)
+    graph = graph.reverse()     # Make the graph top-down
+    node_colors = [history.genealogy_history[i].fitness.values[0] for i in graph]
+    node_labels = {}
+    #for i in graph:
+    #    node_labels[i]=history.genealogy_history[i].ID
+    networkx.draw(graph)#, node_color=node_colors, labels = node_labels)
+    plt.show()
     
 
 def saveGenomeToCSV(genome, filename):
