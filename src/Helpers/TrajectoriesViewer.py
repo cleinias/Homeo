@@ -120,6 +120,7 @@ class TrajectoryViewer(QWidget):
         self.hofWidget.cellDoubleClicked.connect(self.onCellDoubleClicked)
         self.hofWidget.cellPressed.connect(self.onCellPressed)
         self.quitPB.clicked.connect(self.appRef.exit)
+        self.GAInfoPB.clicked.connect(self.visualizeGAInfo)
     
     def onTrajectoryDoubleClicked(self, curr):
         self.onTrajectoryClicked(curr)
@@ -275,7 +276,13 @@ class TrajectoryViewer(QWidget):
             msgBox.setText("No logbook data to visualize");
             msgBox.exec_();
     
+    def visualizeGAInfo(self):
+        "Show general info about the GA simulation as extracted from the relevant entry in the logbook "
+        self.notImplementedYet()
     
+    def closeEvent(self, *args, **kwargs):
+        self.appRef.exit()
+        
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
