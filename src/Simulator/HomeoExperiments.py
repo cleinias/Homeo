@@ -2476,6 +2476,22 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(genome, homeoParameters=4, ra
     
     See initializeBraiten2_2_Full_GA for details on initialization procedure.'''
     
+    "1. setup webots"
+    "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
+    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO-NO-NOISE.wbt'
+    webotsMode = "fast"              #for GA experiments, run simulation as fast as possible 
+
+    '''Webots parameters for tcp/ip communication
+       (Defined in webots world specified above)
+    '''
+    
+    #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
+    host = 'localhost'
+    kheperaPort = 10020
+    supervisorPort = 10021
+    
+    startWebots(world=webotsWorld, mode=webotsMode)
+    
     hom = initializeBraiten2_2_Full_GA(homeoGenome=genome, noHomeoParameters=homeoParameters, raw=False)
     for unit in hom.homeoUnits:
         unit.uniselectorActive = False         #    *** No Uniselectors active ***
