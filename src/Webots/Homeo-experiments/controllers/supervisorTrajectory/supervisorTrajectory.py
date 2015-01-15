@@ -92,12 +92,15 @@ class supervisorTrajectory(Supervisor):
                 posFile = self.trajFileRename(posFile, fullPathTrajFileName,khepModelField)   
             self.step(32)
             
-    def buildTrajFilename(self, modelName):        
+    def buildTrajFilename(self, modelName=None):        
          '''Assume that the current directory is under a "src" directory
          and that a data folder called 'SimulationsData will exist
          at the same level as "src"
          Save file with filename equal to resulting path + an identifier '''
 
+         if modelName == None:
+             modelName = ''
+             
          curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")                    
          trajFilename = 'trajData-'+curDateTime+"-ID-"+ modelName+'.traj'
          #print trajFilename
