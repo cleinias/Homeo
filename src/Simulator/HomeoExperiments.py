@@ -2502,6 +2502,297 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(genome, homeoParameters=4, ra
     return hom
     
 
+def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(homeoGenome, noHomeoParameters=4, raw=False):
+    '''
+    SAME AS initializeBraiten2_2_Full_GA (see above for details), BUT:
+    
+    * No uniselector
+    * No noise in Webots world
+    * No noise in units
+    * Dummylights sensor that produce repeatable sequences of random light values
+    Initialization of a Braitenberg-like homeostat for use in GA simulations.
+    
+
+                      
+''' 
+    if raw == None:
+        raw = False
+             
+    "1. setup webots"
+    "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
+    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO-NO-NOISE.wbt'
+    webotsMode = "fast"              #for GA experiments, run simulation as fast as possible 
+
+    '''Webots parameters for tcp/ip communication
+       (Defined in webots world specified above)
+    '''
+    
+    #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
+    host = 'localhost'
+    kheperaPort = 10020
+    supervisorPort = 10021
+    
+    startWebots(world=webotsWorld, mode=webotsMode)
+    
+    "2. set up homeostat, connect it and create client and socket, etc."
+    hom = Homeostat()
+    hom._host = host
+    hom._port = kheperaPort
+
+    '''Clear the class-based set containing the names of all units
+        FIXME: this is a hack that will not work in case of repeated calls to the
+        same experimental setup within the same experiment.
+        Need to give names with incremental integer values'''
+    HomeoUnit.clearNames()
+    
+       
+    '3.1 Setup robotic communication parameters in actuator and sensor'
+    'motors'
+    rightWheel = WebotsDiffMotorTCP('right')
+    leftWheel = WebotsDiffMotorTCP('left')
+    #rightWheel.robotSocket = socket
+    rightWheel.funcParameters = 10 #wheel speed in rad/s
+    #leftWheel.robotSocket = socket
+    leftWheel.funcParameters = 10  #wheel speed in rad/s
+
+    
+    'sensors'
+    if raw == False:
+        leftEyeSensorTransd  = WebotsLightSensorDUMMY(0,64)
+        rightEyeSensorTransd = WebotsLightSensorDUMMY(1,100)
+    else:
+        leftEyeSensorTransd  = WebotsLightSensorRawTCP(0)
+        rightEyeSensorTransd = WebotsLightSensorRawTCP(1)
+
+        
+    leftEyeSensorTransd._clientPort = kheperaPort
+    #leftEyeSensorTransd.robotSocket = socket
+    rightEyeSensorTransd._clientPort = kheperaPort
+    #rightEyeSensorTransd.robotSocket = socket
+    
+    '3.2 initialize motors and sensors units with properly setup motors and sensors'        
+    leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel)
+    rightMotor = HomeoUnitNewtonianActuator(transducer = rightWheel)
+    leftEye = HomeoUnitNewtonian()
+    rightEye = HomeoUnitNewtonian()
+    leftEyeSensorOnly = HomeoUnitInput(transducer=leftEyeSensorTransd)
+    rightEyeSensorOnly = HomeoUnitInput(transducer=rightEyeSensorTransd)
+    
+    '3.3 initialize units essential parameters according to slices of input list'
+    leftMotor.initialize_GA(homeoGenome[0:4])
+    rightMotor.initialize_GA(homeoGenome[4:8])
+    leftEye.initialize_GA(homeoGenome[8:12])
+    rightEye.initialize_GA(homeoGenome[12:16])
+                               
+        
+    '3.4. Setup *non-essential* homeo parameters'
+    
+    motor_self_noise = 0.05
+    sensor_self_noise = 0.05
+        
+    motor_self_connection_active = 'active'
+    motor_self_connection_uniselector = 'manual'
+    motor_self_connection_switch = -1
+    motor_self_connection_noise = 0.05
+    motor_incoming_connection_uniselector = 'uniselector' 
+    sensor_incoming_connection_uniselector = 'manual'
+    
+    "4. Set up Homeostat"   
+    
+    'Setup a 4 unit Homeostat with 2 additional input units. Then change the parameters'
+    if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
+            hom.addFullyConnectedUnit(leftMotor)
+            hom.addFullyConnectedUnit(rightMotor)
+            hom.addFullyConnectedUnit(leftEye)
+            hom.addFullyConnectedUnit(rightEye)
+            hom.addFullyConnectedUnit(leftEyeSensorOnly)
+            hom.addFullyConnectedUnit(rightEyeSensorOnly)
+    else:
+        raise(HomeostatError, "Homeostat is not empty")
+
+
+     
+    #===========================================================================
+    # 'Disable all connections except self-connections'
+    # for unit in hom.homeoUnits:
+    #     for i in xrange(1, len(hom.homeoUnits)):
+    #         unit.inputConnections[i].status = False
+    #===========================================================================
+
+    '4.1 Agent units or motors parameters setting'
+    leftMotor.name = 'Left Motor'
+    leftMotor.noise = motor_self_noise
+
+    rightMotor.name = 'Right Motor'
+    rightMotor.noise = motor_self_noise
+    
+    'self-connection'
+    leftMotor.inputConnections[0].noise = motor_self_connection_noise
+    leftMotor.inputConnections[0].state = motor_self_connection_uniselector
+
+    rightMotor.inputConnections[0].noise = motor_self_connection_noise
+    rightMotor.inputConnections[0].state = motor_self_connection_uniselector
+
+    '4.2 Sensor units parameters setting'
+    leftEye.name = 'Left Eye'
+    leftEye.noise = sensor_self_noise
+
+    rightEye.name = 'Right Eye'
+    rightEye.noise = sensor_self_noise
+
+    'Activate uniselector'
+    leftEye.uniselectorActive = True
+    rightEye.uniselectorActive = True
+    
+    'Activate self-connection'
+    leftEye.inputConnections[0].status = True
+    rightEye.uniselectorActive = True
+
+    '4.3 SensorOnly units parameters setting'
+    leftEyeSensorOnly.name = 'Left Sensor'
+    leftEyeSensorOnly.noise = sensor_self_noise
+
+    rightEyeSensorOnly.name = 'Right Sensor'
+    rightEyeSensorOnly.noise = sensor_self_noise
+
+    'disactivate uniselector'
+    leftEyeSensorOnly.uniselectorActive = False
+    rightEyeSensorOnly.uniselectorActive = False
+    
+    'disactivate self-connection'
+    leftEyeSensorOnly.inputConnections[0].status = False
+    rightEyeSensorOnly.inputConnections[0].status = False
+
+
+    '''Set up homeostat's initial connections,
+       according to input list.'''
+    "Left motor's connections are contained in the input list at positions 24:29"
+    incoming_conn_noise = 0.05           # General constraint
+    
+    offset = 24
+    for connection in leftMotor.inputConnections:
+        connection.newWeightGA(homeoGenome[offset])
+        connection.noise = incoming_conn_noise
+        connection.state = motor_incoming_connection_uniselector
+        connection.status = True
+        offset += 1
+
+    "Right motor's connections are contained in the input list at positions 30:35"
+    for connection in rightMotor.inputConnections:
+        connection.newWeightGA(homeoGenome[offset])
+        connection.noise = incoming_conn_noise
+        connection.state = motor_incoming_connection_uniselector
+        connection.status = True
+        offset += 1
+    
+    "Left eye's connections are contained in the input list at positions 36:41"
+    for connection in leftEye.inputConnections:
+        connection.newWeightGA(homeoGenome[offset])
+        connection.noise = incoming_conn_noise
+        connection.state = motor_incoming_connection_uniselector
+        connection.status = True    
+        offset += 1
+
+    "Right eye's connections are contained in the input list at positions 42:47"
+    for connection in rightEye.inputConnections:
+        connection.newWeightGA(homeoGenome[offset])
+        connection.noise = incoming_conn_noise
+        connection.state = motor_incoming_connection_uniselector
+        connection.status = True    
+        offset += 1
+            
+    'Sensors are not connected (do not receive input from) any other unit'
+    for connection in leftEyeSensorOnly.inputConnections:
+        connection.status = False
+    for connection in rightEyeSensorOnly.inputConnections:
+        connection.status = False
+        
+    #===========================================================================
+    # Debugging code to isolate the tcp/ip problem
+    # Removing the light sensors (input units)  
+    #===========================================================================
+    #hom.removeUnit(leftEyeSensorOnly)
+    #hom.removeUnit(rightEyeSensorOnly)
+        
+    #===========================================================================
+    # End of debugging code
+    #===========================================================================
+        
+#===============================================================================
+#     #===========================================================================
+#     # Debugging 
+#     #===========================================================================
+#     from tabulate import tabulate
+#     #===========================================================================
+#     # for i in xrange(homeoGenome.size):
+#     #     print "param %d  is:\t%f" % (i,homeoGenome[i])
+#     #===========================================================================
+#     " Checking HomeoUnits values"
+#     homUnitsData = []
+#     k = 0
+#     for i in hom.homeoUnits:
+#         singleUnitdata = []
+#         singleUnitdata.append(k)
+#         singleUnitdata.append(i.name)
+#         singleUnitdata.append(homeoGenome[0+k])
+#         singleUnitdata.append(i.mass)
+#         singleUnitdata.append(homeoGenome[1+k])
+#         singleUnitdata.append(i.viscosity)
+#         singleUnitdata.append(homeoGenome[2+k])
+#         singleUnitdata.append(i.uniselectorTimeInterval)
+#         singleUnitdata.append(homeoGenome[3+k])
+#         singleUnitdata.append(i.maxDeviation)
+#         homUnitsData.append(singleUnitdata)        
+#         k += 4
+#     headers = ["k","Unit", "mass-param",  "mass", "Visc-param", "Visc.","Unisel-time-param", "Unisel-timing", "maxDev-param", "maxDev"]      
+#     print tabulate(homUnitsData,headers,tablefmt='orgtbl')
+#     print
+#     print
+#               
+#     "Checking connections"                                                                                                                                                 
+#     homConnectionsData = []
+#     k = 0
+#     offset = 24
+#     for unit in hom.homeoUnits:
+#         for conn in unit.inputConnections:
+#             unitConnData = []
+#             unitConnData.append(offset)
+#             unitConnData.append(unit.name)
+#             unitConnData.append(conn.incomingUnit.name)
+#             unitConnData.append(homeoGenome[offset])
+#             unitConnData.append(conn.weight)
+#             unitConnData.append(abs((2*homeoGenome[offset])-1))
+#             unitConnData.append(conn.weight-(abs((2*homeoGenome[offset])-1)))
+#             unitConnData.append(conn.switch)            
+#             unitConnData.append(np.sign(((2*homeoGenome[offset])-1)))
+#             unitConnData.append(conn.switch - (np.sign(((2*homeoGenome[offset])-1))))
+#             unitConnData.append(conn.status)
+#             offset += 1
+#             homConnectionsData.append(unitConnData)
+# 
+#     headers = ["Genome offset","To unit", "From unit", "weight param", "weight", "weight comp.", "weight delta", "switch", "switch comp.", "switch delta", "status"]
+#     print tabulate(homConnectionsData, headers, tablefmt='orgtbl')                
+#     #===========================================================================
+#     # End debugging
+#     #===========================================================================
+#===============================================================================
+    
+    hom._usesSocket = True
+    hom.connectUnitsToNetwork()
+    
+    for unit in hom.homeoUnits:
+        unit.uniselectorActive = False         #    *** No Uniselectors active ***
+        unit.noise = 0                         #    *** No unit's noise ***
+        for conn in unit.inputConnections:
+            conn.noise = 0                     #    *** No noise on connections ***
+        
+    return hom
+
+    
+    'Return the properly configured homeostat'
+    hDebug('unit', "Homeostat initialized")
+    return hom
+
 
 #===============================================================================
 # Utility functions
