@@ -5,6 +5,9 @@ Created on Sep 17, 2013
 '''
 import socket  
 from time import sleep
+from Helpers.ExceptionAndDebugClasses import TCPConnectionError
+import sys
+from Helpers.ExceptionAndDebugClasses import hDebug
 
 class WebotsTCPClient(object):
     '''WebotsTCPClient manages a connection to a Webots robot running a server controller
@@ -33,26 +36,33 @@ class WebotsTCPClient(object):
         connected = False
         connectAttempts = 10
         sleepTime = 0.05
+        retries = 3
+        retrySleepTime = 1
         if self._clientSocket is not None:
-            print 'Already connected! Use the socket stored in clientSocket'
+            hDebug('network', 'Already connected! Use the socket stored in clientSocket')
+            #self.close()
         else:
-            for i in xrange(connectAttempts):
-                try:
-                    self._clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    self._clientSocket.connect((self._ip_address, self._clientPort))
-                    print 'Success! Connected to server at %s on port %u' % (self._ip_address, self._clientPort)
-                    connected = True
-                    break
-                except socket.error:
-                    print 'Cannot connect to server at %s on port %u' % (self._ip_address, self._clientPort)
-                    print "Waiting %f seconds and then going for attempt number %d" % (sleepTime,i+2)
-                    sleep(sleepTime)
             if connected == False:
-                print " I could not connect to server at %s on port %u after %d attempts" % (self._ip_address, self._clientPort, connectAttempts)
-                print 'Destroying socket'
-                self._clientSocket = None
-                raise socket.error
-                             
+                try:
+                    for i in xrange(connectAttempts):
+                        try:
+                            self._clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            self._clientSocket.connect((self._ip_address, self._clientPort))
+                            hDebug('network', ('Success! Connected to server at %s on port %u' % (self._ip_address, self._clientPort)))
+                            connected = True
+                            break
+                        except socket.error:
+                            hDebug('network', ('Cannot connect to server at %s on port %u' % (self._ip_address, self._clientPort)))
+                            hDebug('network', "Waiting %f seconds and then going for attempt number %d" % (sleepTime,i+2))
+                            sleep(sleepTime)
+                    if connected == False:
+                        hDebug('network', "I could not connect to server at %s on port %u after %d attempts" % (self._ip_address, self._clientPort, connectAttempts))
+                        hDebug('network', 'Destroying socket')
+                        self._clientSocket = None
+                        raise socket.error
+                except socket.error:
+                    raise TCPConnectionError("I could NOT connect to server")
+                      
     def close(self):
         'Closes the connection and set socket to None'
         if self._clientSocket is not None:
