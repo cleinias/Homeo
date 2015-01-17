@@ -27,6 +27,7 @@ from scipy.stats import *
 from Helpers.QObjectProxyEmitter import emitter
 from PyQt4.QtCore import QObject, SIGNAL
 import sys
+from Helpers.ExceptionAndDebugClasses import hDebug
 
 class ConnectionError(Exception):
     '''
@@ -66,6 +67,7 @@ class HomeoConnection(object):
         self.noise = np.random.uniform(0,0.1)
         self.state = 'uniselector'
         self.newWeight(np.random.uniform(-1,1))
+        #self.newWeight(0)
         self.status = True
 
 
@@ -256,7 +258,9 @@ class HomeoConnection(object):
     def newWeightGA(self, aWeightParam):
         ''''updates weight and switch by scaling aWeightParam (0,1) to the
         interval (-1,1)'''
-        self.newWeight = HomeoConnection.connWeightFromGAWeight(aWeightParam)
+        self.newWeight(HomeoConnection.connWeightFromGAWeight(aWeightParam))
+        #print "GAparam: %.3f, weight: %.3f., switch: %d for conn from %s to %s" % (aWeightParam, self.weight, self.switch, self.incomingUnit.name, self.outgoingUnit.name)
+
 
     def setAbsoluteWeight(self, aPositiveValue):
         'Utility function that changes the weight of a connection without changing its sign (i.e. the switch)'
@@ -291,8 +295,10 @@ class HomeoConnection(object):
         newNoise.normal()          # select noise as normally (Gaussian) distributed around the value for the unit's connection noise"
         newNoise.distorting()      # select  noise as distorting the current"
         newNoise.proportional()    # consider the noise on the communication line as a ratio of the current being transmitted"
-
-        return (self._incomingUnit.currentOutput * self.switch * self.weight) + newNoise.getNoise()
+        
+        connNoise = newNoise.getNoise()
+        hDebug('conn', ("The noise on the connection is %f" % connNoise))
+        return (self._incomingUnit.currentOutput * self.switch * self.weight) + connNoise
     
     def isActive(self):
         '''Return the status of the connection to active'''
