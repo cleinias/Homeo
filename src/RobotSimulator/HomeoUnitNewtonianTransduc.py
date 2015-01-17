@@ -26,28 +26,33 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
     '''
 
 
-    def __init__(self, transducer = None):
+    def __init__(self, transducer = None, filename = None,maxSpeed = None):
         '''
         Initialize according to superclass
         '''
         super(HomeoUnitNewtonianActuator, self).__init__()
-        
+        self._maxSpeed = maxSpeed
         'Initialize actuator, if passed'
         if transducer is not None:
             self._transducer = transducer
-            self.rightSpeed = 0
-            self.leftSpeed = 0
+            #self.rightSpeed = 0
+            #self.leftSpeed = 0
             self.maxDelta = 0
             try:
                 self._maxSpeed = self._transducer.range()[1]* self._maxSpeedFraction
             except: 
                 hDebug('unit network', "Transducer still unconnected to network or socket stale")
+        
             
         '''Initialize default parameters for sigmoid function used to convert
            unit's deviation to motor commands'''
         self._maxSpeedFraction = 0.2   # The maximum speed of a motor as a fraction of the actuator speed
-        self._switchingRate = .1       # The speed at which the function switches from positive to negative, or the slope of the curve     
-        self._maxSpeed = 100
+        self._switchingRate = 0.1       # The speed at which the function switches from positive to negative, or the slope of the logistic curve     
+        
+        'Open file for writing updated values, if needed'
+        if filename is not None:
+            self._fileOut = open(filename,'w')
+            self._fileOut.write('currentDev,currentVel, torque,drag,acc,Mass,displ,newDev,noise,\n')
     
     def setTransducer(self, aTransducer):
         self._transducer = aTransducer
@@ -62,7 +67,16 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
             then convert unit-value to actuator value,
             then operate actuator on the unit value scaled 
             to the actuator range'''
+        
         super(HomeoUnitNewtonianActuator, self).selfUpdate()
+        
+        #=======================================================================
+        # 'write value to file, if needed'
+        # if self._fileOut is not None:
+        #     self._fileOut.write(str(self.criticalDeviation))
+        #     self._fileOut.flush()
+        #=======================================================================
+            
         #=======================================================================
         # '''For testing'''
         # if self.actuator._wheel == 'right':
@@ -89,7 +103,7 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
                 raise HomeoUnitError("Cannot get max speed from Transducer")
                           
         setSpeed = float(-self._maxSpeed) + ((2 * self._maxSpeed)/ (1+exp(- self._switchingRate * self.criticalDeviation)))
-        #hDebug('unit' ("Speed of %s wheel is %f " % (self.actuator._wheel, setSpeed)))
+        hDebug('unit', ("Speed set by %s is %f " % (self.name, setSpeed)))
         self.transducer.funcParameters = setSpeed
         self.transducer.act()
     
@@ -175,7 +189,7 @@ class HomeoUnitInput(HomeoUnit):
         '''
         Read the value from the external transducer (self.sensor) and scale it to the unit's deviation. 
         NOTICE that the sensor's value is always positive WHILE the scaled unit's deviation value 
-        MAY BE positive is the ivar always_pos is set to true (default) OR  centered at 0 (zero), 
+        MAY BE positive if the ivar always_pos is set to true (default) OR  centered at 0 (zero), 
         (hence either positive or negative) if the ivar always_pos is set to False'''
         
         if self.always_pos == True:
