@@ -39,6 +39,8 @@ class TrajectoryViewer(QWidget):
         self.setCurrentLogbook()
         self.currentDir.setText(self._dirpath)
         self.currentLogbookLE.setText(self._currentLogbookName)
+        self.refreshTimer = QTimer()
+        self.refreshTimer.start(1000)
         self.connectSlot()
         
         
@@ -125,6 +127,7 @@ class TrajectoryViewer(QWidget):
         self.hofWidget.cellPressed.connect(self.onCellPressed)
         self.quitPB.clicked.connect(self.appRef.exit)
         self.GAInfoPB.clicked.connect(self.visualizeGAInfo)
+        self.refreshTimer.timeout.connect(self._populate)
     
     def onTrajectoryDoubleClicked(self, curr):
         self.onTrajectoryClicked(curr)
@@ -158,12 +161,12 @@ class TrajectoryViewer(QWidget):
     def visualizeGen(self):
         "visualize the individuals' genealogy"
         #showGenealogyTree(history)
-        self.notImplementedYet()
+        self.warningBox('Sorry, feature not implemented yet')
         
-    def notImplementedYet(self):
+    def warningBox(self, aMessage):
         msgBox = QMessageBox()
-        msgBox.setWindowTitle("NOT IMPLEMENTED!")
-        msgBox.setText("Sorry, this function is not implemented yet");
+        msgBox.setWindowTitle("Warning")
+        msgBox.setText(aMessage);
         msgBox.exec_()
  
     def getNewDir(self):
@@ -248,26 +251,29 @@ class TrajectoryViewer(QWidget):
            Use a QTableWidget with a list containing
         a list of headers at [0] and a list of rows at [1]"""
         
-        self.hofWidget.clear()
-        self.hofWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
-        hof = genomeAndFitnessList(indivsDecodedFromLogbook(self._currentLogbook), num = 10)
-        self.hofWidget.setRowCount(len(hof[1]))
-        self.hofWidget.setColumnCount(len(hof[0]))
-
-        self.hofWidget = QTableWidget(len(hof[1]),len(hof[0]))
-        self.hofWidget.setHorizontalHeaderLabels(hof[0])
-        self.hofWidget.setWindowTitle("Hall of Fame: 10 best results")
-        for column in xrange(len(hof[0])):
-            for row in xrange(len(hof[1])):
-                try:
-                    item = QTableWidgetItem(str(round(hof[1][row][column],3)))
-                except TypeError:
-                    item = QTableWidgetItem(str(hof[1][row][column]))                    
-                item.setFlags(Qt.ItemIsSelectable |  Qt.ItemIsEnabled)
-                self.hofWidget.setItem(row,column,item)
-        self.hofWidget.setSortingEnabled(True)
-        self.hofWidget.sortByColumn(0,Qt.AscendingOrder)
-        self.hofWidget.show()
+        if self._currentLogbook is not None:
+            self.hofWidget.clear()
+            self.hofWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
+            hof = genomeAndFitnessList(indivsDecodedFromLogbook(self._currentLogbook), num = 10)
+            self.hofWidget.setRowCount(len(hof[1]))
+            self.hofWidget.setColumnCount(len(hof[0]))
+    
+            self.hofWidget = QTableWidget(len(hof[1]),len(hof[0]))
+            self.hofWidget.setHorizontalHeaderLabels(hof[0])
+            self.hofWidget.setWindowTitle("Hall of Fame: 10 best results")
+            for column in xrange(len(hof[0])):
+                for row in xrange(len(hof[1])):
+                    try:
+                        item = QTableWidgetItem(str(round(hof[1][row][column],3)))
+                    except TypeError:
+                        item = QTableWidgetItem(str(hof[1][row][column]))                    
+                    item.setFlags(Qt.ItemIsSelectable |  Qt.ItemIsEnabled)
+                    self.hofWidget.setItem(row,column,item)
+            self.hofWidget.setSortingEnabled(True)
+            self.hofWidget.sortByColumn(0,Qt.AscendingOrder)
+            self.hofWidget.show()
+        else:
+            self.warningBox('No logbooks in current directory')
     
     def visualizeAvgFitnessGraph(self):
         """Show a Matplotlib chart of fitnesses if data are present"""
@@ -276,10 +282,8 @@ class TrajectoryViewer(QWidget):
             logbook = self._currentLogbook
             plotFitnessesFromLogBook(logbook)
         else:
-            msgBox = QMessageBox()
-            msgBox.setText("No logbook data to visualize");
-            msgBox.exec_();
-    
+            self.warningBox('No logbook data to visualize')
+            
     def visualizeGAInfo(self):
         "Show general info about the GA simulation as extracted from the relevant entry in the logbook "
         self.notImplementedYet()
