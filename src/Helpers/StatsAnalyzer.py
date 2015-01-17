@@ -16,6 +16,9 @@ from operator import itemgetter
 from tabulate import tabulate
 import csv
 from deap import creator, base
+import numpy as np
+import glob
+from itertools import combinations
 
 def main():
     "All function calls in the main() functions are for testing purposes only"  
@@ -217,7 +220,6 @@ def extractAllGenomes(logbookFileWithPath):
 
 def showGenealogyTree(history):
     """ Show the GA run genealogy as a tree on the basis of the GA run's history obiect"""
-    import matplotlib.pyplot as plt
     import networkx
 
     "Need to recreate the Individual class used by history, otherwise it cannot be unpickled."
@@ -245,7 +247,49 @@ def saveGenomeToCSV(genome, filename):
     except IOError:
         print "Could not save the genome to", filename
 
+def areValueFilesIdentical(fileN1,fileN2):
+    """Compare two files,  each containing a single 
+       column of floats. Return true iff all values are identical"""
+    try:
+        a = np.loadtxt(fileN1,  delimiter=',')        
+        b = np.loadtxt(fileN2,  delimiter=',')
+    except IOError:
+        print " I could not load either of the two csv files"
+        return
+  
+    return len([x for x in a-b if not x==0]) == 0
     
+def diffBetweenCSVFiles(fileN1,fileN2):
+    """Compare two files,  each containing a single 
+       column of floats. Return the difference as np.array"""
+    try:
+        a = np.loadtxt(fileN1,  delimiter=',')        
+        b = np.loadtxt(fileN2,  delimiter=',')
+    except IOError:
+        print " I could not load either of the two csv files"
+        return
+    
+    return [x for x in a-b if not x==0]
+
+def areAllInpAndOutpFilesIdentical():
+    '''Compare all the files of input readings and motor commands 
+       from the current directory.
+       Return true if all files of the same kind are the same
+       (compared pairwise on the power set
+       '''
+    
+    results = []
+    patterns = [ 'LeftMotorC*', 'RightMotorC*', 'LeftEyeDUMMYr*', 'RightEyeDUMMYr', 'LeftEyeRead*', 'RightEyeRead*']
+    for pattern in patterns:
+        fileList = glob.glob(pattern)
+        if pattern is not  None:
+            print "Now checking files with pattern: ", pattern
+            print "Including:", fileList
+            for pair in list(combinations(fileList, 2)):
+                results.append(areValueFilesIdentical(pair[0], pair[1]))                                   
+    return len([x for x in results if x == False]) == 0
+                                   
+             
 if __name__=="__main__":
     main()
     
