@@ -8,6 +8,7 @@ from  Core.HomeoUnit import *
 import numpy as np
 from math import sqrt
 from Helpers.General_Helper_Functions import *
+from Helpers.ExceptionAndDebugClasses import hDebug
 
 class HomeoUnitNewtonian(HomeoUnit):
     '''
@@ -35,6 +36,7 @@ class HomeoUnitNewtonian(HomeoUnit):
         
         "initialize according to superclass first"
         super(HomeoUnitNewtonian, self).__init__()
+        
 
 
     def clearFutureValues(self):
@@ -120,12 +122,40 @@ class HomeoUnitNewtonian(HomeoUnit):
            These factors are ignored here'''
         
         totalForce = aTorqueValue + self.drag()
-            
         "Then compute displacement according to Newton's second law"    
             
         acceleration = totalForce / self.needleUnit.mass                   # As per  Newton's second law 
         displacement = self.currentVelocity + (1 / 2. * acceleration)      #  x - x0 = v0t + 1/2 a t, with t obviously =  1 
-    
+
+        try:
+            #print "My name is %s and I have a fileOut object to write to: %s " % (self.name, self._fileOut)
+            #===================================================================
+            # print "critDev: %3f\t curVel: %3f\t inputTorque: %3f\t torque: %3f\t drag: %3f\t acc: %3f\t mass: %3f\t displ: %3f\t newCrit: %3f\t noise: %3f" % (self.criticalDeviation,
+            #                                                                                                                                 self.currentVelocity,
+            #                                                                                                                                 self.inputTorque,
+            #                                                                                                                                  aTorqueValue,
+            #                                                                                                                                 self.drag(),
+            #                                                                                                                                 acceleration,
+            #                                                                                                                                 self.needleUnit.mass,
+            #                                                                                                                                 displacement,
+            #                                                                                                                                 self.criticalDeviation + displacement,
+            #                                                                                                                                 self.noise)
+            #===================================================================
+
+            self._fileOut.write(str(self.criticalDeviation) + ',')
+            self._fileOut.write(str(self.currentVelocity) + ',')
+            self._fileOut.write(str(aTorqueValue) + ',')
+            self._fileOut.write(str(self.drag()) + ',')
+            self._fileOut.write(str(acceleration) + ',')
+            self._fileOut.write(str(self.needleUnit.mass) + ',')
+            self._fileOut.write(str(displacement) + ',')
+            self._fileOut.write(str(self.criticalDeviation + displacement) + ',')
+            self._fileOut.write(str(self.noise) + '\n')
+            self._fileOut.flush()            
+        except AttributeError:
+            pass
+            #print "My name is %s and type is %s" %(self.name, type(self))
+        
         "Testing"
         if self.debugMode:      
             outputString = ""
@@ -216,4 +246,3 @@ class HomeoUnitNewtonian(HomeoUnit):
         self.nextDeviation = 0
         if self.debugMode:
             print "%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput)
-

@@ -12,6 +12,7 @@ from copy import copy
 import StringIO
 from Helpers.QObjectProxyEmitter import emitter
 from math import  floor
+from Helpers.ExceptionAndDebugClasses import hDebug
 
 
 class HomeoUnitError(Exception):
@@ -174,6 +175,8 @@ class HomeoUnit(object):
         self._inputConnections = []
         self.setDefaultSelfConnection()
         self.unit_essential_parameters = 4
+        print "At time: %d unit: %s dev: %f output: %f" %(self.time, self.name, self.criticalDeviation, self._currentOutput)
+
 
         
     def initializeBasicParameters(self):
@@ -208,11 +211,11 @@ class HomeoUnit(object):
         self._nextDeviation = 0
         self._inputTorque = 0
         self._currentOutput = 0 
-        
+                
 
 
         "sets the correspondence between the simulation units and real physical units"
-        self._physicalParameters=dict(timeEquivalence = 1,           # 1 simulation tick corresponds to 1 second of physical time"
+        self._physicalParameters=dict(timeEquivalence = 1,            # 1 simulation tick corresponds to 1 second of physical time"
                                       lengthEquivalence = 0.01,       # 1 unit of displacement corresponds to 1 cm (expressed in meters)"
                                       massEquivalence = 0.001)        # 1 unit of mass equals one gram, or 0.001 kg"
     
@@ -237,7 +240,9 @@ class HomeoUnit(object):
         self.setDefaultUniselectorSettings()
                 
         "generates a random output to set the unit close to equilibrium"
-        self.setDefaultOutputAndDeviation()
+        #self.setDefaultOutputAndDeviation()
+        
+        
     
     def initializeUniselector(self):
         '''Reset uniselector to its default parameters, but do not change its type'''
@@ -579,12 +584,14 @@ class HomeoUnit(object):
         
     def setCurrentOutput(self, aValue):
         self._currentOutput = aValue
+        #print "In setcurrentOutput at time: %d. Value passed: %f unit: %s dev: %f output: %f" %(self.time, aValue, self.name, self.criticalDeviation, self._currentOutput)
+
         QObject.emit(emitter(self), SIGNAL("currentOutputChanged"), self._currentOutput)
         QObject.emit(emitter(self), SIGNAL("currentOutputChangedLineEdit"), str(round(self._currentOutput, 5)))
 #        sys.stderr.write( 'Unit %s just emitted the signal currentOutputChanged \n' % self.name)   
         "For testing"
         if self._debugMode == True:
-            sys.stderr.write(str(self._currentOutput)+'\n')
+            sys.stderr.write(self.name + " curr output: " + str(self._currentOutput)+'\n')
 
     currentOutput = property(fget = lambda self: self.getCurrentOutput(),
                              fset = lambda self, aBoolean: self.setCurrentOutput(aBoolean))
@@ -1213,18 +1220,33 @@ class HomeoUnit(object):
 
         activeConnections = [conn for conn in self.inputConnections if (conn.isActive() and 
                                                                         conn.incomingUnit.isActive())]
-        #------------ print "For Unit %s the active connections are" % self.name
-        #---------------------------------------- for conn in activeConnections:
-            #------------------------ print "%s, %s " % (conn.incomingUnit.name,
-                           #----------------------------------- conn.isActive())
-        # print "The active connections list for unit %s has exactly %u units, with outputs" % (self.name, len(activeConnections))
-        #-------------------------------------------------------- runningSum = 0
-        #---------------------------------------- for conn in activeConnections:
-            # print "Output of connection coming from unit %s is %f and the running total  is %f " % (conn.incomingUnit.name, conn.output(), runningSum)
-            #--------------------------------------- runningSum += conn.output()
-        #------------------------------- print "and the sum is %f " % runningSum
+        #=======================================================================
+        # print "For Unit %s the active connections are" % self.name
+        # for conn in activeConnections:
+        #     print "%s, %s " % (conn.incomingUnit.name,
+        #                    conn.isActive())
+        #=======================================================================
+        #print "The active connections list for unit %s has exactly %u units, with outputs" % (self.name, len(activeConnections))
+        #=======================================================================
+        # runningSum = 0
+        # for conn in activeConnections:
+        #     print "%d: into %s with mass: %.0f from %s with critDev: %f, outp:  %f with noise %f, currOut: %f switch: %f and weight: %f.  Running total  is %f " % (self.time,
+        #                                                                                                                            self.name,
+        #                                                                                                                            self.needleUnit.mass,
+        #                                                                                                                            conn.incomingUnit.name, 
+        #                                                                                                                            conn.incomingUnit.criticalDeviation, 
+        #                                                                                                                            conn.output(), 
+        #                                                                                                                            conn.noise,
+        #                                                                                                                            conn._incomingUnit.currentOutput,
+        #                                                                                                                            conn.switch,
+        #                                                                                                                            conn.weight, 
+        #                                                                                                                            runningSum)
+        #     runningSum += conn.output()
+        # print "and the sum is %f " % runningSum
+        # print
+        #=======================================================================
         self.inputTorque = sum([conn.output() for conn in activeConnections])
-        # print "the computed input torque is %f and the delta is %f" % (self.inputTorque, self.inputTorque - runningSum)
+        #print "the computed input torque is %f and the delta is %f" % (self.inputTorque, self.inputTorque - runningSum)
         "Testing"
         if self._debugMode:
             sys.stderr.write('Current torque at time: %s for unit %s is %f' %
@@ -1334,10 +1356,10 @@ class HomeoUnit(object):
         If, instead, the displacement is equal to the ratio between the maximum torque 
         and the maximum deviation, then the ***potential displacement*** is independent 
         from the number of connected units and will depend more directly on the values of 
-        the incoming units rather than their number. It is obvious that the behaviototalForcer of a 
+        the incoming units rather than their number. It is obvious that the behavior of a 
         collection of units, i.e. a homeostat, will be different in either case. Ashby's 
         probably followed the former model, as evidenced by his (widely reported) comments 
-        about the direct relation between instability and number of units (see alsototalForce 
+        about the direct relation between instability and number of units (see also 
         Capehart 1967 for comments to the same effect). 
         It must be admitted, however, that a careful manipulation of the weights of the 
         connection may reduce the difference between the two methods: one would have to 
@@ -1413,6 +1435,7 @@ class HomeoUnit(object):
 #        newNoise.proportional()  # consider noise as the ratio of the current affected by noise"
         newNoise.linear()        # consider noise as  proportional to the  absolute magnitude of the noise parameter
         addedNoise = newNoise.getNoise()
+        hDebug('unit', ("Noise for unit %s is: %f" % (self.name, addedNoise)))
 #        sys.stderr.write("New noise is %f at time: %u\n" % (addedNoise, self.time))
 #        self.criticalDeviation = np.clip((self.criticalDeviation + addedNoise), self.minDeviation, self.maxDeviation)    # apply the noise to the critical deviation value"
         self.criticalDeviation = self.criticalDeviation + addedNoise    # apply the noise to the critical deviation value"
@@ -1425,7 +1448,7 @@ class HomeoUnit(object):
         pass
 
     def updateUniselectorTime(self):
-        '''Updates the tick counter fore the uniselector'''
+        '''Updates the tick counter for the uniselector'''
         
         self.uniselectorTime = self.uniselectorTime + 1
 
