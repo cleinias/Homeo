@@ -160,7 +160,7 @@ class TransducerTCP(object):
 
     def __init__(self):
         '''
-        Basic setupseveral
+        Basic setup 
         '''
     #=================================================================
     # Class properties
@@ -264,6 +264,42 @@ class WebotsDiffMotorTCP(TransducerTCP):
             except SocketError as e:
                 print "FAILED! cannot connect to socket %s for actuator %s:  %s" % (type(self.robotSocket).__name__, type(self).__name__, e)
 
+class WebotsDiffMotorTCPWithWrite(WebotsDiffMotorTCP):
+    ''' Add the capability to write to file the value of the output command
+        issued to the Webots differential wheel robot.
+        Only overwrites the act method
+    '''
+    
+    def __init__(self, wheel, filename = None):
+        super(WebotsDiffMotorTCPWithWrite, self).__init__(wheel)
+        if not filename is None:
+            try:
+                self._fileoutFile = open(filename,'w')
+            except IOError:
+                print "Could not open file in DUMMY transducer"
+    
+    def act(self):
+        '''activate the wheel motor by calling the actuator function with the passed parameters
+           and write the value of the motor command to file'''
+        command = self.transdFunction + ',' + self.funcParameters
+        #print "Executing command: %s for transducer %s" % (command, type(self).__name__)
+        try:
+            #print "Motor transducer %s is connected to socket %s" % (type(self).__name__, type(self._robotSocket).__name__)
+            hDebug('network',("sending motor command: " + command))
+            print
+            self._robotSocket.send(command)
+            "Discard reply from receive buffer"
+            discard = self._robotSocket.recv(1024)
+            self._fileoutFile.write(command.split(',')[1]+"\n")
+            self._fileoutFile.flush()
+            #===================================================================
+            # if len(discard) == 0:
+            #     print "CONNECTION INTERRUPTED! I received 0 bytes back"
+            # else:
+            #     print "I received %u bytes back, the message was: %s" % (len(discard), discard)
+            #===================================================================
+        except SocketError as e:
+            print "FAILED! cannot connect to socket with command %s for actuator %s:  %s" % ( command, type(self).__name__, e)
                 
         
 class WebotsLightSensorTCP(TransducerTCP):
@@ -272,12 +308,19 @@ class WebotsLightSensorTCP(TransducerTCP):
        since webots uses a light sensor's maximum value for the 
        minimum stimulus and 0 for the maximum possible stimulus'''
     
-    def __init__(self, aNumber):
+    def __init__(self, aNumber, filename = None, debug=True):
         '''Initialize the sensor with the Webots function name and the number of the sensor.
            Notice that it is the caller class responsibility to make sure that there is actually 
            such a sensor in the robot and that the robot tcp server controller returns an appropriate string'''
         self._transdFunction = "O"
         self._funcParameters = aNumber
+        if not filename is None:
+            try:
+                self._fileOut = open(filename,'w')
+            except IOError:
+                print "Could not open file in DUMMY transducer"
+        self._debug = debug 
+        
         
     def read(self):
         '''Return the light value by reading the nth element of 
@@ -305,6 +348,10 @@ class WebotsLightSensorTCP(TransducerTCP):
         
         #light_values = self._robotSocket.recv(1024).rstrip('\r\n').split(',')[1:]
         light_values = receivedData.rstrip('\r\n').split(',')[1:]
+        if self._debug == True:
+            self._fileOut.write(str( self.range()[1] - float(light_values[self._funcParameters]))+"\n")
+            self._fileOut.flush()
+
         return self.range()[1] - float(light_values[self._funcParameters])
         #except SocketError as e:
             #print "FAILED! cannot connect to socket with actuator %s: %s" % (type(self).__name__, e)
@@ -323,9 +370,15 @@ class WebotsLightSensorRawTCP(WebotsLightSensorTCP):
        and Max is the minimum.
        The class overrides only the read function of its superclass'''
     
-    def __init__(self, aNumber):
+    def __init__(self, aNumber, filename = None):
         '''Initialize according to superclass'''
         super(WebotsLightSensorRawTCP, self).__init__(aNumber)
+        if not filename is None:
+            try:
+                self._fileOut = open(filename,'w')
+            except IOError:
+                print "Could not open file in DUMMY transducer" 
+
 
         
     def read(self):
@@ -340,21 +393,34 @@ class WebotsLightSensorDUMMY(WebotsLightSensorTCP):
     '''DUMMY Interface to a Webots' robot light sensor,
        for testing purposes.
        Return a random, repeatable sequence of random numbers,
-       based on the random seed stored in the instance variable SensorSeed. 
+       based on the random seed stored in the instance variable SensorSeed.
+       Record all input values to file for later analysis.
+        
        The class overrides only the read function of its superclass'''
     
     
-    def __init__(self, aNumber, aSeed):
+    def __init__(self, aNumber, aSeed, filename=None):
         '''Initialize according to superclass.
            Store the seed for random gen initialization and future reseeds'''
         super(WebotsLightSensorDUMMY, self).__init__(aNumber)
         self._randomGen = random.Random()
         self._seed = aSeed
         self._randomGen.seed(self._seed)
+        if not filename is None:
+            try:
+                self._fileOut = open(filename,'w')
+            except IOError:
+                print "Could not open file in DUMMY transducer" 
         
     def read(self):
         '''return a fake, random light value in the allowed range.
            '''
-        return self._randomGen.random() * self.range()[1]  
+        readInput =  self._randomGen.random() * self.range()[1]
+        self._fileOut.write(str(readInput)+"\n")
+        self._fileOut.flush()
+        return readInput
+        
+    def reSeed(self):
+        self._randomGen.seed(self._seed)  
        
    
