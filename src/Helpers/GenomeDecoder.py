@@ -78,19 +78,44 @@ def genomeDecoder(noUnits, genome):
        Return a list of actual values.
     """
     decodedValues = []
+    essenVar = 4
     "Converting units' values"
     for unit in xrange(noUnits):
-        decodedValues.append(HomeoUnit.massFromWeight(genome[(unit+1)+0]))                    # Mass
-        decodedValues.append(HomeoUnit.viscosityfromWeight(genome[(unit+1)+1]))               # Viscosity
-        decodedValues.append(HomeoUnit.uniselectorTimeIntervalFromWeight(genome[(unit+1)+2])) # UniselectorTiming (integer)                
-        decodedValues.append(HomeoUnit.maxDeviationFromWeight(genome[(unit+1)+3]))            # maxDeviation (integer)                        
+        decodedValues.append(HomeoUnit.massFromWeight(genome[(unit*essenVar) + 0]))                    # Mass        
+        decodedValues.append(HomeoUnit.viscosityfromWeight(genome[(unit*essenVar) +1]))               # Viscosity
+        decodedValues.append(HomeoUnit.uniselectorTimeIntervalFromWeight(genome[(unit*essenVar) +2])) # UniselectorTiming (integer)                
+        decodedValues.append(HomeoUnit.maxDeviationFromWeight(genome[(unit*essenVar) + 3]))            # maxDeviation (integer)                        
     
     "Converting connection weights"
     for conn in xrange(noUnits*noUnits):
-        decodedValues.append(HomeoConnection.connWeightFromGAWeight(genome[(4*noUnits)+conn]))
+        decodedValues.append(HomeoConnection.connWeightFromGAWeight(genome[(essenVar*noUnits)+conn]))
 
     return decodedValues
 
+def genomePrettyPrinter(noUnits, decodedGenome):
+    "Return a string with all decoded values preceded by labels "
+    outString = ''
+    essVar = 4
+    for unit in xrange(noUnits):
+        outString += 'mass: '
+        outString += str(round(decodedGenome[(unit*essVar)+0],3))           # Mass
+        outString += '\tvisc: '
+        outString += str(round(decodedGenome[(unit*essVar)+1],3))           # Viscosity
+        outString += '\tunisel: '
+        outString += str(round(decodedGenome[(unit*essVar)+2],3))           # UniselectorTiming (integer) 
+        outString += '\tmaxDev: '               
+        outString += str(round(decodedGenome[(unit*essVar)+3],3))            # maxDeviation (integer)  
+        outString += '\n'                      
+    
+    for connIn in xrange(noUnits):
+        #outString += '\t'
+        for connOut in xrange(noUnits):
+            outString += (str(connIn+1) + ' to ' +  str(connOut+1) + ': ')
+            outString += str(round(decodedGenome[(noUnits*essVar)+(noUnits*connIn) + connOut],3))
+#            print " reading weight at: %d as from %d to %d" %(((noUnits*essVar)+(noUnits*connIn) + connOut), connIn+1 , connOut + 1)
+            outString += '\t'   
+        outString += '\n'
+    return outString 
     
 if __name__ == "__main__":
     main(sys.argv[0])
