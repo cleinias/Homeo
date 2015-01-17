@@ -70,7 +70,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
                 velocityDelta = 0
             else:
                 velocityDelta = abs(self.unit.currentVelocity - computedVelocity)
-
+            
             self.assertTrue(velocityDelta < errorTolerance)
                             
                                     
@@ -83,11 +83,17 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         errorTolerance = 10**-14
         testRuns = 1000
         anotherUnit = HomeoUnitNewtonian()
+        anotherUnit.noise = 0
         self.unit.addConnectionWithRandomValues(anotherUnit)
 
         self.unit.inputConnections[1].noise = 0
         self.unit.criticalDeviation = 0
         self.unit.noise = 0
+        for conn in self.unit.inputConnections:
+            conn.noise = 0
+        for conn in anotherUnit.inputConnections:
+            conn.noise = 0
+            
         for index in xrange(testRuns):
             self.unit.needleUnit.mass = numpy.random.uniform(1,1000)
             oldVelocity = self.unit.currentVelocity
@@ -98,7 +104,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
             "consider the drag affecting the force"
             torque = torque + self.unit.drag()
             
-            "velocity value according to  Newtonian dynamics: v = v0 +at (where a is force / mass)"                                            
+            "velocity value according to Newtonian dynamics: v = v0 +at (where a is force / mass)"                                            
             computedVelocity = oldVelocity + (torque / self.unit.needleUnit.mass)    
             self.unit.selfUpdate()
             
@@ -110,6 +116,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
                 velocityDelta = 0
             else:
                 velocityDelta = abs(self.unit.currentVelocity - computedVelocity)
+            print index, velocityDelta
             self.assertTrue(velocityDelta < errorTolerance)
    
     def testDragEquationDrag(self):
@@ -172,8 +179,8 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
             radius = math.sqrt(self.unit.needleUnit.surfaceArea / numpy.pi)
             dragForce = self.unit.stokesLawDrag()
             "test with precision to 10 decimals"
-            self.assertAlmostEqual(dragForce , -(6 * numpy.pi * radius * self.unit.viscosity * self.unit.currentVelocity), 10)
-
+            #self.assertAlmostEqual(dragForce , -(6 * numpy.pi * radius * self.unit.viscosity * self.unit.currentVelocity), 10)
+            self.assertAlmostEqual(dragForce, -self.unit.viscosity * self.unit.currentVelocity, 10)
 
     def testUniselectorIsTriggered(self):
         """
