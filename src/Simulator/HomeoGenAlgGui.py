@@ -20,6 +20,8 @@ from PyQt4.QtGui import *
 import sys
 import numpy as np
 import csv
+import datetime
+from operator import attrgetter
 
 #import RobotSimulator.WebotsTCPClient
 from RobotSimulator.WebotsTCPClient import WebotsTCPClient
@@ -28,14 +30,15 @@ import os
 from math import sqrt
 from time import sleep, time, strftime, localtime
 from tabulate import tabulate
-from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug
-from Helpers.ExceptionAndDebugClasses import hDebug
-from Helpers.GenomeDecoder import genomeDecoder
+from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDebug
 from Helpers.StatsAnalyzer import extractGenomeOfIndID
+
+
+
 
 class HomeoGASimulGUI(QWidget):
     """GUI to GA simulation"""
-
+        
     def __init__(self, parent = None):
         super(HomeoGASimulGUI,self).__init__(parent)
         
@@ -100,6 +103,9 @@ class HomeoGASimulation(object):
     allowable error classes names. 
     '''
     
+    dataDirRoot = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/'
+    
+        
     def __init__(self,parent=None, stepsSize = 1000, 
                                    popSize=150,
                                    generSize = 1, 
@@ -117,6 +123,20 @@ class HomeoGASimulation(object):
                                    ID_padding = 3,
                                    clonableGenome = None,
                                    debugging = None):
+
+        "Directory to save simulations'data, used to save logbook and history and passed to HomeoQt simulation and other classes"
+        self.dataDir = os.path.join(HomeoGASimulation.dataDirRoot,('SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))))
+        try:
+            os.mkdir(self.dataDir)
+        except OSError:
+            print "Saving to existing directory", self.dataDir
+        'save dataDir path to a file, so Webots trajectory supervisor can read it'
+        'FIXME: Should really communicate it to webots simulation supervisor to pass it to trajectory supervisor '
+        dataDirFile = open(os.path.join(os.getenv("HOME"),'.HomeoSimDataDir.txt'),'w+')
+        dataDirFile.write(self.dataDir)
+        dataDirFile.close()
+
+
 
         "Tell HomeoDebug which error classes it should print "
         if debugging:
@@ -148,7 +168,7 @@ class HomeoGASimulation(object):
         Instance HomeoQTSimulation's variable maxRun holds the number of steps the single simulations should be run       
         '''
         
-        self._simulation = HomeoQtSimulation(experiment=exp)             # instance variable holding the real simulation
+        self._simulation = HomeoQtSimulation(experiment=exp, dataDir=self.dataDir)             # instance variable holding the real simulation
         self._simulation.maxRuns=self.stepsSize
         #self._simulation.initializeExperSetup(self.createRandomHomeostatGenome())
         self._supervisor = WebotsTCPClient(ip=supervisor_host, port=supervisor_port)
@@ -198,24 +218,21 @@ class HomeoGASimulation(object):
         #self.toolbox.register("evaluate", self.evaluateGenomeFitnessSUPER_DUMMY)   #For testing purposes
 
         self.toolbox.register("mate", tools.cxTwoPoint)
-        #toolbox.register("mutate", tools.mutFlipBit, indpb=self.indivProb)            
         self.toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 2, indpb=self.indivProb)            
         self.toolbox.register("select", tools.selTournament, tournsize=self.tournamentSize)
-        " FIXME---> NEED TO REMOVE SELECTED INDIVIDUAL FROM POOL <-----"
+        " FIXME---> NEED TO REMOVE SELECTED INDIVIDUALS FROM ASPIRANTS POOL <-----"
         #self.toolbox.register("select", tools.selBest)
         self.toolbox.decorate("mate", self.checkBounds(0, 1))
         self.toolbox.decorate("mutate", self.checkBounds(0, 1))
         
-        "2.1 Define Hall of Fame and History operators"
-        
-        
+        "2.1 Define Hall of Fame and History operators"               
         'Decorate the variation operators to insert newly created individuals in the GA history'
         self.toolbox.decorate("mate", self.hist.decorator)
         self.toolbox.decorate("mutate", self.hist.decorator)
 
-    def recordGADataToLogbook(self):
+    def recordGADataToLogbook(self,timeElapsed, pop):
         " Insert general GA simulation parameters into logbook"
-        
+         
         self.logbook.record(date = strftime("%a, %d %b %Y %H:%M:%S",localtime()),
                             exp=self._simulation.currentExperiment,
                             initPop=self.popSize,
@@ -225,7 +242,11 @@ class HomeoGASimulation(object):
                             cxProb=self.cxProb,
                             mutationProb=self.mutationProb,
                             indivProb=self.indivProb,
-                            tournsize=self.tournamentSize)
+                            tournSize=self.tournamentSize,
+                            timeElapsed = str(datetime.timedelta(seconds=timeElapsed)), 
+                            finalPop = len(pop), 
+                            finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop]) 
+
 
         #=======================================================================
         # simulationParameters = {'population':self.popSize, 'generations':self.generSize, 
@@ -301,9 +322,6 @@ class HomeoGASimulation(object):
            All parameters (popsize, gen, cxProb, etc.) as well as DEAP-specific tools,
            are stored in class's ivars.
            Save fitness data to logbook"""
-
-        'Save general GA run info to logbook'
-        self.recordGADataToLogbook()
           
         'Record time for naming logbook pickled object and computing time statistics'
         timeStarted = time()        
@@ -337,8 +355,8 @@ class HomeoGASimulation(object):
             for g in xrange(self.generSize):
                 print("-- Generation %s --" % str(g+1))
                 
-                # Select the next generation individuals with previously defined select function 
-                offspring = self.toolbox.select(pop, len(pop)/2)
+                # Select the next generation individuals with previously defined select function
+                offspring = self.toolbox.select(pop, len(pop))
                 # Clone the selected individuals
                 offspring = list(map(self.toolbox.clone, offspring))
                 print "  Offsprings now include: ",
@@ -346,7 +364,7 @@ class HomeoGASimulation(object):
                     print ind.ID+", ",
                 print
 
-                # Apply crossover and mutation on the offspring
+                # Apply crossover and mutation on the offsprings
                 hDebug('ga',"Applying crossover")
                 mated = 0
                 for child1, child2 in zip(offspring[::2], offspring[1::2]):
@@ -403,18 +421,23 @@ class HomeoGASimulation(object):
                 record = self.stats.compile(pop)
                 self.logbook.record(gen=g+1, evaluations = len(invalid_ind), **record)
                 self.hof.update(pop)
+                "save logbook and history after each generation"
+                timeElapsed = time() - timeStarted 
+                self.saveLogbook(pop, timeElapsed,timeStarted)
+                self.saveHistory(timeStarted)
                 #self.hist.update(pop)
 
                 #print "   Generation " + str(g+1) + " with ID's: ", sorted([ind.ID for ind in pop])
                              
             #print genomeDecoder(4, tools.selBest(pop,10)[0])
             #self.simulationEnvironQuit()
-            timeElapsed = timeStarted - time()
-            self.logbook.record(timeElapsed = localtime(timeElapsed))
-            self.logbook.record(finalPop = len(pop), finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop]) 
+            timeElapsed = time() - timeStarted 
             print("-- End of (successful) evolution --")
-            self.saveLogbook(timeStarted)
+
+            'Record general GA run info to logbook and save logbook and history'
+            self.saveLogbook(pop, timeElapsed, timeStarted)
             self.saveHistory(timeStarted)
+            
             self.simulationEnvironQuit()
             
             #best_ind = tools.selBest(pop, 1)[0]
@@ -426,17 +449,22 @@ class HomeoGASimulation(object):
             
             
 
-    def saveLogbook(self, timeStarted):
-        """Save the logbook for the GA run to a pickled object
+    def saveLogbook(self, pop, timeElapsed, timeStarted):
+        """Insert general info about the GA run into logbook
+           and the logbook for the GA run to a pickled object
            for later analysis. Name the file according to the time
-           the simulation started and save it in current directory"""
+           the simulation started and save it in current directory.
+           Overwrite existing file is necessary, i.e. update with 
+           the latest version 
+           """
+        self.recordGADataToLogbook(timeElapsed, pop)   
         logbookFilename = self.getTimeFormattedCompleteFilename(timeStarted, 'Logbook', 'lgb')
         try:
             dump(self.logbook, open(logbookFilename, "w"))
         except IOError: #as e:
             #sys.stderr.write("Could not save the logbook to file:" + e.__str__ + "\n")
             print "Could not save the logbook to file:" #, e.__str__ 
-            
+
     def saveHistory(self, timeStarted):
         """Save the history for the GA run to a pickled object
            for later analysis. Name the file according to the time
@@ -453,17 +481,14 @@ class HomeoGASimulation(object):
         """ Return a string containing a complete filename (including path)
             that starts with prefix, plus a formatted version of the timeNow string, plus
             the extension.
-            Uses the "SimulationData" subdir of the src directory if no path is given.
+            Create a folder under the globally defined dataDir if no path is given.
             TimeStarted is in seconds from the epoch (as returned by time.time())
         """ 
         formattedTime = strftime("%Y-%m-%d-%H-%M-%S", localtime(timeStarted))
         filename = prefix+'-'+formattedTime+ '.' + extension
         if path == None:
-            addedPath = 'SimulationsData'
-            datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
-            print 
+            datafilePath = self.dataDir
         else: datafilePath = path
-        print os.path.join(datafilePath, filename)
         return os.path.join(datafilePath, filename)
          
       
@@ -577,9 +602,12 @@ class HomeoGASimulation(object):
         try:
             self._supervisor._clientSocket.send("Q")
             response = self._supervisor._clientSocket.recv(100) 
-            hDebug('newtwork', "Quit Webots: received back " + response + " from server")
+            hDebug('network', "Quit Webots: received back " + response + " from server")
         except SocketError:
-            hDebug('newtwork',  "Sorry, I lost the connection to Webots and could not could not quit")
+            hDebug('network',  "Sorry, I lost the connection to Webots and could not could not quit")
+        except AttributeError:
+            hDebug('network', "I encountered a major error: lost the socket communicating to Webots")
+            
         
     def evaluateGenomeFitnessDUMMY(self,genome=None):
         """For GA testing purposes: initialize experiments and homeostats,
@@ -588,7 +616,8 @@ class HomeoGASimulation(object):
                      
         if genome==None:
             genome=self.createRandomHomeostatGenome(self.genomeSize)
-        self._simulation.initializeExperSetup(genome)
+        params = {'homeoGenome':genome, 'dataDir' : self.dataDir}
+        self._simulation.initializeExperSetup(params)
         self._supervisor.clientConnect()
         self.simulationEnvironReset()
         self._supervisor.close()
@@ -629,7 +658,10 @@ class HomeoGASimulation(object):
             
         if genome==None:
             genome=self.createRandomHomeostatGenome(self.genomeSize)
-        self._simulation.initializeExperSetup(genome)
+        
+        params = {'homeoGenome':genome, 'dataDir' : self.dataDir}
+        self._simulation.initializeExperSetup(**params)
+
         hDebug('network', "Trying to connect to supervisor")
         self._supervisor.clientConnect()
         hDebug('network', "Connected")
@@ -705,6 +737,26 @@ class HomeoGASimulation(object):
         #=======================================================================
         return sqrt((target[0]-robotX)**2 + (target[1]-robotY)**2)
     
+def selTournamentRemove(individuals, k, tournsize):
+    """Select *k* individuals from the input *individuals* using *k*
+    tournaments of *tournsize* individuals and remove them from the initial list.
+    The list returned contains
+    references to the input *individuals*.
+    
+    :param individuals: A list of individuals to select from.
+    :param k: The number of individuals to select.
+    :param tournsize: The number of individuals participating in each tournament.
+    :returns: A list of selected individuals.
+    
+    This function uses the :func:`~random.choice` function from the python base
+    :mod:`random` module.
+    """
+    chosen = []
+    for i in xrange(k):
+        aspirants = tools.selRandom(individuals, tournsize)
+        chosen.append(max(aspirants, key=attrgetter("fitness")))
+        individuals.remove(max(aspirants, key=attrgetter("fitness")))
+    return chosen
     
                 
 if __name__ == '__main__':
@@ -718,7 +770,7 @@ if __name__ == '__main__':
 #    print [round(x,3) for x in genome['genome']]
 #    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
     #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
-    simul = HomeoGASimulation(popSize=1, stepsSize=10, generSize = 0,  clonableGenome= genome, debugging = 'major')
+    simul = HomeoGASimulation(popSize=10, stepsSize=5, generSize = 0,  clonableGenome= genome, debugging = 'ga major')
     simul.runGaSimulation(simul.generatePopOfClones())
     #simul.test()
     #simul.runOneGenSimulation()

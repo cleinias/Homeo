@@ -27,15 +27,15 @@ class TrajectoryViewer(QWidget):
     '''
 
 
-    def __init__(self, dirPath='/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData', parent=None, appRef=None):
+    def __init__(self, parent=None, appRef=None):
         '''
         Constructor
         '''
         super(TrajectoryViewer,self).__init__(parent)
         self.appRef = appRef
-        self._dirpath = dirPath
+        self._dirPath = self.setOpeningPath()
         self.buidGui()
-        self.setDirpath(dirPath)
+        self.setDirpath(self._dirPath)
         self._currentLogbookName = self.setCurrentLogbookName()
         self.setCurrentLogbook()
         self.currentDir.setText(self._dirpath)
@@ -45,6 +45,17 @@ class TrajectoryViewer(QWidget):
         self.refreshTimer.start(1000)
         self.connectSlot()
         
+    def setOpeningPath(self):
+        '''Reads the initial data path from a file
+           set by the Simulation object'''
+        try:
+            homeDir = os.getenv('HOME')
+            dataDirSource = open(os.path.join(homeDir,'.HomeoSimDataDir.txt'),'r')
+            dirPath = dataDirSource.read()
+            dataDirSource.close()
+        except IOError:
+            dirPath = os.getcwd()
+        return dirPath
         
     def buidGui(self):
         '''
@@ -258,15 +269,18 @@ class TrajectoryViewer(QWidget):
         'Read GA run general infos from the logbook'
         
         outstring = ''
-        for entry in self._currentLogbook:
-            if 'date' in entry:
-                for key, value in iteritems(entry):
-                    outstring += '<b>'+key+'</b>' + ':\t' + str(value) +'<br>'
-                return outstring
-            else:
-                pass
-        return "No info found"
-        
+        try:
+            for entry in self._currentLogbook:
+                if 'date' in entry:
+                    for key, value in iteritems(entry):
+                        if not key == 'finalIndivs':
+                            outstring += '<b>'+key+'</b>' +':  ' +str(value) +'<br>'
+                    return outstring
+                else:
+                    pass
+            return "No info found"
+        except TypeError:
+            return "No logbook found"
     
     def visualizeGenInfo(self):
         'Fill the gen info text box with data extracted from the logbook'
