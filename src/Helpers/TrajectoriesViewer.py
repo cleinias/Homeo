@@ -17,6 +17,7 @@ import os
 from glob import glob
 from sys import stderr
 import pickle
+from IPython.external.jsonschema._jsonschema import iteritems
 
 
 class TrajectoryViewer(QWidget):
@@ -39,6 +40,7 @@ class TrajectoryViewer(QWidget):
         self.setCurrentLogbook()
         self.currentDir.setText(self._dirpath)
         self.currentLogbookLE.setText(self._currentLogbookName)
+        self.visualizeGenInfo()
         self.refreshTimer = QTimer()
         self.refreshTimer.start(1000)
         self.connectSlot()
@@ -59,7 +61,7 @@ class TrajectoryViewer(QWidget):
         self.logLayout = QHBoxLayout()
         self.currentDirLayout = QHBoxLayout()
         self.trajectoriesLayout = QHBoxLayout()
-        
+        self.genInfoLayout = QHBoxLayout()
 
         'widgets'
         self.VisualizePB = QPushButton("Visualize")
@@ -70,14 +72,16 @@ class TrajectoryViewer(QWidget):
         self.currentDir = QLineEdit(self)
         self.trajListLabel = QLabel("Trajectories:        ")
         self.TrajList = QListWidget(self)
-        self.refreshPB = QPushButton("Refresh")
         self.hallOfFamePB = QPushButton("Hall of Fame")
         self.avgFitnessPB = QPushButton("Average Fitness")
-        self.GAInfoPB = QPushButton("General info")
         self.genealogyPB = QPushButton("Genealogy")
         self.trajLabel = QLabel("Curr. Trajectory:   ")
         self.logLabel = QLabel("Curr. Logbook:     ")
-        self.quitPB = QPushButton("Quit")
+        self.genInfoTextW = QTextEdit()
+        self.genInfoLabel = QLabel("General Info        ")
+        self.genInfoTextW.setLineWrapMode(0)
+        self.genInfoTextW.setReadOnly(True)
+        #self.quitPB = QPushButton("Quit")
         self.hofWidget = QTableWidget()
         
         'build layouts'
@@ -92,27 +96,33 @@ class TrajectoryViewer(QWidget):
 
 
         self.buttonsLayout.addWidget(self.changeDirPB)
-        self.buttonsLayout.addWidget(self.GAInfoPB)
-        self.buttonsLayout.addWidget(self.VisualizePB)        
+        #self.buttonsLayout.addWidget(self.VisualizePB)        
         self.buttonsLayout.addStretch()
-        self.buttonsLayout.addWidget(self.refreshPB)
+        #self.buttonsLayout.addWidget(self.refreshPB)
         self.buttonsLayout.addStretch()
         self.buttonsLayout.addWidget(self.hallOfFamePB)
         self.buttonsLayout.addWidget(self.avgFitnessPB)
         self.buttonsLayout.addWidget(self.genealogyPB)
         self.buttonsLayout.addStretch()        
-        self.buttonsLayout.addWidget(self.quitPB)
+        self.buttonsLayout.addStretch()        
+        self.buttonsLayout.addStretch()        
+        self.buttonsLayout.addWidget(self.VisualizePB)
 
 
         self.listLayout.addLayout(self.currentDirLayout)
         self.listLayout.addLayout(self.logLayout)
-        self.listLayout.addLayout(self.trajLayout)
+        self.genInfoLayout.addWidget(self.genInfoLabel)
+        self.genInfoLayout.addWidget(self.genInfoTextW)
+        self.listLayout.addLayout(self.genInfoLayout)
         self.listLayout.addLayout(self.trajectoriesLayout)
+        self.listLayout.addLayout(self.trajLayout)
+        
 
         self.overallLayout.addLayout(self.listLayout)
         self.overallLayout.addLayout(self.buttonsLayout)
 
         self.setLayout(self.overallLayout)
+        self.setMinimumSize(750, 390)
             
     def connectSlot(self):
         self.VisualizePB.clicked.connect(self.visualize)
@@ -120,13 +130,12 @@ class TrajectoryViewer(QWidget):
         self.TrajList.itemDoubleClicked.connect(self.onTrajectoryDoubleClicked)
         self.changeDirPB.clicked.connect(self.getNewDir)
         self.avgFitnessPB.clicked.connect(self.visualizeAvgFitnessGraph)
-        self.refreshPB.clicked.connect(self._populate)
+        #self.refreshPB.clicked.connect(self._populate)
         self.hallOfFamePB.clicked.connect(self.visualizeHOF)
         self.genealogyPB.clicked.connect(self.visualizeGen)
         self.hofWidget.cellDoubleClicked.connect(self.onCellDoubleClicked)
         self.hofWidget.cellPressed.connect(self.onCellPressed)
-        self.quitPB.clicked.connect(self.appRef.exit)
-        self.GAInfoPB.clicked.connect(self.visualizeGAInfo)
+        #self.quitPB.clicked.connect(self.appRef.exit)
         self.refreshTimer.timeout.connect(self._populate)
     
     def onTrajectoryDoubleClicked(self, curr):
@@ -173,7 +182,8 @@ class TrajectoryViewer(QWidget):
         dir = QFileDialog.getExistingDirectory(parent = self, directory = self._dirpath)
         self.setDirpath(str(dir))
         self.refreshLogbook()
-        self.currentLogbookLE.setText(self._currentLogbookName)        
+        self.currentLogbookLE.setText(self._currentLogbookName)
+        self.genInfoTextW.setText(self.readGeneralInfo())   
         
     def quit(self):
         self.appRef.exit()
@@ -244,7 +254,29 @@ class TrajectoryViewer(QWidget):
         self._currentLogbookName = self.setCurrentLogbookName()
         self.setCurrentLogbook()
                   
+    def readGeneralInfo(self):
+        'Read GA run general infos from the logbook'
+        
+        outstring = ''
+        for entry in self._currentLogbook:
+            if 'date' in entry:
+                for key, value in iteritems(entry):
+                    outstring += '<b>'+key+'</b>' + ':\t' + str(value) +'<br>'
+                print outstring
+                return outstring
+            else:
+                pass
+        print "Date not found"
+        return "No info found"
+        
     
+    def visualizeGenInfo(self):
+        'Fill the gen info text box with data extracted from the logbook'
+        
+        self.genInfoTextW.clear()
+        self.genInfoTextW.setText(self.readGeneralInfo())
+        
+        
     def visualizeHOF(self):
         """Print the hall of fame of 10 best individuals extracted 
            from the logbook in a separate window".
@@ -284,10 +316,6 @@ class TrajectoryViewer(QWidget):
         else:
             self.warningBox('No logbook data to visualize')
             
-    def visualizeGAInfo(self):
-        "Show general info about the GA simulation as extracted from the relevant entry in the logbook "
-        self.notImplementedYet()
-    
     def closeEvent(self, *args, **kwargs):
         self.appRef.exit()
         
