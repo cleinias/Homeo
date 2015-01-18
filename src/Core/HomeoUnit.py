@@ -175,7 +175,7 @@ class HomeoUnit(object):
         self._inputConnections = []
         self.setDefaultSelfConnection()
         self.unit_essential_parameters = 4
-        print "At time: %d unit: %s dev: %f output: %f" %(self.time, self.name, self.criticalDeviation, self._currentOutput)
+        hDebug('unit', ("At time: %d unit: %s dev: %f output: %f" %(self.time, self.name, self.criticalDeviation, self._currentOutput)))
 
 
         
