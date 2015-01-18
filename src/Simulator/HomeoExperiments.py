@@ -17,7 +17,7 @@ from time import sleep
 from docutils.nodes import problematic
 from Helpers.ExceptionAndDebugClasses import hDebug
 from Helpers.GenomeDecoder import genomePrettyPrinter, genomeDecoder
-
+import os
 
 
 '''
@@ -2469,7 +2469,7 @@ def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=Fa
         unit.uniselectorActive = False
     return hom
 
-def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=4, raw=False):
+def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=4, dataDir = None, raw=False):
     '''
     Initialize a homeostat according to initializeBraiten2_2_Full_GA, then turn 
     off all uniselectors and all noise in units and in world
@@ -2492,6 +2492,10 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
     
     if raw == None:
         raw = False
+    
+    if dataDir == None:
+        dataDir = os.getcwd()
+        
              
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
@@ -2525,8 +2529,8 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
        
     '3.1 Setup robotic communication parameters in actuator and sensor'
     'motors'
-    rightWheel = WebotsDiffMotorTCPWithWrite('right', filename="/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/RightMotorCommands-"+formattedTime+'.csv')
-    leftWheel  = WebotsDiffMotorTCPWithWrite('left', filename="/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/LeftMotorCommands-"+formattedTime+'.csv')
+    rightWheel = WebotsDiffMotorTCPWithWrite('right', filename = os.path.join(dataDir,("RightMotorCommands-"+formattedTime+'.csv')))
+    leftWheel  = WebotsDiffMotorTCPWithWrite('left', filename = os.path.join(dataDir,("LeftMotorCommands-"+formattedTime+'.csv')))
     #rightWheel.robotSocket = socket
     rightWheel.funcParameters = 10 #wheel speed in rad/s
     #leftWheel.robotSocket = socket
@@ -2534,8 +2538,8 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
 
     'sensors'
     if raw == False:
-        leftEyeSensorTransd  = WebotsLightSensorTCP(0,filename = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/LeftEyeReadings-"+formattedTime+'.csv')
-        rightEyeSensorTransd = WebotsLightSensorTCP(1,filename = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/RightEyeReadings-"+formattedTime+'.csv')
+        leftEyeSensorTransd  = WebotsLightSensorTCP(0,filename = os.path.join(dataDir,("LeftEyeReadings-"+formattedTime+'.csv')))
+        rightEyeSensorTransd = WebotsLightSensorTCP(1,filename = os.path.join(dataDir,("RightEyeReadings-"+formattedTime+'.csv')))
     else:
         leftEyeSensorTransd  = WebotsLightSensorRawTCP(0)
         rightEyeSensorTransd = WebotsLightSensorRawTCP(1)
@@ -2547,8 +2551,8 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
     #rightEyeSensorTransd.robotSocket = socket
     
     '3.2 initialize motors and sensors units with properly setup motors and sensors'        
-    leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel,filename = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/LeftMotorValues-'+formattedTime+'.csv')
-    rightMotor = HomeoUnitNewtonianActuator(transducer = rightWheel,filename = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/RightMotorValues-'+formattedTime+'.csv')
+    leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel,filename = os.path.join(dataDir,('LeftMotorValues-'+formattedTime+'.csv')))
+    rightMotor = HomeoUnitNewtonianActuator(transducer = rightWheel,filename = os.path.join(dataDir,('RightMotorValues-'+formattedTime+'.csv')))
     leftEye = HomeoUnitNewtonian()
     rightEye = HomeoUnitNewtonian()
     leftEyeSensorOnly = HomeoUnitInput(transducer=leftEyeSensorTransd)
@@ -2771,7 +2775,7 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
 
  
 
-def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(homeoGenome, noHomeoParameters=4, raw=False):
+def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,noHomeoParameters=4, dataDir = None, raw=False):
     '''
     SAME AS initializeBraiten2_2_Full_GA (see above for details), BUT:
     
@@ -2789,9 +2793,18 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(homeoGenome, 
     # print genomePrettyPrinter(6, genomeDecoder(6, homeoGenome))
     #===========================================================================
     
-    if raw == None:
+    if 'raw' not in kwargs:
         raw = False
+    else:
+        raw = kwargs['raw']
              
+    if 'dataDir' not in kwargs:
+        dataDir = os.getcwd()
+    else:
+         dataDir =  kwargs['dataDir']
+    
+    homeoGenome = kwargs['homeoGenome']
+
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
     webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO-NO-NOISE.wbt'
@@ -2824,8 +2837,8 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(homeoGenome, 
        
     '3.1 Setup robotic communication parameters in actuator and sensor'
     'motors'
-    rightWheel = WebotsDiffMotorTCPWithWrite('right', filename="/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/RightMotorCommands-"+formattedTime+'.csv')
-    leftWheel  = WebotsDiffMotorTCPWithWrite('left', filename="/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/LeftMotorCommands-"+formattedTime+'.csv')
+    rightWheel = WebotsDiffMotorTCPWithWrite('right', filename = os.path.join(dataDir,("RightMotorCommands-"+formattedTime+'.csv')))
+    leftWheel  = WebotsDiffMotorTCPWithWrite('left', filename = os.path.join(dataDir,("LeftMotorCommands-"+formattedTime+'.csv')))
     #rightWheel.robotSocket = socket
     rightWheel.funcParameters = 10 #wheel speed in rad/s
     #leftWheel.robotSocket = socket
@@ -2833,8 +2846,8 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(homeoGenome, 
 
     'sensors'
     if raw == False:
-        leftEyeSensorTransd  = WebotsLightSensorDUMMY(0,64,filename = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/LeftEyeDUMMYreadings-"+formattedTime+'.csv')
-        rightEyeSensorTransd = WebotsLightSensorDUMMY(1,100, filename = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/RightEyeDUMMYreadings-"+formattedTime+'.csv')
+        leftEyeSensorTransd  = WebotsLightSensorDUMMY(0,64,filename = os.path.join(dataDir,("LeftEyeDUMMYreadings-"+formattedTime+'.csv')))
+        rightEyeSensorTransd = WebotsLightSensorDUMMY(1,100, filename = os.path.join(dataDir,("RightEyeDUMMYreadings-"+formattedTime+'.csv')))
     else:
         leftEyeSensorTransd  = WebotsLightSensorRawTCP(0)
         rightEyeSensorTransd = WebotsLightSensorRawTCP(1)
@@ -2846,8 +2859,8 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(homeoGenome, 
     #rightEyeSensorTransd.robotSocket = socket
     
     '3.2 initialize motors and sensors units with properly setup motors and sensors'        
-    leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel,filename = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/LeftMotorValues-'+formattedTime+'.csv')
-    rightMotor = HomeoUnitNewtonianActuator(transducer = rightWheel,filename = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/RightMotorValues-'+formattedTime+'.csv')
+    leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel,filename = os.path.join(dataDir,('LeftMotorValues-'+formattedTime+'.csv')))
+    rightMotor = HomeoUnitNewtonianActuator(transducer = rightWheel,filename = os.path.join(dataDir,('RightMotorValues-'+formattedTime+'.csv')))
     leftEye = HomeoUnitNewtonian()
     rightEye = HomeoUnitNewtonian()
     leftEyeSensorOnly = HomeoUnitInput(transducer=leftEyeSensorTransd)
