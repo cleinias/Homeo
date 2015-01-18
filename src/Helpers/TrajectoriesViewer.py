@@ -44,19 +44,7 @@ class TrajectoryViewer(QWidget):
         self.refreshTimer = QTimer()
         self.refreshTimer.start(1000)
         self.connectSlot()
-        
-    def setOpeningPath(self):
-        '''Reads the initial data path from a file
-           set by the Simulation object'''
-        try:
-            homeDir = os.getenv('HOME')
-            dataDirSource = open(os.path.join(homeDir,'.HomeoSimDataDir.txt'),'r')
-            dirPath = dataDirSource.read()
-            dataDirSource.close()
-        except IOError:
-            dirPath = os.getcwd()
-        return dirPath
-        
+                
     def buidGui(self):
         '''
         Build the general GUI for the trajectory viewer
@@ -227,6 +215,18 @@ class TrajectoryViewer(QWidget):
             item = QListWidgetItem(self.TrajList)
             item.setText(trajectory)
         self.TrajList.sortItems(order=Qt.DescendingOrder)
+
+    def setOpeningPath(self):
+        '''Reads the initial data path from a file
+           set by the Simulation object'''
+        try:
+            homeDir = os.getenv('HOME')
+            dataDirSource = open(os.path.join(homeDir,'.HomeoSimDataDir.txt'),'r')
+            dirPath = dataDirSource.read()
+            dataDirSource.close()
+        except IOError:
+            dirPath = os.getcwd()
+        return dirPath
     
     def setDirpath(self, dirpath):        
         ''' Set the current trajectory directory and refresh the list. '''
