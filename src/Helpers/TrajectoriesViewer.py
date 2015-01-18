@@ -262,11 +262,9 @@ class TrajectoryViewer(QWidget):
             if 'date' in entry:
                 for key, value in iteritems(entry):
                     outstring += '<b>'+key+'</b>' + ':\t' + str(value) +'<br>'
-                print outstring
                 return outstring
             else:
                 pass
-        print "Date not found"
         return "No info found"
         
     
