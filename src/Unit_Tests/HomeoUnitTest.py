@@ -337,13 +337,15 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.needleCompMethod = 'linear'
         self.unit.potentiometer = 0  #"put the weight of the self-connection to zero."
         self.unit.noise = 0
+        for conn in self.unit.inputConnections:   #Eliminate noise from self-connection
+            conn.noise = 0
 
         for each in xrange(testRuns):
             self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation, self.unit.maxDeviation)
             self.unit.needleUnit.mass = numpy.random.uniform(0.0001, 10000)
             self.unit.viscosity = numpy.random.uniform(0,1)
             tempDev = self.unit.criticalDeviation
-            for i in xrange(10):
+            for i in xrange(100):
                 self.unit. selfUpdate()
             self.assertTrue(tempDev == self.unit.criticalDeviation)
 
@@ -372,6 +374,8 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.needleCompMethod = 'proportional'
         self.unit.potentiometer = 0  #"put the weight of the self-connection to zero."
         self.unit.noise = 0
+        for conn in self.unit.inputConnections:
+            conn.noise = 0
 
         for each in xrange(testRuns):
             self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation, self.unit.maxDeviation)
