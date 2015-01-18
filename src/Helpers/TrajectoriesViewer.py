@@ -38,7 +38,7 @@ class TrajectoryViewer(QWidget):
         self.setDirpath(self._dirPath)
         self._currentLogbookName = self.setCurrentLogbookName()
         self.setCurrentLogbook()
-        self.currentDir.setText(self._dirpath)
+        self.currentDir.setText(self._dirPath)
         self.currentLogbookLE.setText(self._currentLogbookName)
         self.visualizeGenInfo()
         self.refreshTimer = QTimer()
@@ -136,6 +136,8 @@ class TrajectoryViewer(QWidget):
         self.hofWidget.cellPressed.connect(self.onCellPressed)
         #self.quitPB.clicked.connect(self.appRef.exit)
         self.refreshTimer.timeout.connect(self._populate)
+        self.refreshTimer.timeout.connect(self.refreshLogbook)
+        self.refreshTimer.timeout.connect(self.visualizeGenInfo)
     
     def onTrajectoryDoubleClicked(self, curr):
         self.onTrajectoryClicked(curr)
@@ -159,7 +161,7 @@ class TrajectoryViewer(QWidget):
             return
         else:
             try:
-                graphTrajectory(os.path.join(self._dirpath, str(self.currentTrajEntry.text())))
+                graphTrajectory(os.path.join(self._dirPath, str(self.currentTrajEntry.text())))
             except:
                 "visualize warning box"
                 msgBox = QMessageBox();
@@ -178,7 +180,7 @@ class TrajectoryViewer(QWidget):
         msgBox.exec_()
  
     def getNewDir(self):
-        dir = QFileDialog.getExistingDirectory(parent = self, directory = self._dirpath)
+        dir = QFileDialog.getExistingDirectory(parent = self, directory = self._dirPath)
         self.setDirpath(str(dir))
         self.refreshLogbook()
         self.currentLogbookLE.setText(self._currentLogbookName)
@@ -198,13 +200,13 @@ class TrajectoryViewer(QWidget):
         # extension and add them to the trajectories list.
         trajectories = []
         for extension in self.supportedTrajExtensions():
-            pattern = os.path.join(self._dirpath, '*.%s' % extension)
+            pattern = os.path.join(self._dirPath, '*.%s' % extension)
             trajectories.extend(os.path.basename(x) for x in glob(pattern))        
         return trajectories
 
     def _populate(self):
         """ Fill the trajectory list with trajectories from the
-            current directory in self._dirpath. """
+            current directory in self._dirPath. """
      
         # In case we're repopulating, clear the list
         self.TrajList.clear()
@@ -230,17 +232,17 @@ class TrajectoryViewer(QWidget):
     
     def setDirpath(self, dirpath):        
         ''' Set the current trajectory directory and refresh the list. '''
-        self._dirpath = dirpath
+        self._dirPath = dirpath
         self._populate()
-        self.currentDir.setText(self._dirpath)
+        self.currentDir.setText(self._dirPath)
         
     def setCurrentLogbookName(self):
         """Return the first logbook in current dir, i.e, the  
            first filename with extension .lgb"""
         logFilenames = []
         for extension in self.supportedLogBookExtensions():
-            pattern = os.path.join(self._dirpath, '*.%s' % extension)
-            logFilenames.extend(os.path.basename(x) for x in glob(pattern))
+            pattern = os.path.join(self._dirPath, '*.%s' % extension)
+            logFilenames.extend([os.path.basename(x) for x in glob(pattern)])
         try:
             return logFilenames[0]
         except IndexError:
@@ -251,7 +253,7 @@ class TrajectoryViewer(QWidget):
            and store it in an iVar"""
         if not self._currentLogbookName == "NO LOGBOOKS PRESENT":
             try:
-                logbookFile = open(os.path.join(self._dirpath, self._currentLogbookName),'r')
+                logbookFile = open(os.path.join(self._dirPath, self._currentLogbookName),'r')
                 self._currentLogbook=pickle.load(logbookFile)
                 logbookFile.close()                                                    
             except IOError:
@@ -264,6 +266,7 @@ class TrajectoryViewer(QWidget):
     def refreshLogbook(self):
         self._currentLogbookName = self.setCurrentLogbookName()
         self.setCurrentLogbook()
+        self.currentLogbookLE.setText(self._currentLogbookName)
                   
     def readGeneralInfo(self):
         'Read GA run general infos from the logbook'
