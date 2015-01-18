@@ -42,6 +42,7 @@ class HomeoQtSimulation(QObject):
         maxDataPoints               <anInteger>        the maximum dataPoints to hold for live charting
         panningCharts               <aBoolean>         whether charts should show the complete history or only the last MaxDataPoints
         currentExperiment           <aMethod>          holds a reference to the initialization procedure for the current experimental setup
+        dataDir                     <aString>          directory to save simulation's data
     '''
 
 #===============================================================================
@@ -139,7 +140,7 @@ class HomeoQtSimulation(QObject):
     def units(self):
         return self.homeostat.homeoUnits
     
-    def __init__(self, experiment=None, experimentParams=None):
+    def __init__(self, experiment=None, experimentParams=None, dataDir = None):
         '''
         Initialize the instance with a new homeostat and a default number of runs."
         '''
@@ -190,19 +191,19 @@ class HomeoQtSimulation(QObject):
     def initializeLiveData(self):
         "set up the liveData dictionary for live graphing"
         for unit in  self._homeostat.homeoUnits:
-            self.liveData[unit] = []                         # add empty list to hold critDev data for unit
-            self.liveData[unit.uniselector] = []             # add empty list to hold uniselector activation data for unit
+            self.liveData[unit] = []                                                  # add empty list to hold critDev data for unit
+            self.liveData[unit.uniselector] = []                                      # add empty list to hold uniselector activation data for unit
             self.liveDataWindow[unit] = deque(maxlen=self.maxDataPoints)              # add empty queue to hold critDev data for unit
-            self.liveDataWindow[unit.uniselector] = deque(maxlen=self.maxDataPoints)        # add empty queue to hold uniselector activation data for unit
+            self.liveDataWindow[unit.uniselector] = deque(maxlen=self.maxDataPoints)  # add empty queue to hold uniselector activation data for unit
             self.unitsSelfWeights[unit] = []
 
-    def initializeExperSetup(self, params=None):
+    def initializeExperSetup(self, **params):
         '''Initialize the homeostat to the current experimental set up by calling the function
            in module HomeoExperiment corresponding to the string stored in self.currentExperiment'''
         if params == None:
             self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)()
         else:
-            self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)(params)
+            self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)(**params)
         self._dataFilename = self.currentExperiment + '--Plot-Data'
         #----------------------------------------------------------------------------- #
         # FIXME 
