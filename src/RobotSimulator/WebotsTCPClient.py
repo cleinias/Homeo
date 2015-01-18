@@ -35,7 +35,7 @@ class WebotsTCPClient(object):
         'Try a few times to create a connection if not connected already. Store the returned socket in clientSocket'
         connected = False
         connectAttempts = 10
-        sleepTime = 0.05
+        sleepTime = 0.1
         retries = 3
         retrySleepTime = 1
         if self._clientSocket is not None:
