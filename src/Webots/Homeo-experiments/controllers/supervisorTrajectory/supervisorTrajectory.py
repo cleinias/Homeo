@@ -93,22 +93,26 @@ class supervisorTrajectory(Supervisor):
             self.step(32)
             
     def buildTrajFilename(self, modelName=None):        
-         '''Assume that the current directory is under a "src" directory
-         and that a data folder called 'SimulationsData will exist
-         at the same level as "src"
+         '''FIXME: reads dataDirectory from a file called .HomeoSimDataDir.txt
+                stored in ~ 
+                Should really get the dataDir from the simulation supervisor. 
          Save file with filename equal to resulting path + an identifier '''
 
          if modelName == None:
              modelName = ''
+
+         try:
+             homeDir = os.getenv('HOME')
+             dataDirSource = open(os.path.join(homeDir,'.HomeoSimDataDir.txt'),'r')
+             dataDir = dataDirSource.read()
+             dataDirSource.close()
+         except IOError:
+             dataDir = os.getcwd()
              
          curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")                    
          trajFilename = 'trajData-'+curDateTime+"-ID-"+ modelName+'.traj'
-         #print trajFilename
-             
-         addedPath = 'SimulationsData'
-         datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
-         #print datafilePath 
-         return  os.path.join(datafilePath, trajFilename)
+         #print trajFilename                 
+         return  os.path.join(dataDir, trajFilename)
      
     def trajFileRename(self, trajFileHandle, oldFileName,modelField):
          "rename traj file to include robot's model, if needed"
