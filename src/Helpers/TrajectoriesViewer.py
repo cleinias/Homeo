@@ -72,6 +72,7 @@ class TrajectoryViewer(QWidget):
         self.trajListLabel = QLabel("Trajectories:        ")
         self.TrajList = QListWidget(self)
         self.hallOfFamePB = QPushButton("Hall of Fame")
+        self.allIndivsPB = QPushButton("All individs")
         self.avgFitnessPB = QPushButton("Average Fitness")
         self.genealogyPB = QPushButton("Genealogy")
         self.trajLabel = QLabel("Curr. Trajectory:   ")
@@ -99,6 +100,7 @@ class TrajectoryViewer(QWidget):
         self.buttonsLayout.addStretch()
         #self.buttonsLayout.addWidget(self.refreshPB)
         self.buttonsLayout.addStretch()
+        self.buttonsLayout.addWidget(self.allIndivsPB)
         self.buttonsLayout.addWidget(self.hallOfFamePB)
         self.buttonsLayout.addWidget(self.avgFitnessPB)
         self.buttonsLayout.addWidget(self.genealogyPB)
@@ -131,6 +133,7 @@ class TrajectoryViewer(QWidget):
         self.avgFitnessPB.clicked.connect(self.visualizeAvgFitnessGraph)
         #self.refreshPB.clicked.connect(self._populate)
         self.hallOfFamePB.clicked.connect(self.visualizeHOF)
+        self.allIndivsPB.clicked.connect(self.visualizeFullIndsData)
         self.genealogyPB.clicked.connect(self.visualizeGen)
         self.hofWidget.cellDoubleClicked.connect(self.onCellDoubleClicked)
         self.hofWidget.cellPressed.connect(self.onCellPressed)
@@ -291,17 +294,19 @@ class TrajectoryViewer(QWidget):
         self.genInfoTextW.clear()
         self.genInfoTextW.setText(self.readGeneralInfo())
         
-        
-    def visualizeHOF(self):
-        """Print the hall of fame of 10 best individuals extracted 
-           from the logbook in a separate window".
+    def visualizeIndsData(self,num=10,all=False):
+        """Visualize the decoded genome and fitness of num individuals
            Use a QTableWidget with a list containing
-        a list of headers at [0] and a list of rows at [1]"""
-        
+           a list of headers at [0] and a list of rows at [1]"""
+
         if self._currentLogbook is not None:
+            decodedInds = indivsDecodedFromLogbook(self._currentLogbook)
+            if all:
+                hof = genomeAndFitnessList(decodedInds, num=len(decodedInds))
+            else:
+                hof = genomeAndFitnessList(decodedInds, num = 10)
             self.hofWidget.clear()
             self.hofWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
-            hof = genomeAndFitnessList(indivsDecodedFromLogbook(self._currentLogbook), num = 10)
             self.hofWidget.setRowCount(len(hof[1]))
             self.hofWidget.setColumnCount(len(hof[0]))
     
@@ -321,6 +326,19 @@ class TrajectoryViewer(QWidget):
             self.hofWidget.show()
         else:
             self.warningBox('No logbooks in current directory')
+
+        
+    def visualizeHOF(self):
+        """Print the hall of fame of 10 best individuals extracted 
+           from the logbook in a separate window"""
+        self.visualizeIndsData(10)
+        
+    
+    def visualizeFullIndsData(self):
+        """Visualize the decoded genome and fitness 
+           of all the individuals in the ga simulation"""
+    
+        self.visualizeIndsData(all=True)
     
     def visualizeAvgFitnessGraph(self):
         """Show a Matplotlib chart of fitnesses if data are present"""
