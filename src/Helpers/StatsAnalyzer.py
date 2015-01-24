@@ -279,7 +279,7 @@ def areAllInpAndOutpFilesIdentical():
        '''
     
     results = []
-    patterns = [ 'LeftMotorC*', 'RightMotorC*', 'LeftEyeDUMMYr*', 'RightEyeDUMMYr', 'LeftEyeRead*', 'RightEyeRead*']
+    patterns = [ 'LeftMotorCommands*', 'RightMotorCommands*', 'LeftEyeDUMMYr*', 'RightEyeDUMMYr', 'LeftEyeRead*', 'RightEyeRead*']
     for pattern in patterns:
         fileList = glob.glob(pattern)
         if pattern is not  None:
