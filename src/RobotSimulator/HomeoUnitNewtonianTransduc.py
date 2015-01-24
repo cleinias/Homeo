@@ -7,6 +7,7 @@ from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
 from Core.HomeoUnit import HomeoUnit,  HomeoUnitError
 from Core.HomeoUnitAristotelian import HomeoUnitAristotelian
 from numpy import sign
+from numpy  import exp as np_exp
 from Helpers.General_Helper_Functions import scaleTo
 from math import exp
 from Helpers.ExceptionAndDebugClasses import hDebug
@@ -47,7 +48,7 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
         '''Initialize default parameters for sigmoid function used to convert
            unit's deviation to motor commands'''
         self._maxSpeedFraction = 0.2   # The maximum speed of a motor as a fraction of the actuator speed
-        self._switchingRate = 0.1       # The speed at which the function switches from positive to negative, or the slope of the logistic curve     
+        self._switchingRate = .1      # The speed at which the function switches from positive to negative, or the slope of the logistic curve     
         
         'Open file for writing updated values, if needed'
         if filename is not None:
@@ -101,9 +102,10 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
                 self._maxSpeed = self._transducer.range()[1]* self._maxSpeedFraction
             except:
                 raise HomeoUnitError("Cannot get max speed from Transducer")
-                          
-        setSpeed = float(-self._maxSpeed) + ((2 * self._maxSpeed)/ (1+exp(- self._switchingRate * self.criticalDeviation)))
-        hDebug('unit', ("Speed set by %s is %f " % (self.name, setSpeed)))
+        hDebug('unit', ("critDev for unit: %s is %.3f" % (self.name, self.criticalDeviation)))                  
+        setSpeed = float(-self._maxSpeed) + ((2 * self._maxSpeed)/ (1+np_exp(- self._switchingRate * self.criticalDeviation)))
+        setSpeed = round(setSpeed,3)
+        hDebug('unit', ("Speed set by %s is %f with critDev: %.3f " % (self.name, setSpeed, self.criticalDeviation)))
         self.transducer.funcParameters = setSpeed
         self.transducer.act()
     
