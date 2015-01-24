@@ -5,7 +5,10 @@
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QThread>
-#include <QtCore/QDebug>
+#include <QtCore/QtCore/QDebug>
+#include <QFile>
+#include <QDateTime>
+#include <QDir>
 
 using namespace std;
 using namespace webots;
@@ -25,8 +28,33 @@ RobotWorker::RobotWorker(QObject *parent) :
     }
 }
 
+QString getCmdFileName(QString param){
+    /* FIXME: reads dataDirectory from a file called .HomeoSimDataDir.txt
+     * stored in ~ .
+     * Should really get the dataDir from the simulation supervisor.
+     * Save file with filename equal to resulting path + an identifier
+     *
+     * param is either "Right" or "Left" */
+    QString dirFileName = "/home/stefano/.HomeoSimDataDir.txt";
+    QFile dirFile(dirFileName);
+    dirFile.open(QIODevice::ReadOnly);
+    QTextStream inStream(&dirFile);
+    QString saveDir = inStream.readLine();
+    dirFile.close();
+    QString timeStamp = QDateTime::currentDateTime().toString("yyyy-mm-dd-hh-mm-ss");
+    QString fileName = saveDir + "/"+ param + "MotorCommandsWebots-" + timeStamp + ".csv";
+    return fileName;
+}
+
 void RobotWorker::run() {
     qDebug() << "Running";
+    QFile rightMotorFile(getCmdFileName("Right"));
+    QFile leftMotorFile(getCmdFileName("Left"));
+    rightMotorFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    leftMotorFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream rightStrm(&rightMotorFile);
+    QTextStream leftStrm(&leftMotorFile);
+
     while (step(TIME_STEP) != -1)
     {
         {
@@ -48,14 +76,14 @@ void RobotWorker::run() {
                     double rightSpeed = cmd.split(',')[1].toDouble();
 
                     setSpeed(leftSpeed, rightSpeed);
-
+                        rightStrm << rightSpeed <<endl;
                     emit sendCommand("d");
                 } else if (cmd.at(0) == 'L') {
                     double rightSpeed = getRightSpeed();
                     double leftSpeed = cmd.split(',')[1].toDouble();
 
                     setSpeed(leftSpeed, rightSpeed);
-
+                    leftStrm << leftSpeed <<endl;
                     emit sendCommand("d");
                 } else if (cmd.at(0) == 'O') {
                     const QString out = QString("o,%1,%2").arg(m_sensors[0]->getValue())
@@ -70,6 +98,8 @@ void RobotWorker::run() {
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents | QEventLoop::ExcludeSocketNotifiers);
     }
     qDebug() << "Done stepping, got -1";
+    rightMotorFile.close();
+    leftMotorFile.close();
 }
 
 

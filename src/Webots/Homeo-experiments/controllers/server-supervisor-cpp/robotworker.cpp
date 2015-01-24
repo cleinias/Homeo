@@ -14,7 +14,7 @@
 #include <webots/Supervisor.hpp>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QThread>
-#include <QtCore/QDebug>
+#include <QtCore/QtCore/QDebug>
 
 #include <math.h>
 
@@ -30,12 +30,6 @@ RobotWorker::RobotWorker(QObject *parent) :
     m_targetY(0.0),
     m_targetZ(0.0)
 {
-//    QString sensor_name = "ls%1";
-//    for (int i = 0; i < NUM_SENSORS; i++) {
-//        LightSensor *sensor = getLightSensor(sensor_name.arg(i).toLatin1().constData());
-//        sensor->enable(TIME_STEP);
-//        m_sensors.append(sensor);
-//    }
     // Find list of targets
     const QString targetName = "TARGET";
     m_targetNode = getFromDef(targetName.toStdString());
