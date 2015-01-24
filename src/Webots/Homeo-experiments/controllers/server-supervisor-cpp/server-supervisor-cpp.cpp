@@ -17,7 +17,7 @@
 #include <algorithm>
 
 #include <QtCore/QCoreApplication>
-#include <QtCore/QDebug>
+#include <QtCore/QtCore/QDebug>
 #include <QtCore/QThread>
 #include <QtCore/QStringList>
 
