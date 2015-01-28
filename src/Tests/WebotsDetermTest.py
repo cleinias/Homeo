@@ -127,7 +127,7 @@ class TestWebotsDeterminism(object):
            Save fitness data to logbook"""
           
         'Record time for naming logbook pickled object and computing time statistics'
-        self.simulationEnvironStart(world=self.exp)#,mode='fast')
+        self.simulationEnvironStart(world=self.exp, mode='fast')
         try:
             self._supervisorSocket = self.getWebotsSocket(self.supervisor_host, self.supervisor_port, self._supervisorSocket)
             self._clientSocket = self.getWebotsSocket(self.khepera_host, self.khepera_port, self._kheperaSocket)
@@ -162,14 +162,14 @@ class TestWebotsDeterminism(object):
             self.stopRobot()
             self._supervisorSocket.send('M,'+'Dummy_final')
             sleep(1)
-            self.simulationEnvironQuit()
+            #self.simulationEnvironQuit()
             print "Simulation completed."
             print "Data files are available in directory:"
             print self._dataDir    
         except:
             print "TCP connection error. Cleaning up and quitting..."
             print "Trying to quit webots"
-            self.simulationEnvironQuit()
+            #self.simulationEnvironQuit()
                 
     def getTimeFormattedCompleteFilename(self,timeStarted, prefix, extension, path = None):
         """ Return a string containing a complete filename (including path)
@@ -226,13 +226,13 @@ class TestWebotsDeterminism(object):
              print "I lost the socket communicating to Webots"
              print e.value()
             
-    def simulationEnvironStart(self,world = None, mode = "realtime"):
+    def simulationEnvironStart(self,world = None, mode = "fast"):
         """
         Start a webots instance with the given world and at the specified speed (mode).
         Mode can be one of realtime, run, or fast 
         """
         if not 'webots-bin' in check_output(['ps','ax']):
-            callString =  "webots  --mode="+ mode+ " " +os.path.join (os.getcwd(),'worlds',world) + " &"
+            callString =  "/home/stefano/bin/webots  --mode="+ mode+ " " +os.path.join (os.getcwd(),'worlds',world) + " &"
             system(callString)
             'Wait for webots to start listening to commands (in seconds)'
             sleep(2)            
@@ -264,5 +264,5 @@ class TestWebotsDeterminism(object):
         return response
                             
 if __name__ == '__main__':
-    simul = TestWebotsDeterminism(popSize=2, stepsSize=500)
+    simul = TestWebotsDeterminism(popSize=1, stepsSize=100)
     simul.runDetermTest()
