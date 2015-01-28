@@ -1,3 +1,11 @@
+/* Simple TCP/IP slave that execute commands according to the following protocol:
+ *
+ * L, speed: change speed of left motor to speed
+ * R, speed: change speed of right motor to speed
+ * S       : stop robot by setting both right and left motors' speed to 0
+*/
+
+
 #include "robotworker.h"
 
 #include <webots/DifferentialWheels.hpp>
@@ -15,7 +23,7 @@ using namespace webots;
 
 static const double maxSpeed = 100.0;
 static const int NUM_SENSORS = 2;
-static const int TIME_STEP = 32;
+static const int TIME_STEP = 32*32*20;
 
 RobotWorker::RobotWorker(QObject *parent) :
     QObject(parent)
@@ -51,20 +59,24 @@ QString getCmdFileName(QString param){
 
 void RobotWorker::run() {
     qDebug() << "Running";
-//    QFile rightMotorFile(getCmdFileName("Right"));
-//    QFile leftMotorFile(getCmdFileName("Left"));
-//    rightMotorFile.open(QIODevice::WriteOnly | QIODevice::Text);
-//    leftMotorFile.open(QIODevice::WriteOnly | QIODevice::Text);
-//    QTextStream rightStrm(&rightMotorFile);
-//    QTextStream leftStrm(&leftMotorFile);
+    QFile rightMotorFile(getCmdFileName("Right"));
+    QFile leftMotorFile(getCmdFileName("Left"));
+    rightMotorFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    leftMotorFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream rightStrm(&rightMotorFile);
+    QTextStream leftStrm(&leftMotorFile);
+    double simTime;
+//    double queueFullTime;
 
     while (step(TIME_STEP) != -1)
-    {
+    {simTime = getTime();
+     qDebug() << "Current simul time is: " << simTime;
         {
             QMutexLocker l(&m_commandMutex);
             while(!m_commandsQueue.isEmpty()) {
                 const QString cmd = QString::fromLatin1(m_commandsQueue.dequeue());
-
+//                queueFullTime = getTime();
+//                qDebug() << "Queue NOT full at: " << queueFullTime;
                 if (cmd.size() == 0) {
                     qDebug() << "Got an empty command!";
                     continue;
@@ -79,14 +91,16 @@ void RobotWorker::run() {
                     double rightSpeed = cmd.split(',')[1].toDouble();
 
                     setSpeed(leftSpeed, rightSpeed);
-//                     rightStrm << rightSpeed <<endl;
+                    double cmdTime = getTime();
+                    rightStrm << cmdTime << "," << rightSpeed <<endl;
                     emit sendCommand("r");
                 } else if (cmd.at(0) == 'L') {
                     double rightSpeed = getRightSpeed();
                     double leftSpeed = cmd.split(',')[1].toDouble();
 
                     setSpeed(leftSpeed, rightSpeed);
-//                    leftStrm << leftSpeed <<endl;
+                    double cmdTime = getTime();
+                    leftStrm << cmdTime << "," << leftSpeed <<endl;
                     emit sendCommand("l");
                 } else if (cmd.at(0) == 'O') {
                     const QString out = QString("o,%1,%2").arg(m_sensors[0]->getValue())
@@ -106,8 +120,8 @@ void RobotWorker::run() {
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents | QEventLoop::ExcludeSocketNotifiers);
     }
     qDebug() << "Done stepping, got -1";
-//    rightMotorFile.close();
-//    leftMotorFile.close();
+    rightMotorFile.close();
+    leftMotorFile.close();
 }
 
 
