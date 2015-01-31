@@ -32,6 +32,7 @@ from time import sleep, time, strftime, localtime
 from tabulate import tabulate
 from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDebug
 from Helpers.StatsAnalyzer import extractGenomeOfIndID
+from xml.dom.minidom import _clone_node
 
 
 
@@ -245,7 +246,9 @@ class HomeoGASimulation(object):
                             tournSize=self.tournamentSize,
                             timeElapsed = str(datetime.timedelta(seconds=timeElapsed)), 
                             finalPop = len(pop), 
-                            finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop]) 
+                            finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop],
+                            type = self._type,
+                            cloneName = self._cloneName) 
 
 
         #=======================================================================
@@ -301,10 +304,12 @@ class HomeoGASimulation(object):
         return ind      
 
 
-    def generatePopOfClones(self):
+    def generatePopOfClones(self, cloneName =''):
         """Generate a population of identical clones from
            genome stored in self.clonableGenome""" 
 
+        self._type = "clones"
+        self._cloneName = cloneName
         return self.toolbox.popClones(n=self.popSize)
         
         
@@ -313,6 +318,7 @@ class HomeoGASimulation(object):
         """Generate a population of random individual with given random seed"""
         
         np.random.seed(randomSeed)   # For repeatable experiments
+        self._type = 'random'
         return self.toolbox.population(n=self.popSize)
 
 
@@ -762,16 +768,16 @@ def selTournamentRemove(individuals, k, tournsize):
 if __name__ == '__main__':
     #app = QApplication(sys.argv)
     #simulGUI = HomeoGASimulGUI()
-    logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/Test"
-    logL = 'Logbook-2015-01-17-16-20-10.lgb'
-    id = '000-001'
+    logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/SimsData-2015-01-19-00-35-10"
+    logL = 'Logbook-2015-01-19-00-35-10.lgb'
+    id = '018-016'
     logF = os.path.join(logD,logL)
     genome = extractGenomeOfIndID(id,logF)
 #    print [round(x,3) for x in genome['genome']]
 #    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
     #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
-    simul = HomeoGASimulation(popSize=10, stepsSize=5, generSize = 0,  clonableGenome= genome, debugging = 'ga major')
-    simul.runGaSimulation(simul.generatePopOfClones())
+    simul = HomeoGASimulation(popSize=10, stepsSize=10000, generSize = 0,  clonableGenome= genome, debugging = 'ga major')
+    simul.runGaSimulation(simul.generatePopOfClones(cloneName='SimsData-2015-01-19-00-35-10--018-016'))
     #simul.test()
     #simul.runOneGenSimulation()
     #simul.runGaSimulation(simul.generateRandomPop())
