@@ -15,7 +15,6 @@ moc_*
 
 ## Webots files ##
 ##################
-
 *.wproj
 
 
@@ -55,3 +54,10 @@ moc_*
 *.backup
 *.aux
 *.bbl
+
+
+## Homeo created ddata files ##
+###############################
+
+*.csv
+*.traj
