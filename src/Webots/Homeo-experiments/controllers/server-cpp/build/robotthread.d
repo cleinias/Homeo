@@ -1,0 +1,36 @@
+build/release/robotthread.o: robotthread.cpp robotthread.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/QObject \
+ /usr/local/webots//include/qt/QtCore/QtCore/qobject.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qobjectdefs.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qnamespace.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qglobal.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qconfig.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qfeatures.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qsystemdetection.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qcompilerdetection.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qprocessordetection.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qglobalstatic.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qatomic.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qbasicatomic.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qatomic_x86.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qgenericatomic.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qlogging.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qflags.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qtypeinfo.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qtypetraits.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qsysinfo.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qobjectdefs_impl.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qstring.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qchar.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qbytearray.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qrefcount.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qarraydata.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qlist.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qalgorithms.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qiterator.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qscopedpointer.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qmetatype.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qvarlengtharray.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qcontainerfwd.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qisenum.h \
+ /usr/local/webots//include/qt/QtCore/QtCore/qobject_impl.h

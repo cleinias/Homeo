@@ -43,9 +43,15 @@ moc_*
 *.lyx~
 
 
-# Compiled documents from lyx ##
-################################
+# Compiled documents from lyx and compiled images from svg ##
+#############################################################
 
 *.tex
 *.pdf
 *.lyx#
+*.ps
+*.eps
+*.bcf
+*.backup
+*.aux
+*.bbl
