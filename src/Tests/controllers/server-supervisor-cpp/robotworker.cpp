@@ -111,6 +111,7 @@ void RobotWorker::run() {
                     const std::string newModelName = cmd.split(',')[1].toStdString();
                     model->setSFString(newModelName);
                     mod = QString::fromStdString(model->getSFString());
+
                     simulationPhysicsReset();
                     message = "NEWFILE";
                     emitter->send(message.toStdString().c_str(),message.length());

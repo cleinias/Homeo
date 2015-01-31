@@ -223,7 +223,6 @@ DEF KHEPERA DifferentialWheels {
 }
 DEF TRAJECTORY Supervisor {
   name "trajRecorder"
-  controller "supervisorTrajectory"
 }
 DEF SIMULSUPER Supervisor {
   controller "server-supervisor-cpp"

@@ -41,7 +41,7 @@ QString getCmdFileName(QString param){
     QTextStream inStream(&dirFile);
     QString saveDir = inStream.readLine();
     dirFile.close();
-    QString timeStamp = QDateTime::currentDateTime().toString("yyyy-mm-dd-hh-mm-ss");
+    QString timeStamp = QDateTime::currentDateTime().toString("yyyy-MM-dd-hh-mm-ss");
     QString fileName = saveDir + "/"+ param + "MotorCommandsWebots-" + timeStamp + ".csv";
     return fileName;
 }
