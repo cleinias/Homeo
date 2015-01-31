@@ -15,7 +15,7 @@ Assumes:
 4. Supervisor's controller listens on localhost:10021
 5. A SimsData subdir exists at the same level as the script 
 '''
-
+import decimal
 import sys
 import numpy as np
 import csv
@@ -36,9 +36,11 @@ from xml.dom.minidom import _clone_node
 
 ORIG_TRANSL = [4,0,4]      # y coord is always 0 in a 2d world
 ORIG_ROTAT  = [0,1,0,0]    # Rotation expressed as a normalized vector for rot axis, plus a rot angle along that axis  
+WEBOTS_MIN_TIME_STEP =  decimal.Decimal(0.032)
 
 class TestWebotsDeterminism(object):
     ''' Class testing a Webots determinist run'''
+    
         
     def __init__(self,parent=None, stepsSize = 1000, 
                                    popSize=150,
@@ -74,15 +76,15 @@ class TestWebotsDeterminism(object):
             print "could not write to  dataDir file"
             raise Exception
 
-                                
+        decimal.getcontext().prec = 4                       
     
     def getWebotsSocket(self, host, port, my_socket):
         '''Try a few times to create a connection if not connected already. 
            Return a socket'''
         
         connected = False
-        connectAttempts = 10
-        sleepTime = 0.1
+        connectAttempts = 1000
+        sleepTime = 0.05
         if my_socket is not None:
             print 'Already connected! Use the socket stored in clientSocket'
         else:
@@ -131,10 +133,13 @@ class TestWebotsDeterminism(object):
         try:
             self._supervisorSocket = self.getWebotsSocket(self.supervisor_host, self.supervisor_port, self._supervisorSocket)
             self._clientSocket = self.getWebotsSocket(self.khepera_host, self.khepera_port, self._kheperaSocket)
-        except:
+        except Exception, e:
             print " Could not connect to Webots robot or Webots supervisor"
+            print e
             return
         try:
+            timeStep      =  decimal.Decimal(32)     # In milliseconds
+            betwCmdsDelay =  10     # In time steps
             for ind in xrange(self.popSize):
                 np.random.seed(64)
                 formattedTime = strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))
@@ -144,32 +149,61 @@ class TestWebotsDeterminism(object):
                 robot_ID = "000-"+str(ind+1).zfill(3)
                 self._supervisorSocket.send('M,'+robot_ID)
                 print "indiv number: ", ind
+                
+                cmdExptdTime = (self.getSimulTime(self._clientSocket) / WEBOTS_MIN_TIME_STEP) + 100
+                print cmdExptdTime
                 for step in xrange(self.stepsSize):
+                    #print "Webots at:", currentTime
+                    #print cmdExptdTime
                     rightCmd = str(round(np.random.uniform(low=0,high=10),3))
-                    self._clientSocket.send('R,'+rightCmd)
-                    rightCmdFile.write(str(rightCmd+'\n'))
-                    leftCmd = str(round(np.random.uniform(low=0,high=10),3))                    
-                    self._clientSocket.send('L,'+ leftCmd)
-                    leftCmdFile.write(leftCmd+'\n')
+                    if not self.checkCmdTime(self._clientSocket, cmdExptdTime):
+                       print "Bailing out"
+                       print "Executed command %d/%d for ind %d \r" %(step,self.stepsSize,ind),
+                       raise Exception
+                    self._clientSocket.send('R,'+rightCmd + ','+str(cmdExptdTime) +','+str((2*step)+1))
+                    discard = self._clientSocket.recv(100)
+                    rightCmdFile.write(str(rightCmd+','+str(cmdExptdTime*timeStep) +','+str((2*step)+1)+'\n'))
+                    #rightCmdFile.flush()
+#                    print 'R,'+rightCmd + ','+str(cmdExptdTime*timeStep) +','+str((2*step)+1)
+                    cmdExptdTime += betwCmdsDelay
+                    leftCmd = str(round(np.random.uniform(low=0,high=10),3))
+                    # if not self.checkCmdTime(self._clientSocket, cmdExptdTime*timeStep):
+                        #----------------------------------- print "Bailing out"
+                        #------------------------------------------------- break
+                    self._clientSocket.send('L,'+ leftCmd+ ','+str(cmdExptdTime)+','+str((2*step)+2))
+                    discard = self._clientSocket.recv(100)
+                    leftCmdFile.write(leftCmd+','+str(cmdExptdTime*timeStep) +','+str((2*step)+2)+'\n')
+                    #leftCmdFile.flush()
+#                    print 'L,'+ leftCmd+ ','+str(cmdExptdTime*timeStep)+','+str((2*step)+2)
                     sleep(0.1)
+                    cmdExptdTime += betwCmdsDelay                    
+                self._clientSocket.send("Z,,-1,")
+                resp =  ""
+                "wait until client has processed all the commands" 
+                while "Z" not in resp:
+                    resp = self._clientSocket.recv(1024)
+ #                   print resp
+                    sleep(0.1)
+                print "GOT BACK %s --- End of run for individual number %d with id %s" %(resp, ind, robot_ID)
                 rightCmdFile.close()
                 leftCmdFile.close()
                 self.stopRobot()
                 self.simulationEnvironResetPos(ORIG_TRANSL + ORIG_ROTAT)
-                #self.simulationEnvironReset()
-                #self.simulationEnvironResetPhysics()
-                #self._supervisorSocket = self.getWebotsSocket(self.supervisor_host, self.supervisor_port, self._supervisorSocket)
+                self._clientSocket.send("T,,-1,")
+                simulTime = float(self._clientSocket.recv(128))
+                print "Simulation now at ==>  ", str(simulTime)
+                self.simulationEnvironResetPhysics()
             self.stopRobot()
             self._supervisorSocket.send('M,'+'Dummy_final')
             sleep(1)
-            #self.simulationEnvironQuit()
+            self.simulationEnvironQuit()
             print "Simulation completed."
             print "Data files are available in directory:"
             print self._dataDir    
-        except:
-            print "TCP connection error. Cleaning up and quitting..."
+        except Exception, e:
+            print "TCP connection error. Cleaning up and quitting...", e
             print "Trying to quit webots"
-            #self.simulationEnvironQuit()
+            self.simulationEnvironQuit()
                 
     def getTimeFormattedCompleteFilename(self,timeStarted, prefix, extension, path = None):
         """ Return a string containing a complete filename (including path)
@@ -209,7 +243,8 @@ class TestWebotsDeterminism(object):
         
         try:
             self._supervisorSocket.send("P")
-            response = self._supervisorSocket.recv(100) 
+            #response = self._supervisorSocket.recv(100)
+            print "Webots pysics reset" 
         except SocketError:
             print "Could not reset Webots simulation's physics"
             
@@ -232,7 +267,7 @@ class TestWebotsDeterminism(object):
         Mode can be one of realtime, run, or fast 
         """
         if not 'webots-bin' in check_output(['ps','ax']):
-            callString =  "/home/stefano/bin/webots  --mode="+ mode+ " " +os.path.join (os.getcwd(),'worlds',world) + " &"
+            callString =  "/home/stefano/bin/webots  --stderr --stdout  --mode="+ mode+ " " +os.path.join (os.getcwd(),'worlds',world) + " &"
             system(callString)
             'Wait for webots to start listening to commands (in seconds)'
             sleep(2)            
@@ -250,7 +285,8 @@ class TestWebotsDeterminism(object):
     def stopRobot(self):
         'Stop the robot by setting its velocity to 0'
         try:
-            self._clientSocket.send('S')
+            self._clientSocket.send('S,,-1,')
+            discard = self._clientSocket.recv(100)
         except SocketError:
             print 'I could not stop the robot'
         
@@ -262,7 +298,25 @@ class TestWebotsDeterminism(object):
         self._supervisor._clientSocket.send("D")
         response = float(self._supervisor._clientSocket.recv(100)) 
         return response
-                            
+           
+    def getSimulTime(self, webotsRobotSocket):
+        "return the Webots simulation time, in ms"
+        try:
+            webotsRobotSocket.send("T,,-1,")
+            W_time =  decimal.Decimal(webotsRobotSocket.recv(100))
+            return W_time
+        except Exception, e:
+            print "Could not connect to the robot client", e
+            
+    def checkCmdTime(self, webotRobotSocket, cmdTime):
+        simulTime = self.getSimulTime(webotRobotSocket)
+        if simulTime > (cmdTime * WEBOTS_MIN_TIME_STEP):
+            print "Webots simulation ran ahead! Me: %.3f Webots: %.3f" %(cmdTime*WEBOTS_MIN_TIME_STEP, simulTime)
+            return False
+        else:
+            return True
+
+                         
 if __name__ == '__main__':
-    simul = TestWebotsDeterminism(popSize=1, stepsSize=100)
+    simul = TestWebotsDeterminism(popSize=2, stepsSize=10)
     simul.runDetermTest()
