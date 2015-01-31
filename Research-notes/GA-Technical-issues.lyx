@@ -1,0 +1,104 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass memoir-article
+\begin_preamble
+\addbibresource{/home/stefano/Documents/Biblios/Italian-philosophy.bib}
+\addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
+\addbibresource{/home/stefano/Documents/Books/Play-and-Passivity/Dissertation-references.bib}
+\addbibresource{/home/stefano/Documents/Biblios/additional-refs-for-Il-Pensiero-Vivente.bib}
+\end_preamble
+\options article, 11pt
+\use_default_options false
+\begin_modules
+biblatex
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding utf8-plain
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing onehalf
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine natbib_authoryear
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Technical issue on Homeo-GA simulations
+\end_layout
+
+\begin_layout Itemize
+Selection procedures
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+it is not clear how the selection procedure I currently chose actually works.
+ It does produce (it seems) repeated ancestors, i..e repeated individual in
+ the population, which is not good.
+ Check again:
+\end_layout
+
+\begin_layout Itemize
+ind.ID naming procedures (to make sure the perceived problem is not an artifact
+ of a different bug)
+\end_layout
+
+\begin_layout Itemize
+genealogy tree generation (same as above)
+\end_layout
+
+\begin_layout Itemize
+lit on selection (Ashlock, partic.)
+\end_layout
+
+\end_deeper
+\end_body
+\end_document
