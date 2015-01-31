@@ -84,6 +84,18 @@ biblatex
 Note to self: Homeo transition to GA support
 \end_layout
 
+\begin_layout Standard
+\align center
+
+\emph on
+ALL DONE WITH DEAP
+\end_layout
+
+\begin_layout Standard
+These notes document the thought process and decision that lead to the current
+ setup for genetic algorithms simulation in Homeo.
+\end_layout
+
 \begin_layout Chapter
 Genetic algorithms libraries in Python
 \end_layout
@@ -474,10 +486,6 @@ Viscosity (float, range??)
 \end_layout
 
 \begin_layout Itemize
-Potentiometer (aka self-weight ) (float, [0,1])
-\end_layout
-
-\begin_layout Itemize
 UniselectorTiming (integer, [10, 1000?]
 \end_layout
 
@@ -485,8 +493,18 @@ UniselectorTiming (integer, [10, 1000?]
 maxDeviation (or CritThreshold) (integer, [1,1000?] or [1,100?])
 \end_layout
 
-\begin_layout Standard
+\begin_layout Itemize
+Potentiometer (aka self-weight ) (float, [0,1])
+\end_layout
 
+\begin_layout Standard
+However, considering that the potentiometer is just one of the connections,
+ a HomeoUnit has really only 4 essential parameters, plus the parameters
+ for the connections to all other 
+\emph on
+n 
+\emph default
+units (including itself).
 \end_layout
 
 \begin_layout Section
@@ -561,8 +579,8 @@ reference "sub:Summary-of-Homeounit"
 
 \end_inset
 
-, we have 5 unit-related parameters, for a total of 
-\begin_inset Formula $n(5+n)=n(5+n)$
+, we have 4 unit-related parameters, for a total of 
+\begin_inset Formula $n(4+n)$
 \end_inset
 
  parameters describing a homeostat.
@@ -571,10 +589,20 @@ reference "sub:Summary-of-Homeounit"
 \end_inset
 
  would be described by 
-\begin_inset Formula $34$
+\begin_inset Formula $32$
 \end_inset
 
  parameters.
+ The Homeo equivalent of a Braitenberg-2 vehicle, currently modeled with
+ 6 HomeoUnits, has 
+\begin_inset Formula $60$
+\end_inset
+
+ parameters (
+\begin_inset Formula $6*(4+6)).$
+\end_inset
+
+
 \end_layout
 
 \begin_layout Chapter
@@ -643,7 +671,7 @@ Simulations
 \end_layout
 
 \begin_layout Standard
-TODO
+TODO (all done)
 \end_layout
 
 \begin_layout Section
@@ -666,7 +694,7 @@ reference "sec:Homeostat-Genome"
 \begin_inset Formula $m$
 \end_inset
 
- being the essential parameters (most likely 5, see 
+ being the essential parameters (most likely 4, see 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "sub:Summary-of-Homeounit"
@@ -688,7 +716,7 @@ Fitness function(s)
 
 \begin_layout Standard
 The fitness function depends on the task, of course.
- for the DiPaolo/Braitenberg inspired experiment it could just be the distance
+ For the DiPaolo/Braitenberg inspired experiment it could just be the distance
  from the target (if the selection procedure is minimizing, or the negative
  of the distance, i.e.
  assuming a maximizing function)
@@ -707,7 +735,7 @@ Tasks
 \end_layout
 
 \begin_layout Section
-Running a single-run simulation from a homeostat's parametric description
+DONE Running a single-run simulation from a homeostat's parametric description
  and an experiment's description
 \end_layout
 
@@ -728,7 +756,7 @@ Wrap the the previous procedures in a class managing a homeostat's single-run
 \end_layout
 
 \begin_layout Section
-Running the simulation of a population
+DONE Running the simulation of a population
 \end_layout
 
 \begin_layout Enumerate
@@ -748,7 +776,7 @@ Collect (and possibly write) the homeostat-descriptions
 \end_layout
 
 \begin_layout Section
-Running a whole GA-experiment
+DONE Running a whole GA-experiment
 \end_layout
 
 \begin_layout Enumerate

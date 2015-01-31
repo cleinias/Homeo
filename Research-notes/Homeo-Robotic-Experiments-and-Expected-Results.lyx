@@ -162,7 +162,7 @@ simplest possible
 \begin_layout Chapter
 Type-1 taxes 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -182,7 +182,7 @@ To finish
 \begin_layout Section
 Environment 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -217,7 +217,7 @@ sensory input tuned to the stimulus (i.e.
 \begin_layout Section
 Homeostatic setup 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -262,7 +262,7 @@ reference "sub:Homeo-1-not-Braiten"
  with 2-unit setups in section  .
  
 \begin_inset Note Note
-status open
+status collapsed
 
 \begin_layout Plain Layout
 The main difference between the two setups is that the 2-unit architecture
@@ -289,7 +289,7 @@ input-modulation,
 \begin_layout Section
 Overall features of the described setups 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -314,7 +314,7 @@ Let us analyze the behavior of the vehicle by first reducing it to its simplest
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
@@ -325,7 +325,7 @@ status open
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -371,7 +371,7 @@ name "fig:1-unit-setup"
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -610,7 +610,7 @@ There is another possible difference between the Homeo setup and Braitenberg's.
 
 ]).
 \begin_inset Foot
-status open
+status collapsed
 
 \begin_layout Plain Layout
 In the Homeo implementation, this is actually the default behavior, which
@@ -682,7 +682,7 @@ Simplest setup: 1-unit setup
 \emph default
 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -717,7 +717,7 @@ No
 
  self-connection 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -741,7 +741,7 @@ If we remove the self-connection (and
 
 ) from the setup in figure 
 \begin_inset Flex ShortXRef
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
@@ -842,7 +842,7 @@ terminal velocity
 \begin_layout Subsubsection
 Expected observable behaviors 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -863,7 +863,7 @@ Done
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
@@ -1021,7 +1021,7 @@ d by the stimulus, a light-seeking vehicle will have to reach maximum velocity
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -1055,7 +1055,7 @@ reference "fig:Webots-braiten1"
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
@@ -1202,7 +1202,7 @@ name "sec:Self-connected-motor-unit"
 \emph default
 1-unit setup with self-connected motor unit 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -1222,7 +1222,7 @@ Done
 \begin_layout Subsubsection
 Expected behaviors 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -1293,7 +1293,7 @@ identical
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -1568,7 +1568,7 @@ darkness-seeker,
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -1595,7 +1595,7 @@ Preliminary tests confirms the above observations.
 \begin_layout Section
 Ashbian 2-unit setups 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -1813,7 +1813,7 @@ reference "fig:1-2-non-connected"
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Float figure
@@ -1917,7 +1917,7 @@ The values of the 3 units modeling the vehicle
 
 \begin_layout Plain Layout
 \begin_inset Flex ShortLabel
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
@@ -2203,7 +2203,7 @@ reference "fig:1-2-S-S-connect"
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 
@@ -2221,7 +2221,7 @@ status open
 
 \begin_layout Plain Layout
 \begin_inset Flex Flex:ShortLabel
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
@@ -2302,7 +2302,7 @@ The presence of a self-connection
 \begin_inset Formula $M\rightarrow M$
 \end_inset
 
- on the motor unit turn it into a damped Newtonian unit.
+ on the motor unit turns it into a damped Newtonian unit.
  The absence of a similar self-connection on the sensory unit 
 \begin_inset Formula $S$
 \end_inset
@@ -2400,7 +2400,7 @@ Done
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 
@@ -2418,7 +2418,7 @@ status open
 
 \begin_layout Plain Layout
 \begin_inset Flex Flex:ShortLabel
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
@@ -2459,7 +2459,7 @@ Values of the units in a 2-unit model of a Braitenberg-like type-1 vehicle
 
 \emph on
 \begin_inset Flex ShortLabel
-status open
+status collapsed
 
 \begin_layout Plain Layout
 
@@ -2594,11 +2594,7 @@ lag,
 \begin_inset Float figure
 wide false
 sideways false
-status open
-
-\begin_layout Plain Layout
-
-\end_layout
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -2612,7 +2608,7 @@ status open
 
 \begin_layout Plain Layout
 \begin_inset Flex Flex:ShortLabel
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
@@ -2848,7 +2844,7 @@ reference "fig:1-2-M-M-S-S-connect"
  half the time, actually).
  On the contrary, figure 
 \begin_inset Flex Flex:ShortXRef
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
@@ -2871,7 +2867,7 @@ reference "fig:3-runs-fully-connect-1"
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \begin_inset Float figure
@@ -2882,7 +2878,6 @@ status open
 \begin_layout Plain Layout
 \begin_inset Graphics
 	filename Images/Braiten-1-2-full-connection-point.3-value.pdf
-	lyxscale 30
 	scale 20
 
 \end_inset
@@ -2921,7 +2916,6 @@ status open
 \begin_layout Plain Layout
 \begin_inset Graphics
 	filename Images/Braiten-1-2-full-connection-point.3-value-2.pdf
-	lyxscale 30
 	scale 20
 
 \end_inset
@@ -2957,7 +2951,6 @@ status open
 \begin_layout Plain Layout
 \begin_inset Graphics
 	filename Images/Braiten-1-2-full-connection-point.3-value-3.pdf
-	lyxscale 30
 	scale 20
 
 \end_inset
@@ -3029,7 +3022,7 @@ Values of the units in 3 runs of a fully connected 2-unit model of a Braitenberg
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Float figure
@@ -3184,7 +3177,7 @@ positive
 \begin_layout Subsection
 Adding uniselector action 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3204,7 +3197,7 @@ To do
 \begin_layout Subsubsection
 Expected behaviors 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3224,7 +3217,7 @@ To do
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3244,7 +3237,7 @@ To do
 \begin_layout Section
 Final discussion of Type-1 taxes 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3271,7 +3264,7 @@ To do
 \begin_layout Chapter
 Type-2 taxes 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3291,7 +3284,7 @@ To do
 \begin_layout Section
 Environment 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3311,7 +3304,7 @@ To do
 \begin_layout Section
 Homeostatic setup 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3331,7 +3324,7 @@ To do
 \begin_layout Section
 Overall features of the described setup 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3351,7 +3344,7 @@ To do
 \begin_layout Chapter
 Multi-modal type-2 taxes 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3371,7 +3364,7 @@ To do
 \begin_layout Section
 Environment 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3391,7 +3384,7 @@ To do
 \begin_layout Section
 Homeostatic setup 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -3411,7 +3404,7 @@ To do
 \begin_layout Section
 Overall features of the described setup 
 \begin_inset Branch working
-status open
+status collapsed
 
 \begin_layout Standard
 
@@ -4116,7 +4109,7 @@ Leftover tables (wrong tables)
 \begin_inset Float table
 wide false
 sideways true
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Tabular
