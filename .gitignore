@@ -7,6 +7,17 @@
 *.o
 *.so
 
+## Qt and Qt-creator created files ##
+#####################################
+moc_*
+*.user
+
+
+## Webots files ##
+##################
+
+*.wproj
+
 
 # Packages #
 ############
@@ -30,3 +41,11 @@
 # Backup files #
 ################
 *.lyx~
+
+
+# Compiled documents from lyx ##
+################################
+
+*.tex
+*.pdf
+*.lyx#
