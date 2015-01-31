@@ -107,8 +107,8 @@ void RobotWorker::run() {
                         continue;
                     }
                     QString mod = QString::fromStdString(model->getSFString());
-                    // qDebug() << "Robot model is now: " << mod;
-                    // qDebug() << "Resetting...";
+                    //qDebug() << "Robot model is now: " << mod;
+                    //qDebug() << "Resetting...";
                     const std::string newModelName = cmd.split(',')[1].toStdString();
                     model->setSFString(newModelName);
                     mod = QString::fromStdString(model->getSFString());
