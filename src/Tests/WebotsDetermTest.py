@@ -48,7 +48,7 @@ class TestWebotsDeterminism(object):
                                    supervisor_port = 10021, 
                                    khepera_host = 'localhost',
                                    khepera_port = 10020,
-                                   exp = "Determinist-Khepera-world.wbt"):
+                                   exp = "Determinist-Khepera-world-TESTING.wbt"):
         self.popSize = popSize
         self.stepsSize = stepsSize    
         self.exp = exp
@@ -150,18 +150,21 @@ class TestWebotsDeterminism(object):
                 self._supervisorSocket.send('M,'+robot_ID)
                 print "indiv number: ", ind
                 
-                cmdExptdTime = (self.getSimulTime(self._clientSocket) / WEBOTS_MIN_TIME_STEP) + 100
-                print cmdExptdTime
+#                cmdExptdTime = (self.getSimulTime(self._clientSocket) / WEBOTS_MIN_TIME_STEP) + 100
+#                print cmdExptdTime
                 for step in xrange(self.stepsSize):
+                    cmdExptdTime = 0
                     #print "Webots at:", currentTime
                     #print cmdExptdTime
                     rightCmd = str(round(np.random.uniform(low=0,high=10),3))
-                    if not self.checkCmdTime(self._clientSocket, cmdExptdTime):
-                       print "Bailing out"
-                       print "Executed command %d/%d for ind %d \r" %(step,self.stepsSize,ind),
-                       raise Exception
+                    #===========================================================
+                    # if not self.checkCmdTime(self._clientSocket, cmdExptdTime):
+                    #    print "Bailing out"
+                    #    print "Executed command %d/%d for ind %d \r" %(step,self.stepsSize,ind),
+                    #    raise Exception
+                    #===========================================================
                     self._clientSocket.send('R,'+rightCmd + ','+str(cmdExptdTime) +','+str((2*step)+1))
-                    discard = self._clientSocket.recv(100)
+#                    discard = self._clientSocket.recv(100)
                     rightCmdFile.write(str(rightCmd+','+str(cmdExptdTime*timeStep) +','+str((2*step)+1)+'\n'))
                     #rightCmdFile.flush()
 #                    print 'R,'+rightCmd + ','+str(cmdExptdTime*timeStep) +','+str((2*step)+1)
@@ -171,29 +174,33 @@ class TestWebotsDeterminism(object):
                         #----------------------------------- print "Bailing out"
                         #------------------------------------------------- break
                     self._clientSocket.send('L,'+ leftCmd+ ','+str(cmdExptdTime)+','+str((2*step)+2))
-                    discard = self._clientSocket.recv(100)
+#                   discard = self._clientSocket.recv(100)
                     leftCmdFile.write(leftCmd+','+str(cmdExptdTime*timeStep) +','+str((2*step)+2)+'\n')
                     #leftCmdFile.flush()
 #                    print 'L,'+ leftCmd+ ','+str(cmdExptdTime*timeStep)+','+str((2*step)+2)
-                    sleep(0.1)
+                    #sleep(0.1)
                     cmdExptdTime += betwCmdsDelay                    
                 self._clientSocket.send("Z,,-1,")
-                resp =  ""
-                "wait until client has processed all the commands" 
-                while "Z" not in resp:
-                    resp = self._clientSocket.recv(1024)
- #                   print resp
-                    sleep(0.1)
-                print "GOT BACK %s --- End of run for individual number %d with id %s" %(resp, ind, robot_ID)
-                rightCmdFile.close()
-                leftCmdFile.close()
-                self.stopRobot()
-                self.simulationEnvironResetPos(ORIG_TRANSL + ORIG_ROTAT)
-                self._clientSocket.send("T,,-1,")
-                simulTime = float(self._clientSocket.recv(128))
-                print "Simulation now at ==>  ", str(simulTime)
+ #==============================================================================
+ #                resp =  ""
+ #                "wait until client has processed all the commands" 
+ #                while "Z" not in resp:
+ #                    resp = self._clientSocket.recv(1024)
+ # #                   print resp
+ #                    sleep(0.1)
+ #                print "GOT BACK %s --- End of run for individual number %d with id %s" %(resp, ind, robot_ID)
+ #==============================================================================
+                #===============================================================
+                # rightCmdFile.close()
+                # leftCmdFile.close()
+                # self.stopRobot()
+                # self.simulationEnvironResetPos(ORIG_TRANSL + ORIG_ROTAT)
+                # self._clientSocket.send("T,,-1,")
+                # simulTime = float(self._clientSocket.recv(128))
+                # print "Simulation now at ==>  ", str(simulTime)
+                #===============================================================
                 self.simulationEnvironResetPhysics()
-            self.stopRobot()
+#            self.stopRobot()
             self._supervisorSocket.send('M,'+'Dummy_final')
             sleep(1)
             self.simulationEnvironQuit()
