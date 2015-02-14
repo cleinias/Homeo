@@ -141,6 +141,7 @@ class TestWebotsDeterminism(object):
         try:
             timeStep      =  mpf(32)                      # In milliseconds
             betwCmdsDelay =  mpf(50)                      # In time steps
+            betwLoopsDelay = mpf(100)                     # In time steps
             for ind in xrange(self.popSize):
                 np.random.seed(64)
                 formattedTime = strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))
@@ -149,22 +150,23 @@ class TestWebotsDeterminism(object):
                 'name the robot according to pattern 000-ind'
                 robot_ID = "000-"+str(ind+1).zfill(3)
                 self._supervisorSocket.send('M,'+robot_ID)
-                print "indiv number: ", ind                
+                print "indiv number: ", ind
+                cmdExptdTime = int( (self.getSimulTime(self._clientSocket) /WEBOTS_MIN_TIME_STEP))                             
                 for step in xrange(self.stepsSize):
-                    simulTime = self.getSimulTime(self._clientSocket)
-                    cmdExptdTime = int((simulTime / WEBOTS_MIN_TIME_STEP)   + betwCmdsDelay)
-                    print "now simul at: %f and cmd expect param: %d"%(simulTime, cmdExptdTime) 
+                    cmdExptdTime += betwCmdsDelay
+                    print "now cmd expect param: %d" % cmdExptdTime
                     rightCmd = str(round(np.random.uniform(low=0,high=10),3))
-                    self._clientSocket.send('R,'+rightCmd + ','+nstr(cmdExptdTime,0) +','+str((2*step)+1))
+                    self._clientSocket.send('R,'+rightCmd + ','+str(cmdExptdTime) +','+str((2*step)+1))
                     discard = self._clientSocket.recv(100)
                     rightCmdFile.write(str(rightCmd+','+str(cmdExptdTime*timeStep) +','+str((2*step)+1)+'\n'))
                     leftCmd = str(round(np.random.uniform(low=0,high=10),3))
-                    simulTime = self.getSimulTime(self._clientSocket)
-                    cmdExptdTime = int((simulTime / WEBOTS_MIN_TIME_STEP)   + betwCmdsDelay)
+#                     simulTime = self.getSimulTime(self._clientSocket)
+                    cmdExptdTime +=  betwCmdsDelay
 #                     print "now simul at: %d and cmd expect param: %d"%(simulTime, cmdExptdTime) 
-                    self._clientSocket.send('L,'+ leftCmd+ ','+nstr(cmdExptdTime,0)+','+str((2*step)+2))
+                    self._clientSocket.send('L,'+ leftCmd+ ','+str(cmdExptdTime)+','+str((2*step)+2))
                     discard = self._clientSocket.recv(100)
                     leftCmdFile.write(leftCmd+','+str(cmdExptdTime*timeStep) +','+str((2*step)+2)+'\n')
+                    cmdExptdTime += betwLoopsDelay
 #                 self._clientSocket.send("Z,,-1,")
                 rightCmdFile.close()
                 leftCmdFile.close()
@@ -301,5 +303,5 @@ class TestWebotsDeterminism(object):
 
                          
 if __name__ == '__main__':
-    simul = TestWebotsDeterminism(popSize=150, stepsSize=200)
+    simul = TestWebotsDeterminism(popSize=50, stepsSize=2000)
     simul.runDetermTest()
