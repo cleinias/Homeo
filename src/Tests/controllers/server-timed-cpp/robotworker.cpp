@@ -79,6 +79,7 @@ void RobotWorker::run() {
     double simTime;
     double exptdTime;
     int exptdTimeParam;
+    double cmdDelta = 0.0064;
     QString cmdNo;
    while (step(TIME_STEP) != -1)
    {
@@ -87,11 +88,11 @@ void RobotWorker::run() {
             while(!m_commandsQueue.isEmpty()) {
 //                qDebug() << "Queue length is: " << m_commandsQueue.length();
                 const QString tempCmd = QString::fromLatin1(m_commandsQueue.head());
-                exptdTimeParam = (tempCmd.split(",")[2]).toInt();
+                exptdTimeParam = (tempCmd.split(",")[2]).toDouble();
                 exptdTime = exptdTimeParam * ((double)TIME_STEP /1000);
                 simTime = getTime();
                 qDebug() << "Current time ==> "<< simTime << " -- at " << exptdTime << "with time param: "<< exptdTimeParam << "  expect to execute cmd #: " <<tempCmd.split(",")[3];
-                if ((exptdTime == simTime) || (exptdTime < 0)){
+                if ((abs(exptdTime - simTime) < cmdDelta) || (exptdTime < 0)){
                     const QString cmd = QString::fromLatin1(m_commandsQueue.dequeue());
                     if (cmd.size() == 0) {
                         qDebug() << "Got an empty command!";
@@ -144,7 +145,7 @@ void RobotWorker::run() {
                 }
                 else {
 //                    qDebug() << "Wrong Time, not executing. Waiting ...";
-//                    QObject().thread()->usleep(1000*1000*0.001);
+//                    QObject().thread()->usleep(1000*1);  // in milliseconds (usleep is in microseconds)
                     break;
                 }
             }
