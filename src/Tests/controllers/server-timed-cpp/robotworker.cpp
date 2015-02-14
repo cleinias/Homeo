@@ -11,7 +11,7 @@
  * O,       , time, cmdNo : Read values of light sensors and send them to client
  * S,       , time, cmdNo : Stop robot by setting both right and left motors' speed to 0
  * Z,       , time, cmdNo : Do nothing, but report reception back to client (used to coordinate behavior between client and server)
- * T,       , time, cmdNo : Read simulation's current time and send it to the client
+ * T,       , time, cmdNo : Read simulation's current time and send it to the client (in simulation seconds)
 */
 
 
@@ -33,6 +33,8 @@ using namespace webots;
 static const double maxSpeed = 100.0;
 static const int NUM_SENSORS = 2;
 static const int TIME_STEP = 32;
+static const int MIN_TIME_STEP = 32;
+
 
 RobotWorker::RobotWorker(QObject *parent) :
     QObject(parent)
@@ -68,30 +70,27 @@ QString getCmdFileName(QString param){
 
 void RobotWorker::run() {
     qDebug() << "Running";
-//    QFile rightMotorFile(getCmdFileName("Right"));
-//    QFile leftMotorFile(getCmdFileName("Left"));
-//    rightMotorFile.open(QIODevice::WriteOnly | QIODevice::Text);
-//    leftMotorFile.open(QIODevice::WriteOnly | QIODevice::Text);
-//    QTextStream rightStrm(&rightMotorFile);
-//    QTextStream leftStrm(&leftMotorFile);
-//    double simTime;
-//    double exptdTime;
+    QFile rightMotorFile(getCmdFileName("Right"));
+    QFile leftMotorFile(getCmdFileName("Left"));
+    rightMotorFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    leftMotorFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream rightStrm(&rightMotorFile);
+    QTextStream leftStrm(&leftMotorFile);
+    double simTime;
+    double exptdTime;
+    int exptdTimeParam;
     QString cmdNo;
-   while(1){
-//    step(TIME_STEP);
-//    while (!m_commandsQueue.isEmpty()){
-        qDebug() << "I am waiting for commands";
-        qDebug() << "Command queue is empty? " << m_commandsQueue.isEmpty();
+   while (step(TIME_STEP) != -1)
+   {
+       {
         QMutexLocker l(&m_commandMutex);
-        if (!m_commandsQueue.isEmpty())
-            {const QString tempCmd = QString::fromLatin1(m_commandsQueue.dequeue());
-             qDebug() << "I got the command: " << tempCmd;}
-        step(TIME_STEP);
-        {
             while(!m_commandsQueue.isEmpty()) {
+//                qDebug() << "Queue length is: " << m_commandsQueue.length();
                 const QString tempCmd = QString::fromLatin1(m_commandsQueue.head());
-                exptdTime = (tempCmd.split(",")[2].toDouble()) * ((double)TIME_STEP /1000);
-                qDebug() << "Current time ==> "<< simTime << " -- Commands expected to be executed at ==> " << exptdTime;
+                exptdTimeParam = (tempCmd.split(",")[2]).toInt();
+                exptdTime = exptdTimeParam * ((double)TIME_STEP /1000);
+                simTime = getTime();
+                qDebug() << "Current time ==> "<< simTime << " -- at " << exptdTime << "with time param: "<< exptdTimeParam << "  expect to execute cmd #: " <<tempCmd.split(",")[3];
                 if ((exptdTime == simTime) || (exptdTime < 0)){
                     const QString cmd = QString::fromLatin1(m_commandsQueue.dequeue());
                     if (cmd.size() == 0) {
@@ -135,20 +134,21 @@ void RobotWorker::run() {
                         emit sendCommand("Z");
                     } else if (cmd.at(0)=='T'){
                         double cmdTime = getTime();
+//                        double timeSteps = cmdTime / (MIN_TIME_STEP/1000);
                         const QString out = QString("%1").arg(cmdTime);
-//                        qDebug() << "Got T. Sending " << out.toLatin1();
+                        qDebug() << "Got T. Sending " << out.toLatin1();
                         emit sendCommand(out.toLatin1());
                     }  else {
                         emit sendCommand("g");
                     }
                 }
                 else {
-                      QObject().thread()->usleep(1000*1000*0.3);
-                    qDebug() << "Wrong Time, not executing. Waiting ...";
+//                    qDebug() << "Wrong Time, not executing. Waiting ...";
+//                    QObject().thread()->usleep(1000*1000*0.001);
                     break;
                 }
             }
-        }
+       }
 
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents | QEventLoop::ExcludeSocketNotifiers);
     }
