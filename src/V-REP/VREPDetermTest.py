@@ -6,6 +6,7 @@ import vrep
 
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 import os, sys
 import subprocess
 from vrepConst import simx_opmode_oneshot, simx_opmode_oneshot_wait
@@ -30,13 +31,18 @@ class VREPTests(object):
         self.betwCmdDelays = 0
         self.maxSpeed = 5
 
-    def testDetermePuckMomvt(self):
+
+    def connectAll(self):
         self.startVrepAndConn()
         self.getHandles()
-        self.movePuckRandomly()
-        self.cleanUp()
+
+    def testDetermePuckMomvt(self):
+        self.moveEPuckRandomly()
         
-    def movePuckRandomly(self):
+    def testKJLightSensors(self):
+        self.moveKJuniorReadLights()
+        
+    def moveEPuckRandomly(self):
         for run in xrange(self.noRuns): #     print "About to start simulation for run number: ", run+1
             eCode = vrep.simxStartSimulation(self.simulID, vrep.simx_opmode_oneshot_wait)
             vrep.simxSynchronousTrigger(self.simulID)
@@ -48,9 +54,6 @@ class VREPTests(object):
                 leftSpeed = np.random.uniform(self.maxSpeed * 2) # -maxSpeed
                 eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.rightMotor, rightSpeed, vrep.simx_opmode_oneshot)
                 eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.leftMotor, leftSpeed, vrep.simx_opmode_oneshot)
-                vrep.simxSynchronousTrigger(self.simulID)
-                eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.KJrightMotor, rightSpeed, vrep.simx_opmode_oneshot)
-                eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.KJleftMotor, rightSpeed, vrep.simx_opmode_oneshot)
                 vrep.simxSynchronousTrigger(self.simulID)
                 for i in xrange(self.betwCmdDelays):
                     vrep.simxSynchronousTrigger(self.simulID) #         print "%d\t Speeds are L:%.3f\tR:%.3f" %(step, rightSpeed,leftSpeed)
@@ -65,6 +68,45 @@ class VREPTests(object):
             vrep.simxSynchronousTrigger(self.simulID)
             sleep(2) #     print "Simulation stopped"
         print "Done"
+        
+    def moveKJuniorReadLights(self):
+#         vrep.simxHandleVisionSensor???? (no remote API for this?)
+        "rotate in place and print light readings"
+        eCode, res, rightEyeRead = vrep.simxGetVisionSensorImage(self.simulID, self.KJrightEye, 0, vrep.simx_opmode_streaming)
+        ecode, res, leftEyeRead = vrep.simxGetVisionSensorImage(self.simulID, self.KJleftEye, 0, vrep.simx_opmode_streaming)
+        vrep.simxSynchronousTrigger(self.simulID)
+
+        for step in xrange(100):
+            rightSpeed = 25
+            leftSpeed = rightSpeed
+            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.KJrightMotor, rightSpeed, vrep.simx_opmode_oneshot_wait)
+            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.KJleftMotor, leftSpeed, vrep.simx_opmode_oneshot_wait)
+            vrep.simxSynchronousTrigger(self.simulID)
+#             eCodeR, res, rightEyeRead = vrep.simxGetVisionSensorImage(self.simulID, self.KJrightEye, 0, vrep.simx_opmode_buffer)
+#             eCodeL, res, leftEyeRead = vrep.simxGetVisionSensorImage(self.simulID, self.KJleftEye, 0, vrep.simx_opmode_buffer)
+#             vrep.simxSynchronousTrigger(self.simulID)
+#             print "Right eCode:\t", eCodeR,
+#             print "Left eCode:\t", eCodeL
+#             leftImg = np.array(leftEyeRead, np.uint8)
+#             rightImg.resize(res[0],res[1],3)
+#             print "Right:\t%d\tLeft:\t%d"% (sum(rightEyeRead), sum(leftEyeRead))
+#         print rightImg.shape
+#         plt.imshow(rightImg)#, origin="lower")
+
+#         for run in xrange(self.noRuns):
+#             np.random.seed(64)
+#                 
+#             for step in xrange(self.noSteps):
+#                 rightSpeed = np.random.uniform(self.maxSpeed * 2) # - self.maxSpeed
+#                 leftSpeed = np.random.uniform(self.maxSpeed * 2) # -maxSpeed
+#                 eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.KJrightMotor, rightSpeed, vrep.simx_opmode_oneshot_wait)
+#                 eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.KJleftMotor, leftSpeed, vrep.simx_opmode_oneshot_wait)
+#                 vrep.simxSynchronousTrigger(self.simulID)
+#                 eCode, res, rightEyeRead = vrep.simxGetVisionSensorImage(self.simulID, self.KJrightEye, 1, vrep.simx_opmode_buffer)
+#                 ecode, res, leftEyeRead = vrep.simxGetVisionSensorImage(self.simulID, self.KJleftEye, 1, vrep.simx_opmode_buffer)
+#                 vrep.simxSynchronousTrigger(self.simulID)
+#                 print "Right eye reads: \t", rightEyeRead
+#                 print "Left eye reads: \t", leftEyeRead
 
 
     "Clean up"
@@ -107,35 +149,40 @@ class VREPTests(object):
 
     def getHandles(self):
         "Get handles for epuck and motors"
-        ecodeE, self.ePuckHandle = vrep.simxGetObjectHandle(self.simulID, "ePuck", vrep.simx_opmode_oneshot_wait)
-        vrep.simxSynchronousTrigger(self.simulID)                    
-        ecodeE, self.kheperaHandle = vrep.simxGetObjectHandle(self.simulID, "K3_robot", vrep.simx_opmode_oneshot_wait)
-        vrep.simxSynchronousTrigger(self.simulID)                    
+#         ecodeE, self.ePuckHandle = vrep.simxGetObjectHandle(self.simulID, "ePuck", vrep.simx_opmode_oneshot_wait)
+#         vrep.simxSynchronousTrigger(self.simulID)                    
+#         ecodeE, self.kheperaHandle = vrep.simxGetObjectHandle(self.simulID, "K3_robot", vrep.simx_opmode_oneshot_wait)
+#         vrep.simxSynchronousTrigger(self.simulID)                    
         ecodeE, self.KJuniorHandle = vrep.simxGetObjectHandle(self.simulID, "KJunior", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)                    
-        # eCodeEC, ePuckCollHandle = vrep.simxGetObjectHandle(self.simulID, "ePuck1", vrep.simx_opmode_oneshot_wait)
-        eCodeR, self.rightMotor  = vrep.simxGetObjectHandle(self.simulID, "ePuck_rightJoint", vrep.simx_opmode_oneshot_wait)
-        vrep.simxSynchronousTrigger(self.simulID)                    
-        eCodeL, self.leftMotor   = vrep.simxGetObjectHandle(self.simulID, "ePuck_leftJoint", vrep.simx_opmode_oneshot_wait)
-        vrep.simxSynchronousTrigger(self.simulID)
+#         eCodeR, self.rightMotor  = vrep.simxGetObjectHandle(self.simulID, "ePuck_rightJoint", vrep.simx_opmode_oneshot_wait)
+#         vrep.simxSynchronousTrigger(self.simulID)                    
+#         eCodeL, self.leftMotor   = vrep.simxGetObjectHandle(self.simulID, "ePuck_leftJoint", vrep.simx_opmode_oneshot_wait)
+#         vrep.simxSynchronousTrigger(self.simulID)
         eCodeR, self.KJrightMotor  = vrep.simxGetObjectHandle(self.simulID, "KJunior_motorRight", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)                    
         eCodeL, self.KJleftMotor   = vrep.simxGetObjectHandle(self.simulID, "KJunior_motorLeft", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)                    
-        eCodeR, self.KJrightEye  = vrep.simxGetObjectHandle(self.simulID, "KJunior_lightSensor1", vrep.simx_opmode_oneshot_wait)
+        eCodeR, self.KJrightEye  = vrep.simxGetObjectHandle(self.simulID, "KJ_RightEye1", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)                    
-        eCodeL, self.KJleftEye   = vrep.simxGetObjectHandle(self.simulID, "KJunior_lightSensor2", vrep.simx_opmode_oneshot_wait)
+        eCodeL, self.KJleftEye   = vrep.simxGetObjectHandle(self.simulID, "KJ_LeftEye1", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)                    
                    
 
-        if (self.ePuckHandle == 0 or self.rightMotor == 0 or self.leftMotor == 0):
+        if (self.KJrightMotor == 0 or self.KJleftMotor == 0 or self.KJrightEye == 0 or self.KJleftEye == 0):
             cleanUp()
-            sys.exit("Exiting:  Could not connect to motors")
+            sys.exit("Exiting:  Could not connect to motors or sensors")
         else:
-            print " I am connected to Right Motor with ID %d and leftMotor with id %d" % (self.rightMotor, self.leftMotor)
+            print " I am connected to Right Motor: %d, leftMotor: %d, Right eye: %d, Left eye: %d" % (self.KJrightMotor, 
+                                                                                                      self.KJleftMotor,
+                                                                                                      self.KJrightEye,
+                                                                                                      self.KJleftEye)
     
 
 
 if __name__ == "__main__":
-    test = VREPTests(noSteps=10)
-    test.testDetermePuckMomvt()
+    test = VREPTests(noSteps=50)
+    test.connectAll()
+#     test.testDetermePuckMomvt()
+    test.testKJLightSensors()
+    test.cleanUp()
