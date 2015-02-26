@@ -36,8 +36,8 @@ def graphTrajectory(trajDataFilename):
     'read trajectory data'
     try:
         trajData = np.loadtxt(trajDataFilename, skiprows=len(dataFileHeader))
-    except:
-        print "cannot open the file"
+    except Exception as e:
+        print "Cannot open the file: ", e
     
     'Compute final distance'
     finalPos = [trajData[:,0][-1],trajData[:,1][-1]]
