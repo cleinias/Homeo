@@ -11,14 +11,13 @@ def withAllSubclasses(aClass):
 
     
 def rchop(aString, ending):
-  if str(aString).endswith(ending):
-    return str(aString)[:-len(ending)]
-  return str(aString)    
+    if str(aString).endswith(ending):
+        return str(aString)[:-len(ending)]
+    return str(aString)    
     
 class SubclassResponsibility(Exception):
     pass
 
-#
 class Singleton(type):
     _instances = {}
     def __call__(cls, *args, **kwargs):
@@ -26,10 +25,10 @@ class Singleton(type):
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
     
-    
 def scaleTo(fromRange,toRange, value):
     """Linearly scale a value from its original
        fromRange to toRange
        fromRange and toRange are 2-element lists of numbers"""
        
     return (value - fromRange[0]) * (toRange[1]-toRange[0]) / (fromRange[1]-fromRange[0]) + toRange[0]
+
