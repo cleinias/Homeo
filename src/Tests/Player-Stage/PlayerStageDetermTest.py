@@ -63,9 +63,9 @@ class TestPlayerStageDeterm(object):
         np.random.seed(1)
         for i in xrange(nRuns):
             speed = np.random.uniform(100)
-            speedTime = self.simulation.GetElapsedTime()
+            #speedTime = self.simulation.GetElapsedTime()
             turn = -360 + np.random.uniform(720)
-            turnTime = self.simulation.GetElapsedTime()
+            #turnTime = self.simulation.GetElapsedTime()
 #             print "speed is %.2f at %f and turn is %.2f at %f" % (speed, speedTime,turn,turnTime)
             self.position.SetSpeed(speed, dtor(turn))
             sleep(0.03)
@@ -108,6 +108,6 @@ if __name__ == "__main__":
     playerTestDeterm = TestPlayerStageDeterm()
     playerTestDeterm.connectAll()
     for x in xrange(10):
-        playerTestDeterm.doOneRun(80)
+        playerTestDeterm.doOneRun(800)
         playerTestDeterm.stopAndReset()
     print "done"
