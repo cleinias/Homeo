@@ -11,16 +11,15 @@ Include also related tests (such as light readings, Braitenberg-like simulations
 
 Assumes:
 1. V-REP world ("Scene") "$HOMEO/src/VREP/Khepera-J-Proximity-only.SF.ttt" is already running
-2. V-REP listens on ports 19997 (for main control) and 19998 (for trajectory program)
+2. V-REP listens on ports 19997 (for main control)
 3. The V-REP robot to be controlled is called "Khepera"
 4. Other V-REP assumptions about lights and other features of the V-REP world (see method comments and V-REP world description)  
-5. A SimsData subdir exists at the same level as the script 
+5. A SimsData subdir exists at /home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData
 '''
 
 
 import vrep
 from Helpers.SimulationThread import SimulationThread
-from VREPTrajectoryRecorder import VREPTrajectoryRecorder
 import math
 import numpy as np
 # import matplotlib.pyplot as plt
@@ -30,7 +29,7 @@ import datetime
 from numpy import dot, arccos, degrees
 from math import pi
 from numpy.linalg import norm
-from time import sleep,time
+from time import sleep,time, strftime,localtime
 from Helpers.General_Helper_Functions import scaleTo
 from ctypes import c_ubyte
 
@@ -74,17 +73,12 @@ class VREPTests(object):
         
         
     def startTrajRecorder(self):
-        self.trajRec = VREPTrajectoryRecorder( self.robot_host, self.trajectoryPort, self.robotName, lightIntensity=100)
-        self.trajRecorderThread = SimulationThread()
-        self.trajRec.moveToThread(self.trajRecorderThread)
-        self.trajRecorderThread.started.connect(self.trajRec.run)
-        self.trajRecorderThread.start()
-
+        pass
 
     def connectAll(self):
         self.connect()
         self.getHandles()
-        self.startTrajRecorder()
+#         self.startTrajRecorder()
 
     def testDetermMomvt(self):
         self.moveRandomly()
@@ -96,8 +90,19 @@ class VREPTests(object):
         self.moveAndReadProxSensors()
                 
     def moveRandomly(self):
+        "Set trajectory data directory and communicate to V-REP"
+        HOMEODIR = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/'
+        dataDir = 'SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))
+        simsDataDir = os.path.join(HOMEODIR,"SimulationsData",dataDir)
+        os.mkdir(simsDataDir)
+        print "Saving to: ", simsDataDir
+        e = vrep.simxSetStringSignal(self.simulID,"HOMEO_SIGNAL_SIM_DATA_DIR" ,asByteArray(simsDataDir), vrep.simx_opmode_oneshot_wait)
+        vrep.simxSynchronousTrigger(self.simulID)
+        print "Message sent, error code: ", e
         for run in xrange(self.noRuns):
             eCode = vrep.simxStartSimulation(self.simulID, vrep.simx_opmode_oneshot_wait)
+            vrep.simxSynchronousTrigger(self.simulID)
+            e = vrep.simxSetStringSignal(self.simulID,"HOMEO_SIGNAL_SIM_DATA_DIR" ,asByteArray(simsDataDir), vrep.simx_opmode_oneshot_wait)
             vrep.simxSynchronousTrigger(self.simulID)
             print "Simulation started: run number %d, error code: %d"% (run+1, eCode)
             "Wait until simulation is ready, otherwise we will miss a few movement commands"    
@@ -157,7 +162,7 @@ class VREPTests(object):
         ecode, res, leftEyeRead = vrep.simxGetVisionSensorImage(self.simulID, self.leftEye, 0, vrep.simx_opmode_streaming)
         vrep.simxSynchronousTrigger(self.simulID)
 
-        for step in xrange(100):
+        for step in xrange(self.noSteps):
             rightSpeed = 25
             leftSpeed = rightSpeed
             eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.rightMotor, rightSpeed, vrep.simx_opmode_oneshot_wait)
@@ -404,7 +409,7 @@ class VREPTests(object):
 
 
 if __name__ == "__main__":
-    test = VREPTests(noSteps=100, noRuns=1)
+    test = VREPTests(noSteps=10, noRuns=1)
     test.connectAll()
     test.testDetermMomvt()
 #     test.testLightSensors()
