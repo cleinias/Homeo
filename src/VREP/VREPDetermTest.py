@@ -125,7 +125,7 @@ class VREPTests(object):
                 vrep.simxSynchronousTrigger(self.simulID)
                 for i in xrange(self.betwCmdDelays):
                     vrep.simxSynchronousTrigger(self.simulID)
-                timeElapsed = time() - timeStart
+            timeElapsed = time() - timeStart
             "Stop the robot"
             self.stopRobot(self.simulID, [self.rightMotor, self.leftMotor])
             eCode = vrep.simxSetStringSignal(self.simulID, self.trajStateSignalName, asByteArray("SAVE"), vrep.simx_opmode_oneshot_wait)
@@ -249,9 +249,8 @@ class VREPTests(object):
             eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.rightMotor, lightReading, vrep.simx_opmode_oneshot_wait)
             eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.leftMotor,  lightReading, vrep.simx_opmode_oneshot_wait)
             vrep.simxSynchronousTrigger(self.simulID)
-
-
             sleep(0)
+            
 
     def braiten1b(self):
         "slowly move forward and print normal vector readings"
@@ -282,19 +281,76 @@ class VREPTests(object):
             
     def braiten2a(self):
         "Seek light source"
+        "PARAMETERS"
         intens = 100
         ambientIntensRatio = 0
         attVect = [0,0,1]
-        for step in xrange(self.noSteps):
-            rightLight = vrep.simxGetFloatSignal(self.simulID, "HOMEO_SIGNAL_Khepera_proxSensor4_LIGHT_READING", vrep.simx_opmode_oneshot_wait)
+        HOMEODIR = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/'
+        dataDir = 'SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))
+        simsDataDir = os.path.join(HOMEODIR,"SimulationsData",dataDir)
+        os.mkdir(simsDataDir)
+        print "Saving to: ", simsDataDir
+        e = vrep.simxSetStringSignal(self.simulID,"HOMEO_SIGNAL_SIM_DATA_DIR" ,asByteArray(simsDataDir), vrep.simx_opmode_oneshot_wait)
+        vrep.simxSynchronousTrigger(self.simulID)
+        print "Message sent, error code: ", e
+        "END PARAMETERS"
+        for run in xrange(self.noRuns):
+            eCode = vrep.simxStartSimulation(self.simulID, vrep.simx_opmode_oneshot_wait)
             vrep.simxSynchronousTrigger(self.simulID)
-            leftLight = vrep.simxGetFloatSignal(self.simulID, "HOMEO_SIGNAL_Khepera_proxSensor2_LIGHT_READING", vrep.simx_opmode_oneshot_wait)
+            e = vrep.simxSetStringSignal(self.simulID,"HOMEO_SIGNAL_SIM_DATA_DIR" ,asByteArray(simsDataDir), vrep.simx_opmode_oneshot_wait)
             vrep.simxSynchronousTrigger(self.simulID)
-            print "rightLight %.3f\t  left light: %.3f" %(rightLight[1],leftLight[1])
-            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.rightMotor, clip(leftLight[1],0,self.maxSpeed), vrep.simx_opmode_oneshot_wait)
-            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.leftMotor,  clip(rightLight[1],0, self.maxSpeed), vrep.simx_opmode_oneshot_wait)
+            print "Simulation started: run number %d, error code: %d"% (run+1, eCode)
+            "Wait until simulation is ready, otherwise we will miss a few movement commands"    
+#             sleep(2) 
+            np.random.seed(64)
+            #     resetRobotInitPose(initPose, self.simulID, ePuckHandle)
+            eCode = vrep.simxSetStringSignal(self.simulID, self.trajStateSignalName, asByteArray("NEWFILE"), vrep.simx_opmode_oneshot_wait)
             vrep.simxSynchronousTrigger(self.simulID)
-            sleep(0)
+            if eCode == 0:
+                print "Starting a new trajectory file"
+            else:
+                print "ERROR: Could not start a new trajectory file" 
+            timeStart = time()
+            for step in xrange(self.noSteps):
+                rightLight = vrep.simxGetFloatSignal(self.simulID, "HOMEO_SIGNAL_Khepera_proxSensor4_LIGHT_READING", vrep.simx_opmode_oneshot_wait)
+                vrep.simxSynchronousTrigger(self.simulID)
+                leftLight = vrep.simxGetFloatSignal(self.simulID, "HOMEO_SIGNAL_Khepera_proxSensor2_LIGHT_READING", vrep.simx_opmode_oneshot_wait)
+                vrep.simxSynchronousTrigger(self.simulID)
+#                 print "rightLight %.3f\t  left light: %.3f" %(rightLight[1],leftLight[1])
+                eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.rightMotor, clip(leftLight[1],0,self.maxSpeed), vrep.simx_opmode_oneshot_wait)
+                eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.leftMotor,  clip(rightLight[1],0, self.maxSpeed), vrep.simx_opmode_oneshot_wait)
+                vrep.simxSynchronousTrigger(self.simulID)
+                sleep(0)
+            timeElapsed = time() - timeStart
+            "Stop the robot"
+            self.stopRobot(self.simulID, [self.rightMotor, self.leftMotor])
+            eCode = vrep.simxSetStringSignal(self.simulID, self.trajStateSignalName, asByteArray("SAVE"), vrep.simx_opmode_oneshot_wait)
+            vrep.simxSynchronousTrigger(self.simulID)
+            if eCode == 0:
+                print "Saving trajectory file"
+            else:
+                print "ERROR: Could not save a new trajectory file" 
+
+            sleep(.5)
+            robotPose = vrep.simxGetObjectPosition(self.simulID, self.robotHandle, -1, vrep.simx_opmode_oneshot_wait)[1][:2]
+            vrep.simxSynchronousTrigger(self.simulID)
+            print "%d: Robot is at: %.3f, %.3f Distance from target is:  %.4f. Run took exactly %.3f seconds" % (run, 
+                                                                                                                 robotPose[0], 
+                                                                                                                 robotPose[1], 
+                                                                                                                 self.computeDistance(self.targetPose, robotPose),
+                                                                                                                 timeElapsed) #
+            eCode = vrep.simxStopSimulation(self.simulID, vrep.simx_opmode_oneshot_wait)
+            vrep.simxSynchronousTrigger(self.simulID)
+            sleep(1) 
+#             eCode = vrep.simxStartSimulation(self.simulID, vrep.simx_opmode_oneshot_wait)
+#             vrep.simxSynchronousTrigger(self.simulID)
+        eCode = vrep.simxSetStringSignal(self.simulID, self.trajStateSignalName, asByteArray("CLOSEFILE"), vrep.simx_opmode_oneshot_wait)
+        vrep.simxSynchronousTrigger(self.simulID)
+        if eCode == 0:
+            print "Starting a new trajectory file"
+        else:
+            print "ERROR: Could not close a new trajectory file" 
+        print "Done"
             
         
     
@@ -385,7 +441,7 @@ class VREPTests(object):
 
 
 if __name__ == "__main__":
-    test = VREPTests(noSteps=100, noRuns=1)
+    test = VREPTests(noSteps=1000, noRuns=3)
     test.connectAll()
 #     test.testDetermMomvt()
 #     test.testLightSensors()
