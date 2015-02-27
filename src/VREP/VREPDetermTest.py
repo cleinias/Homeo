@@ -439,12 +439,40 @@ class VREPTests(object):
         attenuation = 1/(attenVect[0]+(attenVect[1]*distance)+(attenVect[2]*distance**2))
         return (directIntens + (intens*ambIntensRatio)) * attenuation
 
+    def testMaxSpeed(self, maxSpeed, mode):
+        """test max speed of khepera-like robot in V-Rep
+           revving the motors up to maxSpeed in the self.noSteps and then backward.
+           mode--> 1, both motors, 2: right only, 3: left only"""
+        if mode == 1: 
+            rightOn = leftOn = 1
+        elif mode == 2:             
+            rightOn = 1
+            leftOn = 0
+        elif mode == 3:
+            rightOn = 0
+            leftOn = 1
+        unitSpeed = maxSpeed /self.noSteps
+             
+        for i in xrange(self.noSteps):
+            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.rightMotor, unitSpeed *(i+1)*rightOn, vrep.simx_opmode_oneshot_wait)
+            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.leftMotor,  unitSpeed *(i+1)*leftOn, vrep.simx_opmode_oneshot_wait)
+            vrep.simxSynchronousTrigger(self.simulID)
+            print "Step: %s\t Speed now: %.2f" %(str(i),(unitSpeed *(i+1)))
+       
+        for i in xrange(self.noSteps):
+            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.rightMotor, -(maxSpeed/(i+1))*rightOn, vrep.simx_opmode_oneshot_wait)
+            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.leftMotor,  -(maxSpeed/(i+1))*leftOn, vrep.simx_opmode_oneshot_wait)
+            vrep.simxSynchronousTrigger(self.simulID)
+            print "Step: %s\t Speed now: %.2f" % (str(i), (maxSpeed/(i+1))*rightOn) 
 
+        
+        
 if __name__ == "__main__":
-    test = VREPTests(noSteps=1000, noRuns=3)
+    test = VREPTests(noSteps=100, noRuns=1)
     test.connectAll()
 #     test.testDetermMomvt()
 #     test.testLightSensors()
 #     test.moveReadLights()
-    test.braiten2a()
+    test.testMaxSpeed(300,1)
+#     test.braiten2a()
     test.cleanUp()
