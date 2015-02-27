@@ -280,43 +280,19 @@ class VREPTests(object):
             sleep(0)
             
             
-    def braiten2a(self, targetID):
+    def braiten2a(self):
         "Seek light source"
-        intens = 50
-        ambientIntensRatio = .2
+        intens = 100
+        ambientIntensRatio = 0
         attVect = [0,0,1]
         for step in xrange(self.noSteps):
-            rightInput = vrep.simxReadProximitySensor(self.simulID, self.rightEye, vrep.simx_opmode_oneshot_wait)
+            rightLight = vrep.simxGetFloatSignal(self.simulID, "HOMEO_SIGNAL_Khepera_proxSensor4_LIGHT_READING", vrep.simx_opmode_oneshot_wait)
             vrep.simxSynchronousTrigger(self.simulID)
-            leftInput = vrep.simxReadProximitySensor(self.simulID, self.leftEye, vrep.simx_opmode_oneshot_wait)
+            leftLight = vrep.simxGetFloatSignal(self.simulID, "HOMEO_SIGNAL_Khepera_proxSensor2_LIGHT_READING", vrep.simx_opmode_oneshot_wait)
             vrep.simxSynchronousTrigger(self.simulID)
-            rightAngle = degrees(self.angleBetVecs([0,0,1], rightInput[2]))
-            leftAngle = degrees(self.angleBetVecs([0,0,1], rightInput[2]))
-
-            if leftInput[3] == targetID:
-                leftLightReading = self.irradAtSensor(intens, ambientIntensRatio, leftInput[2], attVect)
-            else:
-                leftLightReading = 0
-            if rightInput[3] == targetID:
-                rightLightReading = self.irradAtSensor(intens, ambientIntensRatio, rightInput[2], attVect)
-            else:
-                rightLightReading = 0
-
-#             print "Left sees: %s\tAngle:%.3f\tIrrad:%.2f\tSpeed:%.2f\tNorm: %.3f\tVector:%s\tRight sees: %s\tAngle:%.3f\tIrrad:%.3fSpeed:%.2f\t\tNorm: %.3f\tVector:%s\t" % (leftInput[3],
-#                                                                                              leftAngle,
-#                                                                                              leftLightReading,
-#                                                                                              clip(leftLightReading, 0, self.maxSpeed),
-#                                                                                              norm(leftInput[2]),
-#                                                                                              leftInput[2],
-#                                                                                              rightInput[3],
-#                                                                                              rightAngle,
-#                                                                                              rightLightReading,
-#                                                                                              clip(rightLightReading, 0, self.maxSpeed),
-#                                                                                              norm(rightInput[2]),
-#                                                                                              rightInput[2])
-              
-            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.rightMotor, clip(leftLightReading,0,self.maxSpeed), vrep.simx_opmode_oneshot_wait)
-            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.leftMotor,  clip(rightLightReading,0, self.maxSpeed), vrep.simx_opmode_oneshot_wait)
+            print "rightLight %.3f\t  left light: %.3f" %(rightLight[1],leftLight[1])
+            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.rightMotor, clip(leftLight[1],0,self.maxSpeed), vrep.simx_opmode_oneshot_wait)
+            eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.leftMotor,  clip(rightLight[1],0, self.maxSpeed), vrep.simx_opmode_oneshot_wait)
             vrep.simxSynchronousTrigger(self.simulID)
             sleep(0)
             
@@ -409,10 +385,10 @@ class VREPTests(object):
 
 
 if __name__ == "__main__":
-    test = VREPTests(noSteps=10, noRuns=1)
+    test = VREPTests(noSteps=100, noRuns=1)
     test.connectAll()
-    test.testDetermMomvt()
+#     test.testDetermMomvt()
 #     test.testLightSensors()
 #     test.moveReadLights()
-#     test.braiten2a(test.targetID)
+    test.braiten2a()
     test.cleanUp()
