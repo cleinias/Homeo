@@ -67,7 +67,7 @@ def graphTrajectory(trajDataFilename):
     for lightName, light in lightsOnDic.iteritems():
         lightPos = (light[0],light[1])  
         lightRadius = 1.5      # FIXME Provisional. Need to read from trajectory data file
-        ax.add_artist(Circle(lightPos, 0.05, alpha=1,color = 'black')) # marks the center of the light cone
+        ax.add_artist(Circle(lightPos, 0.15, alpha=1,color = 'black')) # marks the center of the light cone
         # parametrize color value to light intensity 
         ax.add_artist(Circle(lightPos, lightRadius, alpha = 0.25, color = cMap(light[2]))) # light cone
     startPose = (trajData[0][0],trajData[0][1])
