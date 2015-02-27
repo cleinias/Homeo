@@ -34,8 +34,8 @@ class HomeoSimulationControllerGui(QDialog):
     The simulation itself is run in a separate thread held in simulThread. 
 
     Instance Variables:
-        simulation                 <aHomeoQtSimulation>   The simulation being controlled
-        simulThread                <aSimulationThread>    The QT thread holding the simulation run
+        _simulation                 <aHomeoQtSimulation>   The simulation being controlled
+        _simulThread                <aSimulationThread>    The QT thread holding the simulation run
     '''
     def __init__(self, parent = None):
         '''
