@@ -5,12 +5,13 @@ Created on Sep 3, 2013
 The Transducer module contains the classes necessary to operate 
 a robot's actuators (motors, etc). The basic class is fairly abstract 
 and may be subclassed to operate concrete robotic simulation environments
-(player/Stage, Webots, etc) 
+(player/Stage, Webots, V-REP, etc.) 
 '''
 from socket import error as SocketError
 from Helpers.General_Helper_Functions import SubclassResponsibility
 from Helpers.ExceptionAndDebugClasses import hDebug
 import random
+
 
 class TransducerException(Exception):
     def __init__(self, value):
@@ -23,14 +24,14 @@ class Transducer(object):
     Transducer is an abstract class. It subclasses control a robot's input /output interfaces. 
     It has just three instance variables:
 
-    robot          <aRef>        a ref to the robot whose actuator it operates
+    robot          <aRef>       a ref to the robot whose actuator it operates
     transdFunction <aString>    the name of the robot's function to operate the actuator
     parameters     <aList>      a list of  parameters to be passed to the function
 
     The basic methods (all defined in subclasses) are 
     
-    act  ---  which activates the actuator by running robot.function(parameters)
-    sense --- which read the sensor by running robot.function(parameters) and returning a value
+    act  ---  which activates the actuator by running robot.transdFunction(parameters)
+    sense --- which read the sensor by running robot.transdFunction(parameters) and returning a value
     range --- which returns a 2 value list containing the minimum and maximum values of the transducer 
     
     '''
@@ -92,7 +93,7 @@ class WebotsDiffMotor(Transducer):
      '''   
     
     def __init__(self, wheel):
-        " initialize instance to Webots values and sets the right or left wheel accordingly"
+        "Initialize instance to Webots values and sets the right or left wheel accordingly"
         self._transdFunction = "setSpeed"
         if wheel not in ["right","left"]:
             raise TransducerException("Wheel must either be right or left")
@@ -132,14 +133,25 @@ class WebotsLightSensor(Transducer):
        
     def range(self):
         '''Returns the range of the light sensor.
-           FIXME Webots actually has now access to the light sensor maximum value (its minimum value is 0).
+           FIXME Webots actually has no access to the light sensor maximum value (its minimum value is 0).
            Raise an exception for now'''
         raise TransducerException("Webots does not give access to a sensor's max value")
     
+
+class VREPMotor(Transducer):
+    """ Connects a unit to the motor of a differential drive
+        robot in the V-REP simulator"""
+    
+    "In VREP "
+
+class VREPLightSensor(Transducer):
+    """ Connects a unit to a HomeoLight sensor of  a khepera-like robot
+        in the V-REP simulator"""
+    pass
     
 class TransducerTCP(object):
     '''
-    TransduceTCP is an abstract class. Its subclasses control a robot's input /output interfaces
+    TransducerTCP is an abstract class. Its subclasses control a robot's input /output interfaces
     through a TCP connection to a server running on the robot. 
     It has just four instance variables:
 
@@ -206,7 +218,7 @@ class TransducerTCP(object):
 
 class WebotsDiffMotorTCP(TransducerTCP): 
     '''
-     webotsDiffMotor is the interface to the wheels of a Webots'
+     WebotsDiffMotorTCP is the interface to the wheels of a Webots'
      Differential Wheel robot controlled by a server. 
      Its "_wheel" variable specifies which wheel (right or left)
      it controls. It defines the transdFunction name and redefines
@@ -308,7 +320,7 @@ class WebotsLightSensorTCP(TransducerTCP):
        since webots uses a light sensor's maximum value for the 
        minimum stimulus and 0 for the maximum possible stimulus'''
     
-    def __init__(self, aNumber, filename = None, debug=True):
+    def __init__(self, aNumber, filename = None, debug=False):
         '''Initialize the sensor with the Webots function name and the number of the sensor.
            Notice that it is the caller class responsibility to make sure that there is actually 
            such a sensor in the robot and that the robot tcp server controller returns an appropriate string'''

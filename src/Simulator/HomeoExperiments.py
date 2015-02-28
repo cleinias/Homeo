@@ -2135,7 +2135,7 @@ def initializeBraiten2_2Neg(params=None):
 #===============================================================================
 # Genetic Algorithms experiments
 #===============================================================================
-def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "VREP", raw=False):
+def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "VREP", raw=False, dataDir = None):
     '''
     Initialization of a Braitenberg-like homeostat for use in GA simulations.
     
@@ -2192,7 +2192,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "
 ''' 
     "TCP/IP parameters"
         #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
-    host = 'localhost'
+    host = '127.0.0.1'
     WebotsKheperaPort = 10020
     VREPKheperaPort = 19997
 
@@ -2451,7 +2451,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "
     hDebug('unit', "Homeostat initialized")
     return hom
 
-def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=False):
+def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=False, dataDir = None):
     '''
     Initialize a homeostat according to initializeBraiten2_2_Full_GA, then turn 
     off all uniselectors.

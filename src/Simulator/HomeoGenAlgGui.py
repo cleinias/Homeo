@@ -105,8 +105,7 @@ class HomeoGASimulation(object):
     '''
     
     dataDirRoot = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/'
-    
-        
+           
     def __init__(self,parent=None, stepsSize = 1000, 
                                    popSize=150,
                                    generSize = 1, 
@@ -115,7 +114,7 @@ class HomeoGASimulation(object):
                                    supervisor_host = 'localhost', 
                                    supervisor_port = 10021, 
 #                                   exp = "initializeBraiten2_2_NoUnisel_No_Noise_Full_GA",
-                                   exp = "initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE",
+                                   exp = "initializeBraiten2_2_Full_GA",
 #                                   exp = "initializeBraiten2_2_Full_GA",
                                    cxProb = 0.5, 
                                    mutationProb = 0.2, 
@@ -233,6 +232,12 @@ class HomeoGASimulation(object):
 
     def recordGADataToLogbook(self,timeElapsed, pop):
         " Insert general GA simulation parameters into logbook"
+        
+        " for non cloned population the self._cloname attr is None"
+        try:
+            clone = self._cloneName
+        except AttributeError:
+            clone  = 'Random population'
          
         self.logbook.record(date = strftime("%a, %d %b %Y %H:%M:%S",localtime()),
                             exp=self._simulation.currentExperiment,
@@ -248,7 +253,7 @@ class HomeoGASimulation(object):
                             finalPop = len(pop), 
                             finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop],
                             type = self._type,
-                            cloneName = self._cloneName) 
+                            cloneName = clone) 
 
 
         #=======================================================================
@@ -274,7 +279,6 @@ class HomeoGASimulation(object):
         #hDebug('ga', "indA is: " + indA)
         #hDebug('ga', "indB is: " + indB)
         return indA == indB
-
     
     def checkBounds(self, min, max):
         def decorator(func):
@@ -303,7 +307,6 @@ class HomeoGASimulation(object):
         ind.ID = genome["indivId"]        
         return ind      
 
-
     def generatePopOfClones(self, cloneName =''):
         """Generate a population of identical clones from
            genome stored in self.clonableGenome""" 
@@ -311,16 +314,13 @@ class HomeoGASimulation(object):
         self._type = "clones"
         self._cloneName = cloneName
         return self.toolbox.popClones(n=self.popSize)
-        
-        
-    
+          
     def generateRandomPop(self, randomSeed = 64):
         """Generate a population of random individual with given random seed"""
         
         np.random.seed(randomSeed)   # For repeatable experiments
         self._type = 'random'
         return self.toolbox.population(n=self.popSize)
-
 
     def runGaSimulation(self, pop):
         """Execute a complete GA run. Could be either over a population of clones
@@ -335,8 +335,7 @@ class HomeoGASimulation(object):
             gen = 0
             for i, ind in enumerate(pop):
                 ind.ID = str(gen).zfill(self.IDPad)+"-"+str(i+1).zfill(self.IDPad)
-            
-                
+                            
                     
             print("Start of evolution")
             
@@ -664,8 +663,8 @@ class HomeoGASimulation(object):
             
         if genome==None:
             genome=self.createRandomHomeostatGenome(self.genomeSize)
-        
-        params = {'homeoGenome':genome, 'dataDir' : self.dataDir}
+                    
+        params = {'homeoGenome':genome, 'dataDir' : self.dataDir, 'simulator':"WEBOTS"}
         self._simulation.initializeExperSetup(**params)
 
         hDebug('network', "Trying to connect to supervisor")
@@ -768,19 +767,20 @@ def selTournamentRemove(individuals, k, tournsize):
 if __name__ == '__main__':
     #app = QApplication(sys.argv)
     #simulGUI = HomeoGASimulGUI()
-    logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/SimsData-2015-01-19-00-35-10"
-    logL = 'Logbook-2015-01-19-00-35-10.lgb'
-    id = '018-016'
-    logF = os.path.join(logD,logL)
-    genome = extractGenomeOfIndID(id,logF)
+#     logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/SimsData-2015-01-19-00-35-10"
+#     logL = 'Logbook-2015-01-19-00-35-10.lgb'
+#     id = '018-016'
+#     logF = os.path.join(logD,logL)
+#     genome = extractGenomeOfIndID(id,logF)
 #    print [round(x,3) for x in genome['genome']]
 #    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
     #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
-    simul = HomeoGASimulation(popSize=10, stepsSize=10000, generSize = 0,  clonableGenome= genome, debugging = 'ga major')
-    simul.runGaSimulation(simul.generatePopOfClones(cloneName='SimsData-2015-01-19-00-35-10--018-016'))
+#     simul = HomeoGASimulation(popSize=1, stepsSize=100, generSize = 0,  clonableGenome = genome, debugging = 'ga major')
+#     simul.runGaSimulation(simul.generatePopOfClones(cloneName='SimsData-2015-01-19-00-35-10--018-016'))
+    simul = HomeoGASimulation(popSize=3, stepsSize=1000, generSize = 0,  debugging = 'ga major')
     #simul.test()
     #simul.runOneGenSimulation()
-    #simul.runGaSimulation(simul.generateRandomPop())
+    simul.runGaSimulation(simul.generateRandomPop())
     #simul.showGenealogyTree(simul.hist, simul.toolbox)
     #simulGUI.show()
     #app.exec_()
