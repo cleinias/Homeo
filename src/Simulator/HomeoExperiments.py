@@ -1129,8 +1129,9 @@ def initializeBraiten2_1(params=None):
     to interface to the outside world
     ''' 
     hom = Homeostat()
+    raise("This feature not implemented yet")
 
-def initializeBraiten2_2(raw=False,params=None):
+def initializeBraiten2_2(raw=False,params=None, simulator = None, dataDir = None):
     '''
     Initialize a Homeostat to replicate a Braitenberg type-2 vehicle with
     4 real units: two for either Motor and two for the sensors, plus 2  HomeoInput Units
@@ -1148,53 +1149,49 @@ def initializeBraiten2_2(raw=False,params=None):
     will translate into a low sensor value.  
                       
 ''' 
-    if raw == None:
-        raw = False
-             
-    "1. setup webots"
-    "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
-       
+    "TCP/IP parameters"
+    #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
+    host = '127.0.0.1'
+    WebotsKheperaPort = 10020
+    VREPKheperaPort = 19997
 
-    '''Webots parameters for tcp/ip communication
-       (Defined in webots world specified above)
-    '''
-    kheperaPort = 10020
-    #kheperaPort = 50000   # Test server at port 50000 that just echoes commands back
-    supervisorPort = 10021
+    """Get the simulator-specific transducer units
+    Either function returns a dictionary with 4 transducers: 
+    rightWheelTransd, leftWheelTransd, rightEyeTransd, leftEyeTransd""" 
+    try:
+        if simulator == "VREP":
+            port = VREPKheperaPort
+            transducers = basicBraiten2VREPTransducers()
+        elif simulator == "WEBOTS":
+            port = WebotsKheperaPort
+            transducers = basicBraiten2WEBOTSTransducers(host, port,raw)
+        else:
+            raise Exception
+    except:
+      print "%s is not a supported robotic simulator backend" 
     
-    startWebots(webotsWorld)
+    "2. set up homeostat"
+    hom = Homeostat()
+    hom._host = host
+    hom._port = port
+
+    '''Clear the class-based set containing the names of all units
+        FIXME: this is a hack that will not work in case of repeated calls to the
+        same experimental setup within the same experiment.
+        Need to give names with incremental integer values'''
+    HomeoUnit.clearNames()
     
-    "2. set up connection and create client and socket, etc."
-    client = WebotsTCPClient()
-    client._clientPort = kheperaPort
-    socket = client.getClientSocket()
-    print "Connection to external robotic enviroment initialized"
        
     '3.1 Setup robotic communication parameters in actuator and sensor'
     'motors'
-    rightWheel = WebotsDiffMotorTCP('right')
-    leftWheel = WebotsDiffMotorTCP('left')
-    rightWheel.robotSocket = socket
-    rightWheel.funcParameters = 10
-    leftWheel.robotSocket = socket
-    leftWheel.funcParameters = 10
-
+    rightWheel = transducers["rightWheelTransd"]
+    leftWheel = transducers["leftWheelTransd"]
     
     'sensors'
-    if raw == False:
-        leftEyeSensorTransd  = WebotsLightSensorTCP(0)
-        rightEyeSensorTransd = WebotsLightSensorTCP(1)
-    else:
-        leftEyeSensorTransd  = WebotsLightSensorRawTCP(0)
-        rightEyeSensorTransd = WebotsLightSensorRawTCP(1)
-
-        
-    leftEyeSensorTransd._clientPort = kheperaPort
-    leftEyeSensorTransd.robotSocket = socket
-    rightEyeSensorTransd._clientPort = kheperaPort
-    rightEyeSensorTransd.robotSocket = socket
+    leftEyeSensorTransd = transducers["leftEyeTransd"]
+    rightEyeSensorTransd = transducers["rightEyeTransd"]
     
+
     '3.2 initialize motors and sensors units with properly setup motors and sensors'    
     rightMotor = HomeoUnitNewtonianActuator(transducer = rightWheel)
     leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel)
@@ -1237,7 +1234,6 @@ def initializeBraiten2_2(raw=False,params=None):
     sensor_incoming_connection_uniselector = 'manual'
     
     "4. Set up Homeostat"   
-    hom = Homeostat()
 
     'Setup a 4 unit Homeostat with 2 additional input units. Then change the parameters'
     if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
@@ -1365,8 +1361,13 @@ def initializeBraiten2_2(raw=False,params=None):
     for connection in rightEyeSensorOnly.inputConnections:
         connection.status = False
 
-    hom._usesSocket = True
-
+    if simulator == "WEBOTS":
+        """Only Webots (so far) uses explicit sockets and needs to connect 
+           the units to the server. VREP uses a global connection and passes only a
+           clientID"""
+        hom._usesSocket = True
+        hom.connectUnitsToNetwork()
+    
     'Return the properly configured homeostat'
     hDebug('unit', "Homeostat initialized")
     return hom
@@ -2112,25 +2113,25 @@ def initializeBraiten2_2_Full_Pos(params=None):
     
     return initializeBraiten2_2_Full(False)
 
-def initializeBraiten2_2_Full_Neg(params=None):    
+def initializeBraiten2_2_Full_Neg(params=None,simulator = 'WEBOTS', dataDir = None):    
     '''Utility function to choose a  FULLY Connected Braitenberg type-2 vehicle with
     4 real units and 2 negative connections between actual stimulus and sensory 
     input (the higher the world's value, the higher the stimulus'''
     
-    return initializeBraiten2_2_Full(True)
+    return initializeBraiten2_2_Full(True,simulator = simulator, dataDir = dataDir)
 
-def initializeBraiten2_2Pos(params=None):
+def initializeBraiten2_2Pos(params=None,simulator = 'WEBOTS', dataDir = None):
     '''Utility function to choose a  Braitenberg type-2 vehicle with
     4 real units and 2 positive connections between actual stimulus and sensory 
     input (the higher the world's value, the higher the stimulus'''
-    return initializeBraiten2_2(False)
+    return initializeBraiten2_2(False, simulator = simulator, dataDir = dataDir)
 
-def initializeBraiten2_2Neg(params=None):
+def initializeBraiten2_2Neg(params=None, simulator = 'WEBOTS', dataDir = None):
     '''Utility function to choose a  Braitenberg type-2 vehicle with
     4 real units and 2 negative connections between actual stimulus and sensory 
     input (the higher the world's value, the lower the stimulus'''
 
-    return initializeBraiten2_2(True,params=None)
+    return initializeBraiten2_2(True, simulator = simulator, dataDir = dataDir)
 
 #===============================================================================
 # Genetic Algorithms experiments
@@ -2209,8 +2210,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "
         else:
             raise Exception
     except:
-      print "%s is not a supported robotic simulator backend" % simulator
-             
+      print "%s is not a supported robotic simulator backend"
     
     "2. set up homeostat"
     hom = Homeostat()
@@ -3103,7 +3103,7 @@ def startWebots(world = None, mode = "realtime"):
         
 def basicBraiten2VREPTransducers():
     """Define transducers ad return for Braitenberg type 2 simulations, 
-        set up for the V-REP robotic simulator."""   
+        set up for the V-REP robotic simulator."""      
     pass
 
 def basicBraiten2WEBOTSTransducers(host, port, raw = False):
