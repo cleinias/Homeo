@@ -2135,7 +2135,7 @@ def initializeBraiten2_2Neg(params=None):
 #===============================================================================
 # Genetic Algorithms experiments
 #===============================================================================
-def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
+def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "VREP", raw=False):
     '''
     Initialization of a Braitenberg-like homeostat for use in GA simulations.
     
@@ -2185,31 +2185,37 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
     which are minimum for maximum stimulus and maximal for minimun stimulus.
     This is the **reverse** of the classical Braitenberg case: a high intensity in the world
     will translate into a low sensor value.  
+    
+    The simulator variable determines how to initialize the transducer units, depending 
+    on the robotic simulator backend. 
                       
 ''' 
-    if raw == None:
-        raw = False
-             
-    "1. setup webots"
-    "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
-    webotsMode = "fast"              #for GA experiments, run simulation as fast as possible 
-
-    '''Webots parameters for tcp/ip communication
-       (Defined in webots world specified above)
-    '''
-    
-    #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
+    "TCP/IP parameters"
+        #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
     host = 'localhost'
-    kheperaPort = 10020
-    supervisorPort = 10021
+    WebotsKheperaPort = 10020
+    VREPKheperaPort = 19997
+
+    """Get the simulator-specific transducer units
+    Either function returns a dictionary with 4 transducers: 
+    rightWheelTransd, leftWheelTransd, rightEyeTransd, leftEyeTransd""" 
+    try:
+        if simulator == "VREP":
+            port = VREPKheperaPort
+            transducers = basicBraiten2VREPTransducers()
+        elif simulator == "WEBOTS":
+            port = WebotsKheperaPort
+            transducers = basicBraiten2WEBOTSTransducers(host, port,raw)
+        else:
+            raise Exception
+    except:
+      print "%s is not a supported robotic simulator backend" % simulator
+             
     
-    startWebots(world=webotsWorld, mode=webotsMode)
-    
-    "2. set up homeostat, connect it and create client and socket, etc."
+    "2. set up homeostat"
     hom = Homeostat()
     hom._host = host
-    hom._port = kheperaPort
+    hom._port = port
 
     '''Clear the class-based set containing the names of all units
         FIXME: this is a hack that will not work in case of repeated calls to the
@@ -2220,27 +2226,12 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
        
     '3.1 Setup robotic communication parameters in actuator and sensor'
     'motors'
-    rightWheel = WebotsDiffMotorTCP('right')
-    leftWheel = WebotsDiffMotorTCP('left')
-    #rightWheel.robotSocket = socket
-    rightWheel.funcParameters = 10 #wheel speed in rad/s
-    #leftWheel.robotSocket = socket
-    leftWheel.funcParameters = 10  #wheel speed in rad/s
-
+    rightWheel = transducers["rightWheelTransd"]
+    leftWheel = transducers["leftWheelTransd"]
     
     'sensors'
-    if raw == False:
-        leftEyeSensorTransd  = WebotsLightSensorTCP(0)
-        rightEyeSensorTransd = WebotsLightSensorTCP(1)
-    else:
-        leftEyeSensorTransd  = WebotsLightSensorRawTCP(0)
-        rightEyeSensorTransd = WebotsLightSensorRawTCP(1)
-
-        
-    leftEyeSensorTransd._clientPort = kheperaPort
-    #leftEyeSensorTransd.robotSocket = socket
-    rightEyeSensorTransd._clientPort = kheperaPort
-    #rightEyeSensorTransd.robotSocket = socket
+    leftEyeSensorTransd = transducers["leftEyeTransd"]
+    rightEyeSensorTransd = transducers["rightEyeTransd"]
     
     '3.2 initialize motors and sensors units with properly setup motors and sensors'        
     leftMotor = HomeoUnitNewtonianActuator(transducer = leftWheel)
@@ -2449,8 +2440,12 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, raw=False):
 #     #===========================================================================
 #===============================================================================
     
-    hom._usesSocket = True
-    hom.connectUnitsToNetwork()
+    if simulator == "WEBOTS":
+        """Only Webots (so far) uses explicit sockets and needs to connect 
+           the units to the server. VREP uses a global connection and passes only a
+           clientID"""
+        hom._usesSocket = True
+        hom.connectUnitsToNetwork()
 
     'Return the properly configured homeostat'
     hDebug('unit', "Homeostat initialized")
@@ -3104,4 +3099,56 @@ def startWebots(world = None, mode = "realtime"):
         hDebug('network',callString)
         system(callString)
         'Wait for webots to start listening to commands (in seconds)'
-        sleep(2)         
+        sleep(2)      
+        
+def basicBraiten2VREPTransducers():
+    """Define transducers ad return for Braitenberg type 2 simulations, 
+        set up for the V-REP robotic simulator."""   
+    pass
+
+def basicBraiten2WEBOTSTransducers(host, port, raw = False):
+    """Define and return transducers for Braitenberg type 2 simulations, 
+       with transducers set up for the WEBOTS robotic simulator"""   
+
+    """ If the 'raw' variable is set to True, the sensory transducer reads webots raw values, 
+        which are minimum for maximum stimulus and maximal for minimun stimulus.
+        This is the **reverse** of the classical Braitenberg case: a high intensity in the world
+        will translate into a low sensor value."""  
+
+    "1. setup webots"
+    "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
+    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
+    webotsMode = "fast"              #for GA experiments, run simulation as fast as possible 
+
+    '''Webots parameters for tcp/ip communication
+       (Defined in webots world specified above)
+    '''
+    
+    
+    startWebots(world=webotsWorld, mode=webotsMode)
+    
+    'Setup robotic communication parameters in actuator and sensor'
+    
+    'motors'
+    rightWheel = WebotsDiffMotorTCP('right')
+    leftWheel = WebotsDiffMotorTCP('left')
+    rightWheel.funcParameters = 10 #wheel speed in rad/s
+    leftWheel.funcParameters = 10  #wheel speed in rad/s
+  
+    'sensors'
+    if raw == False:
+        leftEyeSensorTransd  = WebotsLightSensorTCP(0)
+        rightEyeSensorTransd = WebotsLightSensorTCP(1)
+    else:
+        leftEyeSensorTransd  = WebotsLightSensorRawTCP(0)
+        rightEyeSensorTransd = WebotsLightSensorRawTCP(1)
+
+    leftEyeSensorTransd._clientPort = port
+    rightEyeSensorTransd._clientPort = port
+    
+    transducers = {"rightWheelTransd": rightWheel, 
+                   "leftWheelTransd":leftWheel, 
+                   "rightEyeTransd":rightEyeSensorTransd, 
+                   "leftEyeTransd":leftEyeSensorTransd}
+    
+    return transducers
