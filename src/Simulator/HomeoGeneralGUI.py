@@ -23,6 +23,7 @@ from Simulator.Four_units_Homeostat_Standard_UI import Ui_ClassicHomeostat
 from math import floor
 from itertools import cycle
 from Helpers.TrajectoryGrapher import graphTrajectory
+from time import strftime, localtime, time
 
 class HomeoSimulationControllerGui(QDialog):    
     '''
@@ -36,8 +37,11 @@ class HomeoSimulationControllerGui(QDialog):
     Instance Variables:
         _simulation                 <aHomeoQtSimulation>   The simulation being controlled
         _simulThread                <aSimulationThread>    The QT thread holding the simulation run
-    '''
-    def __init__(self, parent = None):
+    '''    
+   
+    dataDirRoot = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/'
+
+    def __init__(self, parent = None, simulatorBackend = 'VREP'):
         '''
         Build all the widgets and layouts and set them up with proper connections
         Initialize the iVars to hold on to the simulation being run 
@@ -48,9 +52,23 @@ class HomeoSimulationControllerGui(QDialog):
         "Create the simulation"
         self._simulation = HomeoQtSimulation()
         
+        "Directory to save simulations'data, used to save logbook and history and passed to HomeoQt simulation and other classes"
+        self.dataDir = os.path.join(HomeoSimulationControllerGui.dataDirRoot,('SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))))
+        try:
+            os.mkdir(self.dataDir)
+        except OSError:
+            print "Saving to existing directory", self.dataDir
+        'save dataDir path to a file, so Webots trajectory supervisor can read it'
+        'FIXME: Should really communicate it to webots simulation supervisor to pass it to trajectory supervisor '
+        dataDirFile = open(os.path.join(os.getenv("HOME"),'.HomeoSimDataDir.txt'),'w+')
+        dataDirFile.write(self.dataDir)
+        dataDirFile.close()
+        
         '''Create the homeostat according to desired experiment (with proper number of units
-           connections, etcetera'''
-        self._simulation.initializeExperSetup()
+           connections, etcetera), and set data directory and robotic simulator back-end'''
+#         params = {'dataDir' : self.dataDir, 'simulator':"VREP"}
+        params = {'simulator':simulatorBackend}
+        self._simulation.initializeExperSetup(**params)
         
         "Initialize live data recording and display "
         self._simulation.initializeLiveData()
