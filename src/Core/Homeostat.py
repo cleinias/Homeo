@@ -428,7 +428,9 @@ class Homeostat(object):
     def connectUnitsToNetwork(self):
         "Connect all transducer-connected units to network"
         if self._usesSocket == False:
-            raise HomeostatError("Trying to reconnect a homeostat that uses no sockets to network")
+            print "Trying to reconnect a homeostat that uses no sockets to network"
+            print "Ignoring"
+            return
         else:
             try:
                 self._client.close()
