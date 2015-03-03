@@ -3,7 +3,7 @@ Created on Sep 4, 2013
 
 @author: stefano
 '''
-
+import vrep
 from Core.Homeostat import *
 from Core.HomeoUnitNewtonian import *
 from Core.HomeoConnection import * 
@@ -17,6 +17,7 @@ from time import sleep
 from docutils.nodes import problematic
 from Helpers.ExceptionAndDebugClasses import hDebug
 from Helpers.GenomeDecoder import genomePrettyPrinter, genomeDecoder
+from Helpers.VREP_Helper_Functions import connectToVREP
 import os
 
 
@@ -1149,11 +1150,13 @@ def initializeBraiten2_2(raw=False,params=None, simulator = None, dataDir = None
     will translate into a low sensor value.  
                       
 ''' 
-    "TCP/IP parameters"
+    "TCP/IP parameters and simulation worlds to be used"
     #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
     host = '127.0.0.1'
     WebotsKheperaPort = 10020
     VREPKheperaPort = 19997
+    WEBOTS_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
+    VREP_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt'
 
     """Get the simulator-specific transducer units
     Either function returns a dictionary with 4 transducers: 
@@ -1161,14 +1164,15 @@ def initializeBraiten2_2(raw=False,params=None, simulator = None, dataDir = None
     try:
         if simulator == "VREP":
             port = VREPKheperaPort
-            transducers = basicBraiten2VREPTransducers()
+            transducers = basicBraiten2VREPTransducers(host, port, VREP_World)
         elif simulator == "WEBOTS":
             port = WebotsKheperaPort
-            transducers = basicBraiten2WEBOTSTransducers(host, port,raw)
+            transducers = basicBraiten2WEBOTSTransducers(host, WEBOTS_World,raw)
         else:
-            raise Exception
-    except:
-      print "%s is not a supported robotic simulator backend" 
+            raise Exception("I cannot use backend simulator %s yet" % simulator)
+    except Exception as e:
+      print "%s is not a supported robotic simulator backend" % simulator
+      print e
     
     "2. set up homeostat"
     hom = Homeostat()
@@ -2136,7 +2140,7 @@ def initializeBraiten2_2Neg(params=None, simulator = 'WEBOTS', dataDir = None):
 #===============================================================================
 # Genetic Algorithms experiments
 #===============================================================================
-def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "VREP", raw=False, dataDir = None):
+def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = None, raw=False, clientId = None, dataDir = None, noNoise = False, noUnisel = False):
     '''
     Initialization of a Braitenberg-like homeostat for use in GA simulations.
     
@@ -2196,6 +2200,8 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "
     host = '127.0.0.1'
     WebotsKheperaPort = 10020
     VREPKheperaPort = 19997
+    WEBOTS_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
+    VREP_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt'
 
     """Get the simulator-specific transducer units
     Either function returns a dictionary with 4 transducers: 
@@ -2203,15 +2209,17 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "
     try:
         if simulator == "VREP":
             port = VREPKheperaPort
-            transducers = basicBraiten2VREPTransducers()
+            transducers = basicBraiten2VREPTransducers(host, port, VREP_World, clientId)
         elif simulator == "WEBOTS":
             port = WebotsKheperaPort
-            transducers = basicBraiten2WEBOTSTransducers(host, port,raw)
+            transducers = basicBraiten2WEBOTSTransducers(host, port, WEBOTS_World,raw)
         else:
-            raise Exception
+            raise Exception("I cannot use backend simulator %s yet" % simulator)
     except:
-      print "%s is not a supported robotic simulator backend"
+      print "%s is not a supported robotic simulator backend" % simulator
     
+    if transducers is None:
+        raise Exception("Could not build transducers to simulator backend ",simulator)
     "2. set up homeostat"
     hom = Homeostat()
     hom._host = host
@@ -2250,8 +2258,13 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "
         
     '3.4. Setup *non-essential* homeo parameters'
     
-    motor_self_noise = 0.05
-    sensor_self_noise = 0.05
+    'Set noise to 0 if so desired)'
+    if noNoise == True:
+        motor_self_noise = 0
+        sensor_self_noise = 0
+    else:
+        motor_self_noise = 0.05
+        sensor_self_noise = 0.05
         
     motor_self_connection_active = 'active'
     motor_self_connection_uniselector = 'manual'
@@ -2330,7 +2343,11 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "
     '''Set up homeostat's initial connections,
        according to input list.'''
     "Left motor's connections are contained in the input list at positions 24:29"
-    incoming_conn_noise = 0.05           # General constraint
+    
+    if noNoise == True:
+        incoming_conn_noise = 0.0
+    else:
+        incoming_conn_noise = 0.05           # General constraint
     
     offset = 24
     for connection in leftMotor.inputConnections:
@@ -2446,6 +2463,11 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = "
            clientID"""
         hom._usesSocket = True
         hom.connectUnitsToNetwork()
+
+    if noUnisel == True:
+        for unit in hom.homeoUnits:
+            unit.uniselectorActive = False
+
 
     'Return the properly configured homeostat'
     hDebug('unit', "Homeostat initialized")
@@ -3099,14 +3121,39 @@ def startWebots(world = None, mode = "realtime"):
         hDebug('network',callString)
         system(callString)
         'Wait for webots to start listening to commands (in seconds)'
-        sleep(2)      
-        
-def basicBraiten2VREPTransducers():
+        sleep(2)
+            
+
+def basicBraiten2VREPTransducers(host, port, VREP_World, clientId = None):
     """Define transducers ad return for Braitenberg type 2 simulations, 
         set up for the V-REP robotic simulator."""      
-    pass
+    
+    if clientId is None:
+        '1. check that V-Rep is running with the correct world and connect to it'
+        
+        clientId = connectToVREP(host, port, VREP_World, clientId)
+        
+    '3. Create transducers with proper client ID'
+    
+    '4. Create transducers'
+    
+    '    4.1  Motors'
+    rightWheel = VREP_DiffMotor('right', clientId)
+    leftWheel = VREP_DiffMotor('left', clientId)
+    
+    '    4.2 Sensors'
+    rightEyeSensorTransd = VREP_LightSensor('right', clientId)
+    leftEyeSensorTransd = VREP_LightSensor('left', clientId)
+    
+    'Return transducers'
+    transducers = {"rightWheelTransd": rightWheel, 
+                  "leftWheelTransd":   leftWheel, 
+                  "rightEyeTransd":    rightEyeSensorTransd, 
+                  "leftEyeTransd":     leftEyeSensorTransd}
+    
+    return transducers
 
-def basicBraiten2WEBOTSTransducers(host, port, raw = False):
+def basicBraiten2WEBOTSTransducers(host, port, WEBOTS_World, raw = False):
     """Define and return transducers for Braitenberg type 2 simulations, 
        with transducers set up for the WEBOTS robotic simulator"""   
 
@@ -3116,16 +3163,12 @@ def basicBraiten2WEBOTSTransducers(host, port, raw = False):
         will translate into a low sensor value."""  
 
     "1. setup webots"
-    "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
     webotsMode = "fast"              #for GA experiments, run simulation as fast as possible 
 
     '''Webots parameters for tcp/ip communication
        (Defined in webots world specified above)
-    '''
-    
-    
-    startWebots(world=webotsWorld, mode=webotsMode)
+    '''        
+    startWebots(world=WEBOTS_World, mode=webotsMode)
     
     'Setup robotic communication parameters in actuator and sensor'
     
