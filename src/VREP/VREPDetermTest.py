@@ -34,7 +34,7 @@ from Helpers.General_Helper_Functions import scaleTo
 from ctypes import c_ubyte
 
 def distance(pointA3D, pointB3D):
-    "Return Euclidean distance"    
+    "Return Euclidean distance between two 3D points"    
     return math.sqrt((pointA3D[0]-pointB3D[0])**2 + (pointA3D[1]-pointB3D[1])**2 + (pointA3D[2]-pointB3D[2])**2)
 
 def distanceFromOrig(point3D):
@@ -312,9 +312,9 @@ class VREPTests(object):
                 print "ERROR: Could not start a new trajectory file" 
             timeStart = time()
             for step in xrange(self.noSteps):
-                rightLight = vrep.simxGetFloatSignal(self.simulID, "HOMEO_SIGNAL_Khepera_proxSensor4_LIGHT_READING", vrep.simx_opmode_oneshot_wait)
+                rightLight = vrep.simxGetFloatSignal(self.simulID, "HOMEO_SIGNAL_rightEye_LIGHT_READING", vrep.simx_opmode_oneshot_wait)
                 vrep.simxSynchronousTrigger(self.simulID)
-                leftLight = vrep.simxGetFloatSignal(self.simulID, "HOMEO_SIGNAL_Khepera_proxSensor2_LIGHT_READING", vrep.simx_opmode_oneshot_wait)
+                leftLight = vrep.simxGetFloatSignal(self.simulID, "HOMEO_SIGNAL_leftEye_LIGHT_READING", vrep.simx_opmode_oneshot_wait)
                 vrep.simxSynchronousTrigger(self.simulID)
 #                 print "rightLight %.3f\t  left light: %.3f" %(rightLight[1],leftLight[1])
                 eCode = vrep.simxSetJointTargetVelocity(self.simulID, self.rightMotor, clip(leftLight[1],0,self.maxSpeed), vrep.simx_opmode_oneshot_wait)
@@ -394,17 +394,17 @@ class VREPTests(object):
         "Get handles for epuck and motors"
         ecodeE, self.robotHandle = vrep.simxGetObjectHandle(self.simulID, "Khepera", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)                    
-        eCodeR, self.rightMotor  = vrep.simxGetObjectHandle(self.simulID, "Khepera_motorRight", vrep.simx_opmode_oneshot_wait)
+        eCodeR, self.rightMotor  = vrep.simxGetObjectHandle(self.simulID, "rightWheel", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)                    
-        eCodeL, self.leftMotor   = vrep.simxGetObjectHandle(self.simulID, "Khepera_motorLeft", vrep.simx_opmode_oneshot_wait)
+        eCodeL, self.leftMotor   = vrep.simxGetObjectHandle(self.simulID, "leftWheel", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)                    
-        eCodeR, self.rightEye  = vrep.simxGetObjectHandle(self.simulID, "Khepera_proxSensor4", vrep.simx_opmode_oneshot_wait)
+        eCodeR, self.rightEye  = vrep.simxGetObjectHandle(self.simulID, "rightEye", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)                    
-        eCodeL, self.leftEye   = vrep.simxGetObjectHandle(self.simulID, "Khepera_proxSensor2", vrep.simx_opmode_oneshot_wait)
+        eCodeL, self.leftEye   = vrep.simxGetObjectHandle(self.simulID, "leftEye", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)                    
           
-        eCodeL, self.KJcenterEye   = vrep.simxGetObjectHandle(self.simulID, "Khepera_proxSensor3", vrep.simx_opmode_oneshot_wait)
-        vrep.simxSynchronousTrigger(self.simulID)    
+#         eCodeL, self.KJcenterEye   = vrep.simxGetObjectHandle(self.simulID, "Khepera_proxSensor3", vrep.simx_opmode_oneshot_wait)
+#         vrep.simxSynchronousTrigger(self.simulID)    
          
         eCode,self.targetID =  vrep.simxGetObjectHandle(self.simulID,"TARGET", vrep.simx_opmode_oneshot_wait)
         vrep.simxSynchronousTrigger(self.simulID)
@@ -468,11 +468,11 @@ class VREPTests(object):
         
         
 if __name__ == "__main__":
-    test = VREPTests(noSteps=100, noRuns=1)
+    test = VREPTests(noSteps=100, noRuns=5)
     test.connectAll()
 #     test.testDetermMomvt()
 #     test.testLightSensors()
 #     test.moveReadLights()
-    test.testMaxSpeed(300,1)
-#     test.braiten2a()
+#   test.testMaxSpeed(300,1)
+    test.braiten2a()
     test.cleanUp()
