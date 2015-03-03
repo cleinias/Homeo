@@ -11,7 +11,8 @@ from socket import error as SocketError
 from Helpers.General_Helper_Functions import SubclassResponsibility
 from Helpers.ExceptionAndDebugClasses import hDebug
 import random
-
+import vrep
+from string import uppercase
 
 class TransducerException(Exception):
     def __init__(self, value):
@@ -138,17 +139,100 @@ class WebotsLightSensor(Transducer):
         raise TransducerException("Webots does not give access to a sensor's max value")
     
 
-class VREPMotor(Transducer):
-    """ Connects a unit to the motor of a differential drive
+class VREP_DiffMotor(Transducer):
+    """ Connects a unit to a the motor of a Khepera-like differential drive
         robot in the V-REP simulator"""
     
-    "In VREP "
+    def __init__(self, wheel, clientID):
+        "Wheel could either 'right or 'left' and nothing else"
 
-class VREPLightSensor(Transducer):
-    """ Connects a unit to a HomeoLight sensor of  a khepera-like robot
-        in the V-REP simulator"""
-    pass
+        if wheel not in ["right","left"]:
+            raise TransducerException("Wheel must either be right or left")
+        self._wheel = wheel
+        self.robot = clientID
+        self._transdFunction = vrep.simxSetJointTargetVelocity
+        self._opMode = 'simx_opmode_oneshot_wait'
+        try:
+            eCode, self._transducID = vrep.simxGetObjectHandle(self.robot, (self._wheel+"Wheel"), getattr(vrep,self._opMode))
+            vrep.simxSynchronousTrigger(self.robot)
+        except Exception as e:
+            print "Cannot connect to VREP!"
+            print "Error: ",e  
+        
+        if eCode != 0:
+            raise TransducerException("Cannot connect to VREP motor: " + self._wheel+"Wheel")
+        self._range = self.getRange()
+            
+    def getRange(self):
+        "get motor range"
+        eCode, value = vrep.simxGetFloatSignal(self.robot, "HOMEO_SIGNAL_"+self._wheel+"Wheel"+"_MAX_SPEED",getattr(vrep,self._opMode))
+        vrep.simxSynchronousTrigger(self.robot)
+        if eCode != 0:
+            raise TransducerException("Cannot get maxSpeed of VREP motor: " + self._wheel+"Wheel")
+        return value
     
+    def act(self):
+        '''activates the wheel motor by calling the actuator function (transdFunction) with 
+           VREP client (stored in self.robot) and the needed parameters (stored in funcParameters)'''
+#         parametersString =  str(self.robot) + ", " + str(self._transducID) + ", " + str(self.funcParameters) + ", " + 'vrep.'+self._opMode
+        eCode = self.transdFunction(self.robot, self._transducID, self.funcParameters, getattr(vrep, self._opMode))
+        vrep.simxSynchronousTrigger(self.robot)
+        if eCode != 0:
+            raise TransducerException("Motor command to VREP motor:%sWheel failed " % self._wheel)
+    
+    def read(self):
+        "Motors cannot sense"
+        raise TransducerException("VREP Motor %sWheel cannot sense" %self._wheel)
+    
+    def range(self):
+        "Motor's max speed is obtained at initialization and cached for efficiency"
+        '''Function returns a list containing the min and max speed of the motor.
+           notice that the posits min speed as always = to minus maxspeed'''
+
+        return (-self._range, self._range)
+
+class VREP_LightSensor(Transducer):
+    """ Connects a unit to a HomeoLight sensor of  a Khepera-like robot
+        in the V-REP simulator"""
+        
+    def __init__(self, eye, clientID):
+        "Current HOMEO Khepera models only have a 'right' and a 'left' eye and nothing else"
+
+        if eye not in ["right","left"]:
+            raise TransducerException("Eye must either be right or left")
+        self._eye = eye
+        self.robot = clientID
+        self._transdFunction = vrep.simxGetFloatSignal
+        self._opMode = 'simx_opmode_oneshot_wait'
+        self._VREPSignalName = "HOMEO_SIGNAL_"+self._eye+"Eye"+"_LIGHT_READING"
+        self._range = self.getRange()
+        
+    def getRange(self):
+        "get sensor range"
+        eCode, value = vrep.simxGetFloatSignal(self.robot, "HOMEO_SIGNAL_"+self._eye+"Eye"+"_MAX_LIGHT",getattr(vrep,self._opMode))
+        vrep.simxSynchronousTrigger(self.robot)
+        if eCode != 0:
+            raise TransducerException("Cannot get maxLight of VREP sensor: " + self._eye+"Eye")
+        return value
+
+    def read(self):
+#         sensingParameters = self.robot + ", " + self._VREPSignalName +  ", " + 'vrep.'+self._opMode
+        eCode, value = self._transdFunction(self.robot, self._VREPSignalName , getattr(vrep, self._opMode))
+        vrep.simxSynchronousTrigger(self.robot)
+        if eCode != 0:
+            raise Exception("Cannot read value for sensor " + self._eye+"Eye")
+#         print "Sensor %s read value %.3f" %((self._eye+"Eye"),value)
+        return value
+        
+    def range(self):
+        "Sensor's range is obtained at initialization and cached for efficiency"
+        '''Function returns a tuple with min and max range. We posits minRange = 0'''
+        return (0,self._range)
+    
+    def act(self):
+        "Eyes cannot act"
+        raise TransducerException("VREP sensor %sEye cannot act" %self._eye)
+
 class TransducerTCP(object):
     '''
     TransducerTCP is an abstract class. Its subclasses control a robot's input /output interfaces
