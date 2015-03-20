@@ -225,7 +225,7 @@ class KheperaCamera(object):
                   sin(self.angle), cos(self.angle), 0.0) #tilt
         
          
-class KheperaSimulationVisualTest(object):
+class KheperaSimulationVisualizer(object):
     """Visualizer class for KheperaSimulation. Uses pyglet backend"""
     
     def __init__(self):
@@ -272,5 +272,5 @@ class KheperaSimulationVisualTest(object):
             self.window.flip()
             
 if __name__=="__main__":
-    app = KheperaSimulationVisualTest()
+    app = KheperaSimulationVisualizer()
     app.run()      
