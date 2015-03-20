@@ -1,6 +1,7 @@
 from __future__ import division
 from math import sqrt
 from ctypes import c_ubyte
+from string import zfill
 
 def withAllSubclasses(aClass):
     """
@@ -40,3 +41,12 @@ def distance(pointA3D, pointB3D):
 
 def asByteArray(m_string):
     return (c_ubyte * len(m_string)).from_buffer_copy(m_string)
+
+def fmtTimefromSecs(deltaInSeconds):
+    """Python does not have built-in functions to format a timedelta in
+       hour/minutes/seconds.
+       Return a string formatted as hh:mm:ss"""
+    hoursOut = deltaInSeconds // 3600
+    minutesOut = (deltaInSeconds - (hoursOut*3600))  // 60
+    secondsOut = deltaInSeconds - (hoursOut * 3600) - (minutesOut * 60)
+    return str(hoursOut).zfill(2)+ ":"+str(minutesOut).zfill(2)+":"+str(secondsOut).zfill(2)
