@@ -51,6 +51,11 @@ def makePygletCircle(center=(0,0), r=10, numPoints=100, orientation = 0):
    to the box2D bodies used in Khepera world""" 
 def pygletDraw(self):
     """Each b2Body knows how to draw itself in pyglet using its pre-computed pyglet shape (at initialization)"""
+    
+    """Since glTranslatef moves the world by a relative amount by changing the view matrix, we need to 
+       save the current view matrix (by pushing it on the stack), moving the world, do our drawing and then 
+       restore the previous view matrix by popping it off the stack"""
+    glPushMatrix()
     glColor4f(self.userData['color'][0],self.userData['color'][1],self.userData['color'][2],self.userData['color'][3])
     glTranslatef(self.position[0], self.position[1],0)
     glRotatef(self.angle, 0,0,1)
@@ -59,6 +64,7 @@ def pygletDraw(self):
     except KeyError:
         "Body does not know how to draw itself. Skip it"
         pass
+    glPopMatrix()
     
 b2Body.draw = pygletDraw
 
@@ -106,8 +112,11 @@ class KheperaSimulation(object):
         """For testing"""
         xVel = np.random.uniform(-5,5)
         yVel = np.random.uniform(-5,5)
-        self.changeBodyVelocity('Unspecified', (xVel, yVel))
+#         self.changeBodyVelocity('Unspecified', (xVel, yVel))
+        self.changeAngularVelocity('Unspecified', 100)
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)
+#         print "Position of TARGET is:", self.world.bodies[2].position
+#         print "Position of robot is: ", self.world.bodies[1].position
     
     def resetSim(self):
         raise Exception("Not implemented yet")
@@ -118,16 +127,17 @@ class KheperaSimulation(object):
         'Constants'
         backgroundColor = (0.55,.95,1.0,1.0)               # light blue in openGl [0,1] float format ('c4f')
         kheperaRobotColor  = (1.0,0.0,0.0,1.0)             # solid red in openGl [0,1] float format ('c4f')
+        kheperaRobotDefaultName = 'Unspecified'
+        kheperaDefaultRadius = 0.063                        # diameter of Khepera junior is about 12.6 cm
+        kheperaDefaultPosition = (4,4)
         lightColor = (1.0,1.0,0.0,1.0)                     # solid yellow in openGl [0,1] float format ('c4f')
         lightDefaultPosition = (7,7)
         lightDefaultRadius = .03
-        kheperaRobotDefaultName = 'Unspecified'
-        kheperaDefaultRadius = 0.063                        # diameter of Khepera junior is about 12.6 cm
         kheperaWorld = b2World(gravity = (0,0))             #Setting gravity to 0 lets us simulate horizontal movement in the 2D world
         backgroundBody = kheperaWorld.CreateBody(self.backgroundBodyDef(backgroundColor))
         backgroundBody.CreateFixturesFromShapes(shapes = b2PolygonShape(box=(50,10)))
         
-        kheperaRobotBody = kheperaWorld.CreateBody(self.KJuniorDef(kheperaRobotColor, kheperaRobotDefaultName))
+        kheperaRobotBody = kheperaWorld.CreateBody(self.KJuniorDef(kheperaRobotColor, kheperaRobotDefaultName,kheperaDefaultPosition))
         kheperaRobotBody.CreateFixturesFromShapes(shapes = b2CircleShape(radius = kheperaDefaultRadius)) 
         
         
@@ -140,6 +150,13 @@ class KheperaSimulation(object):
 
         lightBody.userData['pygletShape'] =  makePygletCircle(center = (0,0), r = lightDefaultRadius, numPoints=100, orientation = 0)
         lightBody.userData['filled'] = GL_POLYGON
+        
+        
+        """FOR TESTING"""
+        kheperaRobotBody.angle = 90
+
+        """ End testing"""
+        
         return kheperaWorld
         
     def backgroundBodyDef(self,color):
@@ -151,12 +168,12 @@ class KheperaSimulation(object):
                                 type = b2_staticBody)
         return backBodyDef
                                     
-    def KJuniorDef(self, color, name):
+    def KJuniorDef(self, color, name, position):
         """Builds a Khepera-like object similar to the K-Junior model 
            used in V-REP"""
         
         userData = {'name': name, 'color':color}
-        robotDef = b2BodyDef(position = (4,4),
+        robotDef = b2BodyDef(position = position,
                              type = b2_kinematicBody ,   # We just worry about position and speed
                              userData = userData)
         return robotDef
@@ -188,23 +205,23 @@ class KheperaSimulation(object):
 
  
 class KheperaCamera(object):
-    """KheperaCamera sets the OpenGL projections required to draw the simulation's objects.
-       The KheperaCamera will eventually be able to pan and tilt."""
+    """The camera used by the the visualizer to set OpenGL's projections 
+       required to convert simulation objects' world coordinates into 
+       screen coordinate and to provide zoom, pan, and tilt."""
  
-    def __init__(self, win, position, angle=0.0, zoom=1.0):
-        self.win = win
+    def __init__(self, position, angle=0.0, zoom=1.0):
         self.x ,self.y =  position
         self.angle = angle
         self.zoom = zoom
- 
-    def worldProjection(self):
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        widthRatio = self.win.width / self.win.height
-        gluOrtho2D(-self.zoom * widthRatio,
-                    self.zoom * widthRatio,
-                   -self.zoom,
-                    self.zoom)
+#  
+#     def worldProjection(self):
+#         glMatrixMode(GL_PROJECTION)
+#         glLoadIdentity()
+#         aspect = self.win.width / self.win.height
+#         gluOrtho2D(-self.zoom * aspect,
+#                     self.zoom * aspect,
+#                    -self.zoom,
+#                     self.zoom)
     
     def focus(self, win_width, win_height):
         """Set up projection matrix for 2D rendering to set proper zoom level,
@@ -212,65 +229,129 @@ class KheperaCamera(object):
         
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        widthRatio = win_width / win_height
-        gluOrtho2D(-self.zoom * widthRatio,
-                    self.zoom * widthRatio,
+        aspect = win_width / win_height
+        gluOrtho2D(-self.zoom * aspect,
+                    self.zoom * aspect,
                    -self.zoom,
                     self.zoom)
         
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        gluLookAt(self.x, self.y, +1.0, # camera  x,y,z
-                  self.x, self.y, -1.0,  # look at x,y,z
-                  sin(self.angle), cos(self.angle), 0.0) #tilt
-        
-         
-class KheperaSimulationVisualizer(object):
+        gluLookAt(self.x, self.y, +1.0,  # camera  (the "eye") is at x,y,z
+                  self.x, self.y, -1.0,  # and it looks at this point x,y,z
+                  sin(self.angle), cos(self.angle), 0.0) # with this angle
+#         print "looking at %dx%d" % (self.x, self.y)
+                            
+class KheperaSimulationVisualizer(pyglet.window.Window):
     """Visualizer class for KheperaSimulation. Uses pyglet backend"""
     
-    def __init__(self):
+    def __init__(self, width = 800, height = 400, initialZoom = 1):
+        
+        #As per pyglet prog guide"
+        conf = Config(sample_buffers=0,  # This parameter and the parameter "samples" allow more than one color sample. Higher quality, lower performance
+              depth_size=0)              # (usually) Required for 3D rendering. Typical size is 24 bits (Default). 0 for no depth buffer (we're in 2D)
+        super(KheperaSimulationVisualizer, self).__init__(width, height,config = conf, resizable = True, fullscreen=False, visible=True, vsync=True)
+        
         # --- constants ---
-        self.zoom =5
         self.TARGET_FPS=60
-    #     TIME_STEP=1.0/TARGET_FPS
         self.TIME_STEP = 0.032 #32 msec
-        self.SCREEN_WIDTH, self.SCREEN_HEIGHT=1000,800
-        
+
         self.sim    = KheperaSimulation(timeStep=self.TIME_STEP)
-        self.window = window.Window(self.SCREEN_WIDTH, self.SCREEN_HEIGHT, "HOMEO Khepera Simulator", resizable = True, fullscreen=False, visible=True, vsync=True)
-        self.camera = KheperaCamera(self.window, (0,0),zoom = self.zoom)    
         clock.set_fps_limit(60)  #??? function of this line?
-        self.on_key_press = self.window.event(self.on_key_press)
-        self.on_mouse_scroll = self.window.event(self.on_mouse_scroll)
+
+        self.init_gl(width, height)
         
+        self.ZOOM_IN_FACTOR = 1.2
+        
+        self.camera = KheperaCamera((0, 0), zoom = initialZoom) #Camera initially centered at point (0,0), zoom, no tilt. 
+        self.initialParam = {'width': width, 'height': height, 'zoom': initialZoom}
+
+    def resetVisualization(self):
+        "reset window to initialization parameters"
+        self.width = self.initialParam['width']
+        self.height = self.initialParam['height']
+        self.camera.zoom = self.initialParam['zoom']
+        
+                
+    def init_gl(self, width, height):
+        # Set clear color (light grey)
+#         glClearColor(.9, .9, .9, 1)
+
+        # Set antialiasing
+        glEnable( GL_LINE_SMOOTH )
+        glEnable( GL_POLYGON_SMOOTH )
+        glHint( GL_LINE_SMOOTH_HINT, GL_NICEST )
+
+        # Set alpha blending
+        glEnable( GL_BLEND )
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
+
+        # Set viewport
+#         glViewport( -100, -100, width, height)
+#     
+#     def on_resize(self, width, height):
+#         # Set window values
+#         self.width  = width
+#         self.height = height
+#         # Initialize OpenGL context
+# #         self.init_gl(width, height)
+        
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if buttons == 1:
+            print "camera position was at: %dx%d" % (self.camera.x, self.camera.y)
+            self.camera.x += dx
+            self.camera.y += dy
+            
+            glMatrixMode(GL_MODELVIEW)
+            glLoadIdentity()
+            glTranslatef(dx, dy, 0.0)#,  # camera  (the "eye") is at x,y,z
+#                       0,0, -1.0,  # and it looks at this point x,y,z
+#                       0, 1, 0.0) # with this angle
+    
+            print "camera position is now at: %dx%d" % (self.camera.x, self.camera.y)
+        elif buttons == 4:
+            print "camera angle was at: %d" % (self.camera.angle)
+            self.camera.angle += dx
+            print "camera angle is now at: %d" % (self.camera.angle)
+    
+    def on_mouse_scroll(self, x, y, dx, dy):
+        # Get proper zoom factor
+        if dy > 0:
+            zf = self.ZOOM_IN_FACTOR  
+        elif  dy < 0:
+            zf = 1/self.ZOOM_IN_FACTOR
+        else:
+            zf = 1
+
+        if .2 < self.camera.zoom * zf < 50:
+            self.camera.zoom *= zf
+
     def on_key_press(self, symbol, modifiers):
-        pass    
+        print "you pressed", symbol
+        if symbol == key.Z:
+            self.resetVisualization()
+        elif symbol == key.ESCAPE:
+            pass
     
     def on_key_release(self,symbol,modifiers):
         pass
-    
-    def on_mouse_motion(self, x, y, dx, dy): 
-        print "You moved the mouse"
         
-    def on_mouse_scroll(self,x,y,scroll_x, scroll_y):
-        if scroll_y > 0:
-            self.camera.zoom *= 1.1
-        else:
-            self.camera.zoom /= 1.1 
-
+    def on_mouse_motion(self, x, y, dx, dy): 
+        pass
+        
+    def on_draw(self):
+        #advance simulation"
+        self.sim.advanceSim()
+        glClear( GL_COLOR_BUFFER_BIT )
+        glLoadIdentity()
+        print "Window size is %dx%d" %(self.width, self.height)
+        self.camera.focus(self.width, self.height)
+        self.sim.pygletDraw()
+      
     def run(self):
-        # --- main simulation loop ---
-        while not self.window.has_exit:
-            self.window.dispatch_events()
+        pyglet.app.run()
 
-            self.sim.advanceSim()
-
-            self.camera.worldProjection()
-            self.sim.pygletDraw()
-            
-            clock.tick()
-            self.window.flip()
-            
+              
 if __name__=="__main__":
     app = KheperaSimulationVisualizer()
     app.run()      
