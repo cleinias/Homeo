@@ -17,7 +17,6 @@ import os
 from glob import glob
 from sys import stderr
 import pickle
-from IPython.external.jsonschema._jsonschema import iteritems
 
 
 class TrajectoryViewer(QWidget):
@@ -278,7 +277,7 @@ class TrajectoryViewer(QWidget):
         try:
             for entry in self._currentLogbook:
                 if 'date' in entry:
-                    for key, value in iteritems(entry):
+                    for key, value in entry.iteritems():
                         if not key == 'finalIndivs':
                             outstring += '<b>'+key+'</b>' +':  ' +str(value) +'<br>'
                     return outstring
