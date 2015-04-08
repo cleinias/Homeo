@@ -22,6 +22,8 @@ import numpy as np
 import csv
 import datetime
 from operator import attrgetter
+from scoop import futures
+
 
 #import RobotSimulator.WebotsTCPClient
 from RobotSimulator.WebotsTCPClient import WebotsTCPClient
@@ -33,6 +35,7 @@ from tabulate import tabulate
 from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDebug
 from Helpers.StatsAnalyzer import extractGenomeOfIndID
 from Helpers.VREP_Helper_Functions import connectToVREP, sendSignalVREP, startSimulationVREP, getDistanceBetwObjectsVREP, quitServerVREP
+
 import vrep
 from glob import glob
 
@@ -123,13 +126,18 @@ class HomeoGASimulation(object):
                                    ID_padding = 3,
                                    clonableGenome = None,
                                    debugging = None,
-                                   simulatorBackend = "VREP"):
+                                   simulatorBackend = "VREP",
+                                   vrepPort = None):
 
+        timeElapsed = None
         self._robotName = "Khepera"
         if simulatorBackend == "VREP":
             self.simulatorBackend = "VREP"
             self.host = '127.0.0.1'
-            self.kheperaPort = 19997
+            if vrepPort == None: 
+                self.kheperaPort = 19997
+            else:
+                self.kheperaPort = vrepPort
             self._VREP_clientId = None
         elif simulatorBackend == "WEBOTS":
             self.simulatorBackend = "WEBOTS"
@@ -138,6 +146,7 @@ class HomeoGASimulation(object):
             self.host = '127.0.0.1'
             self.kheperaPort = 10020
             self._supervisor = WebotsTCPClient(ip=self.supervisor_host, port=self.supervisor_port)
+            self._VREP_clientId = None
 
         "Directory to save simulations'data, used to save logbook and history and passed to HomeoQt simulation and other classes"
         self.dataDir = os.path.join(HomeoGASimulation.dataDirRoot,('SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))))
@@ -148,7 +157,7 @@ class HomeoGASimulation(object):
         
         self.simulationDispatch("SetDataDir", self.dataDir)
 
-        'General paramaters for the experiment'
+        'General parameters for the experiment'
         self.experimentParams = {'dataDir' : self.dataDir, 'simulator':self.simulatorBackend, 'clientId':self._VREP_clientId, 'noNoise' : noNoise, 'noUnisel' : noUnisel}
 
         "Tell HomeoDebug which error classes it should print "
@@ -214,6 +223,12 @@ class HomeoGASimulation(object):
         
         'Operator to create a list of identical individual of given genome'
         self.toolbox.register('popClones', tools.initRepeat, list, self.toolbox.individualClone)                            
+        
+        "Operator to use scoop's parallel processing capabilities"
+        self.toolbox.register('map',futures.map)
+
+        "Operator to use standard (serial) map function"
+#         self.toolbox.register('map',map)
         
         hDebug('ga',("Population defined.\nIndividual defined with genome size = " + str(self.genomeSize) +"\n"))
         
@@ -353,7 +368,7 @@ class HomeoGASimulation(object):
             
             # Evaluate the entire population
             print "-- Generation 0 --"
-            fitnesses = list(map(self.toolbox.evaluate, pop))
+            fitnesses = list(self.toolbox.map(self.toolbox.evaluate, pop))
             for ind, fit in zip(pop, fitnesses):
                 ind.fitness.values = fit
                 "record the data about the newly evaluated individual's genome in the logbook"
@@ -450,7 +465,7 @@ class HomeoGASimulation(object):
             #self.simulationEnvironQuit()
             timeElapsed = time() - timeStarted 
             print("-- End of (successful) evolution --")
-            print "Total time elapsed: ", strftime("%H-%M-%S", localtime(timeElapsed))
+            print "Total time elapsed: ", str(datetime.timedelta(seconds=timeElapsed))
             print("-- Cleaning up trajectory files --")
             self.cleanUpTrajFiles()
             'Record general GA run info to logbook and save logbook and history'
@@ -461,11 +476,32 @@ class HomeoGASimulation(object):
             
             #best_ind = tools.selBest(pop, 1)[0]
             #print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
+        
         except TCPConnectionError as e:
             hDebug("network major",("TCP connection error: \n" + e.value + "Cleaning up and quitting...")) 
             hDebug("network",("Trying to quit simulation environment" % self.simulatorBackend))
             self.simulationDispatch("Quit")
-            
+        #=======================================================================
+        # except VREP_Error as e:
+        #     "Try to close connection to V-REP"
+        #
+        #     "FIXME : TO DO"
+        # finally: 
+        #     "release V-rep and/or Webots connections if we crashed"
+        #     
+        #     "FIXME: TO DO"
+        #=======================================================================
+
+        except:
+            "Something bad happened: Check if we did anything and save logbook and history of work done so far and re-raise."
+            if timeElapsed is not None:
+                self.saveLogbook(pop, timeElapsed, timeStarted)
+                self.saveHistory(timeStarted)
+            else: 
+                'TimeElapsed still unbound: we did no even get started.'
+                pass
+            raise
+        
             
 
     def saveLogbook(self, pop, timeElapsed, timeStarted):
@@ -743,7 +779,7 @@ class HomeoGASimulation(object):
         hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
         finalDis =self.simulationDispatch("FinalDisFromTarget")
         hDebug('eval', ("Final distance from target was: " + str(finalDis)))
-        print " Evaluation for model %s took %.3f seconds with fitness %.5f" %(genome.ID, time()-timeNow, finalDis)
+        print " Evaluation for model %s took time: %s with fitness %.5f" %(genome.ID, str(datetime.timedelta(seconds=time()- timeNow)), finalDis)
         return finalDis,                                       # Return a tuple, as required by DEAP
         
     def simulationEnvironmentFinalDisFromTargetWEBOTS(self):
@@ -844,8 +880,7 @@ class HomeoGASimulation(object):
 def selTournamentRemove(individuals, k, tournsize):
     """Select *k* individuals from the input *individuals* using *k*
     tournaments of *tournsize* individuals and remove them from the initial list.
-    The list returned contains
-    references to the input *individuals*.
+    The list returned contains references to the input *individuals*.
     
     :param individuals: A list of individuals to select from.
     :param k: The number of individuals to select.
@@ -866,19 +901,19 @@ def selTournamentRemove(individuals, k, tournsize):
 if __name__ == '__main__':
     #app = QApplication(sys.argv)
     #simulGUI = HomeoGASimulGUI()
-    logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/SimsData-2015-03-01-18-01-11"
-    logL = 'Logbook-2015-03-01-18-01-11.lgb'
-    id = '000-001'
+    logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/SimsData-2015-03-07-11-27-23"
+    logL = 'Logbook-2015-03-07-11-27-23.lgb'
+    id = '003-031'
     logF = os.path.join(logD,logL)
     genome = extractGenomeOfIndID(id,logF)
 #    print [round(x,3) for x in genome['genome']]
 #    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
     #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
 #     simul = HomeoGASimulation(popSize=3, stepsSize=100, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "WEBOTS")
-    simul = HomeoGASimulation(popSize=10, stepsSize=10000, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "VREP", noUnisel = True, noNoise = True)
+    simul = HomeoGASimulation(popSize=4, stepsSize=500, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "VREP", noUnisel = True, noNoise = True)
     #simul.test()
     #simul.runOneGenSimulation()
-    simul.runGaSimulation(simul.generatePopOfClones(cloneName='Pippo'))
+    simul.runGaSimulation(simul.generatePopOfClones(cloneName='003-031'))
 #     simul.runGaSimulation(simul.generateRandomPop())
     #simul.showGenealogyTree(simul.hist, simul.toolbox)
     #simulGUI.show()
