@@ -13,6 +13,7 @@ from Helpers.ExceptionAndDebugClasses import hDebug
 import random
 import vrep
 from string import uppercase
+from sys import stderr
 
 class TransducerException(Exception):
     def __init__(self, value):
@@ -106,7 +107,7 @@ class WebotsDiffMotor(Transducer):
     def setFunctParameters(self,aNumber):
         if self._wheel == "right":
             self._functParameters = (self._robot.getLeftSpeed(), aNumber)
-        else:
+        else: 
             self._functParameters = (aNumber, self._robot.getRightSpeed())
             
     def act(self):
@@ -178,7 +179,8 @@ class VREP_DiffMotor(Transducer):
         eCode = self.transdFunction(self.robot, self._transducID, self.funcParameters, getattr(vrep, self._opMode))
         vrep.simxSynchronousTrigger(self.robot)
         if eCode != 0:
-            raise TransducerException("Motor command to VREP motor:%sWheel failed " % self._wheel)
+            stderr.write("Motor command to VREP motor:%sWheel failed " % self._wheel)
+#             raise TransducerException("Motor command to VREP motor:%sWheel failed " % self._wheel)
     
     def read(self):
         "Motors cannot sense"
@@ -220,7 +222,9 @@ class VREP_LightSensor(Transducer):
         eCode, value = self._transdFunction(self.robot, self._VREPSignalName , getattr(vrep, self._opMode))
         vrep.simxSynchronousTrigger(self.robot)
         if eCode != 0:
-            raise Exception("Cannot read value for sensor " + self._eye+"Eye")
+#             raise Exception("Cannot read value for sensor " + self._eye+"Eye")
+            stderr.write("Cannot read value for sensor " + self._eye+"Eye")
+            return 0
 #         print "Sensor %s read value %.3f" %((self._eye+"Eye"),value)
         return value
         
