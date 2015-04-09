@@ -139,9 +139,15 @@ def b2PygletBodyDraw(self):
 #         raise
         pass
     glPopMatrix()
+
+def b2BodyDefaultUpdate(self):
+    "Default update function for Box2D body: do nothing"
+    pass
     
+        
 b2Body.draw = b2PygletBodyDraw
 b2Fixture.draw = b2PygletFixtureDraw
+b2Body.update = b2BodyDefaultUpdate
 
 "Khepera simulation classes"
 
@@ -653,7 +659,7 @@ class KheperaSimulation(object):
     
     "make a static background surface for the world" 
 
-    def __init__(self, timeStep = 0.032, vel_iters = 6, pos_iters = 2):
+    def __init__(self, HomeoExperiment = None, timeStep = 0.032, vel_iters = 6, pos_iters = 2):
         '''
         Default time step is 1/60 of a second, values for velocity 
         and position iterations are those recommended by pyBox2D docs'''
@@ -692,7 +698,8 @@ class KheperaSimulation(object):
     def advanceSim(self):
         """For testing"""
         self.braiten2b()
-        self.allBodies['kheperaPhys'].update()
+        for body in self.allBodies.values():
+            body.update()
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)
         "for testing irradiance function"
 #         print self.allBodies["kheperaPhys"].irradAtSensor('CenterEye', [self.allBodies['TARGET']])
@@ -771,7 +778,6 @@ class KheperaSimulation(object):
 #         self.setSpeed("Khepera",100,-100)
         
         """ End testing"""
-
     
     def KheperaWorldLightDef(self, color, position, intensity=None, ambRatio = 0, attenVec = (0,0,1), name=None):
         "Definition of a static light-like object."
@@ -851,7 +857,7 @@ class KheperaCamera(object):
 class KheperaSimulationVisualizer(pyglet.window.Window):
     """Visualizer class for KheperaSimulation. Uses pyglet backend"""
     
-    def __init__(self, width = 800, height = 400, initialZoom = 0.2):
+    def __init__(self, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2,  HomeoExperiment = None, width = 800, height = 400, initialZoom = 0.2):
         
         #As per pyglet prog guide"
         conf = Config(sample_buffers=0,  # This parameter and the parameter "samples" allow more than one color sample. Higher quality, lower performance
@@ -860,9 +866,9 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
         
         # --- constants ---
         self.TARGET_FPS=60
-        self.TIME_STEP = 0.032 #32 msec
+        self.TIME_STEP = Box2D_timeStep # defaults to 0.032 = 32 msec
 
-        self.sim = KheperaSimulation(timeStep=self.TIME_STEP)
+        self.sim = KheperaSimulation(timeStep=self.TIME_STEP, HomeoExperiment = HomeoExperiment)
         clock.set_fps_limit(60)  #??? function of this line?
 
         self.init_gl(width, height)
@@ -975,7 +981,7 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
         self.camera.focus(self.width, self.height)
         self.update(0)
       
-    def run(self):
+    def run(self, app):
         pyglet.clock.schedule(app.update)
         pyglet.app.run()
 
@@ -988,7 +994,21 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
         if not self.simStopped:
             self.sim.advanceSim()
         self.sim.pygletDraw()
-        
+
+def runKheperaSimulator(headless = False, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2, HomeoExperiment = None, window_width = 800, window_height = 400, window_initialZoom = 0.2):
+    """Runs the Khepera simulator either in headless mode (no graphics, for fast simulations) or with the openGl visualization class"""
+    if not headless:
+        app = KheperaSimulationVisualizer(Box2D_timeStep=Box2D_timeStep, Box2D_vel_iter=Box2D_vel_iter, 
+                                          Box2D_pos_iter=Box2D_pos_iter, HomeoExperiment = HomeoExperiment,
+                                          width = window_width, height = window_height, 
+                                          initialZoom = window_initialZoom)
+        app.run(app)
+    else:
+        sim = KheperaSimulation(Box2D_timeStep=Box2D_timeStep, Box2D_vel_iter=Box2D_vel_iter, 
+                                Box2D_pos_iter=Box2D_pos_iter, HomeoExperiment = HomeoExperiment)
+        sim.advanceSim()
+     
 if __name__=="__main__":
-    app = KheperaSimulationVisualizer()
-    app.run()      
+#     app = KheperaSimulationVisualizer()
+#     app.run()
+    runKheperaSimulator()      
