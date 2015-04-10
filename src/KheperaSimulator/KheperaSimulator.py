@@ -29,8 +29,7 @@ import numpy as np
 
 from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2
 from Helpers.General_Helper_Functions import normalize
-from time import sleep
-from pip._vendor.distlib.wheel import Wheel
+from time import sleep, time, strftime, localtime
 
 "pyglet and openGL utility functions"
 
@@ -659,11 +658,15 @@ class KheperaSimulation(object):
     
     "make a static background surface for the world" 
 
-    def __init__(self, HomeoExperiment = None, timeStep = 0.032, vel_iters = 6, pos_iters = 2):
+    def __init__(self, HomeoExperiment = "No Experiment", timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False):
         '''
         Default time step is 1/60 of a second, values for velocity 
-        and position iterations are those recommended by pyBox2D docs'''
+        and position iterations are those recommended by pyBox2D docs
         
+        The experimental setup to use is passed in HomoeExperiment as the name of the initializing
+        method.'''
+        
+        self.running = running
         self.timeStep = timeStep
         self.vel_iters = vel_iters
         self.pos_iters = pos_iters
@@ -673,27 +676,37 @@ class KheperaSimulation(object):
         self.gridDefaultSpacing = 0.5
         self.grid = makePygletGrid(self.gridDefaultSize, self.gridDefaultSpacing)       #Default grid is 20x20m, 0.1 spacing
 
-        self.world = self.createKheperaWorld()
+        try:
+            self.world = getattr(self, HomeoExperiment)()
+            self.experimentBeingRun = HomeoExperiment
+#             self.createKheperaBraitenberg2_HOMEO_World()
+        except TypeError:
+            print "Cannot run simulation without an experiment to run"
+            raise
+        except AttributeError:
+            print "Cannot find %s among my experiment setup methods" % HomeoExperiment
+            raise
+            
 #         self.sensorTesting()
         
 
     def resetWorld(self):
-        self.world = self.createKheperaWorld()
+        self.world = self.createKheperaBraitenberg2_HOMEO_World()
         
     def braiten2a(self):
         "simulate a Braitenberg type 2a vehicle: parallel-connected motors/sensors, 'the more, the more'"
         light = self.allBodies['TARGET']
-        leftEyeReading = self.allBodies['kheperaPhys'].irradAtSensor('LeftEye', [light])
-        rightEyeReading = self.allBodies['kheperaPhys'].irradAtSensor('RightEye', [light])
+        leftEyeReading = self.allBodies['kheperaRobot'].irradAtSensor('LeftEye', [light])
+        rightEyeReading = self.allBodies['kheperaRobot'].irradAtSensor('RightEye', [light])
         print "right eye sees: %3.f  left eye sees: %.3f" % (rightEyeReading, leftEyeReading)
-        self.allBodies['kheperaPhys'].setSpeed(rightEyeReading,leftEyeReading)    
+        self.allBodies['kheperaRobot'].setSpeed(rightEyeReading,leftEyeReading)    
     
     def braiten2b(self):
         "simulate a Braitenberg type 2b vehicle: cross-connected motors/sensors, 'the more, the more'"
         light = self.allBodies['TARGET']
-        leftEyeReading = self.allBodies['kheperaPhys'].irradAtSensor('LeftEye', [light])
-        rightEyeReading = self.allBodies['kheperaPhys'].irradAtSensor('RightEye', [light])
-        self.allBodies['kheperaPhys'].setSpeed(leftEyeReading, rightEyeReading)    
+        leftEyeReading = self.allBodies['kheperaRobot'].irradAtSensor('LeftEye', [light])
+        rightEyeReading = self.allBodies['kheperaRobot'].irradAtSensor('RightEye', [light])
+        self.allBodies['kheperaRobot'].setSpeed(leftEyeReading, rightEyeReading)    
 
     def advanceSim(self):
         """For testing"""
@@ -702,20 +715,20 @@ class KheperaSimulation(object):
             body.update()
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)
         "for testing irradiance function"
-#         print self.allBodies["kheperaPhys"].irradAtSensor('CenterEye', [self.allBodies['TARGET']])
-#         print "kheperaPhys vels: %.5f , %.5f  FW_speeds: %.3f, %.3f location: %s  angle: %.3f. LeftWheel W-FW-vector:%s RightWheel W-FW-vector:%s " % (self.allBodies['kheperaPhys'].wheels['Left'].getCurrentSpeed(),
-#                                                                                                         self.allBodies['kheperaPhys'].wheels['Right'].getCurrentSpeed(),
-#                                                                                                         self.allBodies['kheperaPhys'].leftSpeed,
-#                                                                                                         self.allBodies['kheperaPhys'].rightSpeed,
-#                                                                                                         self.allBodies['kheperaPhys'].body.position, 
-#                                                                                                         self.allBodies['kheperaPhys'].body.angle,
-#                                                                                                         self.allBodies['kheperaPhys'].wheels['Left'].getForwardNormal(),
-#                                                                                                         self.allBodies['kheperaPhys'].wheels['Right'].getForwardNormal())
+#         print self.allBodies["kheperaRobot"].irradAtSensor('CenterEye', [self.allBodies['TARGET']])
+#         print "kheperaRobot vels: %.5f , %.5f  FW_speeds: %.3f, %.3f location: %s  angle: %.3f. LeftWheel W-FW-vector:%s RightWheel W-FW-vector:%s " % (self.allBodies['kheperaRobot'].wheels['Left'].getCurrentSpeed(),
+#                                                                                                         self.allBodies['kheperaRobot'].wheels['Right'].getCurrentSpeed(),
+#                                                                                                         self.allBodies['kheperaRobot'].leftSpeed,
+#                                                                                                         self.allBodies['kheperaRobot'].rightSpeed,
+#                                                                                                         self.allBodies['kheperaRobot'].body.position, 
+#                                                                                                         self.allBodies['kheperaRobot'].body.angle,
+#                                                                                                         self.allBodies['kheperaRobot'].wheels['Left'].getForwardNormal(),
+#                                                                                                         self.allBodies['kheperaRobot'].wheels['Right'].getForwardNormal())
     
     def resetSim(self):
         raise NotImplementedError
 
-    def createKheperaWorld(self):
+    def createKheperaBraitenberg2_HOMEO_World(self):
         """Create an empty world with a Khepera-like objects and one or more lights"""
                 
         'Constants'
@@ -732,7 +745,7 @@ class KheperaSimulation(object):
         kheperaWorld = b2World(gravity = (0,0))                   #Setting gravity to 0 lets us simulate horizontal movement in the 2D world
 
         'Add a robot'
-        self.allBodies['kheperaPhys'] = KheperaRobot(world=kheperaWorld, unit = 'mm', color = kheperaRobotDefaultColor, name = kheperaRobotDefaultName, ID = kheperaRobotDefaultID)
+        self.allBodies['kheperaRobot'] = KheperaRobot(world=kheperaWorld, unit = 'mm', color = kheperaRobotDefaultColor, name = kheperaRobotDefaultName, ID = kheperaRobotDefaultID)
 
         'Add a light'
         
@@ -758,9 +771,9 @@ class KheperaSimulation(object):
         """move robot slightly behind origin, so that center sensor is exactly  at (0,0).
            and target exactly in front"""
 #         
-        self.allBodies['kheperaPhys'].rotateTo(radians(90))
+        self.allBodies['kheperaRobot'].rotateTo(radians(90))
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)
-        self.allBodies['kheperaPhys'].moveTo( (0,0 - (self.allBodies['kheperaPhys'].diameter/2)))
+        self.allBodies['kheperaRobot'].moveTo( (0,0 - (self.allBodies['kheperaRobot'].diameter/2)))
         self.allBodies['TARGET'].position = (0,1)
 #         self.setSpeed("Khepera",10,-10)
 
@@ -824,6 +837,36 @@ class KheperaSimulation(object):
             body.draw()
             for fixture in body.fixtures:
                 fixture.draw(body)
+                
+    def run(self):
+        "Run simulation perpetually until asked to stop"
+        while self.running:
+#             print "Khepera Simulation running"
+            self.advanceSim()
+            
+    def getDistance(self,obj1Name, obj2Name):
+        "return Euclidean distance between obj1 and obj2 "
+        
+        try:
+            obj1Pos = self.allBodies[obj1Name].position
+        except (KeyError, AttributeError):
+            try:
+                obj1Pos = self.allBodies[obj1Name].body.position
+            except (KeyError, AttributeError):
+                print "Cannot find object %s among the simulation's objects" % obj1Name
+                raise  
+        try:
+            obj2Pos = self.allBodies[obj2Name].position
+        except (KeyError, AttributeError):
+            try:
+                obj2Pos = self.allBodies[obj2Name].body.position
+            except (KeyError, AttributeError):
+                print "Cannot find object %s among the simulation's objects" % obj2Name
+                raise  
+        
+        return (obj2Pos - obj1Pos).length
+        
+            
  
 class KheperaCamera(object):
     """The camera used by the the visualizer to set OpenGL's projections 
@@ -950,17 +993,17 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
             self.sim.gridDefaultSpacing /= 0.75           
             self.sim.grid = makePygletGrid(self.sim.gridDefaultSize, self.sim.gridDefaultSpacing)
         elif symbol == key.O:     # increase right wheel speed
-            currentSpeeds = self.sim.allBodies['kheperaPhys'].getSpeed()
-            self.sim.allBodies['kheperaPhys'].setSpeed(currentSpeeds[0], currentSpeeds[1]+1)
+            currentSpeeds = self.sim.allBodies['kheperaRobot'].getSpeed()
+            self.sim.allBodies['kheperaRobot'].setSpeed(currentSpeeds[0], currentSpeeds[1]+1)
         elif symbol == key.L:     # decrease left wheel speed
-            currentSpeeds = self.sim.allBodies['kheperaPhys'].getSpeed()
-            self.sim.allBodies['kheperaPhys'].setSpeed(currentSpeeds[0], currentSpeeds[1]-1)
+            currentSpeeds = self.sim.allBodies['kheperaRobot'].getSpeed()
+            self.sim.allBodies['kheperaRobot'].setSpeed(currentSpeeds[0], currentSpeeds[1]-1)
         elif symbol == key.Q:    # increase left wheel speed
-            currentSpeeds = self.sim.allBodies['kheperaPhys'].getSpeed()
-            self.sim.allBodies['kheperaPhys'].setSpeed(currentSpeeds[0]+1, currentSpeeds[1])
+            currentSpeeds = self.sim.allBodies['kheperaRobot'].getSpeed()
+            self.sim.allBodies['kheperaRobot'].setSpeed(currentSpeeds[0]+1, currentSpeeds[1])
         elif symbol == key.A:    # decrease left wheel speed
-            currentSpeeds = self.sim.allBodies['kheperaPhys'].getSpeed()
-            self.sim.allBodies['kheperaPhys'].setSpeed(currentSpeeds[0]-1, currentSpeeds[1])
+            currentSpeeds = self.sim.allBodies['kheperaRobot'].getSpeed()
+            self.sim.allBodies['kheperaRobot'].setSpeed(currentSpeeds[0]-1, currentSpeeds[1])
         elif symbol == key.F1:
             self.step()
         elif symbol == key.ESCAPE:
@@ -1003,12 +1046,26 @@ def runKheperaSimulator(headless = False, Box2D_timeStep = 0.032, Box2D_vel_iter
                                           width = window_width, height = window_height, 
                                           initialZoom = window_initialZoom)
         app.run(app)
+        return app
     else:
-        sim = KheperaSimulation(Box2D_timeStep=Box2D_timeStep, Box2D_vel_iter=Box2D_vel_iter, 
-                                Box2D_pos_iter=Box2D_pos_iter, HomeoExperiment = HomeoExperiment)
-        sim.advanceSim()
+        sim = KheperaSimulation(running = True, timeStep=Box2D_timeStep, vel_iters=Box2D_vel_iter, 
+                                pos_iters=Box2D_pos_iter, HomeoExperiment = HomeoExperiment)
+#         sim.run()
+        return sim
      
 if __name__=="__main__":
 #     app = KheperaSimulationVisualizer()
 #     app.run()
-    runKheperaSimulator()      
+    a = runKheperaSimulator(headless=True, HomeoExperiment = "createKheperaBraitenberg2_HOMEO_World")      
+#     runKheperaSimulator(headless=False,HomeoExperiment = "createKheperaBraitenberg2_HOMEO_World")  
+    dis = 100
+    step = 0
+    timeNow  = time()
+    while step < 100000:
+#         print step
+        a.advanceSim()
+        dis = a.getDistance('kheperaRobot', 'TARGET')
+        step += 1
+    print "distance to target is %.3f, time elapsed is %f" % (dis, time()- timeNow)
+
+    
