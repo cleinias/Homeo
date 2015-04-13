@@ -24,11 +24,12 @@ from Box2D import *
 from pyglet import clock, font, image, window
 from pyglet.gl import *
 from pyglet.window import mouse, key
-
 import numpy as np
+from os import getcwd
 
 from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2
 from Helpers.General_Helper_Functions import normalize
+from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from time import sleep, time, strftime, localtime
 
 "pyglet and openGL utility functions"
@@ -658,7 +659,9 @@ class KheperaSimulation(object):
     
     "make a static background surface for the world" 
 
-    def __init__(self, HomeoExperiment = "No Experiment", timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False):
+
+
+    def __init__(self, dataDir, HomeoExperiment = "No Experiment", timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False):
         '''
         Default time step is 1/60 of a second, values for velocity 
         and position iterations are those recommended by pyBox2D docs
@@ -671,27 +674,34 @@ class KheperaSimulation(object):
         self.vel_iters = vel_iters
         self.pos_iters = pos_iters
         self.allBodies = {} #Dictionary containing refs to all relevant bodies in the world
+   
         "Create and cache a pyglet grid"
         self.gridDefaultSize = 20
         self.gridDefaultSpacing = 0.5
         self.grid = makePygletGrid(self.gridDefaultSize, self.gridDefaultSpacing)       #Default grid is 20x20m, 0.1 spacing
 
+        self.experimentBeingRun = HomeoExperiment 
+        self.setupExperiment(dataDir)                    #  The called function will set up the class's Trajectory writer as well                
+        
+
+#         self.sensorTesting()
+
+    def setupExperiment(self, dataDir):
         try:
-            self.world = getattr(self, HomeoExperiment)()
-            self.experimentBeingRun = HomeoExperiment
-#             self.createKheperaBraitenberg2_HOMEO_World()
+            self.world = getattr(self, self.experimentBeingRun)(dataDir)
         except TypeError:
             print "Cannot run simulation without an experiment to run"
             raise
         except AttributeError:
-            print "Cannot find %s among my experiment setup methods" % HomeoExperiment
+            print "Cannot find %s among my experiment setup methods" % self.experimentBeingRun
             raise
-            
-#         self.sensorTesting()
+        self.currentStep = 0
         
 
     def resetWorld(self):
-        self.world = self.createKheperaBraitenberg2_HOMEO_World()
+        self.world = None
+        self.currentStep = 0
+        self.startExperiment()
         
     def braiten2a(self):
         "simulate a Braitenberg type 2a vehicle: parallel-connected motors/sensors, 'the more, the more'"
@@ -714,6 +724,7 @@ class KheperaSimulation(object):
         for body in self.allBodies.values():
             body.update()
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)
+        self.currentStep += 1
         "for testing irradiance function"
 #         print self.allBodies["kheperaRobot"].irradAtSensor('CenterEye', [self.allBodies['TARGET']])
 #         print "kheperaRobot vels: %.5f , %.5f  FW_speeds: %.3f, %.3f location: %s  angle: %.3f. LeftWheel W-FW-vector:%s RightWheel W-FW-vector:%s " % (self.allBodies['kheperaRobot'].wheels['Left'].getCurrentSpeed(),
@@ -728,8 +739,9 @@ class KheperaSimulation(object):
     def resetSim(self):
         raise NotImplementedError
 
-    def createKheperaBraitenberg2_HOMEO_World(self):
-        """Create an empty world with a Khepera-like objects and one or more lights"""
+    def createKheperaBraitenberg2_HOMEO_World(self, dataDir):
+        """Create an empty world with a Khepera-like objects and one or more lights.
+           Set up the trajectory writer with appropriate initial values"""
                 
         'Constants'
         kheperaRobotDefaultColor  = (1.0,0.0,0.0,0.5)             # solid red in openGl [0,1] float format ('c4f')
@@ -740,6 +752,7 @@ class KheperaSimulation(object):
         lightDefaultPosition = (7,7)
         lightDefaultRadius = .06
         lightDefaultName = "TARGET"
+        lightDefaultIntensity = 100
         
         "Create the Box2D world"
         kheperaWorld = b2World(gravity = (0,0))                   #Setting gravity to 0 lets us simulate horizontal movement in the 2D world
@@ -749,7 +762,7 @@ class KheperaSimulation(object):
 
         'Add a light'
         
-        lightBody = kheperaWorld.CreateBody(self.KheperaWorldLightDef(lightColor, lightDefaultPosition, name = lightDefaultName))
+        lightBody = kheperaWorld.CreateBody(self.KheperaWorldLightDef(lightColor, lightDefaultPosition, intensity = lightDefaultIntensity, name = lightDefaultName))
         lightFixtures = self.KheperaWorldLightFixtureDefs(lightDefaultRadius)
         for fixtureDef in lightFixtures:
             lightBody.CreateFixture(fixtureDef)
@@ -761,7 +774,18 @@ class KheperaSimulation(object):
 
         lightBody.userData['pygletShape'] =  makePygletCircle(center = (0,0), r = lightDefaultRadius, numPoints=100, orientation = 0)
         lightBody.userData['filled'] = GL_POLYGON
-                   
+        
+        "Now set up an appropriate Trajectory writer"
+        "First create a list with the lights. Use Webots convention of putting y coordinate in 3rd position  "
+        
+        light = {'name' : lightDefaultName, 
+                 'lightPos': (lightDefaultPosition[0],0,lightDefaultPosition[1]),
+                 'lightIntensity': lightDefaultIntensity,
+                 'lightIsOn': True}
+        
+        lights = [light]
+        self.trajectoryWriter = RobotTrajectoryWriter(kheperaRobotDefaultID, (kheperaDefaultPosition[0],0,kheperaDefaultPosition[1]), lights, dataDir = dataDir)
+                           
         return kheperaWorld
                                     
     def sensorTesting(self):
@@ -865,9 +889,11 @@ class KheperaSimulation(object):
                 raise  
         
         return (obj2Pos - obj1Pos).length
-        
-            
- 
+    
+    def setDataDir(self, dataDir):
+        "Tells the trajectory writer the directory to save the trajectory files to"        
+        self.trajectoryWriter.setDataDir(dataDir)
+         
 class KheperaCamera(object):
     """The camera used by the the visualizer to set OpenGL's projections 
        required to convert simulation objects' world coordinates into 
@@ -900,7 +926,7 @@ class KheperaCamera(object):
 class KheperaSimulationVisualizer(pyglet.window.Window):
     """Visualizer class for KheperaSimulation. Uses pyglet backend"""
     
-    def __init__(self, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2,  HomeoExperiment = None, width = 800, height = 400, initialZoom = 0.2):
+    def __init__(self, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2,  dataDir = None, HomeoExperiment = None, width = 1200, height = 800, initialZoom = 0.2):
         
         #As per pyglet prog guide"
         conf = Config(sample_buffers=0,  # This parameter and the parameter "samples" allow more than one color sample. Higher quality, lower performance
@@ -911,7 +937,7 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
         self.TARGET_FPS=60
         self.TIME_STEP = Box2D_timeStep # defaults to 0.032 = 32 msec
 
-        self.sim = KheperaSimulation(timeStep=self.TIME_STEP, HomeoExperiment = HomeoExperiment)
+        self.sim = KheperaSimulation(dataDir, timeStep=self.TIME_STEP, HomeoExperiment = HomeoExperiment)
         clock.set_fps_limit(60)  #??? function of this line?
 
         self.init_gl(width, height)
@@ -1038,34 +1064,72 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
             self.sim.advanceSim()
         self.sim.pygletDraw()
 
-def runKheperaSimulator(headless = False, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2, HomeoExperiment = None, window_width = 800, window_height = 400, window_initialZoom = 0.2):
+def runKheperaSimulator(headless = False, dataDir = None, HomeoExperiment = None, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2, window_width = 800, window_height = 400, window_initialZoom = 0.2):
     """Runs the Khepera simulator either in headless mode (no graphics, for fast simulations) or with the openGl visualization class"""
+    
+    if dataDir is None:
+        dataDir = getcwd()
+    print dataDir   
     if not headless:
         app = KheperaSimulationVisualizer(Box2D_timeStep=Box2D_timeStep, Box2D_vel_iter=Box2D_vel_iter, 
-                                          Box2D_pos_iter=Box2D_pos_iter, HomeoExperiment = HomeoExperiment,
-                                          width = window_width, height = window_height, 
+                                          Box2D_pos_iter=Box2D_pos_iter, HomeoExperiment = HomeoExperiment,                                          
+                                          dataDir = dataDir, width = window_width, height = window_height, 
                                           initialZoom = window_initialZoom)
         app.run(app)
         return app
     else:
-        sim = KheperaSimulation(running = True, timeStep=Box2D_timeStep, vel_iters=Box2D_vel_iter, 
+        sim = KheperaSimulation(dataDir = dataDir, running = True, timeStep=Box2D_timeStep, vel_iters=Box2D_vel_iter, 
                                 pos_iters=Box2D_pos_iter, HomeoExperiment = HomeoExperiment)
 #         sim.run()
         return sim
      
 if __name__=="__main__":
+    """Testing code"""
+
 #     app = KheperaSimulationVisualizer()
 #     app.run()
+
+    "Testing the deterministic features of the  simulator in headless mode"
+
     a = runKheperaSimulator(headless=True, HomeoExperiment = "createKheperaBraitenberg2_HOMEO_World")      
 #     runKheperaSimulator(headless=False,HomeoExperiment = "createKheperaBraitenberg2_HOMEO_World")  
-    dis = 100
-    step = 0
-    timeNow  = time()
-    while step < 100000:
-#         print step
-        a.advanceSim()
-        dis = a.getDistance('kheperaRobot', 'TARGET')
-        step += 1
-    print "distance to target is %.3f, time elapsed is %f" % (dis, time()- timeNow)
+ 
+    steps = 50
+    runs = 1
+    for run in xrange(runs):
+        timeNow  = time()
+        dis = a.getDistance('kheperaRobot', 'TARGET')    
+        print "%d Initial distance to target is %.3f  " % (run+1, dis),
+        for k in xrange(steps):
+            a.advanceSim()
+            dis = a.getDistance('kheperaRobot', 'TARGET')
+#             print "sim's current step is", a.currentStep
+        print "%d: Final distance to target is %.3f, time elapsed is %f" % (run+1, dis, time()- timeNow)
+        print "resetting simulation..."
+        a.resetWorld()
+# #         print "Starting simulation again"
+#         print "distance to target is %.3f, time elapsed is %f" % (dis, time()- timeNow)
 
+#     "Testing the deterministic features of the  simulator in graphic mode"
+#     vis = KheperaSimulationVisualizer(HomeoExperiment = "createKheperaBraitenberg2_HOMEO_World")      
+# #     runKheperaSimulator(headless=False,HomeoExperiment = "createKheperaBraitenberg2_HOMEO_World")  
+#     a = vis.sim
+#     steps = 12000
+#     runs = 5
+#     for run in xrange(runs):
+#         timeNow  = time()
+#         dis = a.getDistance('kheperaRobot', 'TARGET')    
+#         print "%d Initial distance to target is %.3f  " % (run+1, dis),
+#         for k in xrange(steps):
+#             vis.step()
+#             dis = a.getDistance('kheperaRobot', 'TARGET')
+# #             print "sim's current step is", a.currentStep
+#         print "%d: Final distance to target is %.3f, time elapsed is %f" % (run+1, dis, time()- timeNow)
+#         print "resetting simulation..."
+#         a.resetWorld()
+# #         print "Starting simulation again"
+#         print "distance to target is %.3f, time elapsed is %f" % (dis, time()- timeNow)
+    
+    
+    "End of testing code"
     
