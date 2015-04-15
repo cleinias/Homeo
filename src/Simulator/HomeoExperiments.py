@@ -14,10 +14,10 @@ from subprocess import call as subCall
 from RobotSimulator.Transducer import  *
 from os import system
 from time import sleep 
-from docutils.nodes import problematic
 from Helpers.ExceptionAndDebugClasses import hDebug
 from Helpers.GenomeDecoder import genomePrettyPrinter, genomeDecoder
-from Helpers.VREP_Helper_Functions import connectToVREP
+# from Helpers.VREP_Helper_Functions import connectToVREP
+from KheperaSimulator.KheperaSimulator import KheperaSimulation
 import os
 
 
@@ -2140,7 +2140,7 @@ def initializeBraiten2_2Neg(params=None, simulator = 'WEBOTS', dataDir = None):
 #===============================================================================
 # Genetic Algorithms experiments
 #===============================================================================
-def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = None, raw=False, clientId = None, dataDir = None, noNoise = False, noUnisel = False):
+def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimulator = None, dataDir = None, noNoise = False, noUnisel = False, transducers = None):
     '''
     Initialization of a Braitenberg-like homeostat for use in GA simulations.
     
@@ -2191,39 +2191,42 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = N
     This is the **reverse** of the classical Braitenberg case: a high intensity in the world
     will translate into a low sensor value.  
     
-    The simulator variable determines how to initialize the transducer units, depending 
+    The backendSimulator variable determines how to initialize the transducer units, depending 
     on the robotic simulator backend. 
                       
 ''' 
-    "TCP/IP parameters"
-        #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
-    host = '127.0.0.1'
-    WebotsKheperaPort = 10020
-    VREPKheperaPort = 19997
+#     "TCP/IP parameters"
+#         #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
+#     host = '127.0.0.1'
+#     WebotsKheperaPort = 10020
+#     VREPKheperaPort = 19997
     WEBOTS_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
     VREP_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt'
-
-    """Get the simulator-specific transducer units
-    Either function returns a dictionary with 4 transducers: 
-    rightWheelTransd, leftWheelTransd, rightEyeTransd, leftEyeTransd""" 
-    try:
-        if simulator == "VREP":
-            port = VREPKheperaPort
-            transducers = basicBraiten2VREPTransducers(host, port, VREP_World, clientId)
-        elif simulator == "WEBOTS":
-            port = WebotsKheperaPort
-            transducers = basicBraiten2WEBOTSTransducers(host, port, WEBOTS_World,raw)
-        else:
-            raise Exception("I cannot use backend simulator %s yet" % simulator)
-    except:
-      print "%s is not a supported robotic simulator backend" % simulator
+    HOMEO_World = None #FIXME !!!
     
+    """Get the simulator-specific transducer units
+       The basicBraiten2 functions return a dictionary with 4 transducers: 
+       rightWheelTransd, leftWheelTransd, rightEyeTransd, leftEyeTransd"""
+       
+    if backendSimulator.name == "VREP":
+        world = VREP_World
+    elif backendSimulator.name == "WEBOTS":
+        world = WEBOTS_World
+    elif backendSimulator.name == "HOMEO":
+        world = HOMEO_World
+    else:
+        raise Exception("I cannot use backend simulator %s yet" % backendSimulator.name)
+
+    transducers = basicBraiten2Tranducers(backendSimulator, world) 
+
+        
     if transducers is None:
-        raise Exception("Could not build transducers to simulator backend ",simulator)
+        raise Exception("Could not build transducers for simulator backend ", backendSimulator.name)
+    
     "2. set up homeostat"
     hom = Homeostat()
-    hom._host = host
-    hom._port = port
+    hom._host = backendSimulator.host
+    hom._port = backendSimulator.port
 
     '''Clear the class-based set containing the names of all units
         FIXME: this is a hack that will not work in case of repeated calls to the
@@ -2457,7 +2460,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, simulator = N
 #     #===========================================================================
 #===============================================================================
     
-    if simulator == "WEBOTS":
+    if backendSimulator.name == "WEBOTS":
         """Only Webots (so far) uses explicit sockets and needs to connect 
            the units to the server. VREP uses a global connection and passes only a
            clientID"""
@@ -2487,6 +2490,8 @@ def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=Fa
     return hom
 
 def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=4, dataDir = None, raw=False):
+    raise NotImplementedError
+    "THIS FUNCTION NEEDS TO BE FIXED TO WORK WITH REFACTOR BACKENDSIMULATOR CLASS"
     '''
     Initialize a homeostat according to initializeBraiten2_2_Full_GA, then turn 
     off all uniselectors and all noise in units and in world
@@ -2793,6 +2798,9 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
  
 
 def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,noHomeoParameters=4, dataDir = None, raw=False):
+    raise NotImplementedError
+    "THIS FUNCTION NEEDS TO BE FIXED TO WORK WITH REFACTOR BACKENDSIMULATOR CLASS"
+
     '''
     SAME AS initializeBraiten2_2_Full_GA (see above for details), BUT:
     
@@ -3103,95 +3111,24 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
 # Utility functions
 #===============================================================================
 
-def isWebotsRunning():
-    'Check if Webots is running'
-    webots_running = False
-    if 'webots-bin' in check_output(['ps','ax']):
-            webots_running = True
-    return webots_running
+
+def basicBraiten2Tranducers(backendSimulator, world):
+    """Asks the back end simulator to return 4 
+       tranducers: two wheels and two sensors"""
+       
+    "1. start backend simulation with correct world"
+    
+    try:
+        backendSimulator.start(world)
+    except:
+        print "I cannot start the backend simulator %s. Aborting..."
+        raise
+    
+    "2. get transducers"    
+    transducers = {"rightWheelTransd" : backendSimulator.getWheel('right'), 
+                   "leftWheelTransd"  : backendSimulator.getWheel('left'), 
+                   "rightEyeTransd"   : backendSimulator.getSensor('right'), 
+                   "leftEyeTransd"    : backendSimulator.getSensor('left')} 
    
-def startWebots(world = None, mode = "realtime"):
-    """
-    Start a webots instance with the given world and at the specified speed (mode).
-    Mode can be one of realtime, run, or fast 
-    """
-    if not isWebotsRunning():
-        hDebug('network',("Is webots-running: " + str(isWebotsRunning())))
-        callString = "/usr/local/webots/webots " +"--mode="+ mode+ " " +world + " &"
-        hDebug('network',callString)
-        system(callString)
-        'Wait for webots to start listening to commands (in seconds)'
-        sleep(2)
-            
-
-def basicBraiten2VREPTransducers(host, port, VREP_World, clientId = None):
-    """Define transducers ad return for Braitenberg type 2 simulations, 
-        set up for the V-REP robotic simulator."""      
-    
-    if clientId is None:
-        '1. check that V-Rep is running with the correct world and connect to it'
-        
-        clientId = connectToVREP(host, port, VREP_World, clientId)
-        
-    '3. Create transducers with proper client ID'
-    
-    '4. Create transducers'
-    
-    '    4.1  Motors'
-    rightWheel = VREP_DiffMotor('right', clientId)
-    leftWheel = VREP_DiffMotor('left', clientId)
-    
-    '    4.2 Sensors'
-    rightEyeSensorTransd = VREP_LightSensor('right', clientId)
-    leftEyeSensorTransd = VREP_LightSensor('left', clientId)
-    
-    'Return transducers'
-    transducers = {"rightWheelTransd": rightWheel, 
-                  "leftWheelTransd":   leftWheel, 
-                  "rightEyeTransd":    rightEyeSensorTransd, 
-                  "leftEyeTransd":     leftEyeSensorTransd}
-    
     return transducers
 
-def basicBraiten2WEBOTSTransducers(host, port, WEBOTS_World, raw = False):
-    """Define and return transducers for Braitenberg type 2 simulations, 
-       with transducers set up for the WEBOTS robotic simulator"""   
-
-    """ If the 'raw' variable is set to True, the sensory transducer reads webots raw values, 
-        which are minimum for maximum stimulus and maximal for minimun stimulus.
-        This is the **reverse** of the classical Braitenberg case: a high intensity in the world
-        will translate into a low sensor value."""  
-
-    "1. setup webots"
-    webotsMode = "fast"              #for GA experiments, run simulation as fast as possible 
-
-    '''Webots parameters for tcp/ip communication
-       (Defined in webots world specified above)
-    '''        
-    startWebots(world=WEBOTS_World, mode=webotsMode)
-    
-    'Setup robotic communication parameters in actuator and sensor'
-    
-    'motors'
-    rightWheel = WebotsDiffMotorTCP('right')
-    leftWheel = WebotsDiffMotorTCP('left')
-    rightWheel.funcParameters = 10 #wheel speed in rad/s
-    leftWheel.funcParameters = 10  #wheel speed in rad/s
-  
-    'sensors'
-    if raw == False:
-        leftEyeSensorTransd  = WebotsLightSensorTCP(0)
-        rightEyeSensorTransd = WebotsLightSensorTCP(1)
-    else:
-        leftEyeSensorTransd  = WebotsLightSensorRawTCP(0)
-        rightEyeSensorTransd = WebotsLightSensorRawTCP(1)
-
-    leftEyeSensorTransd._clientPort = port
-    rightEyeSensorTransd._clientPort = port
-    
-    transducers = {"rightWheelTransd": rightWheel, 
-                   "leftWheelTransd":leftWheel, 
-                   "rightEyeTransd":rightEyeSensorTransd, 
-                   "leftEyeTransd":leftEyeSensorTransd}
-    
-    return transducers
