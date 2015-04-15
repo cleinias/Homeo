@@ -209,7 +209,7 @@ class HomeoQtSimulation(QObject):
         # FIXME 
         # Need to properly set up the homeostat filename according to the kind of experiment being run
         #------------------------------------------------------------------------------ 
-
+        print "Initialization of Homeo's experiment %s completed" % self.currentExperiment
 #===============================================================================
 # Running methods
 #===============================================================================

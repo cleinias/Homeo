@@ -225,7 +225,7 @@ class VREP_LightSensor(Transducer):
 #             raise Exception("Cannot read value for sensor " + self._eye+"Eye")
             stderr.write("Cannot read value for sensor " + self._eye+"Eye")
             return 0
-#         print "Sensor %s read value %.3f" %((self._eye+"Eye"),value)
+        print "Sensor %s read value %.3f" %((self._eye+"Eye"),value)
         return value
         
     def range(self):

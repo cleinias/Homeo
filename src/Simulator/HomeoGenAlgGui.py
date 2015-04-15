@@ -17,9 +17,9 @@ from Helpers.SimulationThread import SimulationThread
 from Helpers.GenomeDecoder import genomeDecoder, genomePrettyPrinter
 from PyQt4.QtCore import *
 from PyQt4.QtGui import * 
-import sys
+# import sys
 import numpy as np
-import csv
+# import csv
 import datetime
 from operator import attrgetter
 from scoop import futures
@@ -27,16 +27,15 @@ from scoop import futures
 
 #import RobotSimulator.WebotsTCPClient
 from RobotSimulator.WebotsTCPClient import WebotsTCPClient
-from socket import error as SocketError
+# from socket import error as SocketError
 import os
 from math import sqrt
-from time import sleep, time, strftime, localtime
+from time import time, strftime, localtime
 from tabulate import tabulate
 from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDebug
 from Helpers.StatsAnalyzer import extractGenomeOfIndID
-from Helpers.VREP_Helper_Functions import connectToVREP, sendSignalVREP, startSimulationVREP, getDistanceBetwObjectsVREP, quitServerVREP
+from SimulatorBackend import SimulatorBackendHOMEO,SimulatorBackendVREP,SimulatorBackendWEBOTS
 
-import vrep
 from glob import glob
 
 
@@ -116,7 +115,6 @@ class HomeoGASimulation(object):
                                    essentParams=4, 
 #                                   exp = "initializeBraiten2_2_NoUnisel_No_Noise_Full_GA",
                                    exp = "initializeBraiten2_2_Full_GA",
-#                                   exp = "initializeBraiten2_2_Full_GA",
                                    noNoise = False,
                                    noUnisel = False,
                                    cxProb = 0.5, 
@@ -131,22 +129,17 @@ class HomeoGASimulation(object):
 
         timeElapsed = None
         self._robotName = "Khepera"
+        
         if simulatorBackend == "VREP":
-            self.simulatorBackend = "VREP"
-            self.host = '127.0.0.1'
-            if vrepPort == None: 
-                self.kheperaPort = 19997
-            else:
-                self.kheperaPort = vrepPort
-            self._VREP_clientId = None
+            self.simulatorBackend = SimulatorBackendVREP('127.0.0.1', vrepPort, robotName = self._robotName)
         elif simulatorBackend == "WEBOTS":
-            self.simulatorBackend = "WEBOTS"
-            self.supervisor_host = '127.0.0.1' 
-            self.supervisor_port = 10021
-            self.host = '127.0.0.1'
-            self.kheperaPort = 10020
-            self._supervisor = WebotsTCPClient(ip=self.supervisor_host, port=self.supervisor_port)
-            self._VREP_clientId = None
+            self.simulatorBackend = SimulatorBackendWEBOTS('127.0.0.1',
+                                                           10021,              # supervisor port
+                                                           '127.0.0.1',
+                                                           10020,              # robot port
+                                                           robotName = self._robotName)              
+        elif simulatorBackend == "HOMEO":
+            self.simulatorBackend =  SimulatorBackendHOMEO(robotName = self._robotName)
 
         "Directory to save simulations'data, used to save logbook and history and passed to HomeoQt simulation and other classes"
         self.dataDir = os.path.join(HomeoGASimulation.dataDirRoot,('SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))))
@@ -154,11 +147,11 @@ class HomeoGASimulation(object):
             os.mkdir(self.dataDir)
         except OSError:
             print "Saving to existing directory", self.dataDir
-        
-        self.simulationDispatch("SetDataDir", self.dataDir)
+         
+        self.simulatorBackend.setDataDir(self.dataDir)
 
         'General parameters for the experiment'
-        self.experimentParams = {'dataDir' : self.dataDir, 'simulator':self.simulatorBackend, 'clientId':self._VREP_clientId, 'noNoise' : noNoise, 'noUnisel' : noUnisel}
+        self.experimentParams = {'dataDir' : self.dataDir, 'backendSimulator':self.simulatorBackend, 'noNoise' : noNoise, 'noUnisel' : noUnisel}
 
         "Tell HomeoDebug which error classes it should print "
         if debugging:
@@ -224,11 +217,11 @@ class HomeoGASimulation(object):
         'Operator to create a list of identical individual of given genome'
         self.toolbox.register('popClones', tools.initRepeat, list, self.toolbox.individualClone)                            
         
-        "Operator to use scoop's parallel processing capabilities"
-        self.toolbox.register('map',futures.map)
+#         "Operator to use scoop's parallel processing capabilities"
+#         self.toolbox.register('map',futures.map)
 
         "Operator to use standard (serial) map function"
-#         self.toolbox.register('map',map)
+        self.toolbox.register('map',map)
         
         hDebug('ga',("Population defined.\nIndividual defined with genome size = " + str(self.genomeSize) +"\n"))
         
@@ -256,7 +249,7 @@ class HomeoGASimulation(object):
         'Decorate the variation operators to insert newly created individuals in the GA history'
         self.toolbox.decorate("mate", self.hist.decorator)
         self.toolbox.decorate("mutate", self.hist.decorator)
-
+        
     def recordGADataToLogbook(self,timeElapsed, pop):
         " Insert general GA simulation parameters into logbook"
         
@@ -357,7 +350,8 @@ class HomeoGASimulation(object):
            Save fitness data to logbook"""
           
         'Record time for naming logbook pickled object and computing time statistics'
-        timeStarted = time()        
+        timeStarted = time()
+        timeElapsed = None        
         try:
             gen = 0
             for i, ind in enumerate(pop):
@@ -472,7 +466,7 @@ class HomeoGASimulation(object):
             self.saveLogbook(pop, timeElapsed, timeStarted)
             self.saveHistory(timeStarted)
             
-            self.simulationDispatch("Quit")
+            self.simulatorBackend.quit()
             
             #best_ind = tools.selBest(pop, 1)[0]
             #print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
@@ -480,7 +474,7 @@ class HomeoGASimulation(object):
         except TCPConnectionError as e:
             hDebug("network major",("TCP connection error: \n" + e.value + "Cleaning up and quitting...")) 
             hDebug("network",("Trying to quit simulation environment" % self.simulatorBackend))
-            self.simulationDispatch("Quit")
+            self.simulatorBackend.quit()
         #=======================================================================
         # except VREP_Error as e:
         #     "Try to close connection to V-REP"
@@ -498,7 +492,7 @@ class HomeoGASimulation(object):
                 self.saveLogbook(pop, timeElapsed, timeStarted)
                 self.saveHistory(timeStarted)
             else: 
-                'TimeElapsed still unbound: we did no even get started.'
+                'TimeElapsed still unbound: we did not even get started.'
                 pass
             raise
         
@@ -573,7 +567,7 @@ class HomeoGASimulation(object):
             statsFile.write('\n')
             statsFile.flush()
             os.fsync(statsFile)
-            self.simulationDispatch("Quit")
+            self.simulatorBackend.quit()
         statsFile.close()
         headers = ['Run', 'Final distance','Time in secs']
         for i in xrange(len(population[0])):
@@ -610,88 +604,7 @@ class HomeoGASimulation(object):
         '''          
         return np.random.uniform(size=genomeSize)
     
-    def simulationDispatch(self, command, *args):
-        "Dispatches a robotic simulation-related command to the appropriate backend"
-        "(also known as poor-man polymorphism...)"
-        return getattr(self, "simulationEnvironment"+command+self.simulatorBackend)(*args)
         
-    def simulationEnvironmentResetWEBOTS(self):
-        """Reset webots simulation.
-           Do not return from function until the simulation has really exited 
-           and the previous tcp/ip socket is no longer valid. """
-           
-        try:
-            self._supervisor._clientSocket.send("R")
-            response = self._supervisor._clientSocket.recv(100) 
-            hDebug('network',("Reset Webots simulation: received back "+ response + " from server"))
-            try:
-                while True:
-                    self._supervisor._clientSocket.send(".")
-                    sleep(0.05)
-            except SocketError:
-                pass
-        except SocketError:
-            raise TCPConnectionError("Could not reset Webots simulation")
-    
-    def simulationEnvironmentResetVREP(self):
-        """In VREP we reset a simulation by stopping and restarting it"""
-        eCode = vrep.simxStopSimulation(self._VREP_clientId, vrep.simx_opmode_oneshot_wait)  
-        if eCode != 0:
-            raise Exception("Could not stop VREP simulation")
-        eCode = vrep.simxStartSimulation(self._VREP_clientId, vrep.simx_opmode_oneshot_wait)   
-        if eCode != 0:
-            raise Exception("Could not start VREP simulation")
-        vrep.simxSynchronousTrigger(self._VREP_clientId)
-        
-    def simulationEnvironmentSetRobotModelWEBOTS(self,modelName):
-        """Set the name  of the robot's model,
-           which is then used to name the trajectory file"""
-           
-        try:
-            self._supervisor._clientSocket.send("M,"+modelName)
-            response = self._supervisor._clientSocket.recv(100) 
-            hDebug('network',("Reset robot's model to: " + modelName + ". Received back: " + response))
-        except SocketError:
-            raise TCPConnectionError("Could not set model name of Webots robot")
-
-    def simulationEnvironmentSetRobotModelVREP(self,modelName):
-        """Tell V-REP to save the current trajectory (by sending the 
-           appropriate signal, set the new name of the robot's model, 
-           and start recording trajectory to a new, appropriately named file.""" 
-        sendSignalVREP(self._VREP_clientId, "HOMEO_SIGNAL_"+self._robotName+"_TRAJECTORY_RECORDER","CLOSEFILE")
-        sendSignalVREP(self._VREP_clientId, "HOMEO_SIGNAL_"+self._robotName+"_MODELNAME", modelName)
-        sendSignalVREP(self._VREP_clientId, "HOMEO_SIGNAL_"+self._robotName+"_TRAJECTORY_RECORDER", "NEWFILE")
-                
-    def simulationEnvironmentResetPhysicsVREP(self):
-        "Do nothing: no comparable function in V-REP"
-        pass
-        
-    def simulationEnvironmentResetPhysicsWEBOTS(self):
-        "Reset Webots simulation physics"
-        try:
-            self._supervisor._clientSocket.send("P")
-            response = self._supervisor._clientSocket.recv(100) 
-            hDebug('network', ("Reset Webots simulation physics: received back %s from server" % response))
-        except SocketError:
-            raise TCPConnectionError("Could not reset Webots simulation's physics")
-            
-    
-    def simulationEnvironmentQuitWEBOTS(self):
-        "Quit Webots application"
-        
-        try:
-            self._supervisor._clientSocket.send("Q")
-            response = self._supervisor._clientSocket.recv(100) 
-            hDebug('network', "Quit Webots: received back " + response + " from server")
-        except SocketError:
-            hDebug('network',  "Sorry, I lost the connection to Webots and could not could not quit")
-        except AttributeError:
-            hDebug('network', "I encountered a major error: lost the socket communicating to Webots")
-            
-    def simulationEnvironmentQuitVREP(self):
-        "Quit connection to VREP tcp/ip server"
-        quitServerVREP(self._VREP_clientId)
-
     def evaluateGenomeFitnessDUMMY(self,genome=None):
         """For GA testing purposes: initialize experiments and homeostats,
            but do not run simulation on Webots, return a normally distributed 
@@ -701,10 +614,10 @@ class HomeoGASimulation(object):
             genome=self.createRandomHomeostatGenome(self.genomeSize)
         params = {'homeoGenome':genome, 'dataDir' : self.dataDir}
         self._simulation.initializeExperSetup(params)
-        self.simulationDispatch("Connect")
-        self.simulationDispatch("Reset")
-        self.simulationDispatch("Close")
-        self.simulationDispatch("Connect")
+        self.simulatorBackend.connect()
+        self.simulatorBackend.reset()
+        self.simulatorBackend.close()
+        self.simulatorBackend.connect()
         self._simulation.homeostat.connectUnitsToNetwork()
         self._simulation.maxRuns = self.stepsSize
         "Initialize live data recording and display "
@@ -743,26 +656,26 @@ class HomeoGASimulation(object):
             genome=self.createRandomHomeostatGenome(self.genomeSize)
                     
         if self.simulatorBackend == "VREP":
-            self.simulationDispatch("Connect")
+            self.simulatorBackend.connect()
         self.experimentParams['homeoGenome']= genome
         self._simulation.initializeExperSetup(**self.experimentParams)
 
         hDebug('network', "Trying to connect to supervisor")
 #         self._supervisor.clientConnect()
-        self.simulationDispatch("Connect")
+        self.simulatorBackend.connect()
         hDebug('network', "Connected")
         hDebug('network', "Resetting Webots")
-        self.simulationDispatch("Reset")
+        self.simulatorBackend.reset()
         hDebug('network', "Closing connection to supervisor")
-        self.simulationDispatch("Close")
+        self.simulatorBackend.close()
 #         self._supervisor.close()
         hDebug('network', "Reconnecting to supervisor")
 #         self._supervisor.clientConnect()
-        self.simulationDispatch("Connect")
+        self.simulatorBackend.connect()
         hDebug('network', "Connecting units to network")
         #
         #
-        self.simulationDispatch("SetRobotModel", genome.ID)
+        self.simulatorBackend.setRobotModel(genome.ID)
         self._simulation.homeostat.connectUnitsToNetwork()
         self._simulation.maxRuns = self.stepsSize
         "Initialize live data recording and display "
@@ -774,66 +687,15 @@ class HomeoGASimulation(object):
         hDebug('eval', ("Now computing exactly " + str(self.stepsSize) + " steps...."))
         for i in xrange(self.stepsSize):
             hDebug('eval', ("Step: "+ str(i+1)+"\n"))
+            print "step: ",i+1
             self._simulation.step()
         #self._simulation.go()
         hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
-        finalDis =self.simulationDispatch("FinalDisFromTarget")
+        finalDis =self.simulatorBackend.finalDisFromTarget()
         hDebug('eval', ("Final distance from target was: " + str(finalDis)))
         print " Evaluation for model %s took time: %s with fitness %.5f" %(genome.ID, str(datetime.timedelta(seconds=time()- timeNow)), finalDis)
         return finalDis,                                       # Return a tuple, as required by DEAP
         
-    def simulationEnvironmentFinalDisFromTargetWEBOTS(self):
-        """Compute the distance from target by asking the supervisor to
-        evaluate the distance between a node with 'DEF' = 'TARGET'
-        and the KHEPERA robot"""
-        
-        self._supervisor._clientSocket.send("D")
-        response = float(self._supervisor._clientSocket.recv(100)) 
-        return response
-    
-    def simulationEnvironmentFinalDisFromTargetVREP(self):
-        """Compute the distance from target by computing 
-           the distance between a VREP object with name  = 'TARGET'
-           and the KHEPERA robot (whose name is stored in an iVar)"""
-        
-        "Close trajectory file first"
-        sendSignalVREP(self._VREP_clientId, "HOMEO_SIGNAL_"+self._robotName+"_TRAJECTORY_RECORDER","CLOSEFILE")
-        return getDistanceBetwObjectsVREP(self._VREP_clientId,"TARGET",self._robotName)
-    
-    def simulationEnvironmentCloseWEBOTS(self):
-        self._supervisor.close()
-        
-    def simulationEnvironmentCloseVREP(self):
-        "In VREP we close a simulation run by stopping it"
-        eCode = vrep.simxStopSimulation(self._VREP_clientId, vrep.simx_opmode_oneshot_wait)
-        if eCode != 0:
-            raise Exception("Could not stop VREP simulation")
-    
-    def simulationEnvironmentConnectWEBOTS(self):
-        self._supervisor.clientConnect()
-    
-    def simulationEnvironmentConnectVREP(self):
-        """Try to connect to VREP ans store the clientId in an ivar"""
-        
-        if self._VREP_clientId is not None:
-            startSimulationVREP(self._VREP_clientId)
-        else:
-            self._VREP_clientId = connectToVREP(self.host, self.kheperaPort)
-                
-    def simulationEnvironmentSetDataDirWEBOTS(self,dataDir):
-        'save dataDir path to a file, so Webots trajectory supervisor can read it'
-        'FIXME: Should really communicate it to webots simulation supervisor to pass it to trajectory supervisor '
-        dataDirFile = open(os.path.join(os.getenv("HOME"),'.HomeoSimDataDir.txt'),'w+')
-        dataDirFile.write(dataDir)
-        dataDirFile.close()
-
-    def simulationEnvironmentSetDataDirVREP(self,dataDir):
-        
-        if self._VREP_clientId is None:
-            "cannot send signal to V-REP unless I am connected"
-            self.simulationDispatch("Connect")
-        sendSignalVREP(self._VREP_clientId, "HOMEO_SIGNAL_SIM_DATA_DIR", dataDir)
-       
     def finalDisFromTargetFromFile(self, target):
         """Compute the distance between robot and target at
         the end of the simulation.
@@ -910,7 +772,7 @@ if __name__ == '__main__':
 #    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
     #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
 #     simul = HomeoGASimulation(popSize=3, stepsSize=100, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "WEBOTS")
-    simul = HomeoGASimulation(popSize=4, stepsSize=500, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "VREP", noUnisel = True, noNoise = True)
+    simul = HomeoGASimulation(popSize=2, stepsSize=5000, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "VREP", noUnisel = True, noNoise = True)
     #simul.test()
     #simul.runOneGenSimulation()
     simul.runGaSimulation(simul.generatePopOfClones(cloneName='003-031'))
