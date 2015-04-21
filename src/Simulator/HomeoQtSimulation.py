@@ -200,6 +200,9 @@ class HomeoQtSimulation(QObject):
     def initializeExperSetup(self, **params):
         '''Initialize the homeostat to the current experimental set up by calling the function
            in module HomeoExperiment corresponding to the string stored in self.currentExperiment'''
+        
+        print "Initializing experimental setup"
+        
         if params == None:
             self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)()
         else:
@@ -247,7 +250,7 @@ class HomeoQtSimulation(QObject):
     def step(self):
         "Advance the simulation one step"
         if self._homeostat.time  < self._maxRuns:
-#            print "I am running cycle number: %u" % self._homeostat.time
+            print "I am running cycle number: %u" % self._homeostat.time
             self._homeostat.runOnce()
             self.updateLiveData()
 #            time.sleep(self._simulDelay / 1000)

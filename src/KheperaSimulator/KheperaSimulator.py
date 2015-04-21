@@ -31,6 +31,7 @@ from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2
 from Helpers.General_Helper_Functions import normalize
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from time import sleep, time, strftime, localtime
+from datetime import datetime
 
 "pyglet and openGL utility functions"
 
@@ -167,7 +168,7 @@ class KheperaRobot(object):
        - right eye position in degrees from y-axis  =  21.9017 
        - left eye position in degrees from y-axis   = -21.9017
        - center eye position in degrees from y-axis = 0 
-           Notice that the positions of RightEye and LeftEye sensors are relative to the forward facing direction
+           Notice that the positions of rightEye and leftEye sensors are relative to the forward facing direction
            and correspond to a position on the outer surface of the body, at the indicated angle (drawn from K-Team specs)
            from the y axis. See addSensor function  for details on their implementation.
            
@@ -196,6 +197,7 @@ class KheperaRobot(object):
         bodyDef = b2BodyDef()
         bodyDef.type = b2_dynamicBody
         self.body = world.CreateBody(bodyDef)
+        self.body.position = initialPose
         circleShape = b2CircleShape(radius=self.diameter/2.0)
         bodyFixtureDef = b2FixtureDef()
         bodyFixtureDef.density = self.density
@@ -212,7 +214,7 @@ class KheperaRobot(object):
         
         'Left wheel'       
         frontLeftWheel = KheperaWheel(world, thickness = self.diameter * wheelThicknessRatio,  diameter = self.diameter* wheelRadiusRatio*2,
-                                        maxForwardSpeed = self.maxSpeed,  maxBackwardSpeed = -self.maxSpeed, name = 'Left')
+                                        maxForwardSpeed = self.maxSpeed,  name = 'left')
         frontLeftWheel.body.position = self.body.worldCenter + (0, self.diameter * wheelSepRatio/2)
         jointDef = b2RevoluteJointDef()
         jointDef.bodyA = self.body
@@ -224,11 +226,12 @@ class KheperaRobot(object):
         jointDef.bodyB = frontLeftWheel.body
         jointDef.localAnchorA = (0, self.diameter * wheelSepRatio/2)
         world.CreateJoint(jointDef)
-        self.wheels = {'Left': frontLeftWheel}
+        self.wheels = {'left': frontLeftWheel}
+        print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontLeftWheel), id(self), 'left')
 
         'Right wheel'
         frontRightWheel = KheperaWheel(world, thickness = self.diameter * wheelThicknessRatio,  diameter = self.diameter * wheelRadiusRatio*2,
-                                        maxForwardSpeed = self.maxSpeed,  maxBackwardSpeed = -self.maxSpeed, name = 'Right')  
+                                        maxForwardSpeed = self.maxSpeed,  name = 'right')  
         frontRightWheel.body.position = self.body.worldCenter + (0, -self.diameter * wheelSepRatio/2)
         jointDef = b2RevoluteJointDef()
         jointDef.bodyA = self.body
@@ -239,11 +242,12 @@ class KheperaRobot(object):
         jointDef.bodyB = frontRightWheel.body
         jointDef.localAnchorA = (0, -self.diameter * wheelSepRatio/2)
         world.CreateJoint(jointDef)
-        self.wheels['Right']= frontRightWheel
+        self.wheels['right']= frontRightWheel
+        print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontRightWheel), id(self), 'right')
         
         
         "Sensors"
-        """Positions of RightEye and LeftEye sensors (in meters) relative to the center of Khepera's circular body,
+        """Positions of rightEye and leftEye sensors (in meters) relative to the center of Khepera's circular body,
            corresponding to a position on the outer surface of the body, at an angle of approximately +/- 21 degrees
            from the forward facing direction. 
            Both sensors are modeled with a 1 mm round shape placed on the body's surface, and distance measurements
@@ -261,14 +265,14 @@ class KheperaRobot(object):
         kheperaEyeDefaultMaxValue   = 100                 # Default clipping value (saturation value) for eye sensors, same as in V_REP
         kheperaEyeDefaultMaxRange   =  10                 # Default max range (in meters) for eye sensors, same as in V_REP
         kheperaEyeDefaultAngleRange =  90                 # Default angle range for eye sensors, in degrees, same as in V_REP
-        kheperaEyeDefaultDiameterRatio = 0.04             # Default size of the sensor radius as ration of robot's size. For rendering only 
-        kheperaEyeDefaultDiameterRatio = 0.1              # Default size of the sensor radius as ration of robot's size. For rendering only 
+        kheperaEyeDefaultDiameterRatio = 0.04             # Default size of the sensor radius as ratio of robot's size. For rendering only 
+        kheperaEyeDefaultDiameterRatio = 0.1              # Default size of the sensor radius as ratio of robot's size. For rendering only 
         
-        self.addSensor(khepheraLeftEyeDefaultPose, 'LeftEye', diameter = self.diameter*kheperaEyeDefaultDiameterRatio, 
+        self.addSensor(khepheraLeftEyeDefaultPose, 'leftEye', diameter = self.diameter*kheperaEyeDefaultDiameterRatio, 
                        orientation = 0, maxRange = kheperaEyeDefaultMaxRange, angleRange = kheperaEyeDefaultAngleRange,
                        maxValue = kheperaEyeDefaultMaxValue)        
  
-        self.addSensor(khepheraRightEyeDefaultPose, 'RightEye', diameter = self.diameter*kheperaEyeDefaultDiameterRatio, 
+        self.addSensor(khepheraRightEyeDefaultPose, 'rightEye', diameter = self.diameter*kheperaEyeDefaultDiameterRatio, 
                        orientation = 0, maxRange = kheperaEyeDefaultMaxRange, angleRange = kheperaEyeDefaultAngleRange,
                        maxValue = kheperaEyeDefaultMaxValue)        
 
@@ -276,15 +280,26 @@ class KheperaRobot(object):
 #                        orientation = 0, maxRange = kheperaEyeDefaultMaxRange, angleRange = kheperaEyeDefaultAngleRange,
 #                        maxValue = kheperaEyeDefaultMaxValue)        
         
+        """Sensor's detectable objects.
+           Each sensors will return the sum of irradiances gained from a list of 'lights'.
+           The list of 'sensable' lights existing in the world is stored in the iVar
+           'detectableLights' which is empty at robot's initialization and typically
+           set by one to the world setting methods in the KheperaSimulation class'"""
+        
+        self.detectableLights = []
         
         "Add a pyglet shape to robot's body for rendering"
-        self.body.userData = {}
         self.setRenderingParameters(color = color)
 
+    def setModelName(self,ID_String):
+        "Resets the ID, or modelName, of the robot"
+        self.body.userData['ID'] = ID_String
+        
+    def getModelName(self):
+        return self.body.userData['ID']
+        
     def addSensor(self, position, sensorName, diameter = 5, orientation = 0, maxRange = 10, angleRange = 90, maxValue = 100):
-        """Adds a Khepera-like object light sensor that knows how to return a 
-           scalar value representing the intensity (irradiance) of light falling
-           upon its point-like surface.
+        """Adds a Khepera-like object light sensor.
            Sensors are implemented as 5mm radius circle Box2D *fixture*  upon a KheperaRobotBody at
            a specified position. The irradiance is measured from the center of the circle
            Main parameters are:
@@ -296,7 +311,6 @@ class KheperaRobot(object):
         - diameter      (default = 5mm, for rendering purposes only"""
 
         rotMatrix = np.mat('0,1;-1,0')     #CW 90 rotation matrix  
-        sensorDefaultRadius = 0.001
         positionVector = np.reshape(position, (2,1))
         sensorFixtureDef = b2FixtureDef()
         circleShape = b2CircleShape(radius = diameter/2)
@@ -317,6 +331,7 @@ class KheperaRobot(object):
         sensorAngle = degrees(atan((rotMatrix * positionVector).A1[1]  / (rotMatrix * positionVector).A1[0]))
         sensorFixture.userData[sensorName + 'Angle']  = sensorAngle
         self.sensors[sensorName] = sensorFixture
+        print "At time %s I added fixture %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'),id(sensorFixture), id(self), sensorName)
         
         "For openGl rendering: cache vertices for a blue circle"        
         sensorFixture.userData['pygletShape'] = makePygletArc(r = maxRange, span = radians(angleRange), orientation = sensorAngle)  
@@ -341,11 +356,23 @@ class KheperaRobot(object):
                 return (directIntens + (intens*ambRatio)) * attenuation
             end
         """
-        try:
-            sensorFixture = self.sensors[sensorName]
-        except KeyError as e:
-            print "Cannot find the desired sensor: %s, KeyError: %s" % (sensorName, e)
-            return 0
+        
+#         print "                In irradAtSensor"
+# #         try:
+#         print "                    trying to acquire the fixture"
+#         print "                    I am a: %s" % type(self)
+#         print "                    with %.0f sensors, and I am looking for %s" % (len(self.sensors), sensorName)
+#         print "                    At time %s  robot ID is %s and ID  of right wheel is %s " % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'),id(self), id(self.wheels['right']))
+#         print "                    trying to access right wheel's position: ", self.wheels['right'].body.position
+#         print "                    At time %s robot ID is %s and ID of right eye is %s " %(datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(self), id(self.sensors['rightEye']))
+#         print "                    right: ", self.sensors.values()[0] 
+#         print "                    my sensors are: ", self.sensors
+#         print "                    sensor is at: ", self.sensors['rightEye']
+        sensorFixture = self.sensors[sensorName]
+#         print "the fixture is: %s\n the  shape is: %s " % (sensorFixture, sensorFixture.shape)#.pos
+#         except KeyError as e:
+#             print "Cannot find the desired sensor: %s, KeyError: %s" % (sensorName, e)
+#         return 0
         
         sensorIrrad = 0 
         
@@ -354,7 +381,7 @@ class KheperaRobot(object):
         sensorPosition = self.body.position + sensorRelPosition
         
         for targetLight in lightsList:
-            targetPose = targetLight.position
+            targetPose = b2Vec2(targetLight.userData['lightPos'][0],targetLight.userData['lightPos'][2])
             vecToTarget = targetPose-sensorPosition
             targetDistance = vecToTarget.length
             lightIntensity = targetLight.userData['intensity']
@@ -388,7 +415,7 @@ class KheperaRobot(object):
         
             "Is target in range?"
     #         print "to target: %.3f, robot's angle: %3f, angle to target: %.3f, vectToTarget: %s, OUT OF RANGE ==> %s" %(targetDistance, 
-    #                                                                                            self.allBodies['Khepera'].angle,
+    #                                                                                            self.allBodies[self.robotName].angle,
     #                                                                                            degrees(acos(cosAngleToTarget)),
     #                                                                                            vecToTarget,
     #                                                                                            (targetDistance > eyeMaxRange or abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange/2))
@@ -414,20 +441,43 @@ class KheperaRobot(object):
         
     def update(self):
         "Update physical state"
-        self.wheels['Right'].update(self.rightSpeed)
-        self.wheels['Left'].update(self.leftSpeed)
-#         print "rightWheel is at: %s, leftWheel is at: %s" %(self.wheels['Right'].body.position, self.wheels['Left'].body.position)
+        self.wheels['right'].update(self.rightSpeed)
+        self.wheels['left'].update(self.leftSpeed)
+#         print "rightWheel is at: %s, leftWheel is at: %s" %(self.wheels['right'].body.position, self.wheels['left'].body.position)
     
-    def setSpeed(self, rightSpeed, leftSpeed):
+    def setSpeed(self, newRightSpeed, newLeftSpeed):
+        self.rightSpeed = self.setRightSpeed(newRightSpeed)
+        self.leftSpeed = self.setLeftSpeed(newLeftSpeed)
+    
+    def setRightSpeed(self, newSpeed):
         """Wheel speed is expressed in rad/sec.
            Convert to linear wheel speeds from wheel radius"""
-        self.rightSpeed = rightSpeed * self.wheelRadius
-        self.leftSpeed = leftSpeed * self.wheelRadius
-#         print "Wheel speeds now: L: %f, R: %f" % (self.rightSpeed ,self.leftSpeed)
+        self.rightSpeed = newSpeed * self.wheelRadius
+
+    def setLeftSpeed(self, newSpeed):
+        """Wheel speed is expressed in rad/sec.
+           Convert to linear wheel speeds from wheel radius"""
+        self.leftSpeed = newSpeed * self.wheelRadius
     
     def getSpeed(self):
-        return (self.leftSpeed, self.rightSpeed)
+        return {'right':self.rightSpeed,'left':self.leftSpeed}
+    
+    def getMaxSpeed(self):
+        return {'right':self.wheels['right'].getMaxSpeed(),'left':self.wheels['left'].getMaxSpeed()}
+    
+    def getMaxSensorRange(self,sensorName):
+        "Return the max range of the named sensor"
         
+        return self.sensors[sensorName].userData[sensorName + 'MaxRange']
+    
+    def getSensorRead(self,sensorName):
+        """Convenience method: return the value read by sensor sensorName
+           as the sum of irradiances produced by all the existing lights 
+           in the robot's world."""
+        
+        print "      In sensorRead function of Khepera simulator"
+        return self.irradAtSensor(sensorName, self.detectableLights)
+            
     def rotateTo(self, angleRad):
         """Rotate robot and its jointed bodies to angleRad.
           Calling function must also call the step function of the containing world
@@ -471,13 +521,13 @@ class KheperaWheel(object):
                     and getRightNormal behave accordingly"""
        
     def __init__(self, world, thickness = 2, diameter = 31.2, 
-                 killAngVelParam = 0.1, maxForwardSpeed=1, maxBackwardSpeed=-1, 
+                 killAngVelParam = 0.1, maxForwardSpeed=1, 
                 tireFriction= -0.18, density = 1, name = None):
         
         """A wheel for the Khepera robot. Creates a rectangular body 
            of diameter X thickness size (i.e. its vertical projection)"""
         self.maxForwardSpeed =   maxForwardSpeed
-        self.maxBackwardSpeed =  maxBackwardSpeed
+        self.maxBackwardSpeed =  -maxForwardSpeed
         self.killAngVelParam = killAngVelParam
         self.tireFriction = tireFriction
                  
@@ -509,6 +559,9 @@ class KheperaWheel(object):
         self.body.userData['pygletShape'] = makePygletBox(thickness, diameter) 
         self.body.userData['color'] = color
         self.body.userData['filled'] = GL_POLYGON
+        
+    def getMaxSpeed(self):
+        return self.maxForwardSpeed
        
     def getForwardNormal(self):
         """Default forward velocity at creation is to the right (along (1,0) vector)"""
@@ -568,12 +621,12 @@ class KheperaWheel(object):
         velChange = desiredSpeed - self.getCurrentSpeed()
         impulse = self.body.mass * velChange
         impulseVec = impulse * self.getForwardNormal()
-        if self.name == 'Right':
+        if self.name == 'right':
             self.impulseCounter += 1
             print "Applying impulse # %d to wheel: %s, currently going at: %.3f " % (self.impulseCounter, self.name, self.getCurrentSpeed())
         self.body.ApplyLinearImpulse(impulseVec, self.body.GetWorldPoint((0,0)),True)
         
-#         print "%s wheel: FW normal: %s, Right normal: %s" % (self.name, self.getForwardNormal(), self.getRightNormal())
+#         print "%s wheel: FW normal: %s, right normal: %s" % (self.name, self.getForwardNormal(), self.getRightNormal())
         if abs(desiredSpeed) <0.001:
             self.body.fixtures[0].friction = 1 
 
@@ -589,7 +642,7 @@ class KheperaWheel(object):
         self.body.linearVelocity = newVelocity
 #         print "Velocity changing from %s to: %s" %(self.getForwardVelocity(), newVelocity)
         
-#         print "%s wheel: FW normal: %s, Right normal: %s" % (self.name, self.getForwardNormal(), self.getRightNormal())
+#         print "%s wheel: FW normal: %s, right normal: %s" % (self.name, self.getForwardNormal(), self.getRightNormal())
         if abs(desiredSpeed) <0.001:
             self.body.fixtures[0].friction = 1 
         else:
@@ -602,71 +655,66 @@ class KheperaWheel(object):
         self.updateDriveVelocity(desiredSpeed)
         
         
-class KheperaSensor(object):
-    """Implements a Khepera-like object light sensor. It knows how to return a 
-       scalar value representing the intensity (irradiance) of light falling
-       upon its point-like surface.
-       Sensors are implemented as 5mm radius circle Box2D bodies welded upon a KheperaRobotBody at
-       a specified position. The irradiance is measured from the center of the circle
-       Main parameters are:
-       - orientation  (in degrees, default is 0, i/e normal to the robot's surface
-                      through the center of sensor) 
-       - maxRange     (default = 10 meters, (same as in V-REP))
-       - angleRange   (default = 90 degrees (same as in V-REP))
-       - maxValue     (default = 100, saturation value (same as in V-REP))
-       - diamter      (default = 5mm, for rendering purposes only"""
-
-    def __init__(self, world, name, diameter = 5, orientation = 0, maxRange = 10, angleRange = 90, maxValue = 100):
-
-        "setting sensors's parameters"
-        self.orientation = orientation
-        self.maxRange = maxRange
-        self.angleRange = angleRange
-        self.maxValue = maxValue
-        
-        "creating body and fixture"
-        bodyDef = b2BodyDef()
-        bodyDef.type = b2_dynamicBody
-        self.body = world.CreateBody(bodyDef)
-        circleShape = b2CircleShape(radius=0.001)
-        fixtureDef = b2FixtureDef()
-        fixtureDef.shape = circleShape
-        fixtureDef.density = 0.01
-
-        self.body.userData = {}
-        self.setRenderingParameters(diameter)
-        
-        if name is not None:
-            self.name = name
-        
-            
-    def setRenderingParameters(self, diameter, color = (0.,0.,1.,1)):
-        "default openGl rendering: blue circle"
-        
-        self.body.userData['pygletShape'] = makePygletCircle(r = diameter/2) 
-        self.body.userData['color'] = color
-        self.body.userData['filled'] = GL_POLYGON
-
+# class KheperaSensor(object):
+#     """Implements a Khepera-like object light sensor. It knows how to return a 
+#        scalar value representing the intensity (irradiance) of light falling
+#        upon its point-like surface.
+#        Sensors are implemented as 5mm radius circle Box2D bodies welded upon a KheperaRobotBody at
+#        a specified position. The irradiance is measured from the center of the circle
+#        Main parameters are:
+#        - orientation  (in degrees, default is 0, i/e normal to the robot's surface
+#                       through the center of sensor) 
+#        - maxRange     (default = 10 meters, (same as in V-REP))
+#        - angleRange   (default = 90 degrees (same as in V-REP))
+#        - maxValue     (default = 100, saturation value (same as in V-REP))
+#        - diameter      (default = 5mm, for rendering purposes only"""
+# 
+#     def __init__(self, world, name, diameter = 5, orientation = 0, maxRange = 10, angleRange = 90, maxValue = 100):
+# 
+#         "setting sensors's parameters"
+#         self.orientation = orientation
+#         self.maxRange = maxRange
+#         self.angleRange = angleRange
+#         self.maxValue = maxValue
+#         
+#         "creating body and fixture"
+#         bodyDef = b2BodyDef()
+#         bodyDef.type = b2_dynamicBody
+#         self.body = world.CreateBody(bodyDef)
+#         circleShape = b2CircleShape(radius=0.001)
+#         fixtureDef = b2FixtureDef()
+#         fixtureDef.shape = circleShape
+#         fixtureDef.density = 0.01
+# 
+#         self.body.userData = {}
+#         self.setRenderingParameters(diameter)
+#         
+#         if name is not None:
+#             self.name = name
+#         
+#             
+#     def setRenderingParameters(self, diameter, color = (0.,0.,1.,1)):
+#         "default openGl rendering: blue circle"
+#         
+#         self.body.userData['pygletShape'] = makePygletCircle(r = diameter/2) 
+#         self.body.userData['color'] = color
+#         self.body.userData['filled'] = GL_POLYGON
 
    
 class KheperaSimulation(object):
-    '''
+    """
     KheperaSimulation is the overall class managing the simulation.
     It is responsible for saving/loading of simulated worlds,
     as well for managing the simulation's operation: advancing, 
     stopping, resetting, etc.
-    '''
+    """
     
-    "make a static background surface for the world" 
-
-
-
-    def __init__(self, dataDir, HomeoExperiment = "No Experiment", timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False):
+    def __init__(self, timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False):
         '''
         Default time step is 1/60 of a second, values for velocity 
         and position iterations are those recommended by pyBox2D docs
         
-        The experimental setup to use is passed in HomoeExperiment as the name of the initializing
+        The experimental world to simulate is passed in HomeoWorld as the name of the initializing
         method.'''
         
         self.running = running
@@ -680,71 +728,106 @@ class KheperaSimulation(object):
         self.gridDefaultSpacing = 0.5
         self.grid = makePygletGrid(self.gridDefaultSize, self.gridDefaultSpacing)       #Default grid is 20x20m, 0.1 spacing
 
-        self.experimentBeingRun = HomeoExperiment 
-        self.setupExperiment(dataDir)                    #  The called function will set up the class's Trajectory writer as well                
-        
+#         self.setupWorld(self.dataDir)                    #  The called function will set up the class's Trajectory writer as well                
 
 #         self.sensorTesting()
 
-    def setupExperiment(self, dataDir):
-        try:
-            self.world = getattr(self, self.experimentBeingRun)(dataDir)
-        except TypeError:
-            print "Cannot run simulation without an experiment to run"
-            raise
-        except AttributeError:
-            print "Cannot find %s among my experiment setup methods" % self.experimentBeingRun
-            raise
-        self.currentStep = 0
+    def setupWorld(self, HomeoWorld = None, dataDir = None):
+        """Create a world to run experiments in by calling the method stored in the homeoWorldToRun ivar,
+           which will also set up a trajectory writer with a proper (even though provisional) data directory.
+           Each method will also setup a list of 'lights' in the robots' ivar 'targets', which the robot's sensors will
+           be able to sense.      
+        """
+        if HomeoWorld is not None:
+            self.homeoWorldToRun = HomeoWorld
+         
+        if dataDir is not None:
+            self.dataDir = dataDir
         
+        if len(self.allBodies)>0:
+            print "Robot is currently at: ", self.allBodies[self.robotName].body.position
+        
+        try:
+            self.world = self.__getattribute__(self.homeoWorldToRun)()
+        except TypeError:
+            raise Exception("Cannot run simulation without an experiment to run")
+        except AttributeError:
+            raise Exception("Cannot find ** %s ** among my experiment setup methods" % self.homeoWorldToRun)
+        self.currentStep = 0
+#         sleep(1.5)
+        print "Now leaving setupWorld. Robot is at: ", self.allBodies[self.robotName].body.position
 
     def resetWorld(self):
-        self.world = None
-        self.currentStep = 0
-        self.startExperiment()
+        "Reset world to the setup specified in self.homeoWorldToRun"
         
-    def braiten2a(self):
-        "simulate a Braitenberg type 2a vehicle: parallel-connected motors/sensors, 'the more, the more'"
-        light = self.allBodies['TARGET']
-        leftEyeReading = self.allBodies['kheperaRobot'].irradAtSensor('LeftEye', [light])
-        rightEyeReading = self.allBodies['kheperaRobot'].irradAtSensor('RightEye', [light])
-        print "right eye sees: %3.f  left eye sees: %.3f" % (rightEyeReading, leftEyeReading)
-        self.allBodies['kheperaRobot'].setSpeed(rightEyeReading,leftEyeReading)    
-    
-    def braiten2b(self):
-        "simulate a Braitenberg type 2b vehicle: cross-connected motors/sensors, 'the more, the more'"
-        light = self.allBodies['TARGET']
-        leftEyeReading = self.allBodies['kheperaRobot'].irradAtSensor('LeftEye', [light])
-        rightEyeReading = self.allBodies['kheperaRobot'].irradAtSensor('RightEye', [light])
-        self.allBodies['kheperaRobot'].setSpeed(leftEyeReading, rightEyeReading)    
+        self.trajectoryWriter.runOnce(transitionMessage = "CLOSEFILE")
+        self.currentStep = 0
+        self.destroyWorld()
+        self.setupWorld()
+#         self.trajectoryWriter.runOnce(transitionMessage="SAVE")
 
+    def destroyWorld(self):
+        """Destroy the Box2D world and nulls the variables containing 
+           references to box2D objects"""
+        self.allBodies.values()[0].sensors = None
+        del(self.allBodies)
+        self.allBodies = {}
+        del(self.world)
+             
+    def setRobotModelName(self,robotName,newID):
+        "Resets the ID, or modelName, of robot robotName"
+        self.allBodies[robotName].body.userData['ID'] = newID
+            
     def advanceSim(self):
-        """For testing"""
-        self.braiten2b()
+        """Advances simulation one step and writes trajectory data to file """
+#         "For testing"
+#         self.braiten2b()
+#         "end testing"
         for body in self.allBodies.values():
             body.update()
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)
         self.currentStep += 1
+        
+        """FIXME: following line depends on the details of a particular world being simulated. It should be world-agnostic.
+                  The method setting up the experimental world should decide what needs to be written into the trajectory file"""
+        self.trajectoryWriter.runOnce(position = (self.allBodies[self.robotName].body.position[0],0,self.allBodies[self.robotName].body.position[1]))
         "for testing irradiance function"
 #         print self.allBodies["kheperaRobot"].irradAtSensor('CenterEye', [self.allBodies['TARGET']])
-#         print "kheperaRobot vels: %.5f , %.5f  FW_speeds: %.3f, %.3f location: %s  angle: %.3f. LeftWheel W-FW-vector:%s RightWheel W-FW-vector:%s " % (self.allBodies['kheperaRobot'].wheels['Left'].getCurrentSpeed(),
-#                                                                                                         self.allBodies['kheperaRobot'].wheels['Right'].getCurrentSpeed(),
+#         print "kheperaRobot vels: %.5f , %.5f  FW_speeds: %.3f, %.3f location: %s  angle: %.3f. LeftWheel W-FW-vector:%s RightWheel W-FW-vector:%s " % (self.allBodies['kheperaRobot'].wheels['left'].getCurrentSpeed(),
+#                                                                                                         self.allBodies['kheperaRobot'].wheels['right'].getCurrentSpeed(),
 #                                                                                                         self.allBodies['kheperaRobot'].leftSpeed,
 #                                                                                                         self.allBodies['kheperaRobot'].rightSpeed,
 #                                                                                                         self.allBodies['kheperaRobot'].body.position, 
 #                                                                                                         self.allBodies['kheperaRobot'].body.angle,
-#                                                                                                         self.allBodies['kheperaRobot'].wheels['Left'].getForwardNormal(),
-#                                                                                                         self.allBodies['kheperaRobot'].wheels['Right'].getForwardNormal())
+#                                                                                                         self.allBodies['kheperaRobot'].wheels['left'].getForwardNormal(),
+#                                                                                                         self.allBodies['kheperaRobot'].wheels['right'].getForwardNormal())
     
-    def resetSim(self):
-        raise NotImplementedError
+    def saveTrajectory(self):
+        "Asks the TrajectorytWriter to save the robot's trajectory"
+        self.trajectoryWriter.runOnce(transitionMessage = "CLOSEFILE")
 
-    def createKheperaBraitenberg2_HOMEO_World(self, dataDir):
+    def newTrajectoryFile(self):
+        "Asks the trajectoryWriter to open a new trajectory file for the robot"
+        self.trajectoryWriter.runOnce(transitionMessage = "NEWFILE", 
+                                      modelName = self.allBodies[self.robotName].body.userData['ID'], 
+                                      position = (self.allBodies[self.robotName].body.position[0],0,self.allBodies[self.robotName].body.position[1]),
+                                      lights = self.allBodies[self.robotName].detectableLights)
+        
+    #===============================================================================
+    #                             EXPERIMENTAL WORLDS
+    # 
+    # Each world for HOMEO's experiments is setup by one of the following methods,
+    # which return a properly configured Box2D world.
+    # Each world-setting method is also responsible for setting up the 
+    # trajectoryWriter instance  with a proper (even if provisional) data directory.
+    #===============================================================================
+
+    def kheperaBraitenberg2_HOMEO_World(self):
         """Create an empty world with a Khepera-like objects and one or more lights.
            Set up the trajectory writer with appropriate initial values"""
                 
         'Constants'
-        kheperaRobotDefaultColor  = (1.0,0.0,0.0,0.5)             # solid red in openGl [0,1] float format ('c4f')
+        kheperaRobotDefaultColor  = (1.0,0.0,0.0,0.5)            # partially transparent red,  in openGl [0,1] float format ('c4f')
         kheperaRobotDefaultName = "Khepera"
         kheperaRobotDefaultID = 'Unspecified'
         kheperaDefaultPosition = (4,4)
@@ -758,7 +841,13 @@ class KheperaSimulation(object):
         kheperaWorld = b2World(gravity = (0,0))                   #Setting gravity to 0 lets us simulate horizontal movement in the 2D world
 
         'Add a robot'
-        self.allBodies['kheperaRobot'] = KheperaRobot(world=kheperaWorld, unit = 'mm', color = kheperaRobotDefaultColor, name = kheperaRobotDefaultName, ID = kheperaRobotDefaultID)
+        self.robotName = kheperaRobotDefaultName
+        self.allBodies[self.robotName] = KheperaRobot(world=kheperaWorld, 
+                                                      unit = 'mm', 
+                                                      color = kheperaRobotDefaultColor, 
+                                                      name = kheperaRobotDefaultName, 
+                                                      ID = kheperaRobotDefaultID,
+                                                      initialPose = kheperaDefaultPosition)
 
         'Add a light'
         
@@ -778,26 +867,61 @@ class KheperaSimulation(object):
         "Now set up an appropriate Trajectory writer"
         "First create a list with the lights. Use Webots convention of putting y coordinate in 3rd position  "
         
-        light = {'name' : lightDefaultName, 
-                 'lightPos': (lightDefaultPosition[0],0,lightDefaultPosition[1]),
-                 'lightIntensity': lightDefaultIntensity,
-                 'lightIsOn': True}
+        lightBody.userData['name'] = lightDefaultName 
+        lightBody.userData['lightPos'] =  (lightDefaultPosition[0],0,lightDefaultPosition[1])
+        lightBody.userData['lightIntensity'] =  lightDefaultIntensity
+        lightBody.userData['lightIsOn'] =  True
         
-        lights = [light]
-        self.trajectoryWriter = RobotTrajectoryWriter(kheperaRobotDefaultID, (kheperaDefaultPosition[0],0,kheperaDefaultPosition[1]), lights, dataDir = dataDir)
-                           
+        lights = [lightBody]        
+        self.trajectoryWriter = RobotTrajectoryWriter(kheperaRobotDefaultID, (kheperaDefaultPosition[0],0,kheperaDefaultPosition[1]), lights, dataDir = self.dataDir)
+        
+        "Finally, inform the robot of the existing detectable lights"
+        self.allBodies[kheperaRobotDefaultName].detectableLights = lights                  
+        
         return kheperaWorld
+    
+   #============================================================================
+   # END EXPERIMENTAL WORLD SETUP 
+   #============================================================================
+
+
+    #===========================================================================
+    # TESTING METHODS
+    # 
+    # Simple methods to test the simulator in elementary scenarios
+    #===========================================================================
+
+    def braiten2a(self):
+        """Simulate a Braitenberg type 2a vehicle: parallel-connected motors/sensors, 'the more, the more'.
+           Assume the kheperaBraitenberg2_HOMEO_World is running."""
+        light = self.allBodies['TARGET']
+        leftEyeReading = self.allBodies[self.robotName].irradAtSensor('leftEye', [light])
+        rightEyeReading = self.allBodies[self.robotName].irradAtSensor('rightEye', [light])
+        print "right eye sees: %3.f  left eye sees: %.3f" % (rightEyeReading, leftEyeReading)
+        self.allBodies[self.robotName].setSpeed(rightEyeReading,leftEyeReading)    
+    
+    def braiten2b(self):
+        """Simulate a Braitenberg type 2b vehicle: cross-connected motors/sensors, 'the more, the more'"
+           Assume the kheperaBraitenberg2_HOMEO_World is running."""
+
+        light = self.allBodies['TARGET']
+        leftEyeReading = self.allBodies[self.robotName].irradAtSensor('leftEye', [light])
+        rightEyeReading = self.allBodies[self.robotName].irradAtSensor('rightEye', [light])
+        self.allBodies[self.robotName].setSpeed(leftEyeReading, rightEyeReading)    
+
+
                                     
     def sensorTesting(self):
         """FOR TESTING"""        
         """for testing irradiance values:"""
+        """Assume the kheperaBraitenberg2_HOMEO_World is running."""
 
         """move robot slightly behind origin, so that center sensor is exactly  at (0,0).
            and target exactly in front"""
 #         
-        self.allBodies['kheperaRobot'].rotateTo(radians(90))
+        self.allBodies[self.robotName].rotateTo(radians(90))
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)
-        self.allBodies['kheperaRobot'].moveTo( (0,0 - (self.allBodies['kheperaRobot'].diameter/2)))
+        self.allBodies[self.robotName].moveTo( (0,0 - (self.allBodies[self.robotName].diameter/2)))
         self.allBodies['TARGET'].position = (0,1)
 #         self.setSpeed("Khepera",10,-10)
 
@@ -814,7 +938,9 @@ class KheperaSimulation(object):
 #         lightBody.position = (1,1)
 #         self.setSpeed("Khepera",100,-100)
         
-        """ End testing"""
+        #=======================================================================
+        #  END TESTING METHODS
+        #=======================================================================
     
     def KheperaWorldLightDef(self, color, position, intensity=None, ambRatio = 0, attenVec = (0,0,1), name=None):
         "Definition of a static light-like object."
@@ -892,7 +1018,7 @@ class KheperaSimulation(object):
     
     def setDataDir(self, dataDir):
         "Tells the trajectory writer the directory to save the trajectory files to"        
-        self.trajectoryWriter.setDataDir(dataDir)
+        self.dataDir = dataDir
          
 class KheperaCamera(object):
     """The camera used by the the visualizer to set OpenGL's projections 
@@ -926,7 +1052,7 @@ class KheperaCamera(object):
 class KheperaSimulationVisualizer(pyglet.window.Window):
     """Visualizer class for KheperaSimulation. Uses pyglet backend"""
     
-    def __init__(self, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2,  dataDir = None, HomeoExperiment = None, width = 1200, height = 800, initialZoom = 0.2):
+    def __init__(self, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2,  dataDir = None, HomeoWorld = None, width = 1200, height = 800, initialZoom = 0.2):
         
         #As per pyglet prog guide"
         conf = Config(sample_buffers=0,  # This parameter and the parameter "samples" allow more than one color sample. Higher quality, lower performance
@@ -937,7 +1063,7 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
         self.TARGET_FPS=60
         self.TIME_STEP = Box2D_timeStep # defaults to 0.032 = 32 msec
 
-        self.sim = KheperaSimulation(dataDir, timeStep=self.TIME_STEP, HomeoExperiment = HomeoExperiment)
+        self.sim = KheperaSimulation(dataDir, timeStep=self.TIME_STEP, HomeoWorld = HomeoWorld)
         clock.set_fps_limit(60)  #??? function of this line?
 
         self.init_gl(width, height)
@@ -1019,17 +1145,17 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
             self.sim.gridDefaultSpacing /= 0.75           
             self.sim.grid = makePygletGrid(self.sim.gridDefaultSize, self.sim.gridDefaultSpacing)
         elif symbol == key.O:     # increase right wheel speed
-            currentSpeeds = self.sim.allBodies['kheperaRobot'].getSpeed()
-            self.sim.allBodies['kheperaRobot'].setSpeed(currentSpeeds[0], currentSpeeds[1]+1)
+            currentSpeeds = self.sim.allBodies[self.robotName].getSpeed()
+            self.sim.allBodies[self.robotName].setSpeed(currentSpeeds[0], currentSpeeds[1]+1)
         elif symbol == key.L:     # decrease left wheel speed
-            currentSpeeds = self.sim.allBodies['kheperaRobot'].getSpeed()
-            self.sim.allBodies['kheperaRobot'].setSpeed(currentSpeeds[0], currentSpeeds[1]-1)
+            currentSpeeds = self.sim.allBodies[self.robotName].getSpeed()
+            self.sim.allBodies[self.robotName].setSpeed(currentSpeeds[0], currentSpeeds[1]-1)
         elif symbol == key.Q:    # increase left wheel speed
-            currentSpeeds = self.sim.allBodies['kheperaRobot'].getSpeed()
-            self.sim.allBodies['kheperaRobot'].setSpeed(currentSpeeds[0]+1, currentSpeeds[1])
+            currentSpeeds = self.sim.allBodies[self.robotName].getSpeed()
+            self.sim.allBodies[self.robotName].setSpeed(currentSpeeds[0]+1, currentSpeeds[1])
         elif symbol == key.A:    # decrease left wheel speed
-            currentSpeeds = self.sim.allBodies['kheperaRobot'].getSpeed()
-            self.sim.allBodies['kheperaRobot'].setSpeed(currentSpeeds[0]-1, currentSpeeds[1])
+            currentSpeeds = self.sim.allBodies[self.robotName].getSpeed()
+            self.sim.allBodies[self.robotName].setSpeed(currentSpeeds[0]-1, currentSpeeds[1])
         elif symbol == key.F1:
             self.step()
         elif symbol == key.ESCAPE:
@@ -1064,7 +1190,7 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
             self.sim.advanceSim()
         self.sim.pygletDraw()
 
-def runKheperaSimulator(headless = False, dataDir = None, HomeoExperiment = None, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2, window_width = 800, window_height = 400, window_initialZoom = 0.2):
+def runKheperaSimulator(headless = False, dataDir = None, HomeoWorld = None, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2, window_width = 800, window_height = 400, window_initialZoom = 0.2):
     """Runs the Khepera simulator either in headless mode (no graphics, for fast simulations) or with the openGl visualization class"""
     
     if dataDir is None:
@@ -1072,14 +1198,14 @@ def runKheperaSimulator(headless = False, dataDir = None, HomeoExperiment = None
     print dataDir   
     if not headless:
         app = KheperaSimulationVisualizer(Box2D_timeStep=Box2D_timeStep, Box2D_vel_iter=Box2D_vel_iter, 
-                                          Box2D_pos_iter=Box2D_pos_iter, HomeoExperiment = HomeoExperiment,                                          
+                                          Box2D_pos_iter=Box2D_pos_iter, HomeoWorld = HomeoWorld,                                          
                                           dataDir = dataDir, width = window_width, height = window_height, 
                                           initialZoom = window_initialZoom)
         app.run(app)
         return app
     else:
         sim = KheperaSimulation(dataDir = dataDir, running = True, timeStep=Box2D_timeStep, vel_iters=Box2D_vel_iter, 
-                                pos_iters=Box2D_pos_iter, HomeoExperiment = HomeoExperiment)
+                                pos_iters=Box2D_pos_iter, HomeoWorld = HomeoWorld)
 #         sim.run()
         return sim
      
@@ -1091,18 +1217,18 @@ if __name__=="__main__":
 
     "Testing the deterministic features of the  simulator in headless mode"
 
-    a = runKheperaSimulator(headless=True, HomeoExperiment = "createKheperaBraitenberg2_HOMEO_World")      
-#     runKheperaSimulator(headless=False,HomeoExperiment = "createKheperaBraitenberg2_HOMEO_World")  
+#     a = runKheperaSimulator(headless=True, HomeoWorld = "kheperaBraitenberg2_HOMEO_World")      
+    a = runKheperaSimulator(headless=False,HomeoWorld = "kheperaBraitenberg2_HOMEO_World")  
  
-    steps = 50
+    steps = 10
     runs = 1
     for run in xrange(runs):
         timeNow  = time()
-        dis = a.getDistance('kheperaRobot', 'TARGET')    
+        dis = a.getDistance(self.robotName, 'TARGET')    
         print "%d Initial distance to target is %.3f  " % (run+1, dis),
         for k in xrange(steps):
             a.advanceSim()
-            dis = a.getDistance('kheperaRobot', 'TARGET')
+            dis = a.getDistance(self.robotName, 'TARGET')
 #             print "sim's current step is", a.currentStep
         print "%d: Final distance to target is %.3f, time elapsed is %f" % (run+1, dis, time()- timeNow)
         print "resetting simulation..."
@@ -1111,18 +1237,18 @@ if __name__=="__main__":
 #         print "distance to target is %.3f, time elapsed is %f" % (dis, time()- timeNow)
 
 #     "Testing the deterministic features of the  simulator in graphic mode"
-#     vis = KheperaSimulationVisualizer(HomeoExperiment = "createKheperaBraitenberg2_HOMEO_World")      
-# #     runKheperaSimulator(headless=False,HomeoExperiment = "createKheperaBraitenberg2_HOMEO_World")  
+#     vis = KheperaSimulationVisualizer(HomeoWorld = "kheperaBraitenberg2_HOMEO_World")      
+# #     runKheperaSimulator(headless=False,HomeoWorld = "kheperaBraitenberg2_HOMEO_World")  
 #     a = vis.sim
 #     steps = 12000
 #     runs = 5
 #     for run in xrange(runs):
 #         timeNow  = time()
-#         dis = a.getDistance('kheperaRobot', 'TARGET')    
+#         dis = a.getDistance(self.robotName, 'TARGET')    
 #         print "%d Initial distance to target is %.3f  " % (run+1, dis),
 #         for k in xrange(steps):
 #             vis.step()
-#             dis = a.getDistance('kheperaRobot', 'TARGET')
+#             dis = a.getDistance(self.robotName, 'TARGET')
 # #             print "sim's current step is", a.currentStep
 #         print "%d: Final distance to target is %.3f, time elapsed is %f" % (run+1, dis, time()- timeNow)
 #         print "resetting simulation..."
