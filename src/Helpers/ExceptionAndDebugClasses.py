@@ -38,13 +38,17 @@ class HomeoDebug(object):
     @classmethod
     def addDebugCodes(cls,codes):
         """Class method to be used by all apps wishing to enable
-           printing of some classes of erroc messages.
-           Codes is a space-separated string of allowed error classes codes"""
-        for code in codes.split():
-            if code in HomeoDebug.allowableCodes:
-                HomeoDebug.debugCodes.add(code)
-            else:
-                stderr.write("Trying to add a non-allowed debugging code: " + code + "\n")
+           printing of some classes of error messages.
+           Codes is a space-separated string of allowed error classes codes, 
+           or the string 'all' """
+        if 'all' in codes:
+            HomeoDebug.debugCodes = set(HomeoDebug.allowableCodes)
+        else:
+            for code in codes.split():
+                if code in HomeoDebug.allowableCodes:
+                    HomeoDebug.debugCodes.add(code)
+                else:
+                    stderr.write("Trying to add a non-allowed debugging code: " + code + "\n")
     
     
     @classmethod

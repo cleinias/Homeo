@@ -30,12 +30,12 @@ from RobotSimulator.WebotsTCPClient import WebotsTCPClient
 # from socket import error as SocketError
 import os
 from math import sqrt
-from time import time, strftime, localtime
+from time import time, strftime, localtime, sleep
 from tabulate import tabulate
 from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDebug
 from Helpers.StatsAnalyzer import extractGenomeOfIndID
 from SimulatorBackend import SimulatorBackendHOMEO,SimulatorBackendVREP,SimulatorBackendWEBOTS
-
+from threading import Lock
 from glob import glob
 
 
@@ -126,7 +126,8 @@ class HomeoGASimulation(object):
                                    debugging = None,
                                    simulatorBackend = "VREP",
                                    vrepPort = None):
-
+        
+        self.worldBeingResetLock = Lock()
         timeElapsed = None
         self._robotName = "Khepera"
         
@@ -139,14 +140,14 @@ class HomeoGASimulation(object):
                                                            10020,              # robot port
                                                            robotName = self._robotName)              
         elif simulatorBackend == "HOMEO":
-            self.simulatorBackend =  SimulatorBackendHOMEO(robotName = self._robotName)
+            self.simulatorBackend =  SimulatorBackendHOMEO(robotName = self._robotName, lock = self.worldBeingResetLock)
 
         "Directory to save simulations'data, used to save logbook and history and passed to HomeoQt simulation and other classes"
         self.dataDir = os.path.join(HomeoGASimulation.dataDirRoot,('SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))))
         try:
             os.mkdir(self.dataDir)
         except OSError:
-            print "Saving to existing directory", self.dataDir
+            print "WARNING: Saving to existing directory", self.dataDir
          
         self.simulatorBackend.setDataDir(self.dataDir)
 
@@ -645,8 +646,8 @@ class HomeoGASimulation(object):
         # self._simulation.initializeLiveData()
         #=======================================================================
         #self._simulThread.start()
-        finalDis =np.random.normal(loc=3, scale = 3)
-        return finalDis,                   # Return a tuple, as required by DEAP
+        finalDis = np.random.normal(loc=3, scale = 3)
+        return finalDis,                   # Return a tuple, as required by DEAP (vide trailing comma)
     
     def evaluateGenomeFitness(self,genome=None):
         """Run a simulation for a given number of steps on the given genome.
@@ -655,17 +656,24 @@ class HomeoGASimulation(object):
         if genome==None:
             genome=self.createRandomHomeostatGenome(self.genomeSize)
                     
-        if self.simulatorBackend == "VREP":
+        if self.simulatorBackend.name == "VREP":
             self.simulatorBackend.connect()
         self.experimentParams['homeoGenome']= genome
         self._simulation.initializeExperSetup(**self.experimentParams)
 
+        "testing"
+#         sleep(1)
+        "end testing"
+        
         hDebug('network', "Trying to connect to supervisor")
 #         self._supervisor.clientConnect()
         self.simulatorBackend.connect()
         hDebug('network', "Connected")
         hDebug('network', "Resetting Webots")
         self.simulatorBackend.reset()
+        if self.simulatorBackend.name == "HOMEO":
+            print " recreating experimental setup just for HOMEO backend"
+            self._simulation.initializeExperSetup(**self.experimentParams)
         hDebug('network', "Closing connection to supervisor")
         self.simulatorBackend.close()
 #         self._supervisor.close()
@@ -676,6 +684,11 @@ class HomeoGASimulation(object):
         #
         #
         self.simulatorBackend.setRobotModel(genome.ID)
+        
+        "testing"
+#         sleep(1)
+        "end testing"
+        
         self._simulation.homeostat.connectUnitsToNetwork()
         self._simulation.maxRuns = self.stepsSize
         "Initialize live data recording and display "
@@ -685,11 +698,17 @@ class HomeoGASimulation(object):
         timeNow = time()
         hDebug('eval' , "Simulation started at time: " +  str(timeNow))  
         hDebug('eval', ("Now computing exactly " + str(self.stepsSize) + " steps...."))
+        self.worldBeingResetLock.acquire()
+#         for sensor in self.simulatorBackend.world.allBodies[self._robotName].sensors.values():
+#             print  sensor.shape.pos
+        print "Lock ACQUIRED by evaluateGenomeFitness"
         for i in xrange(self.stepsSize):
             hDebug('eval', ("Step: "+ str(i+1)+"\n"))
             print "step: ",i+1
             self._simulation.step()
         #self._simulation.go()
+        self.worldBeingResetLock.release()
+        print "Lock RELEASED by evaluateGenomeFitness"
         hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
         finalDis =self.simulatorBackend.finalDisFromTarget()
         hDebug('eval', ("Final distance from target was: " + str(finalDis)))
@@ -772,11 +791,11 @@ if __name__ == '__main__':
 #    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
     #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
 #     simul = HomeoGASimulation(popSize=3, stepsSize=100, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "WEBOTS")
-    simul = HomeoGASimulation(popSize=2, stepsSize=5000, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "VREP", noUnisel = True, noNoise = True)
+    simul = HomeoGASimulation(popSize=1000, stepsSize=50, generSize = 10,  clonableGenome = genome, debugging = 'network', simulatorBackend = "HOMEO", noUnisel = True, noNoise = True)
     #simul.test()
     #simul.runOneGenSimulation()
-    simul.runGaSimulation(simul.generatePopOfClones(cloneName='003-031'))
-#     simul.runGaSimulation(simul.generateRandomPop())
+#     simul.runGaSimulation(simul.generatePopOfClones(cloneName='003-031'))
+    simul.runGaSimulation(simul.generateRandomPop())
     #simul.showGenealogyTree(simul.hist, simul.toolbox)
     #simulGUI.show()
     #app.exec_()

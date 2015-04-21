@@ -24,7 +24,8 @@ from  subprocess import check_output
 from os import system
 from os.path import split
 from Helpers.General_Helper_Functions import asByteArray, distance
-from RobotSimulator.Transducer import VREP_DiffMotor,VREP_LightSensor
+from RobotSimulator.Transducer import VREP_DiffMotor,VREP_LightSensor, HOMEO_DiffMotor,HOMEO_LightSensor, WebotsDiffMotorTCP,WebotsLightSensorTCP
+from KheperaSimulator.KheperaSimulator import KheperaSimulation
 
 class SimulatorBackendAbstract(object):
     '''
@@ -51,13 +52,16 @@ class SimulatorBackendAbstract(object):
         return self.name
               
     @abstractmethod
-    def reset(self):
-        "Restore simulation to initial conditions"
+    def reset(self, lock):
+        """Restore simulation to initial conditions.
+           Simulations are run in a separate threads. 
+           Always pass a lock to prevent access to the world 
+           while it is being reset """
         pass
 
     @abstractmethod    
     def setRobotModel(self, modelName):
-        "Set the name of the model used in the robotic simulations"
+        "Set the name of the robot used in the robotic simulations"
         pass
 
     @abstractmethod
@@ -81,46 +85,71 @@ class SimulatorBackendAbstract(object):
         pass
 
     @abstractmethod
-    def start(self):
-        "Start the simulator backend"
+    def start(self, lock):
+        """Start the simulator backend"
+           Simulations are run in a separate threads. 
+           Always pass a lock to prevent access to the world 
+           while it is being reset"""
         pass
 
     @abstractmethod    
     def setDataDir(self):
-        "Set the directory where simualtion's data will be saved (trajectories, etc.) "
+        "Set the directory where simulation's data will be saved (trajectories, etc.) "
         pass
 
     @abstractmethod
     def finalDisFromTarget(self,target):
         "Return distance of robot from target at simulation's end"
         pass
-        
+      
+    @abstractmethod
+    def getWheel(self,wheel):
+        "Return a reference to a robot's wheel, which can be used to control its speed"
+        pass
+    
+    @abstractmethod
+    def getSensor(self,sensorName):
+        "Return a reference to a robot's sensor, which can be used to read its value"
+        pass
 
 class SimulatorBackendHOMEO(SimulatorBackendAbstract):
     "Interface to the internal HOMEO Khepera-like robotic simulator" 
 
-    def __init__(self):
-        raise NotImplementedError
-        
+    def __init__(self, lock = None, robotName='', dataDir = None):
+        self._robotName = robotName
+        self.lock = lock
+        self.kheperaSimulation = KheperaSimulation()    
+        self.host = None
+        self.port = None
+
     @property
     def name(self):
         return "HOMEO"
-    
-        
+            
     def setRobotModel(self, modelName):            
         """Tell the internal simulator to save the current trajectory (by sending the 
            appropriate signal, set the new name of the robot's model, 
            and start recording trajectory to a new, appropriately named file.  
          """
-        raise NotImplementedError
+        self.kheperaSimulation.saveTrajectory()
+        self.kheperaSimulation.setRobotModelName(self._robotName, modelName)
+        self.kheperaSimulation.newTrajectoryFile()
                  
     def reset(self):
-        """The internal simulator provides a method to reset a simulation"""
-        
-        raise NotImplementedError 
+        """The internal simulator's resetWorld resets a simulation
+           to initial conditions.
+           Use the instance's lock to prevent access to the world before it is properly set up"""
+        try:
+            self.lock.acquire()
+            print "Lock ACQUIRED by reset function of robotic backend"
+            self.kheperaSimulation.resetWorld()
+        finally:
+            print "My world has robot: %s with id: %s " % (self.kheperaSimulation.allBodies[self._robotName].body.userData['ID'], id(self.kheperaSimulation.allBodies[self._robotName]))        
+            self.lock.release()
+            print "Lock RELEASED by reset function of robotic backend"
         
     def resetPhysics(self):
-        "Do nothing: no comparable function in HOMEO"
+        "Do nothing: no comparable function is needed in HOMEO"
         pass
                    
     def finalDisFromTarget(self):
@@ -129,8 +158,12 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
            'TARGET' and the KHEPERA robot (whose name is stored in an iVar)"""
        
         obj1Name = self._robotName
-        raise NotImplementedError
-    
+        obj2Name = 'TARGET'
+        try:
+            return self.kheperaSimulation.getDistance(obj1Name, obj2Name)
+        except:
+            raise Exception("Cannot get distance between %s and %s" % (obj1Name, obj2Name))
+        
     def close(self):
         "Do nothing: we do not need to disconnect from the internal simulation environment"
         pass 
@@ -140,33 +173,34 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
         pass
                 
     def setDataDir(self,dataDir):
-        raise NotImplementedError
-    
-    def basicBraiten2Transducers(self, HomeoWorld):
-        """Define and return transducers for Braitenberg type 2 simulations, 
-           with transducers set up for the HOMEO internal Khepera robotic simulator"""   
-    
-        "1. Setup simulator "
-        sim = KheperaSimulation(HomeoExperiment=HomeoWorld)
+        "Set the directory for data recording"
         
-        "2. Create transducers"
-    
-        'motors'
-        rightWheel = ''#WebotsDiffMotorTCP('right')
-        leftWheel = ''#WebotsDiffMotorTCP('left')
-        rightWheel.funcParameters = ''# 10  #wheel speed in rad/s
-        leftWheel.funcParameters =  ''# 10  #wheel speed in rad/s
-      
-        'sensors'
-        leftEyeSensorTransd  = ''# WebotsLightSensorRawTCP(0)
-        rightEyeSensorTransd = ''# WebotsLightSensorRawTCP(1)
+        self.kheperaSimulation.setDataDir(dataDir)
         
-        transducers = {"rightWheelTransd": rightWheel, 
-                       "leftWheelTransd":leftWheel, 
-                       "rightEyeTransd":rightEyeSensorTransd, 
-                       "leftEyeTransd":leftEyeSensorTransd}
+    def start(self, world):
+        """Internal simulator is started by creating the experimental setup.
+           Use the instance's lock to prevent access to the world before it is properly set up"""
+        
+        with self.lock:
+            self.kheperaSimulation.setupWorld(world)
     
-        return transducers
+    def quit(self):
+        """Trash the existing simulation instance """     
+        self.kheperaSimulation = None
+
+    def getWheel(self,wheel):
+        """Return a transducer to a HOMEO's khepera-like robot's wheel.
+           Wheel is a string: 'left' or 'right'"""
+        
+        return HOMEO_DiffMotor(wheel, self._robotName ,self.kheperaSimulation)
+
+    def getSensor(self,eye):
+        """Return a transducer to a HOMEO's khepera-like robot's 'eye'.
+           Eye is a string: 'left' or 'right'"""
+        
+        return HOMEO_LightSensor(eye, self.kheperaSimulation.allBodies[self._robotName])
+    
+
 
        
 class SimulatorBackendWEBOTS(SimulatorBackendAbstract):
@@ -333,7 +367,7 @@ class SimulatorBackendVREP(SimulatorBackendAbstract):
             self._kheperaPort = kheperaPort
         self._robotName = robotName
         self._VREP_clientId = None
-        self.world = None
+        self.VREPSimulation = None
         self.dataDir = dataDir
             
     @property
@@ -401,7 +435,7 @@ class SimulatorBackendVREP(SimulatorBackendAbstract):
         if self._VREP_clientId is not None:
             self.startSimulationVREP()
         else:
-            self._VREP_clientId = self.connectToVREP(self.world)        
+            self._VREP_clientId = self.connectToVREP(self.VREPSimulation)        
     
     def setDataDir(self,dataDir):
         "Set the directory for saving data (trajectories, etc."
@@ -417,12 +451,12 @@ class SimulatorBackendVREP(SimulatorBackendAbstract):
         "Connect to VREP and load the correct world if needed"
         "FIXME: SHOULD LAUNCH VREP IF NOT RUNNING"
         VREP_exec = 'vrep'
-        if self.world == None:
-            self.world = VREP_World
+        if self.VREPSimulation == None:
+            self.VREPSimulation = VREP_World
         
         '1. check that V-Rep is running and see whether we are already connected to it. Otherwise connect'
         if VREP_exec not in check_output(["ps","-f", "--no-headers",  "ww", "-C", "vrep"]):
-            raise Exception(("V-REP is not running! Please start V-REP with scene: %s" % self.world))
+            raise Exception(("V-REP is not running! Please start V-REP with scene: %s" % self.VREPSimulation))
         else:
             "Check if we are connected with the passed clientId already"
             if self._VREP_clientId is not None:
@@ -441,12 +475,12 @@ class SimulatorBackendVREP(SimulatorBackendAbstract):
                         raise Exception("Failed to connect to VREP simulation. Bailing out")
     #     print " we are connected with clientId ", self._VREP_clientId
         "2. Check the correct world is running"
-        if self.world is not None: 
-            VREP_Scene = split(self.world)[1]
+        if self.VREPSimulation is not None: 
+            VREP_Scene = split(self.VREPSimulation)[1]
             if VREP_Scene not in check_output(["ps","-f", "--no-headers",  "ww", "-C", "vrep"]):
-                eCode = vrep.simxLoadScene(self._VREP_clientId, self.world, 0, vrep.simx_opmode_oneshot_wait)
+                eCode = vrep.simxLoadScene(self._VREP_clientId, self.VREPSimulation, 0, vrep.simx_opmode_oneshot_wait)
                 if eCode != 0:
-                    raise Exception(("Could not load into V-REP the world",  self.world))     
+                    raise Exception(("Could not load into V-REP the world",  self.VREPSimulation))     
     
     
         "3. Make sure VREP has bees set to the correct directory for saving data"

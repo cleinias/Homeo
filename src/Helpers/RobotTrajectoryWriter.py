@@ -52,7 +52,7 @@ class RobotTrajectoryWriter(object):
 
             "state actions and transitions"       
             if self._state == self.State.SAVE:
-                print "I am in state SAVE"
+#                 print "I am in state SAVE"
                 self.writePosition(position)
             elif self._state == self.State.CLOSEFILE:
 #                print "I am in state CLOSE"
@@ -86,10 +86,10 @@ class RobotTrajectoryWriter(object):
         self.posFile.write("# Light sources positioned at:\n")
         
         for light in lights:
-                self.posFile.write(light['name'] +'\t%f\t%f\t%f\t%s\n' % (light['lightPos'][0],
-                                                                  light['lightPos'][2],
-                                                                  light['lightIntensity'],
-                                                                  light['lightIsOn']))
+                self.posFile.write(light.userData['name'] +'\t%f\t%f\t%f\t%s\n' % (light.userData['lightPos'][0],
+                                                                  light.userData['lightPos'][2],
+                                                                  light.userData['lightIntensity'],
+                                                                  light.userData['lightIsOn']))
                 self.posFile.flush()
         self.posFile.write("# Vehicle's initial position at:\n")
         self.posFile.write('%f\t %f\n\n\n' % (initialPos[0], initialPos[2]))

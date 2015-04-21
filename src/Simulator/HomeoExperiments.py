@@ -2195,26 +2195,19 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     on the robotic simulator backend. 
                       
 ''' 
-#     "TCP/IP parameters"
-#         #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
-#     host = '127.0.0.1'
-#     WebotsKheperaPort = 10020
-#     VREPKheperaPort = 19997
-    WEBOTS_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
-    VREP_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt'
-    HOMEO_World = None #FIXME !!!
+    worlds = {
+              'WEBOTS_World' : '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt',
+              'VREP_World' : '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt',
+              'HOMEO_World' : 'kheperaBraitenberg2_HOMEO_World'
+              }
     
     """Get the simulator-specific transducer units
        The basicBraiten2 functions return a dictionary with 4 transducers: 
        rightWheelTransd, leftWheelTransd, rightEyeTransd, leftEyeTransd"""
        
-    if backendSimulator.name == "VREP":
-        world = VREP_World
-    elif backendSimulator.name == "WEBOTS":
-        world = WEBOTS_World
-    elif backendSimulator.name == "HOMEO":
-        world = HOMEO_World
-    else:
+    try:
+        world = worlds[backendSimulator.name + '_World']
+    except:
         raise Exception("I cannot use backend simulator %s yet" % backendSimulator.name)
 
     transducers = basicBraiten2Tranducers(backendSimulator, world) 
@@ -3121,8 +3114,7 @@ def basicBraiten2Tranducers(backendSimulator, world):
     try:
         backendSimulator.start(world)
     except:
-        print "I cannot start the backend simulator %s. Aborting..."
-        raise
+        raise Exception("I cannot start the backend simulator %s. Aborting..." % backendSimulator.name) 
     
     "2. get transducers"    
     transducers = {"rightWheelTransd" : backendSimulator.getWheel('right'), 

@@ -14,6 +14,7 @@ import random
 import vrep
 from string import uppercase
 from sys import stderr
+from KheperaSimulator.KheperaSimulator import KheperaRobot
 
 class TransducerException(Exception):
     def __init__(self, value):
@@ -43,7 +44,7 @@ class Transducer(object):
         '''
         Basic setup
         '''
-    #=========================================several========================
+    #=================================================================
     # Class properties
     #=================================================================
     
@@ -71,7 +72,7 @@ class Transducer(object):
 
     #======================================================================
     #  Running methods
-    #=========================================several=============================
+    #======================================================================
     
     def act(self, parameters):
         '''act method is implemented only by Transducer's subclasses'''
@@ -193,6 +194,7 @@ class VREP_DiffMotor(Transducer):
 
         return (-self._range, self._range)
 
+
 class VREP_LightSensor(Transducer):
     """ Connects a unit to a HomeoLight sensor of  a Khepera-like robot
         in the V-REP simulator"""
@@ -236,6 +238,106 @@ class VREP_LightSensor(Transducer):
     def act(self):
         "Eyes cannot act"
         raise TransducerException("VREP sensor %sEye cannot act" %self._eye)
+
+class HOMEO_DiffMotor(Transducer):
+    """Interface to a motor of a differential wheel robot simulated by HOMEO internal robotic simulator
+       Instance variables:
+       - wheel     aString: the right or left wheel 
+       - robot     aString: the string identifying the robot in the HOMEO simulation
+       - simul     aRef: reference to the simulation (needed to advance it in single step after each command is actuating command"""
+    
+    def __init__(self, wheel, robotRef, simul):
+        "Wheel could either 'right or 'left' and nothing else"
+
+        if wheel == 'right':
+            self._transdFunction = 'setRightSpeed'
+        elif wheel == 'left':
+            self._transdFunction = 'setLeftSpeed'
+        else:
+            raise TransducerException("Wheel must either be right or left")
+
+        self._wheel = wheel
+        self.robot = robotRef
+        self.simul = simul
+        self._range = self.getRange()
+
+
+    def getRange(self):
+        "Get motor range from robot"
+
+        try:
+            range = self.simul.allBodies[self.robot].getMaxSpeed()[self._wheel]
+            return range
+        except:
+            raise TransducerException("Cannot get maxSpeed of HOMEO motor: " + self._wheel+"Wheel")
+    
+    def act(self):
+        '''Activates the wheel motor by calling the actuator function (transdFunction) with 
+           HOMEO client (stored in self.robot) and the needed parameters (stored in funcParameters)'''
+        
+        try:         
+            getattr(self.simul.allBodies[self.robot], self._transdFunction)(self.funcParameters)
+            self.simul.advanceSim()
+        except:
+            stderr.write("Motor command to HOMEO motor:%sWheel failed " % self._wheel)
+            raise #TransducerException("Motor command to HOMEO motor:%sWheel failed " % self._wheel)
+        
+    def read(self):
+        "Motors cannot sense"
+        raise TransducerException("HOMEO Motor %sWheel cannot sense" %self._wheel)
+ 
+    def range(self):
+        "Motor's max speed is obtained at initialization and cached for efficiency"
+        '''Function returns a list containing the min and max speed of the motor.
+           notice that this posits minSpeed as always = to minus maxSpeed'''
+
+        return (-self._range, self._range)
+
+
+class HOMEO_LightSensor(Transducer):
+    """ Connects a unit to a HomeoLight sensor of  a Khepera-like robot
+        in the internal HOMEO simulator"""
+        
+    def __init__(self, eye, robotRef):
+        "Current HOMEO Khepera models only have a 'right' and a 'left' eye and nothing else"
+
+        if eye not in ["right","left"]:
+            raise TransducerException("Eye must either be right or left")
+        self._eye = eye + "Eye"
+        self.robot = robotRef
+        self._transdFunction = self.robot.getSensorRead
+        self._range = self.getRange()
+        
+    def getRange(self):
+        "get sensor range"
+        try:
+            value = self.robot.getMaxSensorRange(self._eye)
+        except:
+            raise TransducerException("Cannot get maxRange of HOMEO sensor: " + self._eye)
+        return value
+
+    def read(self):
+        """Return a value representing the sum of all the irradiances at 
+           the sensor's surface produced by the detectable light in the world."""
+#         value = 0
+        print "About to read value from within transducer object"
+        try:
+            value =  self._transdFunction(self._eye)
+        except:
+            raise Exception("Cannot read value for HOMEO sensor " + self._eye)
+#             stderr.write("Cannot read value for HOMEO sensor " + self._eye)
+#             return 0
+        print "Sensor %s read value %.3f" %((self._eye+" sensor"),value)
+        return value
+        
+    def range(self):
+        "Sensor's range is obtained at initialization and cached for efficiency"
+        '''Function returns a tuple with min and max range. We posits minRange = 0'''
+        return (0,self._range)
+    
+    def act(self):
+        "Eyes cannot act"
+        raise TransducerException("HOMEO sensor %s cannot act" %self._eye)
 
 class TransducerTCP(object):
     '''
