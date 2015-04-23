@@ -139,7 +139,7 @@ class RobotTrajectoryWriter(object):
         dataDir = self.dataDir
         curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")                    
         trajFilename = 'trajData-'+curDateTime+"-ID-"+ modelName+'.traj'
-        print "Saving data to: ", os.path.join(dataDir,trajFilename)                 
+#         print "Saving data to: ", os.path.join(dataDir,trajFilename)                 
         return  os.path.join(dataDir, trajFilename)
     
     def setDataDir(self, dataDir):

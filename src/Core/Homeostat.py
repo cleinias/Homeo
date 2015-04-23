@@ -428,8 +428,7 @@ class Homeostat(object):
     def connectUnitsToNetwork(self):
         "Connect all transducer-connected units to network"
         if self._usesSocket == False:
-            print "Trying to reconnect a homeostat that uses no sockets to network"
-            print "Ignoring"
+            hDebug('network', "Trying to reconnect a homeostat that uses no sockets to network...Ignoring")
             return
         else:
             try:
