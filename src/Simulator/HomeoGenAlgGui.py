@@ -22,7 +22,7 @@ import numpy as np
 # import csv
 import datetime
 from operator import attrgetter
-from scoop import futures
+# from scoop import futures
 
 
 #import RobotSimulator.WebotsTCPClient
@@ -106,7 +106,7 @@ class HomeoGASimulation(object):
     allowable error classes names. 
     '''
     
-    dataDirRoot = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/'
+    dataDirRoot = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/homeo/SimulationsData/'
            
     def __init__(self,parent=None, stepsSize = 1000, 
                                    popSize=150,
@@ -782,16 +782,17 @@ def selTournamentRemove(individuals, k, tournsize):
 if __name__ == '__main__':
     #app = QApplication(sys.argv)
     #simulGUI = HomeoGASimulGUI()
-    logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/SimsData-2015-03-07-11-27-23"
-    logL = 'Logbook-2015-03-07-11-27-23.lgb'
-    id = '003-031'
-    logF = os.path.join(logD,logL)
-    genome = extractGenomeOfIndID(id,logF)
+#     logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/SimsData-2015-03-07-11-27-23"
+#     logL = 'Logbook-2015-03-07-11-27-23.lgb'
+#     id = '003-031'
+#     logF = os.path.join(logD,logL)
+#     genome = extractGenomeOfIndID(id,logF)
+    genome = ''
 #    print [round(x,3) for x in genome['genome']]
 #    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
     #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
 #     simul = HomeoGASimulation(popSize=3, stepsSize=100, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "WEBOTS")
-    simul = HomeoGASimulation(popSize=1000, stepsSize=50, generSize = 10,  clonableGenome = genome, debugging = 'network', simulatorBackend = "HOMEO", noUnisel = True, noNoise = True)
+    simul = HomeoGASimulation(popSize=10, stepsSize=50000, generSize = 5,  clonableGenome = genome, debugging = 'network', simulatorBackend = "HOMEO", noUnisel = True, noNoise = True)
     #simul.test()
     #simul.runOneGenSimulation()
 #     simul.runGaSimulation(simul.generatePopOfClones(cloneName='003-031'))
