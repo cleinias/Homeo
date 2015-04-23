@@ -194,12 +194,10 @@ class HomeoUnitInput(HomeoUnit):
         MAY BE positive if the ivar always_pos is set to true (default) OR  centered at 0 (zero), 
         (hence either positive or negative) if the ivar always_pos is set to False'''
         
-        print " in selfUpdate of HomeoUnitInput. my transducer is of type", type(self.transducer)
         if self.always_pos == True:
             self.criticalDeviation = scaleTo(self.transducer.range(), [0, self.maxDeviation], self.transducer.read())
         else:
             self.criticalDeviation = scaleTo(self.transducer.range(), [-self.maxDeviation, self.maxDeviation], self.transducer.read())
-        print "    about to compute output"
         self.computeOutput()
         if self.debugMode:
             print "%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput)

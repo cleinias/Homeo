@@ -227,7 +227,6 @@ class VREP_LightSensor(Transducer):
 #             raise Exception("Cannot read value for sensor " + self._eye+"Eye")
             stderr.write("Cannot read value for sensor " + self._eye+"Eye")
             return 0
-        print "Sensor %s read value %.3f" %((self._eye+"Eye"),value)
         return value
         
     def range(self):
@@ -320,14 +319,12 @@ class HOMEO_LightSensor(Transducer):
         """Return a value representing the sum of all the irradiances at 
            the sensor's surface produced by the detectable light in the world."""
 #         value = 0
-        print "About to read value from within transducer object"
         try:
             value =  self._transdFunction(self._eye)
         except:
             raise Exception("Cannot read value for HOMEO sensor " + self._eye)
 #             stderr.write("Cannot read value for HOMEO sensor " + self._eye)
 #             return 0
-        print "Sensor %s read value %.3f" %((self._eye+" sensor"),value)
         return value
         
     def range(self):
@@ -436,7 +433,6 @@ class WebotsDiffMotorTCP(TransducerTCP):
         try:
             #print "Motor transducer %s is connected to socket %s" % (type(self).__name__, type(self._robotSocket).__name__)
             hDebug('network',("sending motor command: " + command))
-            print
             self._robotSocket.send(command)
             "Discard reply from receive buffer"
             discard = self._robotSocket.recv(1024)

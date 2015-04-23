@@ -106,7 +106,7 @@ class HomeoGASimulation(object):
     allowable error classes names. 
     '''
     
-    dataDirRoot = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/homeo/SimulationsData/'
+    dataDirRoot = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/'
            
     def __init__(self,parent=None, stepsSize = 1000, 
                                    popSize=150,
@@ -701,14 +701,12 @@ class HomeoGASimulation(object):
         self.worldBeingResetLock.acquire()
 #         for sensor in self.simulatorBackend.world.allBodies[self._robotName].sensors.values():
 #             print  sensor.shape.pos
-        print "Lock ACQUIRED by evaluateGenomeFitness"
         for i in xrange(self.stepsSize):
             hDebug('eval', ("Step: "+ str(i+1)+"\n"))
             print "step: ",i+1
             self._simulation.step()
         #self._simulation.go()
         self.worldBeingResetLock.release()
-        print "Lock RELEASED by evaluateGenomeFitness"
         hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
         finalDis =self.simulatorBackend.finalDisFromTarget()
         hDebug('eval', ("Final distance from target was: " + str(finalDis)))
@@ -792,7 +790,7 @@ if __name__ == '__main__':
 #    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
     #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
 #     simul = HomeoGASimulation(popSize=3, stepsSize=100, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "WEBOTS")
-    simul = HomeoGASimulation(popSize=10, stepsSize=50000, generSize = 5,  clonableGenome = genome, debugging = 'network', simulatorBackend = "HOMEO", noUnisel = True, noNoise = True)
+    simul = HomeoGASimulation(popSize=1, stepsSize=2, generSize = 2,  clonableGenome = genome, debugging = 'network', simulatorBackend = "HOMEO", noUnisel = True, noNoise = True)
     #simul.test()
     #simul.runOneGenSimulation()
 #     simul.runGaSimulation(simul.generatePopOfClones(cloneName='003-031'))

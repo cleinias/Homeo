@@ -398,29 +398,29 @@ class KheperaRobot(object):
             eyeNormalVec = np.array([cos(eyeAngle),sin(eyeAngle)])
 #             print "eye normal vector length = %.12f (numpy) %.12f (Box2D)" % (np.linalg.norm(eyeNormalVec), eyeNormalVec.length)
 #             cosAngleToTarget = b2Dot(vecToTarget/vecToTarget.length,eyeNormalVec)
-            if np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget)) != 1:
-                print "the vector to target normalized vector is <> from 1", np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget))
-            else:
-                print "OK"
-            
-            if np.linalg.norm(eyeNormalVec) != 1:
-                print "The eye normal vector normalized is <>  from 1"
-            else:
-                print "OK"
+#             if np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget)) != 1:
+#                 print "the vector to target normalized vector is <> from 1", np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget))
+#             else:
+#                 print "OK"
+#             
+#             if np.linalg.norm(eyeNormalVec) != 1:
+#                 print "The eye normal vector normalized is <>  from 1"
+#             else:
+#                 print "OK"
     
-            cosAngleToTarget = np.dot(vecToTarget/np.linalg.norm(vecToTarget),eyeNormalVec)
+#             cosAngleToTarget = np.dot(vecToTarget/np.linalg.norm(vecToTarget),eyeNormalVec)
             cosAngleToTarget = np.dot(normalize(vecToTarget),eyeNormalVec)
 #             targetAngle = atan(vecToTarget[1]/vecToTarget[0])
 #             cosAngleToTarget = cos(eyeAngle - targetAngle)
 #             print "cosAngle to Target = ", cosAngleToTarget
             "Testing"
-            print "V2T: %.3f,%.3f   eyeNormV: %.12f,%.12f normV2T: %.3f,%.3f   NormNormzdV2T: %.25f NormNormalEyeVec: %.25f, eyeAngle: %.5f, cos:%.12f"% (vecToTarget[0], vecToTarget[1], 
-                                                                                  eyeNormalVec[0],eyeNormalVec[1], 
-                                                                                  normalize(vecToTarget)[0], normalize(vecToTarget)[1], 
-                                                                                  np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget)),
-                                                                                  np.linalg.norm(eyeNormalVec),
-                                                                                  degrees(eyeAngle),
-                                                                                  cosAngleToTarget)
+#             print "V2T: %.3f,%.3f   eyeNormV: %.12f,%.12f normV2T: %.3f,%.3f   NormNormzdV2T: %.25f NormNormalEyeVec: %.25f, eyeAngle: %.5f, cos:%.12f"% (vecToTarget[0], vecToTarget[1], 
+#                                                                                   eyeNormalVec[0],eyeNormalVec[1], 
+#                                                                                   normalize(vecToTarget)[0], normalize(vecToTarget)[1], 
+#                                                                                   np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget)),
+#                                                                                   np.linalg.norm(eyeNormalVec),
+#                                                                                   degrees(eyeAngle),
+#                                                                                   cosAngleToTarget)
 #             assert -1 <= cosAngleToTarget <= 1
 #             np.testing.assert_allclose(np.linalg.norm(eyeNormalVec), 1)
 #             np.testing.assert_allclose(np.linalg.norm(normalize(vecToTarget)),1.0)      
@@ -492,7 +492,6 @@ class KheperaRobot(object):
            as the sum of irradiances produced by all the existing lights 
            in the robot's world."""
         
-        print "      In sensorRead function of Khepera simulator"
         return self.irradAtSensor(sensorName, self.detectableLights)
             
     def rotateTo(self, angleRad):
