@@ -141,12 +141,9 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
            Use the instance's lock to prevent access to the world before it is properly set up"""
         try:
             self.lock.acquire()
-            print "Lock ACQUIRED by reset function of robotic backend"
             self.kheperaSimulation.resetWorld()
         finally:
-            print "My world has robot: %s with id: %s " % (self.kheperaSimulation.allBodies[self._robotName].body.userData['ID'], id(self.kheperaSimulation.allBodies[self._robotName]))        
             self.lock.release()
-            print "Lock RELEASED by reset function of robotic backend"
         
     def resetPhysics(self):
         "Do nothing: no comparable function is needed in HOMEO"

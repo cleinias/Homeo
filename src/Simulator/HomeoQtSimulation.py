@@ -228,13 +228,11 @@ class HomeoQtSimulation(QObject):
         self._isRunning = True
         
         while self._homeostat.time  < self._maxRuns  and self._isRunning == True:
-#            print "I am running cycle number: %u" % self._homeostat.time
             self._homeostat.runOnce()
 #            if self.liveDataOn:
             self.updateLiveData()
             time.sleep(self._simulDelay / 1000)
             QApplication.processEvents()
-        print "Done with simulation: processed %u steps" % self._homeostat.time
 
     def pause(self):
         "Pause the simulation" 
@@ -250,7 +248,6 @@ class HomeoQtSimulation(QObject):
     def step(self):
         "Advance the simulation one step"
         if self._homeostat.time  < self._maxRuns:
-            print "I am running cycle number: %u" % self._homeostat.time
             self._homeostat.runOnce()
             self.updateLiveData()
 #            time.sleep(self._simulDelay / 1000)

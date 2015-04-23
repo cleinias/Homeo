@@ -223,7 +223,6 @@ class Homeostat(object):
            then collecting data for each unit.
            First check that there are enough data to start'''
 
-        print "In runFor"
         sleepTime = self.slowingFactor
 
         if self.isReadyToGo():
@@ -237,7 +236,6 @@ class Homeostat(object):
                                  unit.currentOutput,
                                  unit.criticalDeviation))
             "END TESTING"
-            print "At the end of testing"
             
             while self.time < ticks:
                 for unit in self.homeoUnits:
@@ -245,7 +243,7 @@ class Homeostat(object):
                         self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
                     unit.time =  self.time
                     # sys.stderr.write("the status of %s in the function is %s and in the ivar is %s \n" % (unit.name, unit.isActive(), unit._status))
-                    print "unit: %s of type %s about to update with value: %.3f" % (unit.name, type(unit), unit.criticalDeviation)
+#                     print "unit: %s of type %s about to update with value: %.3f" % (unit.name, type(unit), unit.criticalDeviation)
                     if unit.isActive():
                         unit.selfUpdate()
                 self.time +=  1
@@ -262,15 +260,12 @@ class Homeostat(object):
                              unit.currentOutput,
                              unit.criticalDeviation))
         "END TESTING"
-        print "Leaving runFor"
 
     def runOnce(self):
         "Advance the simulation by one tick"
         
-        print "in runOnce"
         upTo = self.time + 1
         self.runFor(upTo)
-        print "exiting runOnce"
         
     def start(self):
         '''Start the simulation by setting the units "in motion." 
