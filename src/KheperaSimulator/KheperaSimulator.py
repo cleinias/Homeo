@@ -394,22 +394,36 @@ class KheperaRobot(object):
         
             "Compute vector of eye's normal from the robot's angle and cached eyeAngle."
             eyeAngle = (self.body.angle + radians(sensorFixture.userData[sensorName+'Angle']))
-            eyeNormalVec = b2Vec2(cos(eyeAngle), sin(eyeAngle))
+#             eyeNormalVec = b2Vec2(cos(eyeAngle), sin(eyeAngle))
+            eyeNormalVec = np.array([cos(eyeAngle),sin(eyeAngle)])
 #             print "eye normal vector length = %.12f (numpy) %.12f (Box2D)" % (np.linalg.norm(eyeNormalVec), eyeNormalVec.length)
-            cosAngleToTarget = b2Dot(vecToTarget/vecToTarget.length,eyeNormalVec)
+#             cosAngleToTarget = b2Dot(vecToTarget/vecToTarget.length,eyeNormalVec)
+            if np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget)) != 1:
+                print "the vector to target normalized vector is <> from 1", np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget))
+            else:
+                print "OK"
+            
+            if np.linalg.norm(eyeNormalVec) != 1:
+                print "The eye normal vector normalized is <>  from 1"
+            else:
+                print "OK"
+    
+            cosAngleToTarget = np.dot(vecToTarget/np.linalg.norm(vecToTarget),eyeNormalVec)
+            cosAngleToTarget = np.dot(normalize(vecToTarget),eyeNormalVec)
 #             targetAngle = atan(vecToTarget[1]/vecToTarget[0])
 #             cosAngleToTarget = cos(eyeAngle - targetAngle)
 #             print "cosAngle to Target = ", cosAngleToTarget
             "Testing"
-#             print "V2T: %.3f,%.3f   eyeNormV: %.12f,%.12f normV2T: %.3f,%.3f   NormNormzdV2T: %.3f NormNormalEyeVec: %.13f, eyeAngle: %.12f, cos:%.3f"% (vecToTarget[0], vecToTarget[1], 
-#                                                                                   eyeNormalVec[0],eyeNormalVec[1], 
-#                                                                                   normalize(vecToTarget)[0], normalize(vecToTarget)[1], 
-#                                                                                   np.linalg.norm(normalize(vecToTarget)), np.linalg.norm(eyeNormalVec),
-#                                                                                   degrees(eyeAngle),
-#                                                                                   cosAngleToTarget)
-            assert -1 <= cosAngleToTarget <= 1
-            np.testing.assert_allclose(np.linalg.norm(eyeNormalVec), 1)
-            np.testing.assert_allclose(np.linalg.norm(normalize(vecToTarget)),1.0)      
+            print "V2T: %.3f,%.3f   eyeNormV: %.12f,%.12f normV2T: %.3f,%.3f   NormNormzdV2T: %.25f NormNormalEyeVec: %.25f, eyeAngle: %.5f, cos:%.12f"% (vecToTarget[0], vecToTarget[1], 
+                                                                                  eyeNormalVec[0],eyeNormalVec[1], 
+                                                                                  normalize(vecToTarget)[0], normalize(vecToTarget)[1], 
+                                                                                  np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget)),
+                                                                                  np.linalg.norm(eyeNormalVec),
+                                                                                  degrees(eyeAngle),
+                                                                                  cosAngleToTarget)
+#             assert -1 <= cosAngleToTarget <= 1
+#             np.testing.assert_allclose(np.linalg.norm(eyeNormalVec), 1)
+#             np.testing.assert_allclose(np.linalg.norm(normalize(vecToTarget)),1.0)      
 
             "End testing"
         
@@ -420,16 +434,19 @@ class KheperaRobot(object):
     #                                                                                            vecToTarget,
     #                                                                                            (targetDistance > eyeMaxRange or abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange/2))
     #         print targetDistance, degrees(acos(cosAngleToTarget))
-            if targetDistance > eyeMaxRange or (abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange / 2):
-                sensorIrrad +=  0
-            else:        
-                directIntens = (lightIntensity * (1-lightAmbRatio)) * cosAngleToTarget
-                attenuationFactor = 1/( lightAttenVec[0]+
-                                       (lightAttenVec[1]*targetDistance)+
-                                       (lightAttenVec[2]*targetDistance**2))
-    #             print "Irradiance: %.5f" % min((directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor, eyeMaxValue)            
-                sensorIrrad +=  min((directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor, eyeMaxValue) # clip sensor's output to its max value
-        
+            try:
+                if targetDistance > eyeMaxRange or (abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange / 2):
+                    sensorIrrad +=  0
+                else:        
+                    directIntens = (lightIntensity * (1-lightAmbRatio)) * cosAngleToTarget
+                    attenuationFactor = 1/( lightAttenVec[0]+
+                                           (lightAttenVec[1]*targetDistance)+
+                                           (lightAttenVec[2]*targetDistance**2))
+        #             print "Irradiance: %.5f" % min((directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor, eyeMaxValue)            
+                    sensorIrrad +=  min((directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor, eyeMaxValue) # clip sensor's output to its max value
+            except Exception as e:
+                print e
+                raise
         return sensorIrrad
     
     def setRenderingParameters(self, color = (1.,0.,0.,0.5)):
