@@ -672,7 +672,7 @@ class HomeoGASimulation(object):
         hDebug('network', "Resetting Webots")
         self.simulatorBackend.reset()
         if self.simulatorBackend.name == "HOMEO":
-            print " recreating experimental setup just for HOMEO backend"
+#             print " recreating experimental setup just for HOMEO backend"
             self._simulation.initializeExperSetup(**self.experimentParams)
         hDebug('network', "Closing connection to supervisor")
         self.simulatorBackend.close()
@@ -703,7 +703,7 @@ class HomeoGASimulation(object):
 #             print  sensor.shape.pos
         for i in xrange(self.stepsSize):
             hDebug('eval', ("Step: "+ str(i+1)+"\n"))
-            print "step: ",i+1
+#             print "step: ",i+1
             self._simulation.step()
         #self._simulation.go()
         self.worldBeingResetLock.release()
@@ -714,8 +714,7 @@ class HomeoGASimulation(object):
         return finalDis,                                       # Return a tuple, as required by DEAP
         
     def finalDisFromTargetFromFile(self, target):
-        """Compute the distance between robot and target at
-        the end of the simulation.
+        """Compute the distance between robot and target at the end of the simulation.
         
         Target must be passed to function as a list of 2 floats (x-coord, y-coord)
         
@@ -790,7 +789,7 @@ if __name__ == '__main__':
 #    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
     #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
 #     simul = HomeoGASimulation(popSize=3, stepsSize=100, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "WEBOTS")
-    simul = HomeoGASimulation(popSize=1, stepsSize=2, generSize = 2,  clonableGenome = genome, debugging = 'network', simulatorBackend = "HOMEO", noUnisel = True, noNoise = True)
+    simul = HomeoGASimulation(popSize=50, stepsSize=50000, generSize = 10,  clonableGenome = genome, debugging = 'network', simulatorBackend = "HOMEO", noUnisel = True, noNoise = True)
     #simul.test()
     #simul.runOneGenSimulation()
 #     simul.runGaSimulation(simul.generatePopOfClones(cloneName='003-031'))

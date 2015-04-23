@@ -227,7 +227,7 @@ class KheperaRobot(object):
         jointDef.localAnchorA = (0, self.diameter * wheelSepRatio/2)
         world.CreateJoint(jointDef)
         self.wheels = {'left': frontLeftWheel}
-        print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontLeftWheel), id(self), 'left')
+#         print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontLeftWheel), id(self), 'left')
 
         'Right wheel'
         frontRightWheel = KheperaWheel(world, thickness = self.diameter * wheelThicknessRatio,  diameter = self.diameter * wheelRadiusRatio*2,
@@ -243,7 +243,7 @@ class KheperaRobot(object):
         jointDef.localAnchorA = (0, -self.diameter * wheelSepRatio/2)
         world.CreateJoint(jointDef)
         self.wheels['right']= frontRightWheel
-        print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontRightWheel), id(self), 'right')
+#         print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontRightWheel), id(self), 'right')
         
         
         "Sensors"
@@ -331,7 +331,7 @@ class KheperaRobot(object):
         sensorAngle = degrees(atan((rotMatrix * positionVector).A1[1]  / (rotMatrix * positionVector).A1[0]))
         sensorFixture.userData[sensorName + 'Angle']  = sensorAngle
         self.sensors[sensorName] = sensorFixture
-        print "At time %s I added fixture %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'),id(sensorFixture), id(self), sensorName)
+#         print "At time %s I added fixture %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'),id(sensorFixture), id(self), sensorName)
         
         "For openGl rendering: cache vertices for a blue circle"        
         sensorFixture.userData['pygletShape'] = makePygletArc(r = maxRange, span = radians(angleRange), orientation = sensorAngle)  
@@ -760,8 +760,8 @@ class KheperaSimulation(object):
         if dataDir is not None:
             self.dataDir = dataDir
         
-        if len(self.allBodies)>0:
-            print "Robot is currently at: ", self.allBodies[self.robotName].body.position
+#         if len(self.allBodies)>0:
+#             print "Robot is currently at: ", self.allBodies[self.robotName].body.position
         
         try:
             self.world = self.__getattribute__(self.homeoWorldToRun)()
@@ -771,7 +771,7 @@ class KheperaSimulation(object):
             raise Exception("Cannot find ** %s ** among my experiment setup methods" % self.homeoWorldToRun)
         self.currentStep = 0
 #         sleep(1.5)
-        print "Now leaving setupWorld. Robot is at: ", self.allBodies[self.robotName].body.position
+#         print "Now leaving setupWorld. Robot is at: ", self.allBodies[self.robotName].body.position
 
     def resetWorld(self):
         "Reset world to the setup specified in self.homeoWorldToRun"
