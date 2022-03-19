@@ -1,0 +1,804 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command biber
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine biblatex-natbib
+\cite_engine_type authoryear
+\biblatex_bibstyle authoryear
+\biblatex_citestyle authoryear
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Notes on music-related (or sound-related) experiments with the homeostat
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+The following notes discuss the possibility of deploying a homeostat-driven
+ 
+\begin_inset Quotes eld
+\end_inset
+
+robot
+\begin_inset Quotes erd
+\end_inset
+
+ in a sound space rather than in a physical space.
+ The overall theme (it is not a goal yet, nor a set thereof, just an area)
+ is the exploration of the concept of equilibrium within a sound space and
+ of the affordances, as it were, that equilibrium may warrant an 
+\begin_inset Quotes eld
+\end_inset
+
+organism.
+\begin_inset Quotes erd
+\end_inset
+
+ We start out by describing a minimal cybernetic-homeostatic setup before
+ discussing how its basic component can be described abstractly and then
+ mapped onto the sound domain.
+\end_layout
+
+\begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:Minimal-cybernetic-setup"
+
+\end_inset
+
+Minimal cybernetic setup
+\end_layout
+
+\begin_layout Standard
+The well-known cybernetic approach to a living organism is based on W.
+ R.
+ Ashby
+\begin_inset Quotes ers
+\end_inset
+
+s discussions (later refined and recently revived
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+(See Franchi for an extended discussion, plus usual refs)
+\end_layout
+
+\end_inset
+
+).
+ Consider the following minimal example as cybernetics
+\begin_inset Quotes ers
+\end_inset
+
+s zero-degree organism:
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+See Franchi minimal example
+\end_layout
+
+\end_inset
+
+ an 
+\begin_inset Quotes eld
+\end_inset
+
+organism
+\begin_inset Quotes erd
+\end_inset
+
+ that lives on a horizontal line and is only able to move left or right
+ while sensing its distance to a given point (which may represent the location
+ of a food source, say).With a correctly setup feedback-loop—namely, a loop
+ that feeds into the motor the value of its distance from the source with
+ the algebraic sign reversed—the organism will zero in onto its target quite
+ efficiently.
+ This minimal setup loosely corresponds to a Braitenberg type-1 vehicle
+ 
+\begin_inset CommandInset citation
+LatexCommand citeyearpar
+key "Braitenberg1984"
+literal "false"
+
+\end_inset
+
+ and is visually represented in fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:type-1-vehicle"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ below.
+ 
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:type-1-vehicle"
+
+\end_inset
+
+Formal structure and graphic rendition of a Braitenberg type-1 organism.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The Ashbian cybernetic interpretation adds an essential twist: the values
+ and structure of the feedback loop are not setup by a designer but rather
+ determined by the organism itself through a random walk of possible parameter:
+ in the beginning the connection between the motor action (the organism
+\begin_inset Quotes ers
+\end_inset
+
+s output) and the sensed distance (the input) is random.
+ For the sake of simplicity, we may assume it is just a real number 
+\emph on
+v
+\emph default
+ representing the velocity of the organism along the line 
+\emph on
+l
+\emph default
+.
+ As time passes, the
+\emph on
+ 
+\emph default
+system changes the values of 
+\emph on
+v
+\emph default
+ if its distance from the food source is not reduced, until it hits upon
+ the correct value and reaches equilibrium again (if it does at all, otherwise
+ it dies).
+ 
+\end_layout
+
+\begin_layout Standard
+In slightly more abstract term, our minimal example is made up of a 1-dimensiona
+l space for the environment, the internal space consists of only one variable
+ measuring the location of the organism on the space, the action is a [-1,
+ 1] velocity vector controlling the location of the organism in the space,
+ a feedback loop that seeks to minimize the distance between organism and
+ the zero point in the environment by translating the distance into the
+ velocity vector.
+ 
+\end_layout
+
+\begin_layout Standard
+Notice that even such a simple mono-dimensional organism-environment coupling
+ could be made more complex without altering the basic setup.
+ For instance, we could imagine having the food source moving along the
+ line, in which case a successful organism would be tracking it.
+ Or we could imagine having a variable measuring an internal slowly decaying
+ value (perhaps modeling a battery-level) and having the motor operating
+ only when the battery is below a certain threshold, or the organism dying
+ when the level reaches zero.
+ Notice also that the input-output relation may not be linear, nor would
+ the sensing have to be so.
+ It is well-known fact, for instance, that several biological organisms
+ sense their environment on a logarithmic scale (i.e., the intensity of the
+ internal sensation increases linearly when the value of the external stimulus
+ doubles) and it may be appropriate for a biological setup to model the
+ sensing apparatus of the agent accordingly.
+\end_layout
+
+\begin_layout Standard
+In short, an Ashby-like cybernetic description is based upon the following
+ concepts:
+\end_layout
+
+\begin_layout Itemize
+an (external) environmental space providing stimuli (or rather, offering
+ 
+\emph on
+affordances
+\emph default
+)
+\end_layout
+
+\begin_layout Itemize
+an internal environmental space (monitored by a discrete set set of internal
+ continuous variables )
+\end_layout
+
+\begin_layout Itemize
+a set of actions modifying the organism
+\begin_inset Quotes ers
+\end_inset
+
+s relation to the environment
+\end_layout
+
+\begin_layout Itemize
+a set of monitoring (feedback) loops, typically including a set of organism
+ sensors
+\end_layout
+
+\begin_layout Itemize
+a set of operations that would change the parameters of the feedback loops
+ themselves
+\end_layout
+
+\begin_layout Itemize
+equilibrium as the overall goal of the system
+\end_layout
+
+\begin_layout Standard
+A system is in equilibrium when its internal variables are at zero.
+ The system reaches equilibrium (when possible, otherwise it dies) by acting
+ upon the environment, i.e.
+ by exploiting the affordances the external environment provides that can
+ modify its internal space (and therefore alter the value of its internal
+ variable).
+ The equilibrium-seeking strategy is randomly determined by randomly switching
+ through the set of possible values for its input-output connections.
+\end_layout
+
+\begin_layout Subsection
+Abstract concepts
+\end_layout
+
+\begin_layout Standard
+Even though Ashbian cybernetics had a biological inspiration (the human
+ brain being its main inspiration), its operational model was not limited
+ to the biological domain from the very beginning as cyberneticians really
+ very quickly that its basic concepts were abstract enough to warrant applicatio
+n to different domains
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+refs to Illinois-experiments on homeostats, for instance, von Foerster work
+ on blood cell counters, etc.
+\end_layout
+
+\end_inset
+
+.
+ In general, an Ashbian-cybernetic setup is modeled through two basic entities:
+\end_layout
+
+\begin_layout Itemize
+an organism, or 
+\begin_inset Quotes eld
+\end_inset
+
+agent
+\begin_inset Quotes erd
+\end_inset
+
+ conceived as a set of fully connected units each one receiving inputs and
+ emitting outputs
+\end_layout
+
+\begin_layout Itemize
+an environment whose features impinge upon the agent by changing the values
+ of some of its internal units
+\end_layout
+
+\begin_layout Itemize
+an internally generated equilibrium-seeking strategy
+\end_layout
+
+\begin_layout Standard
+At an abstract level, the 
+\emph on
+environment
+\emph default
+ is an 
+\emph on
+n
+\emph default
+-dimensional space with some kind of metrics defined over it.
+ The space does not have to be homogenous—it could be a juxtaposition of
+ several heterogeneous (
+\emph on
+n-
+\emph default
+dimensional) spaces, each with its own metric.
+ In the biological domain, the space could be a 3D Euclidean empty space.
+ But it could also be a 4-D space thats adds to each geometrical point a
+ luminance value, for instance.
+ Or it could be a 6-D space that adds a tristimulus value representing a
+ color value to each point in space, and so on.
+ 
+\end_layout
+
+\begin_layout Standard
+The 
+\emph on
+agent
+\emph default
+, conversely, is basically just a set of 
+\emph on
+n 
+\emph default
+variables plus a set of actions that connects the inputs to those variables.
+ The variables define an 
+\emph on
+n
+\emph default
+-dimensional space of possible internal configurations of the agent, with
+ the equilibrium state being as close to the center of that space.
+ In the agent
+\begin_inset Quotes ers
+\end_inset
+
+s case as well it is possible that this internal space may not be completely
+ homogeneous, even though it would make more sense to model it as a metric
+ 
+\emph on
+n
+\emph default
+-dimensional space with the origin representing equilibrium.
+ A multiplicity of internal spaces would stand for the presence of heterogeneous
+ goals within the agent and is better modeled as a combination of interlocked
+ yet separate cybernetic sub-systems.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+See the discussion of multi-homeostats in various places.
+ REFS
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+In general terms, the cybernetic agents seeks to reach equilibrium by moving
+ across the environmental space or by tracking some specific point therein
+ in case of a dynamically evolving space.
+ It follows that a minimal cybernetic model would always have to provide,
+ in addition to the external and internal spaces (the environment and the
+ agent, resp), a set of actions that move the latter across the former.
+\end_layout
+
+\begin_layout Subsection
+Sound domain translation
+\end_layout
+
+\begin_layout Standard
+The translation of the concept to the sound domain starts with the basic
+ concepts sketched above: the environmental space, the agent, and the actions.
+\end_layout
+
+\begin_layout Subsubsection
+
+\emph on
+Environmental 
+\emph default
+space 
+\end_layout
+
+\begin_layout Standard
+A traditional definition of sound singles out five general parameters: pitch
+ (frequency), intensity (amplitude), duration, timbre, and spatialization.
+ In the simplest case, pitch is represented by frequency in HZ, intensity
+ by an amplitude in Db, duration in 
+\emph on
+s, 
+\emph default
+and spatialization by a set of geometrical coordinates ( (typically spherical
+ coordinates centered on the hearer
+\begin_inset Quotes ers
+\end_inset
+
+s head), while timbre is by far the most complicated parameter.
+ Some authors have suggested a three-dimensional characterization of timbre
+ measuring the relative intensity of the basic pitch, the 2nd to 4th harmonic,
+ and all the other harmonics, and more complex approaches including time-related
+ decay (ADSR or similar).
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+refs on tri-stimulus characterization of timbre
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+A sound space can be defined by keeping the values of a subset of the five
+ parameters fix and lets the others vary.
+ A mono-dimensional frequency space, for instance, could be defined as the
+ the space of sounds of different pitch but fixed duration, timbre, location,
+ and intensity (and similarly for the mono-dimensional intensity space,
+ duration space, etc.).
+ The minimal working setup of the Braitenberg-1 type detailed below will
+ use a one-dimensional sound space of this sort.
+\end_layout
+
+\begin_layout Subsubsection
+
+\emph on
+Agent
+\emph default
+ space
+\end_layout
+
+\begin_layout Standard
+We can divide the agent model into two broad categories corresponding to
+ the direction of the agent-environment interaction:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Sensing.
+
+\emph default
+ A sound space based agent will obviously need to be able to sense the sonic
+ features of the sound space, most likely on a logarithmic basis, and it
+ sensing apparatus must correspond to the variable sonic features of the
+ provided environment or a subset thereof.
+ For instance, assuming a bi-dimensional sound space representing pitch
+ and intensity while keeping fix timbre duration and spatialization, we
+ could have agents capable of sensing frequency, amplitude or to both, while
+ sensitivity to timbre, location, or duration would not not produce any
+ movement in the sound environment.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Acting
+\emph default
+.
+ An action is a movement across the space capable of directly or indirectly
+ changing the value of the agent
+\begin_inset Quotes ers
+\end_inset
+
+s sensed input(s).
+ In the minimal Braitenberg type-1 example described above, for instance,
+ the action of moving along the line changes the distance from the food
+ source which is directly sensed by the agent.
+ Similarly, in a mono-dimensional frequency sound space an agent could be
+ constantly emitting a sound (a behavior analogous to be positioned on a
+ line) and be measuring the distance between the its frequency and the frequency
+ emitted by a (possibly shifting) environmental sound source.
+ The agent
+\begin_inset Quotes ers
+\end_inset
+
+s action would be a change in the frequency of the sound it emits.
+ In this possible setup, a successful equilibrium-seeking strategy would
+ produce a 
+\emph on
+glissando
+\emph default
+ from the initial frequency to the environmental source (or a series of
+ partial or total 
+\emph on
+glissandi
+\emph default
+, in the case of a dynamic environment)
+\end_layout
+
+\begin_layout Section
+Possible experiments and/or investigations: mono-agent setups
+\end_layout
+
+\begin_layout Standard
+The first set of investigations centers on mono-agents setups, which, in
+ a musical environment, would most naturally correspond to a mono-voice
+ setup.
+\end_layout
+
+\begin_layout Subsubsection*
+IMPORTANT NOTICE
+\end_layout
+
+\begin_layout Standard
+The Braitenberg-like experiments below, whether mono-agent or not, are all,
+ fundamentally (and consistently with Braitenberg
+\begin_inset Quotes ers
+\end_inset
+
+s 
+\emph on
+Vehicles
+\emph default
+ theme), example of 
+\emph on
+taxis
+\emph default
+, even though they are variations upon 
+\emph on
+phonotaxis
+\emph default
+ instead of 
+\emph on
+phototaxis
+\emph default
+.
+ Regardless of the specific problems that the sonic environment may pose
+ with respect to its light-based counterpart (in terms of sensory apparatuses,
+ 
+\begin_inset Quotes eld
+\end_inset
+
+motor
+\begin_inset Quotes erd
+\end_inset
+
+ actions, etc.), it remains to be seen whether 
+\emph on
+phonotaxis
+\emph default
+ has any relevance from a musical standpoint.
+ 
+\end_layout
+
+\begin_layout Standard
+The Ashbian concept of equilibrium translated to the sound world converts
+ to an understanding of sound production (or music) as tracking followed
+ by rest, or, perhaps sequences of tracking/rest cycle.
+ In case of multi-agent setups, the landscape is only slightly more complicated
+ (theoretically speaking, not in terms of sonic results) as it reduces to
+ the production of 
+\begin_inset Quotes eld
+\end_inset
+
+somehow
+\begin_inset Quotes erd
+\end_inset
+
+ coordinated cycles of tracking and rest.
+\end_layout
+
+\begin_layout Standard
+There are a couple of points to think about here:
+\end_layout
+
+\begin_layout Itemize
+tracking/rest is, at some abstract level, mappable to a musical progression
+\end_layout
+
+\begin_layout Itemize
+tracking/rest is, at an even more abstract level, equivalent to the tension/rele
+ase cycle characteristic, in various forms to be sure, of much music (with
+ important exceptions of course)
+\end_layout
+
+\begin_layout Subsection
+Minimal working setup: a Braitenberg-like exploration
+\end_layout
+
+\begin_layout Standard
+The less-than-minimal working setup is the sonic analogous of the minimal
+ example described in section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:Minimal-cybernetic-setup"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ above.
+ The space is mono-dimensional and limited to frequency, intensity, or duration.
+ Timbre cannot be modeled with one-dimension, while a mono-dimensional spatializ
+ation space is uninteresting from the sonic perspective being essentially
+ analogous to a standard cybernetic light-tracking setup with a different
+ kind of stimulus.
+ The environment emits a sound at a determinate frequency with fixed timbre,
+ duration, intensity, and amplitude.
+\end_layout
+
+\begin_layout Standard
+The agent is similarly emitting a constant sound with fixed timbre, duration,
+ intensity, initially at a random frequency (possibly quantized along a
+ musical pre-given scale).
+ The agent senses its 
+\emph on
+distance 
+\emph default
+to the environment sound and takes an action which, at the most basic level
+ is to reduce (or amplify) such distance by inputting its value into its
+ sound generating procedure.
+ 
+\end_layout
+
+\begin_layout Standard
+The expected result is that the agent
+\begin_inset Quotes ers
+\end_inset
+
+s sound will move either toward or away from the source either continuously
+ (via 
+\emph on
+glissandi
+\emph default
+) or stepwise (according to the chosen scale).
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Notice the possibility of changing scales?
+\end_layout
+
+\end_inset
+
+ Notice that this setup is less than minimal because, as per the standard
+ Braitenberg type-1 design, it has a built-in goal-seeking strategy.
+ The minimal and truly cybernetic design adds a system that switches the
+ frequency of the sound it emits if the frequency distance from the source
+ is not reduced.
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Need to explain this better
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+CONTINUE HERE WITH THE POSSIBLE VARIATIONS OF THIS BASIC SETUP AT A VERY
+ GENERAL ABSTRACT LEVEL AND THEN CONTINUE WITH THE SPECIFIC INVESTIGATIONS
+\end_layout
+
+\begin_layout Subsection
+Specific investigations on mono-dimensional setups
+\end_layout
+
+\begin_layout Subsubsection
+Frequency
+\end_layout
+
+\begin_layout Subsubsection
+Intensity
+\end_layout
+
+\begin_layout Subsubsection
+Duration
+\end_layout
+
+\begin_layout Subsection
+Multi-dimensional setups
+\end_layout
+
+\begin_layout Subsubsection
+Duration and pitch (= rhythm)
+\end_layout
+
+\begin_layout Subsection
+Timbre-related explorations
+\end_layout
+
+\begin_layout Section
+Multi-voice setups
+\end_layout
+
+\begin_layout Standard
+A second set of investigations explore the possibility of modeling multiple-voic
+e setups modeled as multiple agents.
+\end_layout
+
+\begin_layout Section
+Genetic algorithms
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+btprint "btPrintCited"
+bibfiles "/home/stefano/texmf/bibtex/bib/Global-biblio"
+options "plain"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
