@@ -23,9 +23,9 @@ class HomeoNeedleUnitTest(unittest.TestCase):
         defParam = HomeoNeedleUnit.DefaultParameters  #HomeoUnit class variables with all the defaults values"
 
 
-        self.assertTrue(defParam.has_key('mass'))
-        self.assertTrue(defParam.has_key('surfaceArea'))
-        self.assertTrue(defParam.has_key('dragCoefficient'))
+        self.assertTrue('mass' in defParam)
+        self.assertTrue('surfaceArea' in defParam)
+        self.assertTrue('dragCoefficient' in defParam)
 
         self.assertTrue(defParam['mass'] is not None)
         self.assertTrue(defParam['surfaceArea'] is not None)

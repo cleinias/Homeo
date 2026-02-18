@@ -1,7 +1,5 @@
-from __future__ import division
 from math import sqrt
 from ctypes import c_ubyte
-from string import zfill
 
 def withAllSubclasses(aClass):
     """
@@ -71,7 +69,7 @@ def sensorCoordsFromAngle(radius = 0.063, step= 1, rotation = 0):
     from math import pi, sin, cos,  radians
     forFacAngle = pi/2   
     coords = {}
-    for angle in xrange(0 + step, 180+step, step):
+    for angle in range(0 + step, 180+step, step):
         coords[angle]=[(radius * cos(forFacAngle - radians(angle))), (radius * sin(forFacAngle - radians(angle)))]
         coords[-angle]=[(radius * cos(forFacAngle + radians(angle))), (radius * sin(forFacAngle + radians(angle)))]
     if rotation == 0:

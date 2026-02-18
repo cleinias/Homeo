@@ -36,7 +36,7 @@ class HomeoSimulation(object):
     def readFrom(self,filename):
         '''This is a class method that create a new HomeoSimulation instance from a filename,
         by loading a pickled homeostat'''
-        fileIn = open(filename, 'r')
+        fileIn = open(filename, 'rb')
         unpickler = pickle.Unpickler(fileIn)
         newHomeostat = unpickler.load()
         fileIn.close()
@@ -124,7 +124,7 @@ class HomeoSimulation(object):
         '''Adds four fully connected units with random values to the simulator 
            (as per Ashby basic design)'''
  
-        for i in xrange(4):
+        for i in range(4):
             unit = HomeoUnitNewtonian()
             unit.setRandomValues()
             self._homeostat.addFullyConnectedUnit(unit)

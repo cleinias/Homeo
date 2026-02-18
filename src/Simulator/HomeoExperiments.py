@@ -31,7 +31,7 @@ parameters between Webots and Homeo.
 def initialize10UnitHomeostat(params=None):
     "Returns a homeostat with 10 units. Used for testing UI"
     hom = Homeostat()
-    for i in xrange(10):
+    for i in range(10):
         unit = HomeoUnitNewtonian()
         unit.setRandomValues()
         hom.addFullyConnectedUnit(unit)
@@ -42,7 +42,7 @@ def initializeAshbySimulation(params=None):
        four fully connected units with random values to the simulator 
        (as per Ashby basic design)'''
     hom = Homeostat()
-    for i in xrange(4):
+    for i in range(4):
         unit = HomeoUnitNewtonian()
         unit.setRandomValues()
         hom.addFullyConnectedUnit(unit)
@@ -56,7 +56,7 @@ def initializeAshbyNoNoiseSimulation(params=None):
        (as per Ashby basic design)
        Set all noises values to 0 for testing purposes'''
     hom = Homeostat()
-    for i in xrange(4):
+    for i in range(4):
         unit = HomeoUnitNewtonian()
         unit.setRandomValues()
         hom.addFullyConnectedUnit(unit)
@@ -115,14 +115,14 @@ def initialize_Ashby_2nd_Experiment(params=None):
     'Setup a standard Homeostat if none exists. Then change the parameters'
      
     if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
-        for i in xrange(4):
+        for i in range(4):
             unit = HomeoUnitNewtonian()
             unit.setRandomValues()
             hom.addFullyConnectedUnit(unit)
 
     'disable all connections except self-connections'
     for unit in hom.homeoUnits:
-        for i in xrange(1, len(hom.homeoUnits)):
+        for i in range(1, len(hom.homeoUnits)):
             unit.inputConnections[i].status = False
             
     homeo1_unit1_minus = hom.homeoUnits[0]
@@ -249,14 +249,14 @@ def initialize_1minus_2xExperiment(params=None):
     'Setup a standard Homeostat if none exists. Then change the parameters'
      
     if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
-        for i in xrange(4):
+        for i in range(4):
             unit = HomeoUnitNewtonian()
             unit.setRandomValues()
             hom.addFullyConnectedUnit(unit)
         
     'disable all connections except self-connections'
     for unit in hom.homeoUnits:
-        for i in xrange(1, len(hom.homeoUnits)):
+        for i in range(1, len(hom.homeoUnits)):
             unit.inputConnections[i].status = False
     
     homeo1_unit1_minus = hom.homeoUnits[0]
@@ -393,14 +393,14 @@ def initialize_1minus_2_minus_3xExperiment(params=None):
     'Setup a standard Homeostat if none exists. Then change the parameters'
      
     if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
-        for i in xrange(4):
+        for i in range(4):
             unit = HomeoUnitNewtonian()
             unit.setRandomValues()
             hom.addFullyConnectedUnit(unit)
 
     'disable all connections except self-connections'
     for unit in hom.homeoUnits:
-        for i in xrange(1, len(hom.homeoUnits)):
+        for i in range(1, len(hom.homeoUnits)):
             unit.inputConnections[i].status = False
     
     homeo1_unit1_minus = hom.homeoUnits[0]
@@ -569,7 +569,7 @@ def initializeBraiten1_1Arist(raw=True,params=None):
      
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
-        for i in xrange(1, len(hom.homeoUnits)):
+        for i in range(1, len(hom.homeoUnits)):
             unit.inputConnections[i].status = False
 
     'Agent unit or motor'
@@ -725,7 +725,7 @@ def initializeBraiten1_1(raw=False,params=None):
      
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
-        for i in xrange(1, len(hom.homeoUnits)):
+        for i in range(1, len(hom.homeoUnits)):
             unit.inputConnections[i].status = False
 
     'Agent unit or motor'
@@ -887,7 +887,7 @@ def initializeBraiten1_2(raw=False,params=None):
      
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
-        for i in xrange(1, len(hom.homeoUnits)):
+        for i in range(1, len(hom.homeoUnits)):
             unit.inputConnections[i].status = False
 
     '4.1 Agent unit or motor parameters setting'
@@ -1045,7 +1045,7 @@ def initializeBraiten1_3(params=None):
      
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
-        for i in xrange(1, len(hom.homeoUnits)):
+        for i in range(1, len(hom.homeoUnits)):
             unit.inputConnections[i].status = False
 
     '4.1 Agent unit or motor parameters setting'
@@ -1171,8 +1171,8 @@ def initializeBraiten2_2(raw=False,params=None, simulator = None, dataDir = None
         else:
             raise Exception("I cannot use backend simulator %s yet" % simulator)
     except Exception as e:
-      print "%s is not a supported robotic simulator backend" % simulator
-      print e
+      print("%s is not a supported robotic simulator backend" % simulator)
+      print(e)
     
     "2. set up homeostat"
     hom = Homeostat()
@@ -1252,7 +1252,7 @@ def initializeBraiten2_2(raw=False,params=None, simulator = None, dataDir = None
      
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
-        for i in xrange(1, len(hom.homeoUnits)):
+        for i in range(1, len(hom.homeoUnits)):
             unit.inputConnections[i].status = False
 
     '4.1 Agent units or motors parameters setting'
@@ -1497,7 +1497,7 @@ def initializeBraiten2_2Aristotelian(raw=True,params=None):
      
     'Disable all connections except self-connections'
     for unit in hom.homeoUnits:
-        for i in xrange(1, len(hom.homeoUnits)):
+        for i in range(1, len(hom.homeoUnits)):
             unit.inputConnections[i].status = False
 
     '4.1 Agent units or motors parameters setting'
@@ -1739,7 +1739,7 @@ def initializeBraiten2_2_Full(raw=False,params=None):
     #===========================================================================
     # 'Disable all connections except self-connections'
     # for unit in hom.homeoUnits:
-    #     for i in xrange(1, len(hom.homeoUnits)):
+    #     for i in range(1, len(hom.homeoUnits)):
     #         unit.inputConnections[i].status = False
     #===========================================================================
 
@@ -1989,7 +1989,7 @@ def initializeBraiten2_7_Full(raw=False):
     #===========================================================================
     # 'Disable all connections except self-connections'
     # for unit in hom.homeoUnits:
-    #     for i in xrange(1, len(hom.homeoUnits)):
+    #     for i in range(1, len(hom.homeoUnits)):
     #         unit.inputConnections[i].status = False
     #===========================================================================
 
@@ -2287,7 +2287,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     #===========================================================================
     # 'Disable all connections except self-connections'
     # for unit in hom.homeoUnits:
-    #     for i in xrange(1, len(hom.homeoUnits)):
+    #     for i in range(1, len(hom.homeoUnits)):
     #         unit.inputConnections[i].status = False
     #===========================================================================
 
@@ -2400,7 +2400,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
 #     #===========================================================================
 #     from tabulate import tabulate
 #     #===========================================================================
-#     # for i in xrange(homeoGenome.size):
+#     # for i in range(homeoGenome.size):
 #     #     print "param %d  is:\t%f" % (i,homeoGenome[i])
 #     #===========================================================================
 #     " Checking HomeoUnits values"
@@ -2610,7 +2610,7 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
     #===========================================================================
     # 'Disable all connections except self-connections'
     # for unit in hom.homeoUnits:
-    #     for i in xrange(1, len(hom.homeoUnits)):
+    #     for i in range(1, len(hom.homeoUnits)):
     #         unit.inputConnections[i].status = False
     #===========================================================================
 
@@ -2719,7 +2719,7 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
 #     #===========================================================================
 #     from tabulate import tabulate
 #     #===========================================================================
-#     # for i in xrange(homeoGenome.size):
+#     # for i in range(homeoGenome.size):
 #     #     print "param %d  is:\t%f" % (i,homeoGenome[i])
 #     #===========================================================================
 #     " Checking HomeoUnits values"
@@ -2921,7 +2921,7 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
     #===========================================================================
     # 'Disable all connections except self-connections'
     # for unit in hom.homeoUnits:
-    #     for i in xrange(1, len(hom.homeoUnits)):
+    #     for i in range(1, len(hom.homeoUnits)):
     #         unit.inputConnections[i].status = False
     #===========================================================================
 
@@ -3030,7 +3030,7 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
 #     #===========================================================================
 #     from tabulate import tabulate
 #     #===========================================================================
-#     # for i in xrange(homeoGenome.size):
+#     # for i in range(homeoGenome.size):
 #     #     print "param %d  is:\t%f" % (i,homeoGenome[i])
 #     #===========================================================================
 #     " Checking HomeoUnits values"

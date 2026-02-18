@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python3
 
 '''
 Created on Dec 28, 2014
@@ -18,11 +18,11 @@ def main(argv):
     try:
         graphTrajectory(sys.argv[1])
     except IndexError:
-        print "Usage: TrajectoryGraph filename"
+        print("Usage: TrajectoryGraph filename")
     except:
             raise
-            print "You entered filename: ", sys.argv[1]
-            print "File not found"
+            print("You entered filename: ", sys.argv[1])
+            print("File not found")
 
 
 def graphTrajectory(trajDataFilename):
@@ -37,7 +37,7 @@ def graphTrajectory(trajDataFilename):
     try:
         trajData = np.loadtxt(trajDataFilename, skiprows=len(dataFileHeader))
     except Exception as e:
-        print "Cannot open the file: ", e
+        print("Cannot open the file: ", e)
     
     'Compute final distance'
     finalPos = [trajData[:,0][-1],trajData[:,1][-1]]
@@ -64,7 +64,7 @@ def graphTrajectory(trajDataFilename):
     xmax = lightsOnDic['TARGET'][0] + 2.5
     ymax = lightsOnDic['TARGET'][1] + 2.5
     cMap = plt.get_cmap('Blues')  # Use a matplotlib color map to map lights' intensity
-    for lightName, light in lightsOnDic.iteritems():
+    for lightName, light in lightsOnDic.items():
         lightPos = (light[0],light[1])  
         lightRadius = 1.5      # FIXME Provisional. Need to read from trajectory data file
         ax.add_artist(Circle(lightPos, 0.15, alpha=1,color = 'black')) # marks the center of the light cone
@@ -85,7 +85,7 @@ def readLightsFromHeader(dataFileHeader):
     """Read the lights position from a trajectory file header""" 
     
     lightPosList = []
-    lightsList = ["LIGHT" + str(i+1) for i in xrange(10)]
+    lightsList = ["LIGHT" + str(i+1) for i in range(10)]
     lightsList.append("TARGET")
     lightsOnDic = {}
     for line in dataFileHeader:
@@ -96,7 +96,7 @@ def readLightsFromHeader(dataFileHeader):
     'read initial position'
 
 def readInitPosFromHeader(dataFileHeader):
-    for lineNo in xrange(len(dataFileHeader)):
+    for lineNo in range(len(dataFileHeader)):
         if ('initial' in dataFileHeader[lineNo].split() and 'position' in dataFileHeader[lineNo].split()):
             try:
                 return dataFileHeader[lineNo+1].split()

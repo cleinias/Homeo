@@ -1,4 +1,3 @@
-from __future__ import division
 from   HomeoUnit import *
 from   HomeoUniselector import *
 from   Homeostat import *
@@ -34,17 +33,17 @@ class HomeoUnitTest(unittest.TestCase):
         defParam = HomeoUnit.DefaultParameters  #HomeoUnit class variables with all the defaults values"
 
 
-        self.assertTrue(defParam.has_key('viscosity'))
-        self.assertTrue(defParam.has_key('maxDeviation'))
-        self.assertTrue(defParam.has_key('outputRange'))
-        self.assertTrue(defParam.has_key('noise'))
-        self.assertTrue(defParam.has_key('potentiometer'))
-        self.assertTrue(defParam.has_key('time'))
-        self.assertTrue(defParam.has_key('uniselectorTimeInterval'))
-        self.assertTrue(defParam.has_key('uniselectorTime'))
-        self.assertTrue(defParam.has_key('needleCompMethod'))
-        self.assertTrue(defParam.has_key('outputRange'))
-        self.assertTrue(defParam.has_key('critThreshold'))
+        self.assertTrue('viscosity' in defParam)
+        self.assertTrue('maxDeviation' in defParam)
+        self.assertTrue('outputRange' in defParam)
+        self.assertTrue('noise' in defParam)
+        self.assertTrue('potentiometer' in defParam)
+        self.assertTrue('time' in defParam)
+        self.assertTrue('uniselectorTimeInterval' in defParam)
+        self.assertTrue('uniselectorTime' in defParam)
+        self.assertTrue('needleCompMethod' in defParam)
+        self.assertTrue('outputRange' in defParam)
+        self.assertTrue('critThreshold' in defParam)
 
         self.assertTrue(defParam['viscosity'] is not None)
         self.assertTrue(defParam['maxDeviation'] is not None)
@@ -59,10 +58,10 @@ class HomeoUnitTest(unittest.TestCase):
 
         outputRange = defParam['outputRange']
 
-        self.assertTrue(outputRange.has_key('high'))
+        self.assertTrue('high' in outputRange)
         self.assertTrue(outputRange['high'] is not None)
 
-        self.assertTrue(outputRange.has_key('low'))
+        self.assertTrue('low' in outputRange)
         self.assertTrue(outputRange['low'] is not None)
         
     def testSaveToFileAndBack(self):
@@ -119,7 +118,7 @@ class HomeoUnitTest(unittest.TestCase):
         "Two units cannot have the sane name. Check on 100 units"
         #Create 100 units, collects their names and check"
         self.unitNames = []
-        for i in xrange(100):
+        for i in range(100):
             newUnit = HomeoUnit()
             self.unitNames.append(newUnit.name)
         self.assertTrue(len(self.unitNames) == len(set(self.unitNames)))
@@ -130,13 +129,13 @@ class HomeoUnitTest(unittest.TestCase):
 
         self.unit.setRandomValues()
         self.unit.noise = 0.1
-        for i in xrange(1,10):
+        for i in range(1,10):
             oldDeviation = self.unit.criticalDeviation
             self.unit.updateDeviationWithNoise()
             self.assertFalse(oldDeviation == self.unit.criticalDeviation)
 
         self.unit.noise = 0
-        for i in xrange(1,10):
+        for i in range(1,10):
             oldDeviation = self.unit.criticalDeviation
             self.unit.updateDeviationWithNoise()
             self.assertTrue(oldDeviation == self.unit.criticalDeviation)
@@ -165,11 +164,11 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.viscosity = 0                      #No viscosity to simplify computations
         self.unit.criticalDeviation = 1
         self.unit.computeOutput()
-        for i in xrange(10):
+        for i in range(10):
             expectedDev = self.unit.criticalDeviation + self.unit.currentOutput
             self.unit.selfUpdate()
         self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev) < errorTolerance)     
-        for i in xrange(100):
+        for i in range(100):
             self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == self.unit.maxDeviation)
 
@@ -183,11 +182,11 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == expectedDev)
         
-        for i in xrange(10):
+        for i in range(10):
             expectedDev = self.unit.criticalDeviation + self.unit.currentOutput
             self.unit.selfUpdate()
         self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev)  < errorTolerance)     
-        for i in xrange(100):
+        for i in range(100):
             self.unit.selfUpdate()            
         self.assertTrue(self.unit.criticalDeviation == self.unit.minDeviation)
 
@@ -202,7 +201,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.computeOutput()
         self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == (-2 + 0.2))
-        for i in xrange(200):
+        for i in range(200):
             self.unit.selfUpdate()
         self.assertTrue(abs(self.unit.criticalDeviation) < errorTolerance)
 
@@ -211,7 +210,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.computeOutput()
         self.unit.selfUpdate()
         self.assertTrue((self.unit.criticalDeviation - (2 - 0.2)) < errorTolerance)
-        for i in xrange(200):
+        for i in range(200):
             self.unit.selfUpdate()
         self.assertTrue(abs(self.unit.criticalDeviation) < errorTolerance)
 
@@ -239,7 +238,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.viscosity = 0                      #No viscosity to simplify computations
         self.unit.criticalDeviation = 1
         self.unit.computeOutput()
-        for i in xrange(10):
+        for i in range(10):
             expectedDev = self.unit.criticalDeviation + (self.unit.currentOutput / (self.unit.maxDeviation *2.))
             self.unit.selfUpdate()
         self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev) < errorTolerance)     
@@ -249,7 +248,7 @@ class HomeoUnitTest(unittest.TestCase):
             self.unit.selfUpdate()
             runs += 1
             if runs > maxruns:
-                raise(HomeoUnitError, "The unit does not run off after %u runs" % runs)
+                raise HomeoUnitError("The unit does not run off after %u runs" % runs)
         self.assertTrue(self.unit.criticalDeviation == self.unit.maxDeviation)
 
 
@@ -261,7 +260,7 @@ class HomeoUnitTest(unittest.TestCase):
         expectedDev = self.unit.criticalDeviation + (self.unit.currentOutput /(self.unit.maxDeviation *2.))
         self.unit.selfUpdate()
         self.assertTrue((self.unit.criticalDeviation - expectedDev) < errorTolerance)        
-        for i in xrange(10):
+        for i in range(10):
             expectedDev = self.unit.criticalDeviation + (self.unit.currentOutput / (self.unit.maxDeviation *2.))
             self.unit.selfUpdate()
         self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev)  < errorTolerance)     
@@ -271,7 +270,7 @@ class HomeoUnitTest(unittest.TestCase):
             self.unit.selfUpdate()
             runs += 1
             if runs > maxruns:
-                raise(HomeoUnitError, "The unit does not run off after %u runs" % runs)
+                raise HomeoUnitError("The unit does not run off after %u runs" % runs)
         self.assertTrue(self.unit.criticalDeviation == self.unit.minDeviation)
 
         
@@ -293,7 +292,7 @@ class HomeoUnitTest(unittest.TestCase):
             self.unit.selfUpdate()
             runs += 1
             if runs > maxRuns:
-                raise(HomeoUnitError, "Unit does not stabilize after %u runs" % runs)
+                raise HomeoUnitError("Unit does not stabilize after %u runs" % runs)
         self.assertTrue(abs(self.unit.criticalDeviation) < errorTolerance)
 
         #4." 
@@ -308,7 +307,7 @@ class HomeoUnitTest(unittest.TestCase):
             self.unit.selfUpdate()
             runs += 1
             if runs > maxRuns:
-                raise(HomeoUnitError, "Unit does not stabilize after %u runs" % runs)
+                raise HomeoUnitError("Unit does not stabilize after %u runs" % runs)
         self.assertTrue(abs(self.unit.criticalDeviation) < errorTolerance)
 
     def testComputeNextDeviationLinearUnconnected(self):
@@ -336,12 +335,12 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.potentiometer = 0  #"put the weight of the self-connection to zero."
         self.unit.noise = 0
 
-        for each in xrange(testRuns):
+        for each in range(testRuns):
             self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation, self.unit.maxDeviation)
             self.unit.needleUnit.mass = numpy.random.uniform(0.0001, 10000)
             self.unit.viscosity = numpy.random.uniform(0,1)
             tempDev = self.unit.criticalDeviation
-            for i in xrange(10):
+            for i in range(10):
                 self.unit. selfUpdate()
             self.assertTrue(tempDev == self.unit.criticalDeviation)
 
@@ -371,12 +370,12 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.potentiometer = 0  #"put the weight of the self-connection to zero."
         self.unit.noise = 0
 
-        for each in xrange(testRuns):
+        for each in range(testRuns):
             self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation, self.unit.maxDeviation)
             self.unit.needleUnit.mass = numpy.random.uniform(0.0001, 10000)
             self.unit.viscosity = numpy.random.uniform(0,1)
             tempDev = self.unit.criticalDeviation
-            for i in xrange(10):
+            for i in range(10):
                 self.unit. selfUpdate()
             self.assertTrue(tempDev == self.unit.criticalDeviation)
 
@@ -415,7 +414,7 @@ class HomeoUnitTest(unittest.TestCase):
         for eachConn in self.unit.inputConnections:
             eachConn.noise = 0                          # The self-connection and the connection to anotherUnit are noise-free"
 
-        for i in xrange(testRuns):
+        for i in range(testRuns):
             
             #-------------------------------------- " testing on simple values "
             #----------------------------------- self.unit.criticalDeviation = 1
@@ -434,7 +433,7 @@ class HomeoUnitTest(unittest.TestCase):
             self.unit.potentiometer = numpy.random.uniform(0,1)
             self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))   # sign returns 0 for input = 0. 
                                                                         # Homeounit.switch() considers 0 to be positive
-            for i in xrange(10): 
+            for i in range(10): 
                 deviation = self.unit.criticalDeviation     
                 errorTolerance = pow(10,-14)                            
                 expectedInputfromOtherUnit = self.unit.inputConnections[1].output()
@@ -481,7 +480,7 @@ class HomeoUnitTest(unittest.TestCase):
         for eachConn in self.unit.inputConnections:
             eachConn.noise = 0                          # The self-connection and the connection to anotherUnit are noise-free"
 
-        for i in xrange(testRuns):
+        for i in range(testRuns):
             
             #-------------------------------------- " testing on simple values "
             #----------------------------------- self.unit.criticalDeviation = 1
@@ -500,7 +499,7 @@ class HomeoUnitTest(unittest.TestCase):
             self.unit.potentiometer = numpy.random.uniform(0,1)
             self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))   # sign returns 0 for input = 0. 
                                                                         # Homeounit.switch() considers 0 to be positive
-            for i in xrange(10): 
+            for i in range(10): 
                 deviation = self.unit.criticalDeviation     
                 errorTolerance = pow(10,-14)                            
                 expectedInputFromOtherUnit = self.unit.inputConnections[1].output()
@@ -534,7 +533,7 @@ class HomeoUnitTest(unittest.TestCase):
         errorTolerance = pow(10,-14)             #Cannot get a result better than 10^-14. Consistently fails on smaller values"
         testRuns = 10
         N = 10                                   # number of units to create and connect to
-        for each in xrange(N):
+        for each in range(N):
             aUnit = HomeoUnit()
             self.unit.addConnectionWithRandomValues(aUnit) 
 
@@ -547,7 +546,7 @@ class HomeoUnitTest(unittest.TestCase):
         for conn in self.unit.inputConnections:
             conn.noise = 0                             #the self-connection and the connections to all other units are noise-free"
 
-        for i in xrange(testRuns):
+        for i in range(testRuns):
             #-------------------------------------- " Simple values for testing"
             #--------------------------- for conn in self.unit.inputConnections:
                 #----------------------- conn.incomingUnit.criticalDeviation = 1
@@ -569,7 +568,7 @@ class HomeoUnitTest(unittest.TestCase):
             for conn in self.unit.inputConnections:
                 conn.incomingUnit.computeOutput()
 
-            for k in xrange(100):
+            for k in range(100):
                 deviation = self.unit.criticalDeviation     
                 inputFromAllUnits = sum([conn.output() for conn in self.unit.inputConnections])  # includes self-connection
                 expectedDeviation = deviation  + inputFromAllUnits
@@ -602,7 +601,7 @@ class HomeoUnitTest(unittest.TestCase):
         errorTolerance = pow(10,-14)             #Cannot get a result better than 10^-14. Consistently fails on smaller values"
         testRuns = 10
         N = 10                                   # number of units to create and connect to
-        for each in xrange(N):
+        for each in range(N):
             aUnit = HomeoUnit()
             self.unit.addConnectionWithRandomValues(aUnit) 
 
@@ -615,7 +614,7 @@ class HomeoUnitTest(unittest.TestCase):
         for conn in self.unit.inputConnections:
             conn.noise = 0                             #the self-connection and the connections to all other units are noise-free"
 
-        for i in xrange(testRuns):
+        for i in range(testRuns):
             #-------------------------------------- " Simple values for testing"
             #--------------------------- for conn in self.unit.inputConnections:
                 #----------------------- conn.incomingUnit.criticalDeviation = 1
@@ -637,7 +636,7 @@ class HomeoUnitTest(unittest.TestCase):
             for conn in self.unit.inputConnections:
                 conn.incomingUnit.computeOutput()
 
-            for k in xrange(100):
+            for k in range(100):
                 deviation = self.unit.criticalDeviation     
                 inputFromAllUnits = sum([conn.output() for conn in self.unit.inputConnections])  # includes self-connection
                 expectedDeviation = deviation  + (inputFromAllUnits/ (self.unit.maxDeviation * 2.))
@@ -688,12 +687,12 @@ class HomeoUnitTest(unittest.TestCase):
         ''''Test that the next computed deviation will be equal to 
         the current deviation plus the output from self * weight (unless it runs to maximum)'''
         
-        for test in xrange(testRuns):
+        for test in range(testRuns):
 #            self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation,self.unit.maxDeviation)
             self.unit.computeOutput()
 #            self.unit.potentiometer = numpy.random.uniform(0, 1)
             self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))
-            for i in xrange(10):
+            for i in range(10):
                 deviation = self.unit.criticalDeviation
                 nextDeviation = deviation + (self.unit.currentOutput * self.unit.potentiometer * self.unit.switch)
                 exceeded = abs(nextDeviation) >  self.unit.maxDeviation
@@ -739,12 +738,12 @@ class HomeoUnitTest(unittest.TestCase):
         ''''Test that the next computed deviation will be equal to 
         the current deviation plus the output from self * weight / maxdeviation *2 (unless it runs to maximum)'''
         
-        for test in xrange(testRuns):
+        for test in range(testRuns):
 #            self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation,self.unit.maxDeviation)
             self.unit.computeOutput()
 #            self.unit.potentiometer = numpy.random.uniform(0, 1)
             self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))
-            for i in xrange(10):
+            for i in range(10):
                 deviation = self.unit.criticalDeviation
                 nextDeviation = deviation + ((self.unit.currentOutput * self.unit.potentiometer * self.unit.switch) / (self.unit.maxDeviation * 2))
                 exceeded = abs(nextDeviation) >  self.unit.maxDeviation
@@ -838,7 +837,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.needleCompMethod = 'linear'       # Default, but we want to make sure
         maxInput = 3                #typical of the 4 units Homeostat"
         minInput = - maxInput
-        for i in xrange(100):
+        for i in range(100):
             self.unit.criticalDeviation = 1
             self.unit.noise = 0
             self.unit.viscosity = 0      # no viscosity effects to simplify computations
@@ -847,29 +846,29 @@ class HomeoUnitTest(unittest.TestCase):
             correctValue = self.unit.criticalDeviation + (torqueValue * (1- self.unit.viscosity))  - self.unit.noise
           
             # Print values to console for debugging purposes
-            print 'newNeedlePos: ' + str(newNeedlePosition) + '   and critical Dev: ' + str(self.unit.criticalDeviation)
-            print  self.unit.printDescription()
-            
-            
+            print('newNeedlePos: ' + str(newNeedlePosition) + '   and critical Dev: ' + str(self.unit.criticalDeviation))
+            print(self.unit.printDescription())
+
+
             self.assertTrue(newNeedlePosition == correctValue)
-            
-            
+
+
         "Repeat tests for proportional method"
         self.unit.needleUnit.mass = 1
-        self.unit.needleCompMethod = 'proportional'       
+        self.unit.needleCompMethod = 'proportional'
         maxInput = 3                #typical of the 4 units Homeostat"
         minInput = - maxInput
-        for i in xrange(100):
+        for i in range(100):
             self.unit.criticalDeviation = 1
             self.unit.noise = 0
             self.unit.viscosity = 0      # no viscosity effects to simplify computations
             torqueValue = numpy.random.uniform(minInput, maxInput)
             newNeedlePosition = self.unit.newNeedlePosition(torqueValue)
             correctValue = self.unit.criticalDeviation + ((torqueValue/(self.unit.maxDeviation * 2.)) * (1- self.unit.viscosity))  - self.unit.noise
-          
+
             # Print values to console for debugging purposes
-            print 'newNeedlePos: ' + str(newNeedlePosition) + '   and critical Dev: ' + str(self.unit.criticalDeviation)
-            print  self.unit.printDescription()
+            print('newNeedlePos: ' + str(newNeedlePosition) + '   and critical Dev: ' + str(self.unit.criticalDeviation))
+            print(self.unit.printDescription())
             
             
             self.assertTrue(newNeedlePosition == correctValue)
@@ -900,7 +899,7 @@ class HomeoUnitTest(unittest.TestCase):
             deviationValues = [] 
             #check that the critical deviation values are always different"
             
-            for i in xrange(1000):
+            for i in range(1000):
                 deviationValues.append(self.unit.criticalDeviation)
                 self.unit.selfUpdate()
             self.assertTrue(len(set(deviationValues)) == 1000)
@@ -911,7 +910,7 @@ class HomeoUnitTest(unittest.TestCase):
         
         "Changing the potentiometer value changes the value of the units connection to itself"                
       
-        for i in xrange(10):
+        for i in range(10):
             poten = numpy.random.uniform(0,1)
             self.unit.potentiometer = poten
             self.assertTrue(self.unit.potentiometer == poten)
@@ -921,14 +920,14 @@ class HomeoUnitTest(unittest.TestCase):
         '''The threshold beyond which a HomeoUnit's essential variable's 
             value is deemed critical must be between 0 and 1'''
         
-        for i in xrange(100):
+        for i in range(100):
             critValue = np.random.uniform(0, 1)
             self.unit.critThreshold = critValue
             self.assertTrue(self.unit.critThreshold == critValue)        
-        for i in xrange(100):   
+        for i in range(100):   
             critValue = np.random.uniform(-100, 0)
             self.assertRaises(HomeoUnitError, self.unit.setCritThreshold, critValue)
-        for i in xrange(100):   
+        for i in range(100):   
             critValue = np.random.uniform(1, 100)
             self.assertRaises(HomeoUnitError, self.unit.setCritThreshold, critValue)
 
@@ -936,7 +935,7 @@ class HomeoUnitTest(unittest.TestCase):
         "a Unit in normal operation never goes out of range"
         highRange = self.unit. outputRange['high']
         lowRange = self.unit. outputRange['low']
-        for i in xrange(100): 
+        for i in range(100): 
             self.unit.selfUpdate()
             self.assertTrue((self.unit.currentOutput <= highRange) and 
                             (self.unit.currentOutput >= lowRange))
@@ -983,7 +982,7 @@ class HomeoUnitTest(unittest.TestCase):
         "Test with unit still unconnected, but random values for critDeviation" 
         self.unit.potentiometer = 0
         self.unit.noise = 0                     #eliminate flickering noise
-        for i in xrange(100):                   
+        for i in range(100):                   
             critDev = np.random.uniform(self.unit.minDeviation,self.unit.maxDeviation)
             self.unit.criticalDeviation = critDev
             self.unit.selfUpdate()
@@ -998,7 +997,7 @@ class HomeoUnitTest(unittest.TestCase):
 #        "and test with  random values for critDeviation" 
 #        self.unit.noise = 0                      #eliminate flickering noise
 #        self.unit.inputConnections[0].noise = 0  # eliminate noise on the self-connection
-#        for i in xrange(100):                   
+#        for i in range(100):                   
 ##            potValue = np.random.uniform(0,1)
 ##            switchValue = np.sign(np.random.uniform(-1,1)) 
 #            potValue = 1
@@ -1042,7 +1041,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.addConnectionWithRandomValues(unit3)
         self.unit.addConnectionWithRandomValues(unit4)
 
-        for i in xrange(10000):
+        for i in range(10000):
             self.unit.selfUpdate()
             self.assertTrue(self.unit.currentOutput >= lowOut and
                             self.unit.currentOutput <= highOut)
@@ -1071,7 +1070,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.addConnectionWithRandomValues(unit3)
         self.unit.addConnectionWithRandomValues(unit4)
 
-        for i in xrange(1000):
+        for i in range(1000):
             self.unit.selfUpdate()
             unit2.selfUpdate()
             unit3.selfUpdate()
@@ -1115,7 +1114,7 @@ class HomeoUnitTest(unittest.TestCase):
         "4. Put some random values in the units, add their outputs, check inputTorque is equal to their sum"
         
         tests = 100
-        for i in xrange(tests):
+        for i in range(tests):
             out1 = np.random.uniform(-1,1)
             self.unit.currentOutput = out1
             
@@ -1155,7 +1154,7 @@ class HomeoUnitTest(unittest.TestCase):
         
         "Then repeat tests with randomized values for unit"
         tests = 100
-        for i in xrange(tests):
+        for i in range(tests):
             self.unit.setRandomValues()
             oldOutput= self.unit.currentOutput
             self.unit.selfUpdate()
@@ -1322,28 +1321,28 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.setRandomValues()
 
         self.unit.needleCompMethod = 'linear'
-        for i in xrange(10):
+        for i in range(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
                     oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
         self.unit.needleCompMethod ='proportional'
-        for i in xrange(10):
+        for i in range(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
                     oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
         self.unit.needleCompMethod = 'random'
-        for i in xrange(10):
+        for i in range(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
                     oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
         self.unit.needleCompMethod = ''
-        for i in xrange(10):
+        for i in range(10):
                     aTorqueValue = numpy.random.uniform( -1 ,  1)
                     oldDeviation = self.unit.criticalDeviation
                     self.unit.newNeedlePosition(aTorqueValue)

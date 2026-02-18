@@ -457,11 +457,11 @@ class SimulatorBackendVREP(SimulatorBackendAbstract):
         else:
             "Check if we are connected with the passed clientId already"
             if self._VREP_clientId is not None:
-                print "ClientId = " ,self._VREP_clientId
+                print("ClientId = " ,self._VREP_clientId)
                 connId = vrep.simxGetConnectionId(self._VREP_clientId)
-                print "My connId is " , connId
+                print("My connId is " , connId)
                 if connId == -1:                                 # we are not: set client Id to none and re-connect
-                    print "Disconnecting all existing connections to V-REP"
+                    print("Disconnecting all existing connections to V-REP")
                     vrep.simxFinish(-1)
                     self._VREP_clientId = None            
             while self._VREP_clientId is None:
@@ -488,7 +488,7 @@ class SimulatorBackendVREP(SimulatorBackendAbstract):
         if eCode != 0:
             raise Exception("VREP simulation cannot get started")
         else:
-            print "V-REP simulation is running with clientId: ", self._VREP_clientId
+            print("V-REP simulation is running with clientId: ", self._VREP_clientId)
             return self._VREP_clientId 
     
     def sendSignalVREP(self,signalName, signalValue):

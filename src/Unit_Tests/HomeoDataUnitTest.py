@@ -80,7 +80,7 @@ class HomeoDataUnitTest(unittest.TestCase):
         dataItems = dataString.split()
         dataItems = [s.replace(':', '') for s in dataItems]
         unitAsLists = []
-        for i in xrange(0,len(dataItems) -1, 2):
+        for i in range(0,len(dataItems) -1, 2):
             unitAsLists.append([dataItems[i] , dataItems[i+1]])
         
         '''Create a simil data unit  from the list of lists, knowing then:
@@ -92,7 +92,7 @@ class HomeoDataUnitTest(unittest.TestCase):
         dic['uniselector'] = unitAsLists[2][1]
         if len(unitAsLists) > 3:
             dic['connections'] = {}
-            for i in xrange(3,len(unitAsLists), 4):
+            for i in range(3,len(unitAsLists), 4):
                 dic['connections'][unitAsLists[i][1]] = [unitAsLists[i+1][1], unitAsLists[i+2][1], unitAsLists[i+3][1]]
       
         "1. Check unit's primary data are the same as the original" 
@@ -120,7 +120,7 @@ class HomeoDataUnitTest(unittest.TestCase):
         unit3 = HomeoUnit()
         self.unit.addConnectionWithRandomValues(unit2)
         self.unit.addConnectionWithRandomValues(unit3)
-        for i in xrange(100):
+        for i in range(100):
             self.unit.selfUpdate()
         self.dataUnit.readStateFrom(self.unit)
         printedData = self.dataUnit.printEssentialVariableOn('')

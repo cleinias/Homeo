@@ -26,7 +26,7 @@ class HomeoUniselectorTest(unittest.TestCase):
         currentClasses = []
         bogusClasses = []
         currentClasses.extend([class_.__name__ for class_ in withAllSubclasses(HomeoUniselector)])
-        for bogusClass in xrange(5):
+        for bogusClass in range(5):
             newRandomName = ''.join(random.choice(string.ascii_lowercase) for x in range(10))
             bogusClasses.extend(newRandomName)
         for currentClass in currentClasses:
@@ -59,7 +59,7 @@ class HomeoUniselectorTest(unittest.TestCase):
         of the interval between upperBound and lowerBound
         '''
         interval = self.uniselector.upperBound - self.uniselector.lowerBound
-        for i in xrange(1000):
+        for i in range(1000):
             value = self.uniselector.ashbyRandom()
             self.assertAlmostEqual(abs(value),interval/25,delta = 0.0001)
         

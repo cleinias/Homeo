@@ -43,7 +43,7 @@ def main():
     
     #
     #---------------------------------------------
-    history = pickle.load(open(filename,'r'))
+    history = pickle.load(open(filename,'rb'))
     showGenealogyTree(history)
     #hDebug('ga',"Logbook loaded")
     #indivs = indivsDecodedFromLogbook(logbook)
@@ -120,7 +120,7 @@ def indivsDecodedFromLogbook(logbook, noUnits=6):
         decodedInd = genomeDecoder(noUnits,ind["genome"])
         name = ind["indivId"]
         indivs.append((decodedInd, fit, name))
-        print "ind: %s\t has fitness: %.2f" % ( name, fit[0])
+        print("ind: %s\t has fitness: %.2f" % ( name, fit[0]))
     return indivs
 
 def hallOfFameInds(indivs, num, max=False):
@@ -147,16 +147,16 @@ def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6):
     
     'Construct headers'
     headers = ['Fitness', 'IndivID']
-    for unit in xrange(noUnits):
+    for unit in range(noUnits):
         headers.append('U'+str(unit+1)+'-mass')
         headers.append('U'+str(unit+1)+'-visc')
         headers.append('U'+str(unit+1)+'-unis-time')
         headers.append('U'+str(unit+1)+'-maxDev')
 
-    for connIn in xrange(noUnits):
-        for connOut in xrange(noUnits):
+    for connIn in range(noUnits):
+        for connOut in range(noUnits):
             headers.append('Conn-W-'+str(connIn+1)+'-to-'+str(connOut+1))
-    
+
     '''Flattens list of tuples including individual genomes and fitnesses to a list of lists.'''
     individuals = []
     for ind in decodedIndivs:        
@@ -174,17 +174,17 @@ def genomeAndFitnessPrettyPrinter(individuals, noUnits=6):
     
     'Construct headers'
     headers = ['Fitness', 'IndivID']
-    for unit in xrange(noUnits):
+    for unit in range(noUnits):
         headers.append('U'+str(unit+1)+'-mass')
         headers.append('U'+str(unit+1)+'-visc')
         headers.append('U'+str(unit+1)+'-unis-time')
         headers.append('U'+str(unit+1)+'-maxDev')
 
-    for connIn in xrange(noUnits):
-        for connOut in xrange(noUnits):
+    for connIn in range(noUnits):
+        for connOut in range(noUnits):
             headers.append('Conn-W-'+str(connIn+1)+'-to-'+str(connOut+1))
 
-         
+
     return tabulate(individuals, headers, tablefmt='orgtbl')
 
 def extractGenomeOfIndID(indID, logbookFileWithPath):
@@ -192,10 +192,10 @@ def extractGenomeOfIndID(indID, logbookFileWithPath):
     Return a dictionary with indivId, genome, and fitness found at respective keys,
     returns 'Not Found' otherwise."""
     genome = {'indivId' : indID, 'genome': "Not Found"}
-    logbookFile = open(logbookFileWithPath, 'r')
+    logbookFile = open(logbookFileWithPath, 'rb')
     logbook = pickle.load(logbookFile)
     logbookFile.close()
-    for entry in xrange(len(logbook)):
+    for entry in range(len(logbook)):
         try:
             if logbook[entry]['indivId'] == indID:
                 genome['genome'] = logbook[entry]['genome']
@@ -209,10 +209,10 @@ def extractAllGenomes(logbookFileWithPath):
     """Extracts all genomes of a GA given simulation
        to a set of unique individuals"""
     inds = set()
-    logbookFile = open(logbookFileWithPath, 'r')
+    logbookFile = open(logbookFileWithPath, 'rb')
     logbook = pickle.load(logbookFile)
     logbookFile.close()
-    for entry in xrange(len(logbook)):
+    for entry in range(len(logbook)):
         try:
             inds.add(tuple(logbook[entry]['genome']))  # convert genome list to tuple for sets
         except KeyError:
@@ -246,7 +246,7 @@ def saveGenomeToCSV(genome, filename):
         genomeWriter.writerow(genome)
         genomeFile.close()
     except IOError:
-        print "Could not save the genome to", filename
+        print("Could not save the genome to", filename)
 
 def areValueFilesIdentical(fileN1,fileN2):
     """Compare two files,  each containing a single 
@@ -255,9 +255,9 @@ def areValueFilesIdentical(fileN1,fileN2):
         a = np.loadtxt(fileN1,  delimiter=',')        
         b = np.loadtxt(fileN2,  delimiter=',')
     except IOError:
-        print " I could not load either of the two csv files"
+        print(" I could not load either of the two csv files")
         return
-  
+
     return len([x for x in a-b if not x==0]) == 0
     
 def diffBetweenCSVFiles(fileN1,fileN2):
@@ -267,9 +267,9 @@ def diffBetweenCSVFiles(fileN1,fileN2):
         a = np.loadtxt(fileN1,  delimiter=',')        
         b = np.loadtxt(fileN2,  delimiter=',')
     except IOError:
-        print " I could not load either of the two csv files"
+        print(" I could not load either of the two csv files")
         return
-    
+
     return [x for x in a-b if not x==0]
 
 def areAllInpAndOutpFilesIdentical():
@@ -284,8 +284,8 @@ def areAllInpAndOutpFilesIdentical():
     for pattern in patterns:
         fileList = glob.glob(pattern)
         if pattern is not  None:
-            print "Now checking files with pattern: ", pattern
-            print "Including:", fileList
+            print("Now checking files with pattern: ", pattern)
+            print("Including:", fileList)
             for pair in list(combinations(fileList, 2)):
                 results.append(areValueFilesIdentical(pair[0], pair[1]))                                   
     return len([x for x in results if x == False]) == 0

@@ -5,8 +5,9 @@ Created on May 5, 2013
 @author: stefano
 '''
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import * 
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 from Core.Homeostat import *
 from Helpers.QtSeparator import Separator
 from Helpers.General_Helper_Functions import rchop
@@ -18,7 +19,7 @@ from Helpers.CustomWidgets import SFDoubleSpinBox,SFSpinBox
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 import pyqtgraph as pg
-from StringIO import StringIO
+from io import StringIO
 from Simulator.Four_units_Homeostat_Standard_UI import Ui_ClassicHomeostat
 from math import floor
 from itertools import cycle
@@ -57,7 +58,7 @@ class HomeoSimulationControllerGui(QDialog):
         try:
             os.mkdir(self.dataDir)
         except OSError:
-            print "Saving to existing directory", self.dataDir
+            print("Saving to existing directory", self.dataDir)
         'save dataDir path to a file, so Webots trajectory supervisor can read it'
         'FIXME: Should really communicate it to webots simulation supervisor to pass it to trajectory supervisor '
         dataDirFile = open(os.path.join(os.getenv("HOME"),'.HomeoSimDataDir.txt'),'w+')
@@ -211,10 +212,10 @@ class HomeoSimulationControllerGui(QDialog):
         self.graphTrajectoryButton.clicked.connect(self.graphTrajectory)
 
 
-        QObject.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged"), self.currentTimeSpinBox.setValue)
-        
+        emitter(self._simulation.homeostat).homeostatTimeChanged.connect(self.currentTimeSpinBox.setValue)
+
         #===============================================================================
-        # Homeostat control pane and saving/plotting data       
+        # Homeostat control pane and saving/plotting data
         #===============================================================================
 
         "Widgets"
@@ -287,7 +288,7 @@ class HomeoSimulationControllerGui(QDialog):
                                        
         "Connections"
         self.homeostatLineEdit.textChanged.connect(self.changedHomeostatName)
-        QObject.connect(self._simulation, SIGNAL("homeostatFilenameChanged"), self.homeostatLineEdit.setText)
+        self._simulation.homeostatFilenameChanged.connect(self.homeostatLineEdit.setText)
 
         self.newHomeostatButton.clicked.connect(self.newHomeostat)
         self.loadHomeostatButton.clicked.connect(self.loadHomeostat)
@@ -355,8 +356,8 @@ class HomeoSimulationControllerGui(QDialog):
         colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,255)]
         for unit, color, dataPlotRow, uniselPlotRow in  zip(self._simulation.homeostat.homeoUnits, 
                                                            cycle(colors),
-                                                            xrange(0,len(self._simulation.homeostat.homeoUnits)*2,2),
-                                                            xrange(1,(len(self._simulation.homeostat.homeoUnits)*2),2)):
+                                                            range(0,len(self._simulation.homeostat.homeoUnits)*2,2),
+                                                            range(1,(len(self._simulation.homeostat.homeoUnits)*2),2)):
             colorFaded = [self.minusXifPlus(170,x)  for x in color]
             self.pgChartsAndItems[unit] = []
             plotItemCritDev = plotsWindow.addPlot(row=dataPlotRow, col=0, rowspan=1, colspan=4,  name=(unit.name))
@@ -383,7 +384,7 @@ class HomeoSimulationControllerGui(QDialog):
             plotItemCritDev.getViewBox().setXLink(plotItemUnisel.getViewBox())
             
         plotLayout.addWidget(plotsWindow)
-        self.connect(self._simulation, SIGNAL("liveDataCritDevChanged"), self.updateCritDevChart)
+        self._simulation.liveDataCritDevChanged.connect(self.updateCritDevChart)
 #        self.connect(self._simulation, SIGNAL("liveDataUniselChanged"), self.updateCritDevChart)
         return plotLayout
  
@@ -467,8 +468,8 @@ class HomeoSimulationControllerGui(QDialog):
                           'criticalDeviation':('CritDev', 5, 'LineEdit', (),unitCritDevValueLineEditSize,defaultColor,Qt.AlignRight)}
         
         '2. create and setup the widgets'
-        for i in xrange(len(self._simulation.homeostat.homeoUnits)):
-            for propertyName, lineEdit in lineEditsNames.iteritems():
+        for i in range(len(self._simulation.homeostat.homeoUnits)):
+            for propertyName, lineEdit in lineEditsNames.items():
                 widget = SFLineEdit()
                 widget.setObjectName('unit' + str(i + 1) + lineEdit[0] + lineEdit[2])
                 widget.setMinimumSize(QSize(lineEdit[4][0],lineEdit[4][1]))
@@ -479,7 +480,7 @@ class HomeoSimulationControllerGui(QDialog):
                 widget.setStyleSheet("background-color: rgb("+ lineEdit[5]+")")
                 unitAttribute = getattr(self._simulation.homeostat.homeoUnits[i], propertyName)
                 slot = getattr(self._simulation.homeostat.homeoUnits[i], 'set' + propertyName[0].upper() + propertyName[1:])
-                if isinstance(unitAttribute, basestring):
+                if isinstance(unitAttribute, str):
                     widget.setText(unitAttribute)
                 else:
 #                    floatValidator = QDoubleValidator()
@@ -490,8 +491,8 @@ class HomeoSimulationControllerGui(QDialog):
                 widget.textModified.connect(slot)                
                 'Update signals'
                 signalFromUnit =  propertyName + "ChangedLineEdit"
-                QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL(signalFromUnit), widget.setText)
-                
+                getattr(emitter(self._simulation.homeostat.homeoUnits[i]), signalFromUnit).connect(widget.setText)
+
                 "Add newly created line edits to widget dictionary"
                 homeostatGuiUnitWidgets[str(widget.objectName())]= widget
 
@@ -502,7 +503,7 @@ class HomeoSimulationControllerGui(QDialog):
         Therefore, they need to listen to signals coming from it. 
         ''' 
         uniselectList = HomeoUniselector.__subclasses__()
-        for i in xrange(len(self._simulation.homeostat.homeoUnits)):
+        for i in range(len(self._simulation.homeostat.homeoUnits)):
             'comboBoxes'
             'uniselector type'
             widget = QComboBox()
@@ -532,12 +533,12 @@ class HomeoSimulationControllerGui(QDialog):
             slot = getattr(self._simulation.homeostat.homeoUnits[i], 'setStatus')
             widget.currentIndexChanged[str].connect(slot)
             signalFromUnit = 'unitActiveIndexchanged'
-            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL(signalFromUnit), widget.setCurrentIndex)
-            
+            getattr(emitter(self._simulation.homeostat.homeoUnits[i]), signalFromUnit).connect(widget.setCurrentIndex)
+
             "add newly created combo box to widget dictionary"
-            homeostatGuiUnitWidgets[str(widget.objectName())] = widget          
- 
-            
+            homeostatGuiUnitWidgets[str(widget.objectName())] = widget
+
+
             'uniselector active and uniselector sound checkboxes'
             widget = QCheckBox()
             widget.setObjectName('unit'+str(i+1)+'UniselOnCheckBox')
@@ -549,7 +550,7 @@ class HomeoSimulationControllerGui(QDialog):
             widget.setText("On")
             signalFromUnit = 'unitUniselOnChanged'
             widget.stateChanged.connect(self._simulation.homeostat.homeoUnits[i].toggleUniselectorActive)
-            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL(signalFromUnit), widget.setChecked)             
+            getattr(emitter(self._simulation.homeostat.homeoUnits[i]), signalFromUnit).connect(widget.setChecked)
 
             "add newly created check box to widget dictionary"
             homeostatGuiUnitWidgets[str(widget.objectName())] = widget          
@@ -564,7 +565,7 @@ class HomeoSimulationControllerGui(QDialog):
             widget.setText("Sound")
             signalFromUnit = 'uniselSoundChanged'
             widget.stateChanged.connect(self._simulation.homeostat.homeoUnits[i].uniselector.toggleBeeping)
-            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i].uniselector), SIGNAL(signalFromUnit), widget.setChecked)   
+            getattr(emitter(self._simulation.homeostat.homeoUnits[i].uniselector), signalFromUnit).connect(widget.setChecked)
             
             "add newly created combo box to widget dictionary"
             homeostatGuiUnitWidgets[str(widget.objectName())] = widget          
@@ -575,7 +576,7 @@ class HomeoSimulationControllerGui(QDialog):
          
         "the precision value to use for the float <--> integer conversion is stored in a class variable of HomeoUnit" 
         prec = HomeoUnit.precision                    
-        for i in xrange(len(self._simulation.homeostat.homeoUnits)):
+        for i in range(len(self._simulation.homeostat.homeoUnits)):
             widget = QSlider()
             widget.setObjectName('unit'+str(i+1)+'CritDevSlider')
             slot = getattr(self._simulation.homeostat.homeoUnits[i], 'setCriticalDeviationFromSlider')        # scaling to float in range done by the Unit 
@@ -586,9 +587,9 @@ class HomeoSimulationControllerGui(QDialog):
             widget.valueChanged.connect(slot)
            
             'The value passed back to the slider are scaled by the Unit'
-            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL('criticalDeviationScaledChanged(int)'), widget.setValue) 
-            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL('minDeviationScaledChanged'), widget.setMinimum)  
-            QObject.connect(emitter(self._simulation.homeostat.homeoUnits[i]), SIGNAL('maxDeviationScaledChanged'), widget.setMaximum)  
+            emitter(self._simulation.homeostat.homeoUnits[i]).criticalDeviationScaledChanged.connect(widget.setValue)
+            emitter(self._simulation.homeostat.homeoUnits[i]).minDeviationScaledChanged.connect(widget.setMinimum)
+            emitter(self._simulation.homeostat.homeoUnits[i]).maxDeviationScaledChanged.connect(widget.setMaximum)
 
             "add newly created combo box to widget dictionary"
             homeostatGuiUnitWidgets[str(widget.objectName())] = widget          
@@ -597,8 +598,8 @@ class HomeoSimulationControllerGui(QDialog):
 
         "Set up, initialize, and connect the line edits for all the units' connections's lineEdits widgets"
         
-        for incomingUnit in xrange(len(self._simulation.homeostat.homeoUnits)):
-            for outgoingUnit in xrange(len(self._simulation.homeostat.homeoUnits)):
+        for incomingUnit in range(len(self._simulation.homeostat.homeoUnits)):
+            for outgoingUnit in range(len(self._simulation.homeostat.homeoUnits)):
                 'lineEdits'
                 widget = SFLineEdit()
                 widget.setObjectName('unit' + str(incomingUnit + 1) + 'Unit' + str(outgoingUnit+1)+ 'ConnNameLineEdit')
@@ -609,8 +610,7 @@ class HomeoSimulationControllerGui(QDialog):
                 attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit].incomingUnit, 'name')
                 widget.setText(attribute)
                 widget.setReadOnly(True)
-                QObject.connect(emitter(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit].incomingUnit), 
-                                SIGNAL("nameChanged"), widget.setText)
+                emitter(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit].incomingUnit).nameChanged.connect(widget.setText)
                 
                 "add newly created lineEdit to widget dictionary"
                 homeostatGuiUnitWidgets[str(widget.objectName())] = widget          
@@ -621,7 +621,7 @@ class HomeoSimulationControllerGui(QDialog):
                 spinBoxes = {'weight':('Double', 'setAbsoluteWeight',(0,1),0.001,False,unitConnParamsSpinBoxSize,4), 
                              'switch':('','toggleSwitch',(-1,1),2,True,(unitConnParamsSpinBoxSize[0]-20,unitConnParamsSpinBoxSize[1]),0), 
                              'noise':('Double', 'setNoise',(0,1),0.001,False,unitConnParamsSpinBoxSize,4)}
-                for spinBox, spinBoxType in spinBoxes.iteritems():
+                for spinBox, spinBoxType in spinBoxes.items():
                     if spinBoxType[0] == 'Double':
                         widget = SFDoubleSpinBox()
                         widget.setDecimals(spinBoxType[6])
@@ -644,7 +644,7 @@ class HomeoSimulationControllerGui(QDialog):
                     signalFromUnit = spinBox + "Changed"
                     widget.setValue(attribute)
                     widget.editingValueFinished.connect(slot)                  #uses a custom signal produced by SFSpinBox and SFDoubleSpinBox
-                    QObject.connect(emitter(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit]), SIGNAL(signalFromUnit), widget.setValue)
+                    getattr(emitter(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit]), signalFromUnit).connect(widget.setValue)
 
                     "add newly created spin box to widget dictionary"
                     homeostatGuiUnitWidgets[str(widget.objectName())] = widget          
@@ -654,7 +654,7 @@ class HomeoSimulationControllerGui(QDialog):
                 'setup a dictionary with comboBoxes names, values, and setter methods indexed by attributes'
                 comboBoxes = {'status':({'Active':True,'Non active':False},'Connected','toggleStatus'),
                               'state':({'manual':'manual', 'uniselector':'uniselector'},'Uniselector', 'toggleUniselectorState')}
-                for attrName, attrData in comboBoxes.iteritems():
+                for attrName, attrData in comboBoxes.items():
                     widget = QComboBox()
                     widget.setObjectName('unit' + str(incomingUnit + 1) + 
                                      'Unit' + str(outgoingUnit+1)+ attrData[1]+'ComboBox')
@@ -663,12 +663,12 @@ class HomeoSimulationControllerGui(QDialog):
                     widget.setSizePolicy(fixedSizePolicy)
                     widget.setFont(guiFont)
                     attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], attrName)
-                    values = attrData[0].keys()
+                    values = list(attrData[0].keys())
                     slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], attrData[2])
                     # print "The slot of the incoming connection for unit %s coming from connection to unit %s comboboxes is set to %s" % (self._simulation.homeostat.homeoUnits[incomingUnit].name,
                                                                                                                                          # self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit].incomingUnit.name,
                                                                                                                                          # slot.__name__)
-                    index = attrData[0].values().index(getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit],attrName))
+                    index = list(attrData[0].values()).index(getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit],attrName))
                     widget.addItems(values)
                     widget.setEditable(False)
                     widget.setCurrentIndex(index)
@@ -678,7 +678,7 @@ class HomeoSimulationControllerGui(QDialog):
                     homeostatGuiUnitWidgets[str(widget.objectName())] = widget          
 
         "Lay out all the widgets"
-        for i in xrange(len(self._simulation.homeostat.homeoUnits)):
+        for i in range(len(self._simulation.homeostat.homeoUnits)):
             "all QT layouts needed to layout a single unit"
             unitLayout = QHBoxLayout()                      # Layout for the whole unit
             unitLeftSideLayout = QVBoxLayout()              # Layout for the left side of a unit's GUI: Everything except uniselector and crit dev
@@ -826,7 +826,7 @@ class HomeoSimulationControllerGui(QDialog):
             unitAllConnectionsLayout.addWidget(connIsLabel,0,5,Qt.AlignRight)
             
             'Lay out all the widgets for the connections parameters for all connections'
-            for inUnitNo in xrange(len(self._simulation.homeostat.homeoUnits[i].getInputConnections())):
+            for inUnitNo in range(len(self._simulation.homeostat.homeoUnits[i].getInputConnections())):
                 unitAllConnectionsLayout.addWidget(homeostatGuiUnitWidgets['unit'+str(i+1)+'Unit'+str(inUnitNo+1) + 'ConnNameLineEdit'],inUnitNo+1,0)
                 unitAllConnectionsLayout.addWidget(homeostatGuiUnitWidgets['unit'+str(i+1)+'Unit'+str(inUnitNo+1) + 'ConnectedComboBox'],inUnitNo+1,1)
                 unitAllConnectionsLayout.addWidget(homeostatGuiUnitWidgets['unit'+str(i+1)+'Unit'+str(inUnitNo+1) + 'WeightDoubleSpinBox'],inUnitNo+1,2)
@@ -901,14 +901,14 @@ class HomeoSimulationControllerGui(QDialog):
         
         
     def loadHomeostat(self):
-        filename = QFileDialog.getOpenFileNameAndFilter(parent=self, 
-                                                        caption=QString("Choose a Homeostat file to open"), 
-                                                        filter = QString("Homeostats (*.pickled);;All files (*.*)"))[0]   #QFileDialog.GetOpen returns a tuple
+        filename = QFileDialog.getOpenFileName(parent=self,
+                                                        caption="Choose a Homeostat file to open",
+                                                        filter="Homeostats (*.pickled);;All files (*.*)")[0]   #QFileDialog.GetOpen returns a tuple
         if len(filename) > 0:
             try:
                 self._simulation.loadNewHomeostat(filename)
                 self.changeWindowsTitles(self._simulation.homeostatFilename)
-                QObject.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged"), self.currentTimeSpinBox.setValue)
+                emitter(self._simulation.homeostat).homeostatTimeChanged.connect(self.currentTimeSpinBox.setValue)
                 self._simulation.timeReset()
                 self.stepButton.setEnabled(True)
                 self.resumeButton.setEnabled(True)
@@ -953,7 +953,7 @@ class HomeoSimulationControllerGui(QDialog):
         filename = QFileDialog.getSaveFileName(parent = self, 
                                                        caption = "Save simulation's complete data", 
                                                        directory = self._simulation.dataFilename)    #QFileDialog.GetSave returns a QString
-        print filename
+        print(filename)
         if len(filename) > 0:                            # Change the filename to the newly selected one
             self._simulation.dataFilename = filename
         self._simulation.saveCompleteRunOnFile(filename)
@@ -963,9 +963,9 @@ class HomeoSimulationControllerGui(QDialog):
         filename = QFileDialog.getSaveFileName(parent = self, 
                                                        caption = "Save simulation's essential data", 
                                                        directory = (self._simulation.dataFilename + "-essential.txt"))    #QFileDialog.GetSave returns a QString
-        print filename
+        print(filename)
         if len(filename) <= 0:                            # Change the filename to the newly selected one
-            filename = (self._simulation.dataFilename + "-essential.txt") 
+            filename = (self._simulation.dataFilename + "-essential.txt")
         self._simulation.saveEssentialDataOnFile(filename, withWeights)
 
     def choosePlotDataAndSave(self):
@@ -1013,7 +1013,7 @@ class HomeoSimulationControllerGui(QDialog):
         try:
             trajDataFilename = max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)])
         except ValueError:
-            print "The file I tried to open was:", os.path.join(datafilePath, max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)]))
+            print("The file I tried to open was:", os.path.join(datafilePath, max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)])))
             messageBox =  QMessageBox.warning(self, 'No data file', 'There are no trajectory data to visualize', QMessageBox.Cancel)
             
         "graph the data"

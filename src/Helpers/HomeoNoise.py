@@ -3,12 +3,11 @@ Created on Mar 15, 2013
 
 @author: stefano
 '''
-from __future__ import division
 from Helpers.General_Helper_Functions import Singleton
 import numpy as np
 import sys
 
-class HomeoNoise(object):
+class HomeoNoise(object, metaclass=Singleton):
     '''
     HomeoNoise is a utility class that provides different algorithms to deal with 
     the computation of how noise affects the transmission of current between units 
@@ -31,8 +30,6 @@ class HomeoNoise(object):
     This method constructs a selector string from the values of the ivar and calls the corresponding method. 
 
     '''
-    __metaclass__ = Singleton
-
     def __init__(self):
         '''
         Initialize the instance to a current of 1 and noise of 0, representing a full current and no noise. 
@@ -240,7 +237,7 @@ class HomeoNoise(object):
         if self.noise == 0:
             return 0
         else:
-            if self._current <> 0:
+            if self._current != 0:
                 minNoise = - self._noise * abs(self._current)
                 maxNoise = self._noise * abs(self._current)
             else:
@@ -250,7 +247,7 @@ class HomeoNoise(object):
         if self.noise == 0:
             return 0
         else:
-            if self._current <> 0:
+            if self._current != 0:
                 noiseSign = np.sign(self._current) * -1 
                 minAbsNoise = 0
                 maxAbsNoise = self._noise * abs(self._current) * 2
@@ -321,13 +318,13 @@ class HomeoNoise(object):
         if self.noise == 0:
             return 0
         else:
-            if self._current <> 0:
+            if self._current != 0:
                 minNoise = - self._noise * abs(self._current)
                 maxNoise = self._noise * abs(self._current)
             else:
                 minNoise = - self._noise
                 maxNoise = self._noise
-                
+
         noiseValue = np.random.normal(0, maxNoise / 3.)
     
         "trim noise within the interval (0, 2 *noise)"

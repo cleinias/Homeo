@@ -22,7 +22,7 @@ class HomeoDataCollectorTest(unittest.TestCase):
         "setup a standard Ashby 4 units homeostat to be used in various tests"
 
         self.homeostat = Homeostat()
-        for unit in xrange(4):
+        for unit in range(4):
             unit = HomeoUnit()
             unit.setRandomValues()
             self.homeostat.addFullyConnectedUnit(unit)

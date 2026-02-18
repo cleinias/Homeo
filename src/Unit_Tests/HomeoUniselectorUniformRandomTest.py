@@ -29,7 +29,7 @@ class HomeoUniselectorUniformRandomTest(unittest.TestCase):
         "Interval bounds are always centered around 0, 
         i.e. lowerBound always = to upperBound negated"
         """
-        for i in xrange(100):
+        for i in range(100):
             self.uniselector.lowerBound = numpy.random.uniform(-10, 10)
             self.assertTrue(self.uniselector.lowerBound == - self.uniselector.upperBound)
             self.uniselector.upperBound = numpy.random.uniform(-10, 10)
@@ -43,17 +43,17 @@ class HomeoUniselectorUniformRandomTest(unittest.TestCase):
     
         "testing with default interval bounds: No repeated values"
         values = []
-        for test in xrange(tests):
+        for test in range(tests):
             newValue = self.uniselector.produceNewValue()
             values.append(newValue)
         self.assertTrue(len(set(values))  == tests)    
 
 
         "testing with random values for interval: No repeated values"
-        for i in xrange(10):
+        for i in range(10):
             values = []
             self.uniselector.upperBound = numpy.random.uniform(-10, 10)
-            for test in xrange(tests): 
+            for test in range(tests): 
                 newValue = self.uniselector.produceNewValue()
                 values.append(newValue)
             self.assertTrue(len(set(values)) == tests)    
@@ -65,7 +65,7 @@ class HomeoUniselectorUniformRandomTest(unittest.TestCase):
         tests = 1000
         values = []
 
-        for test in xrange(tests):
+        for test in range(tests):
             values.append(self.uniselector.produceNewValue())
 
         self.assertTrue(max(values)  <= self.uniselector.upperBound)

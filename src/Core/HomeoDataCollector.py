@@ -54,11 +54,11 @@ class HomeoDataCollector(object):
         '''Create a new DataCollector instance from a file containing 
            a saved instance object'''
 
-        fileIn = open(aFilename, 'r')
+        fileIn = open(aFilename, 'rb')
         unpickler = pickle.Unpickler(fileIn)
         newDataCollector = unpickler.load()
         fileIn.close()
-        return newDataCollector       
+        return newDataCollector
         
 #===============================================================================
 # Saving methods
@@ -69,9 +69,9 @@ class HomeoDataCollector(object):
            It will erase the old content of aFilename'''
 
 
-        fileOut = open(aFilename, 'w')
+        fileOut = open(aFilename, 'wb')
         pickler = pickle.Pickler(fileOut)
-        pickler.dump(self) 
+        pickler.dump(self)
         fileOut.close()
 
     def saveDeviationOnForUnit(self, aString, aUnit):
@@ -140,7 +140,7 @@ class HomeoDataCollector(object):
         timeIndex = 0
         for state in self.states:
             if state is not None:
-                for key,value in state.iteritems():
+                for key,value in state.items():
                     if key == aHomeoUnit.name:
                         aString += "time: %u    " % timeIndex
                         aString += value.printDataOn('')
@@ -161,7 +161,7 @@ class HomeoDataCollector(object):
         
         for state in self.states:
             if state is not None:
-                for key,value in state.iteritems():
+                for key,value in state.items():
                     if key == aHomeoUnit.name:
                         aString += value.printCriticalDeviationOn('')
 
@@ -171,7 +171,7 @@ class HomeoDataCollector(object):
         timeIndex = 0
         for state in self.states:
             if state is not None:
-                for key, value in state.iteritems():
+                for key, value in state.items():
                     if key == aHomeoUnit.name:
                         aString += 'time: %u    ' % timeIndex
                         aString += value.name
@@ -184,7 +184,7 @@ class HomeoDataCollector(object):
         timeIndex = 0
         for state in self.states:
             if self.states[state] is not None:
-                for key,value in self.states[state].iteritems():
+                for key,value in self.states[state].items():
                     aString += " time:    %u    " % timeIndex
                     aString += value.name
                     aString += ":    "
@@ -256,7 +256,7 @@ class HomeoDataCollector(object):
         unitNames = []
         if len(self.states) == 0:
             sys.stderr.write("DataCollector: There are no data to save")
-        for index, dataUnit in iteritems(self.states[0]):
+        for index, dataUnit in self.states[0].items():
             unitNames.append(dataUnit.name)
         
         criticDevData = self.criticalDevAsCollectionOfArraysForAllUnits()
@@ -271,7 +271,7 @@ class HomeoDataCollector(object):
 
         "Print  the column headers"
         for index, name in enumerate(unitNames):
-            if index <> 0:
+            if index != 0:
                 aString += aCharacter
             aString += name
             aString += aCharacter
@@ -379,7 +379,7 @@ class HomeoDataCollector(object):
         aCollection = []
         for state in self.states:
             if state is not None:
-                for key, value in self.states[state].iteritems():
+                for key, value in self.states[state].items():
                     if key == aHomeoUnit.name:
                         aCollection.append(value.criticalDeviation)
         return aCollection
@@ -390,10 +390,10 @@ class HomeoDataCollector(object):
            Each list has all the homeoDataunits for a point in time'''
 
         aCollection = []
-        for stateAtTick, data in self.states.iteritems():
+        for stateAtTick, data in self.states.items():
             if data is not None:
                 dataPoint = []
-                for HomeoUnitName, homeoDataUnit in data.iteritems():
+                for HomeoUnitName, homeoDataUnit in data.items():
                     dataPoint.append(homeoDataUnit.criticalDeviation)
                     if (homeoDataUnit.uniselectorActive == True):
                         dataPoint.append(1)

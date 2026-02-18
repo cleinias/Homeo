@@ -20,12 +20,9 @@
 
 
 
-from __future__ import  division
 from Helpers.HomeoNoise import *
 import numpy as np
-from scipy.stats import * 
 from Helpers.QObjectProxyEmitter import emitter
-from PyQt4.QtCore import QObject, SIGNAL
 import sys
 from Helpers.ExceptionAndDebugClasses import hDebug
 
@@ -166,9 +163,9 @@ class HomeoConnection(object):
         except ValueError:
             sys.stderr.write("Tried to assign a non-numeric value to the switch of the connection from %s to %s The value was: %s\n" % (self.outgoingUnit.name, self.incomingUnit.name, aNumber))
         finally:
-            QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
-            QObject.emit(emitter(self), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
-            QObject.emit(emitter(self.incomingUnit), SIGNAL('switchChangedLineEdit'),str(int(self._switch))) 
+            emitter(self).switchChanged.emit(self._switch)
+            emitter(self).switchChangedLineEdit.emit(str(int(self._switch)))
+            emitter(self.incomingUnit).switchChangedLineEdit.emit(str(int(self._switch))) 
 #            sys.stderr.write('%s emitted signals switchChanged with value %f the object emitting the signal was %s\n' % (self._name, self._switch, emitter(self.inputConnections[0])))
    
 
@@ -194,7 +191,7 @@ class HomeoConnection(object):
             self._noise = aNoise
         else:
             raise ConnectionError("Noise must be between 0 and 1")
-        QObject.emit(emitter(self), SIGNAL('noiseChanged'), self._noise)
+        emitter(self).noiseChanged.emit(self._noise)
 
     
     noise = property(fget = lambda self: self.getNoise(),
@@ -219,7 +216,7 @@ class HomeoConnection(object):
         if aBoolean in (True,False):
             self._status = aBoolean
         else:
-            raise(ConnectionError, 'The status of a connection can only be a Boolean')
+            raise ConnectionError('The status of a connection can only be a Boolean')
     
     status = property(fget = lambda self: self.getStatus(),
                           fset = lambda self, value: self.setStatus(value))   
@@ -242,15 +239,15 @@ class HomeoConnection(object):
                 self._weight= abs(aWeight)
                 self._switch = np.sign(aWeight)
             else:
-                raise(ConnectionError, "A HomeoConnection weight must be between -1 and 1")
-        QObject.emit(emitter(self), SIGNAL('weightChanged'), self._weight)
-        QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
-        
+                raise ConnectionError("A HomeoConnection weight must be between -1 and 1")
+        emitter(self).weightChanged.emit(self._weight)
+        emitter(self).switchChanged.emit(self._switch)
+
         "Signaling back to the incoming unit's potentiometer and switch in case of a self-connection"
         try:
             if self.incomingUnit == self.outgoingUnit:
-                QObject.emit(emitter(self.incomingUnit), SIGNAL('potentiometerChangedLineEdit'), str(round(self._weight, 4)))
-                QObject.emit(emitter(self.incomingUnit), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
+                emitter(self.incomingUnit).potentiometerChangedLineEdit.emit(str(round(self._weight, 4)))
+                emitter(self.incomingUnit).switchChangedLineEdit.emit(str(int(self._switch)))
         except AttributeError:
             pass
             #sys.stderr.write("Initializing connection, no incoming unit assigned yet\n")
@@ -273,7 +270,7 @@ class HomeoConnection(object):
 #            QObject.emit(emitter(self), SIGNAL('weightChanged'), self._weight)
         "signal back to unit's potentiometer in case of self-connections"
         if self.incomingUnit == self.outgoingUnit:
-            QObject.emit(emitter(self.incomingUnit), SIGNAL('potentiometerChangedLineEdit'), str(round(self._weight, 4)))
+            emitter(self.incomingUnit).potentiometerChangedLineEdit.emit(str(round(self._weight, 4)))
                 
         
         
