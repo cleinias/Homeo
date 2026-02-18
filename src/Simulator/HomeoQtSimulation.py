@@ -154,14 +154,14 @@ class HomeoQtSimulation(QObject):
         if experiment == None:
 #            self.currentExperiment = 'initialize10UnitHomeostat'
 #           self.currentExperiment = 'initialize_Ashby_2nd_Experiment'
-#            self.currentExperiment = 'initializeAshbyNoNoiseSimulation'
+            self.currentExperiment = 'initializeAshbyNoNoiseSimulation'
 #            self.currentExperiment = 'initializeBraiten1_1Arist'
 #            self.currentExperiment = 'initializeBraiten1_1Pos'
 #            self.currentExperiment = 'initializeBraiten1_1Neg'
 #            self.currentExperiment = 'initializeBraiten1_2Pos'
 #            self.currentExperiment = 'initializeBraiten1_2Neg'
 #            self.currentExperiment = 'initializeBraiten1_3'
-            self.currentExperiment = 'initializeBraiten2_2Pos'
+#            self.currentExperiment = 'initializeBraiten2_2Pos'
 #            self.currentExperiment = 'initializeBraiten2_2Neg'
 #            self.currentExperiment = 'initializeBraiten2_2_Full_Neg'
 #            self.currentExperiment = 'initializeBraiten2_2_Full_Pos'
@@ -226,7 +226,9 @@ class HomeoQtSimulation(QObject):
         self._dataAreSaved = False
         self._homeostatIsSaved = False
         self._isRunning = True
-        
+        if not self.liveData:
+            self.initializeLiveData()
+
         while self._homeostat.time  < self._maxRuns  and self._isRunning == True:
             self._homeostat.runOnce()
 #            if self.liveDataOn:
@@ -255,6 +257,8 @@ class HomeoQtSimulation(QObject):
 
     
     def updateLiveData(self):
+#        import pdb;
+#        pdb.set_trace()
         for unit in self._homeostat.homeoUnits:
             self.liveData[unit].append(unit.criticalDeviation)
             self.liveData[unit.uniselector].append(unit.uniselectorActivated)

@@ -1,0 +1,43 @@
+/* File: StageSwig.i 
+*  Swig file for the Stage C++ library
+*  of the Player/Stage robotic simulation environment 
+*
+* Author: Stefano Franchi
+* Date:   3/9/2015             */
+
+%feature("flatnested");         // Needed for nested classes
+%module StageLibPy
+
+// Redefine nested class in global scope in order for SWIG to generate
+// a proxy class. Only SWIG parses this definition.
+// class Event
+//     {
+//     public:
+      
+//       Event( usec_t time, Model* mod, model_callback_t cb, void* arg ) 
+// 	: time(time), mod(mod), cb(cb), arg(arg) {}
+			
+//       usec_t time; ///< time that event occurs
+//       Model* mod; ///< model to pass into callback
+//       model_callback_t cb;
+//       void* arg;
+			
+//       /** order by time. Break ties by value of Model*, then cb*. 
+// 	  @param event to compare with this one. */
+//       bool operator<( const Event& other ) const;
+//     };
+
+// Now include the regular classes
+%{
+  //#include "/usr/include/FL/Fl_Window.H"
+#include "/home/stefano/builds/from-upstream-sources/stage4/Stage/libstage/stage.hh"
+%}
+//%include "std_string.i"
+//%include "/usr/include/FL/Fl_Window.H"
+%include "/home/stefano/builds/from-upstream-sources/stage4/Stage/libstage/stage.hh"
+
+%{
+// SWIG thinks that Event is a global class, so we need to trick the C++
+// compiler into understanding this so called global type.
+//typedef World::Event Event;
+%}

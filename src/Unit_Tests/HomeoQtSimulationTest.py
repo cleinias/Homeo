@@ -11,6 +11,9 @@ from   Simulator.HomeoQtSimulation import *
 import unittest, numpy, os, sys
 from time import sleep
 from  Helpers.SimulationThread import SimulationThread
+from PyQt4.QtGui import QApplication
+
+app = QApplication.instance() or QApplication(sys.argv)
 
 class HomeoQtSimulationTest(unittest.TestCase):
     """
@@ -139,9 +142,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         self.simulation.maxRuns = simulationCycles
 
         "runs for the default number of cycles"
-        self.simulation.moveToThread(self.thr)
-        self.thr.started.connect(self.simulation.go)
-        self.thr.start()
+        self.simulation.go()
 
         self.assertTrue(simulationCycles == self.simulation.homeostat.time)
 

@@ -1,0 +1,21 @@
+Start of evolution
+-- Generation 0 --
+Traceback (most recent call last):
+  File "build/bdist.linux-x86_64/egg/scoop/_control.py", line 150, in runFuture
+    future.resultValue = future.callable(*future.args, **future.kargs)
+  File "/usr/lib/python2.7/runpy.py", line 240, in run_path
+    return _run_module_code(code, init_globals, run_name, path_name)
+  File "/usr/lib/python2.7/runpy.py", line 82, in _run_module_code
+    mod_name, mod_fname, mod_loader, pkg_name)
+  File "/usr/lib/python2.7/runpy.py", line 72, in _run_code
+    exec code in run_globals
+  File "HomeoGenAlgGui.py", line 803, in <module>
+    simul.runGaSimulation(simul.generateRandomPop())
+  File "HomeoGenAlgGui.py", line 373, in runGaSimulation
+    fitnesses = list(self.toolbox.map(self.toolbox.evaluate, pop))
+  File "/usr/lib/python2.7/multiprocessing/pool.py", line 251, in map
+    return self.map_async(func, iterable, chunksize).get()
+  File "/usr/lib/python2.7/multiprocessing/pool.py", line 558, in get
+    raise self._value
+PicklingError: Can't pickle <type 'function'>: attribute lookup __builtin__.function failed
+

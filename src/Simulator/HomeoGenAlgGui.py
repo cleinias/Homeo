@@ -11,6 +11,8 @@ from deap import base
 from deap import creator
 from deap import tools
 from deap.tools.mutation import mutFlipBit
+# from dill import dump
+# import dill as pickle
 from pickle import dump
 from Simulator.HomeoQtSimulation import HomeoQtSimulation
 from Helpers.SimulationThread import SimulationThread
@@ -22,8 +24,12 @@ import numpy as np
 # import csv
 import datetime
 from operator import attrgetter
-# from scoop import futures
+from scoop import futures
+import multiprocessing
 
+from pathos.multiprocessing import ProcessingPool as Pool
+
+from playdoh import map as pd_map 
 
 #import RobotSimulator.WebotsTCPClient
 from RobotSimulator.WebotsTCPClient import WebotsTCPClient
@@ -218,11 +224,23 @@ class HomeoGASimulation(object):
         'Operator to create a list of identical individual of given genome'
         self.toolbox.register('popClones', tools.initRepeat, list, self.toolbox.individualClone)                            
         
-#         "Operator to use scoop's parallel processing capabilities"
+        "Operator to use scoop's parallel processing capabilities"
 #         self.toolbox.register('map',futures.map)
 
         "Operator to use standard (serial) map function"
         self.toolbox.register('map',map)
+        
+        "Operator to use the multiprocessing module"
+#         pool = multiprocessing.Pool()
+#         self.toolbox.register("map", pool.map)
+ 
+        "Operator to use pathos multiprocessing package"
+#         p = Pool(4)
+#         self.toolbox.register('map', p.map)
+
+#         "Operator to use playdoh multiprocessing package"
+#         self.toolbox.register("map", pd_map)
+
         
         hDebug('ga',("Population defined.\nIndividual defined with genome size = " + str(self.genomeSize) +"\n"))
         
@@ -236,7 +254,7 @@ class HomeoGASimulation(object):
         "2. Registering GA operators"
         
         self.toolbox.register("evaluate", self.evaluateGenomeFitness)
-        #self.toolbox.register("evaluate", self.evaluateGenomeFitnessSUPER_DUMMY)   #For testing purposes
+#         self.toolbox.register("evaluate", self.evaluateGenomeFitnessSUPER_DUMMY)   #For testing purposes
 
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 2, indpb=self.indivProb)            
@@ -323,9 +341,11 @@ class HomeoGASimulation(object):
     
     def initIndividualClone(self, indivClass, genome):
         """Generate an individual with given genome.
-           Assumes 'genome' is a dictionary with keys indivId and genome"""
+           Assumes 'genome' is a dictionary with keys indivId, fitness, and genome"""
         ind = indivClass(genome['genome'])
-        ind.ID = genome["indivId"]        
+        ind.ID = genome["indivId"] 
+        "FIX ME !!! Need to return an individual with pre-filled fitness for cloned populations"
+#         ind.fitness = genome['fitness']       
         return ind      
 
     def generatePopOfClones(self, cloneName =''):
@@ -363,7 +383,8 @@ class HomeoGASimulation(object):
             
             # Evaluate the entire population
             print "-- Generation 0 --"
-            fitnesses = list(self.toolbox.map(self.toolbox.evaluate, pop))
+#             fitnesses = list(self.toolbox.map(self.toolbox.evaluate, pop))
+            fitnesses = list(self.toolbox.map(self.evaluateGenomeFitness, pop))
             for ind, fit in zip(pop, fitnesses):
                 ind.fitness.values = fit
                 "record the data about the newly evaluated individual's genome in the logbook"
@@ -427,7 +448,7 @@ class HomeoGASimulation(object):
                     #print "Now changed to: ", ind.ID
     
                 'Re-evaluate'
-                fitnesses = map(self.toolbox.evaluate, invalid_ind)
+                fitnesses = self.toobox.map(self.toolbox.evaluate, invalid_ind)
                 for ind, fit in zip(invalid_ind, fitnesses):
                     ind.fitness.values = fit
                     
@@ -779,20 +800,20 @@ def selTournamentRemove(individuals, k, tournsize):
 if __name__ == '__main__':
     #app = QApplication(sys.argv)
     #simulGUI = HomeoGASimulGUI()
-#     logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/SimsData-2015-03-07-11-27-23"
-#     logL = 'Logbook-2015-03-07-11-27-23.lgb'
-#     id = '003-031'
-#     logF = os.path.join(logD,logL)
-#     genome = extractGenomeOfIndID(id,logF)
-    genome = ''
+    logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/SimsData-2015-05-01-16-34-48"
+    logL = 'Logbook-2015-05-01-16-34-48.lgb'
+    id = '018-006'
+    logF = os.path.join(logD,logL)
+    genome = extractGenomeOfIndID(id,logF)
+#     genome = ''
 #    print [round(x,3) for x in genome['genome']]
 #    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
     #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
 #     simul = HomeoGASimulation(popSize=3, stepsSize=100, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "WEBOTS")
-    simul = HomeoGASimulation(popSize=50, stepsSize=50000, generSize = 10,  clonableGenome = genome, debugging = 'network', simulatorBackend = "HOMEO", noUnisel = True, noNoise = True)
+    simul = HomeoGASimulation(popSize=2, stepsSize=10, generSize = 0,  clonableGenome = genome, debugging = 'network', simulatorBackend = "HOMEO", noUnisel = True, noNoise = True)
     #simul.test()
     #simul.runOneGenSimulation()
-#     simul.runGaSimulation(simul.generatePopOfClones(cloneName='003-031'))
+#     simul.runGaSimulation(simul.generatePopOfClones(cloneName='018-006'))
     simul.runGaSimulation(simul.generateRandomPop())
     #simul.showGenealogyTree(simul.hist, simul.toolbox)
     #simulGUI.show()

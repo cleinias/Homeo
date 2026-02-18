@@ -189,7 +189,7 @@ def genomeAndFitnessPrettyPrinter(individuals, noUnits=6):
 
 def extractGenomeOfIndID(indID, logbookFileWithPath):
     """Extract the genome of individual indID from a DEAP logbook file.
-    Return a dictionary with indivId and genome found at respective keys,
+    Return a dictionary with indivId, genome, and fitness found at respective keys,
     returns 'Not Found' otherwise."""
     genome = {'indivId' : indID, 'genome': "Not Found"}
     logbookFile = open(logbookFileWithPath, 'r')
@@ -199,6 +199,7 @@ def extractGenomeOfIndID(indID, logbookFileWithPath):
         try:
             if logbook[entry]['indivId'] == indID:
                 genome['genome'] = logbook[entry]['genome']
+                genome['fitness'] = logbook[entry]['fitness']
                 break
         except KeyError:
             pass

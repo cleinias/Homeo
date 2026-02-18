@@ -1,0 +1,29 @@
+Python program interfacing with libstage needs to carry out following actions:
+
+
+1. Load world
+
+
+2. Actuate model
+    SetSpeed
+    
+
+3. Sense model
+    
+
+4. Read poses of objects
+    GetPose2d
+
+5. Simulation-controlling functions
+
+    Start                Both in class World and in class WorldGui
+    Stop                            "                                 "
+    Update                        "                                 "
+    Run
+
+
+---------------------------------------------------------------------------------------------------------
+Needed for (1): Load world
+
+Class World
+    void World::Load 	(const std::string & worldfile_path) [virtual]

@@ -468,7 +468,7 @@ class HomeoSimulationControllerGui(QDialog):
         
         '2. create and setup the widgets'
         for i in xrange(len(self._simulation.homeostat.homeoUnits)):
-            for propertyName, lineEdit in iteritems(lineEditsNames):
+            for propertyName, lineEdit in lineEditsNames.iteritems():
                 widget = SFLineEdit()
                 widget.setObjectName('unit' + str(i + 1) + lineEdit[0] + lineEdit[2])
                 widget.setMinimumSize(QSize(lineEdit[4][0],lineEdit[4][1]))
@@ -621,7 +621,7 @@ class HomeoSimulationControllerGui(QDialog):
                 spinBoxes = {'weight':('Double', 'setAbsoluteWeight',(0,1),0.001,False,unitConnParamsSpinBoxSize,4), 
                              'switch':('','toggleSwitch',(-1,1),2,True,(unitConnParamsSpinBoxSize[0]-20,unitConnParamsSpinBoxSize[1]),0), 
                              'noise':('Double', 'setNoise',(0,1),0.001,False,unitConnParamsSpinBoxSize,4)}
-                for spinBox, spinBoxType in iteritems(spinBoxes):
+                for spinBox, spinBoxType in spinBoxes.iteritems():
                     if spinBoxType[0] == 'Double':
                         widget = SFDoubleSpinBox()
                         widget.setDecimals(spinBoxType[6])
@@ -654,7 +654,7 @@ class HomeoSimulationControllerGui(QDialog):
                 'setup a dictionary with comboBoxes names, values, and setter methods indexed by attributes'
                 comboBoxes = {'status':({'Active':True,'Non active':False},'Connected','toggleStatus'),
                               'state':({'manual':'manual', 'uniselector':'uniselector'},'Uniselector', 'toggleUniselectorState')}
-                for attrName, attrData in iteritems(comboBoxes):
+                for attrName, attrData in comboBoxes.iteritems():
                     widget = QComboBox()
                     widget.setObjectName('unit' + str(incomingUnit + 1) + 
                                      'Unit' + str(outgoingUnit+1)+ attrData[1]+'ComboBox')
@@ -1085,7 +1085,7 @@ class OutLog(object):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    simul = HomeoSimulationControllerGui()
+    simul = HomeoSimulationControllerGui(simulatorBackend='VREP')
     simul.show()
     app.exec_()
                

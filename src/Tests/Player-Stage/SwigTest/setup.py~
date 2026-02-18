@@ -1,0 +1,25 @@
+#!/usr/bin/env python2
+
+#####################################################
+# setup.py file for SWIG binding of Stage C++ library
+#
+# Author: Stefano Franchi
+# Date: 3/10/2015
+#####################################################
+
+from distutils.core import setup, Extension
+
+
+StageLibPy_module = Extension('_stageLibPy',
+                           sources=['stageTest_wrap.c', '/home/stefano/builds/from-upstream-sources/stage4/Stage/libstage/stage.cc'],
+                           library_dirs = ['/usr/local/lib64/'],
+                           libraries = ["stage"])
+
+
+setup (name = 'StageLibPy',
+       version = '0.0',
+       author      = "Stefano Franchi",
+       description = """Python bindings for Stage library (Player/Stage project""",
+       ext_modules = [StageLibPy_module],
+       py_modules =  ["StageLibPy"],
+       )
