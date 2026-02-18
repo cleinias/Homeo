@@ -91,17 +91,17 @@ class HomeostatTest(unittest.TestCase):
         filename = 'pickled_homeostat_test'
         
         "pickle out the empty homeostat and read it back"
-        fileOut = open(filename, 'w')
+        fileOut = open(filename, 'wb')
         pickler = pickle.Pickler(fileOut)
         pickler.dump(self.homeostat)
         fileOut.close()
-        fileIn = open(filename, 'r')
+        fileIn = open(filename, 'rb')
         unpickler = pickle.Unpickler(fileIn)
         newHomeostat = unpickler.load()
-        fileOut.close()
+        fileIn.close()
         os.remove(filename)
         self.assertTrue(self.homeostat.sameAs(newHomeostat))
-        
+
         "Do the same relying upon the class's own methods"
         
         self.homeostat.saveTo(filename)
@@ -131,12 +131,12 @@ class HomeostatTest(unittest.TestCase):
         in the protocol Homeostat>>sameAs
         """        
         filename = 'pickled_homeostat_test'
-        fileOut = open(filename, 'w')
+        fileOut = open(filename, 'wb')
         pickler = pickle.Pickler(fileOut)
-        
-        pickler.dump(self.homeostat) 
+
+        pickler.dump(self.homeostat)
         fileOut.close()
-        fileIn = open(filename, 'r')
+        fileIn = open(filename, 'rb')
         unpickler = pickle.Unpickler(fileIn)
         newHomeostat = unpickler.load()
         fileIn.close()
@@ -224,7 +224,7 @@ class HomeostatTest(unittest.TestCase):
         "checks that it has a number of data points equal to ticks, and for all the units."
 
         self.assertTrue(len(self.homeostat.dataCollector.states) == ticks)
-        for timeIndex, units in self.homeostat.dataCollector.states.iteritems():
+        for timeIndex, units in self.homeostat.dataCollector.states.items():
             for unit in self.homeostat.homeoUnits:
                 self.assertTrue(unit.name in units)
 
@@ -244,7 +244,7 @@ class HomeostatTest(unittest.TestCase):
         
         self.homeostat.slowingFactor = delay
         
-        for i in xrange(5):
+        for i in range(5):
             timeAtStart = time.time() # in seconds
             self.homeostat.runOnce()  
             timeAtEnd =  time.time()  # in seconds

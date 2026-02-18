@@ -3,7 +3,7 @@ Created on Mar 11, 2013
 
 @author: stefano
 '''
-from __future__ import division
+from functools import reduce
 
 from   Core.HomeoUnit import HomeoUnit
 from   Core.HomeoUnitNewtonian import HomeoUnitNewtonian
@@ -27,7 +27,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         according to Newtonian dynamics: s + v + 1/2ma 
         """
         self.unit.criticalDeviation = 0
-        for i in xrange(1000): 
+        for i in range(1000): 
             torque = numpy.random.uniform(-1,1) 
             self.unit.needleUnit.mass = numpy.random.uniform(1,10000)
             oldDev = self.unit.criticalDeviation
@@ -47,7 +47,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         self.unit.currentOutput = 0.1
         self.unit.inputConnections[0].noise = 0
         
-        for index in xrange(testRuns):
+        for index in range(testRuns):
             self.unit.needleUnit.mass = numpy.random.uniform(1,1000)
             oldVelocity = self.unit.currentVelocity
             
@@ -94,7 +94,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         for conn in anotherUnit.inputConnections:
             conn.noise = 0
             
-        for index in xrange(testRuns):
+        for index in range(testRuns):
             self.unit.needleUnit.mass = numpy.random.uniform(1,1000)
             oldVelocity = self.unit.currentVelocity
             "compute the torque as sum of the output coming from connected units"
@@ -116,7 +116,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
                 velocityDelta = 0
             else:
                 velocityDelta = abs(self.unit.currentVelocity - computedVelocity)
-            print index, velocityDelta
+            print(index, velocityDelta)
             self.assertTrue(velocityDelta < errorTolerance)
    
     def testDragEquationDrag(self):
@@ -133,7 +133,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
 
         "When the unit is started, velocity is zero, and dragForce should be zero"
         self.unit.currentVelocity = 0
-        for i in xrange(testRuns):
+        for i in range(testRuns):
             self.unit.density = numpy.random.uniform(1,1000)
             self.unit.needleUnit.surfaceArea = numpy.random.uniform((1/numpy.pi * 0.001), 1000)
             self.unit.needleUnit.dragCoefficient = numpy.random.uniform(0.3,2)
@@ -143,14 +143,14 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         '''When Velocity is not zero, Drag Force follows drag's equation.
          We briefly test with random velocities,random densities, random surface areas, and random coefficients'''
 
-        for index in xrange(testRuns):
+        for index in range(testRuns):
             self.unit.currentVelocity = numpy.random.uniform(-10,10)
             self.unit.density = numpy.random.uniform(1,1000)
             self.unit.needleUnit.surfaceArea = numpy.random.uniform((1/numpy.pi * 0.001), 1000)
             self.unit.needleUnit.dragCoefficient = numpy.random.uniform(0.3, 2)
 
             dragForce = self.unit.dragEquationDrag()
-            delta = abs((dragForce - (1/2 * self.unit.needleUnit.surfaceArea * self.unit.needleUnit.dragCoefficient * self.unit.density * self.unit.physicalVelocity()**2)))
+            delta = abs((dragForce - (0.5 * self.unit.needleUnit.surfaceArea * self.unit.needleUnit.dragCoefficient * self.unit.density * self.unit.physicalVelocity()**2)))
             self.assertTrue(delta < errorTolerance)
             
     def testStokesDrag(self):
@@ -163,7 +163,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         "When the unit is started, velocity is zero, and dragForce should be zero"
         self.unit.currentVelocity = 0
 
-        for index in xrange(testRuns):
+        for index in range(testRuns):
             self.unit.viscosity = numpy.random.uniform(0.001,1)
             self.unit.needleUnit.surfaceArea = numpy.random.uniform((1/numpy.pi * 0.001), 1000)
             radius = math.sqrt(self.unit.needleUnit.surfaceArea / numpy.pi)
@@ -172,7 +172,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
 
         '''When Velocity is not zero, Drag Force follows Stokes's law.
            We briefly test with random velocities, random densities, and random surface areas'''
-        for index in xrange(testRuns):
+        for index in range(testRuns):
             self.unit.currentVelocity = numpy.random.uniform(-10,10)
             self.unit.viscosity = numpy.random.uniform(0.1,1)
             self.unit.needleUnit.surfaceArea = numpy.random.uniform((1/numpy.pi * 0.001),1000)

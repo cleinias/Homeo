@@ -51,7 +51,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
         self._ashbyKind = 'RandomizedValues'
         self.produceSequence()
         self._beeps = False
-        QObject.emit(emitter(self), SIGNAL('uniselSoundChanged'), self._beeps)
+        emitter(self).uniselSoundChanged.emit(self._beeps)
 
         
     def setLowerBound(self,aValue):
@@ -144,7 +144,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
          (default = 25), n = maximum number of units controlled by the Uniselector'''        
         
         tempSeq = np.linspace(-1,1,(self._steps * 2) + 1)
-        for i in xrange(self._unitsControlled - 1):
+        for i in range(self._unitsControlled - 1):
             tempSeqq = np.linspace(-1,1,(self._steps * 2) + 1)
             np.random.shuffle(tempSeqq) 
             tempSeq = np.column_stack((tempSeq,tempSeqq))
@@ -176,7 +176,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
 
         tempSeq = np.random.uniform(- self._upperBound, self._upperBound,(self._steps * 2) +1)
         tempSeqq = tempSeq.copy()
-        for i in xrange(self._unitsControlled):
+        for i in range(self._unitsControlled):
             tempSeqqq = tempSeqq.copy()
             np.random.shuffle(tempSeqqq) 
             tempSeq = np.column_stack((tempSeq,tempSeqqq))

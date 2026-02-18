@@ -5,9 +5,9 @@ Created on May 5, 2013
 from http://code.google.com/p/kyui/source/browse/trunk/src/Widgets/separator.pyw?r=182
 '''
 
-from PyQt4.QtCore import Qt, QObject, pyqtProperty
-from PyQt4.QtGui import QFrame
-from PyQt4.QtGui import QPainter, QStyle, QStyleOption
+from PyQt5.QtCore import Qt, QObject, pyqtProperty
+from PyQt5.QtWidgets import QFrame, QStyle, QStyleOption
+from PyQt5.QtGui import QPainter
     
 class Separator(QFrame):
     """

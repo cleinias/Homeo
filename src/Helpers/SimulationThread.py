@@ -4,7 +4,7 @@ Created on Apr 30, 2013
 @author: stefano
 '''
 
-from PyQt4.QtCore import QThread
+from PyQt5.QtCore import QThread
 
 class SimulationThread(QThread):
     

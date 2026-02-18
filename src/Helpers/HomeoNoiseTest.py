@@ -3,7 +3,6 @@ Created on Mar 15, 2013
 
 @author: stefano
 '''
-from __future__ import  division
 from   Core.HomeoUnit import HomeoUnit
 from   Helpers.HomeoNoise import HomeoNoise
 
@@ -96,7 +95,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.degrading() 
         self.noise.linear()
 
-        for i in xrange(tests):
+        for i in range(tests):
             values.append(self.noise.getNoise())
         values.sort()
         
@@ -149,7 +148,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.degrading() 
         self.noise.proportional()
 
-        for i in xrange(tests):
+        for i in range(tests):
             values.append(self.noise.getNoise())
         values.sort()
 
@@ -203,7 +202,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.degrading() 
         self.noise.linear()
 
-        for index in xrange(tests):
+        for index in range(tests):
             noiseValue = self.noise.getNoise()
             values.append(noiseValue)
             signs.append(numpy.sign(noiseValue))
@@ -273,7 +272,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.degrading() 
         self.noise.proportional()
 
-        for index in xrange(tests):
+        for index in range(tests):
             noiseValue = self.noise.getNoise()
             values.append(noiseValue)
             signs.append(numpy.sign(noiseValue))
@@ -346,7 +345,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.degrading() 
         self.noise.linear()
 
-        for index in xrange(tests):
+        for index in range(tests):
             noiseValue = self.noise.getNoise()
             values.append(noiseValue)
             signs.append(numpy.sign(noiseValue))
@@ -430,7 +429,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.degrading() 
         self.noise.proportional()
 
-        for index in xrange(tests):
+        for index in range(tests):
             noiseValue = self.noise.getNoise()
             values.append(noiseValue)
             signs.append(numpy.sign(noiseValue))
@@ -509,7 +508,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.distorting() 
         self.noise.linear()
 
-        for index in xrange(tests):
+        for index in range(tests):
             noiseValue = self.noise.getNoise()
             values.append(noiseValue)
             signs.append(numpy.sign(noiseValue))
@@ -520,7 +519,7 @@ class HomeoNoiseTest(unittest.TestCase):
 
         '''distorting: test whether the sign of the noise value is about 50% of the times positive and 50% negative.
            Use binomial test with standard significance value of 0.05. This test will fail about 5% of the times...'''
-        positives =  len(filter(lambda sign: sign == 1, signs))
+        positives =  len(list(filter(lambda sign: sign == 1, signs)))
         self.assertTrue(stats.binom_test(positives, tests,0.5) > 0.05)
 
         "constant and linear: the noise produced is always equal to a unit's noise"
@@ -572,7 +571,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.distorting() 
         self.noise.proportional()
 
-        for index in xrange(tests):
+        for index in range(tests):
             noiseValue = self.noise.getNoise()
             values.append(noiseValue)
             signs.append(numpy.sign(noiseValue))
@@ -583,7 +582,7 @@ class HomeoNoiseTest(unittest.TestCase):
     
         '''distorting: test whether the sign of the noise value is about 50% of the times positive and 50% negative.
            Use binomial test with standard significance value of 0.05. This test will fail about 5% of the times...'''
-        positives =  len(filter(lambda sign: sign == 1, signs))
+        positives =  len(list(filter(lambda sign: sign == 1, signs)))
         self.assertTrue(stats.binom_test(positives, tests,0.5) > 0.05)
 
         "constant and proportional: the absolute value of noise is always equal to the absolute value of unit's noise * unit's value"
@@ -635,7 +634,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.distorting() 
         self.noise.linear()
 
-        for index in xrange(tests):
+        for index in range(tests):
             noiseValue = self.noise.getNoise()
             values.append(noiseValue)
         self.assertTrue(len(values) == tests)
@@ -708,7 +707,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.distorting() 
         self.noise.proportional()
 
-        for index in xrange(tests):
+        for index in range(tests):
             noiseValue = self.noise.getNoise()
             values.append(noiseValue)
         self.assertTrue(len(values) == tests)
@@ -781,7 +780,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.distorting() 
         self.noise.proportional()
 
-        for index in xrange(tests):
+        for index in range(tests):
             noiseValue = self.noise.getNoise()
             values.append(noiseValue)
         self.assertTrue(len(values) == tests)
@@ -850,7 +849,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.noise.distorting() 
         self.noise.linear()
 
-        for index in xrange(tests):
+        for index in range(tests):
             noiseValue = self.noise.getNoise()
             values.append(noiseValue)
         self.assertTrue(len(values) == tests)

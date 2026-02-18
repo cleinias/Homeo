@@ -28,7 +28,7 @@ class HomeoSimulationTest(unittest.TestCase):
         unitsAdded = 5
         self.simulation.addUnit(HomeoUnit())
         self.assertTrue(len(self.simulation.homeostat.homeoUnits) == 1)
-        for unit in xrange(unitsAdded):
+        for unit in range(unitsAdded):
             self.simulation.addUnit(HomeoUnit())
         self.assertTrue(len(self.simulation.homeostat.homeoUnits) == (1 + unitsAdded))
 
@@ -42,7 +42,7 @@ class HomeoSimulationTest(unittest.TestCase):
         self.simulation.addFullyConnectedUnit(HomeoUnit())
         self.assertTrue(len(self.simulation.homeostat.homeoUnits) == 1)
         self.assertTrue(len(self.simulation.homeostat.homeoUnits[0].inputConnections) == 1)
-        for unit in xrange(unitsAdded):
+        for unit in range(unitsAdded):
             self.simulation.addFullyConnectedUnit(HomeoUnit())
         for unit in self.simulation.homeostat.homeoUnits: 
             self.assertTrue(len(unit.inputConnections) == (1+ unitsAdded))
@@ -56,7 +56,7 @@ class HomeoSimulationTest(unittest.TestCase):
         unitsAdded = 3
         self.simulation.addUnit(homeoUnit)
         self.assertTrue(len(self.simulation.homeostat.homeoUnits)  == 1)
-        for i in xrange(unitsAdded):
+        for i in range(unitsAdded):
             self.simulation.addUnit(HomeoUnit())
         self.assertTrue(len(self.simulation.homeostat.homeoUnits) == (1 + unitsAdded))
 
@@ -79,7 +79,7 @@ class HomeoSimulationTest(unittest.TestCase):
         "create a  2-unit homeostat"
         self.simulation.homeostat.addUnit(unit1)    
         self.simulation.homeostat.addUnit(unit2)    
-        for index in xrange(2):
+        for index in range(2):
             "all units are self-connected and self-connected only"
             self.assertTrue(len(self.simulation.homeostat.homeoUnits[index].inputConnections) == 1)   
 
@@ -102,7 +102,7 @@ class HomeoSimulationTest(unittest.TestCase):
         "create a  2-unit homeostat"
         self.simulation.homeostat.addUnit(unit1)    
         self.simulation.homeostat.addUnit(unit2)    
-        for index in xrange(2):
+        for index in range(2):
             "all units are self-connected and self-connected only"
             self.assertTrue(len(self.simulation.homeostat.homeoUnits[index].inputConnections) == 1)   
 
@@ -128,7 +128,7 @@ class HomeoSimulationTest(unittest.TestCase):
         "Create a 4-unit full connected homeostat"
         self.simulation = HomeoSimulation()
 
-        for unit in xrange(4):
+        for unit in range(4):
             self.simulation.homeostat.addFullyConnectedUnit(HomeoUnit())
             
         simulationCycles = 30
@@ -147,7 +147,7 @@ class HomeoSimulationTest(unittest.TestCase):
         "Create a 4-unit full connected homeostat"
         self.simulation = HomeoSimulation()
 
-        for unit in xrange(4):
+        for unit in range(4):
             self.simulation.homeostat.addFullyConnectedUnit(HomeoUnit())
             
         simulationCycles = 1000

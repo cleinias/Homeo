@@ -6,18 +6,28 @@ Created on Mar 19, 2013
 from Core.Homeostat import *
 from Core.HomeoDataCollector  import *
 from Core.HomeoUnitNewtonian  import *
-import Simulator.HomeoExperiments
+try:
+    import Simulator.HomeoExperiments
+except ImportError:
+    Simulator_HomeoExperiments = None  # vrep / robot simulator not available
 from datetime import datetime
 import os, pickle
-from PyQt4.QtCore import  *
-from PyQt4.QtGui import QApplication 
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QApplication
 from collections import deque
 #from Core.HomeoUnit import setRandomValues
 
 class HomeoQtSimulation(QObject):
     '''
     HomeoQSimulation is the class that manages a complete run of a Homeostat
-    run in the Qt framework. 
+    run in the Qt framework.
+
+    PyQt5 signals
+    '''
+    homeostatFilenameChanged = pyqtSignal(str)
+    liveDataCritDevChanged = pyqtSignal(object)
+
+    '''
     
     It takes care of the administrative tasks: 
     - setting up the initial conditions, 
@@ -86,7 +96,7 @@ class HomeoQtSimulation(QObject):
     
     def setHomeostatFilename(self, aString):
         self._homeostatFilename = aString
-        self.emit(SIGNAL("homeostatFilenameChanged"), self._homeostatFilename)
+        self.homeostatFilenameChanged.emit(self._homeostatFilename)
 
     homeostatFilename = property(fget = lambda self: self.getHomeostatFilename(),
                         fset = lambda self, aString: self.setHomeostatFilename(aString))
@@ -201,7 +211,7 @@ class HomeoQtSimulation(QObject):
         '''Initialize the homeostat to the current experimental set up by calling the function
            in module HomeoExperiment corresponding to the string stored in self.currentExperiment'''
         
-        print "Initializing experimental setup"
+        print("Initializing experimental setup")
         
         if params == None:
             self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)()
@@ -266,10 +276,10 @@ class HomeoQtSimulation(QObject):
             self.liveDataWindow[unit.uniselector].append(unit.uniselectorActivated)
             self.unitsSelfWeights[unit].append(unit.inputConnections[0].weight)
             
-#            if unit.uniselectorActivated <> 0:
+#            if unit.uniselectorActivated != 0:
 #                sys.stderr.write("Uniselector activated for unit %s at time %u and value %u\n" % (unit.name, self._homeostat.time, unit.uniselectorActivated))
             if self.liveDataOn:
-                self.emit(SIGNAL("liveDataCritDevChanged"), unit)
+                self.liveDataCritDevChanged.emit(unit)
 #                self.emit(SIGNAL("liveDataUniselChanged"), unit.uniselector)
             "for testing, replaces a self halt"
 #        if (self._homeostat.time % 100 ) == 0:

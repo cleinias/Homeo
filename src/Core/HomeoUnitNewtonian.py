@@ -3,7 +3,6 @@ Created on Mar 17, 2013
 
 @author: stefano
 '''
-from __future__  import division
 from  Core.HomeoUnit import *
 import numpy as np
 from math import sqrt
@@ -91,7 +90,7 @@ class HomeoUnitNewtonian(HomeoUnit):
         '''
 
         if self.debugMode == True:
-            print "Computing drag's equation drag"
+            print("Computing drag's equation drag")
 
         return  - self.viscosity * pow(self.currentVelocity,2)
 
@@ -104,7 +103,7 @@ class HomeoUnitNewtonian(HomeoUnit):
            and simply return the product of viscosity and current velocity
         '''
         if self.debugMode == True:
-            print "Computing Stokes law's Drag"
+            print("Computing Stokes law's Drag")
 
         return - self.viscosity * self.currentVelocity 
 
@@ -245,4 +244,4 @@ class HomeoUnitNewtonian(HomeoUnit):
         self.computeOutput()
         self.nextDeviation = 0
         if self.debugMode:
-            print "%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput)
+            print("%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput))

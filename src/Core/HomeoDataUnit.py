@@ -162,8 +162,8 @@ class HomeoDataUnit(object):
         '''Append to aString a complete representation of its data'''
 
         aString += "name: %s critDev: %.5f output: %.5f uniselector: %s  active: %s" % (self.name, self.criticalDeviation, self.output, self.uniselectorState, self.uniselectorActive)
-        for connName, connValue in self.connectedTo.iteritems():
-            aString += " Connected_to: %s weight: %.5f switch: %u noise: %.5f   " % (connName,
+        for connName, connValue in self.connectedTo.items():
+            aString += " Connected_to: %s weight: %.5f switch: %d noise: %.5f   " % (connName,
                                                                                   connValue[0], # weight
                                                                                   connValue[1], # switch (or polarity)
                                                                                   connValue[3]) # noise

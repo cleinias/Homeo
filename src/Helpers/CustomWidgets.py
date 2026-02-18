@@ -1,6 +1,6 @@
 
-from PyQt4.QtGui import QSpinBox, QDoubleSpinBox
-from PyQt4.QtCore import SIGNAL, pyqtSignal
+from PyQt5.QtWidgets import QSpinBox, QDoubleSpinBox
+from PyQt5.QtCore import pyqtSignal
 import sys
 
 class SFSpinBox(QSpinBox):

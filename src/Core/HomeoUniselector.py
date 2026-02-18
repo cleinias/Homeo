@@ -7,7 +7,6 @@ Created on Feb 19, 2013
 from Helpers.General_Helper_Functions  import SubclassResponsibility, withAllSubclasses
 from Helpers.QObjectProxyEmitter import emitter
 import numpy
-from PyQt4.QtCore import QObject, SIGNAL
 
 
 class HomeoUniselectorError(Exception):
@@ -49,7 +48,7 @@ class HomeoUniselector(object):
         self._lowerBound = 0
         self._upperBound = 1
         self._beeps = False
-        QObject.emit(emitter(self), SIGNAL('uniselSoundChanged'), self._beeps)
+        emitter(self).uniselSoundChanged.emit(self._beeps)
              
     def getLowerBound(self):
         return self._lowerBound
@@ -74,7 +73,7 @@ class HomeoUniselector(object):
     
     def toggleBeeping(self):
         self._beeps = not self._beeps 
-        QObject.emit(emitter(self), SIGNAL('unitUniselSoundChanged'), self._beeps)
+        emitter(self).unitUniselSoundChanged.emit(self._beeps)
     
     beeps = property(fget= lambda self: self.getBeeps(),
                      fset = lambda self: self.toggleBeeping)

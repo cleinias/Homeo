@@ -44,7 +44,7 @@ class WebotsTCPClient(object):
         else:
             if connected == False:
                 try:
-                    for i in xrange(connectAttempts):
+                    for i in range(connectAttempts):
                         try:
                             self._clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                             self._clientSocket.connect((self._ip_address, self._clientPort))
@@ -70,5 +70,5 @@ class WebotsTCPClient(object):
                 self._clientSocket.close()
                 self._clientSocket = None
             except socket.error:
-                print 'Cannot close socket!'
+                print('Cannot close socket!')
         

@@ -78,7 +78,7 @@ class HomeoConnectionTest(unittest.TestCase):
         self.assertTrue(self.connection.state == 'manual' or
                         self.connection.state == 'uniselector')
 
-        for testTry in xrange(10):
+        for testTry in range(10):
             randomString = ''.join(random.choice(string.ascii_lowercase) for x in range(10))
             self.assertRaises(ConnectionError, setattr, self.connection, 'state', randomString)
                 
@@ -94,7 +94,7 @@ class HomeoConnectionTest(unittest.TestCase):
         inputUnit = self.connection.incomingUnit
         tests = 100
         
-        for i in xrange(tests):
+        for i in range(tests):
             self.connection.noise = 0                  # eliminate noise"
             outputWeighed = self.connection.output()
             self.assertTrue(abs(outputWeighed - 

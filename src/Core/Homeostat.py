@@ -6,7 +6,6 @@ Created on Mar 13, 2013
 from Core.HomeoDataCollector import  *
 from Helpers.General_Helper_Functions import withAllSubclasses
 import time, sys, pickle
-from PyQt4.QtCore import  QObject, SIGNAL
 from Helpers.QObjectProxyEmitter import emitter
 from RobotSimulator.WebotsTCPClient import *
 from Helpers.ExceptionAndDebugClasses import hDebug
@@ -48,7 +47,7 @@ class Homeostat(object):
     @classmethod    
     def readFrom(self,filename):
         '''This is a class method that create a new Homeostat instance from filename'''
-        fileIn = open(filename, 'r')
+        fileIn = open(filename, 'rb')
         unpickler = pickle.Unpickler(fileIn)
         try:
             newHomeostat = unpickler.load()
@@ -87,7 +86,7 @@ class Homeostat(object):
         return self._time
     def setTime(self,aValue):
         self._time = aValue
-        QObject.emit(emitter(self), SIGNAL("homeostatTimeChanged"), self._time)
+        emitter(self).homeostatTimeChanged.emit(self._time)
     time = property(fget = lambda self: self.getTime(),
                     fset = lambda self, value: self.setTime(value))
 
@@ -247,7 +246,7 @@ class Homeostat(object):
                     if unit.isActive():
                         unit.selfUpdate()
                 self.time +=  1
-                QObject.emit(emitter(self), SIGNAL('homeostatTimeChanged'), self.time)
+                emitter(self).homeostatTimeChanged.emit(self.time)
                 time.sleep(sleepTime / 1000)               # sleep accepts seconds, slowingFactor is in milliseconds
         else:
             sys.stderr.write('Warning: Homeostat is not ready to start')
@@ -393,7 +392,7 @@ class Homeostat(object):
         '''Return the Unit with name aString, if it exists,
         Return None Otherwise. Assumes units' names are unique '''
         
-        unit = filter(lambda x: x.name==aString, self.homeoUnits)
+        unit = list(filter(lambda x: x.name==aString, self.homeoUnits))
         if len(unit) == 0:
             return None
         else:
@@ -407,9 +406,9 @@ class Homeostat(object):
         '''Pickle yourself to filename.
            It will erase the old content of aFilename.'''
 
-        fileOut = open(filename, 'w')
+        fileOut = open(filename, 'wb')
         pickler = pickle.Pickler(fileOut)
-        pickler.dump(self) 
+        pickler.dump(self)
         fileOut.close()
 
     def flushData(self):

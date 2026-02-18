@@ -32,10 +32,10 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         '''
         self.assertTrue(self.uniselector.steps > 0)
 
-        for index in xrange(100):
+        for index in range(100):
             self.uniselector.steps = numpy.random.uniform(-100,100)
             self.assertTrue(self.uniselector.steps >  0)
-            self.assertTrue(isinstance(self.uniselector.steps, (int, long)))
+            self.assertTrue(isinstance(self.uniselector.steps, int))
 
     def testIntervalBounds(self):
         '''
@@ -44,21 +44,21 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         '''
 
         self.uniselector.equallySpaced()
-        for index in xrange(100):
+        for index in range(100):
             self.uniselector.lowerBound = numpy.random.uniform(-10,10)
             self.assertTrue(self.uniselector.lowerBound == 0)
             self.uniselector.upperBound = numpy.random.uniform(-10,10)
             self.assertTrue(self.uniselector.upperBound == 1)
 
         self.uniselector.independentlyRandomized()
-        for index in xrange(100):
+        for index in range(100):
             self.uniselector.lowerBound = numpy.random.uniform(-10,10)
             self.assertTrue(self.uniselector.lowerBound == 0)
             self.uniselector.upperBound = numpy.random.uniform(-10,10)
             self.assertTrue(self.uniselector.upperBound == 1)
 
         self.uniselector.randomized()        
-        for index in xrange(100):
+        for index in range(100):
             self.uniselector.lowerBound = numpy.random.uniform(-10,10)
             self.assertTrue(self.uniselector.lowerBound == 0)
             self.uniselector.upperBound = numpy.random.uniform(-10,10)
@@ -71,12 +71,12 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         Not really an automated unit test --- needs someone to hear it
         Will change to a more refined test when sound component (Osc/SuperCollider) is added
         '''
-        for index in xrange(2):
+        for index in range(2):
             self.uniselector.produceNewValue()
             self.uniselector.advance()
 
         self.uniselector.toggleBeeping()
-        for index in xrange(2):
+        for index in range(2):
             self.uniselector.produceNewValue()
             self.uniselector.advance
 
@@ -90,9 +90,9 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         expectedNumberOfValues = (self.uniselector.steps * 2 ) + 1 
         valuesProduced =  []
 
-        for i in xrange(1000):
+        for i in range(1000):
             values =  []
-            for unit in xrange(self.uniselector.unitsControlled):
+            for unit in range(self.uniselector.unitsControlled):
                 values.append(self.uniselector.produceNewValue()) 
             valuesProduced.append(values)
             self.uniselector.advance()
@@ -107,7 +107,7 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
 
         "Check that the values are equally spaced"
         deltas = []
-        for value in xrange(len(uniqueSortedValues) , 1, -1):
+        for value in range(len(uniqueSortedValues) , 1, -1):
             deltas.append(round(uniqueSortedValues[value-1] - uniqueSortedValues[value - 2], 7) )
         self.assertTrue(len(set(deltas)) == 1)
         
@@ -134,9 +134,9 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         valuesProduced= []
         tests = 100
         
-        for i in xrange(tests):
+        for i in range(tests):
             values =  []
-            for unit in xrange(self.uniselector.unitsControlled):
+            for unit in range(self.uniselector.unitsControlled):
                 values.append(self.uniselector.produceNewValue()) 
             valuesProduced.append(values)
             self.uniselector.advance()
@@ -173,9 +173,9 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         expectedNumberOfValues = (self.uniselector.steps * 2 ) + 1 
         valuesProduced= []
 
-        for i in xrange(1000):
+        for i in range(1000):
             values =  []
-            for unit in xrange(self.uniselector.unitsControlled):
+            for unit in range(self.uniselector.unitsControlled):
                 values.append(self.uniselector.produceNewValue()) 
             valuesProduced.append(values)
             self.uniselector.advance()
@@ -208,9 +208,9 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         outOfBounds  = False
         tests = 1000
         valuesProduced = []
-        for test in xrange(tests):
+        for test in range(tests):
             values = []
-            for unit in xrange(self.uniselector.unitsControlled): 
+            for unit in range(self.uniselector.unitsControlled): 
                 values.append(self.uniselector.produceNewValue())
             valuesProduced.append(values)
             self.uniselector.advance()
@@ -247,7 +247,7 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         tests = 100
         equalityResults = 0
         deltaTests = int(tests * 0.05)
-        for i in xrange(tests):
+        for i in range(tests):
             anotherUniselector.equallySpaced()
             if self.uniselector.sameAs(anotherUniselector):
                 equalityResults += 1
@@ -258,7 +258,7 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
             if self.uniselector.sameAs(anotherUniselector):
                 equalityResults += 1
         
-        self.assertAlmostEquals(equalityResults, 0, delta = deltaTests)
+        self.assertAlmostEqual(equalityResults, 0, delta = deltaTests)
 
         
     def testSameKindAs(self):

@@ -1,8 +1,4 @@
-from __future__ import division
-import sys
-sys.path.append('/usr/lib/python2.7/site-packages')
 from Core.HomeoNeedleUnit import *
-from PyQt4.QtCore import QObject, SIGNAL
 from Core.HomeoUniselectorAshby import *
 from Core.HomeoUniselector import *
 from Core.HomeoUniselectorUniformRandom import  *
@@ -11,7 +7,7 @@ from Helpers.General_Helper_Functions import withAllSubclasses
 import numpy as np
 import sys, pickle
 from copy import copy
-import StringIO
+from io import StringIO
 from Helpers.QObjectProxyEmitter import emitter
 from math import  floor
 from Helpers.ExceptionAndDebugClasses import hDebug
@@ -136,7 +132,7 @@ class HomeoUnit(object):
     @classmethod    
     def readFrom(self,filename):
         '''This is a class method that creates a new HomeoUnit instance from filename'''
-        fileIn = open(filename, 'r')
+        fileIn = open(filename, 'rb')
         unpickler = pickle.Unpickler(fileIn)
         newHomeoUnit = unpickler.load()
         fileIn.close()
@@ -272,8 +268,8 @@ class HomeoUnit(object):
         
         Subclasses of HomeoUnit may override this method and add parameters
         '''
-        if len(essent_params) <> self.unit_essential_parameters:
-            raise (HomeoUnitError, "The number of parameters needed to initialize the unit is incorrect.")
+        if len(essent_params) != self.unit_essential_parameters:
+            raise HomeoUnitError("The number of parameters needed to initialize the unit is incorrect.")
          
         self.mass = HomeoUnit.massFromWeight(essent_params[0])
         self.viscosity = HomeoUnit.viscosityfromWeight(essent_params[1])
@@ -290,69 +286,69 @@ class HomeoUnit(object):
             so the GUI (if any) can update itself
         """
         'Name'
-        QObject.emit(emitter(self), SIGNAL("nameChanged"),self._name)
-        QObject.emit(emitter(self), SIGNAL("nameChangedLineEdit"),self._name)
+        emitter(self).nameChanged.emit(self._name)
+        emitter(self).nameChangedLineEdit.emit(self._name)
 
 
         'Active'
-        QObject.emit(emitter(self), SIGNAL('unitActiveIndexchanged'), ("Active", "Non Active").index(self.status))
-        
+        emitter(self).unitActiveIndexchanged.emit(("Active", "Non Active").index(self.status))
+
         'Output'
-        QObject.emit(emitter(self), SIGNAL("currentOutputChanged"), self._currentOutput)
-        QObject.emit(emitter(self), SIGNAL("currentOutputChangedLineEdit"), str(round(self._currentOutput, 5)))
-        
+        emitter(self).currentOutputChanged.emit(self._currentOutput)
+        emitter(self).currentOutputChangedLineEdit.emit(str(round(self._currentOutput, 5)))
+
         'Input'
-        QObject.emit(emitter(self), SIGNAL("inputTorqueChanged"), self._inputTorque)
-        QObject.emit(emitter(self), SIGNAL("inputTorqueChangedLineEdit"), str(round(self._inputTorque, 5)))
-        
+        emitter(self).inputTorqueChanged.emit(self._inputTorque)
+        emitter(self).inputTorqueChangedLineEdit.emit(str(round(self._inputTorque, 5)))
+
         'Mass'
-        QObject.emit(emitter(self), SIGNAL('massChanged'),  self.mass)
-        QObject.emit(emitter(self), SIGNAL('massChangedLineEdit'), str(int( self.mass)))
-        
+        emitter(self).massChanged.emit(self.mass)
+        emitter(self).massChangedLineEdit.emit(str(int( self.mass)))
+
         'Switch'
-        QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
-        QObject.emit(emitter(self), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
+        emitter(self).switchChanged.emit(self._switch)
+        emitter(self).switchChangedLineEdit.emit(str(int(self._switch)))
 
-        
+
         'Potentiometer'
-        QObject.emit(emitter(self), SIGNAL('potentiometerDeviationChanged'), self._potentiometer)
-        QObject.emit(emitter(self), SIGNAL('potentiometerChangedLineEdit'), str(round(self._potentiometer, 4)))
+        emitter(self).potentiometerDeviationChanged.emit(self._potentiometer)
+        emitter(self).potentiometerChangedLineEdit.emit(str(round(self._potentiometer, 4)))
 
-        
+
         'Viscosity'
-        QObject.emit(emitter(self), SIGNAL('viscosityChanged'), self._viscosity)
-        QObject.emit(emitter(self), SIGNAL('viscosityChangedLineEdit'), str(round(self._viscosity, 4)))
+        emitter(self).viscosityChanged.emit(self._viscosity)
+        emitter(self).viscosityChangedLineEdit.emit(str(round(self._viscosity, 4)))
 
-        
+
         'Noise'
-        QObject.emit(emitter(self), SIGNAL('noiseChanged'), self._noise)
-        QObject.emit(emitter(self), SIGNAL('noiseChangedLineEdit'), str(round(self._noise, 4)))
-        
+        emitter(self).noiseChanged.emit(self._noise)
+        emitter(self).noiseChangedLineEdit.emit(str(round(self._noise, 4)))
+
         'SelfConnNoise'
 
-        
-        
-        'Critical deviation, including min and max'        
-        QObject.emit(emitter(self), SIGNAL('criticalDeviationChanged'), self._criticalDeviation)
-        QObject.emit(emitter(self), SIGNAL('criticalDeviationChangedLineEdit'), str(round(self._criticalDeviation, 5)))
-        scaledValueToEmit = int(floor(self._criticalDeviation * HomeoUnit.precision))
-        QObject.emit(emitter(self), SIGNAL('criticalDeviationScaledChanged(int)'), scaledValueToEmit)
-        
-        QObject.emit(emitter(self), SIGNAL('minDeviationChanged'), - self._maxDeviation)
-        QObject.emit(emitter(self), SIGNAL('minDeviationChangedLineEdit'), str(int(- self._maxDeviation)))
-        scaledValueToEmit = int(floor(- self._maxDeviation * HomeoUnit.precision))
-        QObject.emit(emitter(self), SIGNAL('minDeviationScaledChanged)'), scaledValueToEmit)
-        QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
 
-        QObject.emit(emitter(self), SIGNAL('maxDeviationChanged'), self._maxDeviation)
-        QObject.emit(emitter(self), SIGNAL('maxDeviationChangedLineEdit'), str(int(self._maxDeviation)))
+
+        'Critical deviation, including min and max'
+        emitter(self).criticalDeviationChanged.emit(self._criticalDeviation)
+        emitter(self).criticalDeviationChangedLineEdit.emit(str(round(self._criticalDeviation, 5)))
+        scaledValueToEmit = int(floor(self._criticalDeviation * HomeoUnit.precision))
+        emitter(self).criticalDeviationScaledChanged.emit(scaledValueToEmit)
+
+        emitter(self).minDeviationChanged.emit(- self._maxDeviation)
+        emitter(self).minDeviationChangedLineEdit.emit(str(int(- self._maxDeviation)))
+        scaledValueToEmit = int(floor(- self._maxDeviation * HomeoUnit.precision))
+        emitter(self).minDeviationScaledChanged.emit(scaledValueToEmit)
+        emitter(self).deviationRangeChanged.emit(self.minDeviation, self.maxDeviation)
+
+        emitter(self).maxDeviationChanged.emit(self._maxDeviation)
+        emitter(self).maxDeviationChangedLineEdit.emit(str(int(self._maxDeviation)))
         scaledValueToEmit = int(floor(self._maxDeviation * HomeoUnit.precision))
-        QObject.emit(emitter(self), SIGNAL('maxDeviationScaledChanged)'),scaledValueToEmit)
-        QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
+        emitter(self).maxDeviationScaledChanged.emit(scaledValueToEmit)
+        emitter(self).deviationRangeChanged.emit(self.minDeviation, self.maxDeviation)
 
         'Uniselector parameters'
-        QObject.emit(emitter(self), SIGNAL("uniselectorTimeIntervalChangedLineEdit"), str(int(self.uniselectorTimeInterval)))
-        QObject.emit(emitter(self), SIGNAL("unitUniselOnChanged"), self.uniselectorActive)
+        emitter(self).uniselectorTimeIntervalChangedLineEdit.emit(str(int(self.uniselectorTimeInterval)))
+        emitter(self).unitUniselOnChanged.emit(self.uniselectorActive)
         
  
     
@@ -374,14 +370,14 @@ class HomeoUnit(object):
 #                self._criticalDeviation = self.clipDeviation(aValue)
             self._criticalDeviation = self.clipDeviation(aValue)
               
-            QObject.emit(emitter(self), SIGNAL('criticalDeviationChanged'), self._criticalDeviation)
-            QObject.emit(emitter(self), SIGNAL('criticalDeviationChangedLineEdit'), str(round(self._criticalDeviation, 5)))
+            emitter(self).criticalDeviationChanged.emit(self._criticalDeviation)
+            emitter(self).criticalDeviationChangedLineEdit.emit(str(round(self._criticalDeviation, 5)))
             scaledValueToEmit = int(floor(self._criticalDeviation * HomeoUnit.precision))
-            QObject.emit(emitter(self), SIGNAL('criticalDeviationScaledChanged(int)'), scaledValueToEmit)
+            emitter(self).criticalDeviationScaledChanged.emit(scaledValueToEmit)
 
-#            sys.stderr.write('Unit %s just emitted the signal criticalDeviationScaledChanged with value %s\n' 
+#            sys.stderr.write('Unit %s just emitted the signal criticalDeviationScaledChanged with value %s\n'
 #                             % (self.name, int(floor(self._criticalDeviation * HomeoUnit.precision))))
-#            sys.stderr.write('Unit %s just emitted the signal criticalDeviationChanged with value %s\n' 
+#            sys.stderr.write('Unit %s just emitted the signal criticalDeviationChanged with value %s\n'
 #                             % (self.name, self._criticalDeviation))
         except ValueError:
             sys.stderr.write("Tried to assign a non-numeric value to unit %s's Critical Deviation. The value was: %s\n" % (self.name, aValue))
@@ -394,7 +390,7 @@ class HomeoUnit(object):
         '''Helper function to convert the magnified integer value 
         coming from Qt int only sliders into the needed float Value'''
         self.criticalDeviation = np.clip((aValue/HomeoUnit.precision), self.minDeviation, self.maxDeviation)
-        QObject.emit(emitter(self), SIGNAL('criticalDeviationChanged'), self._criticalDeviation)
+        emitter(self).criticalDeviationChanged.emit(self._criticalDeviation)
 
     
     def getNextDeviation(self):
@@ -414,14 +410,14 @@ class HomeoUnit(object):
             aValue = float(aValue)
             if aValue < 0 or aValue > HomeoUnit.DefaultParameters['maxViscosity']:
                 sys.stderr.write("The current value for maxViscosity is %f . Trying to set it to %f\n" % (HomeoUnit.DefaultParameters['maxViscosity'], aValue))  
-                raise(HomeoUnitError, "The value of viscosity must always be between 0 and maxViscosity (included)")
+                raise HomeoUnitError("The value of viscosity must always be between 0 and maxViscosity (included)")
             else: 
                 self._viscosity = aValue
         except ValueError:
             sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Viscosity. The value was: %s\n" % (self.name, aValue))
         finally:
-            QObject.emit(emitter(self), SIGNAL('viscosityChanged'), self._viscosity)
-            QObject.emit(emitter(self), SIGNAL('viscosityChangedLineEdit'), str(round(self._viscosity, 4)))
+            emitter(self).viscosityChanged.emit(self._viscosity)
+            emitter(self).viscosityChangedLineEdit.emit(str(round(self._viscosity, 4)))
 
 
         
@@ -451,8 +447,8 @@ class HomeoUnit(object):
         except ValueError:
             sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Potentiometer. The value was: %s\n" % (self.name, aValue))
         finally:
-            QObject.emit(emitter(self), SIGNAL('potentiometerChanged'), self._potentiometer)
-            QObject.emit(emitter(self), SIGNAL('potentiometerChangedLineEdit'), str(round(self._potentiometer, 4)))
+            emitter(self).potentiometerChanged.emit(self._potentiometer)
+            emitter(self).potentiometerChangedLineEdit.emit(str(round(self._potentiometer, 4)))
 
     def getPotentiometer(self):
         return self._potentiometer
@@ -468,8 +464,8 @@ class HomeoUnit(object):
         except ValueError:
             sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Noise. The value was: %s\n" % (self.name, aValue))
         finally:
-            QObject.emit(emitter(self), SIGNAL('noiseChanged'), self._noise)
-            QObject.emit(emitter(self), SIGNAL('noiseChangedLineEdit'), str(round(self._noise, 4)))
+            emitter(self).noiseChanged.emit(self._noise)
+            emitter(self).noiseChangedLineEdit.emit(str(round(self._noise, 4)))
 
                     
     def getNoise(self):
@@ -510,16 +506,16 @@ class HomeoUnit(object):
                 self._maxDeviation = aNumber
                 self.minDeviation = -aNumber
             else:
-                print "THE VALUE YOU TRIED TO USE FOR MAXDEVIATION WAS: ", aNumber
-                raise(HomeoUnitError, "The value of MaxDeviation must always be positive")
+                print("THE VALUE YOU TRIED TO USE FOR MAXDEVIATION WAS: ", aNumber)
+                raise HomeoUnitError("The value of MaxDeviation must always be positive")
         except ValueError:
             sys.stderr.write('Unit %s tried to  assign a non-numeric value to maxDeviation. Value was %s\n' % (self.name, aNumber))
         finally:
-            QObject.emit(emitter(self), SIGNAL('maxDeviationChanged'), self._maxDeviation)
-            QObject.emit(emitter(self), SIGNAL('maxDeviationChangedLineEdit'), str(int(self._maxDeviation)))
+            emitter(self).maxDeviationChanged.emit(self._maxDeviation)
+            emitter(self).maxDeviationChangedLineEdit.emit(str(int(self._maxDeviation)))
             scaledValueToEmit = int(floor(self._maxDeviation * HomeoUnit.precision))
-            QObject.emit(emitter(self), SIGNAL('maxDeviationScaledChanged)'),scaledValueToEmit)
-            QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
+            emitter(self).maxDeviationScaledChanged.emit(scaledValueToEmit)
+            emitter(self).deviationRangeChanged.emit(self.minDeviation, self.maxDeviation)
 #            sys.stderr.write('%s emitted signals maxDeviation with value %f, MinDeviation changed to %f\n' % (self._name, self._maxDeviation, self.minDeviation))
             
     def getMaxDeviation(self):
@@ -559,8 +555,8 @@ class HomeoUnit(object):
         except ValueError:
             sys.stderr.write('Unit %s tried to assign a non-numeric value to the Uniselector Time Interval. Value is %s\n' % (self.name, aValue))
         finally:
-            QObject.emit(emitter(self), SIGNAL('uniselectorTimeIntervalChanged'), self._uniselectorTimeInterval)
-            QObject.emit(emitter(self), SIGNAL('uniselectorTimeIntervalChangedLineEdit'), str(self._uniselectorTimeInterval))
+            emitter(self).uniselectorTimeIntervalChanged.emit(self._uniselectorTimeInterval)
+            emitter(self).uniselectorTimeIntervalChangedLineEdit.emit(str(self._uniselectorTimeInterval))
 #            sys.stderr.write('%s emitted signals UniselectorTimeIntervalChanged with value %f\n' 
 #                             % (self._name,self._uniselectorTimeInterval))
             
@@ -588,8 +584,8 @@ class HomeoUnit(object):
         self._currentOutput = aValue
         #print "In setcurrentOutput at time: %d. Value passed: %f unit: %s dev: %f output: %f" %(self.time, aValue, self.name, self.criticalDeviation, self._currentOutput)
 
-        QObject.emit(emitter(self), SIGNAL("currentOutputChanged"), self._currentOutput)
-        QObject.emit(emitter(self), SIGNAL("currentOutputChangedLineEdit"), str(round(self._currentOutput, 5)))
+        emitter(self).currentOutputChanged.emit(self._currentOutput)
+        emitter(self).currentOutputChangedLineEdit.emit(str(round(self._currentOutput, 5)))
 #        sys.stderr.write( 'Unit %s just emitted the signal currentOutputChanged \n' % self.name)   
         "For testing"
         if self._debugMode == True:
@@ -630,8 +626,8 @@ class HomeoUnit(object):
 
     def setInputTorque(self,aValue):
         self._inputTorque = aValue
-        QObject.emit(emitter(self), SIGNAL("inputTorqueChanged"), self._inputTorque)
-        QObject.emit(emitter(self), SIGNAL("inputTorqueChangedLineEdit"), str(round(self._inputTorque, 5)))
+        emitter(self).inputTorqueChanged.emit(self._inputTorque)
+        emitter(self).inputTorqueChangedLineEdit.emit(str(round(self._inputTorque, 5)))
 
 
     inputTorque = property(fget = lambda self: self.getInputTorque(),
@@ -672,9 +668,9 @@ class HomeoUnit(object):
         except ValueError:
             sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Switch. The value was: %s\n" % (self.name, aNumber))
         finally:
-            QObject.emit(emitter(self), SIGNAL('switchChanged'), self._switch)
-            QObject.emit(emitter(self), SIGNAL('switchChangedLineEdit'), str(int(self._switch)))
-            QObject.emit(emitter(self.inputConnections[0]), SIGNAL('switchChanged'),self._switch) 
+            emitter(self).switchChanged.emit(self._switch)
+            emitter(self).switchChangedLineEdit.emit(str(int(self._switch)))
+            emitter(self.inputConnections[0]).switchChanged.emit(self._switch) 
 #            sys.stderr.write('%s emitted signals switchChanged with value %f the object emitting the signal was %s\n' % (self._name, self._switch, emitter(self.inputConnections[0])))
             
     
@@ -697,18 +693,18 @@ class HomeoUnit(object):
                 
         try:
             aNumber = float(aNumber)
-            if aNumber < 0 and self.maxDeviation <> - aNumber: 
+            if aNumber < 0 and self.maxDeviation != - aNumber:
                 self.maxDeviation = - aNumber
         except ValueError:
             sys.stderr.write("Unit %s tried to assign a non numeric value to  minDeviation. Value was %s\n" % (self.name, aNumber))
         finally:
 #            QObject.emit(emitter(self), SIGNAL('maxDeviationChanged'), self._maxDeviation)
 #            QObject.emit(emitter(self), SIGNAL('maxDeviationChangedLineEdit'), str(int(self._maxDeviation)))
-            QObject.emit(emitter(self), SIGNAL('minDeviationChanged'), - self._maxDeviation)
-            QObject.emit(emitter(self), SIGNAL('minDeviationChangedLineEdit'), str(int(- self._maxDeviation)))
+            emitter(self).minDeviationChanged.emit(- self._maxDeviation)
+            emitter(self).minDeviationChangedLineEdit.emit(str(int(- self._maxDeviation)))
             scaledValueToEmit = int(floor(- self._maxDeviation * HomeoUnit.precision))
-            QObject.emit(emitter(self), SIGNAL('minDeviationScaledChanged)'), scaledValueToEmit)
-            QObject.emit(emitter(self), SIGNAL('deviationRangeChanged'), self.minDeviation, self.maxDeviation)
+            emitter(self).minDeviationScaledChanged.emit(scaledValueToEmit)
+            emitter(self).deviationRangeChanged.emit(self.minDeviation, self.maxDeviation)
 #            sys.stderr.write('%s emitted signals maxDeviation with value %f, MinDeviation changed to %f\n' % (self._name, self._maxDeviation, - self._maxDeviation))
  
     
@@ -746,7 +742,7 @@ class HomeoUnit(object):
         if aValue > 0 and aValue < 1:
             self._critThreshold = aValue
         else:
-            raise(HomeoUnitError, "The value of the critical threshold must be between 0 and 1 excluded")
+            raise HomeoUnitError("The value of the critical threshold must be between 0 and 1 excluded")
     
     critThreshold = property(fget = lambda self: self.getCritThreshold(),
                             fset = lambda self, aValue: self.setCritThreshold(aValue))
@@ -761,9 +757,9 @@ class HomeoUnit(object):
             HomeoUnit.allNames.discard(self._name)
             self._name = aString
             HomeoUnit.allNames.add(aString)
-            QObject.emit(emitter(self), SIGNAL("nameChanged"),self._name)
+            emitter(self).nameChanged.emit(self._name)
         else:
-            raise(HomeoUnitError, "The name %s exists already" % aString)
+            raise HomeoUnitError("The name %s exists already" % aString)
     
     name = property(fget = lambda self: self.getName(),
                     fset = lambda self, aString: self.setName(aString))  
@@ -805,8 +801,8 @@ class HomeoUnit(object):
         except ValueError:
             sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Mass. The value was: %s\n" % (self.name, aValue))
         finally:
-            QObject.emit(emitter(self), SIGNAL('massChanged'),  self.mass)
-            QObject.emit(emitter(self), SIGNAL('massChangedLineEdit'), str(int( self.mass)))
+            emitter(self).massChanged.emit(self.mass)
+            emitter(self).massChangedLineEdit.emit(str(int( self.mass)))
 #            sys.stderr.write('%s emitted signals mass    Changed with value %f\n' % (self._name, self.mass))
             
         
@@ -1035,12 +1031,12 @@ class HomeoUnit(object):
     def saveTo(self,filename):
         "Pickle yourself to filename"
 
-        fileOut = open(filename, 'w')
+        fileOut = open(filename, 'wb')
         pickler = pickle.Pickler(fileOut)
-        pickler.dump(self) 
+        pickler.dump(self)
         fileOut.close()
 
-    
+
     def setRandomValues(self):
         "sets up the unit with random values"
 
@@ -1462,12 +1458,12 @@ class HomeoUnit(object):
         '''Return a string containing a text representation of 
            all of the the unit's instance variables'''
 
-        aStream = StringIO.StringIO()
+        aStream = StringIO()
         aStream.write('aHomeoUnit with values: \n')
         for ivar in sorted(vars(self).keys()):
             aStream.write(ivar)
             aStream.write(' --> ')
-            aStream.write(vars(self)[ivar])
+            aStream.write(str(vars(self)[ivar]))
             aStream.write('\t')
             aStream.write
         aStream.write('\n')

@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python3
 '''
 Created on Jan 2, 2015
 
@@ -8,8 +8,9 @@ from the related DEAP logbook
 @author: stefano
 '''
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import * 
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 from Helpers.TrajectoryGrapher import graphTrajectory
 from Helpers.StatsAnalyzer import plotFitnessesFromLogBook, genomeAndFitnessList, indivsDecodedFromLogbook, showGenealogyTree
 import sys
@@ -255,7 +256,7 @@ class TrajectoryViewer(QWidget):
            and store it in an iVar"""
         if not self._currentLogbookName == "NO LOGBOOKS PRESENT":
             try:
-                logbookFile = open(os.path.join(self._dirPath, self._currentLogbookName),'r')
+                logbookFile = open(os.path.join(self._dirPath, self._currentLogbookName),'rb')
                 self._currentLogbook=pickle.load(logbookFile)
                 logbookFile.close()                                                    
             except IOError:
@@ -277,7 +278,7 @@ class TrajectoryViewer(QWidget):
         try:
             for entry in self._currentLogbook:
                 if 'date' in entry:
-                    for key, value in entry.iteritems():
+                    for key, value in entry.items():
                         if not key == 'finalIndivs':
                             outstring += '<b>'+key+'</b>' +':  ' +str(value) +'<br>'
                     return outstring
@@ -312,8 +313,8 @@ class TrajectoryViewer(QWidget):
             self.hofWidget = QTableWidget(len(hof[1]),len(hof[0]))
             self.hofWidget.setHorizontalHeaderLabels(hof[0])
             self.hofWidget.setWindowTitle("Hall of Fame: 10 best results")
-            for column in xrange(len(hof[0])):
-                for row in xrange(len(hof[1])):
+            for column in range(len(hof[0])):
+                for row in range(len(hof[1])):
                     try:
                         item = QTableWidgetItem(str(round(hof[1][row][column],3)))
                     except TypeError:

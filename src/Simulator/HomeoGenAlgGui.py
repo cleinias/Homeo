@@ -17,8 +17,9 @@ from pickle import dump
 from Simulator.HomeoQtSimulation import HomeoQtSimulation
 from Helpers.SimulationThread import SimulationThread
 from Helpers.GenomeDecoder import genomeDecoder, genomePrettyPrinter
-from PyQt4.QtCore import *
-from PyQt4.QtGui import * 
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 # import sys
 import numpy as np
 # import csv
@@ -153,7 +154,7 @@ class HomeoGASimulation(object):
         try:
             os.mkdir(self.dataDir)
         except OSError:
-            print "WARNING: Saving to existing directory", self.dataDir
+            print("WARNING: Saving to existing directory", self.dataDir)
          
         self.simulatorBackend.setDataDir(self.dataDir)
 
@@ -324,7 +325,7 @@ class HomeoGASimulation(object):
             def wrapper(*args, **kargs):
                 offspring = func(*args, **kargs)
                 for child in offspring:
-                    for i in xrange(len(child)):
+                    for i in range(len(child)):
                         if child[i] > max:
                             child[i] = max
                         elif child[i] < min:
@@ -335,7 +336,7 @@ class HomeoGASimulation(object):
     
     def initIndividual(self, indivClass, genomeSize, ID = None):
         "Generate an individual's random genome"
-        ind = indivClass(np.random.uniform(0,1) for _ in xrange(genomeSize))
+        ind = indivClass(np.random.uniform(0,1) for _ in range(genomeSize))
         ind.ID = ID
         return ind
     
@@ -382,7 +383,7 @@ class HomeoGASimulation(object):
             print("Start of evolution")
             
             # Evaluate the entire population
-            print "-- Generation 0 --"
+            print("-- Generation 0 --")
 #             fitnesses = list(self.toolbox.map(self.toolbox.evaluate, pop))
             fitnesses = list(self.toolbox.map(self.evaluateGenomeFitness, pop))
             for ind, fit in zip(pop, fitnesses):
@@ -391,40 +392,40 @@ class HomeoGASimulation(object):
                 self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
             self.hof.update(pop)
             self.hist.update(pop)
-            print "  Evaluated %i individuals" % len(pop)
-            print "  Pop now includes: ",
+            print("  Evaluated %i individuals" % len(pop))
+            print("  Pop now includes: ", end="")
             for ind in pop:
-                print ind.ID+", ",
-            print
+                print(ind.ID+", ", end="")
+            print()
             #print "  With ID's ", sorted([ind.ID for ind in pop])
             
             # Begin the evolution
             # Main loop over generations
-            for g in xrange(self.generSize):
+            for g in range(self.generSize):
                 print("-- Generation %s --" % str(g+1))
                 
                 # Select the next generation individuals with previously defined select function
                 offspring = self.toolbox.select(pop, len(pop))
                 # Clone the selected individuals
                 offspring = list(map(self.toolbox.clone, offspring))
-                print "  Offsprings now include: ",
+                print("  Offsprings now include: ", end="")
                 for ind in offspring:
-                    print ind.ID+", ",
-                print
+                    print(ind.ID+", ", end="")
+                print()
 
                 # Apply crossover and mutation on the offsprings
                 hDebug('ga',"Applying crossover")
                 mated = 0
                 for child1, child2 in zip(offspring[::2], offspring[1::2]):
-                    print "Mating %s and %s   --->   " % (child1.ID, child2.ID),
+                    print("Mating %s and %s   --->   " % (child1.ID, child2.ID), end="")
                     if np.random.uniform() < self.cxProb:
-                        print "YES!"
+                        print("YES!")
                         mated += 1
                         self.toolbox.mate(child1, child2)
                         del child1.fitness.values
                         del child2.fitness.values
                     else:
-                        print "NO"
+                        print("NO")
                 hDebug('ga',str(mated) + " individuals mated")
         
                 hDebug('eval,ga', "Now mutating individuals")
@@ -460,10 +461,10 @@ class HomeoGASimulation(object):
                 
                 # The population is entirely replaced by the offspring
                 pop[:] = offspring
-                print "  Pop now includes: ",
+                print("  Pop now includes: ", end="")
                 for ind in pop:
-                    print ind.ID+", ",
-                print
+                    print(ind.ID+", ", end="")
+                print()
 
                 "Compute stats for generation with the statistics object"
                 record = self.stats.compile(pop)
@@ -481,7 +482,7 @@ class HomeoGASimulation(object):
             #self.simulationEnvironQuit()
             timeElapsed = time() - timeStarted 
             print("-- End of (successful) evolution --")
-            print "Total time elapsed: ", str(datetime.timedelta(seconds=timeElapsed))
+            print("Total time elapsed: ", str(datetime.timedelta(seconds=timeElapsed)))
             print("-- Cleaning up trajectory files --")
             self.cleanUpTrajFiles()
             'Record general GA run info to logbook and save logbook and history'
@@ -531,10 +532,10 @@ class HomeoGASimulation(object):
         self.recordGADataToLogbook(timeElapsed, pop)   
         logbookFilename = self.getTimeFormattedCompleteFilename(timeStarted, 'Logbook', 'lgb')
         try:
-            dump(self.logbook, open(logbookFilename, "w"))
+            dump(self.logbook, open(logbookFilename, "wb"))
         except IOError: #as e:
             #sys.stderr.write("Could not save the logbook to file:" + e.__str__ + "\n")
-            print "Could not save the logbook to file:" #, e.__str__ 
+            print("Could not save the logbook to file:") #, e.__str__
 
     def saveHistory(self, timeStarted):
         """Save the history for the GA run to a pickled object
@@ -542,10 +543,10 @@ class HomeoGASimulation(object):
            the simulation started and save it in current directory"""
         historyFilename = self.getTimeFormattedCompleteFilename(timeStarted, 'History', 'hist')
         try:
-            dump(self.hist, open(historyFilename, "w"))
+            dump(self.hist, open(historyFilename, "wb"))
         except IOError: #as e:
             #sys.stderr.write("Could not save the logbook to file:" + e.__str__ + "\n")
-            print "Could not save the history to file:" #, e.__str__ 
+            print("Could not save the history to file:") #, e.__str__
     
     
     def getTimeFormattedCompleteFilename(self,timeStarted, prefix, extension, path = None):
@@ -572,7 +573,7 @@ class HomeoGASimulation(object):
         statsFile = open(fullPathstatsFilename,'w')
         self.results = [] 
         population = []
-        for i in xrange(self.popSize):
+        for i in range(self.popSize):
             population.append(self.createRandomHomeostatGenome(self.genomeSize))  
         timeGen = time()               
         for runNumber, indiv in enumerate(population):
@@ -592,7 +593,7 @@ class HomeoGASimulation(object):
             self.simulatorBackend.quit()
         statsFile.close()
         headers = ['Run', 'Final distance','Time in secs']
-        for i in xrange(len(population[0])):
+        for i in range(len(population[0])):
             headers.append('Gene'+str(i+1))
         hDebug('eval',(tabulate(self.results, headers, tablefmt='orgtbl')))
         hDebug('eval',( "Total time for generation was: "+ str(round((time() - timeGen),2))))
@@ -722,7 +723,7 @@ class HomeoGASimulation(object):
         self.worldBeingResetLock.acquire()
 #         for sensor in self.simulatorBackend.world.allBodies[self._robotName].sensors.values():
 #             print  sensor.shape.pos
-        for i in xrange(self.stepsSize):
+        for i in range(self.stepsSize):
             hDebug('eval', ("Step: "+ str(i+1)+"\n"))
 #             print "step: ",i+1
             self._simulation.step()
@@ -731,7 +732,7 @@ class HomeoGASimulation(object):
         hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
         finalDis =self.simulatorBackend.finalDisFromTarget()
         hDebug('eval', ("Final distance from target was: " + str(finalDis)))
-        print " Evaluation for model %s took time: %s with fitness %.5f" %(genome.ID, str(datetime.timedelta(seconds=time()- timeNow)), finalDis)
+        print(" Evaluation for model %s took time: %s with fitness %.5f" %(genome.ID, str(datetime.timedelta(seconds=time()- timeNow)), finalDis))
         return finalDis,                                       # Return a tuple, as required by DEAP
         
     def finalDisFromTargetFromFile(self, target):
@@ -756,7 +757,7 @@ class HomeoGASimulation(object):
         try:
             trajDataFilename = max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern) ])
         except ValueError:
-            print "The file I tried to open was:", os.path.join(datafilePath, max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)]))
+            print("The file I tried to open was:", os.path.join(datafilePath, max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)])))
             messageBox =  QMessageBox.warning(self, 'No data file', 'There are no trajectory data to visualize', QMessageBox.Cancel)
             messageBox.show()
         fullPathTrajFilename = os.path.join(datafilePath, trajDataFilename)
@@ -790,7 +791,7 @@ def selTournamentRemove(individuals, k, tournsize):
     :mod:`random` module.
     """
     chosen = []
-    for i in xrange(k):
+    for i in range(k):
         aspirants = tools.selRandom(individuals, tournsize)
         chosen.append(max(aspirants, key=attrgetter("fitness")))
         individuals.remove(max(aspirants, key=attrgetter("fitness")))

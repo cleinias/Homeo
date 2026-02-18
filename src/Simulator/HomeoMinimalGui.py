@@ -5,8 +5,9 @@ Created on May 5, 2013
 @author: stefano
 '''
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import * 
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 from Core.Homeostat import *
 from Helpers.QtSeparator import Separator
 from Simulator.HomeoQtSimulation import *
@@ -14,7 +15,7 @@ from Helpers.QObjectProxyEmitter import emitter
 from Helpers.SimulationThread import SimulationThread
 import matplotlib.pyplot as plt
 import pyqtgraph as pg
-from StringIO import StringIO
+from io import StringIO
 
 
 class HomeoMinimalGui(QDialog):
@@ -141,10 +142,10 @@ class HomeoMinimalGui(QDialog):
         self.showUniselActionButton.clicked.connect(self.toggleShowUniselAction)
         self.discardDataButton.clicked.connect(self.toggleDiscardData)
 
-        QObject.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged"), self.currentTimeSpinBox.setValue)
-        
+        emitter(self._simulation.homeostat).homeostatTimeChanged.connect(self.currentTimeSpinBox.setValue)
+
 #===============================================================================
-# Homeostat control pane and saving/plotting data       
+# Homeostat control pane and saving/plotting data
 #===============================================================================
 
         "Widgets"
@@ -205,7 +206,7 @@ class HomeoMinimalGui(QDialog):
                                        
         "Connections"
         self.homeostatLineEdit.returnPressed.connect(self._simulation.setHomeostatFilename)
-        QObject.connect(self._simulation, SIGNAL("homeostatFilenameChanged"), self.homeostatLineEdit.setText)
+        self._simulation.homeostatFilenameChanged.connect(self.homeostatLineEdit.setText)
 
         self.newHomeostatButton.clicked.connect(self.newHomeostat)
         self.loadHomeostatButton.clicked.connect(self.loadHomeostat)
@@ -274,13 +275,13 @@ class HomeoMinimalGui(QDialog):
         
         
     def loadHomeostat(self):
-        filename = QFileDialog.getOpenFileNameAndFilter(parent=self, 
-                                                        caption=QString("Choose a Homeostat file to open"), 
-                                                        filter = QString("Homeostats (*.pickled);;All files (*.*)"))[0]   #QFileDialog.GetOpen returns a tuple
+        filename = QFileDialog.getOpenFileName(parent=self,
+                                                        caption="Choose a Homeostat file to open",
+                                                        filter="Homeostats (*.pickled);;All files (*.*)")[0]   #QFileDialog.GetOpen returns a tuple
         if len(filename) > 0:
             try:
                 self._simulation.loadNewHomeostat(filename)
-                QObject.connect(emitter(self._simulation.homeostat), SIGNAL("homeostatTimeChanged"), self.currentTimeSpinBox.setValue)
+                emitter(self._simulation.homeostat).homeostatTimeChanged.connect(self.currentTimeSpinBox.setValue)
                 self._simulation.timeReset()
                 self.stepButton.setEnabled(True)
                 self.resumeButton.setEnabled(True)
@@ -295,7 +296,7 @@ class HomeoMinimalGui(QDialog):
         filename = QFileDialog.getSaveFileName(parent = self, 
                                                        caption = 'Choose the file to save the Homeostat to', 
                                                        directory = self._simulation.homeostatFilename)    #QFileDialog.GetSave returns a QString
-        print filename
+        print(filename)
         if len(filename) > 0:                            # Change the filename to the newly selected one
             self._simulation.homeostatFilename = filename
             #if #Check that files exists here"
@@ -317,7 +318,7 @@ class HomeoMinimalGui(QDialog):
         filename = QFileDialog.getSaveFileName(parent = self, 
                                                        caption = "Save simulation's complete data", 
                                                        directory = self._simulation.dataFilename)    #QFileDialog.GetSave returns a QString
-        print filename
+        print(filename)
         if len(filename) > 0:                            # Change the filename to the newly selected one
             self._simulation.dataFilename = filename
         self._simulation.saveCompleteRunOnFile(filename)
@@ -327,9 +328,9 @@ class HomeoMinimalGui(QDialog):
         filename = QFileDialog.getSaveFileName(parent = self, 
                                                        caption = "Save simulation's essential data", 
                                                        directory = (self._simulation.dataFilename + "-essential.txt"))    #QFileDialog.GetSave returns a QString
-        print filename
+        print(filename)
         if len(filename) <= 0:                            # Change the filename to the newly selected one
-            filename = (self._simulation.dataFilename + "-essential.txt") 
+            filename = (self._simulation.dataFilename + "-essential.txt")
         self._simulation.saveEssentialDataOnFile(filename)
 
 

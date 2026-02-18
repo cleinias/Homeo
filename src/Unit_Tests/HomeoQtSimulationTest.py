@@ -11,7 +11,7 @@ from   Simulator.HomeoQtSimulation import *
 import unittest, numpy, os, sys
 from time import sleep
 from  Helpers.SimulationThread import SimulationThread
-from PyQt4.QtGui import QApplication
+from PyQt5.QtWidgets import QApplication
 
 app = QApplication.instance() or QApplication(sys.argv)
 
@@ -33,7 +33,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         unitsAdded = 5
         self.simulation.addUnit(HomeoUnit())
         self.assertTrue(len(self.simulation.homeostat.homeoUnits) == 1)
-        for unit in xrange(unitsAdded):
+        for unit in range(unitsAdded):
             self.simulation.addUnit(HomeoUnit())
         self.assertTrue(len(self.simulation.homeostat.homeoUnits) == (1 + unitsAdded))
 
@@ -47,7 +47,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         self.simulation.addFullyConnectedUnit(HomeoUnit())
         self.assertTrue(len(self.simulation.homeostat.homeoUnits) == 1)
         self.assertTrue(len(self.simulation.homeostat.homeoUnits[0].inputConnections) == 1)
-        for unit in xrange(unitsAdded):
+        for unit in range(unitsAdded):
             self.simulation.addFullyConnectedUnit(HomeoUnit())
         for unit in self.simulation.homeostat.homeoUnits: 
             self.assertTrue(len(unit.inputConnections) == (1+ unitsAdded))
@@ -61,7 +61,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         unitsAdded = 3
         self.simulation.addUnit(homeoUnit)
         self.assertTrue(len(self.simulation.homeostat.homeoUnits)  == 1)
-        for i in xrange(unitsAdded):
+        for i in range(unitsAdded):
             self.simulation.addUnit(HomeoUnit())
         self.assertTrue(len(self.simulation.homeostat.homeoUnits) == (1 + unitsAdded))
 
@@ -84,7 +84,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         "create a  2-unit homeostat"
         self.simulation.homeostat.addUnit(unit1)    
         self.simulation.homeostat.addUnit(unit2)    
-        for index in xrange(2):
+        for index in range(2):
             "all units are self-connected and self-connected only"
             self.assertTrue(len(self.simulation.homeostat.homeoUnits[index].inputConnections) == 1)   
 
@@ -108,7 +108,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         "create a  2-unit homeostat"
         self.simulation.homeostat.addUnit(unit1)    
         self.simulation.homeostat.addUnit(unit2)    
-        for index in xrange(2):
+        for index in range(2):
             "all units are self-connected and self-connected only"
             self.assertTrue(len(self.simulation.homeostat.homeoUnits[index].inputConnections) == 1)   
 
@@ -135,7 +135,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         self.simulation = HomeoQtSimulation()
         self.thr = SimulationThread()
 
-        for unit in xrange(4):
+        for unit in range(4):
             self.simulation.homeostat.addFullyConnectedUnit(HomeoUnit())
             
         simulationCycles = 30
@@ -155,7 +155,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         "Create a 4-unit full connected homeostat"
         self.simulation = HomeoQtSimulation()
 
-        for unit in xrange(4):
+        for unit in range(4):
             self.simulation.homeostat.addFullyConnectedUnit(HomeoUnit())
             
         simulationCycles = 100

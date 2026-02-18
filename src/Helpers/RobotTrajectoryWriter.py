@@ -64,7 +64,7 @@ class RobotTrajectoryWriter(object):
                 try:
                     self.posFile.close()
                 except IOError:
-                    print "Trajectory file already close"
+                    print("Trajectory file already close")
                 self.posFile = open(self.buildTrajFilename(modelName = modelName), 'w')
                 self.writeTrajFileHeader(position,lights)
                 self._state = self.State.SAVE
@@ -127,7 +127,7 @@ class RobotTrajectoryWriter(object):
         
         curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")                    
         trajFilename = 'trajData-'+curDateTime+"-ID-"+ modelName+'.traj'
-        print "Saving data to: ", os.path.join(dataDir,trajFilename)                 
+        print("Saving data to: ", os.path.join(dataDir,trajFilename))                 
         return  os.path.join(dataDir, trajFilename)
     
     def buildTrajFilename(self, modelName=None):
@@ -139,7 +139,7 @@ class RobotTrajectoryWriter(object):
         dataDir = self.dataDir
         curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")                    
         trajFilename = 'trajData-'+curDateTime+"-ID-"+ modelName+'.traj'
-#         print "Saving data to: ", os.path.join(dataDir,trajFilename)                 
+#         print("Saving data to: ", os.path.join(dataDir,trajFilename))                 
         return  os.path.join(dataDir, trajFilename)
     
     def setDataDir(self, dataDir):

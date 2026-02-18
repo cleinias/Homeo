@@ -1,5 +1,5 @@
-from PyQt4.QtGui import QLineEdit
-from PyQt4.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QLineEdit
+from PyQt5.QtCore import pyqtSignal
 
 class SFLineEdit(QLineEdit):
     '''
