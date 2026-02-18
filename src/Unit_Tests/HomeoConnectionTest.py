@@ -80,7 +80,7 @@ class HomeoConnectionTest(unittest.TestCase):
 
         for testTry in xrange(10):
             randomString = ''.join(random.choice(string.ascii_lowercase) for x in range(10))
-            self.assertRaises(Exception, self.connection.state, randomString) 
+            self.assertRaises(ConnectionError, setattr, self.connection, 'state', randomString)
                 
     def testWeight(self):
         """"Test basic algorithm of a connection.

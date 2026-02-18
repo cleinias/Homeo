@@ -229,7 +229,7 @@ class HomeoUnitNewtonian(HomeoUnit):
         x0 = criticalDeviation
         x = newDeviation
         v0 = currentVelocity
-        Solving for v we get: v = 2(x-x0) -v0'''
+        Solving for v we get: v = 2(x-x0) - v0'''
         
         if not (self.minDeviation < self.nextDeviation < self.maxDeviation):
             newDeviation = self.clipDeviation(self.nextDeviation)
@@ -241,7 +241,7 @@ class HomeoUnitNewtonian(HomeoUnit):
 
         "5. updates the needle's position (critical deviation) with clipping, if necessary, and updates the output"
     
-        self.criticalDeviation =  newDeviation
+        self.criticalDeviation = newDeviation
         self.computeOutput()
         self.nextDeviation = 0
         if self.debugMode:

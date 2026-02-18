@@ -1,4 +1,6 @@
 from __future__ import division
+import sys
+sys.path.append('/usr/lib/python2.7/site-packages')
 from Core.HomeoNeedleUnit import *
 from PyQt4.QtCore import QObject, SIGNAL
 from Core.HomeoUniselectorAshby import *

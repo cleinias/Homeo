@@ -1,8 +1,10 @@
-#LyX 2.0 created this file. For more info see http://www.lyx.org/
-\lyxformat 413
+#LyX 2.4 created this file. For more info see https://www.lyx.org/
+\lyxformat 620
 \begin_document
 \begin_header
-\textclass memoir-article
+\save_transient_properties true
+\origin unavailable
+\textclass memoir
 \begin_preamble
 \addbibresource{/home/stefano/Documents/Biblios/Italian-philosophy.bib}
 \addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
@@ -13,48 +15,65 @@
 \options article, 11pt
 \use_default_options false
 \begin_modules
-biblatex
 ShortInsetNames
 \end_modules
-\maintain_unincluded_children false
+\maintain_unincluded_children no
 \language english
 \language_package default
 \inputencoding utf8-plain
-\fontencoding global
-\font_roman default
-\font_sans default
-\font_typewriter default
+\fontencoding auto
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
 \font_default_family default
 \use_non_tex_fonts false
 \font_sc false
-\font_osf false
-\font_sf_scale 100
-\font_tt_scale 100
-
+\font_roman_osf false
+\font_sans_osf false
+\font_typewriter_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
 \graphics default
 \default_output_format pdf5
 \output_sync 0
 \bibtex_command default
 \index_command default
+\float_placement class
+\float_alignment class
 \paperfontsize default
 \spacing onehalf
 \use_hyperref false
 \papersize default
 \use_geometry false
-\use_amsmath 1
-\use_esint 1
-\use_mhchem 1
-\use_mathdots 1
-\cite_engine natbib_authoryear
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine natbib
+\cite_engine_type authoryear
+\biblio_style plainnat
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
 \suppress_date false
+\justification true
 \use_refstyle 0
+\use_formatted_ref 0
+\use_minted 0
+\use_lineno 0
 \branch working
 \selected 1
 \filename_suffix 0
-\color #faf0e6
+\color background background
 \end_branch
 \index Index
 \shortcut idx
@@ -64,15 +83,23 @@ ShortInsetNames
 \tocdepth 3
 \paragraph_separation indent
 \paragraph_indentation default
-\quotes_language english
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
 \papercolumns 1
 \papersides 1
 \paperpagestyle default
+\tablestyle default
 \tracking_changes false
 \output_changes false
+\change_bars false
+\postpone_fragile_content false
 \html_math_output 0
 \html_css_as_file 0
 \html_be_strict false
+\docbook_table_output 0
+\docbook_mathml_prefix 1
 \end_header
 
 \begin_body
@@ -86,9 +113,8 @@ Stefano Franchi
 \end_layout
 
 \begin_layout Abstract
-A note to myself detailing the homeostatic architectures of the different
- vehicle involved in the Homeo robotic experiments, together with expected
- results and actual results from experimental runs.
+A note to myself detailing the homeostatic architectures of the different vehicle involved in the Homeo robotic experiments,
+ together with expected results and actual results from experimental runs.
 \end_layout
 
 \begin_layout Standard
@@ -116,13 +142,14 @@ Introduction
 \end_layout
 
 \begin_layout Standard
-This series of notes discusses the various experiments to be carried with
- Homeo joined to a simulated robotic environment (Webots).
- Its main goal is to clearly identify, for each 
+This series of notes discusses the various experiments to be carried with Homeo joined to a simulated robotic environment (Webots).
+ Its main goal is to clearly identify,
+ for each 
 \emph on
 experimental
 \emph default
- setup, the 
+ setup,
+ the 
 \emph on
 environmental
 \emph default
@@ -130,15 +157,21 @@ environmental
 \emph on
 setup
 \emph default
- (the Webots world, and what it stands for), the 
+ (the Webots world,
+ and what it stands for),
+ the 
 \emph on
 homeostatic architecture
 \emph default
- (number and type of units), the 
+ (number and type of units),
+ the 
 \emph on
 expected behaviors
 \emph default
-, and, if possible, the 
+,
+ and,
+ if possible,
+ the 
 \emph on
 expected dynamics
 \emph default
@@ -151,17 +184,18 @@ simplest possible
 \begin_inset Quotes erd
 \end_inset
 
- homeostatic creature: a Braitenberg-like type 1 vehicle with one sensory
- opening to the world and one actuator (motor).
- With some approximation, it may resemble a biological agent carrying out
- chemotaxis.
- These notes will then discuss Braitenberg-like type 2 vehicles carrying
- out phototaxis, and multimodal creatures.
+ homeostatic creature:
+ a Braitenberg-like type 1 vehicle with one sensory opening to the world and one actuator (motor).
+ With some approximation,
+ it may resemble a biological agent carrying out chemotaxis.
+ These notes will then discuss Braitenberg-like type 2 vehicles carrying out phototaxis,
+ and multimodal creatures.
 \end_layout
 
 \begin_layout Chapter
 Type-1 taxes 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -182,6 +216,7 @@ To finish
 \begin_layout Section
 Environment 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -201,10 +236,8 @@ Done
 
 \begin_layout Standard
 It is a flat world with no obstacle and no perturbations (i.e.
- no buffeting from external forces such as those that a living organism
- carrying out chemotaxis may experience).
- The environment presents a stimulus gradient of an unspecified kind which
- is simulated by one or more light sources.
+ no buffeting from external forces such as those that a living organism carrying out chemotaxis may experience).
+ The environment presents a stimulus gradient of an unspecified kind which is simulated by one or more light sources.
  The organism/vehicle has 
 \emph on
 one 
@@ -217,6 +250,7 @@ sensory input tuned to the stimulus (i.e.
 \begin_layout Section
 Homeostatic setup 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -235,10 +269,11 @@ Done
 \end_layout
 
 \begin_layout Standard
-As discussed in other notes, there are two possible setups: a 2 unit setup
- with a sensor unit and a motor/actuator unit and a 1 unit setup with only
- a motor unit connected to a sensory interface (these two setups corresponds
- to Ashby second and, respectively, first experiment in 
+As discussed in other notes,
+ there are two possible setups:
+ a 2 unit setup with a sensor unit and a motor/actuator unit and a 1 unit setup with only a motor unit connected to a sensory interface (these two setups corresponds to Ashby second and,
+ respectively,
+ first experiment in 
 \emph on
 Design for a Brain
 \emph default
@@ -247,26 +282,25 @@ Design for a Brain
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "enu:Sensor-unit-features"
+nolink "false"
 
 \end_inset
 
  in section 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "sub:Homeo-1-not-Braiten"
+reference "subsec:Homeo-1-not-Braiten"
+nolink "false"
 
 \end_inset
 
- below for a discussion of the important difference between the two units
- and the detailed discussion of the expected and actual experimental results
- with 2-unit setups in section  .
+ below for a discussion of the important difference between the two units and the detailed discussion of the expected and actual experimental results with 2-unit setups in section  .
  
 \begin_inset Note Note
 status collapsed
 
 \begin_layout Plain Layout
-The main difference between the two setups is that the 2-unit architecture
- allows 
+The main difference between the two setups is that the 2-unit architecture allows 
 \begin_inset Quotes eld
 \end_inset
 
@@ -274,9 +308,8 @@ input-modulation,
 \begin_inset Quotes erd
 \end_inset
 
- so to speak: the organism may change its sensitivity to the external stimulus
- by changing the parameter controlling the the percentage of the input that
- is transmitted to the other unit.
+ so to speak:
+ the organism may change its sensitivity to the external stimulus by changing the parameter controlling the the percentage of the input that is transmitted to the other unit.
  No such input modulation exists for the alternative setup.
  
 \end_layout
@@ -289,6 +322,7 @@ input-modulation,
 \begin_layout Section
 Overall features of the described setups 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -307,11 +341,12 @@ Done
 \end_layout
 
 \begin_layout Standard
-Let us analyze the behavior of the vehicle by first reducing it to its simplest
- possible setup, and then gradually adding additional features.
- A preliminary discussion of the difference between true Braitenberg setups
- and Homeo setups is necessary as it will be referenced in what follows.
+Let us analyze the behavior of the vehicle by first reducing it to its simplest possible setup,
+ and then gradually adding additional features.
+ A preliminary discussion of the difference between true Braitenberg setups and Homeo setups is necessary as it will be referenced in what follows.
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -323,6 +358,8 @@ status collapsed
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -335,7 +372,7 @@ status collapsed
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset Flex ShortLabel
@@ -369,6 +406,8 @@ name "fig:1-unit-setup"
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -381,7 +420,7 @@ status collapsed
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset Flex ShortLabel
@@ -415,7 +454,7 @@ name "fig:2-unit-setup"
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
@@ -429,11 +468,13 @@ name "fig:2-unit-setup-for-type-1"
 \emph on
 M
 \emph default
- is the motor unit, 
+ is the motor unit,
+ 
 \emph on
 S
 \emph default
- is the sensory unit (when present), and 
+ is the sensory unit (when present),
+ and 
 \emph on
 E
 \emph default
@@ -461,7 +502,7 @@ status collapsed
 \emph on
 \begin_inset CommandInset label
 LatexCommand label
-name "sub:Homeo-1-not-Braiten"
+name "subsec:Homeo-1-not-Braiten"
 
 \end_inset
 
@@ -489,8 +530,9 @@ Newtonian
 \begin_inset Quotes erd
 \end_inset
 
- object: the input is a force (torque) that changes its velocity, not its
- position.
+ object:
+ the input is a force (torque) that changes its velocity,
+ not its position.
  A true Braitenberg vehicle would have to be 
 \begin_inset Quotes eld
 \end_inset
@@ -499,13 +541,12 @@ Aristotelian,
 \begin_inset Quotes erd
 \end_inset
 
- with input affecting its position, not its velocity.
- Newtonian physical laws approximate Aristotelian laws whenever friction
- forces are high.
- The only equivalent of friction forces in Homeo units is a negative self-connec
-tion of the unit to itself.
- Such a connection will progressively decrease the value of the unit , hence
- the value of the motor unit it is connected to.
+ with input affecting its position,
+ not its velocity.
+ Newtonian physical laws approximate Aristotelian laws whenever friction forces are high.
+ The only equivalent of friction forces in Homeo units is a negative self-connection of the unit to itself.
+ Such a connection will progressively decrease the value of the unit,
+ hence the value of the motor unit it is connected to.
  It follows that a vehicle such implementing the diagram of figure 
 \begin_inset Flex ShortXRef
 status collapsed
@@ -514,6 +555,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:2-unit-setup-for-type-1"
+nolink "false"
 
 \end_inset
 
@@ -527,9 +569,8 @@ reference "fig:2-unit-setup-for-type-1"
 \end_inset
 
  is present.
- Otherwise put, a vehicle without such a self-connection on its motor unit
- will always have a Newtonian behavior and will therefore never come to
- a stop once it gets going.
+ Otherwise put,
+ a vehicle without such a self-connection on its motor unit will always have a Newtonian behavior and will therefore never come to a stop once it gets going.
  
 \end_layout
 
@@ -550,8 +591,8 @@ name "enu:Sensor-unit-features"
 \end_inset
 
 The above reasoning applies to the Sensor unit as well.
- The sensor unit is a Newtonian unit, which means that the input it receives
- from the environment through the sensory transducer acts upon its 
+ The sensor unit is a Newtonian unit,
+ which means that the input it receives from the environment through the sensory transducer acts upon its 
 \begin_inset Quotes eld
 \end_inset
 
@@ -560,26 +601,27 @@ acceleration
 \end_inset
 
  (the rate of change of its value).
- In other words, once the Sensor unit has received enough input from the
- environment through its sensory transducer, 
+ In other words,
+ once the Sensor unit has received enough input from the environment through its sensory transducer,
+ 
 \emph on
 it will keep that value even in the absence of further environmental input
 \emph default
- (and it will more or less slowly go back to zero under the influence of
- its damping factor, i.e.
+ (and it will more or less slowly go back to zero under the influence of its damping factor,
+ i.e.
  its negative self-connection).
- This behavior is very different from a classic Braitenberg vehicle, of
- course.
- It follows that a Homeo setup striving to keep as close as possible to
- a type-1 Braitenberg vehicle should implement the 1-unit architecture shown
- in figure 
+ This behavior is very different from a classic Braitenberg vehicle,
+ of course.
+ It follows that a Homeo setup striving to keep as close as possible to a type-1 Braitenberg vehicle should implement the 1-unit architecture shown in figure 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-unit-setup"
+nolink "false"
 
 \end_inset
 
-, rather than the more 
+,
+ rather than the more 
 \begin_inset Quotes eld
 \end_inset
 
@@ -591,6 +633,7 @@ Ashbian
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:2-unit-setup"
+nolink "false"
 
 \end_inset
 
@@ -599,11 +642,11 @@ reference "fig:2-unit-setup"
 
 \begin_layout Enumerate
 There is another possible difference between the Homeo setup and Braitenberg's.
- The range of values of a Homeo unit is centered around 0, whereas the range
- of values of a Braitenberg's vehicle is always positive.
- The difference disappears if there are no self-connections, because the
- input value the input unit reads from the sensor can be assumed to be always
- positive (it is just scaled to the input unit's range, i.e.
+ The range of values of a Homeo unit is centered around 0,
+ whereas the range of values of a Braitenberg's vehicle is always positive.
+ The difference disappears if there are no self-connections,
+ because the input value the input unit reads from the sensor can be assumed to be always positive (it is just scaled to the input unit's range,
+ i.e.
  it is scaled to the range [
 \begin_inset Formula $0,\ MaxDev$
 \end_inset
@@ -613,18 +656,22 @@ There is another possible difference between the Homeo setup and Braitenberg's.
 status collapsed
 
 \begin_layout Plain Layout
-In the Homeo implementation, this is actually the default behavior, which
- can be overridden by setting the appropriate ivar to False in the HomeoUnitInpu
-t instances)
+In the Homeo implementation,
+ this is actually the default behavior,
+ which can be overridden by setting the appropriate ivar to False in the HomeoUnitInput instances)
 \end_layout
 
 \end_inset
 
- If, on the other hand, the units are self-connected with a negative self-connec
-tion, then it is indeed possible that the value of the unit and, therefore,
- the value of the motor unit it is connected to, may have a negative value.
- However, self-connected units are no longer of the Braitenberg kind and
- will be discussed at sections 
+ If,
+ on the other hand,
+ the units are self-connected with a negative self-connection,
+ then it is indeed possible that the value of the unit and,
+ therefore,
+ the value of the motor unit it is connected to,
+ may have a negative value.
+ However,
+ self-connected units are no longer of the Braitenberg kind and will be discussed at sections 
 \begin_inset Flex ShortXRef
 status collapsed
 
@@ -632,6 +679,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "sec:Self-connected-sensory-unit"
+nolink "false"
 
 \end_inset
 
@@ -640,7 +688,8 @@ reference "sec:Self-connected-sensory-unit"
 
 \end_inset
 
-, 
+,
+ 
 \begin_inset Flex ShortXRef
 status collapsed
 
@@ -648,6 +697,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "sec:Self-connected-motor-unit"
+nolink "false"
 
 \end_inset
 
@@ -656,7 +706,8 @@ reference "sec:Self-connected-motor-unit"
 
 \end_inset
 
-, 
+,
+ 
 \begin_inset Flex ShortXRef
 status collapsed
 
@@ -664,6 +715,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "sec:Motor-and-sensory"
+nolink "false"
 
 \end_inset
 
@@ -676,12 +728,14 @@ reference "sec:Motor-and-sensory"
 \end_layout
 
 \begin_layout Section
-Simplest setup: 1-unit setup
+Simplest setup:
+ 1-unit setup
 \emph on
  
 \emph default
 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -704,10 +758,12 @@ We will examine first the 1-unit setup depicted in figure
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-unit-setup"
+nolink "false"
 
 \end_inset
 
-, as it is the closest approximation of a true Braitenberg vehicle.
+,
+ as it is the closest approximation of a true Braitenberg vehicle.
 \end_layout
 
 \begin_layout Subsection
@@ -717,6 +773,7 @@ No
 
  self-connection 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -747,6 +804,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-unit-setup"
+nolink "false"
 
 \end_inset
 
@@ -755,14 +813,16 @@ reference "fig:1-unit-setup"
 
 \end_inset
 
-, we obtain an approximation of a Braitenberg type-1 vehicle (see 
+,
+ we obtain an approximation of a Braitenberg type-1 vehicle (see 
 \begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "sub:Homeo-1-not-Braiten"
+reference "subsec:Homeo-1-not-Braiten"
+nolink "false"
 
 \end_inset
 
@@ -781,51 +841,57 @@ perceived
 \emph on
 positively
 \emph default
- and directly proportional to the stimulus source, it will therefore move
- 
+ and directly proportional to the stimulus source,
+ it will therefore move 
 \emph on
 away 
 \emph default
 from it.
- If, on the contrary, the perceived stimulus is 
+ If,
+ on the contrary,
+ the perceived stimulus is 
 \emph on
 negatively 
 \emph default
-and directly proportional to the source, it will still move away from the
- source but in the opposite direction (i.e.
+and directly proportional to the source,
+ it will still move away from the source but in the opposite direction (i.e.
  going backward).
- Put it differently, in either case the vehicle will 
+ Put it differently,
+ in either case the vehicle will 
 \emph on
 climb down
 \emph default
- a gradient, while either by running forward and away from it or by running
- backward and still away from it.
- If the gradient's value reaches zero, then the either kind of vehicle will
- come to a full stop.
+ a gradient,
+ while either by running forward and away from it or by running backward and still away from it.
+ If the gradient's value reaches zero,
+ then the either kind of vehicle will come to a full stop.
  
 \end_layout
 
 \begin_layout Standard
-Notice that the positive or negative relation is determined by the polarity
- of the 
+Notice that the positive or negative relation is determined by the polarity of the 
 \begin_inset Formula $Input\rightarrow M$
 \end_inset
 
  connection.
- The value perceived by the sensory transducer is always positive, but its
- polarity can be reversed when transmitted to the Motor unit.
+ The value perceived by the sensory transducer is always positive,
+ but its polarity can be reversed when transmitted to the Motor unit.
 \end_layout
 
 \begin_layout Standard
-Since, as discussed in section 
+Since,
+ as discussed in section 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "sub:Homeo-1-not-Braiten"
+reference "subsec:Homeo-1-not-Braiten"
+nolink "false"
 
 \end_inset
 
- above, not self-connected units exhibit always pure Newtonian behavior,
- neither vehicle will ever come to a stop, and it may even reach its 
+ above,
+ not self-connected units exhibit always pure Newtonian behavior,
+ neither vehicle will ever come to a stop,
+ and it may even reach its 
 \begin_inset Quotes eld
 \end_inset
 
@@ -834,14 +900,14 @@ terminal velocity
 \end_inset
 
  (i.e.
- it will max out the value of its motor unit) even when the input from the
- sensor unit goes back to zero.
+ it will max out the value of its motor unit) even when the input from the sensor unit goes back to zero.
  
 \end_layout
 
 \begin_layout Subsubsection
 Expected observable behaviors 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -861,6 +927,8 @@ Done
 
 \begin_layout Standard
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -874,7 +942,7 @@ status collapsed
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset Flex ShortLabel
@@ -893,12 +961,14 @@ name "fig:Brait-like-type-1-gradient"
 \end_inset
 
 Braitenberg-like Type 1 vehicle in an environmental stimulus gradient.
- The shaded area identifies the environmental stimulus, centered on the
- red dot.
+ The shaded area identifies the environmental stimulus,
+ centered on the red dot.
  The external green circle represents the minimum possible stimulus.
  The top vehicle (A) has a positive connections between stimulus and motor,
- while the bottom one (B), with the arrow indicating the direction of movement.
- In both cases, the vehicles will run away from (
+ while the bottom one (B),
+ with the arrow indicating the direction of movement.
+ In both cases,
+ the vehicles will run away from (
 \begin_inset Quotes eld
 \end_inset
 
@@ -906,8 +976,7 @@ down
 \begin_inset Quotes erd
 \end_inset
 
-) the gradient and reach a velocity close to or equal to terminal (depending
- on the strength of the gradient).
+) the gradient and reach a velocity close to or equal to terminal (depending on the strength of the gradient).
 \end_layout
 
 \end_inset
@@ -921,7 +990,8 @@ down
 \end_layout
 
 \begin_layout Standard
-A true Braitenberg vehicle---and a true 
+A true Braitenberg vehicle—
+and a true 
 \begin_inset Quotes eld
 \end_inset
 
@@ -929,8 +999,10 @@ Aristotelian
 \begin_inset Quotes erd
 \end_inset
 
- Homeo unit with always positive actuator commands, as discussed above---would
- keep moving straight (and forward, in the case A of figure 
+ Homeo unit with always positive actuator commands,
+ as discussed above—
+would keep moving straight (and forward,
+ in the case A of figure 
 \begin_inset Flex ShortXRef
 status collapsed
 
@@ -938,6 +1010,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Brait-like-type-1-gradient"
+nolink "false"
 
 \end_inset
 
@@ -946,17 +1019,18 @@ reference "fig:Brait-like-type-1-gradient"
 
 \end_inset
 
-) until its input is zero (or sufficiently close to zero, tasking into account
- that the Webots software does provide some simulation for frictional forces
- acting on the robot).
+) until its input is zero (or sufficiently close to zero,
+ tasking into account that the Webots software does provide some simulation for frictional forces acting on the robot).
  The robot will keep moving until the gradient's value is equal to zero,
  where it will stop.
- If the gradient never reaches zero, it will keep moving, with its velocity
- proportional to the stimulus (at least, it will keep moving until the sensory
- input's falls below the minimal threshold needed to overcome frictional
- forces/inertia).
- Non self-connected Homeo units are, on the contrary, Newtonian, therefore
- they will keep going indefinitely with a theoretical 
+ If the gradient never reaches zero,
+ it will keep moving,
+ with its velocity proportional to the stimulus (at least,
+ it will keep moving until the sensory input's falls below the minimal threshold needed to overcome frictional forces/inertia).
+ Non self-connected Homeo units are,
+ on the contrary,
+ Newtonian,
+ therefore they will keep going indefinitely with a theoretical 
 \begin_inset Quotes eld
 \end_inset
 
@@ -965,12 +1039,15 @@ terminal
 \end_inset
 
  velocity dependent on the accumulated input.
- However, given that the value of a unit (and, hence, the value of its actuator,
+ However,
+ given that the value of a unit (and,
+ hence,
+ the value of its actuator,
  i.e.
- the value of the motor command) is constrained within a Max/Min band, its
- terminal velocity will be equal to the unit's maximum value.
- The direction of travel will either be forward or backward, depending on
- whether the 
+ the value of the motor command) is constrained within a Max/Min band,
+ its terminal velocity will be equal to the unit's maximum value.
+ The direction of travel will either be forward or backward,
+ depending on whether the 
 \begin_inset Formula $Input\rightarrow M$
 \end_inset
 
@@ -978,7 +1055,8 @@ terminal
 \end_layout
 
 \begin_layout Standard
-Put it otherwise, the vehicles will be 
+Put it otherwise,
+ the vehicles will be 
 \begin_inset Quotes eld
 \end_inset
 
@@ -986,7 +1064,8 @@ darkness-seekers,
 \begin_inset Quotes erd
 \end_inset
 
- (equating stimulus to light, for the sake of the illustration).
+ (equating stimulus to light,
+ for the sake of the illustration).
  How could one design 
 \begin_inset Quotes eld
 \end_inset
@@ -995,15 +1074,18 @@ light-seekers
 \begin_inset Quotes erd
 \end_inset
 
- vehicles exhibiting the reverse behavior? As the movement is directly determine
-d by the stimulus, a light-seeking vehicle will have to reach maximum velocity
- when the stimulus is close to zero and, conversely, minimum velocity when
- the value of the stimulus is maximum.
- In other words, they would have to have an inverse connection 
+ vehicles exhibiting the reverse behavior?
+ As the movement is directly determined by the stimulus,
+ a light-seeking vehicle will have to reach maximum velocity when the stimulus is close to zero and,
+ conversely,
+ minimum velocity when the value of the stimulus is maximum.
+ In other words,
+ they would have to have an inverse connection 
 \begin_inset Formula $v=\frac{1}{s}$
 \end_inset
 
-, with 
+,
+ with 
 \begin_inset Formula $v=$
 \end_inset
 
@@ -1021,6 +1103,7 @@ d by the stimulus, a light-seeking vehicle will have to reach maximum velocity
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1044,15 +1127,16 @@ The experimental observations in Webots/Homeo confirms this simple behavior.
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Webots-braiten1"
+nolink "false"
 
 \end_inset
 
- shows, the forward velocity of the vehicle (represented by the value of
- the Motor unit in the top chart) grows constantly under the effect of the
- input received from the sensor unit (bottom chart) and remains constant
- when the input drops back to zero.
+ shows,
+ the forward velocity of the vehicle (represented by the value of the Motor unit in the top chart) grows constantly under the effect of the input received from the sensor unit (bottom chart) and remains constant when the input drops back to zero.
  
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -1064,6 +1148,8 @@ status collapsed
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -1078,7 +1164,7 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Webots setup 
@@ -1101,6 +1187,8 @@ Webots setup
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -1114,11 +1202,10 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-Charts representing the value of the Sensor (bottom) and Motor (top) units
- in the vehicle.
+Charts representing the value of the Sensor (bottom) and Motor (top) units in the vehicle.
  
 \end_layout
 
@@ -1138,7 +1225,7 @@ Charts representing the value of the Sensor (bottom) and Motor (top) units
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset Flex ShortLabel
@@ -1156,9 +1243,9 @@ name "fig:Webots-braiten1"
 
 \end_inset
 
-The setup in Webots for the Braitenberg-like experiments, with a single
- light representing the stimulus gradient, and a Khepera-like robot equipped
- with a single light-sensor in front and a single motor activating its wheels.
+The setup in Webots for the Braitenberg-like experiments,
+ with a single light representing the stimulus gradient,
+ and a Khepera-like robot equipped with a single light-sensor in front and a single motor activating its wheels.
  The charts show the evolution of the units
 \begin_inset Quotes ers
 \end_inset
@@ -1202,6 +1289,7 @@ name "sec:Self-connected-motor-unit"
 \emph default
 1-unit setup with self-connected motor unit 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1222,6 +1310,7 @@ Done
 \begin_layout Subsubsection
 Expected behaviors 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1241,13 +1330,14 @@ Let us now consider a vehicle with a self-connection
 \begin_inset Formula $M\rightarrow M$
 \end_inset
 
-, while still leaving out the uniselector mechanism.
- Let us also stipulate that the value of the self-connection will be negative
- (of the order of 
+,
+ while still leaving out the uniselector mechanism.
+ Let us also stipulate that the value of the self-connection will be negative (of the order of 
 \begin_inset Formula $-0.1)$
 \end_inset
 
-, as that is the most common occurrence as discussed elsewhere.
+,
+ as that is the most common occurrence as discussed elsewhere.
 \begin_inset Foot
 status collapsed
 
@@ -1265,8 +1355,7 @@ paper and preparatory work therewith.
 \emph on
 except
 \emph default
- that the vehicle will eventually come to rest once the input coming from
- the Sensor unit reaches zero.
+ that the vehicle will eventually come to rest once the input coming from the Sensor unit reaches zero.
  The vehicle will act as a 
 \begin_inset Quotes eld
 \end_inset
@@ -1276,23 +1365,24 @@ darkness seeker
 \end_inset
 
  and it will overshoot the light/darkness boundary (i.e.
- the edge of the gradient) by a factor depending on the value of its self-connec
-tion.
+ the edge of the gradient) by a factor depending on the value of its self-connection.
 \end_layout
 
 \begin_layout Standard
 We do not need to look at vehicles with reverse polarity (i.e.
- the input is the reverse of the input source's stimulus), as their behavior
- will be 
+ the input is the reverse of the input source's stimulus),
+ as their behavior will be 
 \emph on
 identical
 \emph default
- to the previous three cases, but with the direction of movement reversed.
+ to the previous three cases,
+ but with the direction of movement reversed.
 \end_layout
 
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1315,15 +1405,18 @@ As the charts in figure
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Damped-vehicle"
+nolink "false"
 
 \end_inset
 
- illustrate, the value of the motor unit reaches a maximum and then goes
- gradually down to zero after the value of the sensor unit reaches zero.
+ illustrate,
+ the value of the motor unit reaches a maximum and then goes gradually down to zero after the value of the sensor unit reaches zero.
 \end_layout
 
 \begin_layout Standard
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -1334,6 +1427,8 @@ status collapsed
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -1347,7 +1442,7 @@ status collapsed
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Final position of vehicle
@@ -1370,6 +1465,8 @@ Final position of vehicle
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -1383,7 +1480,7 @@ status collapsed
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Chart of the Sensor and Motor units
@@ -1408,7 +1505,7 @@ Chart of the Sensor and Motor units
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
@@ -1425,7 +1522,8 @@ damped
 \begin_inset Quotes erd
 \end_inset
 
- Newtonian vehicle, i.e.
+ Newtonian vehicle,
+ i.e.
  a vehicle with negative self-connection on its Motor unit.
  The value of the 
 \begin_inset Formula $M\rightarrow M$
@@ -1435,7 +1533,8 @@ damped
 \begin_inset Formula $-0.3$
 \end_inset
 
- that is, 
+ that is,
+ 
 \begin_inset Formula $30\%$
 \end_inset
 
@@ -1456,6 +1555,7 @@ damped
 \begin_layout Subsection
 1-unit setup with uniselector action 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1476,6 +1576,7 @@ To finish
 \begin_layout Subsubsection
 Expected results 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1499,59 +1600,69 @@ The uniselector can only be activated on the motor unit
 \end_inset
 
  (there are no other units).
- As detailed in the previous sections, the motor unit will go back to zero
- by itself if it is damped, whereas it will reach a terminal (forward or
- backward) velocity otherwise.
- Thus, we can expect the uniselector to kick into action in the latter case,
+ As detailed in the previous sections,
+ the motor unit will go back to zero by itself if it is damped,
+ whereas it will reach a terminal (forward or backward) velocity otherwise.
+ Thus,
+ we can expect the uniselector to kick into action in the latter case,
  sooner or later reverting the polarity of the 
 \begin_inset Formula $Input\rightarrow M$
 \end_inset
 
- connection and therefore potentially reversing the vehicle's direction
- of movement.
+ connection and therefore potentially reversing the vehicle's direction of movement.
  Assuming the input unit will have returned to zero by then (i.e.
- the vehicle has escaped the gradient already), this polarity inversion
- will have no effect, and the vehicle will continue moving in the original
- direction.
- If, on the other hand, the vehicle is still within the gradient, then a
- reverse in polarity will actually slow it down and eventually reverse its
- direction of movement, eventually reaching terminal velocity in the opposite
- direction, where the situation will eventually repeat itself (possibly
- periodically).
- In short, we would observe an oscillating behavior, with the vehicle moving
- back and forth 
+ the vehicle has escaped the gradient already),
+ this polarity inversion will have no effect,
+ and the vehicle will continue moving in the original direction.
+ If,
+ on the other hand,
+ the vehicle is still within the gradient,
+ then a reverse in polarity will actually slow it down and eventually reverse its direction of movement,
+ eventually reaching terminal velocity in the opposite direction,
+ where the situation will eventually repeat itself (possibly periodically).
+ In short,
+ we would observe an oscillating behavior,
+ with the vehicle moving back and forth 
 \emph on
 within 
 \emph default
-the gradient, and effectively being trapped inside it.
+the gradient,
+ and effectively being trapped inside it.
 \end_layout
 
 \begin_layout Standard
-If, on the other hand, the motor unit 
+If,
+ on the other hand,
+ the motor unit 
 \begin_inset Formula $M$
 \end_inset
 
- is damped, the vehicle may eventually reach a full stop on its own, as
- discussed above.
- Thus, the uniselector may or may not kick into action, depending on the
- strength of the damping, the strength of the stimulus, and the timing of
- the uniselector action.
- In general, if the strength and/or scope of the stimulus (the breadth of
- the gradient, that is) is large enough that the vehicle reaches a terminal
- velocity while the vehicle is still inside it, we may observe the uniselector
- kicking into action, the vehicle reversing direction and reaching terminal
- velocity, and so on.
- In other words, we should observe the same oscillating behavior we discussed
- above for undamped units trapped within a gradient.
- If, on the contrary, the vehicle manages to escape the gradient and start
- reducing its velocity, the uniselector should operate and the vehicle should
- reach a full stop.
+ is damped,
+ the vehicle may eventually reach a full stop on its own,
+ as discussed above.
+ Thus,
+ the uniselector may or may not kick into action,
+ depending on the strength of the damping,
+ the strength of the stimulus,
+ and the timing of the uniselector action.
+ In general,
+ if the strength and/or scope of the stimulus (the breadth of the gradient,
+ that is) is large enough that the vehicle reaches a terminal velocity while the vehicle is still inside it,
+ we may observe the uniselector kicking into action,
+ the vehicle reversing direction and reaching terminal velocity,
+ and so on.
+ In other words,
+ we should observe the same oscillating behavior we discussed above for undamped units trapped within a gradient.
+ If,
+ on the contrary,
+ the vehicle manages to escape the gradient and start reducing its velocity,
+ the uniselector should operate and the vehicle should reach a full stop.
 \end_layout
 
 \begin_layout Standard
-Thus, it seems that the presence of the uniselector (that is, of the ultrastabil
-ity mechanism) may actually be counter-productive from an adaptive point
- of view.
+Thus,
+ it seems that the presence of the uniselector (that is,
+ of the ultrastability mechanism) may actually be counter-productive from an adaptive point of view.
  If the vehicle is a 
 \begin_inset Quotes eld
 \end_inset
@@ -1561,13 +1672,13 @@ darkness-seeker,
 \end_inset
 
  in some instances (i.e.
- those just discussed) the presence of ultrastability mechanism may lead
- the vehicle to fail in its search for darkness.
+ those just discussed) the presence of ultrastability mechanism may lead the vehicle to fail in its search for darkness.
 \end_layout
 
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1588,13 +1699,14 @@ To finish
 \begin_layout Standard
 Preliminary tests confirms the above observations.
  More work needed to acquire more solid evidence.
- In particular, more work is needed with constant Homeo setups in Webots
- world with gradients of differing strengths and scope.
+ In particular,
+ more work is needed with constant Homeo setups in Webots world with gradients of differing strengths and scope.
 \end_layout
 
 \begin_layout Section
 Ashbian 2-unit setups 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1613,25 +1725,26 @@ To finish
 \end_layout
 
 \begin_layout Standard
-Let us now discuss the behavior of type-1 Braitenberg modeled by the 2-unit
- architecture illustrated by figure 
+Let us now discuss the behavior of type-1 Braitenberg modeled by the 2-unit architecture illustrated by figure 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:2-unit-setup"
+nolink "false"
 
 \end_inset
 
-, whose features are rather different from standard Braitenberg vehicles.
+,
+ whose features are rather different from standard Braitenberg vehicles.
 \end_layout
 
 \begin_layout Subsection
-\begin_inset Flex Flex:ShortLabel
+\begin_inset Flex ShortLabel
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
 LatexCommand label
-name "sub:Ashbian-unconnected-units"
+name "subsec:Ashbian-unconnected-units"
 
 \end_inset
 
@@ -1650,6 +1763,7 @@ Unconnected units (no
 
 ) 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1668,13 +1782,15 @@ Done
 \end_layout
 
 \begin_layout Standard
-With non self-connected units, we expect that no equilibrium will be reached,
+With non self-connected units,
+ we expect that no equilibrium will be reached,
  as discussed in the following sections.
 \end_layout
 
 \begin_layout Subsubsection
 Expected behaviors 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1701,7 +1817,8 @@ When neither the motor unit
 \begin_inset Formula $S$
 \end_inset
 
- are self-connected, we expect the vehicle to run away 
+ are self-connected,
+ we expect the vehicle to run away 
 \emph on
 both
 \emph default
@@ -1714,12 +1831,12 @@ both
 \end_inset
 
  unit).
- In particular, the value of the 
+ In particular,
+ the value of the 
 \begin_inset Formula $S$
 \end_inset
 
- unit will grow as the input received through the sensory transducer increases
- its 
+ unit will grow as the input received through the sensory transducer increases its 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1727,20 +1844,24 @@ acceleration
 \begin_inset Quotes erd
 \end_inset
 
- (the rate at which its internal value grows), and it will never come down
- even when the input it receives from the sensory transducer goes back to
- zero.
- In absence of self-connections, the sensory unit 
+ (the rate at which its internal value grows),
+ and it will never come down even when the input it receives from the sensory transducer goes back to zero.
+ In absence of self-connections,
+ the sensory unit 
 \begin_inset Formula $S$
 \end_inset
 
- is an undamped Newtonian unit, hence it will increase its value, reach
- a terminal state (terminal velocity, i.e.
- max possible value), and never decrease.
+ is an undamped Newtonian unit,
+ hence it will increase its value,
+ reach a terminal state (terminal velocity,
+ i.e.
+ max possible value),
+ and never decrease.
 \end_layout
 
 \begin_layout Standard
-In turn, this maximal value will be transmitted to the motor unit 
+In turn,
+ this maximal value will be transmitted to the motor unit 
 \begin_inset Formula $M$
 \end_inset
 
@@ -1749,10 +1870,12 @@ In turn, this maximal value will be transmitted to the motor unit
 \begin_inset Formula $M$
 \end_inset
 
- as well is an undamped Newtonian unit, it will reach its maximal value
- relatively quickly and never come down.
- Thus, the vehicle will escape the gradient with terminal velocity, moving
- either forward or backward, depending on the polarity of the 
+ as well is an undamped Newtonian unit,
+ it will reach its maximal value relatively quickly and never come down.
+ Thus,
+ the vehicle will escape the gradient with terminal velocity,
+ moving either forward or backward,
+ depending on the polarity of the 
 \begin_inset Formula $S\rightarrow M$
 \end_inset
 
@@ -1762,6 +1885,7 @@ In turn, this maximal value will be transmitted to the motor unit
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -1781,13 +1905,14 @@ Done
 
 \begin_layout Standard
 As illustrated in figure 
-\begin_inset Flex Flex:ShortXRef
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-2-non-connected"
+nolink "false"
 
 \end_inset
 
@@ -1796,7 +1921,8 @@ reference "fig:1-2-non-connected"
 
 \end_inset
 
-, the experimental run confirms the previous discussion of expected behavior.
+,
+ the experimental run confirms the previous discussion of expected behavior.
  The vehicle reaches its terminal values for both its sensory unit 
 \begin_inset Formula $S$
 \end_inset
@@ -1805,18 +1931,23 @@ reference "fig:1-2-non-connected"
 \begin_inset Formula $M$
 \end_inset
 
-, relatively quickly, and the values do not decrease when the input from
- the sensory transducer goes back to zero.
+,
+ relatively quickly,
+ and the values do not decrease when the input from the sensory transducer goes back to zero.
 \end_layout
 
 \begin_layout Standard
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -1833,10 +1964,10 @@ status open
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-\begin_inset Flex Flex:ShortLabel
+\begin_inset Flex ShortLabel
 status collapsed
 
 \begin_layout Plain Layout
@@ -1871,6 +2002,8 @@ Environmental setup
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -1884,10 +2017,10 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-\begin_inset Flex Flex:ShortLabel
+\begin_inset Flex ShortLabel
 status collapsed
 
 \begin_layout Plain Layout
@@ -1913,7 +2046,7 @@ The values of the 3 units modeling the vehicle
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset Flex ShortLabel
@@ -1931,8 +2064,7 @@ name "fig:1-2-non-connected"
 
 \end_inset
 
-A type-1 Braitenberg vehicle modeled by a 2-unit homeostat with no self-connecti
-ons.
+A type-1 Braitenberg vehicle modeled by a 2-unit homeostat with no self-connections.
  In figure 
 \begin_inset Flex ShortXRef
 status collapsed
@@ -1941,6 +2073,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-2-Environmental-setup"
+nolink "false"
 
 \end_inset
 
@@ -1949,18 +2082,18 @@ reference "fig:1-2-Environmental-setup"
 
 \end_inset
 
-, the line A passing through the center of the gradient shows where the
- light input to the vehicle drops to 0, since the light sensor is facing
- forward and receives no input as soon as the vehicle goes past the light
- point.
+,
+ the line A passing through the center of the gradient shows where the light input to the vehicle drops to 0,
+ since the light sensor is facing forward and receives no input as soon as the vehicle goes past the light point.
  The chart in 
-\begin_inset Flex Flex:ShortXRef
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-2-Charts"
+nolink "false"
 
 \end_inset
 
@@ -1973,23 +2106,26 @@ reference "fig:1-2-Charts"
 \begin_inset Formula $M$
 \end_inset
 
-, the sensor unit 
+,
+ the sensor unit 
 \begin_inset Formula $S$
 \end_inset
 
-, and the sensory transducer.
+,
+ and the sensory transducer.
  Even though the input from the sensory trasducer drops to 0 at 
 \emph on
 A
 \emph default
  (corresponding to the vehicle crossing the line A in figure 
-\begin_inset Flex Flex:ShortXRef
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-2-Environmental-setup"
+nolink "false"
 
 \end_inset
 
@@ -2002,13 +2138,15 @@ reference "fig:1-2-Environmental-setup"
 \begin_inset Formula $S$
 \end_inset
 
- keeps rising until it reaches its maximum value soon afterwards, where
- it remains.
- Consequently, the value of the motor unit 
+ keeps rising until it reaches its maximum value soon afterwards,
+ where it remains.
+ Consequently,
+ the value of the motor unit 
 \begin_inset Formula $M$
 \end_inset
 
- reaches a maximum at about the same time, and it remains zero.
+ reaches a maximum at about the same time,
+ and it remains zero.
  The vehicle escapes the gradient at terminal velocity.
 \end_layout
 
@@ -2052,6 +2190,7 @@ Self-connected sensory unit
 \emph default
 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2096,6 +2235,7 @@ paper and preparatory work therewith.
 \begin_layout Subsubsection
 Expected behaviors 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2114,26 +2254,25 @@ Done
 \end_layout
 
 \begin_layout Standard
-A negatively self-connected sensory unit will act as a damped Newtonian
- unit: it will gradually build up the value it receives from the sensory
- transducer and it will then gradually return to zero 
+A negatively self-connected sensory unit will act as a damped Newtonian unit:
+ it will gradually build up the value it receives from the sensory transducer and it will then gradually return to zero 
 \emph on
 after
 \emph default
  the input it receives from the sensory transducer returns to zero.
- However, in the present scenario the motor unit 
+ However,
+ in the present scenario the motor unit 
 \begin_inset Formula $M$
 \end_inset
 
- is not self-connected and will therefore behave as an undamped Newtonian
- unit.
- As a consequence, the vehicle will still reach a terminal velocity, since
- the motor unit 
+ is not self-connected and will therefore behave as an undamped Newtonian unit.
+ As a consequence,
+ the vehicle will still reach a terminal velocity,
+ since the motor unit 
 \begin_inset Formula $M$
 \end_inset
 
- will reach a maximum value and it will never come down even after the sensory
- unit 
+ will reach a maximum value and it will never come down even after the sensory unit 
 \begin_inset Formula $S$
 \end_inset
 
@@ -2143,6 +2282,7 @@ after
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2162,13 +2302,14 @@ Done
 
 \begin_layout Standard
 As figure 
-\begin_inset Flex Flex:ShortXRef
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-2-S-S-connect"
+nolink "false"
 
 \end_inset
 
@@ -2177,16 +2318,17 @@ reference "fig:1-2-S-S-connect"
 
 \end_inset
 
- shows, the experimental run confirms the previous discussion of expected
- behaviors.
+ shows,
+ the experimental run confirms the previous discussion of expected behaviors.
  Notice how the value of the sensory unit 
 \begin_inset Formula $S$
 \end_inset
 
- keeps growing after the value of the sensory transducer has gone back to
- zero, it peaks soon afterwards, and then it gradually goes back to zero
- itself.
- On the contrary, the value of the motor unit 
+ keeps growing after the value of the sensory transducer has gone back to zero,
+ it peaks soon afterwards,
+ and then it gradually goes back to zero itself.
+ On the contrary,
+ the value of the motor unit 
 \begin_inset Formula $M$
 \end_inset
 
@@ -2194,13 +2336,19 @@ reference "fig:1-2-S-S-connect"
 \begin_inset Formula $S$
 \end_inset
 
- has gone back to zero, as predicted, and it quickly maxes out.
- Thus, the vehicle as a whole behaves as predicted: it will escape the gradient
- at terminal velocity, never coming to a full rest.
+ has gone back to zero,
+ as predicted,
+ and it quickly maxes out.
+ Thus,
+ the vehicle as a whole behaves as predicted:
+ it will escape the gradient at terminal velocity,
+ never coming to a full rest.
 \end_layout
 
 \begin_layout Standard
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -2217,10 +2365,10 @@ status collapsed
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-\begin_inset Flex Flex:ShortLabel
+\begin_inset Flex ShortLabel
 status collapsed
 
 \begin_layout Plain Layout
@@ -2235,21 +2383,20 @@ name "fig:1-2-S-S-connect"
 
 \end_inset
 
-Values of the units in a 2-unit model of a Braitenberg-like type-1 vehicle
- with a negative self-connection of 
+Values of the units in a 2-unit model of a Braitenberg-like type-1 vehicle with a negative self-connection of 
 \begin_inset Formula $0.3$
 \end_inset
 
  on the sensory unit and no self-connection on the motor unit.
- The vertical line represent the point in time when the vehicle crosses
- the line A in figure 
-\begin_inset Flex Flex:ShortXRef
+ The vertical line represent the point in time when the vehicle crosses the line A in figure 
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-2-Environmental-setup"
+nolink "false"
 
 \end_inset
 
@@ -2259,12 +2406,13 @@ reference "fig:1-2-Environmental-setup"
 \end_inset
 
 .
- As the figure shows, the value of the sensory unit reaches a peak 
+ As the figure shows,
+ the value of the sensory unit reaches a peak 
 \emph on
 after
 \emph default
- the sensory transducer has already gone down to zero, then it slowly gets
- to zero itself.
+ the sensory transducer has already gone down to zero,
+ then it slowly gets to zero itself.
 \end_layout
 
 \end_inset
@@ -2280,6 +2428,7 @@ after
 \begin_layout Subsection
 Self-connected motor unit 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2307,13 +2456,16 @@ The presence of a self-connection
 \begin_inset Formula $S$
 \end_inset
 
-, however, makes this scenario similar to the previous one.
+,
+ however,
+ makes this scenario similar to the previous one.
  
 \end_layout
 
 \begin_layout Subsubsection
 Expected behaviors 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2332,12 +2484,13 @@ Done
 \end_layout
 
 \begin_layout Standard
-In this scenario, we expect the vehicle to escape the gradient with terminal
- velocity as in the previous case of a single 
+In this scenario,
+ we expect the vehicle to escape the gradient with terminal velocity as in the previous case of a single 
 \begin_inset Formula $S\rightarrow S$
 \end_inset
 
- connection: even if the value of the motor unit 
+ connection:
+ even if the value of the motor unit 
 \begin_inset Formula $M$
 \end_inset
 
@@ -2345,25 +2498,28 @@ In this scenario, we expect the vehicle to escape the gradient with terminal
 \emph on
 would
 \emph default
- come down, being damped, the sensory unit 
+ come down,
+ being damped,
+ the sensory unit 
 \begin_inset Formula $S$
 \end_inset
 
- never goes back to zero, therefore constantly feeding a positive or negative
- value (depending on the polarity of the 
+ never goes back to zero,
+ therefore constantly feeding a positive or negative value (depending on the polarity of the 
 \begin_inset Formula $S\rightarrow M$
 \end_inset
 
  connection) to the motor unit.
- Put it otherwise, the overall behavior is similar to the scenario of a
- vehicle with completely non self-connected units discussed at 
-\begin_inset Flex Flex:ShortXRef
+ Put it otherwise,
+ the overall behavior is similar to the scenario of a vehicle with completely non self-connected units discussed at 
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "sub:Ashbian-unconnected-units"
+reference "subsec:Ashbian-unconnected-units"
+nolink "false"
 
 \end_inset
 
@@ -2373,12 +2529,14 @@ reference "sub:Ashbian-unconnected-units"
 \end_inset
 
 .
- Put it yet otherwise, the damping of the motor unit is completely uninfluent.
+ Put it yet otherwise,
+ the damping of the motor unit is completely uninfluent.
 \end_layout
 
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2398,6 +2556,8 @@ Done
 
 \begin_layout Standard
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -2414,10 +2574,10 @@ status collapsed
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-\begin_inset Flex Flex:ShortLabel
+\begin_inset Flex ShortLabel
 status collapsed
 
 \begin_layout Plain Layout
@@ -2432,8 +2592,7 @@ name "fig:1-2-M-M-connect"
 
 \end_inset
 
-Values of the units in a 2-unit model of a Braitenberg-like type-1 vehicle
- with a negative self-connection of 
+Values of the units in a 2-unit model of a Braitenberg-like type-1 vehicle with a negative self-connection of 
 \begin_inset Formula $0.3$
 \end_inset
 
@@ -2479,6 +2638,7 @@ name "sec:Motor-and-sensory"
 \emph default
 Motor and sensory unit both self-connected 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2499,6 +2659,7 @@ Done
 \begin_layout Subsubsection
 Expected behaviors 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2517,7 +2678,8 @@ Done
 \end_layout
 
 \begin_layout Standard
-In this scenario, both the sensory unit 
+In this scenario,
+ both the sensory unit 
 \begin_inset Formula $S$
 \end_inset
 
@@ -2525,15 +2687,16 @@ In this scenario, both the sensory unit
 \begin_inset Formula $M$
 \end_inset
 
- are self-connected, hence damped Newtonian units.
- Thus, we expect the vehicle to escape the gradient and gradually come to
- a stop as the value of the sensory unit first and then the value of the
- motor unit later come back down to zero.
+ are self-connected,
+ hence damped Newtonian units.
+ Thus,
+ we expect the vehicle to escape the gradient and gradually come to a stop as the value of the sensory unit first and then the value of the motor unit later come back down to zero.
 \end_layout
 
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2553,13 +2716,14 @@ Done
 
 \begin_layout Standard
 As figure 
-\begin_inset Flex Flex:ShortXRef
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-2-M-M-S-S-connect"
+nolink "false"
 
 \end_inset
 
@@ -2568,7 +2732,8 @@ reference "fig:1-2-M-M-S-S-connect"
 
 \end_inset
 
- shows, the vehicle does indeed reach a full stop.
+ shows,
+ the vehicle does indeed reach a full stop.
  Notice the 
 \begin_inset Quotes eld
 \end_inset
@@ -2577,21 +2742,24 @@ lag,
 \begin_inset Quotes erd
 \end_inset
 
- however, between the time the input coming from the sensory transducer
- going back to zero at point 
+ however,
+ between the time the input coming from the sensory transducer going back to zero at point 
 \begin_inset Formula $A$
 \end_inset
 
  and the time the vehicle come to a full stop.
- The amplitude of this lag depends on several factors, including the strength
- of the self-connection and the features of the unit themselves (mass, viscosity
-, etc.).
- Systematic experiments would be required to investigate this aspect more
- fully, if necessary.
+ The amplitude of this lag depends on several factors,
+ including the strength of the self-connection and the features of the unit themselves (mass,
+ viscosity,
+ etc.).
+ Systematic experiments would be required to investigate this aspect more fully,
+ if necessary.
 \end_layout
 
 \begin_layout Standard
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -2604,10 +2772,10 @@ status collapsed
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-\begin_inset Flex Flex:ShortLabel
+\begin_inset Flex ShortLabel
 status collapsed
 
 \begin_layout Plain Layout
@@ -2622,14 +2790,12 @@ name "fig:1-2-M-M-S-S-connect"
 
 \end_inset
 
-Values of the units in a 2-unit model of a Braitenberg-like type-1 vehicle
- with a negative self-connection of 
+Values of the units in a 2-unit model of a Braitenberg-like type-1 vehicle with a negative self-connection of 
 \begin_inset Formula $0.3$
 \end_inset
 
  on both the motor unit and the sensory unit.
- The vehicle escape the gradient and eventually comes to a full stop (motor
- unit values reaching zero at the end of the chart).
+ The vehicle escape the gradient and eventually comes to a full stop (motor unit values reaching zero at the end of the chart).
 \end_layout
 
 \end_inset
@@ -2657,6 +2823,7 @@ both
 
 ) 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2675,8 +2842,9 @@ Done
 \end_layout
 
 \begin_layout Standard
-In fact, a fully connected network seems to run counter to Ashby's overall
- design, since the connections between 
+In fact,
+ a fully connected network seems to run counter to Ashby's overall design,
+ since the connections between 
 \begin_inset Quotes eld
 \end_inset
 
@@ -2693,22 +2861,27 @@ motors
 \end_inset
 
  are always mediated by the environment.
- Hence, the 
+ Hence,
+ the 
 \begin_inset Formula $M\rightarrow S$
 \end_inset
 
- connection will have to be, in actuality, a 
+ connection will have to be,
+ in actuality,
+ a 
 \begin_inset Formula $M\:(\rightarrow E)\rightarrow S$
 \end_inset
 
- connection, which has already been assumed in the previous section.
- Nonetheless, let's leave the details of Ashby's own design aside and examine
- a fully connected 2-unit network.
+ connection,
+ which has already been assumed in the previous section.
+ Nonetheless,
+ let's leave the details of Ashby's own design aside and examine a fully connected 2-unit network.
 \end_layout
 
 \begin_layout Subsubsection
 Expected behaviors 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2727,9 +2900,11 @@ Done
 \end_layout
 
 \begin_layout Standard
-As we discussed above, the behavior of a 2-unit vehicle with both units
- self-connected will eventually reach a full stop, or equilibrium.
- A fully connected unit has just one more connection: the backward 
+As we discussed above,
+ the behavior of a 2-unit vehicle with both units self-connected will eventually reach a full stop,
+ or equilibrium.
+ A fully connected unit has just one more connection:
+ the backward 
 \begin_inset Formula $M\rightarrow S$
 \end_inset
 
@@ -2744,18 +2919,19 @@ positive
 
  
 \emph default
-connection will act as a positive feedback loop between the two units, whereas
- a 
+connection will act as a positive feedback loop between the two units,
+ whereas a 
 \emph on
 negative 
 \emph default
 connection will act as a negative feedback loop.
- Thus, we expect that units with positive 
+ Thus,
+ we expect that units with positive 
 \begin_inset Formula $M\rightarrow S$
 \end_inset
 
- connections will have trouble reaching equilibrium, whereas units with
- negative 
+ connections will have trouble reaching equilibrium,
+ whereas units with negative 
 \begin_inset Formula $M\rightarrow S$
 \end_inset
 
@@ -2766,6 +2942,7 @@ connection will act as a negative feedback loop.
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -2784,15 +2961,17 @@ Done
 \end_layout
 
 \begin_layout Standard
-Indeed, this is what we observe in the experimental run.
+Indeed,
+ this is what we observe in the experimental run.
  Figure 
-\begin_inset Flex Flex:ShortXRef
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:3-runs-fully-connect"
+nolink "false"
 
 \end_inset
 
@@ -2801,21 +2980,22 @@ reference "fig:3-runs-fully-connect"
 
 \end_inset
 
- shows three runs of a fully connected units starting from identical conditions
- and with identical parameters, all with a negative 
+ shows three runs of a fully connected units starting from identical conditions and with identical parameters,
+ all with a negative 
 \begin_inset Formula $M\rightarrow S$
 \end_inset
 
  connections.
- A quick comparison with the case of self-connected only model, discussed
- in section 
-\begin_inset Flex Flex:ShortXRef
+ A quick comparison with the case of self-connected only model,
+ discussed in section 
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "sec:Motor-and-sensory"
+nolink "false"
 
 \end_inset
 
@@ -2825,13 +3005,14 @@ reference "sec:Motor-and-sensory"
 \end_inset
 
 above and illustrated in figure 
-\begin_inset Flex Flex:ShortXRef
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:1-2-M-M-S-S-connect"
+nolink "false"
 
 \end_inset
 
@@ -2840,16 +3021,18 @@ reference "fig:1-2-M-M-S-S-connect"
 
 \end_inset
 
- shows that the fully connected units reaches equilibrium sooner (in about
- half the time, actually).
- On the contrary, figure 
-\begin_inset Flex Flex:ShortXRef
+ shows that the fully connected units reaches equilibrium sooner (in about half the time,
+ actually).
+ On the contrary,
+ figure 
+\begin_inset Flex ShortXRef
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:3-runs-fully-connect-1"
+nolink "false"
 
 \end_inset
 
@@ -2859,18 +3042,22 @@ reference "fig:3-runs-fully-connect-1"
 \end_inset
 
  shows the effects of a positive self-connection.
- In all instances, the vehicle escape the gradient at terminal velocity
- and never reaches equilibrium again.
+ In all instances,
+ the vehicle escape the gradient at terminal velocity and never reaches equilibrium again.
 \end_layout
 
 \begin_layout Standard
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
 
 \begin_layout Plain Layout
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -2886,7 +3073,7 @@ status open
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 
@@ -2909,6 +3096,8 @@ status open
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -2921,7 +3110,7 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 
@@ -2944,6 +3133,8 @@ status open
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -2956,7 +3147,7 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 
@@ -2974,10 +3165,10 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-\begin_inset Flex Flex:ShortLabel
+\begin_inset Flex ShortLabel
 status collapsed
 
 \begin_layout Plain Layout
@@ -2992,8 +3183,7 @@ name "fig:3-runs-fully-connect"
 
 \end_inset
 
-Values of the units in 3 runs of a fully connected 2-unit model of a Braitenberg
--like type-1 vehicle with a negative self-connection of 
+Values of the units in 3 runs of a fully connected 2-unit model of a Braitenberg-like type-1 vehicle with a negative self-connection of 
 \begin_inset Formula $0.3$
 \end_inset
 
@@ -3020,12 +3210,16 @@ Values of the units in 3 runs of a fully connected 2-unit model of a Braitenberg
 
 \begin_layout Standard
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -3042,7 +3236,7 @@ status open
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 
@@ -3061,6 +3255,8 @@ status open
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -3074,7 +3270,7 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 
@@ -3093,6 +3289,8 @@ status open
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -3106,7 +3304,7 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 
@@ -3120,10 +3318,10 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-\begin_inset Flex Flex:ShortLabel
+\begin_inset Flex ShortLabel
 status collapsed
 
 \begin_layout Plain Layout
@@ -3138,8 +3336,7 @@ name "fig:3-runs-fully-connect-1"
 
 \end_inset
 
-Values of the units in 3 runs of a fully connected 2-unit model of a Braitenberg
--like type-1 vehicle with a negative self-connection of 
+Values of the units in 3 runs of a fully connected 2-unit model of a Braitenberg-like type-1 vehicle with a negative self-connection of 
 \begin_inset Formula $0.3$
 \end_inset
 
@@ -3152,8 +3349,7 @@ positive
 \end_inset
 
  connection.
- The vehicle runs away from the gradient at terminal velocity due to the
- positive feedback loop between the 
+ The vehicle runs away from the gradient at terminal velocity due to the positive feedback loop between the 
 \begin_inset Formula $S$
 \end_inset
 
@@ -3177,6 +3373,7 @@ positive
 \begin_layout Subsection
 Adding uniselector action 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3197,6 +3394,7 @@ To do
 \begin_layout Subsubsection
 Expected behaviors 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3217,6 +3415,7 @@ To do
 \begin_layout Subsubsection
 Experimental observations 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3237,6 +3436,7 @@ To do
 \begin_layout Section
 Final discussion of Type-1 taxes 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3264,6 +3464,7 @@ To do
 \begin_layout Chapter
 Type-2 taxes 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3284,6 +3485,7 @@ To do
 \begin_layout Section
 Environment 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3304,6 +3506,7 @@ To do
 \begin_layout Section
 Homeostatic setup 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3324,6 +3527,7 @@ To do
 \begin_layout Section
 Overall features of the described setup 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3344,6 +3548,7 @@ To do
 \begin_layout Chapter
 Multi-modal type-2 taxes 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3364,6 +3569,7 @@ To do
 \begin_layout Section
 Environment 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3384,6 +3590,7 @@ To do
 \begin_layout Section
 Homeostatic setup 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3404,6 +3611,7 @@ To do
 \begin_layout Section
 Overall features of the described setup 
 \begin_inset Branch working
+inverted 0
 status collapsed
 
 \begin_layout Standard
@@ -3441,7 +3649,9 @@ unconnected
 \end_layout
 
 \begin_layout Enumerate
-If, instead, the setup is 
+If,
+ instead,
+ the setup is 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3449,9 +3659,8 @@ Aristotelian,
 \begin_inset Quotes erd
 \end_inset
 
- but the actuator commands are either positive or negative as in the standard
- Homeo configuration, the behavior will be different and it will depend
- on the unit's initial position with respect to the gradient.
+ but the actuator commands are either positive or negative as in the standard Homeo configuration,
+ the behavior will be different and it will depend on the unit's initial position with respect to the gradient.
  Consider vehicle A in figure 
 \begin_inset Flex ShortXRef
 status collapsed
@@ -3460,6 +3669,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Brait-like-type-1-gradient"
+nolink "false"
 
 \end_inset
 
@@ -3469,20 +3679,24 @@ reference "fig:Brait-like-type-1-gradient"
 \end_inset
 
 .
- Its initial input will be less than 0, since it lies outside the red circle.
- Hence it will immediately move away from the input source, i.
+ Its initial input will be less than 0,
+ since it lies outside the red circle.
+ Hence it will immediately move away from the input source,
+ i.
  e.
- backward (to the left, in the diagram).
- In the absence of other stimulus sources, it will keep moving backward
- indefinitely.
+ backward (to the left,
+ in the diagram).
+ In the absence of other stimulus sources,
+ it will keep moving backward indefinitely.
  Consider instead vehicle B.
- It start within the red circle, hence its input will be positive and it
- will move forward until it crosses the red circle on the right side of
- the diagram, when its input will reach 0 and the vehicle will stop.
- In other words, the behavior is sensitive to initial conditions.
+ It start within the red circle,
+ hence its input will be positive and it will move forward until it crosses the red circle on the right side of the diagram,
+ when its input will reach 0 and the vehicle will stop.
+ In other words,
+ the behavior is sensitive to initial conditions.
  If the starting point is past the half-way point of the gradient's value,
- the vehicle will effectively seek such a halfway point, otherwise it will
- move away from the gradient indefinitely.
+ the vehicle will effectively seek such a halfway point,
+ otherwise it will move away from the gradient indefinitely.
 \end_layout
 
 \begin_layout Enumerate
@@ -3502,8 +3716,7 @@ name "enu:Newton-damped-pos-neg"
 \end_inset
 
 Similar considerations apply to non-Aristotelian setups.
- A damped Newtonian vehicle starting outside the red circle (case A in figure
- 
+ A damped Newtonian vehicle starting outside the red circle (case A in figure 
 \begin_inset Flex ShortXRef
 status collapsed
 
@@ -3511,6 +3724,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Brait-like-type-1-gradient"
+nolink "false"
 
 \end_inset
 
@@ -3521,27 +3735,24 @@ reference "fig:Brait-like-type-1-gradient"
 
 ) will accelerate away and reach terminal velocity.
  A similar vehicle starting inside the red circle (case B in the figure),
- will overshoot the red circle on the opposite side, then correct backward,
+ will overshoot the red circle on the opposite side,
+ then correct backward,
  etc.
- In short it will converge harmonically on the red line on the right side
- of the diagram.
+ In short it will converge harmonically on the red line on the right side of the diagram.
 \end_layout
 
 \begin_layout Enumerate
-Finally an undamped unit will accelerate away (backward) in case A, whereas
- in case B it will accelerate rightward (forward), then reverse acceleration
- when it crosses the red line.
- It should converge on the red line as in the previous case, but with a
- much less stable behavior (i.e.
+Finally an undamped unit will accelerate away (backward) in case A,
+ whereas in case B it will accelerate rightward (forward),
+ then reverse acceleration when it crosses the red line.
+ It should converge on the red line as in the previous case,
+ but with a much less stable behavior (i.e.
  ampler oscillations).
 \end_layout
 
 \begin_layout Enumerate
-The last three cases involve a vehicle with inverse input-output connection
- and standard Homeo setup (actuator may have both positive and negative
- values).
- An Aristotelian vehicle starting with input below zero (vehicle A in figure
- 
+The last three cases involve a vehicle with inverse input-output connection and standard Homeo setup (actuator may have both positive and negative values).
+ An Aristotelian vehicle starting with input below zero (vehicle A in figure 
 \begin_inset Flex ShortXRef
 status collapsed
 
@@ -3549,6 +3760,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Brait-like-type-1-gradient"
+nolink "false"
 
 \end_inset
 
@@ -3557,8 +3769,7 @@ reference "fig:Brait-like-type-1-gradient"
 
 \end_inset
 
-) will moves forward until it reaches the area where the input equal zero
- (i.e.
+) will moves forward until it reaches the area where the input equal zero (i.e.
  as soon as it crosses the first red line in the same figure).
  If the vehicle starts with input greater than zero (vehicle B in the figure),
  it will move backward to the red line and then stop.
@@ -3586,39 +3797,44 @@ name "enu:Newton-damped-pos-neg-reverse"
 
 
 \lang english
-A Newtonian damped vehicle starting with input below zero (vehicle A) will
- overshoot the same red line in the figure, and then converge back onto
- it.
- If the vehicle starts with input greater than zero (vehicle B) will move
- backward, overshoot and then converge onto the same read line as in the
- previous case.
+A Newtonian damped vehicle starting with input below zero (vehicle A) will overshoot the same red line in the figure,
+ and then converge back onto it.
+ If the vehicle starts with input greater than zero (vehicle B) will move backward,
+ overshoot and then converge onto the same read line as in the previous case.
 \end_layout
 
 \begin_layout Enumerate
-An undamped Newtonian vehicle will overshoot the line, then move backward
- and converge back with ampler oscillations.
- If the vehicle starts with input greater than zero (vehicle B), it will
- move backward, overshoot, then converge back with ampler oscillations.
+An undamped Newtonian vehicle will overshoot the line,
+ then move backward and converge back with ampler oscillations.
+ If the vehicle starts with input greater than zero (vehicle B),
+ it will move backward,
+ overshoot,
+ then converge back with ampler oscillations.
+\begin_inset Separator latexpar
+\end_inset
+
+
 \end_layout
 
 \begin_deeper
 \begin_layout Standard
-Notice, however, that there is a complication here.
- Imagine a vehicle starting with input less than zero (like vehicle A in
- the figure) but on the right side of the gradient (i.e.
- in the area between the red line and the green line on the right side of
- figure 
+Notice,
+ however,
+ that there is a complication here.
+ Imagine a vehicle starting with input less than zero (like vehicle A in the figure) but on the right side of the gradient (i.e.
+ in the area between the red line and the green line on the right side of figure 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Brait-like-type-1-gradient"
+nolink "false"
 
 \end_inset
 
 ).
- The vehicle will start moving forward, never cross a region with input
- equal to zero, and then will keep moving forward indefinitely.
- Similar behaviors (with terminal velocities) will be observed for Newtonian
- vehicles.
+ The vehicle will start moving forward,
+ never cross a region with input equal to zero,
+ and then will keep moving forward indefinitely.
+ Similar behaviors (with terminal velocities) will be observed for Newtonian vehicles.
  This observation brings us to the following point.
 \end_layout
 
@@ -3627,6 +3843,8 @@ reference "fig:Brait-like-type-1-gradient"
 
 \emph on
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -3643,7 +3861,7 @@ status collapsed
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset CommandInset label
@@ -3652,8 +3870,7 @@ name "fig:2-gradients-setup"
 
 \end_inset
 
-Three Braitenberg-like Type 1 vehicles in an environment with a slightly
- more complex gradient landscape.
+Three Braitenberg-like Type 1 vehicles in an environment with a slightly more complex gradient landscape.
 \end_layout
 
 \end_inset
@@ -3689,6 +3906,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:2-gradients-setup"
+nolink "false"
 
 \end_inset
 
@@ -3697,15 +3915,18 @@ reference "fig:2-gradients-setup"
 
 \end_inset
 
-, we will observe a slightly different behavior.
- Vehicles A and B will behave as detailed above: they will, respectively,
- keep moving backward indefinitely (A) or move forward and eventually stop
- on the red line to the right of the diagram (B).
+,
+ we will observe a slightly different behavior.
+ Vehicles A and B will behave as detailed above:
+ they will,
+ respectively,
+ keep moving backward indefinitely (A) or move forward and eventually stop on the red line to the right of the diagram (B).
  Vehicle C's behavior is different.
- It will start moving backward (leftward) as it input is negative, like
- vehicle A.
- However, once it crosses the red circle at point X, its input will be reversed
- (
+ It will start moving backward (leftward) as it input is negative,
+ like vehicle A.
+ However,
+ once it crosses the red circle at point X,
+ its input will be reversed (
 \begin_inset Formula $>0$
 \end_inset
 
@@ -3722,8 +3943,10 @@ filled
 \begin_inset Quotes erd
 \end_inset
 
- with gradients: an environment, that is, that extends indefinitely in all
- directions and is always 
+ with gradients:
+ an environment,
+ that is,
+ that extends indefinitely in all directions and is always 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3731,26 +3954,27 @@ textured
 \begin_inset Quotes erd
 \end_inset
 
- by gradients (as an analogy, think of a spatiotemporal continuum with mass-prod
-uced gravitational distortions).
+ by gradients (as an analogy,
+ think of a spatiotemporal continuum with mass-produced gravitational distortions).
 \begin_inset Foot
 status collapsed
 
 \begin_layout Plain Layout
-Notice that such an environmental setup could be effectively simulated by
- a toroidal environment with only a few gradient (indeed, even just 1 gradient
- would suffice).
+Notice that such an environmental setup could be effectively simulated by a toroidal environment with only a few gradient (indeed,
+ even just 1 gradient would suffice).
 \end_layout
 
 \end_inset
 
- In such a a generalized environment, the expected behaviors listed above
- will be simplified considerably, because a vehicle's movement will 
+ In such a a generalized environment,
+ the expected behaviors listed above will be simplified considerably,
+ because a vehicle's movement will 
 \emph on
 always
 \emph default
  end up in the vehicle entering another gradient.
- Therefore, even the 
+ Therefore,
+ even the 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3767,8 +3991,8 @@ terminal velocities,
 \end_inset
 
  nor will they exhibit indefinite movements in either directions.
- At most, there will be oscillatory behaviors with the vehicle moving back
- and forth in a 
+ At most,
+ there will be oscillatory behaviors with the vehicle moving back and forth in a 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3777,24 +4001,31 @@ comfort area
 \end_inset
 
  within a gradient.
- Consider, for instance, the (relatively extreme) case of an undamped Newtonian
- vehicle with direct input-output connection and always positive actuator
- output (case 
+ Consider,
+ for instance,
+ the (relatively extreme) case of an undamped Newtonian vehicle with direct input-output connection and always positive actuator output (case 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "enu:Newton-unconn-damped"
+nolink "false"
 
 \end_inset
 
  above).
- The vehicle will move away from the stimulus and perhaps reach terminal
- velocity, but, in the generalized environment, it will sooner or later
- encounter another positive gradient, which will reverse its direction,
- thereby moving forward toward its original spot, where it will start moving
- backward again.
- In short, its movement will be confined (more or less, that is, allowing
- for overshoots) within the area where the input value is minimum.
- Similarly, and perhaps more interestingly, the setups described at 
+ The vehicle will move away from the stimulus and perhaps reach terminal velocity,
+ but,
+ in the generalized environment,
+ it will sooner or later encounter another positive gradient,
+ which will reverse its direction,
+ thereby moving forward toward its original spot,
+ where it will start moving backward again.
+ In short,
+ its movement will be confined (more or less,
+ that is,
+ allowing for overshoots) within the area where the input value is minimum.
+ Similarly,
+ and perhaps more interestingly,
+ the setups described at 
 \begin_inset Flex ShortXRef
 status collapsed
 
@@ -3802,6 +4033,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "enu:Newton-damped-pos-neg"
+nolink "false"
 
 \end_inset
 
@@ -3818,6 +4050,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "enu:Newton-damped-pos-neg-reverse"
+nolink "false"
 
 \end_inset
 
@@ -3835,6 +4068,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "enu:Newton-damped-pos-neg"
+nolink "false"
 
 \end_inset
 
@@ -3844,31 +4078,39 @@ reference "enu:Newton-damped-pos-neg"
 \end_inset
 
  will always converge on the area with input value equal to zero.
- This would be red line on the right side of the diagram or an equivalent
- area with similar value for a gradient that we assume will exist on the
- left side of the world (this behavior is clear if we imagine the world
- represented in in figure 
+ This would be red line on the right side of the diagram or an equivalent area with similar value for a gradient that we assume will exist on the left side of the world (this behavior is clear if we imagine the world represented in in figure 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Brait-like-type-1-gradient"
+nolink "false"
 
 \end_inset
 
- to be a thorus, in which case the vehicle will exit the world on the left,
- reenter on the right, and stop around the red line).
- There is actually another option we are not considering here: consider
- vehicle C in the diagram, which is positioned higher up, that is higher
- then the red line.
- In this case, what would happen? The vehicle would never cross any red
- line (input = 0) in its path, and therefore would never come to a stop.
- It would, instead, orbit endlessly, accelerating when it is farther away
- from the gradient's max, and slowing down when it comes closer.
+ to be a thorus,
+ in which case the vehicle will exit the world on the left,
+ reenter on the right,
+ and stop around the red line).
+ There is actually another option we are not considering here:
+ consider vehicle C in the diagram,
+ which is positioned higher up,
+ that is higher then the red line.
+ In this case,
+ what would happen?
+ The vehicle would never cross any red line (input = 0) in its path,
+ and therefore would never come to a stop.
+ It would,
+ instead,
+ orbit endlessly,
+ accelerating when it is farther away from the gradient's max,
+ and slowing down when it comes closer.
  
 \begin_inset Newline newline
 \end_inset
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status collapsed
@@ -3882,7 +4124,7 @@ status collapsed
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset Flex ShortLabel
@@ -3901,18 +4143,17 @@ name "fig:Brait-like-type-1-gradient-1"
 \end_inset
 
 Braitenberg-like Type 1 vehicle in an environmental stimulus gradient.
- The spherical gradient identifies the environmental stimulus, centered
- on the red dot.
+ The spherical gradient identifies the environmental stimulus,
+ centered on the red dot.
  The external green circle represents the minimum possible stimulus.
- This will be equal to zero in a traditional Braitenberg vehicle, whereas
- it will be negative and equal to the minimum possible value (which is always
- negative) of the sensory unit in the standard Homeo setup.
- The red circle indicates the threshold value equal to exactly half the
- value of the stimulus, which is equivalent to exactly zero in the standard
- Homeo setup.
- Notice that the red circle may not be halfway between the center of the
- gradient and the green line, and its position depends on the chosen stimulus's
- decay rule (which, for light, is inversely quadratic).
+ This will be equal to zero in a traditional Braitenberg vehicle,
+ whereas it will be negative and equal to the minimum possible value (which is always negative) of the sensory unit in the standard Homeo setup.
+ The red circle indicates the threshold value equal to exactly half the value of the stimulus,
+ which is equivalent to exactly zero in the standard Homeo setup.
+ Notice that the red circle may not be halfway between the center of the gradient and the green line,
+ and its position depends on the chosen stimulus's decay rule (which,
+ for light,
+ is inversely quadratic).
 \end_layout
 
 \end_inset
@@ -3926,13 +4167,12 @@ Braitenberg-like Type 1 vehicle in an environmental stimulus gradient.
 \end_layout
 
 \begin_layout Section*
-Cut discussion of positive-negative connection with self-connected sensor
- units
+Cut discussion of positive-negative connection with self-connected sensor units
 \end_layout
 
 \begin_layout Enumerate
-Let us now look at Homeo setups (output centered at zero), starting with
- the Aristotelian case and with reference to figure 
+Let us now look at Homeo setups (output centered at zero),
+ starting with the Aristotelian case and with reference to figure 
 \begin_inset Flex ShortXRef
 status collapsed
 
@@ -3940,6 +4180,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Brait-like-type-1-gradient"
+nolink "false"
 
 \end_inset
 
@@ -3949,27 +4190,26 @@ reference "fig:Brait-like-type-1-gradient"
 \end_inset
 
 .
- Nothing much changes from the not self-connected case: vehicle A will continue
- moving backward indefinitely with the same slightly different dynamics
- (slower initial velocity and progressively less so) as in the previous
- case.
- Vehicle B will, similarly, converge on the zero threshold line (the red
- circle to the left), with the same slightly different dynamics.
+ Nothing much changes from the not self-connected case:
+ vehicle A will continue moving backward indefinitely with the same slightly different dynamics (slower initial velocity and progressively less so) as in the previous case.
+ Vehicle B will,
+ similarly,
+ converge on the zero threshold line (the red circle to the left),
+ with the same slightly different dynamics.
 \end_layout
 
 \begin_layout Enumerate
-A damped self-connected Newtonian vehicle A, will move backward and reach
- a terminal velocity as in the non self-connected case, but the velocity
- will be lower, as it is constantly reduced by a value equal to a fraction
- of its output.
- Vehicle B will converge upon the threshold area with a better approximation
- (fewer oscillations) as it will accelerate less at the beginning.
+A damped self-connected Newtonian vehicle A,
+ will move backward and reach a terminal velocity as in the non self-connected case,
+ but the velocity will be lower,
+ as it is constantly reduced by a value equal to a fraction of its output.
+ Vehicle B will converge upon the threshold area with a better approximation (fewer oscillations) as it will accelerate less at the beginning.
 \end_layout
 
 \begin_layout Enumerate
-Same behavior will be observed for an undamped unit: vehicle A will move
- backward indefinitely with terminal velocity, vehicle B will reach the
- threshold area with less precision than in the case discussed just above.
+Same behavior will be observed for an undamped unit:
+ vehicle A will move backward indefinitely with terminal velocity,
+ vehicle B will reach the threshold area with less precision than in the case discussed just above.
 \end_layout
 
 \begin_layout Section*
@@ -3977,7 +4217,8 @@ Cut discussion of unconnected units
 \end_layout
 
 \begin_layout Enumerate
-A true Braitenberg vehicle---and a true 
+A true Braitenberg vehicle—
+and a true 
 \begin_inset Quotes eld
 \end_inset
 
@@ -3985,8 +4226,10 @@ Aristotelian
 \begin_inset Quotes erd
 \end_inset
 
- Homeo unit with always positive actuator commands, as discussed above---will
- keep moving straight (and forward, in the case of figure 
+ Homeo unit with always positive actuator commands,
+ as discussed above—
+will keep moving straight (and forward,
+ in the case of figure 
 \begin_inset Flex ShortXRef
 status collapsed
 
@@ -3994,6 +4237,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Brait-like-type-1-gradient"
+nolink "false"
 
 \end_inset
 
@@ -4002,31 +4246,29 @@ reference "fig:Brait-like-type-1-gradient"
 
 \end_inset
 
-) until its input is zero (or sufficiently close to zero, tasking into account
- that the Webots software does provide some simulation for frictional forces
- acting on the robot).
+) until its input is zero (or sufficiently close to zero,
+ tasking into account that the Webots software does provide some simulation for frictional forces acting on the robot).
  The robot will keep moving until the gradient's value is equal to zero,
  where it will stop.
- If the gradient never reaches zero, it will keep moving, with its velocity
- proportional to the stimulus (at least, it will keep moving until the sensory
- input's falls below the minimal threshold needed to overcome frictional
- forces/inertia).
+ If the gradient never reaches zero,
+ it will keep moving,
+ with its velocity proportional to the stimulus (at least,
+ it will keep moving until the sensory input's falls below the minimal threshold needed to overcome frictional forces/inertia).
 \end_layout
 
 \begin_layout Enumerate
 A Newtonian unit will behave similarly.
- A damped Newtonian unit will not stop as soon as the input reaches 0, since
- its 
+ A damped Newtonian unit will not stop as soon as the input reaches 0,
+ since its 
 \emph on
 acceleration
 \emph default
- is proportional to the stimulus minus a constant due to the to the damping
- factor.
- Once the stimulus reaches 0, it will gradually slow down under the effect
- of its internal friction (i.e.
+ is proportional to the stimulus minus a constant due to the to the damping factor.
+ Once the stimulus reaches 0,
+ it will gradually slow down under the effect of its internal friction (i.e.
  the viscosity of the medium).
- In practice, it will overshoot the target by a distance inversely proportional
- to its viscosity parameter.
+ In practice,
+ it will overshoot the target by a distance inversely proportional to its viscosity parameter.
 \end_layout
 
 \begin_layout Enumerate
@@ -4045,7 +4287,8 @@ name "enu:Newton-unconn-damped-1"
 
 \end_inset
 
-Finally, an 
+Finally,
+ an 
 \emph on
 undamped
 \emph default
@@ -4059,21 +4302,26 @@ terminal
 \end_inset
 
  velocity dependent on the accumulated input.
- However, given that the value of a unit (and, hence, the value of its actuator,
+ However,
+ given that the value of a unit (and,
+ hence,
+ the value of its actuator,
  i.e.
- the value of the motor command) is constrained within a Max/Min band, its
- terminal velocity will be equal to the unit's maximum value.
+ the value of the motor command) is constrained within a Max/Min band,
+ its terminal velocity will be equal to the unit's maximum value.
 \end_layout
 
 \begin_layout Enumerate
-If, on the contrary, the perceived stimulus is 
+If,
+ on the contrary,
+ the perceived stimulus is 
 \emph on
 negatively
 \emph default
- proportional to the input, we would observe the reverse behavior to case
- 1.
- That is, the behavior will be analogous except that the vehicle will move
- 
+ proportional to the input,
+ we would observe the reverse behavior to case 1.
+ That is,
+ the behavior will be analogous except that the vehicle will move 
 \emph on
 backward
 \emph default
@@ -4082,23 +4330,25 @@ backward
 \emph on
 not 
 \emph default
-zero, with velocity proportional to the stimulus.
+zero,
+ with velocity proportional to the stimulus.
 \end_layout
 
 \begin_layout Enumerate
-A damped Newtonian unit will behave similarly, moving backward with 
+A damped Newtonian unit will behave similarly,
+ moving backward with 
 \emph on
 acceleration
 \emph default
- proportional to the stimulus minus a constant due to the to the damping
- factor.
- If the stimulus reaches 0, it will gradually slow down.
+ proportional to the stimulus minus a constant due to the to the damping factor.
+ If the stimulus reaches 0,
+ it will gradually slow down.
 \end_layout
 
 \begin_layout Enumerate
-Finally, an undamped unit will keep going backward---whether it reaches
- the terminal velocity equal to its max value depends on the initial distance
- between units and gradient's maximum value.
+Finally,
+ an undamped unit will keep going backward—
+whether it reaches the terminal velocity equal to its max value depends on the initial distance between units and gradient's maximum value.
 \end_layout
 
 \begin_layout Section*
@@ -4107,6 +4357,8 @@ Leftover tables (wrong tables)
 
 \begin_layout Standard
 \begin_inset Float table
+placement document
+alignment document
 wide false
 sideways true
 status collapsed
@@ -4194,7 +4446,8 @@ Aristotelian,
 \begin_layout Plain Layout
 
 \size footnotesize
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4242,11 +4495,13 @@ Moves backward until gradient reaches zero and stops
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4298,11 +4553,13 @@ past
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4317,7 +4574,8 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Moves backward until it reaches another gradient, then reverses and so on
+Moves backward until it reaches another gradient,
+ then reverses and so on
 \end_layout
 
 \end_inset
@@ -4350,11 +4608,13 @@ Moves backward until it reaches another gradient, then reverses and so on
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4369,8 +4629,8 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-If starting point above 0 (case C) orbits indefinitely, otherwise stops
- when it crosses a a 0 region
+If starting point above 0 (case C) orbits indefinitely,
+ otherwise stops when it crosses a a 0 region
 \end_layout
 
 \end_inset
@@ -4403,11 +4663,13 @@ If starting point above 0 (case C) orbits indefinitely, otherwise stops
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4422,8 +4684,8 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-As in case 4 above, but will converge harmonically on zero region in second
- case
+As in case 4 above,
+ but will converge harmonically on zero region in second case
 \end_layout
 
 \end_inset
@@ -4456,11 +4718,13 @@ As in case 4 above, but will converge harmonically on zero region in second
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4475,7 +4739,8 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-As in case 5 above, but convergence will take longer
+As in case 5 above,
+ but convergence will take longer
 \end_layout
 
 \end_inset
@@ -4508,11 +4773,13 @@ As in case 5 above, but convergence will take longer
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4560,7 +4827,9 @@ Will move forward and stop when gradient is max
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, inverse, positive
+Newtonian damped,
+ inverse,
+ positive
 \end_layout
 
 \end_inset
@@ -4604,11 +4873,13 @@ Will move forward and overshoot gradient = max then stop
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4623,7 +4894,8 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Will move forward, overshoot max gradient and probably reach terminal velocity
+Will move forward,
+ overshoot max gradient and probably reach terminal velocity
 \end_layout
 
 \end_inset
@@ -4656,11 +4928,13 @@ Will move forward, overshoot max gradient and probably reach terminal velocity
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4675,7 +4949,8 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-If starting point above 0 (case C), will start forward and orbit indefinitely,
+If starting point above 0 (case C),
+ will start forward and orbit indefinitely,
  otherwise will stop on first crossed 0 region
 \end_layout
 
@@ -4709,11 +4984,13 @@ If starting point above 0 (case C), will start forward and orbit indefinitely,
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4728,7 +5005,8 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-As in case 10 above, with harmonic behavior in second case
+As in case 10 above,
+ with harmonic behavior in second case
 \end_layout
 
 \end_inset
@@ -4761,11 +5039,13 @@ As in case 10 above, with harmonic behavior in second case
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -4780,7 +5060,8 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-As in case 10 above, with longer harmonic behavior in second case
+As in case 10 above,
+ with longer harmonic behavior in second case
 \end_layout
 
 \end_inset
@@ -4803,7 +5084,7 @@ As in case 10 above, with longer harmonic behavior in second case
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset Flex ShortLabel
@@ -4821,8 +5102,7 @@ name "tab:Unconnected-summary"
 
 \end_inset
 
-Summary of experimental setups and expected results for a type-1 Braitenberg-lik
-e vehicle in Homeo 
+Summary of experimental setups and expected results for a type-1 Braitenberg-like vehicle in Homeo 
 \emph on
 with no self-connections
 \emph default
@@ -4830,7 +5110,8 @@ with no self-connections
 \begin_inset Newline newline
 \end_inset
 
-In the descriptions, 
+In the descriptions,
+ 
 \begin_inset Quotes eld
 \end_inset
 
@@ -4886,6 +5167,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Brait-like-type-1-gradient"
+nolink "false"
 
 \end_inset
 
@@ -4911,6 +5193,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "enu:Generalized-environment"
+nolink "false"
 
 \end_inset
 
@@ -4934,6 +5217,8 @@ reference "enu:Generalized-environment"
 
 \begin_layout Standard
 \begin_inset Float table
+placement document
+alignment document
 wide false
 sideways true
 status collapsed
@@ -5021,7 +5306,8 @@ Aristotelian,
 \begin_layout Plain Layout
 
 \size footnotesize
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5067,11 +5353,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5117,11 +5405,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5167,11 +5457,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5217,11 +5509,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5267,11 +5561,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5317,11 +5613,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5367,7 +5665,9 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, inverse, positive
+Newtonian damped,
+ inverse,
+ positive
 \end_layout
 
 \end_inset
@@ -5409,11 +5709,13 @@ Newtonian damped, inverse, positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5459,11 +5761,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5509,11 +5813,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5559,11 +5865,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5599,11 +5907,10 @@ pos-neg
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-Summary of experimental setups and expected results for a type-1 Braitenberg-lik
-e vehicle in Homeo 
+Summary of experimental setups and expected results for a type-1 Braitenberg-like vehicle in Homeo 
 \emph on
 with a self-connection in the Motor unit
 \emph default
@@ -5616,6 +5923,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "tab:Unconnected-summary"
+nolink "false"
 
 \end_inset
 
@@ -5639,6 +5947,8 @@ reference "tab:Unconnected-summary"
 
 \begin_layout Standard
 \begin_inset Float table
+placement document
+alignment document
 wide false
 sideways true
 status collapsed
@@ -5726,7 +6036,8 @@ Aristotelian,
 \begin_layout Plain Layout
 
 \size footnotesize
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5772,11 +6083,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5822,11 +6135,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5872,11 +6187,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5922,11 +6239,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -5972,11 +6291,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6022,11 +6343,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6072,7 +6395,9 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, inverse, positive
+Newtonian damped,
+ inverse,
+ positive
 \end_layout
 
 \end_inset
@@ -6114,11 +6439,13 @@ Newtonian damped, inverse, positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6164,11 +6491,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6214,11 +6543,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6264,11 +6595,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6304,11 +6637,10 @@ pos-neg
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-Summary of experimental setups and expected results for a type-1 Braitenberg-lik
-e vehicle in Homeo 
+Summary of experimental setups and expected results for a type-1 Braitenberg-like vehicle in Homeo 
 \emph on
 with a self-connection in the Sensor unit
 \emph default
@@ -6321,6 +6653,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "tab:Unconnected-summary"
+nolink "false"
 
 \end_inset
 
@@ -6344,6 +6677,8 @@ reference "tab:Unconnected-summary"
 
 \begin_layout Standard
 \begin_inset Float table
+placement document
+alignment document
 wide false
 sideways true
 status collapsed
@@ -6435,7 +6770,8 @@ Aristotelian,
 \begin_layout Plain Layout
 
 \size footnotesize
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6481,11 +6817,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6531,11 +6869,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6581,11 +6921,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6631,11 +6973,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6681,11 +7025,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-direct, 
+direct,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6731,11 +7077,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6781,7 +7129,9 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, inverse, positive
+Newtonian damped,
+ inverse,
+ positive
 \end_layout
 
 \end_inset
@@ -6823,11 +7173,13 @@ Newtonian damped, inverse, positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6873,11 +7225,13 @@ positive
 \begin_layout Plain Layout
 
 \size footnotesize
-Aristotelian, 
+Aristotelian,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6923,11 +7277,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian damped, 
+Newtonian damped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -6973,11 +7329,13 @@ pos-neg
 \begin_layout Plain Layout
 
 \size footnotesize
-Newtonian undamped, 
+Newtonian undamped,
+ 
 \begin_inset Newline newline
 \end_inset
 
-inverse, 
+inverse,
+ 
 \begin_inset Newline newline
 \end_inset
 
@@ -7013,11 +7371,10 @@ pos-neg
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
-Summary of experimental setups and expected results for a type-1 Braitenberg-lik
-e vehicle in Homeo 
+Summary of experimental setups and expected results for a type-1 Braitenberg-like vehicle in Homeo 
 \emph on
 with self-connections in both the Motor unit
 \emph default
@@ -7034,6 +7391,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "tab:Unconnected-summary"
+nolink "false"
 
 \end_inset
 

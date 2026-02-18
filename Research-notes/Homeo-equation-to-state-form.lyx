@@ -1,8 +1,10 @@
-#LyX 2.0 created this file. For more info see http://www.lyx.org/
-\lyxformat 413
+#LyX 2.4 created this file. For more info see https://www.lyx.org/
+\lyxformat 620
 \begin_document
 \begin_header
-\textclass memoir-article
+\save_transient_properties true
+\origin unavailable
+\textclass memoir
 \begin_preamble
 \addbibresource{/home/stefano/Documents/Biblios/Italian-philosophy.bib}
 \addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
@@ -12,45 +14,62 @@
 \options article, 11pt
 \use_default_options false
 \begin_modules
-biblatex
 theorems-std
 ShortInsetNames
 \end_modules
-\maintain_unincluded_children false
+\maintain_unincluded_children no
 \language english
 \language_package default
 \inputencoding utf8-plain
-\fontencoding global
-\font_roman default
-\font_sans default
-\font_typewriter default
+\fontencoding auto
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
 \font_default_family default
 \use_non_tex_fonts false
 \font_sc false
-\font_osf false
-\font_sf_scale 100
-\font_tt_scale 100
-
+\font_roman_osf false
+\font_sans_osf false
+\font_typewriter_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
 \graphics default
 \default_output_format pdf5
 \output_sync 0
 \bibtex_command default
 \index_command default
+\float_placement class
+\float_alignment class
 \paperfontsize default
 \spacing onehalf
 \use_hyperref false
 \papersize default
 \use_geometry false
-\use_amsmath 1
-\use_esint 1
-\use_mhchem 1
-\use_mathdots 1
-\cite_engine natbib_authoryear
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine natbib
+\cite_engine_type authoryear
+\biblio_style plainnat
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
 \suppress_date false
+\justification true
 \use_refstyle 0
+\use_formatted_ref 0
+\use_minted 0
+\use_lineno 0
 \index Index
 \shortcut idx
 \color #008000
@@ -59,15 +78,23 @@ ShortInsetNames
 \tocdepth 3
 \paragraph_separation indent
 \paragraph_indentation default
-\quotes_language english
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
 \papercolumns 1
 \papersides 1
 \paperpagestyle default
+\tablestyle default
 \tracking_changes false
 \output_changes false
+\change_bars false
+\postpone_fragile_content false
 \html_math_output 0
 \html_css_as_file 0
 \html_be_strict false
+\docbook_table_output 0
+\docbook_mathml_prefix 1
 \end_header
 
 \begin_body
@@ -81,9 +108,7 @@ Converting Homeostat's general equation into state form
 \end_layout
 
 \begin_layout Standard
-The following note tries to convert the general equation of the homeostat
- and of a homeostat-driven vehicle into state form in order to carry out
- some mathematical analysis on the resulting systems.
+The following note tries to convert the general equation of the homeostat and of a homeostat-driven vehicle into state form in order to carry out some mathematical analysis on the resulting systems.
 \end_layout
 
 \begin_layout Section
@@ -122,7 +147,8 @@ where
 \begin_inset Formula $i$
 \end_inset
 
-'s needle, 
+'s needle,
+ 
 \begin_inset Formula $v_{i}$
 \end_inset
 
@@ -130,7 +156,8 @@ where
 \begin_inset Formula $i$
 \end_inset
 
-'s medium, 
+'s medium,
+ 
 \begin_inset Formula $w_{ij}$
 \end_inset
 
@@ -142,7 +169,8 @@ where
 \begin_inset Formula $i$
 \end_inset
 
-, and 
+,
+ and 
 \begin_inset Formula $u_{i}$
 \end_inset
 
@@ -155,11 +183,13 @@ is the (possible) input to unit
 \end_inset
 
 ).
- Assuming the state variables, for each unit 
+ Assuming the state variables,
+ for each unit 
 \begin_inset Formula $i$
 \end_inset
 
-, are 
+,
+ are 
 \begin_inset Formula $\begin{bmatrix}x_{i_{1}}\\
 x_{i_{2}}
 \end{bmatrix}=\begin{bmatrix}y_{i}\\
@@ -167,7 +197,8 @@ x_{i_{2}}
 \end{bmatrix}$
 \end_inset
 
-, that our 
+,
+ that our 
 \begin_inset Formula $y$
 \end_inset
 
@@ -193,12 +224,12 @@ x_{i_{2}}
 
 \begin_layout Standard
 Now for the state form.
- We need to convert the above expression into a general expression of the
- form 
+ We need to convert the above expression into a general expression of the form 
 \begin_inset Formula $\dot{x}_{i}=Ax+Bu$
 \end_inset
 
-, 
+,
+ 
 \begin_inset Formula $y=Cx$
 \end_inset
 
@@ -207,20 +238,23 @@ Now for the state form.
 \end_inset
 
  as matrices.
- First, for the order of the matrices: 
+ First,
+ for the order of the matrices:
+ 
 \begin_inset Formula $x$
 \end_inset
 
  is a vector (column matrix) of size 
-\begin_inset Formula $2i\, x\,1$
+\begin_inset Formula $2i\,x\,1$
 \end_inset
 
-, and 
+,
+ and 
 \begin_inset Formula $u$
 \end_inset
 
  is a vector of size 
-\begin_inset Formula $2i\, x\,1.$
+\begin_inset Formula $2i\,x\,1.$
 \end_inset
 
 Hence the 
@@ -228,15 +262,16 @@ Hence the
 \end_inset
 
  matrix will be of size 
-\begin_inset Formula $2i\, x\,2i$
+\begin_inset Formula $2i\,x\,2i$
 \end_inset
 
-, 
+,
+ 
 \begin_inset Formula $B$
 \end_inset
 
  will be of size 
-\begin_inset Formula $2i\, x\,1$
+\begin_inset Formula $2i\,x\,1$
 \end_inset
 
  and 
@@ -244,11 +279,12 @@ Hence the
 \end_inset
 
  will be 
-\begin_inset Formula $1\, x\,2i$
+\begin_inset Formula $1\,x\,2i$
 \end_inset
 
 .
- Our final equations of the homeostat in state form, will thus be the following:
+ Our final equations of the homeostat in state form,
+ will thus be the following:
 \begin_inset Formula 
 \begin{equation}
 \dot{x}=\begin{bmatrix}0 & 1 & 0 & 0 & 0 & 0\\
@@ -278,7 +314,8 @@ x_{i_{2}}
 \end_layout
 
 \begin_layout Standard
-In other words: every 
+In other words:
+ every 
 \begin_inset Formula $2i$
 \end_inset
 
@@ -290,16 +327,20 @@ In other words: every
 \begin_inset Formula $2^{nd}$
 \end_inset
 
-, 
+,
+ 
 \begin_inset Formula $4^{th}$
 \end_inset
 
-, 
+,
+ 
 \begin_inset Formula $6^{th}$
 \end_inset
 
-, etc.
- position, which will contain a 
+,
+ etc.
+ position,
+ which will contain a 
 \begin_inset Formula $1.$
 \end_inset
 
@@ -307,28 +348,31 @@ In other words: every
 \begin_inset Formula $A$
 \end_inset
 
- matrix will have the weights divided by the masses in all the odd-numbered
- columns, and the (negative) viscosity divided by the mass in the 
+ matrix will have the weights divided by the masses in all the odd-numbered columns,
+ and the (negative) viscosity divided by the mass in the 
 \begin_inset Formula $2^{nd}$
 \end_inset
 
-, 
+,
+ 
 \begin_inset Formula $4^{th}$
 \end_inset
 
-, 
+,
+ 
 \begin_inset Formula $6^{th}$
 \end_inset
 
-, etc.
+,
+ etc.
  position.
  The 
 \begin_inset Formula $B$
 \end_inset
 
- matrix will have all zeroes in the odd-numbered rows and the unit's input
- coefficient divided by the unit's mass in the even-numbered rows.
- For the second equation, we will have:
+ matrix will have all zeroes in the odd-numbered rows and the unit's input coefficient divided by the unit's mass in the even-numbered rows.
+ For the second equation,
+ we will have:
 \end_layout
 
 \begin_layout Standard
@@ -343,7 +387,9 @@ y=\begin{bmatrix}1 & 0 & ... & ... & 1 & 0\end{bmatrix}x\label{eq:H-State-Form-2
 \end_layout
 
 \begin_layout Standard
-As an example, for a 2-unit homeostat, the matrices would thus be:
+As an example,
+ for a 2-unit homeostat,
+ the matrices would thus be:
 \begin_inset VSpace medskip
 \end_inset
 
@@ -383,11 +429,16 @@ and with the default value in Homeo of
 \begin_inset Formula $v_{1}=v_{2}=10$
 \end_inset
 
-, 
+,
+ 
 \begin_inset Formula $c_{1}=c_{2}=1$
 \end_inset
 
  we obtain the matrices:
+\begin_inset Separator latexpar
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -428,7 +479,8 @@ A system is completely controllable if and only if
 \begin_inset Formula $rank(\Gamma)=n$
 \end_inset
 
-, where 
+,
+ where 
 \begin_inset Formula $n$
 \end_inset
 
@@ -440,7 +492,8 @@ A system is completely controllable if and only if
 \end_layout
 
 \begin_layout Standard
-Let us try for a 2 units homeostat, in which case 
+Let us try for a 2 units homeostat,
+ in which case 
 \begin_inset Formula $A$
 \end_inset
 
@@ -448,7 +501,8 @@ Let us try for a 2 units homeostat, in which case
 \begin_inset Formula $B$
 \end_inset
 
- are defined as above, 
+ are defined as above,
+ 
 \begin_inset Formula $n=4$
 \end_inset
 
@@ -456,8 +510,8 @@ Let us try for a 2 units homeostat, in which case
 \begin_inset Formula $\Gamma=\begin{bmatrix}B & AB & A^{2}B & A^{3}B\end{bmatrix}.$
 \end_inset
 
- The symbolic calculation is rather hard to do by hand, but with Sage to
- the rescue we obtain the scary looking matrix:
+ The symbolic calculation is rather hard to do by hand,
+ but with Sage to the rescue we obtain the scary looking matrix:
 \end_layout
 
 \begin_layout Standard
@@ -481,9 +535,11 @@ Let us try for a 2 units homeostat, in which case
 
 \begin_layout Standard
 whose rank is indeed 4.
- Hence the system is controllable, 
+ Hence the system is controllable,
+ 
 \emph on
 assuming all the coefficient are indeed different!
+
 \emph default
  
 \end_layout
@@ -493,7 +549,9 @@ Notice that setting the constants
 \begin_inset Formula $m_{1,}m_{2,}v_{1,}v_{2}$
 \end_inset
 
- to their default values in Homeo of, respectively, 
+ to their default values in Homeo of,
+ respectively,
+ 
 \begin_inset Formula $100,100,10,10$
 \end_inset
 
@@ -530,19 +588,22 @@ which has still
 \end_inset
 
 .
- The interesting question now is how to pick appropriate values for all
- the coefficients, so that the system does indeed remain stable.
- Notice that if all the weights are the same, the system becomes uncontrollable,
+ The interesting question now is how to pick appropriate values for all the coefficients,
+ so that the system does indeed remain stable.
+ Notice that if all the weights are the same,
+ the system becomes uncontrollable,
  as the 
 \begin_inset Formula $\Gamma's$
 \end_inset
 
  rank does indeed drop.
- For instance, with 
+ For instance,
+ with 
 \begin_inset Formula $w_{11}=w_{12}=w_{21}=w_{22}=1$
 \end_inset
 
-, we obtain the following matrix:
+,
+ we obtain the following matrix:
 \end_layout
 
 \begin_layout Standard
@@ -554,7 +615,8 @@ which has still
 \end{array}\right)$
 \end_inset
 
-whose rank is obviously 2, for the 
+whose rank is obviously 2,
+ for the 
 \begin_inset Formula $3^{rd}$
 \end_inset
 
@@ -563,9 +625,9 @@ and
 \end_inset
 
  rows just repeat the first two rows.
- We can regain rank by setting weights to be all different, of course, but
- also just by differentiating the weights of the first unit from the weight
- of the second one.
+ We can regain rank by setting weights to be all different,
+ of course,
+ but also just by differentiating the weights of the first unit from the weight of the second one.
  With 
 \begin_inset Formula $w_{11}=w_{12}=1$
 \end_inset
@@ -586,7 +648,8 @@ and
 \begin_inset Formula $w_{21}=w_{22}=2$
 \end_inset
 
-, we have the matrix
+,
+ we have the matrix
 \end_layout
 
 \begin_layout Standard
@@ -618,7 +681,8 @@ Observability theorem (see ???):
 \end_layout
 
 \begin_layout Theorem
-A system is completely observable, iff 
+A system is completely observable,
+ iff 
 \begin_inset Formula $rank(\Omega)=n,$
 \end_inset
 
@@ -638,8 +702,7 @@ CA^{n-1}
 \end_layout
 
 \begin_layout Standard
-Computing the observability matrix for our 2 unit sample homeostat we obtain
- the following matrix:
+Computing the observability matrix for our 2 unit sample homeostat we obtain the following matrix:
 \end_layout
 
 \begin_layout Standard
@@ -662,13 +725,21 @@ Computing the observability matrix for our 2 unit sample homeostat we obtain
 \end_layout
 
 \begin_layout Standard
-whose rank is indeed 4, as it can be easily seen.
- Hence the system is completely observable---assuming all the coefficient
- are indeed different! With Homeo's default values, as above, the 
+whose rank is indeed 4,
+ as it can be easily seen.
+ Hence the system is completely observable—
+assuming all the coefficient are indeed different!
+ With Homeo's default values,
+ as above,
+ the 
 \begin_inset Formula $\Omega$
 \end_inset
 
  matrix looks like the following:
+\begin_inset Separator latexpar
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -693,24 +764,31 @@ Describing a NN-controlled Braitenberg vehicle according to control theory
 \end_layout
 
 \begin_layout Standard
-The goal is to get insights about the behavior of a Braitenberg vehicle
- from its description according to control theory.
- In particular, the eventual goal is to try to reverse engineer the NN controlle
-r so to speak.
- That is: 
+The goal is to get insights about the behavior of a Braitenberg vehicle from its description according to control theory.
+ In particular,
+ the eventual goal is to try to reverse engineer the NN controller so to speak.
+ That is:
+ 
 \end_layout
 
 \begin_layout Itemize
-Describe mathematically a Braitenberg vehicle (first Type 1, then, eventually,
- Type 2) that achieves some predefined goal (for instance: goal-seeking,
- or wandering) and then try to infer what the parameters of the controller
- must be like in order for those those goals to be achieved
+Describe mathematically a Braitenberg vehicle (first Type 1,
+ then,
+ eventually,
+ Type 2) that achieves some predefined goal (for instance:
+ goal-seeking,
+ or wandering) and then try to infer what the parameters of the controller must be like in order for those those goals to be achieved
+\begin_inset Separator latexpar
+\end_inset
+
+
 \end_layout
 
 \begin_deeper
 \begin_layout Standard
-The hope is that this description would produce get some insights on the
- dynamic behavior of the vehicle and, hopefully, help determine the parameters
+The hope is that this description would produce get some insights on the dynamic behavior of the vehicle and,
+ hopefully,
+ help determine the parameters
 \begin_inset Quotes ers
 \end_inset
 
@@ -732,8 +810,9 @@ Start with type 1
 
 \begin_layout Itemize
 Simplify vehicle's internal dynamics as much as possible.
- Indeed, start with no dynamics (as in Braitenberg's work, in a certain
- sense)
+ Indeed,
+ start with no dynamics (as in Braitenberg's work,
+ in a certain sense)
 \end_layout
 
 \begin_layout Itemize
@@ -741,12 +820,12 @@ Simplify input structure as much as possible
 \end_layout
 
 \begin_layout Section
-From differential equations to state space form, in general
+From differential equations to state space form,
+ in general
 \end_layout
 
 \begin_layout Enumerate
-Provide a description of the system as a differential equation describing
- the temporal evolution of the system's state
+Provide a description of the system as a differential equation describing the temporal evolution of the system's state
 \end_layout
 
 \begin_layout Enumerate
@@ -758,7 +837,8 @@ The system with state
 \emph on
 state vector
 \emph default
-), input 
+),
+ input 
 \begin_inset Formula $\mathbf{u}\in\mathbb{R}^{m}$
 \end_inset
 
@@ -770,13 +850,16 @@ input vector
 \begin_inset Formula $\mathbf{y}\in\mathbb{R}^{p}$
 \end_inset
 
- (the signal vector representing the measured signal) is represented by
- 
+ (the signal vector representing the measured signal) is represented by 
 \begin_inset Formula 
 \[
-\frac{dx}{dt}=f(x,u),\,\,\,\,\, y=h(x,u)
+\frac{dx}{dt}=f(x,u),\,\,\,\,\,y=h(x,u)
 \]
 
+\end_inset
+
+
+\begin_inset Separator latexpar
 \end_inset
 
 
@@ -809,18 +892,23 @@ If the functions
 \begin_inset Formula $u$
 \end_inset
 
-, the system is called 
+,
+ the system is called 
 \emph on
 linear
 \emph default
  and can be represented as:
+\begin_inset Separator latexpar
+\end_inset
+
+
 \end_layout
 
 \begin_deeper
 \begin_layout Standard
 \begin_inset Formula 
 \[
-\dot{x}=Ax+Bu,\,\,\,\, y=Cx+Dx
+\dot{x}=Ax+Bu,\,\,\,\,y=Cx+Dx
 \]
 
 \end_inset
@@ -837,7 +925,8 @@ where
 \emph on
 system matrix
 \emph default
-, 
+,
+ 
 \begin_inset Formula $B:n\times p$
 \end_inset
 
@@ -845,7 +934,8 @@ system matrix
 \emph on
 control matrix
 \emph default
-, 
+,
+ 
 \begin_inset Formula $C:p\times n$
 \end_inset
 
@@ -861,14 +951,13 @@ and
 \emph on
 direct term
 \emph default
- (frequently absent when the control signal does not directly influence
- the system's output)
+ (frequently absent when the control signal does not directly influence the system's output)
 \end_layout
 
 \end_deeper
 \begin_layout Enumerate
-If the differential equation are not linear, linearize them around an operating
- point (and look for possible problems involving linearizations)
+If the differential equation are not linear,
+ linearize them around an operating point (and look for possible problems involving linearizations)
 \end_layout
 
 \begin_layout Section
@@ -884,11 +973,12 @@ a
 \emph on
 b
 \emph default
- subtypes), with no physics of its own and no independent controller, moving
- on a straight line.
- In fact, let us assume that the whole environment is mono-dimensional.
- Let us also assume the vehicle has a omnidirectional sensor receptive to
- a stimulus source emitting a stimulus 
+ subtypes),
+ with no physics of its own and no independent controller,
+ moving on a straight line.
+ In fact,
+ let us assume that the whole environment is mono-dimensional.
+ Let us also assume the vehicle has a omnidirectional sensor receptive to a stimulus source emitting a stimulus 
 \begin_inset Formula $S$
 \end_inset
 
@@ -905,9 +995,10 @@ b
 \end_layout
 
 \begin_layout Standard
-Now, a Braitenberg vehicle of this kind, ignoring the system physics for
- the time being, can be modeled by focusing on the state-dependent system's
- output 
+Now,
+ a Braitenberg vehicle of this kind,
+ ignoring the system physics for the time being,
+ can be modeled by focusing on the state-dependent system's output 
 \begin_inset Formula $y$
 \end_inset
 
@@ -919,12 +1010,14 @@ perceived
 \begin_inset Quotes erd
 \end_inset
 
- output, i.e.
+ output,
+ i.e.
  a sensor reading) the system's output's dependent actuator commands 
 \begin_inset Formula $u.$
 \end_inset
 
- The system's state is simply its (global) position, hence 
+ The system's state is simply its (global) position,
+ hence 
 \series bold
 
 \begin_inset Formula $\mathbf{x}=x$
@@ -932,7 +1025,8 @@ perceived
 
 
 \series default
-, the input function 
+,
+ the input function 
 \begin_inset Formula $y(x)$
 \end_inset
 
@@ -940,18 +1034,18 @@ perceived
 \begin_inset Formula $\Vert s-x\Vert$
 \end_inset
 
- between the vehicle and the stimulus source and the stimulus's intensity
- 
+ between the vehicle and the stimulus source and the stimulus's intensity 
 \begin_inset Formula $I_{s}$
 \end_inset
 
 .
- If the latter is inversely proportional to the distance between the source
- and the robot, then 
+ If the latter is inversely proportional to the distance between the source and the robot,
+ then 
 \begin_inset Formula $I_{s-x}=\frac{S}{1+\Vert s-x\Vert}$
 \end_inset
 
-, whereas 
+,
+ whereas 
 \family roman
 \series medium
 \shape up
@@ -979,8 +1073,7 @@ perceived
 \uwave default
 \noun default
 \color inherit
- if it is inversely proportional to the square of the distance (as real
- lights would be) and 
+ if it is inversely proportional to the square of the distance (as real lights would be) and 
 \family roman
 \series medium
 \shape up
@@ -1000,8 +1093,7 @@ perceived
 \begin_inset Formula $f$
 \end_inset
 
- may be a simple scaling parameter or a more complex and possibly non linear
- function
+ may be a simple scaling parameter or a more complex and possibly non linear function
 \family default
 \series default
 \shape default
@@ -1017,7 +1109,8 @@ perceived
 \end_layout
 
 \begin_layout Standard
-The input to the system, in the present case in which we have no NN controller,
+The input to the system,
+ in the present case in which we have no NN controller,
  would then be a simple multiplicative factor of the system's output 
 \begin_inset Formula $u=Ky$
 \end_inset
@@ -1026,7 +1119,8 @@ The input to the system, in the present case in which we have no NN controller,
 \emph on
 b
 \emph default
- with a direct connection (the farther away, hence the smaller the stimulus,
+ with a direct connection (the farther away,
+ hence the smaller the stimulus,
  the weaker the actuator) and 
 \begin_inset Formula $u=\frac{K}{y}$
 \end_inset
@@ -1035,22 +1129,25 @@ b
 \emph on
 a
 \emph default
- with an inverse connection (the farther away, hence the smaller the stimulus,
+ with an inverse connection (the farther away,
+ hence the smaller the stimulus,
  the stronger the actuator)
 \emph on
 .
 
 \emph default
- Thus, we can model a standard, no physics, Type 1
+ Thus,
+ we can model a standard,
+ no physics,
+ Type 1
 \emph on
 a 
 \emph default
-stimulus-avoider vehicle with a control signal inversely proportional to
- the stimulus in an environment with a linearly decreasing stimulus with
- the two equations: 
+stimulus-avoider vehicle with a control signal inversely proportional to the stimulus in an environment with a linearly decreasing stimulus with the two equations:
+ 
 \begin_inset Formula 
 \begin{equation}
-\dot{x}=u,\,\,\, y=\frac{\alpha S}{1+\Vert s-x\Vert},\,\,\, u=Ky\label{Type-1a}
+\dot{x}=u,\,\,\,y=\frac{\alpha S}{1+\Vert s-x\Vert},\,\,\,u=Ky\label{Type-1a}
 \end{equation}
 
 \end_inset
@@ -1063,10 +1160,11 @@ If the intensity
 \begin_inset Formula $I_{s}$
 \end_inset
 
- is decreasing according to the inverse square law, we would have:
+ is decreasing according to the inverse square law,
+ we would have:
 \begin_inset Formula 
 \begin{equation}
-\dot{x}=u,\,\,\, y=\frac{\alpha S}{1+\Vert s-x\Vert^{2}},\,\,\, u=Ky\label{eq:Type-1a-quadr}
+\dot{x}=u,\,\,\,y=\frac{\alpha S}{1+\Vert s-x\Vert^{2}},\,\,\,u=Ky\label{eq:Type-1a-quadr}
 \end{equation}
 
 \end_inset
@@ -1079,11 +1177,10 @@ If the intensity
 \begin_inset Formula $\alpha\in[0,1]$
 \end_inset
 
- indicating the efficiency of the sensor in converting the actual intensity
- into a perceived stimulus).
- For a control signal proportionally decreasing with distance (the closer
- to the source, the weaker the stimulus) modeling a stimulus-seeker, type
- 1
+ indicating the efficiency of the sensor in converting the actual intensity into a perceived stimulus).
+ For a control signal proportionally decreasing with distance (the closer to the source,
+ the weaker the stimulus) modeling a stimulus-seeker,
+ type 1
 \emph on
 b
 \emph default
@@ -1093,7 +1190,7 @@ b
 \begin_layout Standard
 \begin_inset Formula 
 \begin{equation}
-\dot{x}=u,\,\,\, y=\frac{\alpha S}{1+\Vert s-x\Vert},\,\,\, u=\frac{K}{y},\,\textrm{or}\,\,\dot{x}=u,\,\,\, y=\frac{\alpha S}{1+\Vert s-x\Vert^{2}},\,\,\, u=\frac{K}{y}\label{eq:Type-1-b}
+\dot{x}=u,\,\,\,y=\frac{\alpha S}{1+\Vert s-x\Vert},\,\,\,u=\frac{K}{y},\,\textrm{or}\,\,\dot{x}=u,\,\,\,y=\frac{\alpha S}{1+\Vert s-x\Vert^{2}},\,\,\,u=\frac{K}{y}\label{eq:Type-1-b}
 \end{equation}
 
 \end_inset
@@ -1103,13 +1200,12 @@ b
 
 \begin_layout Standard
 As these equations model a Type 1 vehicle with omni-directional sensors,
- they can also be assumed to provide a simplified model of a vehicle with
- a skirt of sensors, in which case the function 
+ they can also be assumed to provide a simplified model of a vehicle with a skirt of sensors,
+ in which case the function 
 \begin_inset Formula $y$
 \end_inset
 
- could be interpreted as the (possibly weighted) average of the various
- sensors along the skirts.
+ could be interpreted as the (possibly weighted) average of the various sensors along the skirts.
  
 \end_layout
 
@@ -1118,35 +1214,33 @@ Directional sensors
 \end_layout
 
 \begin_layout Standard
-Let us now add the limitation that the sensor pointing is forward and has
- a field of view 
+Let us now add the limitation that the sensor pointing is forward and has a field of view 
 \begin_inset Formula $180^{\circ}$
 \end_inset
 
 .
- In other words the sensor does not see any stimulus behind the (point-like)
- robot.
- With this limitation, the stimulus will be received only if the distance
- 
+ In other words the sensor does not see any stimulus behind the (point-like) robot.
+ With this limitation,
+ the stimulus will be received only if the distance 
 \begin_inset Formula $s-x$
 \end_inset
 
  is positive (source in front of the robot) and zero otherwise.
- We approximate the required behavior by multiplying the perceived intensity
- by the logistic function scaled to the distance 
+ We approximate the required behavior by multiplying the perceived intensity by the logistic function scaled to the distance 
 \begin_inset Formula $(s-x)$
 \end_inset
 
-: 
+:
+ 
 \begin_inset Formula $\frac{1}{1+e^{\beta(s-x)}}$
 \end_inset
 
-, which will have value 0 whenever the distance 
+,
+ which will have value 0 whenever the distance 
 \begin_inset Formula $(s-x)$
 \end_inset
 
- is negative and whose transition from 1 to 0 is sufficiently steep with
- a sufficiently small negative factor 
+ is negative and whose transition from 1 to 0 is sufficiently steep with a sufficiently small negative factor 
 \begin_inset Formula $\beta$
 \end_inset
 
@@ -1159,7 +1253,8 @@ Let us now add the limitation that the sensor pointing is forward and has
 \begin_inset Formula $y=\frac{\alpha S}{1+\Vert s-x\Vert^{(2)}}*\frac{1}{1+e^{\beta(s-x)}}$
 \end_inset
 
-, which can be slightly simplified to 
+,
+ which can be slightly simplified to 
 \begin_inset Formula $y=\frac{\alpha S}{1+\Vert s-x\Vert^{(2)}+e^{\beta(s-x)}}$
 \end_inset
 
@@ -1168,7 +1263,8 @@ Let us now add the limitation that the sensor pointing is forward and has
 status open
 
 \begin_layout Plain Layout
-I am not really sure why, but it can.
+I am not really sure why,
+ but it can.
  I'll have to think about this a bit longer.
 \end_layout
 
@@ -1179,10 +1275,9 @@ I am not really sure why, but it can.
 status open
 
 \begin_layout Plain Layout
-Notice that this expression is not general at all and it applies only to
- the 1-D case.
- I will have to come up with a better expression for the 2D case, in which
- we have sensors with arbitrary fields of view 
+Notice that this expression is not general at all and it applies only to the 1-D case.
+ I will have to come up with a better expression for the 2D case,
+ in which we have sensors with arbitrary fields of view 
 \begin_inset Formula $\theta$
 \end_inset
 
@@ -1199,7 +1294,8 @@ Notice that this expression is not general at all and it applies only to
 \end_layout
 
 \begin_layout Standard
-Alternatively, we cold use a piece-wise function for 
+Alternatively,
+ we cold use a piece-wise function for 
 \begin_inset Formula $y$
 \end_inset
 
@@ -1207,12 +1303,12 @@ Alternatively, we cold use a piece-wise function for
 \begin_inset Formula $\theta$
 \end_inset
 
- between the robot's heading and the source's location falls within an angle
- 
+ between the robot's heading and the source's location falls within an angle 
 \begin_inset Formula $\phi$
 \end_inset
 
- representing the range of the sensor, and zero otherwise.
+ representing the range of the sensor,
+ and zero otherwise.
  Assuming sensors' bilateral symmetry:
 \end_layout
 
@@ -1231,11 +1327,13 @@ y=\begin{cases}
 \end_layout
 
 \begin_layout Standard
-In our 1-dimensional case, with 
+In our 1-dimensional case,
+ with 
 \begin_inset Formula $\phi=\pi$
 \end_inset
 
-, and the sign of 
+,
+ and the sign of 
 \begin_inset Formula $cos\,\theta$
 \end_inset
 
@@ -1243,7 +1341,8 @@ In our 1-dimensional case, with
 \begin_inset Formula $(s-x)$
 \end_inset
 
-, we have the equivalent formulation
+,
+ we have the equivalent formulation
 \end_layout
 
 \begin_layout Standard
@@ -1261,8 +1360,8 @@ y=\begin{cases}
 \end_layout
 
 \begin_layout Standard
-for a forward-looking sensor, with conditions switched for a rear-looking
- one.
+for a forward-looking sensor,
+ with conditions switched for a rear-looking one.
  
 \begin_inset Note Greyedout
 status open
@@ -1277,9 +1376,9 @@ The problem with this solution is that the
 \begin_inset Formula $(s-x)=0$
 \end_inset
 
-, which represents the only fixed point of the system considered so far.
- Hence the existence/uniqueness of the solution may be problematic (see
- Strogatz 27).
+,
+ which represents the only fixed point of the system considered so far.
+ Hence the existence/uniqueness of the solution may be problematic (see Strogatz 27).
  
 \end_layout
 
@@ -1293,8 +1392,8 @@ Qualitative analysis
 \end_layout
 
 \begin_layout Standard
-For a qualitative analysis, it is useful to express the equations as a single
- differential equation of 
+For a qualitative analysis,
+ it is useful to express the equations as a single differential equation of 
 \begin_inset Formula $\dot{x},$
 \end_inset
 
@@ -1317,7 +1416,8 @@ a
 \end_layout
 
 \begin_layout Standard
-and respectively, for Type 1
+and respectively,
+ for Type 1
 \emph on
 b 
 \emph default
@@ -1329,14 +1429,12 @@ with omnidirectional sensor
 
 \end_inset
 
-where the parenthesis around the quadratic term indicates that the stimulus-decr
-easing function can be linear or quadratic.
+where the parenthesis around the quadratic term indicates that the stimulus-decreasing function can be linear or quadratic.
  
 \end_layout
 
 \begin_layout Standard
-A qualitative analysis in terms of phase portrait of the systems represented
- by equations 
+A qualitative analysis in terms of phase portrait of the systems represented by equations 
 \begin_inset Flex ShortXRef
 status collapsed
 
@@ -1344,6 +1442,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand eqref
 reference "fig:Type-1a-and1b-phase-omnidir-portraits"
+nolink "false"
 
 \end_inset
 
@@ -1356,6 +1455,7 @@ reference "fig:Type-1a-and1b-phase-omnidir-portraits"
 \begin_inset CommandInset ref
 LatexCommand eqref
 reference "eq:Type1-b-system"
+nolink "false"
 
 \end_inset
 
@@ -1363,6 +1463,7 @@ reference "eq:Type1-b-system"
 \begin_inset CommandInset ref
 LatexCommand eqref
 reference "fig:Type-1a-and1b-phase-omnidir-portraits"
+nolink "false"
 
 \end_inset
 
@@ -1371,18 +1472,23 @@ reference "fig:Type-1a-and1b-phase-omnidir-portraits"
 \begin_inset Formula $s$
 \end_inset
 
-, whereas Type 1a has no fixed points at all.
+,
+ whereas Type 1a has no fixed points at all.
  
 \end_layout
 
 \begin_layout Standard
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
 
 \begin_layout Plain Layout
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -1399,14 +1505,15 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Type 1
 \emph on
 a
 \emph default
-, 
+,
+ 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1430,6 +1537,8 @@ the closer the stronger
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -1446,18 +1555,20 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Type 1
 \emph on
 b
 \emph default
-, 
+,
+ 
 \begin_inset Quotes eld
 \end_inset
 
-the closer, the weaker
+the closer,
+ the weaker
 \begin_inset Quotes erd
 \end_inset
 
@@ -1476,7 +1587,7 @@ the closer, the weaker
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset Flex ShortLabel
@@ -1494,8 +1605,7 @@ name "fig:Type-1a-and1b-phase-omnidir-portraits"
 
 \end_inset
 
-Omnidirectional sensors Type 1a and Type 1b phase portraits with a stimulus
- source at location 
+Omnidirectional sensors Type 1a and Type 1b phase portraits with a stimulus source at location 
 \begin_inset Formula $s=5.$
 \end_inset
 
@@ -1522,7 +1632,10 @@ Omnidirectional sensors Type 1a and Type 1b phase portraits with a stimulus
 \end_layout
 
 \begin_layout Standard
-With the forward-looking sensors, instead, we would have: 
+With the forward-looking sensors,
+ instead,
+ we would have:
+ 
 \end_layout
 
 \begin_layout Standard
@@ -1537,7 +1650,8 @@ With the forward-looking sensors, instead, we would have:
 \end_layout
 
 \begin_layout Standard
-and respectively, for Type 1
+and respectively,
+ for Type 1
 \emph on
 b 
 \emph default
@@ -1561,6 +1675,7 @@ status collapsed
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Type-1a-and1b-phase-directional-portraits"
+nolink "false"
 
 \end_inset
 
@@ -1572,6 +1687,8 @@ reference "fig:Type-1a-and1b-phase-directional-portraits"
 .
  
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -1582,6 +1699,8 @@ status open
 
 \begin_layout Plain Layout
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -1598,14 +1717,15 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Type 1
 \emph on
 a
 \emph default
-, 
+,
+ 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1629,6 +1749,8 @@ the closer the stronger
 
 
 \begin_inset Float figure
+placement document
+alignment document
 wide false
 sideways false
 status open
@@ -1645,18 +1767,20 @@ status open
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 Type 1
 \emph on
 b
 \emph default
-, 
+,
+ 
 \begin_inset Quotes eld
 \end_inset
 
-the closer, the weaker
+the closer,
+ the weaker
 \begin_inset Quotes erd
 \end_inset
 
@@ -1671,7 +1795,7 @@ the closer, the weaker
 \end_inset
 
 
-\begin_inset Caption
+\begin_inset Caption Standard
 
 \begin_layout Plain Layout
 \begin_inset Flex ShortLabel
@@ -1724,7 +1848,9 @@ The phase portraits show that in either case there is a fixed point at
 \begin_inset Formula $x_{0}=s$
 \end_inset
 
-, and indeed all points to the right, (
+,
+ and indeed all points to the right,
+ (
 \begin_inset Formula $x_{0}>s)$
 \end_inset
 
@@ -1734,14 +1860,15 @@ The phase portraits show that in either case there is a fixed point at
 status open
 
 \begin_layout Plain Layout
-Unsurprisingly, since I wrote the ugly looking functions to behave exactly
- that way...
+Unsurprisingly,
+ since I wrote the ugly looking functions to behave exactly that way...
 \end_layout
 
 \end_inset
 
- In other words, both vehicles are stimulus-seekers, whit the difference
- that Type 1a rushes to the source (it is 
+ In other words,
+ both vehicles are stimulus-seekers,
+ whit the difference that Type 1a rushes to the source (it is 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1749,8 +1876,9 @@ aggressive,
 \begin_inset Quotes erd
 \end_inset
 
- Braitenberg would say) and the Type 1b, on the contrary, starts very fast
- and slows down as it approaches the source (it is 
+ Braitenberg would say) and the Type 1b,
+ on the contrary,
+ starts very fast and slows down as it approaches the source (it is 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1766,8 +1894,8 @@ Still to do from here on
 \end_layout
 
 \begin_layout Subsection
-Find a better and more general solution for directionality of sensors, extensibl
-e to 2D case
+Find a better and more general solution for directionality of sensors,
+ extensible to 2D case
 \end_layout
 
 \begin_layout Subsection
@@ -1779,8 +1907,8 @@ Connection of NN to system
 \end_layout
 
 \begin_layout Standard
-Looking ahead, a NN-controlled Type-1 vehicle would replace the expressions
- for 
+Looking ahead,
+ a NN-controlled Type-1 vehicle would replace the expressions for 
 \begin_inset Formula $y$
 \end_inset
 
@@ -1789,8 +1917,9 @@ Looking ahead, a NN-controlled Type-1 vehicle would replace the expressions
 \end_inset
 
  with more complex functions.
- In fact, it would replace them with a whole, possibly recurrent network
- with input 
+ In fact,
+ it would replace them with a whole,
+ possibly recurrent network with input 
 \emph on
 
 \begin_inset Formula $I_{s}$
@@ -1806,39 +1935,47 @@ Looking ahead, a NN-controlled Type-1 vehicle would replace the expressions
 \end_layout
 
 \begin_layout Standard
-However, before we get to NN-controlled vehicles, we need to investigate
- a conversion into state form.
+However,
+ before we get to NN-controlled vehicles,
+ we need to investigate a conversion into state form.
  The equations in 
 \begin_inset CommandInset ref
 LatexCommand eqref
 reference "Type-1a"
+nolink "false"
 
 \end_inset
 
-, 
+,
+ 
 \begin_inset CommandInset ref
 LatexCommand eqref
 reference "eq:Type-1a-quadr"
+nolink "false"
 
 \end_inset
 
-, and 
+,
+ and 
 \begin_inset CommandInset ref
 LatexCommand eqref
 reference "eq:Type-1-b"
+nolink "false"
 
 \end_inset
 
-, are non-linear, thereby a linearization is necessary and we need to decide
- around which points to linearize.
+,
+ are non-linear,
+ thereby a linearization is necessary and we need to decide around which points to linearize.
 \begin_inset Note Greyedout
 status open
 
 \begin_layout Plain Layout
-I NEED TO CHECK: HOSANHA AS WELL AS MURRAY/ASTROM ON LINEARIZATION, THE
- BOOK ON FEEDBACK CONTROL OF DYNAMIC SYSTEM FOR NON-LINEAR SYSTEMS, RANO
- (THE GUY WHO DID THE MODEL FOR TYPE 2) FOR EXAMPLES, AND BEER FOR THE ANALYSIS
- OF CTRNN
+I NEED TO CHECK:
+ HOSANHA AS WELL AS MURRAY/ASTROM ON LINEARIZATION,
+ THE BOOK ON FEEDBACK CONTROL OF DYNAMIC SYSTEM FOR NON-LINEAR SYSTEMS,
+ RANO (THE GUY WHO DID THE MODEL FOR TYPE 2) FOR EXAMPLES,
+ AND BEER FOR THE ANALYSIS OF CTRNN
 \end_layout
 
 \end_inset
@@ -1851,21 +1988,27 @@ I NEED TO CHECK: HOSANHA AS WELL AS MURRAY/ASTROM ON LINEARIZATION, THE
 status open
 
 \begin_layout Plain Layout
-Next steps, still missing from this discussion: 
+Next steps,
+ still missing from this discussion:
+ 
 \end_layout
 
 \begin_layout Enumerate
-Qualitative analysis via vector fields, bifurcation, etc (see Strogatz)
+Qualitative analysis via vector fields,
+ bifurcation,
+ etc (see Strogatz)
 \end_layout
 
 \begin_layout Enumerate
-Linearization of y(x), how and especially 
+Linearization of y(x),
+ how and especially 
 \emph on
 where
 \end_layout
 
 \begin_layout Enumerate
-multimodal inputs (y as vector?), possibly with different functions
+multimodal inputs (y as vector?),
+ possibly with different functions
 \emph on
  
 \emph default
@@ -1898,6 +2041,7 @@ Linearization of the quadratic equation
 \begin_inset CommandInset ref
 LatexCommand eqref
 reference "eq:Type-1a-quadr"
+nolink "false"
 
 \end_inset
 
@@ -1905,7 +2049,8 @@ reference "eq:Type-1a-quadr"
 \begin_inset Formula $x_{0}=0$
 \end_inset
 
- brings to the following, after Taylor expansion:
+ brings to the following,
+ after Taylor expansion:
 \end_layout
 
 \begin_layout Plain Layout
@@ -1920,11 +2065,14 @@ reference "eq:Type-1a-quadr"
 \end_layout
 
 \begin_layout Plain Layout
-However, the usefulness of this linearization is doubtful, as 
+However,
+ the usefulness of this linearization is doubtful,
+ as 
 \begin_inset Formula $\dot{x}(0)\neq0$
 \end_inset
 
-, i.e.
+,
+ i.e.
  the system is not at an equilibrium point at 
 \begin_inset Formula $x_{0}=0$
 \end_inset
@@ -1934,15 +2082,18 @@ However, the usefulness of this linearization is doubtful, as
 \begin_inset Formula $x_{0}=\frac{kS}{1+s^{2}}$
 \end_inset
 
-, as per the above linearized equation.
+,
+ as per the above linearized equation.
  
 \end_layout
 
 \begin_layout Plain Layout
-Similarly, linearization of 
+Similarly,
+ linearization of 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "eq:Type-1-b"
+nolink "false"
 
 \end_inset
 
@@ -1950,7 +2101,8 @@ reference "eq:Type-1-b"
 \begin_inset Formula $x_{0}=0$
 \end_inset
 
- brings the following, after Taylor expansion:
+ brings the following,
+ after Taylor expansion:
 \end_layout
 
 \begin_layout Plain Layout
@@ -1982,9 +2134,8 @@ A Braitenberg-1 with physics and no NN controller
 \end_layout
 
 \begin_layout Standard
-Assuming a more realistic physical setup and a second order differential
- equation governing the motion of the Type 1 vehicle, the differential equations
- above (for Type 1
+Assuming a more realistic physical setup and a second order differential equation governing the motion of the Type 1 vehicle,
+ the differential equations above (for Type 1
 \emph on
 a
 \emph default
@@ -1992,7 +2143,8 @@ a
 \emph on
 b
 \emph default
-) now become, respectively:
+) now become,
+ respectively:
 \begin_inset Formula 
 \[
 \ddot{x}=\frac{kS}{1+\Vert s-x\Vert^{2}}-V\dot{x}\,\,\,,\,\,\,\ddot{x}=\Vert s-x\Vert^{2}*kS-V\dot{x}
@@ -2009,7 +2161,8 @@ where
 \end_inset
 
  is a constant indicating the velocity-proportional friction coefficient.
- In this case, our state becomes 
+ In this case,
+ our state becomes 
 \begin_inset Formula $x=\begin{bmatrix}x_{1}\\
 x_{2}
 \end{bmatrix}=\begin{bmatrix}x\\
@@ -2017,8 +2170,8 @@ x_{2}
 \end{bmatrix}$
 \end_inset
 
- and the linearization of the system involves computing the Jacobian, which
- is...
+ and the linearization of the system involves computing the Jacobian,
+ which is...
 \end_layout
 
 \begin_layout Standard

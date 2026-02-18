@@ -6,7 +6,6 @@ Created on Mar 13, 2013
 import pickle, sys, datetime
 from Core.HomeoDataUnit import  *
 import numpy as np
-from cherrypy._cpcompat import iteritems
 
 
 class HomeoDataCollector(object):

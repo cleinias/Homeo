@@ -1,0 +1,413 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+TO DO list for the update of the Homeo package
+\end_layout
+
+\begin_layout Section*
+Environment
+\end_layout
+
+\begin_layout Enumerate
+Run unit tests to figure out what is broken, 
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+See below for details
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Upgrade from python 2.7 to python 3
+\end_layout
+
+\begin_layout Enumerate
+Upgrade from pyqt4 to pyqt5 or 6 (but 5 may be better, i.e.
+ less of a change)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+See 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+https://stackoverflow.com/questions/46554746/pyqt4-to-pyqt5-how
+\end_layout
+
+\end_inset
+
+ for the main differences
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+May (probably must) update the robotic environments as well.
+ Currently installed:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Webots: 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+https://cyberbotics.com/
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Vrep, which has now become Coppelia robotics: 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+https://www.coppeliarobotics.com/
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Player/Stage? (not upgraded since 2010).
+ Gazebo, however (the 3D simulator, still exists and it is actively maintained/m
+arketed by OPen Robotics: 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+https://www.openrobotics.org/
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Enumerate
+I believe I also started with my own virtual world in pyglet?
+\end_layout
+
+\end_deeper
+\begin_layout Section*
+Main issues
+\end_layout
+
+\begin_layout Enumerate
+Figure out exactly what was done...a work in progress
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Virtual worlds
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+I believe the Webots simulation in 1 dimension was working, as I used it
+ for the article in Constructivist Foundations
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+There seem to be software models/ controllers/worlds experiments in the
+ Webots directory
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Also the VREP directory has some models and scenes, 
+\end_layout
+
+\begin_layout Enumerate
+As does the PlayerStage directory
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Enumerate
+Run the UniTests
+\end_layout
+
+\begin_layout Enumerate
+Reread the failed Esprit project and get detailed description of proposed
+ experiments
+\end_layout
+
+\begin_layout Section*
+Unit test run of 4/22/2024
+\end_layout
+
+\begin_layout Standard
+Here are the results of a complete run of all the 135 tests in UnitTests.
+ In brief, 11 failed tests, 3 errors.
+ Will have to go through them carefully to figure out what
+\begin_inset Quotes ers
+\end_inset
+
+s wrong
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+====================================================================== ERROR:
+ testPrintDataOnString (HomeoDataUnitTest.HomeoDataUnitTest) --------------------
+-------------------------------------------------- Traceback (most recent
+ call last):   File "HomeoDataUnitTest.py", line 96, in testPrintDataOnString
+     dic['connections'][unitAsLists[i][1]] = [unitAsLists[i+1][1], unitAsLists[i
++2][1], unitAsLists[i+3][1]] IndexError: list index out of range
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== ERROR:
+ testReadConditionsFromFile (HomeoQtSimulationTest.HomeoQtSimulationTest)
+ ----------------------------------------------------------------------
+ Traceback (most recent call last):   File "HomeoQtSimulationTest.py", line
+ 205, in testReadConditionsFromFile     self.simulation.go()   File "/home/stefano
+/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Simulator/HomeoQtS
+imulation.py", line 233, in go     self.updateLiveData()   File "/home/stefano/Doc
+uments/Projects/Homeostat/Simulator/Python-port/Homeo/src/Simulator/HomeoQtSimul
+ation.py", line 261, in updateLiveData     self.liveData[unit].append(unit.criticalD
+eviation) KeyError: <Core.HomeoUnit.HomeoUnit object at 0x7ced8be2d210>
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== ERROR:
+ testSaveToFile (HomeoQtSimulationTest.HomeoQtSimulationTest) -------------------
+--------------------------------------------------- Traceback (most recent
+ call last):   File "HomeoQtSimulationTest.py", line 239, in testSaveToFile
+     self.simulation.go()   File "/home/stefano/Documents/Projects/Homeostat/Simul
+ator/Python-port/Homeo/src/Simulator/HomeoQtSimulation.py", line 233, in
+ go     self.updateLiveData()   File "/home/stefano/Documents/Projects/Homeostat/
+Simulator/Python-port/Homeo/src/Simulator/HomeoQtSimulation.py", line 261,
+ in updateLiveData     self.liveData[unit].append(unit.criticalDeviation) KeyError:
+ <Core.HomeoUnit.HomeoUnit object at 0x7ced8be431d0>
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testSaveCompleteDataOnFile (HomeoDataCollectorTest.HomeoDataCollectorTest)
+ ----------------------------------------------------------------------
+ Traceback (most recent call last):   File "HomeoDataCollectorTest.py", line
+ 187, in testSaveCompleteDataOnFile     self.assertTrue(len(timeIndices)
+ == homeostatRuns * len(self.homeostat.homeoUnits)) AssertionError: False
+ is not true
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testIndependentlyRandomizedValuesMatrix (HomeoUniselectorAshbyTest.HomeoUniselec
+torAshbyTest) ------------------------------------------------------------------
+---- Traceback (most recent call last):   File "HomeoUniselectorAshbyTest.py",
+ line 157, in testIndependentlyRandomizedValuesMatrix     self.assertTrue(p
+ < 0.05) AssertionError: False is not true
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testRunForTicks (HomeostatTest.HomeostatTest) ----------------------------------
+------------------------------------ Traceback (most recent call last):
+   File "HomeostatTest.py", line 226, in testRunForTicks     self.assertTrue(len(s
+elf.homeostat.dataCollector.states) == ticks) AssertionError: False is not
+ true
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testStop (HomeoSimulationTest.HomeoSimulationTest) -----------------------------
+----------------------------------------- Traceback (most recent call last):
+   File "HomeoSimulationTest.py", line 162, in testStop     self.assertFalse(simul
+ationCycles == self.simulation.homeostat.time) AssertionError: True is not
+ false
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testDegradingUniformLinearNoise (HomeoNoiseTest.HomeoNoiseTest) ----------------
+------------------------------------------------------ Traceback (most recent
+ call last):   File "HomeoNoiseTest.py", line 379, in testDegradingUniformLinearN
+oise     self.assertTrue(p > 0.05) AssertionError: False is not true
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testStart (HomeoQtSimulationTest.HomeoQtSimulationTest) ------------------------
+---------------------------------------------- Traceback (most recent call
+ last):   File "HomeoQtSimulationTest.py", line 146, in testStart     self.assertT
+rue(simulationCycles == self.simulation.homeostat.time) AssertionError: False
+ is not true
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testComputeNextDeviationRunoffAndStabilityLinear (HomeoUnitTest.HomeoUnitTest)
+ Approximate tests on the behavior of a self-connected unit running repeatedly.
+ Check if it runs to (+/-) infinity or it stabilizes ---------------------------
+------------------------------------------- Traceback (most recent call
+ last):   File "HomeoUnitTest.py", line 173, in testComputeNextDeviationRunoffAnd
+StabilityLinear     self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev)
+ < errorTolerance) AssertionError: False is not true
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testComputeNextDeviationRunoffAndStabilityProportional (HomeoUnitTest.HomeoUnitT
+est) Approximate tests on the behavior of a self-connected unit running
+ repeatedly.
+ Check if it runs to (+/-) infinity or it stabilizes ---------------------------
+------------------------------------------- Traceback (most recent call
+ last):   File "HomeoUnitTest.py", line 247, in testComputeNextDeviationRunoffAnd
+StabilityProportional     self.assertTrue(abs(self.unit.criticalDeviation 
+ - expectedDev) < errorTolerance) AssertionError: False is not true
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testComputeOutput (HomeoUnitTest.HomeoUnitTest) A unit's output at time
+ t is equal to -----------------------------------------------------------------
+----- Traceback (most recent call last):   File "HomeoUnitTest.py", line
+ 975, in testComputeOutput     self.assertTrue(abs(self.unit.currentOutput
+ - expectedOutput) < errorTolerance) AssertionError: False is not true
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testViscosity (HomeoUnitTest.HomeoUnitTest) ------------------------------------
+---------------------------------- Traceback (most recent call last):  
+ File "HomeoUnitTest.py", line 1247, in testViscosity     self.assertTrue(self.unit.
+criticalDeviation == oldCritDeviation) AssertionError: False is not true
+\end_layout
+
+\begin_layout Plain Layout
+
+====================================================================== FAIL:
+ testDragEquationDrag (HomeoUnitNewtonianTest.HomeoUnitNewtonianTest) -----------
+----------------------------------------------------------- Traceback (most
+ recent call last):   File "HomeoUnitNewtonianTest.py", line 154, in testDragEqua
+tionDrag     self.assertTrue(delta < errorTolerance) AssertionError: False
+ is not true
+\end_layout
+
+\begin_layout Plain Layout
+
+---------------------------------------------------------------------- Ran
+ 135 tests in 16.236s
+\end_layout
+
+\begin_layout Plain Layout
+
+FAILED (failures=11, errors=3) 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

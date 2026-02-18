@@ -1,0 +1,46 @@
+# bjam file used to build a Python extension for the Stage C++ library
+# (of the Player/Stage robotic simulation system) with Boost::Python.
+#
+# Author: Stefano Franchi
+# Date: 3/10/2015
+
+import python ;
+
+if ! [ python.configured ]
+{
+    ECHO "notice: no Python configured in user-config.jam" ;
+    ECHO "notice: will use default configuration" ;
+    using python ;
+}
+
+#boost-python library
+project
+  : requirements <library>/usr/lib/libboost_python.so ;
+#                 <implicit-dependency>
+#  : usage-requirements <implicit-dependency>
+#  ;
+
+# Declare the three extension modules.  You can specify multiple
+# source files after the colon separated by spaces.
+python-extension stageLibPy_ext : /home/stefano/builds/from-upstream-sources/stage4/Stage/libstage/stage.cc ;                  # CORRECT FILENAME FOR STAGE LIB SOURCE GOES HERE
+
+# Put the extension and Boost.Python DLL in the current directory, so
+# that running script by hand works.
+install convenient_copy 
+  : stageLibPy_ext
+  : <install-dependencies>on <install-type>SHARED_LIB <install-type>PYTHON_EXTENSION 
+    <location>. 
+  ;
+
+# A little "rule" (function) to clean up the syntax of declaring tests
+# of these extension modules.
+local rule run-test ( test-name : sources + )
+{
+    import testing ;
+    testing.make-test run-pyd : $(sources) : : $(test-name) ;
+}
+
+# Declare test targets
+run-test stageLibPy : stageLibPy_ext stageLibPy.py ;
+
+

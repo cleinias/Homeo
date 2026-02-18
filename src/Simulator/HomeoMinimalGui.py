@@ -17,7 +17,7 @@ import pyqtgraph as pg
 from StringIO import StringIO
 
 
-class HomeoMinimalGui(QDialog):    
+class HomeoMinimalGui(QDialog):
     '''
     A minimal GUI for a HomeoSimulation. 
     It just provide access to starting and stopping the simulation and to saving and graphing data.

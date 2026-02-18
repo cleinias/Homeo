@@ -74,7 +74,7 @@ class Homeostat(object):
         self._microTime = 0
         self._homeoUnits = []
         self._dataCollector = HomeoDataCollector()
-        self._collectsData = True                       # default is to collect data. Can be turned off via accessor."
+        self._collectsData = True                       # default is to collect data. Can be turned off via accessor.
         self._slowingFactor = 10                        # Default slowing time is 10 milliseconds 
         self._isRunning = False                         # a new homeostat is not running 
         self._usesSocket = False
@@ -239,8 +239,8 @@ class Homeostat(object):
             
             while self.time < ticks:
                 for unit in self.homeoUnits:
-                    if self.collectsData:
-                        self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
+#                     if self.collectsData:
+#                         self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
                     unit.time =  self.time
                     # sys.stderr.write("the status of %s in the function is %s and in the ivar is %s \n" % (unit.name, unit.isActive(), unit._status))
 #                     print "unit: %s of type %s about to update with value: %.3f" % (unit.name, type(unit), unit.criticalDeviation)
@@ -285,8 +285,8 @@ class Homeostat(object):
                 for unit in self.homeoUnits:
                     unit.time = time
                     unit.selfUpdate()
-                    if self.collectsData:
-                        self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time,unit)
+#                     if self.collectsData:
+#                         self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time,unit)
                     self.time += 1
                     time.sleep(sleepTime / 1000)               # sleep accepts seconds, slowingFactor is in milliseconds
         else:

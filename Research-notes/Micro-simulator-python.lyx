@@ -1,0 +1,389 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass memoir-article
+\begin_preamble
+\addbibresource{/home/stefano/Documents/Biblios/Italian-philosophy.bib}
+\addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
+\addbibresource{/home/stefano/Documents/Books/Play-and-Passivity/Dissertation-references.bib}
+\addbibresource{/home/stefano/Documents/Biblios/additional-refs-for-Il-Pensiero-Vivente.bib}
+\end_preamble
+\options article, 11pt
+\use_default_options false
+\begin_modules
+biblatex
+\end_modules
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding utf8-plain
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format pdf2
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing onehalf
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine natbib_authoryear
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Notes on a micro robotic simulator in Python
+\end_layout
+
+\begin_layout Standard
+Brief notes on the needed components for a micro, non-dynamic robotic simulator
+ in python
+\end_layout
+
+\begin_layout Standard
+ALL DONE
+\end_layout
+
+\begin_layout Chapter
+Basic components
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+World
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+a world is made up of objects
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\emph on
+Objects
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+objects know:
+\end_layout
+
+\begin_layout Enumerate
+Their shape and size along the 2|3 dimensions
+\end_layout
+
+\begin_layout Enumerate
+Their center of mass/gravity
+\end_layout
+
+\begin_layout Enumerate
+their position (aka pose) (2D or 3D?)
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+pose is 2|3 coordinates plus 2|3 rotations
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+their velocity (if any, along the necessary axes)
+\end_layout
+
+\begin_layout Enumerate
+Other model-dependent properties (e.g.
+ lights have intensities)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Objects know also 
+\emph on
+how to
+\emph default
+:
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Change their velocities
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\emph on
+SimEngine
+\emph default
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+the engine knows hows to:
+\end_layout
+
+\begin_layout Enumerate
+Load a saved world
+\end_layout
+
+\begin_layout Enumerate
+Save a world
+\end_layout
+
+\begin_layout Enumerate
+Advance the simulation (the state of the world) 
+\emph on
+one
+\emph default
+|
+\emph on
+n
+\emph default
+ steps by updating the state of the world's objects (i.e.
+ their positions)
+\end_layout
+
+\begin_layout Enumerate
+Report info about the world objects (distances, orientation, etc.)
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\emph on
+SimVisualization
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+The visualization knows how to present a graphic view of the 
+\emph on
+World
+\end_layout
+
+\end_deeper
+\begin_layout Chapter
+Steps needed to complete the simulator
+\end_layout
+
+\begin_layout Enumerate
+Graphic window can visualize static world objects
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Graphic window can be zoomed, panned, and tilted
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Perhaps need to restructure visualization class as subclass of pyglet.window.Windo
+w
+\end_layout
+
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Graphic window can correctly visualize moving objects
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Not working now: all objects move, strangely.
+\end_layout
+
+\begin_layout Standard
+Update: Objects do not move at all, actually, it is the visualization that
+ it is wrong, as it moves the whole window around.
+\end_layout
+
+\begin_layout Standard
+Need to think again how to properly render object in openGL
+\end_layout
+
+\begin_layout Standard
+FIXED AND DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Graphic window can stop/pause/restart simulation
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Simulator's robot has 
+\begin_inset Quotes eld
+\end_inset
+
+sensors
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+wheels
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Simulator's robot can report intensity of stimuli received from light(s)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Simulator's robot executes velocity control commands (as changeLinearVel,
+ changeAngularVel)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Simulator's robot executes velocity control commands as setRightSpeedVel,
+ setLeftSpeedWheel
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Homeo simulation can interface to simulator's world headless
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Homeo simulation can interface to simulator's world 
+\emph on
+visualized
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Simulator can load world's configuration from file
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Changed: world's simulation are loaded as methods.
+\end_layout
+
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Simulator can save world's configuration to file
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Necessary?
+\end_layout
+
+\begin_layout Standard
+N/A see previous point
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Homeo GA experiments can be run on built-in simulator
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+DONE
+\end_layout
+
+\end_deeper
+\end_body
+\end_document

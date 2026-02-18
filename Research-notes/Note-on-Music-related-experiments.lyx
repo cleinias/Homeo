@@ -387,14 +387,14 @@ environment
 n
 \emph default
 -dimensional space with some kind of metrics defined over it.
- The space does not have to be homogenous—it could be a juxtaposition of
+ The space does not have to be homogeneous—it could be a juxtaposition of
  several heterogeneous (
 \emph on
 n-
 \emph default
 dimensional) spaces, each with its own metric.
  In the biological domain, the space could be a 3D Euclidean empty space.
- But it could also be a 4-D space thats adds to each geometrical point a
+ But it could also be a 4-D space that adds to each geometrical point a
  luminance value, for instance.
  Or it could be a 6-D space that adds a tristimulus value representing a
  color value to each point in space, and so on.
