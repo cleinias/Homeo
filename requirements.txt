@@ -1,0 +1,18 @@
+# Core simulation
+PyQt5>=5.15
+numpy>=2.0
+scipy>=1.10
+matplotlib>=3.8
+
+# Real-time charting in the GUI
+pyqtgraph>=0.14
+
+# Genetic-algorithm experiments
+deap>=1.4
+
+# KheperaSimulator (Box2D physics + rendering)
+box2d-py>=2.3.8
+pyglet>=2.1
+
+# Testing
+pytest>=9.0
