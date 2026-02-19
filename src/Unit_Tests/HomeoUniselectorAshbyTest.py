@@ -154,7 +154,7 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
             
         uniformRandomSample = numpy.random.uniform(- self.uniselector.upperBound,self.uniselector.upperBound,10000)
         D,p = stats.ks_2samp(allValues,uniformRandomSample)
-        self.assertTrue(p < 0.05)
+        self.assertTrue(p > 0.05)
         
         "Check that the we are producing values for all units controlled"
         for values in valuesProduced: 

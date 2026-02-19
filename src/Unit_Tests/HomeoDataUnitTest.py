@@ -83,16 +83,20 @@ class HomeoDataUnitTest(unittest.TestCase):
         for i in range(0,len(dataItems) -1, 2):
             unitAsLists.append([dataItems[i] , dataItems[i+1]])
         
-        '''Create a simil data unit  from the list of lists, knowing then:
-        the first 3 items  represent the homeodataunit primary values, and any 
-        block of 4 pair afterwards represent a connection and its values'''
+        '''Create a simil data unit  from the list of lists, knowing that:
+        the first 5 items represent the homeodataunit primary values
+        (name, critDev, output, uniselector, active), and any
+        block of 4 pairs afterwards represent a connection and its values'''
         dic = {}
         dic['name'] = unitAsLists[0][1]
-        dic['output'] = unitAsLists[1][1]
-        dic['uniselector'] = unitAsLists[2][1]
-        if len(unitAsLists) > 3:
+        dic['critDev'] = unitAsLists[1][1]
+        dic['output'] = unitAsLists[2][1]
+        dic['uniselector'] = unitAsLists[3][1]
+        dic['active'] = unitAsLists[4][1]
+        headerPairs = 5
+        if len(unitAsLists) > headerPairs:
             dic['connections'] = {}
-            for i in range(3,len(unitAsLists), 4):
+            for i in range(headerPairs, len(unitAsLists), 4):
                 dic['connections'][unitAsLists[i][1]] = [unitAsLists[i+1][1], unitAsLists[i+2][1], unitAsLists[i+3][1]]
       
         "1. Check unit's primary data are the same as the original" 
