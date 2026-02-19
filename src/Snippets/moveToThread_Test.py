@@ -1,6 +1,6 @@
 import time, sys
-from PyQt4.QtCore  import *
-from PyQt4.QtGui import * 
+from PyQt5.QtCore  import *
+from PyQt5.QtWidgets import *; from PyQt5.QtGui import *
 
 class SimulRunner(QObject):
     'Object managing the simulation'
@@ -44,9 +44,9 @@ class SimulationUi(QDialog):
         self.simulRunner.stepIncreased.connect(self.currentStep.setValue)
 
 
-        self.connect(self.stopButton, SIGNAL('clicked()'), self.simulRunner.stop)
-        self.connect(self.goButton, SIGNAL('clicked()'), self.simulThread.start)
-        self.connect(self.simulRunner,SIGNAL('stepIncreased'), self.currentStep.setValue)
+        self.stopButton.clicked.connect(self.simulRunner.stop)
+        self.goButton.clicked.connect(self.simulThread.start)
+        self.simulRunner.stepIncreased.connect(self.currentStep.setValue)
 
 
 if __name__ == '__main__':

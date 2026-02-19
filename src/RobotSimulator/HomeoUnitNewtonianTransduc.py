@@ -200,7 +200,7 @@ class HomeoUnitInput(HomeoUnit):
             self.criticalDeviation = scaleTo(self.transducer.range(), [-self.maxDeviation, self.maxDeviation], self.transducer.read())
         self.computeOutput()
         if self.debugMode:
-            print "%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput)
+            print("%s has crit dev of: %f and output of: %f" % (self.name, self.criticalDeviation, self.currentOutput))
 
         #=======================================================================
         # "for debugging"

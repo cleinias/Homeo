@@ -45,7 +45,7 @@ class supervisorTrajectory(Supervisor):
          or of form TARGET and write their positions to file"""
          lights = []
          lights.append("TARGET")
-         for i in xrange(10):
+         for i in range(10):
              lights.append("LIGHT"+str(i+1))
          for l in lights:
              try:
@@ -75,7 +75,7 @@ class supervisorTrajectory(Supervisor):
             "and leave the loop when the simulation is over"
             if self.step(64) == -1:
                posFile.close()
-               print "closed data file: %s" % posFile.name
+               print("closed data file: %s" % posFile.name)
                break
             "Get the robot's translation field"
             pos = myKhepera.getPosition()  

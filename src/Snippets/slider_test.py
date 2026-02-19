@@ -1,5 +1,5 @@
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *; from PyQt5.QtGui import *
 from SliderTest_UI import *     
 import sys
 from math import floor
@@ -24,21 +24,22 @@ class SliderTest(QDialog, Ui_SliderTestUI):
                             
         self.SliderFloat.setMaximum(100)
         self.SliderFloat.setMinimum(0)
-        self.connect(self.doubleSpinBox, SIGNAL("valueChanged"), self, SLOT("self.emitConverted"))
-        self.connect(self.doubleSpinBox, SIGNAL("valueConvertedChanged(int)"), self.SliderFloat, SLOT("setValue(int)"))
-        self.connect(self.SliderFloat, SIGNAL("valueChanged(int)"), self.doubleSpinBox, SLOT("setValue(int)"))
+        self.doubleSpinBox.valueChanged.connect(self.emitConverted)
+        # NOTE: valueConvertedChanged is a custom signal -- needs manual wiring if used
+        self.SliderFloat.valueChanged.connect(self.doubleSpinBox.setValue)
 #        self.connect(self.doubleSpinBox, SIGNAL("valueChanged(double)"), self.SliderInt, SLOT("setValue(int)"))
         
     def setupIntSlider(self):
         self.SliderInt.setMaximum(100)
         self.SliderInt.setMinimum(0)
 #        QObject.connect(self.spinBox, SIGNAL("valueChanged"), self.SliderInt, SLOT("setValue(int)"))
-        self.connect(self.spinBox, SIGNAL("valueChanged(int)"), self.SliderInt, SLOT("setValue(int)"))
-        self.connect(self.SliderInt, SIGNAL("valueChanged(int)"), self.spinBox, SLOT("setValue(int)"))
+        self.spinBox.valueChanged.connect(self.SliderInt.setValue)
+        self.SliderInt.valueChanged.connect(self.spinBox.setValue)
 
     def emitConverted(self,aFloat):
-        print "I'm emitting valueConvertedChanged(int)"
-        self.doubleSpinBox.emit(SIGNAL("valueConvertedChanged(int)"), int(floor(aFloat * self.prec)))
+        print("I'm emitting valueConvertedChanged(int)")
+        # NOTE: old-style emit needs manual updating to use a custom pyqtSignal
+        # self.doubleSpinBox.emit(SIGNAL("valueConvertedChanged(int)"), int(floor(aFloat * self.prec)))
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -18,8 +18,6 @@ facilities for debugging purposes.
 Created on Mar 13, 2015
 @author: stefano
 '''
-from __future__ import division
-
 from Box2D import *
 from pyglet import clock, font, image, window
 from pyglet.gl import *
@@ -85,7 +83,7 @@ def makePygletGrid(size, spacing = 1, color = (1,1,1,1)):
        to make it the correct size.  Default color is white"""
     vertices = []
     steps = int(size/spacing)
-    for x in xrange(steps+1):
+    for x in range(steps+1):
         vertices += [x*spacing,0]                            # Top vertex for T-B line
         vertices += [x*spacing,-size]                        # Bottom vertex for T-B line
         vertices += [0, -x*spacing]                          # Left vertex for L-R line
@@ -113,8 +111,8 @@ def b2PygletFixtureDraw(self, body):
             self.userData['pygletShape'].draw(self.userData['filled'])
         glPopMatrix()    
     except KeyError as e:
-        print "Fixture does not know how to draw itself. Skipping it"
-        print e
+        print("Fixture does not know how to draw itself. Skipping it")
+        print(e)
 #         raise
 #         pass
     
@@ -135,8 +133,8 @@ def b2PygletBodyDraw(self):
     try:
         self.userData['pygletShape'].draw(self.userData['filled'])
     except KeyError as e:
-        print "Body does not know how to draw itself. Skipping it"
-        print e
+        print("Body does not know how to draw itself. Skipping it")
+        print(e)
 #         raise
         pass
     glPopMatrix()
@@ -445,7 +443,7 @@ class KheperaRobot(object):
         #             print "Irradiance: %.5f" % min((directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor, eyeMaxValue)            
                     sensorIrrad +=  min((directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor, eyeMaxValue) # clip sensor's output to its max value
             except Exception as e:
-                print e
+                print(e)
                 raise
         return sensorIrrad
     
@@ -639,7 +637,7 @@ class KheperaWheel(object):
         impulseVec = impulse * self.getForwardNormal()
         if self.name == 'right':
             self.impulseCounter += 1
-            print "Applying impulse # %d to wheel: %s, currently going at: %.3f " % (self.impulseCounter, self.name, self.getCurrentSpeed())
+            print("Applying impulse # %d to wheel: %s, currently going at: %.3f " % (self.impulseCounter, self.name, self.getCurrentSpeed()))
         self.body.ApplyLinearImpulse(impulseVec, self.body.GetWorldPoint((0,0)),True)
         
 #         print "%s wheel: FW normal: %s, right normal: %s" % (self.name, self.getForwardNormal(), self.getRightNormal())
@@ -785,7 +783,7 @@ class KheperaSimulation(object):
     def destroyWorld(self):
         """Destroy the Box2D world and nulls the variables containing 
            references to box2D objects"""
-        self.allBodies.values()[0].sensors = None
+        list(self.allBodies.values())[0].sensors = None
         del(self.allBodies)
         self.allBodies = {}
         del(self.world)
@@ -913,7 +911,7 @@ class KheperaSimulation(object):
         light = self.allBodies['TARGET']
         leftEyeReading = self.allBodies[self.robotName].irradAtSensor('leftEye', [light])
         rightEyeReading = self.allBodies[self.robotName].irradAtSensor('rightEye', [light])
-        print "right eye sees: %3.f  left eye sees: %.3f" % (rightEyeReading, leftEyeReading)
+        print("right eye sees: %3.f  left eye sees: %.3f" % (rightEyeReading, leftEyeReading))
         self.allBodies[self.robotName].setSpeed(rightEyeReading,leftEyeReading)    
     
     def braiten2b(self):
@@ -1019,15 +1017,15 @@ class KheperaSimulation(object):
             try:
                 obj1Pos = self.allBodies[obj1Name].body.position
             except (KeyError, AttributeError):
-                print "Cannot find object %s among the simulation's objects" % obj1Name
-                raise  
+                print("Cannot find object %s among the simulation's objects" % obj1Name)
+                raise
         try:
             obj2Pos = self.allBodies[obj2Name].position
         except (KeyError, AttributeError):
             try:
                 obj2Pos = self.allBodies[obj2Name].body.position
             except (KeyError, AttributeError):
-                print "Cannot find object %s among the simulation's objects" % obj2Name
+                print("Cannot find object %s among the simulation's objects" % obj2Name)
                 raise  
         
         return (obj2Pos - obj1Pos).length
@@ -1211,7 +1209,7 @@ def runKheperaSimulator(headless = False, dataDir = None, HomeoWorld = None, Box
     
     if dataDir is None:
         dataDir = getcwd()
-    print dataDir   
+    print(dataDir)
     if not headless:
         app = KheperaSimulationVisualizer(Box2D_timeStep=Box2D_timeStep, Box2D_vel_iter=Box2D_vel_iter, 
                                           Box2D_pos_iter=Box2D_pos_iter, HomeoWorld = HomeoWorld,                                          
@@ -1238,16 +1236,16 @@ if __name__=="__main__":
  
     steps = 10
     runs = 1
-    for run in xrange(runs):
+    for run in range(runs):
         timeNow  = time()
-        dis = a.getDistance(self.robotName, 'TARGET')    
-        print "%d Initial distance to target is %.3f  " % (run+1, dis),
-        for k in xrange(steps):
+        dis = a.getDistance(self.robotName, 'TARGET')
+        print("%d Initial distance to target is %.3f  " % (run+1, dis), end=' ')
+        for k in range(steps):
             a.advanceSim()
             dis = a.getDistance(self.robotName, 'TARGET')
-#             print "sim's current step is", a.currentStep
-        print "%d: Final distance to target is %.3f, time elapsed is %f" % (run+1, dis, time()- timeNow)
-        print "resetting simulation..."
+#             print("sim's current step is", a.currentStep)
+        print("%d: Final distance to target is %.3f, time elapsed is %f" % (run+1, dis, time()- timeNow))
+        print("resetting simulation...")
         a.resetWorld()
 # #         print "Starting simulation again"
 #         print "distance to target is %.3f, time elapsed is %f" % (dis, time()- timeNow)

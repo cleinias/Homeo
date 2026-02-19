@@ -23,9 +23,9 @@ class Vehicle2 (DifferentialWheels):
       leftLightValue = self.leftEye.getValue()
 
       # Process sensor data here
-      print "%u Right eye: %d Left eye: %d \r" % (counter,
+      print("%u Right eye: %d Left eye: %d \r" % (counter,
                                                rightLightValue,
-                                               leftLightValue)
+                                               leftLightValue))
       # Enter here functions to send actuator commands, like:
       self.setSpeed(-1,1)
       counter = counter + 1

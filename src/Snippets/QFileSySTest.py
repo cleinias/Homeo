@@ -1,20 +1,20 @@
 import sys
-from PyQt4 import QtGui,QtCore
+from PyQt5 import QtCore, QtGui, QtWidgets
 
-class Myview(QtGui.QMainWindow):
+class Myview(QtWidgets.QMainWindow):
     def __init__(self,parent=None):
         myRootPath ='/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData'
-        QtGui.QMainWindow.__init__(self)
-        model = QtGui.QFileSystemModel()
+        QtWidgets.QMainWindow.__init__(self)
+        model = QtWidgets.QFileSystemModel()
         model.setRootPath('myRootPath')
-        view = QtGui.QTreeView()
+        view = QtWidgets.QTreeView()
         view.setModel(model)
         self.setCentralWidget(view)
         view.setRootIndex(model.index(myRootPath))
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     myview = Myview()
     myview.show()
     sys.exit(app.exec_())

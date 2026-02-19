@@ -4,7 +4,7 @@
 import os,sys,time
 
 # Import Qt modules
-from PyQt4 import QtCore,QtGui, QtOpenGL
+from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
 
 # Import the compiled UI module
 from ui_clock import Ui_Form
@@ -12,15 +12,15 @@ from ui_clock import Ui_Form
 from random import randint, shuffle
 
 # Create a class for our main window
-class Main(QtGui.QWidget):
+class Main(QtWidgets.QWidget):
     def __init__(self):
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
 
         # This is always the same
         self.ui=Ui_Form()
         self.ui.setupUi(self)
 
-        self.scene=QtGui.QGraphicsScene()
+        self.scene=QtWidgets.QGraphicsScene()
         self.scene.setSceneRect(0,0,600,400)
         self.ui.view.setScene(self.scene)
         #self.ui.view.setViewport(QtOpenGL.QGLWidget())
@@ -37,17 +37,17 @@ class Main(QtGui.QWidget):
         font=QtGui.QFont('White Rabbit')
         font.setPointSize(120)
 
-        self.dot1=QtGui.QGraphicsTextItem(':')
+        self.dot1=QtWidgets.QGraphicsTextItem(':')
         self.dot1.setFont(font)
         self.dot1.setPos(140,0)
         self.scene.addItem(self.dot1)
-        self.dot2=QtGui.QGraphicsTextItem(':')
+        self.dot2=QtWidgets.QGraphicsTextItem(':')
         self.dot2.setFont(font)
         self.dot2.setPos(410,0)
         self.scene.addItem(self.dot2)
 
         for i in range(60):
-            l = QtGui.QGraphicsTextItem(str(i%10))
+            l = QtWidgets.QGraphicsTextItem(str(i%10))
             l.setFont(font)
             l.setZValue(-100)
             l.setPos(randint(0,500),randint(150,300))
@@ -60,7 +60,7 @@ class Main(QtGui.QWidget):
         self.animations=range(0,60)
 
         def animate_to(t,item,x,y,angle):
-            animation=QtGui.QGraphicsItemAnimation()
+            animation=QtWidgets.QGraphicsItemAnimation()
             timeline=QtCore.QTimeLine(1000)
             timeline.setFrameRange(0,100)
             animation.setPosAt(t,QtCore.QPointF(x,y))
@@ -109,7 +109,7 @@ class Main(QtGui.QWidget):
 def main():
     # Again, this is boilerplate, it's going to be the same on
     # almost every app you write
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     window=Main()
     window.show()
 
