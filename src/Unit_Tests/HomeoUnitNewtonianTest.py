@@ -121,12 +121,10 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
    
     def testDragEquationDrag(self):
         """
-        The Drag equation computes drag force on a surface of area A as
-        Drag = Area * 1/2 * DragCoefficient * density * velocity^2
-        We actually need to convert the unit's current velocity
-        to real physical units to have a minimum of plausibility.
-        HomeoUnit>>physicalVelocity does that on the basis of conversion parameters
-        stored in the iVar physicalParameters
+        The implementation of dragEquationDrag simplifies the full drag equation
+        by absorbing all constants (area, drag coefficient, 1/2) into the viscosity
+        parameter: Drag = - viscosity * velocity^2.
+        Sign is negative because drag opposes velocity.
         """
         errorTolerance = 0.000000001
         testRuns = 1000
@@ -134,23 +132,19 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         "When the unit is started, velocity is zero, and dragForce should be zero"
         self.unit.currentVelocity = 0
         for i in range(testRuns):
-            self.unit.density = numpy.random.uniform(1,1000)
-            self.unit.needleUnit.surfaceArea = numpy.random.uniform((1/numpy.pi * 0.001), 1000)
-            self.unit.needleUnit.dragCoefficient = numpy.random.uniform(0.3,2)
+            self.unit.viscosity = numpy.random.uniform(0, 10)
             dragForce = self.unit.dragEquationDrag()
             self.assertEqual(dragForce, 0)
 
-        '''When Velocity is not zero, Drag Force follows drag's equation.
-         We briefly test with random velocities,random densities, random surface areas, and random coefficients'''
+        '''When Velocity is not zero, Drag = -viscosity * velocity^2'''
 
         for index in range(testRuns):
-            self.unit.currentVelocity = numpy.random.uniform(-10,10)
-            self.unit.density = numpy.random.uniform(1,1000)
-            self.unit.needleUnit.surfaceArea = numpy.random.uniform((1/numpy.pi * 0.001), 1000)
-            self.unit.needleUnit.dragCoefficient = numpy.random.uniform(0.3, 2)
+            self.unit.currentVelocity = numpy.random.uniform(-10, 10)
+            self.unit.viscosity = numpy.random.uniform(0, 10)
 
             dragForce = self.unit.dragEquationDrag()
-            delta = abs((dragForce - (0.5 * self.unit.needleUnit.surfaceArea * self.unit.needleUnit.dragCoefficient * self.unit.density * self.unit.physicalVelocity()**2)))
+            expectedDrag = -self.unit.viscosity * pow(self.unit.currentVelocity, 2)
+            delta = abs(dragForce - expectedDrag)
             self.assertTrue(delta < errorTolerance)
             
     def testStokesDrag(self):

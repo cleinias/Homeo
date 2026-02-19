@@ -80,17 +80,17 @@ class HomeoUniselector(object):
     
     def ashbyRandom(self):
         '''
-        Produce 1 of a possible 25 different values for the weight 
-        by selecting at random a 25th of the interval defined by lowerBound and upperBound
-        
+        Produce a random value for the weight equal to 1/25
+        of the interval defined by lowerBound and upperBound,
+        with a random sign (+1 or -1).
+
         This is a very simplistic implementation of Ashby's algorithm that is improved
-        in the proper HomeoUniselector subclass 
+        in the proper HomeoUniselector subclass
         '''
         intervalSegment = (self._upperBound - self._lowerBound) / 25
-        randValue = numpy.random.uniform(1,25)
-        sign = round(numpy.random.uniform(-1,1))
-        
-        return randValue * intervalSegment * sign
+        sign = numpy.random.choice([-1, 1])
+
+        return intervalSegment * sign
         
     def advance(self):
         '''control how to advance to the next position of the uniselector. 

@@ -163,20 +163,21 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.potentiometer = 1                  #this sets the value of the self-connection"
         self.unit.inputConnections[0].newWeight(abs(self.unit.potentiometer))     # make sure self-connection is positive"
         self.unit.noise = 0                          #No noise  to simplify computations"
+        self.unit.inputConnections[0].noise = 0      #No noise on self-connection either
         self.unit.viscosity = 0                      #No viscosity to simplify computations
         self.unit.criticalDeviation = 1
         self.unit.computeOutput()
         for i in range(10):
             expectedDev = self.unit.criticalDeviation + self.unit.currentOutput
             self.unit.selfUpdate()
-        self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev) < errorTolerance)     
+        self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev) < errorTolerance)
         for i in range(100):
             self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == self.unit.maxDeviation)
 
 
 
-        #"2. with starting point negative we will run up to negative infinity, 
+        #"2. with starting point negative we will run up to negative infinity,
         # because the output will become negative after the first iteration."
         self.unit.criticalDeviation = -3
         self.unit.computeOutput()
@@ -237,13 +238,14 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.potentiometer = 1                  #this sets the value of the self-connection"
         self.unit.inputConnections[0].newWeight(abs(self.unit.potentiometer))     # make sure self-connection is positive"
         self.unit.noise = 0                          #No noise  to simplify computations"
+        self.unit.inputConnections[0].noise = 0      #No noise on self-connection either
         self.unit.viscosity = 0                      #No viscosity to simplify computations
         self.unit.criticalDeviation = 1
         self.unit.computeOutput()
         for i in range(10):
             expectedDev = self.unit.criticalDeviation + (self.unit.currentOutput / (self.unit.maxDeviation *2.))
             self.unit.selfUpdate()
-        self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev) < errorTolerance)     
+        self.assertTrue(abs(self.unit.criticalDeviation  - expectedDev) < errorTolerance)
         runs = 1
         maxruns = 500
         while self.unit.criticalDeviation < self.unit.maxDeviation:
@@ -964,6 +966,7 @@ class HomeoUnitTest(unittest.TestCase):
         "test with critDev = 1"
         self.unit.potentiometer = 0
         self.unit.noise = 0                     #eliminate flickering noise
+        self.unit.inputConnections[0].noise = 0 #eliminate noise on self-connection
         self.unit.criticalDeviation = 1
         self.unit.selfUpdate()
         outRange = self.unit.outputRange['high']-self.unit.outputRange['low']
@@ -971,10 +974,11 @@ class HomeoUnitTest(unittest.TestCase):
         critDevDistance = np.sqrt(pow((1 - self.unit.minDeviation),2))
 #        dist = numpy.linalg.norm(1 - self.unit.minDeviation)                         # or could use numpy
         expectedOutput = (critDevDistance * (outRange/devRange)) + self.unit.outputRange['low']
-        self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance) 
-        
+        self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance)
+
         self.unit.potentiometer = 0
         self.unit.noise = 0                     #eliminate flickering noise
+        self.unit.inputConnections[0].noise = 0 #eliminate noise on self-connection
         self.unit.criticalDeviation = 0
         self.unit.selfUpdate()
         outRange = self.unit.outputRange['high']-self.unit.outputRange['low']
@@ -985,9 +989,10 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance) 
 
         "Randomize values"
-        "Test with unit still unconnected, but random values for critDeviation" 
+        "Test with unit still unconnected, but random values for critDeviation"
         self.unit.potentiometer = 0
         self.unit.noise = 0                     #eliminate flickering noise
+        self.unit.inputConnections[0].noise = 0 #eliminate noise on self-connection
         for i in range(100):                   
             critDev = np.random.uniform(self.unit.minDeviation,self.unit.maxDeviation)
             self.unit.criticalDeviation = critDev
@@ -1238,21 +1243,23 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == oldCritDeviation + inputTorque)
         
-        "When viscosity = 1, the force affecting the unit is nullified"
-        self.unit.viscosity = 1
+        "When viscosity = maxViscosity, the force affecting the unit is nullified"
+        maxVisc = HomeoUnit.DefaultParameters['maxViscosity']
+        self.unit.viscosity = maxVisc
         inputTorque =  self.unit.inputConnections[0].output()
         oldCritDeviation = self.unit.criticalDeviation
         self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == oldCritDeviation)
-        
-        "When viscosity = aValue, the force affecting the unit is multiplied by 1 - aValue"
-        
-        viscValue  = np.random.uniform (0,1)
+
+        "When viscosity = aValue, the force is multiplied by (1 - aValue/maxViscosity)"
+
+        viscValue  = np.random.uniform(0, maxVisc)
         self.unit.viscosity = viscValue
         inputTorque =  self.unit.inputConnections[0].output()
         oldCritDeviation = self.unit.criticalDeviation
         self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation == oldCritDeviation + (inputTorque * (1- viscValue)))
+        normalizedVisc = viscValue / maxVisc
+        self.assertTrue(self.unit.criticalDeviation == oldCritDeviation + (inputTorque * (1 - normalizedVisc)))
 
         "Repeat the tests for the proportional method"
         self.unit.needleCompMethod = 'proportional'
@@ -1276,22 +1283,23 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == oldCritDeviation + (inputTorque/(self.unit.maxDeviation * 2.)))
         
-        "When viscosity = 1, the force affecting the unit is nullified"
-        self.unit.viscosity = 1
+        "When viscosity = maxViscosity, the force affecting the unit is nullified"
+        self.unit.viscosity = maxVisc
         inputTorque =  self.unit.inputConnections[0].output()
         oldCritDeviation = self.unit.criticalDeviation
         self.unit.selfUpdate()
         self.assertTrue(self.unit.criticalDeviation == oldCritDeviation)
-        
-        "When viscosity = aValue, the force affecting the unit is multiplied by 1 - aValue"
-        
-        viscValue  = np.random.uniform (0,1)
+
+        "When viscosity = aValue, the force is multiplied by (1 - aValue/maxViscosity)"
+
+        viscValue  = np.random.uniform(0, maxVisc)
         self.unit.viscosity = viscValue
         inputTorque =  self.unit.inputConnections[0].output()
         oldCritDeviation = self.unit.criticalDeviation
         self.unit.selfUpdate()
-        self.assertTrue(self.unit.criticalDeviation == oldCritDeviation + 
-                        (inputTorque /(self.unit.maxDeviation *2.)) * (1. - viscValue))
+        normalizedVisc = viscValue / maxVisc
+        self.assertTrue(self.unit.criticalDeviation == oldCritDeviation +
+                        (inputTorque /(self.unit.maxDeviation *2.)) * (1. - normalizedVisc))
         
 
     def testSelfUpdateAdvancesUnitTime(self):
