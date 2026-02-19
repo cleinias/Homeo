@@ -12,7 +12,7 @@ from Helpers.General_Helper_Functions import SubclassResponsibility
 from Helpers.ExceptionAndDebugClasses import hDebug
 import random
 import vrep
-from string import uppercase
+from string import ascii_uppercase as uppercase
 from sys import stderr
 from KheperaSimulator.KheperaSimulator import KheperaRobot
 
@@ -158,8 +158,8 @@ class VREP_DiffMotor(Transducer):
             eCode, self._transducID = vrep.simxGetObjectHandle(self.robot, (self._wheel+"Wheel"), getattr(vrep,self._opMode))
             vrep.simxSynchronousTrigger(self.robot)
         except Exception as e:
-            print "Cannot connect to VREP!"
-            print "Error: ",e  
+            print("Cannot connect to VREP!")
+            print("Error: ", e)
         
         if eCode != 0:
             raise TransducerException("Cannot connect to VREP motor: " + self._wheel+"Wheel")
@@ -443,8 +443,8 @@ class WebotsDiffMotorTCP(TransducerTCP):
             #     print "I received %u bytes back, the message was: %s" % (len(discard), discard)
             #===================================================================
         except SocketError as e:
-            print "FAILED! cannot connect to socket with command %s for actuator %s:  %s" % ( command, type(self).__name__, e)
-                
+            print("FAILED! cannot connect to socket with command %s for actuator %s:  %s" % ( command, type(self).__name__, e))
+
     def range(self):
         '''return a list containing the min and max speed of the motor.
            notice that the min speed is always = to minus maxspeed in webots
@@ -460,7 +460,7 @@ class WebotsDiffMotorTCP(TransducerTCP):
                 self._transducRange = [-float(commandReturn[1]), float(commandReturn[1])]
                 return self._transducRange
             except SocketError as e:
-                print "FAILED! cannot connect to socket %s for actuator %s:  %s" % (type(self.robotSocket).__name__, type(self).__name__, e)
+                print("FAILED! cannot connect to socket %s for actuator %s:  %s" % (type(self.robotSocket).__name__, type(self).__name__, e))
 
 class WebotsDiffMotorTCPWithWrite(WebotsDiffMotorTCP):
     ''' Add the capability to write to file the value of the output command
@@ -474,8 +474,8 @@ class WebotsDiffMotorTCPWithWrite(WebotsDiffMotorTCP):
             try:
                 self._fileoutFile = open(filename,'w')
             except IOError:
-                print "Could not open file in DUMMY transducer"
-    
+                print("Could not open file in DUMMY transducer")
+
     def act(self):
         '''activate the wheel motor by calling the actuator function with the passed parameters
            and write the value of the motor command to file'''
@@ -484,7 +484,7 @@ class WebotsDiffMotorTCPWithWrite(WebotsDiffMotorTCP):
         try:
             #print "Motor transducer %s is connected to socket %s" % (type(self).__name__, type(self._robotSocket).__name__)
             hDebug('network',("sending motor command: " + command))
-            print
+            print()
             self._robotSocket.send(command)
             "Discard reply from receive buffer"
             discard = self._robotSocket.recv(1024)
@@ -497,9 +497,9 @@ class WebotsDiffMotorTCPWithWrite(WebotsDiffMotorTCP):
             #     print "I received %u bytes back, the message was: %s" % (len(discard), discard)
             #===================================================================
         except SocketError as e:
-            print "FAILED! cannot connect to socket with command %s for actuator %s:  %s" % ( command, type(self).__name__, e)
-                
-        
+            print("FAILED! cannot connect to socket with command %s for actuator %s:  %s" % ( command, type(self).__name__, e))
+
+
 class WebotsLightSensorTCP(TransducerTCP):
     '''Interface to a Webots' robot light sensor. 
        Converts the raw value read from the sensor to its complement, 
@@ -516,8 +516,8 @@ class WebotsLightSensorTCP(TransducerTCP):
             try:
                 self._fileOut = open(filename,'w')
             except IOError:
-                print "Could not open file in DUMMY transducer"
-        self._debug = debug 
+                print("Could not open file in DUMMY transducer")
+        self._debug = debug
         
         
     def read(self):
@@ -575,12 +575,12 @@ class WebotsLightSensorRawTCP(WebotsLightSensorTCP):
             try:
                 self._fileOut = open(filename,'w')
             except IOError:
-                print "Could not open file in DUMMY transducer" 
+                print("Could not open file in DUMMY transducer")
 
 
-        
+
     def read(self):
-        '''returns the light value by reading the nth element of 
+        '''returns the light value by reading the nth element of
            the list of values returned by the read command.
            '''
         self._robotSocket.send(self._transdFunction)
@@ -608,8 +608,8 @@ class WebotsLightSensorDUMMY(WebotsLightSensorTCP):
             try:
                 self._fileOut = open(filename,'w')
             except IOError:
-                print "Could not open file in DUMMY transducer" 
-        
+                print("Could not open file in DUMMY transducer")
+
     def read(self):
         '''return a fake, random light value in the allowed range.
            '''

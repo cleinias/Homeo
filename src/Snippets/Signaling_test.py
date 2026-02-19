@@ -1,6 +1,6 @@
 import time, sys
-from PyQt4.QtCore  import *
-from PyQt4.QtGui import * 
+from PyQt5.QtCore  import *
+from PyQt5.QtWidgets import *; from PyQt5.QtGui import *
 from Helpers.SimulationThread import SimulationThread
 from Helpers.QtSeparator import Separator
  
@@ -29,14 +29,16 @@ class BigObject(object):
         
     def selfUpdate(self):
         self._time += 1
-        QObject.emit(emitter(self), SIGNAL('stepIncreased'), self._time)
+        # NOTE: Old-style QObject.emit needs manual updating to use a custom pyqtSignal
+        # QObject.emit(emitter(self), SIGNAL('stepIncreased'), self._time)
+        emitter(self).stepIncreased.emit(self._time)
     
     def setStep(self,value):
         self._time = value
-        print "I'm in self.setStep"
+        print("I'm in self.setStep")
     def getStep(self):
         return self._time
-        print "returning value %u" % self._time
+        print("returning value %u" % self._time)
     step = property(fget = lambda self: self.getStep(),
                     fset = lambda self, value: self.setStep(value))
 
@@ -79,15 +81,15 @@ class QSimulation(QObject):
     
     def go(self):
         self._isRunning = True
-        print 'clicked go button and iVar self._iRunning = %d' % self._isRunning
+        print('clicked go button and iVar self._iRunning = %d' % self._isRunning)
         self.longRunning()
-        print "and now iVar self._isRunning = %s" % self._isRunning
+        print("and now iVar self._isRunning = %s" % self._isRunning)
 
     def go2(self):
         self._isRunning = True
-        print 'clicked go button and iVar self._iRunning = %d' % self._isRunning
+        print('clicked go button and iVar self._iRunning = %d' % self._isRunning)
         self.runForever()
-        print "and now iVar self._isRunning = %s" % self._isRunning
+        print("and now iVar self._isRunning = %s" % self._isRunning)
 
     def runForever(self):
         'Must be run in a thread'
@@ -105,9 +107,9 @@ class QSimulation(QObject):
             QApplication.processEvents() 
             
     def stop(self):
-        print "clicked stop button and iVar self._isRunning = %s" % self._isRunning
+        print("clicked stop button and iVar self._isRunning = %s" % self._isRunning)
         self._isRunning = False
-        print "and now iVar self._isRunning = %s" % self._isRunning
+        print("and now iVar self._isRunning = %s" % self._isRunning)
 
         
 class SimulationUi(QDialog):
@@ -151,7 +153,9 @@ class SimulationUi(QDialog):
         self.resumeButton.clicked.connect(self.qsimulation.go2)
         self.simulThread.started.connect(self.qsimulation.go2)
 #        emitter(self.qsimulation._simulatedObject).stepIncreased.connect(self.currentStep.setValue) # Does not work
-        QObject.connect(emitter(self.qsimulation._simulatedObject), SIGNAL("stepIncreased"), self.currentStep.setValue)
+        # NOTE: Old-style QObject.connect with emitter proxy needs manual updating
+        # QObject.connect(emitter(self.qsimulation._simulatedObject), SIGNAL("stepIncreased"), self.currentStep.setValue)
+        emitter(self.qsimulation._simulatedObject).stepIncreased.connect(self.currentStep.setValue)
         self.currentStep.valueChanged.connect(self.qsimulation._simulatedObject.setStep)
         
     def go(self):
@@ -178,7 +182,7 @@ class SimulationUi(QDialog):
         'stop the thread running the simulation'
         self.simulThread.quit()
         del(self.simulThread)
-        print 'SimulThread is now %s' % self.simulThread.__str__()
+        print('SimulThread is now %s' % self.simulThread.__str__())
         
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -26,8 +26,8 @@ rightEye = WebotsLightSensorTCP(1)
 leftEye.robotSocket = testSocket
 rightEye.robotSocket = testSocket
 
-print "rightEye sees: ", rightEye.read()
-print "leftEye sees: ", leftEye.read()
+print("rightEye sees: ", rightEye.read())
+print("leftEye sees: ", leftEye.read())
 
 
 testClient.close()

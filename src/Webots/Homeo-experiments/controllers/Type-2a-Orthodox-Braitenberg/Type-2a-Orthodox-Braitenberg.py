@@ -6,7 +6,6 @@
 #
 # Stefano Franchi 2014
 #################################################################
-from __future__ import division
 from controller import *
 import sys
 

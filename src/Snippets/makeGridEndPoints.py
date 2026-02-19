@@ -3,7 +3,7 @@ import numpy as np
 def makeGridEndpoints(size, spacing):
     vertices = []
     steps = int(size/spacing)
-    for x in xrange(steps+1):
+    for x in range(steps+1):
         vertices += [x*spacing,0]                            # Top vertex for T-B line
         vertices += [x*spacing,-size]                        # Bottom vertex for T-B line
         vertices += [0, -x*spacing]                          # Left vertex for L-R line

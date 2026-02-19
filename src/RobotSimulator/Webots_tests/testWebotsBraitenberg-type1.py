@@ -35,7 +35,7 @@ rightSensorMaxRange = rightSensor.range()[1]
 leftWheelMaxRange = rightWheelMaxRange = rightWheel.range()[1]
 DAMPING = .1
 
-for i in xrange(1000):
+for i in range(1000):
     """Convert light values into a sensed value going from motors' minSpeed to maxSpeed.
        Notice that minSpeed is always = -maxSpeed in Webots, and the two motors of a differential
        robots have identical minSpeed and MaxSpeed.
@@ -56,12 +56,12 @@ for i in xrange(1000):
     leftWheel.funcParameters = leftSpeed
     rightWheel.act()
     leftWheel.act()    
-    print "r_sensor: %d, right_eye: %d, l_sensor: %d, left_eye: %d, rightSpeed: %d, leftSpeed: %d" % (
+    print("r_sensor: %d, right_eye: %d, l_sensor: %d, left_eye: %d, rightSpeed: %d, leftSpeed: %d" % (
                                                                           r,
                                                                           right_eye,
                                                                           l,
                                                                           left_eye,
                                                                           rightSpeed,
-                                                                          leftSpeed)
+                                                                          leftSpeed))
 
 testClient.close()

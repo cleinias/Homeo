@@ -1,4 +1,3 @@
-from __future__ import print_function
 from scoop import futures
 from datetime import datetime
 from time import sleep

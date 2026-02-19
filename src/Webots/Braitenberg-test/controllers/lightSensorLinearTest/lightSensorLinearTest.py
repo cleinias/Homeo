@@ -23,9 +23,9 @@ class Vehicle2 (DifferentialWheels):
       leftLightValue = self.leftEye.getValue()
 
       # Process sensor data here
-      print "%u Right eye: %d Left eye: %d \r" % (counter,
+      print("%u Right eye: %d Left eye: %d \r" % (counter,
                                                rightLightValue,
-                                               leftLightValue)
+                                               leftLightValue))
       counter = counter + 1
 
 

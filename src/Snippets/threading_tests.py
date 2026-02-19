@@ -16,7 +16,7 @@ class Looping(object):
     def runForever(self):
        n = 1
        while self.isRunning == True:
-           print "Loop number %u" % n
+           print("Loop number %u" % n)
            n += 1
            time.sleep(1/self.timer)
     
@@ -31,4 +31,4 @@ def testThreadingTime(runTime):
     time.sleep(runTime)
     l.isRunning = False
     end = time.clock()
-    print "I have run for %f seconds" % (end-start) 
+    print("I have run for %f seconds" % (end-start))
