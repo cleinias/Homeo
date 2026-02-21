@@ -18,6 +18,14 @@ import os
 from glob import glob
 from sys import stderr
 import pickle
+import dill
+sys.modules['dill.dill'] = dill._dill  # old logbooks were pickled with dill.dill, renamed to dill._dill
+# Old logbooks were pickled under Python 2 which had types like ListType, DictType, etc.
+# Register them so dill can deserialize those references.
+for _name, _type in [('ListType', list), ('DictType', dict), ('TupleType', tuple),
+                     ('StringType', str), ('IntType', int), ('FloatType', float),
+                     ('LongType', int), ('NoneType', type(None))]:
+    dill._dill._reverse_typemap.setdefault(_name, _type)
 
 
 class TrajectoryViewer(QWidget):
@@ -264,10 +272,12 @@ class TrajectoryViewer(QWidget):
             try:
                 logbookFile = open(os.path.join(self._dirPath, self._currentLogbookName),'rb')
                 self._currentLogbook=pickle.load(logbookFile)
-                logbookFile.close()                                                    
-            except IOError:
+                logbookFile.close()
+            except (IOError, ModuleNotFoundError) as e:
+                self._currentLogbook = None
                 msgBox = QMessageBox()
-                msgBox.setText("No logbooks present");
+                msgBox.setText("Cannot load logbook")
+                msgBox.setInformativeText(str(e))
                 msgBox.exec_()
         else:
             self._currentLogbook = None            

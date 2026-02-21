@@ -9,6 +9,7 @@ pyqtgraph>=0.14
 
 # Genetic-algorithm experiments
 deap>=1.4
+dill>=0.3
 tabulate>=0.9
 
 # KheperaSimulator (Box2D physics + rendering)
