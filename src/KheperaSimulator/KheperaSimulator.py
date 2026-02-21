@@ -19,9 +19,15 @@ Created on Mar 13, 2015
 @author: stefano
 '''
 from Box2D import *
+import pyglet
 from pyglet import clock, font, image, window
-from pyglet.gl import *
+from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
+                       GL_BLEND, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
+                       GL_LINE_SMOOTH, GL_LINE_SMOOTH_HINT, GL_NICEST,
+                       GL_COLOR_BUFFER_BIT,
+                       GL_LINES, GL_LINE_STRIP, GL_TRIANGLE_FAN)
 from pyglet.window import mouse, key
+from pyglet.math import Mat4, Vec3
 import numpy as np
 from os import getcwd
 
@@ -31,113 +37,174 @@ from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from time import sleep, time, strftime, localtime
 from datetime import datetime
 
-"pyglet and openGL utility functions"
+"pyglet 2.x shader program and utility functions"
 
-def makePygletCircle(center=(0,0), r=10, numPoints=100, orientation = 0, span = (2*pi)):
-    """Create an openGL vertex list representing a circle with a radius 
+_shape_program = None
+
+def _get_shape_program():
+    """Return the shapes ShaderProgram, creating it on first call.
+    Requires an active OpenGL context (pyglet display available)."""
+    global _shape_program
+    if _shape_program is None:
+        _shape_program = pyglet.shapes.get_default_shader()
+    return _shape_program
+
+def _has_gl_context():
+    """Return True if a pyglet GL context is available (i.e. not fully headless)."""
+    try:
+        return pyglet.gl.current_context is not None
+    except Exception:
+        return False
+
+def _make_vlist(count, draw_mode, vertices):
+    """Create a pyglet 2.x vertex list from the shape shader program.
+    Initializes colors/translation/rotation/zposition to defaults."""
+    program = _get_shape_program()
+    return program.vertex_list(
+        count, draw_mode,
+        position=('f', vertices),
+        colors=('f', [1.0, 1.0, 1.0, 1.0] * count),
+        translation=('f', [0.0, 0.0] * count),
+        rotation=('f', [0.0] * count),
+        zposition=('f', [0.0] * count),
+    )
+
+def makePygletCircle(center=(0,0), r=10, numPoints=100, orientation=0,
+                     span=(2*pi), draw_mode=GL_TRIANGLE_FAN):
+    """Create a vertex list representing a circle with a radius
        indicating the orientation. The circle is rotated according to the
-       orientation parameter"""
-    vertices = [] 
-    vertices += [center[0],center[1]]
-    orientRad = radians(orientation) 
-    for i in range(numPoints  + 1):
-        angle = orientRad + (float(i)/numPoints * span)
-        x = (r* cos(angle))  + center[0]
-        y = (r * sin(angle)) + center[1]
-        vertices += [x,y]
-    return pyglet.graphics.vertex_list(numPoints + 2, 
-                                       ('v2f', vertices))
-    
-def makePygletArc(center=(0,0), r=10, numPoints=100, orientation = 0, span = (2*pi)):
-    """Create an openGL vertex list representing an arc with a radius 
-       indicating the orientation. The circle is rotated according to the
-       orientation parameter"""
+       orientation parameter."""
     vertices = []
-    vertices += [center[0],center[1]]
-    orientRad = radians(orientation) 
-    for i in range(numPoints  + 1):
-        angle = orientRad + (float(i)/numPoints * span) - span/2
-        x = (r* cos(angle))  + center[0]
+    vertices += [center[0], center[1]]
+    orientRad = radians(orientation)
+    for i in range(numPoints + 1):
+        angle = orientRad + (float(i)/numPoints * span)
+        x = (r * cos(angle)) + center[0]
         y = (r * sin(angle)) + center[1]
-        vertices += [x,y]
-    vertices += [center[0],center[1]]
-    vertices += [center[0],center[1]]
-    return pyglet.graphics.vertex_list(numPoints + 4, 
-                                       ('v2f', vertices))
+        vertices += [x, y]
+    count = numPoints + 2
 
-def makePygletBox(width, height, orientation=0):
-    """Create am openGL vertex list representing a rectangle
+    if draw_mode == GL_LINE_STRIP:
+        vertices += [vertices[2], vertices[3]]
+        count += 1
+
+    return _make_vlist(count, draw_mode, vertices)
+
+def makePygletArc(center=(0,0), r=10, numPoints=100, orientation=0,
+                  span=(2*pi), draw_mode=GL_LINE_STRIP):
+    """Create a vertex list representing an arc with a radius
+       indicating the orientation. The arc is rotated according to the
+       orientation parameter."""
+    vertices = []
+    vertices += [center[0], center[1]]
+    orientRad = radians(orientation)
+    for i in range(numPoints + 1):
+        angle = orientRad + (float(i)/numPoints * span) - span/2
+        x = (r * cos(angle)) + center[0]
+        y = (r * sin(angle)) + center[1]
+        vertices += [x, y]
+    vertices += [center[0], center[1]]
+    vertices += [center[0], center[1]]
+    count = numPoints + 4
+
+    if draw_mode == GL_LINE_STRIP:
+        vertices += [vertices[0], vertices[1]]
+        count += 1
+
+    return _make_vlist(count, draw_mode, vertices)
+
+def makePygletBox(width, height, orientation=0, draw_mode=GL_TRIANGLE_FAN):
+    """Create a vertex list representing a rectangle
        (or box, in Box2D language) with given size and orientation,
-       centered at 0,0"""
-    vertices = [width/2, height/2, -width/2,height/2,-width/2,-height/2,width/2,-height/2]
-    return pyglet.graphics.vertex_list(4,
-                                       ('v2f',vertices))
+       centered at 0,0."""
+    vertices = [width/2, height/2, -width/2, height/2,
+                -width/2, -height/2, width/2, -height/2]
+    count = 4
 
-"""Add drawing pyglet-specific drawing functions 
-   to the box2D bodies used in Khepera world""" 
+    if draw_mode == GL_LINE_STRIP:
+        vertices += [vertices[0], vertices[1]]
+        count = 5
 
-def makePygletGrid(size, spacing = 1, color = (1,1,1,1)):
-    """Create an openGL vertex list representing a 
-       size x size grid with indicated spacing in meters and centered at the 
+    return _make_vlist(count, draw_mode, vertices)
+
+"""Add drawing pyglet-specific drawing functions
+   to the box2D bodies used in Khepera world"""
+
+def makePygletGrid(size, spacing=1, color=(1,1,1,1)):
+    """Create a vertex list representing a
+       size x size grid with indicated spacing in meters and centered at the
        origin. If spacing is not an exact divisor, the grid size will be slightly altered
-       to make it the correct size.  Default color is white"""
+       to make it the correct size.  Default color is white."""
     vertices = []
     steps = int(size/spacing)
     for x in range(steps+1):
-        vertices += [x*spacing,0]                            # Top vertex for T-B line
-        vertices += [x*spacing,-size]                        # Bottom vertex for T-B line
-        vertices += [0, -x*spacing]                          # Left vertex for L-R line
-        vertices += [size,-x*spacing]                        # Right vertex for L-R line
+        vertices += [x*spacing, 0]
+        vertices += [x*spacing, -size]
+        vertices += [0, -x*spacing]
+        vertices += [size, -x*spacing]
 
-    "Translating vertices to their real position with numpy arrays "
-    translVertices = (np.reshape(vertices,(int(len(vertices)/2),-1)) + np.array([-size/2,size/2])).flatten()
-    colors = color * int(len(vertices)/2)
+    "Translating vertices to their real position with numpy arrays"
+    translVertices = (np.reshape(vertices, (int(len(vertices)/2), -1)) +
+                      np.array([-size/2, size/2])).flatten()
     vLength = int(len(vertices)/2)
-    return pyglet.graphics.vertex_list(vLength,('v2f',translVertices), ('c4f',colors))
+    colors = list(color) * vLength
+
+    program = _get_shape_program()
+    return program.vertex_list(
+        vLength, GL_LINES,
+        position=('f', translVertices.tolist()),
+        colors=('f', colors),
+        translation=('f', [0.0, 0.0] * vLength),
+        rotation=('f', [0.0] * vLength),
+        zposition=('f', [0.0] * vLength),
+    )
 
 def b2PygletFixtureDraw(self, body):
-    """A fixture knows how to draw itself pyglet using its pre-computed shape 
-       (created at initialization), but it needs the position and angle 
-       of the body it is connected to to properly render itself"""
+    """A fixture draws itself by setting translation, rotation, and color
+       attributes on its vertex list, then calling draw()."""
     try:
-        glPushMatrix()
-        if self.userData is not None:
-            rotMat = b2Rot(body.angle)              # Rotation matrix for the current angle (Box2d utility)
-            rotatedPose = rotMat * self.shape.pos   # Relative position of the fixture with rotation considered
-            worldPose = rotatedPose + body.position # Position in world coordinates
-            glTranslatef(worldPose[0], worldPose[1],0)
-            glRotatef(degrees(body.angle), 0,0,1)    
-            glColor4f(self.userData['color'][0],self.userData['color'][1],self.userData['color'][2],self.userData['color'][3])
-            self.userData['pygletShape'].draw(self.userData['filled'])
-        glPopMatrix()    
+        if self.userData is None:
+            return
+        vlist = self.userData['pygletShape']
+        if vlist is None:
+            return
+        color = self.userData['color']
+
+        rotMat = b2Rot(body.angle)
+        rotatedPose = rotMat * self.shape.pos
+        worldPose = rotatedPose + body.position
+
+        count = vlist.count
+        vlist.translation[:] = [worldPose[0], worldPose[1]] * count
+        vlist.rotation[:] = [degrees(body.angle)] * count
+        vlist.colors[:] = list(color) * count
+        vlist.draw()
     except KeyError as e:
         print("Fixture does not know how to draw itself. Skipping it")
         print(e)
-#         raise
-#         pass
-    
-    
-    
+
+
 def b2PygletBodyDraw(self):
-    """Each b2Body knows how to draw itself in pyglet using its pre-computed pyglet shape (created at initialization)"""
-    
-    """Since glTranslatef moves the world by a relative amount by changing the view matrix, we need to 
-       save the current view matrix (by pushing it on the stack), moving the world, do our drawing and then 
-       restore the previous view matrix by popping it off the stack"""
-    glPushMatrix()
-    glColor4f(self.userData['color'][0],self.userData['color'][1],self.userData['color'][2],self.userData['color'][3])
-    glTranslatef(self.position[0], self.position[1],0)
-    forwardNormal = self.GetWorldVector((1,0))
-    forwardDirectionAngle = degrees(atan2(forwardNormal[1],forwardNormal[0]))
-    glRotatef(forwardDirectionAngle, 0,0,1)
+    """Each b2Body draws itself by setting translation, rotation, and color
+       attributes on its vertex list, then calling draw()."""
     try:
-        self.userData['pygletShape'].draw(self.userData['filled'])
+        vlist = self.userData['pygletShape']
+        if vlist is None:
+            return
+        color = self.userData['color']
     except KeyError as e:
         print("Body does not know how to draw itself. Skipping it")
         print(e)
-#         raise
-        pass
-    glPopMatrix()
+        return
+
+    forwardNormal = self.GetWorldVector((1, 0))
+    forwardDirectionAngle = degrees(atan2(forwardNormal[1], forwardNormal[0]))
+
+    count = vlist.count
+    vlist.translation[:] = [self.position[0], self.position[1]] * count
+    vlist.rotation[:] = [forwardDirectionAngle] * count
+    vlist.colors[:] = list(color) * count
+    vlist.draw()
 
 def b2BodyDefaultUpdate(self):
     "Default update function for Box2D body: do nothing"
@@ -308,7 +375,7 @@ class KheperaRobot(object):
         - maxValue      (default = 100, saturation value (same as in V-REP))
         - diameter      (default = 5mm, for rendering purposes only"""
 
-        rotMatrix = np.mat('0,1;-1,0')     #CW 90 rotation matrix  
+        rotMatrix = np.asmatrix('0,1;-1,0')     #CW 90 rotation matrix
         positionVector = np.reshape(position, (2,1))
         sensorFixtureDef = b2FixtureDef()
         circleShape = b2CircleShape(radius = diameter/2)
@@ -331,10 +398,12 @@ class KheperaRobot(object):
         self.sensors[sensorName] = sensorFixture
 #         print "At time %s I added fixture %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'),id(sensorFixture), id(self), sensorName)
         
-        "For openGl rendering: cache vertices for a blue circle"        
-        sensorFixture.userData['pygletShape'] = makePygletArc(r = maxRange, span = radians(angleRange), orientation = sensorAngle)  
-        sensorFixture.userData['color'] = (0.,0.,1.,0.2)
-        sensorFixture.userData['filled'] =  GL_LINE_LOOP # GL_POLYGON # 
+        "For openGL rendering: cache vertices for a blue arc"
+        if _has_gl_context():
+            sensorFixture.userData['pygletShape'] = makePygletArc(r=maxRange, span=radians(angleRange), orientation=sensorAngle, draw_mode=GL_LINE_STRIP)
+        else:
+            sensorFixture.userData['pygletShape'] = None
+        sensorFixture.userData['color'] = (0., 0., 1., 0.2)
         sensorFixture.userData['position'] = circleShape.pos
 
     def irradAtSensor(self, sensorName, lightsList):
@@ -449,9 +518,11 @@ class KheperaRobot(object):
     
     def setRenderingParameters(self, color = (1.,0.,0.,0.5)):
         "default rendering: circle of partially transparent red color"
-        self.body.userData['pygletShape'] = makePygletCircle(r = self.diameter / 2) 
+        if _has_gl_context():
+            self.body.userData['pygletShape'] = makePygletCircle(r=self.diameter / 2, draw_mode=GL_LINE_STRIP)
+        else:
+            self.body.userData['pygletShape'] = None
         self.body.userData['color'] = color
-        self.body.userData['filled'] =  GL_LINE_LOOP #GL_POLYGON # 
 
         
     def update(self):
@@ -568,11 +639,12 @@ class KheperaWheel(object):
         self.impulseCounter = 0
             
     def setRenderingParameters(self, thickness, diameter, color = (0.,0.,0.,1)):
-        "default openGl rendering: box in black color"
-        
-        self.body.userData['pygletShape'] = makePygletBox(thickness, diameter) 
+        "default openGL rendering: box in black color"
+        if _has_gl_context():
+            self.body.userData['pygletShape'] = makePygletBox(thickness, diameter, draw_mode=GL_TRIANGLE_FAN)
+        else:
+            self.body.userData['pygletShape'] = None
         self.body.userData['color'] = color
-        self.body.userData['filled'] = GL_POLYGON
         
     def getMaxSpeed(self):
         return self.maxForwardSpeed
@@ -735,16 +807,27 @@ class KheperaSimulation(object):
         self.timeStep = timeStep
         self.vel_iters = vel_iters
         self.pos_iters = pos_iters
+        self.dataDir = getcwd()
         self.allBodies = {} #Dictionary containing refs to all relevant bodies in the world
    
-        "Create and cache a pyglet grid"
+        "Pyglet grid is created lazily (requires GL context)"
         self.gridDefaultSize = 20
         self.gridDefaultSpacing = 0.5
-        self.grid = makePygletGrid(self.gridDefaultSize, self.gridDefaultSpacing)       #Default grid is 20x20m, 0.1 spacing
+        self._grid = None
 
 #         self.setupWorld(self.dataDir)                    #  The called function will set up the class's Trajectory writer as well                
 
 #         self.sensorTesting()
+
+    @property
+    def grid(self):
+        if self._grid is None and _has_gl_context():
+            self._grid = makePygletGrid(self.gridDefaultSize, self.gridDefaultSpacing)
+        return self._grid
+
+    @grid.setter
+    def grid(self, value):
+        self._grid = value
 
     def setupWorld(self, HomeoWorld = None, dataDir = None):
         """Create a world to run experiments in by calling the method stored in the homeoWorldToRun ivar,
@@ -875,8 +958,10 @@ class KheperaSimulation(object):
         
         """Cache the light vertex lists and store the drawing mode for filled circles or not"""        
 
-        lightBody.userData['pygletShape'] =  makePygletCircle(center = (0,0), r = lightDefaultRadius, numPoints=100, orientation = 0)
-        lightBody.userData['filled'] = GL_POLYGON
+        if _has_gl_context():
+            lightBody.userData['pygletShape'] = makePygletCircle(center=(0,0), r=lightDefaultRadius, numPoints=100, orientation=0, draw_mode=GL_TRIANGLE_FAN)
+        else:
+            lightBody.userData['pygletShape'] = None
         
         "Now set up an appropriate Trajectory writer"
         "First create a list with the lights. Use Webots convention of putting y coordinate in 3rd position  "
@@ -996,7 +1081,8 @@ class KheperaSimulation(object):
     def pygletDraw(self):
         """Ask all the bodies in the world and their fixtures to draw themselves"""
         "Draw the grid first"
-        self.grid.draw(GL_LINES)
+        if self.grid is not None:
+            self.grid.draw()
         for body in self.world.bodies:
             body.draw()
             for fixture in body.fixtures:
@@ -1035,50 +1121,45 @@ class KheperaSimulation(object):
         self.dataDir = dataDir
          
 class KheperaCamera(object):
-    """The camera used by the the visualizer to set OpenGL's projections 
-       required to convert simulation objects' world coordinates into 
-       screen coordinate and to provide zoom, pan, and tilt."""
- 
+    """The camera used by the the visualizer to set projection and view
+       matrices for converting simulation objects' world coordinates into
+       screen coordinates and to provide zoom, pan, and tilt."""
+
     def __init__(self, position, angle=0.0, zoom=1.0):
-        self.x ,self.y =  position
+        self.x, self.y = position
         self.angle = angle
         self.zoom = zoom
-    
-    def focus(self, win_width, win_height):
-        """Set up projection matrix for 2D rendering to set proper zoom level,
-           then set up Modelview matrix to allow pan and tilt"""
-        
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        aspect = win_width / win_height
-        gluOrtho2D(-self.zoom * aspect,
-                    self.zoom * aspect,
-                   -self.zoom,
-                    self.zoom)
-        
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        gluLookAt(self.x, self.y, +1.0,  # camera  (the "eye") is at x,y,z
-                  self.x, self.y, -1.0,  # and it looks at this point x,y,z
-                  sin(self.angle), cos(self.angle), 0.0) # with this angle
-#         print "looking at %dx%d" % (self.x, self.y)
+
+    def focus(self, window):
+        """Set projection and view matrices on the pyglet window."""
+        aspect = window.width / window.height
+
+        window.projection = Mat4.orthogonal_projection(
+            -self.zoom * aspect,    # left
+             self.zoom * aspect,    # right
+            -self.zoom,             # bottom
+             self.zoom,             # top
+            -1.0,                   # z_near
+             1.0                    # z_far
+        )
+
+        translation = Mat4.from_translation(Vec3(-self.x, -self.y, 0.0))
+        rotation = Mat4.from_rotation(self.angle, Vec3(0.0, 0.0, 1.0))
+        window.view = translation @ rotation
                             
 class KheperaSimulationVisualizer(pyglet.window.Window):
     """Visualizer class for KheperaSimulation. Uses pyglet backend"""
     
     def __init__(self, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2,  dataDir = None, HomeoWorld = None, width = 1200, height = 800, initialZoom = 0.2):
-        
-        #As per pyglet prog guide"
-        conf = Config(sample_buffers=0,  # This parameter and the parameter "samples" allow more than one color sample. Higher quality, lower performance
-              depth_size=0)              # (usually) Required for 3D rendering. Typical size is 24 bits (Default). 0 for no depth buffer (we're in 2D)
-        super(KheperaSimulationVisualizer, self).__init__(width, height,config = conf, resizable = True, fullscreen=False, visible=True, vsync=True)
-        
+
+        super(KheperaSimulationVisualizer, self).__init__(width, height, resizable=True, fullscreen=False, visible=True, vsync=True)
+
         # --- constants ---
         self.TARGET_FPS=60
         self.TIME_STEP = Box2D_timeStep # defaults to 0.032 = 32 msec
 
-        self.sim = KheperaSimulation(dataDir, timeStep=self.TIME_STEP, HomeoWorld = HomeoWorld)
-        clock.set_fps_limit(60)  #??? function of this line?
+        self.sim = KheperaSimulation(timeStep=self.TIME_STEP)
+        self.sim.setupWorld(HomeoWorld, dataDir)
 
         self.init_gl(width, height)
         
@@ -1100,18 +1181,14 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
         self.camera.y = 0   
                 
     def init_gl(self, width, height):
-        # Set clear color (aka as background color)
-#         glClearColor(self.sim.background)
-
         # Set antialiasing
-        glEnable( GL_LINE_SMOOTH )
-        glEnable( GL_POLYGON_SMOOTH )
-        glHint( GL_LINE_SMOOTH_HINT, GL_NICEST )
+        glEnable(GL_LINE_SMOOTH)
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
 
         # Set alpha blending
-        glEnable( GL_BLEND )
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
-        glClearColor(0.55,.95,1.0,1.0)   # light blue
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glClearColor(0.55, 0.95, 1.0, 1.0)   # light blue
 
 #     def on_resize(self, width, height):
 #         # Set window values
@@ -1183,11 +1260,8 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
         pass
         
     def on_draw(self):
-        #advance simulation if necessary"
-        glClear( GL_COLOR_BUFFER_BIT )
-        glLoadIdentity()
-#         print "Window size is %dx%d" %(self.width, self.height)
-        self.camera.focus(self.width, self.height)
+        glClear(GL_COLOR_BUFFER_BIT)
+        self.camera.focus(self)
         self.update(0)
       
     def run(self, app):
@@ -1218,9 +1292,9 @@ def runKheperaSimulator(headless = False, dataDir = None, HomeoWorld = None, Box
         app.run(app)
         return app
     else:
-        sim = KheperaSimulation(dataDir = dataDir, running = True, timeStep=Box2D_timeStep, vel_iters=Box2D_vel_iter, 
-                                pos_iters=Box2D_pos_iter, HomeoWorld = HomeoWorld)
-#         sim.run()
+        sim = KheperaSimulation(running=True, timeStep=Box2D_timeStep, vel_iters=Box2D_vel_iter,
+                                pos_iters=Box2D_pos_iter)
+        sim.setupWorld(HomeoWorld, dataDir)
         return sim
      
 if __name__=="__main__":

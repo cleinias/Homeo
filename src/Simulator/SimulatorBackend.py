@@ -16,7 +16,10 @@ Created on Apr 13, 2015
 from abc import ABCMeta,abstractmethod,abstractproperty
 from Helpers.ExceptionAndDebugClasses import hDebug, TCPConnectionError
 from socket import error as SocketError
-import vrep
+try:
+    import vrep
+except ImportError:
+    vrep = None
 from time import sleep
 import os
 from RobotSimulator import WebotsTCPClient

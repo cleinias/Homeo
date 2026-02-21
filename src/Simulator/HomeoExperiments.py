@@ -3,7 +3,10 @@ Created on Sep 4, 2013
 
 @author: stefano
 '''
-import vrep
+try:
+    import vrep
+except ImportError:
+    vrep = None
 from Core.Homeostat import *
 from Core.HomeoUnitNewtonian import *
 from Core.HomeoConnection import * 
