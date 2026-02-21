@@ -170,14 +170,37 @@ class TrajectoryViewer(QWidget):
     def visualize(self):
         if len(self.currentTrajEntry.text()) == 0:
             return
+        filepath = os.path.join(self._dirPath, str(self.currentTrajEntry.text()))
+        if filepath.endswith('.log'):
+            self.visualizeLog(filepath)
         else:
             try:
-                graphTrajectory(os.path.join(self._dirPath, str(self.currentTrajEntry.text())))
+                graphTrajectory(filepath)
             except Exception as e:
                 msgBox = QMessageBox()
                 msgBox.setText("Invalid trajectory file")
                 msgBox.setInformativeText(str(e))
                 msgBox.exec_()
+
+    def visualizeLog(self, filepath):
+        """Display a .log file in a scrollable window with monospace font."""
+        try:
+            with open(filepath, 'r') as f:
+                content = f.read()
+        except Exception as e:
+            self.warningBox(str(e))
+            return
+        self.logViewer = QWidget()
+        self.logViewer.setWindowTitle(os.path.basename(filepath))
+        self.logViewer.setMinimumSize(900, 600)
+        layout = QVBoxLayout(self.logViewer)
+        textEdit = QTextEdit()
+        textEdit.setReadOnly(True)
+        textEdit.setLineWrapMode(QTextEdit.NoWrap)
+        textEdit.setFont(QFont('Monospace', 9))
+        textEdit.setPlainText(content)
+        layout.addWidget(textEdit)
+        self.logViewer.show()
     
     def visualizeGen(self):
         "visualize the individuals' genealogy"
@@ -207,7 +230,7 @@ class TrajectoryViewer(QWidget):
         self.appRef.exit()
             
     def supportedTrajExtensions(self):
-        return  ['traj', 'txt']
+        return  ['traj', 'txt', 'log']
     
     def supportedLogBookExtensions(self):
         return ['lgb']
@@ -236,8 +259,14 @@ class TrajectoryViewer(QWidget):
         self.TrajList.sortItems(order=Qt.DescendingOrder)
 
     def setOpeningPath(self):
-        '''Reads the initial data path from a file
-           set by the Simulation object'''
+        '''Return the default data directory.
+           Uses SimulationsData/ at the project root if it exists,
+           otherwise falls back to a path from ~/.HomeoSimDataDir.txt
+           or the current working directory.'''
+        projectRoot = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        simsDir = os.path.join(projectRoot, 'SimulationsData')
+        if os.path.isdir(simsDir):
+            return simsDir
         try:
             homeDir = os.getenv('HOME')
             dataDirSource = open(os.path.join(homeDir,'.HomeoSimDataDir.txt'),'r')
