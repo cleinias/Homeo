@@ -408,7 +408,7 @@ class KheperaRobot(object):
             sensorFixture.userData['pygletShape'] = makePygletArc(r=maxRange, span=radians(angleRange), orientation=sensorAngle, draw_mode=GL_LINE_STRIP)
         else:
             sensorFixture.userData['pygletShape'] = None
-        sensorFixture.userData['color'] = (0., 0., 1., 0.2)
+        sensorFixture.userData['color'] = (0., 0.8, 0., 0.5)
         sensorFixture.userData['position'] = circleShape.pos
 
     def irradAtSensor(self, sensorName, lightsList):
@@ -816,7 +816,7 @@ class KheperaSimulation(object):
         self.allBodies = {} #Dictionary containing refs to all relevant bodies in the world
    
         "Pyglet grid is created lazily (requires GL context)"
-        self.gridDefaultSize = 20
+        self.gridDefaultSize = 40
         self.gridDefaultSpacing = 0.5
         self._grid = None
 
@@ -1084,14 +1084,20 @@ class KheperaSimulation(object):
         return (fixtureDef1, fixtureDef2)
 
     def pygletDraw(self):
-        """Ask all the bodies in the world and their fixtures to draw themselves"""
-        "Draw the grid first"
-        if self.grid is not None:
-            self.grid.draw(self.grid._draw_mode)
-        for body in self.world.bodies:
-            body.draw()
-            for fixture in body.fixtures:
-                fixture.draw(body)
+        """Ask all the bodies in the world and their fixtures to draw themselves.
+        The shape shader program must be active for translation/rotation
+        attributes to take effect."""
+        program = _get_shape_program()
+        program.use()
+        try:
+            if self.grid is not None:
+                self.grid.draw(self.grid._draw_mode)
+            for body in self.world.bodies:
+                body.draw()
+                for fixture in body.fixtures:
+                    fixture.draw(body)
+        finally:
+            program.stop()
                 
     def run(self):
         "Run simulation perpetually until asked to stop"
