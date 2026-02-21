@@ -1132,37 +1132,51 @@ def initializeBraiten2_1(params=None):
     hom = Homeostat()
     raise("This feature not implemented yet")
 
-def initializeBraiten2_2(raw=False,params=None, simulator = None, dataDir = None):
+def initializeBraiten2_2(raw=False,params=None, simulator = None, backendSimulator = None, dataDir = None):
     '''
     Initialize a Homeostat to replicate a Braitenberg type-2 vehicle with
     4 real units: two for either Motor and two for the sensors, plus 2  HomeoInput Units
     to interface to the outside world
-    
-    The initialization variable 'raw' controls the type of sensory tranducer. 
-    If it is set to 'False" (default) the raw sensory input from webot is reversed: high sensory values correspond 
+
+    The initialization variable 'raw' controls the type of sensory tranducer.
+    If it is set to 'False" (default) the raw sensory input from webot is reversed: high sensory values correspond
     to high actual stimuli, and viceversa.
     This setting is equivalent to a classic Braitenberg vehicle: a high (e.g.)
     light intensity in the world will translate into a high sensor reading.
-     
-    If the 'raw' variable is set to True, the sensory transducer reads webots raw values, 
+
+    If the 'raw' variable is set to True, the sensory transducer reads webots raw values,
     which are minimum for maximum stimulus and maximal for minimun stimulus.
     This is the **reverse** of the classical Braitenberg case: a high intensity in the world
-    will translate into a low sensor value.  
-                      
-''' 
+    will translate into a low sensor value.
+
+    The backendSimulator parameter accepts a SimulatorBackend instance (e.g. SimulatorBackendHOMEO).
+    When provided, it is used instead of the simulator string parameter.
+    The simulator string parameter is kept for backward compatibility with VREP and WEBOTS.
+
+'''
     "TCP/IP parameters and simulation worlds to be used"
-    #kheperaPort = 50000 # test server on port 50000 that just echoes commands back 
+    #kheperaPort = 50000 # test server on port 50000 that just echoes commands back
     host = '127.0.0.1'
     WebotsKheperaPort = 10020
     VREPKheperaPort = 19997
     WEBOTS_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
     VREP_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt'
+    HOMEO_World = 'kheperaBraitenberg2_HOMEO_World'
 
     """Get the simulator-specific transducer units
-    Either function returns a dictionary with 4 transducers: 
-    rightWheelTransd, leftWheelTransd, rightEyeTransd, leftEyeTransd""" 
+    Either function returns a dictionary with 4 transducers:
+    rightWheelTransd, leftWheelTransd, rightEyeTransd, leftEyeTransd"""
     try:
-        if simulator == "VREP":
+        if backendSimulator is not None:
+            world = {
+                'HOMEO': HOMEO_World,
+                'VREP': VREP_World,
+                'WEBOTS': WEBOTS_World,
+            }[backendSimulator.name]
+            transducers = basicBraiten2Tranducers(backendSimulator, world)
+            host = backendSimulator.host
+            port = backendSimulator.port
+        elif simulator == "VREP":
             port = VREPKheperaPort
             transducers = basicBraiten2VREPTransducers(host, port, VREP_World)
         elif simulator == "WEBOTS":
@@ -1171,9 +1185,9 @@ def initializeBraiten2_2(raw=False,params=None, simulator = None, dataDir = None
         else:
             raise Exception("I cannot use backend simulator %s yet" % simulator)
     except Exception as e:
-      print("%s is not a supported robotic simulator backend" % simulator)
+      print("Could not set up transducers for robotic simulator backend")
       print(e)
-    
+
     "2. set up homeostat"
     hom = Homeostat()
     hom._host = host
@@ -1365,13 +1379,13 @@ def initializeBraiten2_2(raw=False,params=None, simulator = None, dataDir = None
     for connection in rightEyeSensorOnly.inputConnections:
         connection.status = False
 
-    if simulator == "WEBOTS":
-        """Only Webots (so far) uses explicit sockets and needs to connect 
-           the units to the server. VREP uses a global connection and passes only a
-           clientID"""
+    simulatorName = backendSimulator.name if backendSimulator is not None else simulator
+    if simulatorName == "WEBOTS":
+        """Only Webots (so far) uses explicit sockets and needs to connect
+           the units to the server. VREP and HOMEO use other mechanisms."""
         hom._usesSocket = True
         hom.connectUnitsToNetwork()
-    
+
     'Return the properly configured homeostat'
     hDebug('unit', "Homeostat initialized")
     return hom
@@ -2124,18 +2138,18 @@ def initializeBraiten2_2_Full_Neg(params=None,simulator = 'WEBOTS', dataDir = No
     
     return initializeBraiten2_2_Full(True,simulator = simulator, dataDir = dataDir)
 
-def initializeBraiten2_2Pos(params=None,simulator = 'WEBOTS', dataDir = None):
+def initializeBraiten2_2Pos(params=None, simulator = 'WEBOTS', backendSimulator = None, dataDir = None):
     '''Utility function to choose a  Braitenberg type-2 vehicle with
-    4 real units and 2 positive connections between actual stimulus and sensory 
+    4 real units and 2 positive connections between actual stimulus and sensory
     input (the higher the world's value, the higher the stimulus'''
-    return initializeBraiten2_2(False, simulator = simulator, dataDir = dataDir)
+    return initializeBraiten2_2(False, simulator = simulator, backendSimulator = backendSimulator, dataDir = dataDir)
 
-def initializeBraiten2_2Neg(params=None, simulator = 'WEBOTS', dataDir = None):
+def initializeBraiten2_2Neg(params=None, simulator = 'WEBOTS', backendSimulator = None, dataDir = None):
     '''Utility function to choose a  Braitenberg type-2 vehicle with
-    4 real units and 2 negative connections between actual stimulus and sensory 
+    4 real units and 2 negative connections between actual stimulus and sensory
     input (the higher the world's value, the lower the stimulus'''
 
-    return initializeBraiten2_2(True, simulator = simulator, dataDir = dataDir)
+    return initializeBraiten2_2(True, simulator = simulator, backendSimulator = backendSimulator, dataDir = dataDir)
 
 #===============================================================================
 # Genetic Algorithms experiments
