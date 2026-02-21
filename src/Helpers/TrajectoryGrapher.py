@@ -105,17 +105,15 @@ def readInitPosFromHeader(dataFileHeader):
     return []
 
 def readDataFileHeader(trajDataFilename):
-    '''read the file header = the head of the trajectory file
-       until the line with 'coordinates' in it'''
+    '''read the file header = all lines up to and including
+       the column names line (contains "robot_x" or "coordinates")'''
 
     dataFileHeader = []
     dataFile = open(trajDataFilename,"r")
-    headerLength = 1
     for line in dataFile:
-        if not 'coordinates' in line.split():
-            dataFileHeader.append(line)
-            headerLength += 1
-        else:
+        dataFileHeader.append(line)
+        words = line.split()
+        if 'coordinates' in words or 'robot_x' in words or '# robot_x' in words:
             break
     dataFile.close()
     return dataFileHeader
