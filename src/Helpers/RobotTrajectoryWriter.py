@@ -8,9 +8,9 @@
 # Author:        Stefano Franchi
 # Modifications: 
 
-import time 
-import os  
-# import Helpers.General_Helper_Functions
+import time
+import os
+from math import degrees, sqrt
 from os.path import exists
 
 
@@ -29,10 +29,11 @@ class RobotTrajectoryWriter(object):
         """state determines the controller's behavior. Possible values:
            SAVE: save data to file
            CLOSEFILE: close existing traj file
-           NEWFILE: create new traj file  
-           DONOTHING: do not do anything, just pass        
+           NEWFILE: create new traj file
+           DONOTHING: do not do anything, just pass
         The value of self._state is changed by reading the receiver field, which receives instructions from the supervisor"""
-        
+
+        self.lights = lights
         self.setDataDir(dataDir)
         self._state = self.State.SAVE
         self.posFile = open(self.buildTrajFilename(modelName), 'w')
@@ -73,9 +74,18 @@ class RobotTrajectoryWriter(object):
 #                print "I am in state DONOTHING"
                 pass
                      
-    def writePosition(self,position):
-        "Write robots position to file. Position is a 3-element list with coord in order x, z, y (to follow Webots conventions)"
-        self.posFile.write('%f\t%f\n' % (position[0],position[2]))
+    def writePosition(self, robotBody):
+        "Write robot state and light data to file"
+        rx = robotBody.position[0]
+        ry = robotBody.position[1]
+        heading = degrees(robotBody.angle) % 360
+        parts = ['%f\t%f\t%.1f' % (rx, ry, heading)]
+        for light in self.lights:
+            lx = light.position[0]
+            ly = light.position[1]
+            dist = sqrt((rx - lx)**2 + (ry - ly)**2)
+            parts.append('%f\t%f\t%f' % (lx, ly, dist))
+        self.posFile.write('\t'.join(parts) + '\n')
         
     def writeTrajFileHeader(self, initialPos, lights):
         '''Write data file header with General info, followed
@@ -92,8 +102,8 @@ class RobotTrajectoryWriter(object):
                                                                   light.userData['lightIsOn']))
                 self.posFile.flush()
         self.posFile.write("# Vehicle's initial position at:\n")
-        self.posFile.write('%f\t %f\n\n\n' % (initialPos[0], initialPos[2]))
-        self.posFile.write("# Vehicle's coordinates (x and z in Webots term, as y is the vertical axis), x and y in V-REP terms\n")
+        self.posFile.write('%f\t %f\n\n' % (initialPos[0], initialPos[2]))
+        self.posFile.write("# robot_x\trobot_y\theading\tlight_x\tlight_y\tdistance\n")
         self.posFile.flush()
 
         

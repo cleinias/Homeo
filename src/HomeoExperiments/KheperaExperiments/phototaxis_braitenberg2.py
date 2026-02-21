@@ -25,14 +25,8 @@ Usage:
     # Headless run with trajectory printout
     python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2
 
-    # Headless run with log file
-    python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2 --log
-
     # With visualizer
     python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2 --visualize
-
-    # With visualizer and log file
-    python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2 --visualize --log
 
 @author: stefano
 '''
@@ -40,7 +34,6 @@ Usage:
 import os
 import threading
 from math import sqrt, degrees
-from datetime import datetime
 
 
 def setup_phototaxis(backendSimulator=None):
@@ -63,6 +56,11 @@ def setup_phototaxis(backendSimulator=None):
     if backendSimulator is None:
         lock = threading.Lock()
         backendSimulator = SimulatorBackendHOMEO(lock=lock, robotName='Khepera')
+
+    # Set log directory before world setup so the trajectory writer uses it
+    log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'ExperimentsLogs')
+    os.makedirs(log_dir, exist_ok=True)
+    backendSimulator.kheperaSimulation.dataDir = log_dir
 
     hom = initializeBraiten2_2Pos(backendSimulator=backendSimulator)
 
@@ -117,63 +115,15 @@ def _tune_for_phototaxis(hom):
                 conn.noise = 0
 
 
-class ExperimentLogger:
-    '''Logs experiment state every N ticks to a timestamped file.'''
-
-    def __init__(self, robot, target_body, log_interval=50):
-        self.robot = robot
-        self.target_body = target_body
-        self.log_interval = log_interval
-        self.last_logged_tick = -1
-
-        log_dir = os.path.join(os.path.dirname(__file__), 'ExperimentsLogs')
-        os.makedirs(log_dir, exist_ok=True)
-        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        self.filename = os.path.join(log_dir, f'phototaxis_braitenberg2_{timestamp}.log')
-        self.file = open(self.filename, 'w')
-        self._write_header()
-
-    def _write_header(self):
-        self.file.write('# Phototaxis Braitenberg 2 experiment log\n')
-        self.file.write(f'# Started: {datetime.now().isoformat()}\n')
-        self.file.write('#\n')
-        self.file.write(f'{"tick":>8}\t{"light_x":>8}\t{"light_y":>8}\t'
-                        f'{"robot_x":>8}\t{"robot_y":>8}\t{"heading":>8}\t'
-                        f'{"distance":>8}\n')
-        self.file.flush()
-
-    def log_if_due(self, tick):
-        '''Log a line if tick is a multiple of log_interval.'''
-        nearest = (tick // self.log_interval) * self.log_interval
-        if nearest > self.last_logged_tick and nearest > 0:
-            self.last_logged_tick = nearest
-            self._write_line(nearest)
-
-    def _write_line(self, tick):
-        lx = self.target_body.position[0]
-        ly = self.target_body.position[1]
-        rx = self.robot.body.position[0]
-        ry = self.robot.body.position[1]
-        heading = degrees(self.robot.body.angle) % 360
-        dist = sqrt((rx - lx)**2 + (ry - ly)**2)
-
-        self.file.write(f'{tick:>8}\t{lx:>8.3f}\t{ly:>8.3f}\t'
-                        f'{rx:>8.3f}\t{ry:>8.3f}\t{heading:>8.1f}\t'
-                        f'{dist:>8.3f}\n')
-        self.file.flush()
-
-    def close(self):
-        self.file.close()
-        print(f'Log saved to {self.filename}')
-
-
-def run_headless(total_steps=10000, report_interval=500, log=False):
+def run_headless(total_steps=10000, report_interval=500):
     '''Run the phototaxis experiment headless and print the trajectory.
+
+    Trajectory data (robot position, heading, light position, distance)
+    is logged every tick to a .traj file in HomeoExperiments/ExperimentsLogs/.
 
     Parameters:
         total_steps:     number of simulation steps to run
         report_interval: print robot state every this many steps
-        log:             if True, write a log file every 50 ticks
 
     Returns:
         (hom, backend) - the Homeostat and backend after the run
@@ -182,10 +132,6 @@ def run_headless(total_steps=10000, report_interval=500, log=False):
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target_pos = (7, 7)
-
-    logger = None
-    if log:
-        logger = ExperimentLogger(robot, sim.allBodies['TARGET'])
 
     def dist_to_target():
         rx, ry = robot.body.position[0], robot.body.position[1]
@@ -216,30 +162,25 @@ def run_headless(total_steps=10000, report_interval=500, log=False):
 
         print(f'{target_tick:>6}  {rx:>8.3f}  {ry:>8.3f}  {a:>7.1f}  {d:>7.3f}  {lsensor:>7.2f}  {rsensor:>7.2f}')
 
-        if logger:
-            logger.log_if_due(target_tick)
-
     print()
     print(f'Closest approach: {min_dist:.3f} at t={min_t}')
     print(f'Final distance:   {dist_to_target():.3f}')
 
-    if logger:
-        logger.close()
-
+    sim.saveTrajectory()
     return hom, backend
 
 
-def run_visualized(log=False):
+def run_visualized():
     '''Run the phototaxis experiment with the pyglet visualizer.
 
     The window must be created before the simulation so that all
     vertex lists are allocated in the same GL context.
 
+    Trajectory data is logged every tick to a .traj file in
+    HomeoExperiments/ExperimentsLogs/.
+
     Press Q or Escape to close the window.
     Up/Down arrows adjust simulation speed (steps per frame).
-
-    Parameters:
-        log: if True, write a log file every 50 ticks
     '''
     import pyglet
     from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
@@ -264,10 +205,6 @@ def run_visualized(log=False):
     robot = sim.allBodies['Khepera']
     target_pos = sim.allBodies['TARGET'].position
 
-    logger = None
-    if log:
-        logger = ExperimentLogger(robot, sim.allBodies['TARGET'])
-
     # Camera centered between robot start (4,4) and light (7,7), zoomed out
     # enough to see the whole scene (zoom=8 shows ~16 units across)
     camera = KheperaCamera(position=(5.5, 5.5), zoom=8.0)
@@ -284,8 +221,6 @@ def run_visualized(log=False):
     def update(dt):
         state[0] += state[1]
         hom.runFor(state[0])
-        if logger:
-            logger.log_if_due(state[0])
         # Update window title with progress
         rx, ry = robot.body.position[0], robot.body.position[1]
         dist = sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
@@ -304,8 +239,7 @@ def run_visualized(log=False):
 
     @window.event
     def on_close():
-        if logger:
-            logger.close()
+        sim.saveTrajectory()
 
     pyglet.clock.schedule(update)
     pyglet.app.run()
@@ -314,9 +248,7 @@ def run_visualized(log=False):
 if __name__ == '__main__':
     import sys
 
-    log = '--log' in sys.argv
-
     if '--visualize' in sys.argv:
-        run_visualized(log=log)
+        run_visualized()
     else:
-        run_headless(log=log)
+        run_headless()
