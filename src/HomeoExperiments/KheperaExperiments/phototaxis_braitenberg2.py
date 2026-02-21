@@ -59,7 +59,9 @@ def setup_phototaxis(backendSimulator=None):
         backendSimulator = SimulatorBackendHOMEO(lock=lock, robotName='Khepera')
 
     # Set log directory and experiment name before world setup
-    log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'SimulationsData')
+    # Create a per-day subdirectory under SimulationsData/
+    sims_root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'SimulationsData')
+    log_dir = os.path.join(sims_root, 'SimsData-' + time.strftime("%Y-%m-%d"))
     os.makedirs(log_dir, exist_ok=True)
     backendSimulator.kheperaSimulation.dataDir = log_dir
     backendSimulator.kheperaSimulation.experimentName = 'phototaxis_braitenberg2'
