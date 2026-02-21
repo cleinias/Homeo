@@ -124,3 +124,34 @@ Several experiment functions are provided:
 - `initializeBraiten2_2_Full_GA()` -- same structure, but initialised from a 60-element genome encoding unit parameters and connection weights, for use with the DEAP genetic-algorithm framework.
 
 Each function accepts a `simulator` parameter (`'WEBOTS'`, `'VREP'`, or `'HOMEO'`) to select the backend, plus optional flags like `noNoise` and `noUnisel` for ablation studies.
+
+## Trajectory logging
+
+Every simulation run produces a `.traj` file that records the robot's state at every tick. The file is written by `RobotTrajectoryWriter` (in `Helpers/RobotTrajectoryWriter.py`), which is created automatically when a simulation world is set up.
+
+Each `.traj` file contains a header with light positions and the robot's initial position, followed by one tab-separated row per tick with these columns:
+
+| Column | Description |
+|--------|-------------|
+| `robot_x` | Robot x position |
+| `robot_y` | Robot y position |
+| `heading` | Robot heading in degrees (0-360) |
+| `light_x` | Light source x position |
+| `light_y` | Light source y position |
+| `distance` | Euclidean distance from robot to light |
+
+If multiple lights are present, the light columns are repeated for each light source.
+
+By default, `.traj` files are saved to the current working directory. Experiment scripts can redirect them by setting `kheperaSimulation.dataDir` before the world is created. The phototaxis experiment in `HomeoExperiments/KheperaExperiments/` saves its logs to `SimulationsData/`. The GA GUI (`HomeoGenAlgGui.py`) creates timestamped subdirectories there (`SimsData-YYYY-MM-DD-HH-MM-SS`) containing `.traj`, `.lgb` logbook, and `.hist` history files. Note that `.lgb` logbook files are only produced by GA optimisation runs, not by standalone experiments.
+
+## Visualising experiment data
+
+Two tools are provided for inspecting trajectory data:
+
+**`TrajectoryGrapher`** (`Helpers/TrajectoryGrapher.py`) is a command-line script that plots a single trajectory with matplotlib. It reads the `.traj` file, draws the robot's (x, y) path, marks the start position in green and the end position in red, overlays circles for each light source (sized by intensity), and annotates the final distance to the target.
+
+    python -m Helpers.TrajectoryGrapher path/to/file.traj
+
+**`TrajectoriesViewer`** (`Helpers/TrajectoriesViewer.py`) is a PyQt5 GUI for browsing and visualising multiple experiment runs. It lists all `.traj` files in a directory, supports changing directories, and auto-refreshes every second to pick up new files as they are written. Single-click a trajectory to select it; double-click or press "Visualize" to plot it via `TrajectoryGrapher`. If DEAP genetic-algorithm logbook files (`.lgb`) are present in the same directory, the viewer also provides buttons for inspecting GA statistics: hall of fame, full individual genomes, average fitness charts, and genealogy trees.
+
+    python -m Helpers.TrajectoriesViewer

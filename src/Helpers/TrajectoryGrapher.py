@@ -44,13 +44,12 @@ def graphTrajectory(trajDataFilename):
     finalDistance = sqrt((lightsOnDic['TARGET'][0]- finalPos[0])**2+ (lightsOnDic['TARGET'][1] - finalPos[1])**2)
     
     'build plot'
-    fig = plt.figure()
-    plt.plot(trajData[:,0],trajData[:,1]) 
-    plt.ylabel('y')
-    plt.xlabel('x')
-    plt.title(os.path.split(trajDataFilename)[1])
-    fig.canvas.set_window_title(os.path.split(trajDataFilename)[1])
-    ax = fig.add_subplot(111)
+    fig, ax = plt.subplots()
+    ax.plot(trajData[:,0],trajData[:,1])
+    ax.set_ylabel('y')
+    ax.set_xlabel('x')
+    ax.set_title(os.path.split(trajDataFilename)[1])
+    fig.canvas.manager.set_window_title(os.path.split(trajDataFilename)[1])
 
     'Add final distance to plot'
     finalDisString = "Final distance: "+ str(round(finalDistance,3))
