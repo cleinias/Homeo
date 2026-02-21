@@ -11,7 +11,10 @@ from socket import error as SocketError
 from Helpers.General_Helper_Functions import SubclassResponsibility
 from Helpers.ExceptionAndDebugClasses import hDebug
 import random
-import vrep
+try:
+    import vrep
+except ImportError:
+    vrep = None
 from string import ascii_uppercase as uppercase
 from sys import stderr
 from KheperaSimulator.KheperaSimulator import KheperaRobot
