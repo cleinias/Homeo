@@ -890,9 +890,7 @@ class KheperaSimulation(object):
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)
         self.currentStep += 1
         
-        """FIXME: following line depends on the details of a particular world being simulated. It should be world-agnostic.
-                  The method setting up the experimental world should decide what needs to be written into the trajectory file"""
-        self.trajectoryWriter.runOnce(position = (self.allBodies[self.robotName].body.position[0],0,self.allBodies[self.robotName].body.position[1]))
+        self.trajectoryWriter.runOnce(position=self.allBodies[self.robotName].body)
         "for testing irradiance function"
 #         print self.allBodies["kheperaRobot"].irradAtSensor('CenterEye', [self.allBodies['TARGET']])
 #         print "kheperaRobot vels: %.5f , %.5f  FW_speeds: %.3f, %.3f location: %s  angle: %.3f. LeftWheel W-FW-vector:%s RightWheel W-FW-vector:%s " % (self.allBodies['kheperaRobot'].wheels['left'].getCurrentSpeed(),
