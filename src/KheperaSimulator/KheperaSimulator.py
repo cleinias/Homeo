@@ -58,9 +58,10 @@ def _has_gl_context():
 
 def _make_vlist(count, draw_mode, vertices):
     """Create a pyglet 2.x vertex list from the shape shader program.
-    Initializes colors/translation/rotation/zposition to defaults."""
+    Initializes colors/translation/rotation/zposition to defaults.
+    Stores draw_mode on the vertex list as vlist._draw_mode for later use."""
     program = _get_shape_program()
-    return program.vertex_list(
+    vlist = program.vertex_list(
         count, draw_mode,
         position=('f', vertices),
         colors=('f', [1.0, 1.0, 1.0, 1.0] * count),
@@ -68,6 +69,8 @@ def _make_vlist(count, draw_mode, vertices):
         rotation=('f', [0.0] * count),
         zposition=('f', [0.0] * count),
     )
+    vlist._draw_mode = draw_mode
+    return vlist
 
 def makePygletCircle(center=(0,0), r=10, numPoints=100, orientation=0,
                      span=(2*pi), draw_mode=GL_TRIANGLE_FAN):
@@ -150,7 +153,7 @@ def makePygletGrid(size, spacing=1, color=(1,1,1,1)):
     colors = list(color) * vLength
 
     program = _get_shape_program()
-    return program.vertex_list(
+    vlist = program.vertex_list(
         vLength, GL_LINES,
         position=('f', translVertices.tolist()),
         colors=('f', colors),
@@ -158,6 +161,8 @@ def makePygletGrid(size, spacing=1, color=(1,1,1,1)):
         rotation=('f', [0.0] * vLength),
         zposition=('f', [0.0] * vLength),
     )
+    vlist._draw_mode = GL_LINES
+    return vlist
 
 def b2PygletFixtureDraw(self, body):
     """A fixture draws itself by setting translation, rotation, and color
@@ -178,7 +183,7 @@ def b2PygletFixtureDraw(self, body):
         vlist.translation[:] = [worldPose[0], worldPose[1]] * count
         vlist.rotation[:] = [degrees(body.angle)] * count
         vlist.colors[:] = list(color) * count
-        vlist.draw()
+        vlist.draw(vlist._draw_mode)
     except KeyError as e:
         print("Fixture does not know how to draw itself. Skipping it")
         print(e)
@@ -204,7 +209,7 @@ def b2PygletBodyDraw(self):
     vlist.translation[:] = [self.position[0], self.position[1]] * count
     vlist.rotation[:] = [forwardDirectionAngle] * count
     vlist.colors[:] = list(color) * count
-    vlist.draw()
+    vlist.draw(vlist._draw_mode)
 
 def b2BodyDefaultUpdate(self):
     "Default update function for Box2D body: do nothing"
@@ -1082,7 +1087,7 @@ class KheperaSimulation(object):
         """Ask all the bodies in the world and their fixtures to draw themselves"""
         "Draw the grid first"
         if self.grid is not None:
-            self.grid.draw()
+            self.grid.draw(self.grid._draw_mode)
         for body in self.world.bodies:
             body.draw()
             for fixture in body.fixtures:
