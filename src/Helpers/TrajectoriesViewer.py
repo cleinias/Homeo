@@ -165,11 +165,11 @@ class TrajectoryViewer(QWidget):
         else:
             try:
                 graphTrajectory(os.path.join(self._dirPath, str(self.currentTrajEntry.text())))
-            except:
-                "visualize warning box"
-                msgBox = QMessageBox();
-                msgBox.setText("Invalid trajectory file");
-                msgBox.exec_();
+            except Exception as e:
+                msgBox = QMessageBox()
+                msgBox.setText("Invalid trajectory file")
+                msgBox.setInformativeText(str(e))
+                msgBox.exec_()
     
     def visualizeGen(self):
         "visualize the individuals' genealogy"
@@ -183,7 +183,13 @@ class TrajectoryViewer(QWidget):
         msgBox.exec_()
  
     def getNewDir(self):
-        dir = QFileDialog.getExistingDirectory(parent = self, directory = self._dirPath)
+        dialog = QFileDialog(self, "Choose Directory", self._dirPath)
+        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setOption(QFileDialog.ShowDirsOnly, False)
+        if dialog.exec_():
+            dir = dialog.selectedFiles()[0]
+        else:
+            return
         self.setDirpath(str(dir))
         self.refreshLogbook()
         self.currentLogbookLE.setText(self._currentLogbookName)

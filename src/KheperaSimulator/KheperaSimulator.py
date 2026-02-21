@@ -813,6 +813,7 @@ class KheperaSimulation(object):
         self.vel_iters = vel_iters
         self.pos_iters = pos_iters
         self.dataDir = getcwd()
+        self.experimentName = None
         self.allBodies = {} #Dictionary containing refs to all relevant bodies in the world
    
         "Pyglet grid is created lazily (requires GL context)"
@@ -975,7 +976,7 @@ class KheperaSimulation(object):
         lightBody.userData['lightIsOn'] =  True
         
         lights = [lightBody]        
-        self.trajectoryWriter = RobotTrajectoryWriter(kheperaRobotDefaultID, (kheperaDefaultPosition[0],0,kheperaDefaultPosition[1]), lights, dataDir = self.dataDir)
+        self.trajectoryWriter = RobotTrajectoryWriter(kheperaRobotDefaultID, (kheperaDefaultPosition[0],0,kheperaDefaultPosition[1]), lights, dataDir = self.dataDir, experimentName = self.experimentName)
         
         "Finally, inform the robot of the existing detectable lights"
         self.allBodies[kheperaRobotDefaultName].detectableLights = lights                  

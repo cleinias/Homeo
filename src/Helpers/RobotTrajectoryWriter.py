@@ -25,7 +25,7 @@ class RobotTrajectoryWriter(object):
     State = EnumerateClass('SAVE CLOSEFILE NEWFILE DONOTHING')
     state = State.SAVE
         
-    def __init__(self, modelName, initialPos, lights, dataDir = None):
+    def __init__(self, modelName, initialPos, lights, dataDir = None, experimentName = None):
         """state determines the controller's behavior. Possible values:
            SAVE: save data to file
            CLOSEFILE: close existing traj file
@@ -34,6 +34,7 @@ class RobotTrajectoryWriter(object):
         The value of self._state is changed by reading the receiver field, which receives instructions from the supervisor"""
 
         self.lights = lights
+        self.experimentName = experimentName
         self.setDataDir(dataDir)
         self._state = self.State.SAVE
         self.posFile = open(self.buildTrajFilename(modelName), 'w')
@@ -141,15 +142,17 @@ class RobotTrajectoryWriter(object):
         return  os.path.join(dataDir, trajFilename)
     
     def buildTrajFilename(self, modelName=None):
-        '''Reads dataDir from internal ivar and builds a 
+        '''Reads dataDir from internal ivar and builds a
            filename equal to resulting path + an identifier '''
-        
+
         if modelName == None:
-            modelName = ''        
+            modelName = ''
         dataDir = self.dataDir
-        curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")                    
-        trajFilename = 'trajData-'+curDateTime+"-ID-"+ modelName+'.traj'
-#         print("Saving data to: ", os.path.join(dataDir,trajFilename))                 
+        curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")
+        if self.experimentName:
+            trajFilename = self.experimentName + '-' + curDateTime + '.traj'
+        else:
+            trajFilename = 'trajData-'+curDateTime+"-ID-"+ modelName+'.traj'
         return  os.path.join(dataDir, trajFilename)
     
     def setDataDir(self, dataDir):

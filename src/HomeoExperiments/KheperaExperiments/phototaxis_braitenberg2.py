@@ -57,10 +57,11 @@ def setup_phototaxis(backendSimulator=None):
         lock = threading.Lock()
         backendSimulator = SimulatorBackendHOMEO(lock=lock, robotName='Khepera')
 
-    # Set log directory before world setup so the trajectory writer uses it
-    log_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'ExperimentsLogs')
+    # Set log directory and experiment name before world setup
+    log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'SimulationsData')
     os.makedirs(log_dir, exist_ok=True)
     backendSimulator.kheperaSimulation.dataDir = log_dir
+    backendSimulator.kheperaSimulation.experimentName = 'phototaxis_braitenberg2'
 
     hom = initializeBraiten2_2Pos(backendSimulator=backendSimulator)
 
@@ -119,7 +120,7 @@ def run_headless(total_steps=10000, report_interval=500):
     '''Run the phototaxis experiment headless and print the trajectory.
 
     Trajectory data (robot position, heading, light position, distance)
-    is logged every tick to a .traj file in HomeoExperiments/ExperimentsLogs/.
+    is logged every tick to a .traj file in SimulationsData/.
 
     Parameters:
         total_steps:     number of simulation steps to run
@@ -177,7 +178,7 @@ def run_visualized():
     vertex lists are allocated in the same GL context.
 
     Trajectory data is logged every tick to a .traj file in
-    HomeoExperiments/ExperimentsLogs/.
+    SimulationsData/.
 
     Press Q or Escape to close the window.
     Up/Down arrows adjust simulation speed (steps per frame).

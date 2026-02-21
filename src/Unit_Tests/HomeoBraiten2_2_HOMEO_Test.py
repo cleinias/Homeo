@@ -9,6 +9,8 @@ Requires Box2D, pyglet, and vrep packages to be installed.
 
 import unittest
 import threading
+import tempfile
+import shutil
 
 try:
     from Simulator.SimulatorBackend import SimulatorBackendHOMEO
@@ -28,9 +30,12 @@ class Braiten2_2_HOMEO_Test(unittest.TestCase):
     def setUp(self):
         self.lock = threading.Lock()
         self.backend = SimulatorBackendHOMEO(lock=self.lock, robotName='Khepera')
+        self._tmpdir = tempfile.mkdtemp()
+        self.backend.kheperaSimulation.dataDir = self._tmpdir
 
     def tearDown(self):
         self.backend.quit()
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
 
     def test_initialization_returns_homeostat(self):
         """initializeBraiten2_2 with HOMEO backend returns a working homeostat."""
