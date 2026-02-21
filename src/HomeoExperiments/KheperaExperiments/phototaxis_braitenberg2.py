@@ -32,6 +32,7 @@ Usage:
 '''
 
 import os
+import time
 import threading
 from math import sqrt, degrees
 
@@ -129,10 +130,21 @@ def run_headless(total_steps=10000, report_interval=500):
     Returns:
         (hom, backend) - the Homeostat and backend after the run
     '''
+    from Helpers.HomeostatConditionLogger import (
+        log_homeostat_conditions, log_homeostat_conditions_json)
+
     hom, backend = setup_phototaxis()
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target_pos = (7, 7)
+
+    # Log initial conditions
+    timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
+    log_dir = sim.dataDir
+    log_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.log')
+    json_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.json')
+    log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS')
+    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS')
 
     def dist_to_target():
         rx, ry = robot.body.position[0], robot.body.position[1]
@@ -168,6 +180,11 @@ def run_headless(total_steps=10000, report_interval=500):
     print(f'Final distance:   {dist_to_target():.3f}')
 
     sim.saveTrajectory()
+
+    # Log final conditions
+    log_homeostat_conditions(hom, log_path, 'FINAL CONDITIONS')
+    log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
+
     return hom, backend
 
 
@@ -200,11 +217,22 @@ def run_visualized():
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glClearColor(0.55, 0.95, 1.0, 1.0)
 
+    from Helpers.HomeostatConditionLogger import (
+        log_homeostat_conditions, log_homeostat_conditions_json)
+
     # Now set up the simulation (vertex lists created in window's GL context)
     hom, backend = setup_phototaxis()
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target_pos = sim.allBodies['TARGET'].position
+
+    # Log initial conditions
+    timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
+    log_dir = sim.dataDir
+    log_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.log')
+    json_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.json')
+    log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS')
+    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS')
 
     # Camera centered between robot start (4,4) and light (7,7), zoomed out
     # enough to see the whole scene (zoom=8 shows ~16 units across)
@@ -241,6 +269,8 @@ def run_visualized():
     @window.event
     def on_close():
         sim.saveTrajectory()
+        log_homeostat_conditions(hom, log_path, 'FINAL CONDITIONS')
+        log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
 
     pyglet.clock.schedule(update)
     pyglet.app.run()
