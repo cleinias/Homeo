@@ -142,7 +142,9 @@ Each `.traj` file contains a header with light positions and the robot's initial
 
 If multiple lights are present, the light columns are repeated for each light source.
 
-By default, `.traj` files are saved to the current working directory. Experiment scripts can redirect them by setting `kheperaSimulation.dataDir` before the world is created. The phototaxis experiment in `HomeoExperiments/KheperaExperiments/` saves its logs to `SimulationsData/`. The GA GUI (`HomeoGenAlgGui.py`) creates timestamped subdirectories there (`SimsData-YYYY-MM-DD-HH-MM-SS`) containing `.traj`, `.lgb` logbook, and `.hist` history files. Note that `.lgb` logbook files are only produced by GA optimisation runs, not by standalone experiments.
+Trajectory files are saved to the `SimulationsData/` directory at the project root (one level above `src/`). Experiment scripts set `kheperaSimulation.dataDir` to this path before the world is created. When an experiment also sets `kheperaSimulation.experimentName`, the resulting filename follows the pattern `experimentName-YYYY-MM-DD-HH-MM-SS.traj` (e.g. `phototaxis_braitenberg2-2026-02-21-14-30-00.traj`). Without an experiment name, the legacy pattern `trajData-YYYY-MM-DD-HH-MM-SS-ID-modelName.traj` is used.
+
+The GA GUI (`HomeoGenAlgGui.py`) creates timestamped subdirectories under `SimulationsData/` (`SimsData-YYYY-MM-DD-HH-MM-SS`) containing `.traj`, `.lgb` logbook, and `.hist` history files. Note that `.lgb` logbook files are only produced by GA optimisation runs, not by standalone experiments.
 
 ## Visualising experiment data
 
