@@ -64,10 +64,11 @@ def graphTrajectory(trajDataFilename, output_path=None):
      verticalalignment='center',
      transform = ax.transAxes)
 
-    xmin = float(initPos[0]) - 2         # chart boundaries
-    ymin = float(initPos[0]) - 2
-    xmax = lightsOnDic['TARGET'][0] + 2.5
-    ymax = lightsOnDic['TARGET'][1] + 2.5
+    margin = 1.5
+    xmin = min(trajData[:,0].min(), lightsOnDic['TARGET'][0]) - margin
+    xmax = max(trajData[:,0].max(), lightsOnDic['TARGET'][0]) + margin
+    ymin = min(trajData[:,1].min(), lightsOnDic['TARGET'][1]) - margin
+    ymax = max(trajData[:,1].max(), lightsOnDic['TARGET'][1]) + margin
     cMap = plt.get_cmap('Blues')  # Use a matplotlib color map to map lights' intensity
     for lightName, light in lightsOnDic.items():
         lightPos = (light[0],light[1])
