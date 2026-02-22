@@ -1,0 +1,344 @@
+'''
+Ashby-style phototaxis experiment using a Braitenberg type-2 vehicle
+with the internal HOMEO Khepera simulator backend.
+
+This is the self-organizing counterpart to phototaxis_braitenberg2_control.py.
+Instead of hand-picked parameters, all unit parameters (mass, viscosity,
+noise, potentiometer, switch) and connection weights start at random values.
+The uniselectors are active on the four real units (motors and eyes), so
+that when a unit's essential variable stays critical for too long
+(deviation >= critThreshold * maxDeviation for uniselectorTimeInterval ticks),
+the uniselector fires and randomly reassigns the weights of that unit's
+incoming connections.  This is Ashby's core idea: the system searches
+through parameter space by random trial until it finds a configuration
+where all units remain within their viable range.
+
+The experiment uses the same 6-unit Braitenberg topology as the control:
+2 motors, 2 eyes, 2 sensor inputs, with the robot starting at (4,4) and
+a light source at (7,7).
+
+
+Two initialization modes
+-------------------------
+
+1. Fixed topology (default, --fixed-topology):
+   The Braitenberg cross-wiring is preserved (left eye -> right motor,
+   right eye -> left motor, right eye <- right sensor, left eye <- left
+   sensor).  Only the already-active connections are present; disabled
+   connections stay disabled.  Unit parameters and connection weights
+   are randomized.  Self-connections use state='manual' (protected from
+   the uniselector, as in Ashby's original design).  Cross-connections
+   use state='uniselector' so the uniselector can change their weights.
+   This tests whether Ashby's mechanism can tune a known-good topology.
+
+2. Random topology (--random-topology):
+   All connections between the 4 real units start active with random
+   weights, noise, and state='uniselector'.  The uniselector can change
+   any connection.  The system must discover both useful topology and
+   weights.  This is much harder and may not converge within a short run.
+   Sensor-only units remain input-only (all their connections disabled)
+   since they are pure transducers.
+
+In both modes the sensor-only units (Left Sensor, Right Sensor) have
+their uniselectors disabled — they are pure input transducers and should
+not self-organize.
+
+
+Usage
+-----
+    # Headless, fixed topology (default)
+    python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby
+
+    # Headless, random topology
+    python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby --random-topology
+
+    # With visualizer
+    python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby --visualize
+
+    # Combined
+    python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby --random-topology --visualize
+
+@author: stefano
+'''
+
+import os
+import time
+import threading
+from math import sqrt, degrees
+
+import numpy as np
+
+
+def setup_phototaxis(topology='fixed', backendSimulator=None):
+    '''Set up an Ashby-style phototaxis experiment.
+
+    Creates a SimulatorBackendHOMEO (unless one is provided), initializes
+    a Braitenberg 2 positive homeostat, then randomizes parameters and
+    activates uniselectors.
+
+    Parameters:
+        topology:         'fixed' preserves Braitenberg wiring,
+                          'random' enables all connections randomly.
+        backendSimulator: optional SimulatorBackendHOMEO instance.
+                          If None, one is created with default settings.
+
+    Returns:
+        (hom, backend) - the configured Homeostat and the backend simulator
+    '''
+    from Simulator.SimulatorBackend import SimulatorBackendHOMEO
+    from Simulator.HomeoExperiments import initializeBraiten2_2Pos
+
+    if backendSimulator is None:
+        lock = threading.Lock()
+        backendSimulator = SimulatorBackendHOMEO(lock=lock, robotName='Khepera')
+
+    # Set log directory and experiment name before world setup
+    sims_root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'SimulationsData')
+    log_dir = os.path.join(sims_root, 'SimsData-' + time.strftime("%Y-%m-%d"))
+    os.makedirs(log_dir, exist_ok=True)
+    backendSimulator.kheperaSimulation.dataDir = log_dir
+
+    if topology == 'random':
+        exp_name = 'phototaxis_braitenberg2_Ashby_random'
+    else:
+        exp_name = 'phototaxis_braitenberg2_Ashby_fixed'
+    backendSimulator.kheperaSimulation.experimentName = exp_name
+
+    hom = initializeBraiten2_2Pos(backendSimulator=backendSimulator)
+
+    if topology == 'random':
+        _ashby_random_topology(hom)
+    else:
+        _ashby_fixed_topology(hom)
+
+    return hom, backendSimulator
+
+
+def _ashby_fixed_topology(hom):
+    '''Randomize unit parameters and connection weights, keeping the
+    Braitenberg cross-wiring topology intact.
+
+    The topology set up by initializeBraiten2_2 is preserved: only
+    connections that were already active get random weights.  Disabled
+    connections stay disabled.  Self-connections are protected from the
+    uniselector (state='manual').  Cross-connections are placed under
+    uniselector control (state='uniselector').
+
+    Motors and eyes have their uniselectors activated so the system
+    can self-organize.  Sensor-only units are left as pure inputs.
+    '''
+
+    for u in hom.homeoUnits:
+        if 'Sensor' in u.name and 'Eye' not in u.name:
+            # Sensor-only units: pure input, no self-organization
+            continue
+
+        # Randomize unit parameters
+        u.setRandomValues()
+
+        # Activate uniselector
+        u.uniselectorActive = True
+
+        for conn in u.inputConnections:
+            if conn.incomingUnit == u:
+                # Self-connection: random weight but protected from uniselector
+                conn.newWeight(np.random.uniform(-1, 1))
+                conn.noise = np.random.uniform(0, 0.05)
+                conn.state = 'manual'
+                conn.status = True
+            elif conn.status:
+                # Active cross-connection: randomize weight, put under uniselector
+                conn.newWeight(np.random.uniform(-1, 1))
+                conn.noise = np.random.uniform(0, 0.1)
+                conn.state = 'uniselector'
+
+
+def _ashby_random_topology(hom):
+    '''Fully randomize all connections between the 4 real units.
+
+    Every connection on motors and eyes gets a random weight and is
+    placed under uniselector control.  The system must discover both
+    useful topology (which connections matter) and weights.
+
+    Sensor-only units remain input-only with all connections disabled.
+    '''
+
+    for u in hom.homeoUnits:
+        if 'Sensor' in u.name and 'Eye' not in u.name:
+            # Sensor-only units: keep as pure inputs, all connections off
+            u.uniselectorActive = False
+            for conn in u.inputConnections:
+                conn.status = False
+            continue
+
+        # Randomize unit parameters
+        u.setRandomValues()
+
+        # Randomize all connections (sets all active with random weights,
+        # noise, and state='uniselector')
+        u.randomizeAllConnectionValues()
+
+        # Activate uniselector
+        u.uniselectorActive = True
+
+        # Protect self-connection from uniselector
+        u.inputConnections[0].state = 'manual'
+
+
+def run_headless(topology='fixed', total_steps=10000, report_interval=500):
+    '''Run the Ashby phototaxis experiment headless and print the trajectory.
+
+    Parameters:
+        topology:        'fixed' or 'random'
+        total_steps:     number of simulation steps to run
+        report_interval: print robot state every this many steps
+
+    Returns:
+        (hom, backend) - the Homeostat and backend after the run
+    '''
+    from Helpers.HomeostatConditionLogger import (
+        log_homeostat_conditions, log_homeostat_conditions_json)
+
+    hom, backend = setup_phototaxis(topology=topology)
+    sim = backend.kheperaSimulation
+    robot = sim.allBodies['Khepera']
+    target_pos = (7, 7)
+    exp_name = sim.experimentName
+
+    # Log initial conditions
+    timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
+    log_dir = sim.dataDir
+    log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.log')
+    json_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.json')
+    log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
+    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name)
+
+    def dist_to_target():
+        rx, ry = robot.body.position[0], robot.body.position[1]
+        return sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
+
+    mode_label = 'fixed topology' if topology == 'fixed' else 'random topology'
+    print(f'=== Phototaxis: Braitenberg 2 — Ashby ({mode_label}) ===')
+    print(f'Robot start: ({robot.body.position[0]:.3f}, {robot.body.position[1]:.3f})')
+    print(f'Light target: {target_pos}')
+    print(f'Initial distance: {dist_to_target():.3f}')
+    print()
+    print(f'{"Step":>6}  {"Robot X":>8}  {"Robot Y":>8}  {"Angle":>7}  {"Dist":>7}  {"L Sens":>7}  {"R Sens":>7}')
+    print('-' * 65)
+
+    min_dist = dist_to_target()
+    min_t = 0
+
+    for target_tick in range(report_interval, total_steps + 1, report_interval):
+        hom.runFor(target_tick)
+        rx, ry = robot.body.position[0], robot.body.position[1]
+        d = dist_to_target()
+        a = degrees(robot.body.angle) % 360
+        lsensor = robot.getSensorRead('leftEye')
+        rsensor = robot.getSensorRead('rightEye')
+
+        if d < min_dist:
+            min_dist = d
+            min_t = target_tick
+
+        print(f'{target_tick:>6}  {rx:>8.3f}  {ry:>8.3f}  {a:>7.1f}  {d:>7.3f}  {lsensor:>7.2f}  {rsensor:>7.2f}')
+
+    print()
+    print(f'Closest approach: {min_dist:.3f} at t={min_t}')
+    print(f'Final distance:   {dist_to_target():.3f}')
+
+    sim.saveTrajectory()
+
+    # Log final conditions
+    log_homeostat_conditions(hom, log_path, 'FINAL CONDITIONS')
+    log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
+
+    return hom, backend
+
+
+def run_visualized(topology='fixed'):
+    '''Run the Ashby phototaxis experiment with the pyglet visualizer.
+
+    Press Q or Escape to close the window.
+    Up/Down arrows adjust simulation speed (steps per frame).
+    '''
+    import pyglet
+    from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
+                           GL_BLEND, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
+                           GL_LINE_SMOOTH, GL_LINE_SMOOTH_HINT, GL_NICEST,
+                           GL_COLOR_BUFFER_BIT)
+    from KheperaSimulator.KheperaSimulator import KheperaCamera
+
+    mode_label = 'fixed' if topology == 'fixed' else 'random'
+    window = pyglet.window.Window(width=800, height=600, resizable=True,
+                                  caption=f'Phototaxis Ashby ({mode_label})')
+
+    glEnable(GL_LINE_SMOOTH)
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glClearColor(0.55, 0.95, 1.0, 1.0)
+
+    from Helpers.HomeostatConditionLogger import (
+        log_homeostat_conditions, log_homeostat_conditions_json)
+
+    hom, backend = setup_phototaxis(topology=topology)
+    sim = backend.kheperaSimulation
+    robot = sim.allBodies['Khepera']
+    target_pos = sim.allBodies['TARGET'].position
+    exp_name = sim.experimentName
+
+    # Log initial conditions
+    timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
+    log_dir = sim.dataDir
+    log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.log')
+    json_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.json')
+    log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
+    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name)
+
+    camera = KheperaCamera(position=(5.5, 5.5), zoom=8.0)
+    state = [0, 5]
+
+    @window.event
+    def on_draw():
+        glClear(GL_COLOR_BUFFER_BIT)
+        camera.focus(window)
+        sim.pygletDraw()
+
+    def update(dt):
+        state[0] += state[1]
+        hom.runFor(state[0])
+        rx, ry = robot.body.position[0], robot.body.position[1]
+        dist = sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
+        window.set_caption(
+            f'Phototaxis Ashby ({mode_label}) - t={state[0]}  speed={state[1]}  '
+            f'dist={dist:.2f}  [{1/max(dt, 0.001):.0f} fps]')
+
+    @window.event
+    def on_key_press(symbol, modifiers):
+        if symbol == pyglet.window.key.ESCAPE or symbol == pyglet.window.key.Q:
+            window.close()
+        elif symbol == pyglet.window.key.UP:
+            state[1] = min(state[1] * 2, 200)
+        elif symbol == pyglet.window.key.DOWN:
+            state[1] = max(state[1] // 2, 1)
+
+    @window.event
+    def on_close():
+        sim.saveTrajectory()
+        log_homeostat_conditions(hom, log_path, 'FINAL CONDITIONS')
+        log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
+
+    pyglet.clock.schedule(update)
+    pyglet.app.run()
+
+
+if __name__ == '__main__':
+    import sys
+
+    topology = 'random' if '--random-topology' in sys.argv else 'fixed'
+
+    if '--visualize' in sys.argv:
+        run_visualized(topology=topology)
+    else:
+        run_headless(topology=topology)
