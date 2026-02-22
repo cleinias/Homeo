@@ -33,22 +33,22 @@ behaviour.
 
 The full analysis of each experiment is in:
 
-- [Experiment 1: Positive light (Feb 21)](SimsData-2026-02-21/phototaxis_braitenberg2_Ashby_fixed-2026-02-21-report.md)
-- [Experiment 2: Negative light (Feb 22)](SimsData-2026-02-22/phototaxis_braitenberg2_Ashby_fixed_dark-2026-02-22-report.md)
+- [Experiment 1: Positive light (Feb 21)](2026-02-21-positive-light/phototaxis_braitenberg2_Ashby_fixed-2026-02-21-report.md)
+- [Experiment 2: Negative light (Feb 22)](2026-02-22-negative-light/phototaxis_braitenberg2_Ashby_fixed_dark-2026-02-22-report.md)
 
 
 ## Trajectories
 
 ### Experiment 1: Positive light --- robot moves away
 
-![Positive-light trajectory](SimsData-2026-02-21/trajectory.pdf)
+![Positive-light trajectory](2026-02-21-positive-light/trajectory.pdf)
 
 The vehicle spirals outward, increasing its distance from the light
 source from 4.243 to 9.197 over 2 million ticks.
 
 ### Experiment 2: Negative light --- robot approaches
 
-![Negative-light trajectory](SimsData-2026-02-22/trajectory_dark.pdf)
+![Negative-light trajectory](2026-02-22-negative-light/trajectory_dark.pdf)
 
 The vehicle spirals inward, decreasing its distance from 4.243 to 1.458
 in only 60,000 ticks, entering the target zone and triggering an early
@@ -61,21 +61,21 @@ stop.
 
 Initial state (all units within bounds):
 
-![Positive initial topology](SimsData-2026-02-21/topology_initial.pdf)
+![Positive initial topology](2026-02-21-positive-light/topology_initial.pdf)
 
 Final state (Right Motor and Left Eye saturated):
 
-![Positive final topology](SimsData-2026-02-21/topology_final.pdf)
+![Positive final topology](2026-02-21-positive-light/topology_final.pdf)
 
 ### Experiment 2: Negative light
 
 Initial state (all units within bounds):
 
-![Negative initial topology](SimsData-2026-02-22/topology_dark_initial.pdf)
+![Negative initial topology](2026-02-22-negative-light/topology_dark_initial.pdf)
 
 Final state (Left Motor saturated):
 
-![Negative final topology](SimsData-2026-02-22/topology_dark_final.pdf)
+![Negative final topology](2026-02-22-negative-light/topology_dark_final.pdf)
 
 
 ## Discussion

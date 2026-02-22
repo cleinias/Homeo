@@ -61,3 +61,7 @@ moc_*
 
 *.csv
 *.traj
+
+# Allow all files in ExperimentReports (overrides *.pdf, *.tex, *.log above)
+!ExperimentReports/
+!ExperimentReports/**
