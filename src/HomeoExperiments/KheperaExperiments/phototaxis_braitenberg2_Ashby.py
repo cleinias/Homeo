@@ -44,6 +44,30 @@ their uniselectors disabled — they are pure input transducers and should
 not self-organize.
 
 
+Motor and mass overrides
+------------------------
+
+Three default values in the base homeostat conspire to make the robot
+nearly immobile with random parameters:
+
+1. mass=100 (from HomeoUnit.DefaultParameters, not touched by
+   setRandomValues()) makes the Newtonian needle equation
+   acceleration = (force - viscosity*velocity) / mass extremely
+   sluggish.  We override mass to a random value in [1, 10].
+
+2. _maxSpeedFraction=0.2 in HomeoUnitNewtonianActuator limits the
+   motor to 20% of the available wheel speed range, compressing
+   effective speeds to a tiny band (~[-0.04, 0.04] m/s).  We set
+   it to 0.8.
+
+3. _switchingRate=0.1 makes the logistic sigmoid that maps deviation
+   to wheel speed very gentle — moderate deviations produce almost
+   no speed.  We set it to 0.5 for a more responsive curve.
+
+All three can be passed as parameters to setup_phototaxis() and the
+_ashby_* functions for systematic exploration.
+
+
 Usage
 -----
     # Headless, fixed topology (default)
@@ -69,7 +93,9 @@ from math import sqrt, degrees
 import numpy as np
 
 
-def setup_phototaxis(topology='fixed', backendSimulator=None):
+def setup_phototaxis(topology='fixed', backendSimulator=None,
+                     mass_range=(1, 10), max_speed_fraction=0.8,
+                     switching_rate=0.5):
     '''Set up an Ashby-style phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -77,10 +103,13 @@ def setup_phototaxis(topology='fixed', backendSimulator=None):
     activates uniselectors.
 
     Parameters:
-        topology:         'fixed' preserves Braitenberg wiring,
-                          'random' enables all connections randomly.
-        backendSimulator: optional SimulatorBackendHOMEO instance.
-                          If None, one is created with default settings.
+        topology:           'fixed' preserves Braitenberg wiring,
+                            'random' enables all connections randomly.
+        backendSimulator:   optional SimulatorBackendHOMEO instance.
+                            If None, one is created with default settings.
+        mass_range:         (low, high) for random mass on real units.
+        max_speed_fraction: fraction of motor speed range to use.
+        switching_rate:     logistic sigmoid steepness for motor output.
 
     Returns:
         (hom, backend) - the configured Homeostat and the backend simulator
@@ -106,15 +135,19 @@ def setup_phototaxis(topology='fixed', backendSimulator=None):
 
     hom = initializeBraiten2_2Pos(backendSimulator=backendSimulator)
 
+    kwargs = dict(mass_range=mass_range,
+                  max_speed_fraction=max_speed_fraction,
+                  switching_rate=switching_rate)
     if topology == 'random':
-        _ashby_random_topology(hom)
+        _ashby_random_topology(hom, **kwargs)
     else:
-        _ashby_fixed_topology(hom)
+        _ashby_fixed_topology(hom, **kwargs)
 
     return hom, backendSimulator
 
 
-def _ashby_fixed_topology(hom):
+def _ashby_fixed_topology(hom, mass_range=(1, 10),
+                          max_speed_fraction=0.8, switching_rate=0.5):
     '''Randomize unit parameters and connection weights, keeping the
     Braitenberg cross-wiring topology intact.
 
@@ -126,6 +159,19 @@ def _ashby_fixed_topology(hom):
 
     Motors and eyes have their uniselectors activated so the system
     can self-organize.  Sensor-only units are left as pure inputs.
+
+    Parameters:
+        mass_range:         (low, high) for random mass on real units.
+                            Default (1, 10) — light enough for responsive
+                            dynamics.  setRandomValues() leaves mass at
+                            the sluggish default of 100; we override it.
+        max_speed_fraction: fraction of motor speed range to use.
+                            Default 0.8.  The actuator default is 0.2
+                            which compresses speeds to a tiny band.
+        switching_rate:     logistic sigmoid steepness for motor output.
+                            Default 0.5.  The actuator default is 0.1
+                            which makes moderate deviations produce
+                            almost no speed.
     '''
 
     for u in hom.homeoUnits:
@@ -136,8 +182,17 @@ def _ashby_fixed_topology(hom):
         # Randomize unit parameters
         u.setRandomValues()
 
+        # Override mass to a responsive range (setRandomValues doesn't touch it)
+        u.mass = np.random.uniform(*mass_range)
+
         # Activate uniselector
         u.uniselectorActive = True
+
+        # Motor-specific overrides
+        if 'Motor' in u.name:
+            u._maxSpeedFraction = max_speed_fraction
+            u._switchingRate = switching_rate
+            u._maxSpeed = None  # force recalculation from new fraction
 
         for conn in u.inputConnections:
             if conn.incomingUnit == u:
@@ -153,7 +208,8 @@ def _ashby_fixed_topology(hom):
                 conn.state = 'uniselector'
 
 
-def _ashby_random_topology(hom):
+def _ashby_random_topology(hom, mass_range=(1, 10),
+                           max_speed_fraction=0.8, switching_rate=0.5):
     '''Fully randomize all connections between the 4 real units.
 
     Every connection on motors and eyes gets a random weight and is
@@ -161,6 +217,14 @@ def _ashby_random_topology(hom):
     useful topology (which connections matter) and weights.
 
     Sensor-only units remain input-only with all connections disabled.
+
+    Parameters:
+        mass_range:         (low, high) for random mass on real units.
+                            Default (1, 10).  See _ashby_fixed_topology.
+        max_speed_fraction: fraction of motor speed range to use.
+                            Default 0.8.
+        switching_rate:     logistic sigmoid steepness for motor output.
+                            Default 0.5.
     '''
 
     for u in hom.homeoUnits:
@@ -174,6 +238,9 @@ def _ashby_random_topology(hom):
         # Randomize unit parameters
         u.setRandomValues()
 
+        # Override mass to a responsive range (setRandomValues doesn't touch it)
+        u.mass = np.random.uniform(*mass_range)
+
         # Randomize all connections (sets all active with random weights,
         # noise, and state='uniselector')
         u.randomizeAllConnectionValues()
@@ -183,6 +250,12 @@ def _ashby_random_topology(hom):
 
         # Protect self-connection from uniselector
         u.inputConnections[0].state = 'manual'
+
+        # Motor-specific overrides
+        if 'Motor' in u.name:
+            u._maxSpeedFraction = max_speed_fraction
+            u._switchingRate = switching_rate
+            u._maxSpeed = None  # force recalculation from new fraction
 
 
 def run_headless(topology='fixed', total_steps=10000, report_interval=500):
