@@ -279,22 +279,53 @@ def run_visualized():
 
     # Camera centered between robot start (4,4) and light (7,7), zoomed out
     # enough to see the whole scene (zoom=8 shows ~16 units across)
+    from KheperaSimulator.KheperaSimulator import _get_shape_program
+    from pyglet.gl import GL_LINES
+
     camera = KheperaCamera(position=(5.5, 5.5), zoom=8.0)
     # state[0] = step counter, state[1] = steps per frame
     # Each step takes ~12ms, so 5 steps/frame ~ 60ms ~ 15 FPS
     state = [0, 5]
+    trail_vlists = []  # list of vertex lists for trail segments
+    trail_last = [None] # last recorded (x, y)
+    TRAIL_MIN_DIST = 0.05  # minimum distance before adding a trail segment
 
     @window.event
     def on_draw():
         glClear(GL_COLOR_BUFFER_BIT)
         camera.focus(window)
         sim.pygletDraw()
+        # Draw trail using the same shader (respects camera projection)
+        program = _get_shape_program()
+        program.use()
+        for vl in trail_vlists:
+            vl.draw(GL_LINES)
+        program.stop()
 
     def update(dt):
         state[0] += state[1]
         hom.runFor(state[0])
         # Update window title with progress
         rx, ry = robot.body.position[0], robot.body.position[1]
+
+        # Only add a trail segment when the robot has moved enough
+        if trail_last[0] is not None:
+            px, py = trail_last[0]
+            if sqrt((rx - px)**2 + (ry - py)**2) >= TRAIL_MIN_DIST:
+                program = _get_shape_program()
+                vl = program.vertex_list(
+                    2, GL_LINES,
+                    position=('f', [px, py, rx, ry]),
+                    colors=('f', [0.8, 0.2, 0.2, 0.7] * 2),
+                    translation=('f', [0.0, 0.0] * 2),
+                    rotation=('f', [0.0] * 2),
+                    zposition=('f', [0.0] * 2),
+                )
+                trail_vlists.append(vl)
+                trail_last[0] = (rx, ry)
+        else:
+            trail_last[0] = (rx, ry)
+
         dist = sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
         window.set_caption(
             f'Phototaxis - t={state[0]}  speed={state[1]}  '
