@@ -442,7 +442,14 @@ if __name__ == '__main__':
 
     topology = 'random' if '--random-topology' in sys.argv else 'fixed'
 
+    # Parse --steps N (default 10000)
+    total_steps = 10000
+    if '--steps' in sys.argv:
+        idx = sys.argv.index('--steps')
+        if idx + 1 < len(sys.argv):
+            total_steps = int(sys.argv[idx + 1])
+
     if '--visualize' in sys.argv:
         run_visualized(topology=topology)
     else:
-        run_headless(topology=topology)
+        run_headless(topology=topology, total_steps=total_steps)
