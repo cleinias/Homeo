@@ -9,6 +9,8 @@ at a distance of 4.243 units from a light source at (7, 7) with intensity
 100. By the end of the run, the robot had moved to approximately (16.03,
 8.72), at a distance of 9.197 units from the light --- further away.
 
+![Vehicle trajectory](trajectory.pdf)
+
 This result is consistent with the expected behaviour of a
 homeostat-driven vehicle. The homeostat is an equilibrium-seeking machine
 that strives to keep its essential variables within acceptable bounds.
