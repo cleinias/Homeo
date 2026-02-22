@@ -42,7 +42,14 @@ variables to settle closer to equilibrium.
 
 ## Network topology
 
-*(Diagram to be added.)*
+![Initial topology](topology_initial.pdf)
+
+![Final topology](topology_final.pdf)
+
+In the diagrams above, **green** nodes are within normal bounds, **red**
+nodes are saturated at their deviation limits. Blue arcs are manual
+(protected) connections; orange arcs are uniselector-controlled.  Labels
+show the effective weight (switch × weight).
 
 The vehicle is a 6-unit homeostat wired as a Braitenberg type-2 (crossed)
 vehicle:
