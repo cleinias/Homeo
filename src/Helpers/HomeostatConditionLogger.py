@@ -10,6 +10,7 @@ so that experiments are fully reproducible.
 
 import json
 import os
+import time
 import numpy as np
 from tabulate import tabulate
 
@@ -124,11 +125,20 @@ def _connections_table(snapshot):
     return tabulate(rows, headers, tablefmt='grid')
 
 
-def log_homeostat_conditions(homeostat, filepath, label=''):
-    """Append a labelled snapshot of all unit and connection parameters to filepath."""
+def log_homeostat_conditions(homeostat, filepath, label='', experiment_name=''):
+    """Append a labelled snapshot of all unit and connection parameters to filepath.
 
+    On the first call (file does not exist), a header with the experiment
+    title and date/time is written before the snapshot.
+    """
+
+    write_header = not os.path.exists(filepath)
     snap = _snapshot(homeostat)
     with open(filepath, 'a') as f:
+        if write_header and experiment_name:
+            title = experiment_name.replace('_', ' ').title()
+            f.write(title + '\n')
+            f.write(time.strftime("%Y-%m-%d %H:%M:%S") + '\n\n')
         f.write('=' * 60 + '\n')
         f.write(label + '\n')
         f.write('=' * 60 + '\n\n')
@@ -138,11 +148,12 @@ def log_homeostat_conditions(homeostat, filepath, label=''):
         f.write(_connections_table(snap) + '\n\n')
 
 
-def log_homeostat_conditions_json(homeostat, filepath, label=''):
+def log_homeostat_conditions_json(homeostat, filepath, label='', experiment_name=''):
     """Add a snapshot under label key in a JSON file.
 
     If the file already exists, the existing content is preserved
     and the new snapshot is added (or replaced) under the label key.
+    The experiment title and date/time are stored as top-level fields.
     """
 
     snap = _snapshot(homeostat)
@@ -151,6 +162,10 @@ def log_homeostat_conditions_json(homeostat, filepath, label=''):
     if os.path.exists(filepath):
         with open(filepath, 'r') as f:
             data = json.load(f)
+
+    if experiment_name and 'experiment' not in data:
+        data['experiment'] = experiment_name.replace('_', ' ').title()
+        data['date'] = time.strftime("%Y-%m-%d %H:%M:%S")
 
     data[label] = snap
 

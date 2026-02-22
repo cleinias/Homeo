@@ -145,8 +145,8 @@ def run_headless(total_steps=10000, report_interval=500):
     log_dir = sim.dataDir
     log_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.log')
     json_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.json')
-    log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS')
-    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS')
+    log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', 'phototaxis_braitenberg2')
+    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', 'phototaxis_braitenberg2')
 
     def dist_to_target():
         rx, ry = robot.body.position[0], robot.body.position[1]
@@ -233,8 +233,8 @@ def run_visualized():
     log_dir = sim.dataDir
     log_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.log')
     json_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.json')
-    log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS')
-    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS')
+    log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', 'phototaxis_braitenberg2')
+    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', 'phototaxis_braitenberg2')
 
     # Camera centered between robot start (4,4) and light (7,7), zoomed out
     # enough to see the whole scene (zoom=8 shows ~16 units across)
