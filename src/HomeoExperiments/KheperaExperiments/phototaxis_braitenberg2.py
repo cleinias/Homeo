@@ -6,22 +6,65 @@ The experiment sets up a 6-unit homeostat controlling a Khepera robot
 with cross-wired connections (right motor <- left eye, left motor <- right eye).
 The robot starts at (4,4) and a light source is placed at (7,7).
 
-The default homeostat parameters from initializeBraiten2_2 (mass=100,
-viscosity=0.9*max) are tuned by the GA for long-term adaptation.
-For responsive phototaxis, this experiment overrides them with lighter
-dynamics and strong self-damping so the robot actively steers toward light.
 
-Tuning rationale:
-- mass=1, viscosity=0: fast signal propagation (no inertia or drag)
-- self-connection weight=-0.9 on eyes and motors: deviation decays when
-  input drops (without this, deviations stay at maxDeviation forever
-  because the linear needle model has no natural damping)
-- cross-connection weight=1.0: full signal strength from eye to motor
-- switchingRate=0.5: moderate logistic slope for proportional motor response
-- maxSpeedFraction=1.0: use full wheel speed range
-- noise=0, uniselector off: clean deterministic behavior
+Parameter origin and tuning
+---------------------------
 
-Usage:
+The base homeostat topology and wiring come from initializeBraiten2_2()
+in Simulator/HomeoExperiments.py.  That function creates 6 fully-connected
+units (2 motors, 2 eyes, 2 sensor inputs), disables all connections
+except self-connections, then activates the Braitenberg cross-connections
+(left eye -> right motor, right eye -> left motor).  The default unit
+parameters it sets (mass=100, viscosity=0.9*maxViscosity, noise=0.05,
+connection weights=0.5, uniselector timing=100) were designed for
+long-term optimization via genetic algorithm -- the GA searches over
+those heavy, sluggish dynamics to find stable adaptive behavior.
+
+For a direct phototaxis demonstration without GA, those defaults are
+far too sluggish: with mass=100 each tick's input barely changes the
+unit's deviation, so the robot essentially does not move.  The function
+_tune_for_phototaxis() overrides them with values chosen by reasoning
+about the model's equations (not empirically optimized):
+
+- mass=1, viscosity=0:  The Newtonian needle equation computes
+  acceleration = (force - viscosity*velocity) / mass.  Setting mass=1
+  and viscosity=0 removes all inertia and drag, so each tick's input
+  translates immediately into a change in deviation.  This is the
+  simplest possible dynamics.
+
+- self-connection weight=-0.9 on eyes and motors:  The linear needle
+  computation model (needleCompMethod='linear') has no natural decay.
+  Once a unit's deviation reaches maxDeviation it stays pinned there
+  forever, even if input drops to zero.  A negative self-connection
+  feeds the unit's own output back with opposite sign, acting as a
+  damping term: deviation decays toward zero when external input
+  diminishes.  The value -0.9 (close to -1) gives strong but not
+  instantaneous decay per tick.
+
+- cross-connection weight=1.0:  Full-strength signal transfer from
+  eye to motor.  The gain is simply set to maximum so the sensor
+  reading drives the motor as strongly as possible.
+
+- switchingRate=0.5:  Controls the steepness of the logistic (sigmoid)
+  function that maps a motor unit's deviation to wheel speed inside
+  HomeoUnitNewtonianActuator.  A value of 0.5 gives a moderate slope,
+  producing a proportional response in the mid-range of deviations
+  rather than a sharp on/off switch.
+
+- maxSpeedFraction=1.0:  Uses the full wheel speed range of the
+  Khepera robot, rather than limiting it to a fraction.
+
+- noise=0, uniselector off:  All stochastic elements are removed so
+  the behavior is fully deterministic, which makes debugging easier.
+
+These values are educated guesses, not optimized.  The robot does
+approach the light (distance decreases steadily), but the parameters
+have not been systematically searched or validated.  Proper tuning
+would require either a GA run or a parameter sweep.
+
+
+Usage
+-----
     # Headless run with trajectory printout
     python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2
 
@@ -74,11 +117,9 @@ def setup_phototaxis(backendSimulator=None):
 
 
 def _tune_for_phototaxis(hom):
-    '''Override default homeostat parameters for responsive phototaxis.
-
-    The default parameters (mass=100, viscosity=0.9*max) are designed for
-    long-term adaptation via genetic algorithm. Here we set lighter dynamics
-    so the robot actively follows light in real time.
+    '''Override the heavy GA-oriented defaults with lightweight dynamics
+    for real-time phototaxis.  See the module docstring for a detailed
+    explanation of each parameter value and why it was chosen.
     '''
 
     # Eyes: fast pass-through with self-damping
