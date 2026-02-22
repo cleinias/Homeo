@@ -95,7 +95,7 @@ import numpy as np
 
 def setup_phototaxis(topology='fixed', backendSimulator=None,
                      mass_range=(1, 10), max_speed_fraction=0.8,
-                     switching_rate=0.5):
+                     switching_rate=0.5, light_intensity=100):
     '''Set up an Ashby-style phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -110,6 +110,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         mass_range:         (low, high) for random mass on real units.
         max_speed_fraction: fraction of motor speed range to use.
         switching_rate:     logistic sigmoid steepness for motor output.
+        light_intensity:    intensity of the light source (negative for
+                            a "darkness source").
 
     Returns:
         (hom, backend) - the configured Homeostat and the backend simulator
@@ -131,9 +133,18 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         exp_name = 'phototaxis_braitenberg2_Ashby_random'
     else:
         exp_name = 'phototaxis_braitenberg2_Ashby_fixed'
+    if light_intensity < 0:
+        exp_name += '_dark'
     backendSimulator.kheperaSimulation.experimentName = exp_name
 
     hom = initializeBraiten2_2Pos(backendSimulator=backendSimulator)
+
+    # Override light intensity on the already-created light body
+    if light_intensity != 100:
+        sim = backendSimulator.kheperaSimulation
+        target_body = sim.allBodies['TARGET']
+        target_body.userData['intensity'] = light_intensity
+        target_body.userData['lightIntensity'] = light_intensity
 
     kwargs = dict(mass_range=mass_range,
                   max_speed_fraction=max_speed_fraction,
@@ -258,13 +269,18 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
             u._maxSpeed = None  # force recalculation from new fraction
 
 
-def run_headless(topology='fixed', total_steps=10000, report_interval=500):
+def run_headless(topology='fixed', total_steps=10000, report_interval=500,
+                 light_intensity=100, early_stop_distance=None):
     '''Run the Ashby phototaxis experiment headless and print the trajectory.
 
     Parameters:
-        topology:        'fixed' or 'random'
-        total_steps:     number of simulation steps to run
-        report_interval: print robot state every this many steps
+        topology:             'fixed' or 'random'
+        total_steps:          number of simulation steps to run
+        report_interval:      print robot state every this many steps
+        light_intensity:      intensity of the light source (negative for
+                              a "darkness source")
+        early_stop_distance:  if set, stop when the robot gets closer than
+                              this distance to the target
 
     Returns:
         (hom, backend) - the Homeostat and backend after the run
@@ -272,7 +288,8 @@ def run_headless(topology='fixed', total_steps=10000, report_interval=500):
     from Helpers.HomeostatConditionLogger import (
         log_homeostat_conditions, log_homeostat_conditions_json)
 
-    hom, backend = setup_phototaxis(topology=topology)
+    hom, backend = setup_phototaxis(topology=topology,
+                                    light_intensity=light_intensity)
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target_pos = (7, 7)
@@ -315,6 +332,10 @@ def run_headless(topology='fixed', total_steps=10000, report_interval=500):
             min_t = target_tick
 
         print(f'{target_tick:>6}  {rx:>8.3f}  {ry:>8.3f}  {a:>7.1f}  {d:>7.3f}  {lsensor:>7.2f}  {rsensor:>7.2f}')
+
+        if early_stop_distance is not None and d < early_stop_distance:
+            print(f'\n  *** Early stop: distance {d:.3f} < {early_stop_distance}')
+            break
 
     print()
     print(f'Closest approach: {min_dist:.3f} at t={min_t}')
@@ -449,7 +470,19 @@ if __name__ == '__main__':
         if idx + 1 < len(sys.argv):
             total_steps = int(sys.argv[idx + 1])
 
+    # Parse --dark (negative light intensity) and --early-stop DIST
+    light_intensity = -100 if '--dark' in sys.argv else 100
+    early_stop_distance = None
+    if '--early-stop' in sys.argv:
+        idx = sys.argv.index('--early-stop')
+        if idx + 1 < len(sys.argv):
+            early_stop_distance = float(sys.argv[idx + 1])
+    elif '--dark' in sys.argv:
+        early_stop_distance = 1.5  # default: TrajectoryGrapher's gray circle
+
     if '--visualize' in sys.argv:
         run_visualized(topology=topology)
     else:
-        run_headless(topology=topology, total_steps=total_steps)
+        run_headless(topology=topology, total_steps=total_steps,
+                     light_intensity=light_intensity,
+                     early_stop_distance=early_stop_distance)
