@@ -25,12 +25,18 @@ import numpy as np
 # import csv
 import datetime
 from operator import attrgetter
-from scoop import futures
+try:
+    from scoop import futures
+except ImportError:
+    futures = None  # scoop only works when launched via its runner
 import multiprocessing
 
 from pathos.multiprocessing import ProcessingPool as Pool
 
-from playdoh import map as pd_map 
+try:
+    from playdoh import map as pd_map
+except ImportError:
+    pd_map = None  # playdoh is Python 2 only; its usage is commented out
 
 #import RobotSimulator.WebotsTCPClient
 from RobotSimulator.WebotsTCPClient import WebotsTCPClient
@@ -41,7 +47,7 @@ from time import time, strftime, localtime, sleep
 from tabulate import tabulate
 from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDebug
 from Helpers.StatsAnalyzer import extractGenomeOfIndID
-from SimulatorBackend import SimulatorBackendHOMEO,SimulatorBackendVREP,SimulatorBackendWEBOTS
+from Simulator.SimulatorBackend import SimulatorBackendHOMEO,SimulatorBackendVREP,SimulatorBackendWEBOTS
 from threading import Lock
 from glob import glob
 
@@ -113,7 +119,7 @@ class HomeoGASimulation(object):
     allowable error classes names. 
     '''
     
-    dataDirRoot = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/'
+    dataDirRoot = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'SimulationsData')
            
     def __init__(self,parent=None, stepsSize = 1000, 
                                    popSize=150,
@@ -449,7 +455,7 @@ class HomeoGASimulation(object):
                     #print "Now changed to: ", ind.ID
     
                 'Re-evaluate'
-                fitnesses = self.toobox.map(self.toolbox.evaluate, invalid_ind)
+                fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
                 for ind, fit in zip(invalid_ind, fitnesses):
                     ind.fitness.values = fit
                     
@@ -496,7 +502,7 @@ class HomeoGASimulation(object):
         
         except TCPConnectionError as e:
             hDebug("network major",("TCP connection error: \n" + e.value + "Cleaning up and quitting...")) 
-            hDebug("network",("Trying to quit simulation environment" % self.simulatorBackend))
+            hDebug("network",("Trying to quit simulation environment %s" % self.simulatorBackend))
             self.simulatorBackend.quit()
         #=======================================================================
         # except VREP_Error as e:
@@ -509,7 +515,7 @@ class HomeoGASimulation(object):
         #     "FIXME: TO DO"
         #=======================================================================
 
-        except:
+        except Exception:
             "Something bad happened: Check if we did anything and save logbook and history of work done so far and re-raise."
             if timeElapsed is not None:
                 self.saveLogbook(pop, timeElapsed, timeStarted)
@@ -558,7 +564,7 @@ class HomeoGASimulation(object):
         """ 
         formattedTime = strftime("%Y-%m-%d-%H-%M-%S", localtime(timeStarted))
         filename = prefix+'-'+formattedTime+ '.' + extension
-        if path == None:
+        if path is None:
             datafilePath = self.dataDir
         else: datafilePath = path
         return os.path.join(datafilePath, filename)
@@ -633,10 +639,10 @@ class HomeoGASimulation(object):
            but do not run simulation on Webots, return a normally distributed 
            random fitness instead"""         
                      
-        if genome==None:
+        if genome is None:
             genome=self.createRandomHomeostatGenome(self.genomeSize)
         params = {'homeoGenome':genome, 'dataDir' : self.dataDir}
-        self._simulation.initializeExperSetup(params)
+        self._simulation.initializeExperSetup(**params)
         self.simulatorBackend.connect()
         self.simulatorBackend.reset()
         self.simulatorBackend.close()
@@ -675,9 +681,9 @@ class HomeoGASimulation(object):
         """Run a simulation for a given number of steps on the given genome.
            Return final distance from target"""
             
-        if genome==None:
+        if genome is None:
             genome=self.createRandomHomeostatGenome(self.genomeSize)
-                    
+
         if self.simulatorBackend.name == "VREP":
             self.simulatorBackend.connect()
         self.experimentParams['homeoGenome']= genome
