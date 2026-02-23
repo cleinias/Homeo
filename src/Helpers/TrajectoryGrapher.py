@@ -20,17 +20,28 @@ def main(argv):
     parser.add_argument('traj_file', help='Path to the .traj file')
     parser.add_argument('--output', '-o', default=None,
                         help='Save figure to file (PDF, PNG, etc.) instead of displaying')
+    parser.add_argument('--dark', action='store_true',
+                        help='Treat the light source as a darkness source '
+                             '(reverses the irradiance gradient)')
     args = parser.parse_args(argv[1:])
-    graphTrajectory(args.traj_file, output_path=args.output)
+    graphTrajectory(args.traj_file, output_path=args.output, dark=args.dark)
 
 
-def graphTrajectory(trajDataFilename, output_path=None):
+def graphTrajectory(trajDataFilename, output_path=None, dark=False):
     """Chart the vehicle's trajectory with matplotlib.
+
+    The background shows a radial grey gradient centered on the light
+    source, representing the irradiance field.  For positive-intensity
+    lights the centre is bright and the edges dark (the robot is avoiding
+    brightness); for negative-intensity (dark) lights the centre is dark
+    and the edges bright (the robot is seeking darkness).
 
     Args:
         trajDataFilename: path to a .traj file
         output_path: if provided, save the figure to this path (PDF, PNG, etc.)
                      instead of displaying interactively.
+        dark: if True, treat the source as a "darkness source" (reverses
+              the gradient direction).
     """
 
     'Read simulation general data from header'
@@ -50,7 +61,38 @@ def graphTrajectory(trajDataFilename, output_path=None):
 
     'build plot'
     fig, ax = plt.subplots()
-    ax.plot(trajData[:,0],trajData[:,1])
+
+    margin = 1.5
+    xmin = min(trajData[:,0].min(), lightsOnDic['TARGET'][0]) - margin
+    xmax = max(trajData[:,0].max(), lightsOnDic['TARGET'][0]) + margin
+    ymin = min(trajData[:,1].min(), lightsOnDic['TARGET'][1]) - margin
+    ymax = max(trajData[:,1].max(), lightsOnDic['TARGET'][1]) + margin
+
+    # Draw radial irradiance gradient as background
+    target = lightsOnDic.get('TARGET')
+    if target is not None:
+        tx, ty, intensity = target[0], target[1], target[2]
+        nx, ny = 300, 300
+        x_grid = np.linspace(xmin, xmax, nx)
+        y_grid = np.linspace(ymin, ymax, ny)
+        X, Y = np.meshgrid(x_grid, y_grid)
+        D = np.sqrt((X - tx)**2 + (Y - ty)**2)
+        # Irradiance falloff matching the simulator: 1/d² attenuation.
+        # Use 1/(1+d²) which naturally maps to [0,1] and avoids the
+        # singularity at d=0 while preserving the 1/d² proportionality.
+        irrad_norm = 1.0 / (1.0 + D**2)
+        # Positive light: bright at centre (high irradiance = white)
+        # Negative light (dark): dark at centre (high proximity = dark)
+        if dark:
+            gray = 1.0 - irrad_norm
+        else:
+            gray = irrad_norm
+        # Map to grey range [0.45, 1.0] so trajectory line stays readable
+        gray = 0.45 + 0.55 * gray
+        ax.imshow(gray, extent=[xmin, xmax, ymin, ymax], origin='lower',
+                  cmap='gray', vmin=0, vmax=1, aspect='equal', zorder=0)
+
+    ax.plot(trajData[:,0], trajData[:,1], zorder=2)
     ax.set_ylabel('y')
     ax.set_xlabel('x')
     ax.set_title(os.path.split(trajDataFilename)[1])
@@ -64,26 +106,18 @@ def graphTrajectory(trajDataFilename, output_path=None):
      verticalalignment='center',
      transform = ax.transAxes)
 
-    margin = 1.5
-    xmin = min(trajData[:,0].min(), lightsOnDic['TARGET'][0]) - margin
-    xmax = max(trajData[:,0].max(), lightsOnDic['TARGET'][0]) + margin
-    ymin = min(trajData[:,1].min(), lightsOnDic['TARGET'][1]) - margin
-    ymax = max(trajData[:,1].max(), lightsOnDic['TARGET'][1]) + margin
-    cMap = plt.get_cmap('Blues')  # Use a matplotlib color map to map lights' intensity
     for lightName, light in lightsOnDic.items():
         lightPos = (light[0],light[1])
-        lightRadius = 1.5      # FIXME Provisional. Need to read from trajectory data file
-        ax.add_artist(Circle(lightPos, 0.15, alpha=1,color = 'black')) # marks the center of the light cone
-        # parametrize color value to light intensity
-        ax.add_artist(Circle(lightPos, lightRadius, alpha = 0.25, color = cMap(light[2]))) # light cone
+        ax.add_artist(Circle(lightPos, 0.15, alpha=1, color='black', zorder=3))
     startPose = (trajData[0][0],trajData[0][1])
-    startMark = Circle(startPose, 0.05, alpha =1, color = 'green')
+    startMark = Circle(startPose, 0.05, alpha=1, color='green', zorder=3)
     ax.add_artist(startMark) #draw starting position in green
     endPose = (trajData[-1][0],trajData[-1][1])
-    endMark = Circle(endPose, 0.05, alpha =1, color = 'red')
+    endMark = Circle(endPose, 0.05, alpha=1, color='red', zorder=3)
     ax.add_artist(endMark)   # Draw end position in red
-    ax.axis('equal')         # Otherwise circle comes out as an ellipse
-    ax.axis([xmin,xmax,ymin,ymax])
+    ax.set_aspect('equal')   # Otherwise circle comes out as an ellipse
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
 
     if output_path:
         fig.savefig(output_path, bbox_inches='tight')
@@ -130,4 +164,4 @@ def readDataFileHeader(trajDataFilename):
 
   
 if __name__ == "__main__":
-   main(sys.argv[0])
+   main(sys.argv)
