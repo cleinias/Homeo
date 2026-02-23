@@ -55,9 +55,12 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False):
     except Exception as e:
         print("Cannot open the file: ", e)
 
-    'Compute final distance'
+    'Compute initial and final distance'
+    initPosData = [trajData[:,0][0], trajData[:,1][0]]
     finalPos = [trajData[:,0][-1],trajData[:,1][-1]]
+    initialDistance = sqrt((lightsOnDic['TARGET'][0]- initPosData[0])**2+ (lightsOnDic['TARGET'][1] - initPosData[1])**2)
     finalDistance = sqrt((lightsOnDic['TARGET'][0]- finalPos[0])**2+ (lightsOnDic['TARGET'][1] - finalPos[1])**2)
+    ticks = len(trajData)
 
     'build plot'
     fig, ax = plt.subplots()
@@ -94,17 +97,20 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False):
 
     ax.plot(trajData[:,0], trajData[:,1], zorder=2)
     ax.set_ylabel('y')
-    ax.set_xlabel('x')
     ax.set_title(os.path.split(trajDataFilename)[1])
     if output_path is None:
         fig.canvas.manager.set_window_title(os.path.split(trajDataFilename)[1])
 
-    'Add final distance to plot'
-    finalDisString = "Final distance: "+ str(round(finalDistance,3))
-    ax.text(0.15, 0.95,finalDisString,
-     horizontalalignment='center',
-     verticalalignment='center',
-     transform = ax.transAxes)
+    'Add summary info above the plot'
+    if ticks >= 1000000:
+        time_str = "{:,.0f}K".format(ticks / 1000)
+    elif ticks >= 1000:
+        time_str = "{:.0f}K".format(ticks / 1000)
+    else:
+        time_str = str(ticks)
+    summary = ("Initial distance: {:.3f}    Final distance: {:.3f}    "
+               "Time: {}".format(initialDistance, finalDistance, time_str))
+    ax.set_xlabel(summary, fontsize=9)
 
     for lightName, light in lightsOnDic.items():
         lightPos = (light[0],light[1])
