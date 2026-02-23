@@ -96,7 +96,6 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False):
                   cmap='gray', vmin=0, vmax=1, aspect='equal', zorder=0)
 
     ax.plot(trajData[:,0], trajData[:,1], zorder=2)
-    ax.set_ylabel('y')
     ax.set_title(os.path.split(trajDataFilename)[1])
     if output_path is None:
         fig.canvas.manager.set_window_title(os.path.split(trajDataFilename)[1])
