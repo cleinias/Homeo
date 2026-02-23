@@ -270,7 +270,7 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
 
 
 def run_headless(topology='fixed', total_steps=10000, report_interval=500,
-                 light_intensity=100, early_stop_distance=None):
+                 light_intensity=100, early_stop_distance=None, quiet=False):
     '''Run the Ashby phototaxis experiment headless and print the trajectory.
 
     Parameters:
@@ -281,9 +281,12 @@ def run_headless(topology='fixed', total_steps=10000, report_interval=500,
                               a "darkness source")
         early_stop_distance:  if set, stop when the robot gets closer than
                               this distance to the target
+        quiet:                if True, suppress per-tick output (for batch mode)
 
     Returns:
-        (hom, backend) - the Homeostat and backend after the run
+        dict with keys: hom, backend, final_dist, min_dist, min_t,
+                        steps_run, final_x, final_y, early_stopped,
+                        log_path, json_path
     '''
     from Helpers.HomeostatConditionLogger import (
         log_homeostat_conditions, log_homeostat_conditions_json)
@@ -314,16 +317,18 @@ def run_headless(topology='fixed', total_steps=10000, report_interval=500,
         return sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
 
     mode_label = 'fixed topology' if topology == 'fixed' else 'random topology'
-    print(f'=== Phototaxis: Braitenberg 2 — Ashby ({mode_label}) ===')
-    print(f'Robot start: ({robot.body.position[0]:.3f}, {robot.body.position[1]:.3f})')
-    print(f'Light target: {target_pos}')
-    print(f'Initial distance: {dist_to_target():.3f}')
-    print()
-    print(f'{"Step":>6}  {"Robot X":>8}  {"Robot Y":>8}  {"Angle":>7}  {"Dist":>7}  {"L Sens":>7}  {"R Sens":>7}')
-    print('-' * 65)
+    if not quiet:
+        print(f'=== Phototaxis: Braitenberg 2 — Ashby ({mode_label}) ===')
+        print(f'Robot start: ({robot.body.position[0]:.3f}, {robot.body.position[1]:.3f})')
+        print(f'Light target: {target_pos}')
+        print(f'Initial distance: {dist_to_target():.3f}')
+        print()
+        print(f'{"Step":>6}  {"Robot X":>8}  {"Robot Y":>8}  {"Angle":>7}  {"Dist":>7}  {"L Sens":>7}  {"R Sens":>7}')
+        print('-' * 65)
 
     min_dist = dist_to_target()
     min_t = 0
+    early_stopped = False
 
     for target_tick in range(report_interval, total_steps + 1, report_interval):
         hom.runFor(target_tick)
@@ -337,15 +342,23 @@ def run_headless(topology='fixed', total_steps=10000, report_interval=500,
             min_dist = d
             min_t = target_tick
 
-        print(f'{target_tick:>6}  {rx:>8.3f}  {ry:>8.3f}  {a:>7.1f}  {d:>7.3f}  {lsensor:>7.2f}  {rsensor:>7.2f}')
+        if not quiet:
+            print(f'{target_tick:>6}  {rx:>8.3f}  {ry:>8.3f}  {a:>7.1f}  {d:>7.3f}  {lsensor:>7.2f}  {rsensor:>7.2f}')
 
         if early_stop_distance is not None and d < early_stop_distance:
-            print(f'\n  *** Early stop: distance {d:.3f} < {early_stop_distance}')
+            if not quiet:
+                print(f'\n  *** Early stop: distance {d:.3f} < {early_stop_distance}')
+            early_stopped = True
             break
 
-    print()
-    print(f'Closest approach: {min_dist:.3f} at t={min_t}')
-    print(f'Final distance:   {dist_to_target():.3f}')
+    final_dist = dist_to_target()
+    final_x, final_y = robot.body.position[0], robot.body.position[1]
+    steps_run = target_tick
+
+    if not quiet:
+        print()
+        print(f'Closest approach: {min_dist:.3f} at t={min_t}')
+        print(f'Final distance:   {final_dist:.3f}')
 
     sim.saveTrajectory()
 
@@ -353,7 +366,88 @@ def run_headless(topology='fixed', total_steps=10000, report_interval=500,
     log_homeostat_conditions(hom, log_path, 'FINAL CONDITIONS')
     log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
 
-    return hom, backend
+    return dict(hom=hom, backend=backend,
+                final_dist=final_dist, min_dist=min_dist, min_t=min_t,
+                steps_run=steps_run, final_x=final_x, final_y=final_y,
+                early_stopped=early_stopped,
+                log_path=log_path, json_path=json_path)
+
+
+def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
+              report_interval=500, light_intensity=100,
+              early_stop_distance=None):
+    '''Run a batch of experiments and print a summary table.
+
+    Parameters:
+        n_runs:               number of independent runs
+        topology:             'fixed' or 'random'
+        total_steps:          step budget per run
+        report_interval:      ticks between position checks
+        light_intensity:      intensity (negative for darkness)
+        early_stop_distance:  stop run early if robot gets this close
+
+    Returns:
+        list of result dicts (one per run, without hom/backend)
+    '''
+    import csv as _csv
+
+    mode = 'dark' if light_intensity < 0 else 'light'
+    print(f'=== Batch: {n_runs} runs, {mode}, {total_steps} ticks budget ===')
+    print()
+
+    results = []
+    for i in range(n_runs):
+        t0 = time.time()
+        print(f'--- Run {i+1}/{n_runs} ---', flush=True)
+        r = run_headless(topology=topology, total_steps=total_steps,
+                         report_interval=report_interval,
+                         light_intensity=light_intensity,
+                         early_stop_distance=early_stop_distance,
+                         quiet=True)
+        elapsed = time.time() - t0
+        # Drop non-serialisable objects before storing
+        r.pop('hom'); r.pop('backend')
+        r['run'] = i + 1
+        r['wall_time'] = elapsed
+        results.append(r)
+        print(f'  final_dist={r["final_dist"]:.3f}  min_dist={r["min_dist"]:.3f}  '
+              f'steps={r["steps_run"]}  early_stop={r["early_stopped"]}  '
+              f'wall={elapsed:.1f}s', flush=True)
+
+    # Summary table
+    print()
+    print(f'{"Run":>4}  {"Final Dist":>10}  {"Min Dist":>10}  {"Min@t":>8}  '
+          f'{"Steps":>8}  {"EarlyStop":>9}  {"Wall(s)":>7}')
+    print('-' * 68)
+    for r in results:
+        print(f'{r["run"]:>4}  {r["final_dist"]:>10.3f}  {r["min_dist"]:>10.3f}  '
+              f'{r["min_t"]:>8}  {r["steps_run"]:>8}  '
+              f'{"Yes" if r["early_stopped"] else "No":>9}  '
+              f'{r["wall_time"]:>7.1f}')
+
+    dists = [r['final_dist'] for r in results]
+    mins = [r['min_dist'] for r in results]
+    stops = sum(1 for r in results if r['early_stopped'])
+    print('-' * 68)
+    print(f'Mean final dist: {np.mean(dists):.3f}  (std {np.std(dists):.3f})')
+    print(f'Mean min dist:   {np.mean(mins):.3f}  (std {np.std(mins):.3f})')
+    print(f'Early stops:     {stops}/{n_runs}')
+
+    # Save summary CSV next to the individual log files
+    if results:
+        log_dir = os.path.dirname(results[0]['log_path'])
+        csv_name = f'batch_{mode}_{time.strftime("%Y-%m-%d-%H-%M-%S")}.csv'
+        csv_path = os.path.join(log_dir, csv_name)
+        fields = ['run', 'final_dist', 'min_dist', 'min_t', 'steps_run',
+                  'early_stopped', 'final_x', 'final_y', 'wall_time',
+                  'log_path', 'json_path']
+        with open(csv_path, 'w', newline='') as f:
+            w = _csv.DictWriter(f, fieldnames=fields)
+            w.writeheader()
+            w.writerows(results)
+        print(f'\nSummary saved to: {csv_path}')
+
+    return results
 
 
 def run_visualized(topology='fixed'):
@@ -486,8 +580,20 @@ if __name__ == '__main__':
     elif '--dark' in sys.argv:
         early_stop_distance = 1.5  # default: TrajectoryGrapher's gray circle
 
+    # Parse --batch N
+    n_batch = None
+    if '--batch' in sys.argv:
+        idx = sys.argv.index('--batch')
+        if idx + 1 < len(sys.argv):
+            n_batch = int(sys.argv[idx + 1])
+
     if '--visualize' in sys.argv:
         run_visualized(topology=topology)
+    elif n_batch is not None:
+        run_batch(n_runs=n_batch, topology=topology,
+                  total_steps=total_steps,
+                  light_intensity=light_intensity,
+                  early_stop_distance=early_stop_distance)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
