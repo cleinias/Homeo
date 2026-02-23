@@ -133,7 +133,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.discardDataButton.setCheckable(True)
         self.discardDataButton.setChecked(not self._simulation.homeostat.collectsData)
         self.resetChartsButton = QPushButton("Clear charts")
-        self.graphTrajectoryButton = QPushButton("Chart trajectory")
+        #self.graphTrajectoryButton = QPushButton("Chart trajectory")
         
         'Spinboxes and lineEdits'
         self.maxRunSpinBox = QSpinBox()
@@ -172,7 +172,7 @@ class HomeoSimulationControllerGui(QDialog):
         'Row 4'
         simulationPaneLayout.addWidget(self.currentTimeLabel,4,0)
         simulationPaneLayout.addWidget(self.currentTimeSpinBox,4,1)
-        simulationPaneLayout.addWidget(self.graphTrajectoryButton,4,2)
+        #simulationPaneLayout.addWidget(self.graphTrajectoryButton,4,2)
         
         'Row 5'
         simulationPaneLayout.addWidget(self.slowingFactorLabel, 5,0)
@@ -209,7 +209,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.showUniselActionButton.clicked.connect(self.toggleShowUniselAction)
         self.discardDataButton.clicked.connect(self.toggleDiscardData)
         self.resetChartsButton.clicked.connect(self.resetCharts)
-        self.graphTrajectoryButton.clicked.connect(self.graphTrajectory)
+        #self.graphTrajectoryButton.clicked.connect(self.graphTrajectory)
 
 
         emitter(self._simulation.homeostat).homeostatTimeChanged.connect(self.currentTimeSpinBox.setValue)
@@ -297,6 +297,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.saveGraphDataButton.clicked.connect(self.choosePlotDataAndSave)
         self.graphButton.clicked.connect(self.graphData)
         self.liveDataOnCheckbox.stateChanged.connect(self._simulation.toggleLivedataOn)
+        self.liveDataOnCheckbox.setChecked(True)
         self.liveDataWindowCheckBox.stateChanged.connect(self.toggleLiveDataWindow)
         
         
@@ -640,9 +641,9 @@ class HomeoSimulationControllerGui(QDialog):
                     widget.setFont(guiFont)
                     widget.setAlignment(Qt.AlignRight)                    
                     attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], spinBox)
-                    slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], spinBoxType[1])                    
+                    slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], spinBoxType[1])
                     signalFromUnit = spinBox + "Changed"
-                    widget.setValue(attribute)
+                    widget.setValue(int(attribute) if spinBoxType[0] == '' else float(attribute))
                     widget.editingValueFinished.connect(slot)                  #uses a custom signal produced by SFSpinBox and SFDoubleSpinBox
                     getattr(emitter(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit]), signalFromUnit).connect(widget.setValue)
 
@@ -908,12 +909,12 @@ class HomeoSimulationControllerGui(QDialog):
             try:
                 self._simulation.loadNewHomeostat(filename)
                 self.changeWindowsTitles(self._simulation.homeostatFilename)
-                emitter(self._simulation.homeostat).homeostatTimeChanged.connect(self.currentTimeSpinBox.setValue)
                 self._simulation.timeReset()
                 self.stepButton.setEnabled(True)
                 self.resumeButton.setEnabled(True)
                 self.pauseButton.setEnabled(False)
                 self.clearLiveCharts()
+                self._reconnectAfterHomeostatChange()
             except HomeostatError as e:
                 messageBox = QMessageBox()
                 messageBox.setText(e.__str__())
@@ -948,6 +949,169 @@ class HomeoSimulationControllerGui(QDialog):
         self.stepButton.setEnabled(True)
         self.resumeButton.setEnabled(True)
         self.clearLiveCharts()
+        self._reconnectAfterHomeostatChange()
+
+    def _reconnectAfterHomeostatChange(self):
+        """Reconnect all GUI signals to the new unit/connection objects
+        after the homeostat has been replaced (New / Load).
+        Keeps the existing dialog window so its position is preserved."""
+
+        hom = self._simulation.homeostat
+        gui = self._homeostat_gui
+        numUnits = len(hom.homeoUnits)
+        # Connections from widgets that trigger unit/connection methods
+        # (combo currentIndexChanged, checkbox stateChanged, slider valueChanged)
+        # must be deferred until after widget values are pushed, to avoid
+        # spurious callbacks during the update.
+        deferredConns = []
+
+        lineEditProps = {
+            'name': 'Name', 'currentOutput': 'Output', 'inputTorque': 'Input',
+            'mass': 'Mass', 'potentiometer': 'Potent', 'viscosity': 'Viscosity',
+            'noise': 'Noise', 'switch': 'Switch',
+            'uniselectorTimeInterval': 'UniselTiming',
+            'maxDeviation': 'MaxCritDev', 'minDeviation': 'MinCritDev',
+            'criticalDeviation': 'CritDev',
+        }
+
+        prec = HomeoUnit.precision
+
+        for i, unit in enumerate(hom.homeoUnits):
+            # --- Line edits ---
+            for propName, shortName in lineEditProps.items():
+                widget = gui.findChild(QWidget, 'unit' + str(i + 1) + shortName + 'LineEdit')
+                if widget is None:
+                    continue
+                try:
+                    widget.textModified.disconnect()
+                except TypeError:
+                    pass
+                setter = getattr(unit, 'set' + propName[0].upper() + propName[1:])
+                widget.textModified.connect(setter)
+                getattr(emitter(unit), propName + 'ChangedLineEdit').connect(widget.setText)
+
+            # --- Uniselector type combo ---
+            widget = gui.findChild(QComboBox, 'unit' + str(i + 1) + 'UniselectTypeComboBox')
+            if widget:
+                try:
+                    widget.currentIndexChanged[str].disconnect()
+                except TypeError:
+                    pass
+                uniselName = type(unit.uniselector).__name__.split("HomeoUniselector").pop()
+                idx = widget.findText(uniselName)
+                if idx >= 0:
+                    widget.setCurrentIndex(idx)
+                deferredConns.append((widget.currentIndexChanged[str], unit.changeUniselectorType))
+
+            # --- Active combo ---
+            widget = gui.findChild(QComboBox, 'unit' + str(i + 1) + 'ActiveComboBox')
+            if widget:
+                try:
+                    widget.currentIndexChanged[str].disconnect()
+                except TypeError:
+                    pass
+                emitter(unit).unitActiveIndexchanged.connect(widget.setCurrentIndex)
+                deferredConns.append((widget.currentIndexChanged[str], unit.setStatus))
+
+            # --- Uniselector On checkbox ---
+            widget = gui.findChild(QCheckBox, 'unit' + str(i + 1) + 'UniselOnCheckBox')
+            if widget:
+                try:
+                    widget.stateChanged.disconnect()
+                except TypeError:
+                    pass
+                emitter(unit).unitUniselOnChanged.connect(widget.setChecked)
+                deferredConns.append((widget.stateChanged, unit.toggleUniselectorActive))
+
+            # --- Uniselector Sound checkbox ---
+            widget = gui.findChild(QCheckBox, 'unit' + str(i + 1) + 'UniselSoundCheckBox')
+            if widget:
+                try:
+                    widget.stateChanged.disconnect()
+                except TypeError:
+                    pass
+                emitter(unit.uniselector).uniselSoundChanged.connect(widget.setChecked)
+                widget.setChecked(unit.uniselector.beeps)
+                deferredConns.append((widget.stateChanged, unit.uniselector.toggleBeeping))
+
+            # --- CritDev slider ---
+            widget = gui.findChild(QSlider, 'unit' + str(i + 1) + 'CritDevSlider')
+            if widget:
+                try:
+                    widget.valueChanged.disconnect()
+                except TypeError:
+                    pass
+                emitter(unit).criticalDeviationScaledChanged.connect(widget.setValue)
+                emitter(unit).minDeviationScaledChanged.connect(widget.setMinimum)
+                emitter(unit).maxDeviationScaledChanged.connect(widget.setMaximum)
+                deferredConns.append((widget.valueChanged, unit.setCriticalDeviationFromSlider))
+
+            # --- Connection widgets ---
+            for j in range(numUnits):
+                conn = unit.inputConnections[j]
+                prefix = 'unit' + str(i + 1) + 'Unit' + str(j + 1)
+
+                # Connection name
+                widget = gui.findChild(QWidget, prefix + 'ConnNameLineEdit')
+                if widget:
+                    emitter(conn.incomingUnit).nameChanged.connect(widget.setText)
+                    widget.setText(conn.incomingUnit.name)
+
+                # Connection spinboxes
+                spinBoxDefs = {
+                    'weight': ('Double', 'setAbsoluteWeight'),
+                    'switch': ('', 'toggleSwitch'),
+                    'noise': ('Double', 'setNoise'),
+                }
+                for sbName, (sbType, setterName) in spinBoxDefs.items():
+                    wName = prefix + sbName[0].upper() + sbName[1:] + sbType + 'SpinBox'
+                    widget = gui.findChild(QWidget, wName)
+                    if widget is None:
+                        continue
+                    try:
+                        widget.editingValueFinished.disconnect()
+                    except TypeError:
+                        pass
+                    slot = getattr(conn, setterName)
+                    widget.editingValueFinished.connect(slot)
+                    getattr(emitter(conn), sbName + 'Changed').connect(widget.setValue)
+                    attr = getattr(conn, sbName)
+                    widget.setValue(int(attr) if sbType == '' else float(attr))
+
+                # Connection comboboxes
+                comboDefs = {
+                    'status': ({'Active': True, 'Non active': False}, 'Connected', 'toggleStatus'),
+                    'state': ({'manual': 'manual', 'uniselector': 'uniselector'}, 'Uniselector', 'toggleUniselectorState'),
+                }
+                for attrName, (valMap, widgetMid, setterName) in comboDefs.items():
+                    wName = prefix + widgetMid + 'ComboBox'
+                    widget = gui.findChild(QComboBox, wName)
+                    if widget is None:
+                        continue
+                    try:
+                        widget.currentIndexChanged.disconnect()
+                    except TypeError:
+                        pass
+                    attrVal = getattr(conn, attrName)
+                    idx = list(valMap.values()).index(attrVal)
+                    widget.setCurrentIndex(idx)
+                    slot = getattr(conn, setterName)
+                    deferredConns.append((widget.currentIndexChanged, slot))
+
+        # Push current unit values to widgets via emitter signals
+        self._simulation.allUnitValuesChanged()
+
+        # Now connect deferred widget→unit signals (values already set, no spurious callbacks)
+        for signal, slot in deferredConns:
+            signal.connect(slot)
+
+        # Reconnect simulation-pane signals that reference the homeostat directly
+        try:
+            self.resetValuesButton.clicked.disconnect()
+        except TypeError:
+            pass
+        self.resetValuesButton.clicked.connect(hom.randomizeValuesforAllUnits)
+        emitter(hom).homeostatTimeChanged.connect(self.currentTimeSpinBox.setValue)
     
     def saveAllData(self):       
         filename = QFileDialog.getSaveFileName(parent = self, 
@@ -992,32 +1156,30 @@ class HomeoSimulationControllerGui(QDialog):
         plt.ylabel('Critical Deviation')
         plt.xlabel('Time')
         plt.title(self._simulation.dataFilename)
-        plt.grid(b=True, which='both', color='0.65',linestyle='-')
+        plt.grid(visible=True, which='both', color='0.65',linestyle='-')
         plt.axis(ymin=self._simulation.homeostat.homeoUnits[0].minDeviation, ymax= self._simulation.homeostat.homeoUnits[0].maxDeviation)
         plt.show()
 
-    def graphTrajectory(self):
-        "Chart the vehicle's trajectory with matplotlib"
-        
-        '''Assume that the current directory is under a "src" directory
-        and that a data folder called 'SimulationsData will exist
-        at the same level as "src"
-        Assume also that the trajectory data filename will start with 
-        the string filenamePattern and will include date and time info in the filename
-        so they properly sort in time order
-        Get the most recent file fulfilling the criteria''' 
-        
-        addedPath = 'SimulationsData'
-        datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
-        fileNamepattern = 'trajectoryData'
-        try:
-            trajDataFilename = max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)])
-        except ValueError:
-            print("The file I tried to open was:", os.path.join(datafilePath, max([ f for f in os.listdir(datafilePath) if f.startswith(fileNamepattern)])))
-            messageBox =  QMessageBox.warning(self, 'No data file', 'There are no trajectory data to visualize', QMessageBox.Cancel)
-            
-        "graph the data"
-        graphTrajectory(os.path.join(datafilePath, trajDataFilename))
+    #def graphTrajectory(self):
+    #    "Chart the vehicle's trajectory with matplotlib"
+    #
+    #    '''Assume that the current directory is under a "src" directory
+    #    and that a data folder called 'SimulationsData will exist
+    #    at the same level as "src"
+    #    Assume also that the trajectory data filename will start with
+    #    the string filenamePattern and will include date and time info in the filename
+    #    so they properly sort in time order
+    #    Get the most recent file fulfilling the criteria'''
+    #
+    #    addedPath = 'SimulationsData'
+    #    datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
+    #    trajFiles = [f for f in os.listdir(datafilePath) if f.endswith('.traj')]
+    #    if not trajFiles:
+    #        QMessageBox.warning(self, 'No data file', 'There are no trajectory data to visualize', QMessageBox.Cancel)
+    #        return
+    #
+    #    "graph the most recent .traj file"
+    #    graphTrajectory(os.path.join(datafilePath, max(trajFiles)))
 
 
 
@@ -1025,9 +1187,17 @@ class HomeoSimulationControllerGui(QDialog):
         pass
     
     def clearLiveCharts(self):
-        for unitRef in self._simulation._homeostat.homeoUnits:
+        oldKeys = list(self.pgChartsAndItems.keys())
+        for unitRef in oldKeys:
             self.pgChartsAndItems[unitRef][1].clear()
             self.pgChartsAndItems[unitRef][3].clear()
+        # Remap chart references from old unit objects to new ones
+        newUnits = self._simulation._homeostat.homeoUnits
+        if len(oldKeys) == len(newUnits):
+            newDict = {}
+            for oldKey, newKey in zip(oldKeys, newUnits):
+                newDict[newKey] = self.pgChartsAndItems[oldKey]
+            self.pgChartsAndItems = newDict
             
     def toggleLiveDataWindow(self):
         self._simulation.toggleLivedataWindow()

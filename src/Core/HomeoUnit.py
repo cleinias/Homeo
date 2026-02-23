@@ -363,7 +363,7 @@ class HomeoUnit(object):
             aValue = float(aValue)
             self._criticalDeviation = self.clipDeviation(aValue)
 
-            if not self._headless:
+            if not getattr(self, '_headless', False):
                 emitter(self).criticalDeviationChanged.emit(self._criticalDeviation)
                 emitter(self).criticalDeviationChangedLineEdit.emit(str(round(self._criticalDeviation, 5)))
                 scaledValueToEmit = int(floor(self._criticalDeviation * HomeoUnit.precision))
@@ -572,7 +572,7 @@ class HomeoUnit(object):
     def setCurrentOutput(self, aValue):
         self._currentOutput = aValue
 
-        if not self._headless:
+        if not getattr(self, '_headless', False):
             emitter(self).currentOutputChanged.emit(self._currentOutput)
             emitter(self).currentOutputChangedLineEdit.emit(str(round(self._currentOutput, 5)))
             if self._debugMode == True:
@@ -613,7 +613,7 @@ class HomeoUnit(object):
 
     def setInputTorque(self,aValue):
         self._inputTorque = aValue
-        if not self._headless:
+        if not getattr(self, '_headless', False):
             emitter(self).inputTorqueChanged.emit(self._inputTorque)
             emitter(self).inputTorqueChangedLineEdit.emit(str(round(self._inputTorque, 5)))
 

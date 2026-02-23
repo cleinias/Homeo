@@ -48,11 +48,11 @@ class Homeostat(object):
     def readFrom(self,filename):
         '''This is a class method that create a new Homeostat instance from filename'''
         fileIn = open(filename, 'rb')
-        unpickler = pickle.Unpickler(fileIn)
+        unpickler = pickle.Unpickler(fileIn, encoding='latin-1')
         try:
             newHomeostat = unpickler.load()
-        except:
-            raise HomeostatError("The file is not a pickled Homeostat")
+        except Exception as e:
+            raise HomeostatError("The file is not a pickled Homeostat: %s" % e)
         fileIn.close()
         if newHomeostat.isReadyToGo():
             return newHomeostat
@@ -87,7 +87,7 @@ class Homeostat(object):
         return self._time
     def setTime(self,aValue):
         self._time = aValue
-        if not self._headless:
+        if not getattr(self, '_headless', False):
             emitter(self).homeostatTimeChanged.emit(self._time)
     time = property(fget = lambda self: self.getTime(),
                     fset = lambda self, value: self.setTime(value))
@@ -248,7 +248,7 @@ class Homeostat(object):
                     if unit.isActive():
                         unit.selfUpdate()
                 self.time +=  1
-                if not self._headless:
+                if not getattr(self, '_headless', False):
                     emitter(self).homeostatTimeChanged.emit(self.time)
                 if sleepTime > 0:
                     time.sleep(sleepTime / 1000)           # sleep accepts seconds, slowingFactor is in milliseconds
