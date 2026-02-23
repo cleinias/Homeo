@@ -1,0 +1,880 @@
+{
+  "experiment": "Phototaxis Braitenberg2 Ashby Fixed Dark",
+  "date": "2026-02-22 22:36:00",
+  "INITIAL CONDITIONS": {
+    "units": [
+      {
+        "name": "Right Motor",
+        "type": "HomeoUnitNewtonianActuator",
+        "mass": 5.407422716450219,
+        "viscosity": 8.559310436893155,
+        "maxDeviation": 10,
+        "criticalDeviation": -0.8864009101781813,
+        "noise": 0.09738945064755283,
+        "potentiometer": 0.7015349504617039,
+        "switch": 1.0,
+        "uniselectorActive": true,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 0.5907160388909121,
+        "switchingRate": 0.5,
+        "maxSpeedFraction": 0.8
+      },
+      {
+        "name": "Left Motor",
+        "type": "HomeoUnitNewtonianActuator",
+        "mass": 2.052994730194457,
+        "viscosity": 6.653016676132232,
+        "maxDeviation": 10,
+        "criticalDeviation": -0.6326498348283678,
+        "noise": 0.06425619205814127,
+        "potentiometer": 0.3013311704909858,
+        "switch": 1.0,
+        "uniselectorActive": true,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 0.85288786730775,
+        "switchingRate": 0.5,
+        "maxSpeedFraction": 0.8
+      },
+      {
+        "name": "Left Eye",
+        "type": "HomeoUnitNewtonian",
+        "mass": 3.7422612823500896,
+        "viscosity": 3.375792721254337,
+        "maxDeviation": 10,
+        "criticalDeviation": 0.04996866248430476,
+        "noise": 0.017220419885588225,
+        "potentiometer": 0.7440450401586602,
+        "switch": 1.0,
+        "uniselectorActive": true,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 0.03328831617452488
+      },
+      {
+        "name": "Right Eye",
+        "type": "HomeoUnitNewtonian",
+        "mass": 9.934609935772007,
+        "viscosity": 7.639243645374778,
+        "maxDeviation": 10,
+        "criticalDeviation": -0.724073339242526,
+        "noise": 0.085345912661553,
+        "potentiometer": 0.35899891010147267,
+        "switch": 1.0,
+        "uniselectorActive": true,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 0.25883491204676334
+      },
+      {
+        "name": "Left Sensor",
+        "type": "HomeoUnitInput",
+        "mass": 100.0,
+        "viscosity": 9.0,
+        "maxDeviation": 10,
+        "criticalDeviation": 0,
+        "noise": 0.05,
+        "potentiometer": 1,
+        "switch": -1,
+        "uniselectorActive": false,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 0,
+        "alwaysPos": true
+      },
+      {
+        "name": "Right Sensor",
+        "type": "HomeoUnitInput",
+        "mass": 100.0,
+        "viscosity": 9.0,
+        "maxDeviation": 10,
+        "criticalDeviation": 0,
+        "noise": 0.05,
+        "potentiometer": 1,
+        "switch": -1,
+        "uniselectorActive": false,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 0,
+        "alwaysPos": true
+      }
+    ],
+    "connections": [
+      {
+        "unit": "Right Motor",
+        "from": "Right Motor",
+        "weight": 0.15058050026253578,
+        "switch": 1.0,
+        "noise": 0.021438124816624583,
+        "state": "manual",
+        "active": true
+      },
+      {
+        "unit": "Right Motor",
+        "from": "Left Motor",
+        "weight": 0.7429251469329252,
+        "switch": 1.0,
+        "noise": 0.060581947830508145,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Motor",
+        "from": "Left Eye",
+        "weight": 0.9040368036219089,
+        "switch": 1.0,
+        "noise": 0.06447165164308838,
+        "state": "uniselector",
+        "active": true
+      },
+      {
+        "unit": "Right Motor",
+        "from": "Right Eye",
+        "weight": 0.8212041369819512,
+        "switch": -1.0,
+        "noise": 0.04234246605222978,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Motor",
+        "from": "Left Sensor",
+        "weight": 0.844089785813849,
+        "switch": -1.0,
+        "noise": 0.005991480396825877,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Motor",
+        "from": "Right Sensor",
+        "weight": 0.09682446428202196,
+        "switch": -1.0,
+        "noise": 0.09879261625866581,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Left Motor",
+        "weight": 0.5416244720412402,
+        "switch": 1.0,
+        "noise": 0.03670490111156338,
+        "state": "manual",
+        "active": true
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Right Motor",
+        "weight": 0.7020467849632521,
+        "switch": -1.0,
+        "noise": 0.09506703676385299,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Left Eye",
+        "weight": 0.497097958269892,
+        "switch": -1.0,
+        "noise": 0.036571407123700994,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Right Eye",
+        "weight": 0.9467955115613589,
+        "switch": -1.0,
+        "noise": 0.02318672778141111,
+        "state": "uniselector",
+        "active": true
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Left Sensor",
+        "weight": 0.49894867559270817,
+        "switch": -1.0,
+        "noise": 0.06767297909051233,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Right Sensor",
+        "weight": 0.14184765580002812,
+        "switch": -1.0,
+        "noise": 0.06621224875375521,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Left Eye",
+        "weight": 0.673262937221291,
+        "switch": 1.0,
+        "noise": 0.03674163163624468,
+        "state": "manual",
+        "active": true
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Right Motor",
+        "weight": 0.09131811038665227,
+        "switch": -1.0,
+        "noise": 0.0871668028133234,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Left Motor",
+        "weight": 0.460572439956344,
+        "switch": 1.0,
+        "noise": 0.07644052604068052,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Right Eye",
+        "weight": 0.599891444952168,
+        "switch": -1.0,
+        "noise": 0.04924960819278332,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Left Sensor",
+        "weight": 0.6468871828009084,
+        "switch": -1.0,
+        "noise": 0.06821758153119074,
+        "state": "uniselector",
+        "active": true
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Right Sensor",
+        "weight": 0.5412869182375659,
+        "switch": -1.0,
+        "noise": 0.01080953066994962,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Right Eye",
+        "weight": 0.9068175789959463,
+        "switch": 1.0,
+        "noise": 0.03141108248848062,
+        "state": "manual",
+        "active": true
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Right Motor",
+        "weight": 0.8932381144820922,
+        "switch": -1.0,
+        "noise": 0.07213835251217167,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Left Motor",
+        "weight": 0.6948892327754814,
+        "switch": 1.0,
+        "noise": 0.09608990640376011,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Left Eye",
+        "weight": 0.5358741610941218,
+        "switch": -1.0,
+        "noise": 0.053870262459478936,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Left Sensor",
+        "weight": 0.4399271970010987,
+        "switch": -1.0,
+        "noise": 0.06987998759771501,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Right Sensor",
+        "weight": 0.7445964476148621,
+        "switch": 1.0,
+        "noise": 0.06732922554211433,
+        "state": "uniselector",
+        "active": true
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Left Sensor",
+        "weight": 1,
+        "switch": -1,
+        "noise": 0.0436044814549242,
+        "state": "manual",
+        "active": false
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Right Motor",
+        "weight": 0.520277221108939,
+        "switch": -1.0,
+        "noise": 0.020990135744753502,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Left Motor",
+        "weight": 0.7784700648450558,
+        "switch": -1.0,
+        "noise": 0.08584814842108592,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Left Eye",
+        "weight": 0.21502372941847359,
+        "switch": 1.0,
+        "noise": 0.07285815779483958,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Right Eye",
+        "weight": 0.038540450025239315,
+        "switch": -1.0,
+        "noise": 0.07136912413517336,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Right Sensor",
+        "weight": 0.2581452044436121,
+        "switch": -1.0,
+        "noise": 0.016299296891835204,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Right Sensor",
+        "weight": 1,
+        "switch": -1,
+        "noise": 0.03263278903368906,
+        "state": "manual",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Right Motor",
+        "weight": 0.7018174930967986,
+        "switch": 1.0,
+        "noise": 0.06908190059267484,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Left Motor",
+        "weight": 0.06661884898703185,
+        "switch": -1.0,
+        "noise": 0.09433084823008518,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Left Eye",
+        "weight": 0.2616585630117083,
+        "switch": 1.0,
+        "noise": 0.0436450502360736,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Right Eye",
+        "weight": 0.8677825041865206,
+        "switch": 1.0,
+        "noise": 0.09310951603513763,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Left Sensor",
+        "weight": 0.44300974087822875,
+        "switch": -1.0,
+        "noise": 0.09009510489362066,
+        "state": "uniselector",
+        "active": false
+      }
+    ]
+  },
+  "FINAL CONDITIONS": {
+    "units": [
+      {
+        "name": "Right Motor",
+        "type": "HomeoUnitNewtonianActuator",
+        "mass": 5.407422716450219,
+        "viscosity": 8.559310436893155,
+        "maxDeviation": 10,
+        "criticalDeviation": 10.0,
+        "noise": 0.09738945064755283,
+        "potentiometer": 0.7015349504617039,
+        "switch": 1.0,
+        "uniselectorActive": true,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 1.0,
+        "switchingRate": 0.5,
+        "maxSpeedFraction": 0.8
+      },
+      {
+        "name": "Left Motor",
+        "type": "HomeoUnitNewtonianActuator",
+        "mass": 2.052994730194457,
+        "viscosity": 6.653016676132232,
+        "maxDeviation": 10,
+        "criticalDeviation": 10.0,
+        "noise": 0.06425619205814127,
+        "potentiometer": 0.3013311704909858,
+        "switch": 1.0,
+        "uniselectorActive": true,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 1.0,
+        "switchingRate": 0.5,
+        "maxSpeedFraction": 0.8
+      },
+      {
+        "name": "Left Eye",
+        "type": "HomeoUnitNewtonian",
+        "mass": 3.7422612823500896,
+        "viscosity": 3.375792721254337,
+        "maxDeviation": 10,
+        "criticalDeviation": 10.0,
+        "noise": 0.017220419885588225,
+        "potentiometer": 0.7440450401586602,
+        "switch": 1.0,
+        "uniselectorActive": true,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 1.0
+      },
+      {
+        "name": "Right Eye",
+        "type": "HomeoUnitNewtonian",
+        "mass": 9.934609935772007,
+        "viscosity": 7.639243645374778,
+        "maxDeviation": 10,
+        "criticalDeviation": -10.0,
+        "noise": 0.085345912661553,
+        "potentiometer": 0.35899891010147267,
+        "switch": 1.0,
+        "uniselectorActive": true,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": -1.0
+      },
+      {
+        "name": "Left Sensor",
+        "type": "HomeoUnitInput",
+        "mass": 100.0,
+        "viscosity": 9.0,
+        "maxDeviation": 10,
+        "criticalDeviation": 0.0,
+        "noise": 0.05,
+        "potentiometer": 1,
+        "switch": -1,
+        "uniselectorActive": false,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 0.0,
+        "alwaysPos": true
+      },
+      {
+        "name": "Right Sensor",
+        "type": "HomeoUnitInput",
+        "mass": 100.0,
+        "viscosity": 9.0,
+        "maxDeviation": 10,
+        "criticalDeviation": 0.0,
+        "noise": 0.05,
+        "potentiometer": 1,
+        "switch": -1,
+        "uniselectorActive": false,
+        "uniselectorTimeInterval": 100,
+        "critThreshold": 0.9,
+        "needleCompMethod": "linear",
+        "status": "Active",
+        "currentOutput": 0.0,
+        "alwaysPos": true
+      }
+    ],
+    "connections": [
+      {
+        "unit": "Right Motor",
+        "from": "Right Motor",
+        "weight": 0.15058050026253578,
+        "switch": 1.0,
+        "noise": 0.021438124816624583,
+        "state": "manual",
+        "active": true
+      },
+      {
+        "unit": "Right Motor",
+        "from": "Left Motor",
+        "weight": 0.7429251469329252,
+        "switch": 1.0,
+        "noise": 0.060581947830508145,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Motor",
+        "from": "Left Eye",
+        "weight": 0.5604552771759859,
+        "switch": 1.0,
+        "noise": 0.06447165164308838,
+        "state": "uniselector",
+        "active": true
+      },
+      {
+        "unit": "Right Motor",
+        "from": "Right Eye",
+        "weight": 0.8212041369819512,
+        "switch": -1.0,
+        "noise": 0.04234246605222978,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Motor",
+        "from": "Left Sensor",
+        "weight": 0.844089785813849,
+        "switch": -1.0,
+        "noise": 0.005991480396825877,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Motor",
+        "from": "Right Sensor",
+        "weight": 0.09682446428202196,
+        "switch": -1.0,
+        "noise": 0.09879261625866581,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Left Motor",
+        "weight": 0.5416244720412402,
+        "switch": 1.0,
+        "noise": 0.03670490111156338,
+        "state": "manual",
+        "active": true
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Right Motor",
+        "weight": 0.7020467849632521,
+        "switch": -1.0,
+        "noise": 0.09506703676385299,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Left Eye",
+        "weight": 0.497097958269892,
+        "switch": -1.0,
+        "noise": 0.036571407123700994,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Right Eye",
+        "weight": 0.36964475777582506,
+        "switch": -1.0,
+        "noise": 0.02318672778141111,
+        "state": "uniselector",
+        "active": true
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Left Sensor",
+        "weight": 0.49894867559270817,
+        "switch": -1.0,
+        "noise": 0.06767297909051233,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Motor",
+        "from": "Right Sensor",
+        "weight": 0.14184765580002812,
+        "switch": -1.0,
+        "noise": 0.06621224875375521,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Left Eye",
+        "weight": 0.673262937221291,
+        "switch": 1.0,
+        "noise": 0.03674163163624468,
+        "state": "manual",
+        "active": true
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Right Motor",
+        "weight": 0.09131811038665227,
+        "switch": -1.0,
+        "noise": 0.0871668028133234,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Left Motor",
+        "weight": 0.460572439956344,
+        "switch": 1.0,
+        "noise": 0.07644052604068052,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Right Eye",
+        "weight": 0.599891444952168,
+        "switch": -1.0,
+        "noise": 0.04924960819278332,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Left Sensor",
+        "weight": 0.00023196989211804464,
+        "switch": -1.0,
+        "noise": 0.06821758153119074,
+        "state": "uniselector",
+        "active": true
+      },
+      {
+        "unit": "Left Eye",
+        "from": "Right Sensor",
+        "weight": 0.5412869182375659,
+        "switch": -1.0,
+        "noise": 0.01080953066994962,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Right Eye",
+        "weight": 0.9068175789959463,
+        "switch": 1.0,
+        "noise": 0.03141108248848062,
+        "state": "manual",
+        "active": true
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Right Motor",
+        "weight": 0.8932381144820922,
+        "switch": -1.0,
+        "noise": 0.07213835251217167,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Left Motor",
+        "weight": 0.6948892327754814,
+        "switch": 1.0,
+        "noise": 0.09608990640376011,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Left Eye",
+        "weight": 0.5358741610941218,
+        "switch": -1.0,
+        "noise": 0.053870262459478936,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Left Sensor",
+        "weight": 0.4399271970010987,
+        "switch": -1.0,
+        "noise": 0.06987998759771501,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Eye",
+        "from": "Right Sensor",
+        "weight": 0.5256689959929637,
+        "switch": 1.0,
+        "noise": 0.06732922554211433,
+        "state": "uniselector",
+        "active": true
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Left Sensor",
+        "weight": 1,
+        "switch": -1,
+        "noise": 0.0436044814549242,
+        "state": "manual",
+        "active": false
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Right Motor",
+        "weight": 0.520277221108939,
+        "switch": -1.0,
+        "noise": 0.020990135744753502,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Left Motor",
+        "weight": 0.7784700648450558,
+        "switch": -1.0,
+        "noise": 0.08584814842108592,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Left Eye",
+        "weight": 0.21502372941847359,
+        "switch": 1.0,
+        "noise": 0.07285815779483958,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Right Eye",
+        "weight": 0.038540450025239315,
+        "switch": -1.0,
+        "noise": 0.07136912413517336,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Left Sensor",
+        "from": "Right Sensor",
+        "weight": 0.2581452044436121,
+        "switch": -1.0,
+        "noise": 0.016299296891835204,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Right Sensor",
+        "weight": 1,
+        "switch": -1,
+        "noise": 0.03263278903368906,
+        "state": "manual",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Right Motor",
+        "weight": 0.7018174930967986,
+        "switch": 1.0,
+        "noise": 0.06908190059267484,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Left Motor",
+        "weight": 0.06661884898703185,
+        "switch": -1.0,
+        "noise": 0.09433084823008518,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Left Eye",
+        "weight": 0.2616585630117083,
+        "switch": 1.0,
+        "noise": 0.0436450502360736,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Right Eye",
+        "weight": 0.8677825041865206,
+        "switch": 1.0,
+        "noise": 0.09310951603513763,
+        "state": "uniselector",
+        "active": false
+      },
+      {
+        "unit": "Right Sensor",
+        "from": "Left Sensor",
+        "weight": 0.44300974087822875,
+        "switch": -1.0,
+        "noise": 0.09009510489362066,
+        "state": "uniselector",
+        "active": false
+      }
+    ]
+  }
+}
