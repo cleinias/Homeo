@@ -8,7 +8,29 @@ and provide info, stats, and charts about the GA run
 '''
 from deap import tools
 import pickle
+import sys
 import os
+
+# Old logbook/history files were pickled with Python 2 + dill <= 0.3.x.
+# Two compatibility shims are needed:
+#   1. dill 0.4.x renamed 'dill.dill' to 'dill._dill'
+#   2. Python 2 type names (ListType, DictType, etc.) no longer exist
+try:
+    import dill
+    import dill._dill
+    if 'dill.dill' not in sys.modules:
+        sys.modules['dill.dill'] = dill._dill
+    _py2_types = {
+        'ListType': list, 'DictType': dict, 'StringType': str,
+        'TupleType': tuple, 'IntType': int, 'LongType': int,
+        'FloatType': float, 'BooleanType': bool, 'NoneType': type(None),
+        'UnicodeType': str, 'ComplexType': complex,
+    }
+    for name, typ in _py2_types.items():
+        if name not in dill._dill._reverse_typemap:
+            dill._dill._reverse_typemap[name] = typ
+except ImportError:
+    pass
 import matplotlib.pyplot as plt
 from Helpers.ExceptionAndDebugClasses import hDebug
 from Helpers.GenomeDecoder import genomeDecoder
@@ -19,6 +41,10 @@ from deap import creator, base
 import numpy as np
 import glob
 from itertools import combinations
+
+def _load_pickle(fileObj):
+    """Load a pickle file with latin-1 encoding for Python 2 compatibility."""
+    return pickle.Unpickler(fileObj, encoding='latin-1').load()
 
 def main():
     "All function calls in the main() functions are for testing purposes only"  
@@ -43,7 +69,7 @@ def main():
     
     #
     #---------------------------------------------
-    history = pickle.load(open(filename,'rb'))
+    history = _load_pickle(open(filename,'rb'))
     showGenealogyTree(history)
     #hDebug('ga',"Logbook loaded")
     #indivs = indivsDecodedFromLogbook(logbook)
@@ -193,7 +219,7 @@ def extractGenomeOfIndID(indID, logbookFileWithPath):
     returns 'Not Found' otherwise."""
     genome = {'indivId' : indID, 'genome': "Not Found"}
     logbookFile = open(logbookFileWithPath, 'rb')
-    logbook = pickle.load(logbookFile)
+    logbook = _load_pickle(logbookFile)
     logbookFile.close()
     for entry in range(len(logbook)):
         try:
@@ -210,7 +236,7 @@ def extractAllGenomes(logbookFileWithPath):
        to a set of unique individuals"""
     inds = set()
     logbookFile = open(logbookFileWithPath, 'rb')
-    logbook = pickle.load(logbookFile)
+    logbook = _load_pickle(logbookFile)
     logbookFile.close()
     for entry in range(len(logbook)):
         try:
@@ -221,7 +247,11 @@ def extractAllGenomes(logbookFileWithPath):
 
 def showGenealogyTree(history):
     """ Show the GA run genealogy as a tree on the basis of the GA run's history obiect"""
-    import networkx
+    try:
+        import networkx
+    except ImportError:
+        print("networkx is required for genealogy tree visualization. Install with: pip install networkx")
+        return
 
     "Need to recreate the Individual class used by history, otherwise it cannot be unpickled."
     "FIXME: the individual class should be imported from an independent module"    
@@ -283,7 +313,7 @@ def areAllInpAndOutpFilesIdentical():
     patterns = [ 'LeftMotorCommands*', 'RightMotorCommands*', 'LeftEyeDUMMYr*', 'RightEyeDUMMYr', 'LeftEyeRead*', 'RightEyeRead*']
     for pattern in patterns:
         fileList = glob.glob(pattern)
-        if pattern is not  None:
+        if fileList:
             print("Now checking files with pattern: ", pattern)
             print("Including:", fileList)
             for pair in list(combinations(fileList, 2)):

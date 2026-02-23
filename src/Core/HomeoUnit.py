@@ -1467,7 +1467,7 @@ class HomeoUnit(object):
             Subclasses' instances must call this method explicitly 
             to remove  their names'''
         if self._name is not None:
-            HomeoUnit.allNames.remove(self._name)
+            HomeoUnit.allNames.discard(self._name)
         
         
         

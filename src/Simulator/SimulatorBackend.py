@@ -13,7 +13,7 @@ Created on Apr 13, 2015
 @author: stefano
 '''
 
-from abc import ABCMeta,abstractmethod,abstractproperty
+from abc import ABCMeta, abstractmethod
 from Helpers.ExceptionAndDebugClasses import hDebug, TCPConnectionError
 from socket import error as SocketError
 try:
@@ -22,35 +22,46 @@ except ImportError:
     vrep = None
 from time import sleep
 import os
-from RobotSimulator import WebotsTCPClient
-from  subprocess import check_output
+from subprocess import check_output
 from os import system
 from os.path import split
-from Helpers.General_Helper_Functions import asByteArray, distance
-from RobotSimulator.Transducer import VREP_DiffMotor,VREP_LightSensor, HOMEO_DiffMotor,HOMEO_LightSensor, WebotsDiffMotorTCP,WebotsLightSensorTCP
-from KheperaSimulator.KheperaSimulator import KheperaSimulation
+from Helpers.General_Helper_Functions import distance
 
-class SimulatorBackendAbstract(object):
+# Optional backend dependencies — guard imports so the module can be loaded
+# even when only the HOMEO backend is available
+try:
+    from RobotSimulator import WebotsTCPClient
+    from RobotSimulator.Transducer import (VREP_DiffMotor, VREP_LightSensor,
+        HOMEO_DiffMotor, HOMEO_LightSensor,
+        WebotsDiffMotorTCP, WebotsLightSensorTCP)
+except ImportError:
+    WebotsTCPClient = None
+    VREP_DiffMotor = VREP_LightSensor = None
+    HOMEO_DiffMotor = HOMEO_LightSensor = None
+    WebotsDiffMotorTCP = WebotsLightSensorTCP = None
+
+try:
+    from KheperaSimulator.KheperaSimulator import KheperaSimulation
+except ImportError:
+    KheperaSimulation = None
+
+try:
+    from Helpers.General_Helper_Functions import asByteArray
+except ImportError:
+    asByteArray = None
+
+class SimulatorBackendAbstract(object, metaclass=ABCMeta):
     '''
     Abstract class that defines the interface for the robotic simulation packages
     used by the HOMEO package
     '''
-    __metaclass__ = ABCMeta
-    
+
     @abstractmethod
     def __init__(self):
         pass
-    
-#     def getKheperaHost(self):
-#         "return the robotic supervisor host"
-#         return self._host
-#     
-#     def setKheperaHost(self,value):
-#         "set the robotic supervisor host"
-#         
-#     kheperaHost = abstractproperty(getKheperaHost, setKheperaHost)
-       
-    @abstractproperty
+
+    @property
+    @abstractmethod
     def name(self):
         return self.name
               
@@ -121,7 +132,9 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
     def __init__(self, lock = None, robotName='', dataDir = None):
         self._robotName = robotName
         self.lock = lock
-        self.kheperaSimulation = KheperaSimulation()    
+        if KheperaSimulation is None:
+            raise ImportError("KheperaSimulator requires Box2D. Install with: pip install box2d-py")
+        self.kheperaSimulation = KheperaSimulation()
         self.host = None
         self.port = None
 
@@ -361,7 +374,7 @@ class SimulatorBackendVREP(SimulatorBackendAbstract):
     
     def __init__(self, host, kheperaPort, robotName = '', dataDir = None):
         self._host = host
-        if kheperaPort == None:
+        if kheperaPort is None:
             self._kheperaPort = 19997
         else:
             self._kheperaPort = kheperaPort
@@ -451,7 +464,7 @@ class SimulatorBackendVREP(SimulatorBackendAbstract):
         "Connect to VREP and load the correct world if needed"
         "FIXME: SHOULD LAUNCH VREP IF NOT RUNNING"
         VREP_exec = 'vrep'
-        if self.VREPSimulation == None:
+        if self.VREPSimulation is None:
             self.VREPSimulation = VREP_World
         
         '1. check that V-Rep is running and see whether we are already connected to it. Otherwise connect'

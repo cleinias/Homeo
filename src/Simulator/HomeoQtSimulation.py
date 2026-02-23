@@ -216,7 +216,7 @@ class HomeoQtSimulation(QObject):
         if not params:
             self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)()
         else:
-            self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)(params)
+            self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)(**params)
         self._dataFilename = self.currentExperiment + '--Plot-Data'
         #----------------------------------------------------------------------------- #
         # FIXME 
