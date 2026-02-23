@@ -207,11 +207,11 @@ class HomeoQtSimulation(QObject):
             self.liveDataWindow[unit.uniselector] = deque(maxlen=self.maxDataPoints)  # add empty queue to hold uniselector activation data for unit
             self.unitsSelfWeights[unit] = []
 
-    def initializeExperSetup(self, **params):
+    def initializeExperSetup(self, message=None, **params):
         '''Initialize the homeostat to the current experimental set up by calling the function
            in module HomeoExperiment corresponding to the string stored in self.currentExperiment'''
 
-        print("Initializing experimental setup")
+        print(message or "Initializing experimental setup")
 
         if not params:
             self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)()

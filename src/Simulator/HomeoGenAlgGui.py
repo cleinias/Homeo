@@ -20,7 +20,7 @@ from Helpers.GenomeDecoder import genomeDecoder, genomePrettyPrinter
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-# import sys
+import sys
 import numpy as np
 # import csv
 import datetime
@@ -52,62 +52,343 @@ from threading import Lock
 from glob import glob
 
 
+class QTextEditStream(QObject):
+    """Thread-safe stream that redirects write() calls to a QTextEdit via a Qt signal.
+
+    Assign an instance to sys.stdout while the GA worker thread runs;
+    the cross-thread signal/slot connection ensures QTextEdit updates
+    happen on the GUI thread."""
+
+    textWritten = pyqtSignal(str)
+
+    def write(self, text):
+        if text:
+            self.textWritten.emit(str(text))
+
+    def flush(self):
+        pass
+
+
 class HomeoGASimulGUI(QWidget):
     """GUI to GA simulation"""
-        
-    def __init__(self, parent = None):
-        super(HomeoGASimulGUI,self).__init__(parent)
-        
-        "construct the interface"
+
+    def __init__(self, parent=None):
+        super(HomeoGASimulGUI, self).__init__(parent)
+
         self.setWindowTitle('Homeo GA simulation')
-        self.setMinimumWidth(400)
- 
+        self.setMinimumWidth(600)
+
+        self.gaSimulation = None
+        self._population = None
+        self._clonableGenome = None
+        self._originalStdout = sys.stdout
+
         self.buildGui()
         self.connectSlots()
-        
-        self.gaSimulation = HomeoGASimulation()
+
+        self._stdoutStream = QTextEditStream(self)
+        self._stdoutStream.textWritten.connect(self._appendToOutput)
 
     def buildGui(self):
-        '''Build the general GUI for the GA simulation
-        '''
-        
-        #mainGui = QDialog()
-        'layouts'
-        self.controlLayout = QGridLayout()
-        self.overallLayout = QVBoxLayout()
-        self.textLayout = QVBoxLayout()
+        """Build the GUI for the GA simulation"""
 
-        
-        'widgets'
+        self.overallLayout = QVBoxLayout()
+
+        # --- Control buttons row ---
+        self.controlLayout = QGridLayout()
         self.initializePopButton = QPushButton("Initialize Population")
+        self.noIndividualsLabel = QLabel("Population size")
         self.noIndividualsSpinBox = QSpinBox()
-        self.noIndividualsLabel = QLabel("No of individuals")
-        self.startPushButton = QPushButton("Start")
-        self.stopPushButton = QPushButton("Stop")
-        self.quitPushButton = QPushButton("Quit")
+        self.noIndividualsSpinBox.setRange(2, 5000)
+        self.noIndividualsSpinBox.setValue(150)
+        self.currentFitnessLabel = QLabel("Best Fitness")
         self.currentFitnessLineEdit = QLineEdit()
-        self.currentFitnessLabel = QLabel("Current Fitness")
-        self.outputPane = QTextEdit()
-        
-        self.controlLayout.addWidget(self.initializePopButton,0,0)
-        self.controlLayout.addWidget(self.noIndividualsLabel,0,2)
-        self.controlLayout.addWidget(self.noIndividualsSpinBox, 0,3)
-        self.controlLayout.addWidget(self.currentFitnessLabel, 1,2)
-        self.controlLayout.addWidget(self.currentFitnessLineEdit, 1,3)
-        self.controlLayout.addWidget(self.startPushButton, 2,0)
-        self.controlLayout.addWidget(self.stopPushButton,2,2)
-        self.controlLayout.addWidget(self.quitPushButton,2,3)
-        
-        'text pane'
-        self.textLayout.addWidget(self.outputPane)
-        
+        self.currentFitnessLineEdit.setReadOnly(True)
+        self.startPushButton = QPushButton("Start")
+        self.startPushButton.setEnabled(False)
+        self.stopPushButton = QPushButton("Stop")
+        self.stopPushButton.setEnabled(False)
+        self.quitPushButton = QPushButton("Quit")
+
+        self.controlLayout.addWidget(self.initializePopButton, 0, 0)
+        self.controlLayout.addWidget(self.noIndividualsLabel, 0, 2)
+        self.controlLayout.addWidget(self.noIndividualsSpinBox, 0, 3)
+        self.controlLayout.addWidget(self.currentFitnessLabel, 1, 2)
+        self.controlLayout.addWidget(self.currentFitnessLineEdit, 1, 3)
+        self.controlLayout.addWidget(self.startPushButton, 2, 0)
+        self.controlLayout.addWidget(self.stopPushButton, 2, 2)
+        self.controlLayout.addWidget(self.quitPushButton, 2, 3)
+
         self.overallLayout.addLayout(self.controlLayout)
-        self.overallLayout.addLayout(self.textLayout)
+
+        # --- GA Parameters group ---
+        self.paramGroupBox = QGroupBox("GA Parameters")
+        paramLayout = QFormLayout()
+
+        self.stepsSpinBox = QSpinBox()
+        self.stepsSpinBox.setRange(10, 10000000)
+        self.stepsSpinBox.setValue(1000)
+
+        self.generationsSpinBox = QSpinBox()
+        self.generationsSpinBox.setRange(0, 10000)
+        self.generationsSpinBox.setValue(1)
+
+        self.noUnitsSpinBox = QSpinBox()
+        self.noUnitsSpinBox.setRange(2, 20)
+        self.noUnitsSpinBox.setValue(6)
+
+        self.cxProbSpinBox = QDoubleSpinBox()
+        self.cxProbSpinBox.setRange(0.0, 1.0)
+        self.cxProbSpinBox.setSingleStep(0.05)
+        self.cxProbSpinBox.setValue(0.5)
+
+        self.mutProbSpinBox = QDoubleSpinBox()
+        self.mutProbSpinBox.setRange(0.0, 1.0)
+        self.mutProbSpinBox.setSingleStep(0.05)
+        self.mutProbSpinBox.setValue(0.2)
+
+        self.indivProbSpinBox = QDoubleSpinBox()
+        self.indivProbSpinBox.setRange(0.0, 1.0)
+        self.indivProbSpinBox.setSingleStep(0.01)
+        self.indivProbSpinBox.setValue(0.05)
+
+        self.tournamentSpinBox = QSpinBox()
+        self.tournamentSpinBox.setRange(2, 20)
+        self.tournamentSpinBox.setValue(3)
+
+        self.experimentComboBox = QComboBox()
+        self.experimentComboBox.addItems([
+            "initializeBraiten2_2_Full_GA",
+            "initializeBraiten2_2_NoUnisel_Full_GA",
+            "initializeBraiten2_2_NoUnisel_No_Noise_Full_GA",
+            "initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE",
+        ])
+
+        self.noNoiseCheckBox = QCheckBox("No Noise")
+        self.noUniselCheckBox = QCheckBox("No Uniselector")
+        self.useDummyFitnessCheckBox = QCheckBox("Dummy Fitness (testing)")
+
+        self.popTypeComboBox = QComboBox()
+        self.popTypeComboBox.addItems(["Random", "Clones"])
+        self.cloneFileButton = QPushButton("Select Clone Genome...")
+        self.cloneFileButton.setEnabled(False)
+        self.cloneFileLabel = QLabel("No genome loaded")
+
+        paramLayout.addRow("Steps per individual:", self.stepsSpinBox)
+        paramLayout.addRow("Generations:", self.generationsSpinBox)
+        paramLayout.addRow("No. of units:", self.noUnitsSpinBox)
+        paramLayout.addRow("Crossover prob:", self.cxProbSpinBox)
+        paramLayout.addRow("Mutation prob:", self.mutProbSpinBox)
+        paramLayout.addRow("Indiv. mutation prob:", self.indivProbSpinBox)
+        paramLayout.addRow("Tournament size:", self.tournamentSpinBox)
+        paramLayout.addRow("Experiment:", self.experimentComboBox)
+        paramLayout.addRow(self.noNoiseCheckBox)
+        paramLayout.addRow(self.noUniselCheckBox)
+        paramLayout.addRow(self.useDummyFitnessCheckBox)
+        paramLayout.addRow("Population type:", self.popTypeComboBox)
+        paramLayout.addRow(self.cloneFileButton, self.cloneFileLabel)
+        self.paramGroupBox.setLayout(paramLayout)
+
+        self.overallLayout.addWidget(self.paramGroupBox)
+
+        # --- Progress ---
+        self.currentGenerationLabel = QLabel("Generation: --")
+        self.generationProgressBar = QProgressBar()
+        self.generationProgressBar.setRange(0, 1)
+        self.generationProgressBar.setValue(0)
+
+        self.overallLayout.addWidget(self.currentGenerationLabel)
+        self.overallLayout.addWidget(self.generationProgressBar)
+
+        # --- Output pane ---
+        self.outputPane = QTextEdit()
+        self.outputPane.setReadOnly(True)
+        self.overallLayout.addWidget(self.outputPane)
+
         self.setLayout(self.overallLayout)
-        #return mainGui
 
     def connectSlots(self):
-        pass
+        self.initializePopButton.clicked.connect(self._initializePopulation)
+        self.startPushButton.clicked.connect(self._startEvolution)
+        self.stopPushButton.clicked.connect(self._stopEvolution)
+        self.quitPushButton.clicked.connect(self._quit)
+        self.popTypeComboBox.currentTextChanged.connect(self._onPopTypeChanged)
+        self.cloneFileButton.clicked.connect(self._selectCloneGenome)
+
+    # --- Slot implementations ---
+
+    def _initializePopulation(self):
+        """Create a HomeoGASimulation with current parameter values and generate a population."""
+
+        popSize = self.noIndividualsSpinBox.value()
+        useDummy = self.useDummyFitnessCheckBox.isChecked()
+        backend = "NONE" if useDummy else "HOMEO"
+        self.gaSimulation = HomeoGASimulation(
+            stepsSize=self.stepsSpinBox.value(),
+            popSize=popSize,
+            generSize=self.generationsSpinBox.value(),
+            noUnits=self.noUnitsSpinBox.value(),
+            cxProb=self.cxProbSpinBox.value(),
+            mutationProb=self.mutProbSpinBox.value(),
+            indivProb=self.indivProbSpinBox.value(),
+            tournamentSize=self.tournamentSpinBox.value(),
+            exp=self.experimentComboBox.currentText(),
+            noNoise=self.noNoiseCheckBox.isChecked(),
+            noUnisel=self.noUniselCheckBox.isChecked(),
+            clonableGenome=self._clonableGenome,
+            simulatorBackend=backend,
+        )
+
+        if self.useDummyFitnessCheckBox.isChecked():
+            self.gaSimulation.toolbox.register("evaluate",
+                self.gaSimulation.evaluateGenomeFitnessSUPER_DUMMY)
+
+        popType = self.popTypeComboBox.currentText()
+        if popType == "Clones" and self._clonableGenome is not None:
+            self._population = self.gaSimulation.generatePopOfClones(
+                cloneName=self._clonableGenome.get('indivId', 'clone'))
+        else:
+            self._population = self.gaSimulation.generateRandomPop()
+
+        gens = self.generationsSpinBox.value()
+        self.generationProgressBar.setRange(0, gens + 1)
+        self.generationProgressBar.setValue(0)
+        self.currentGenerationLabel.setText("Population initialized (%d individuals)" % popSize)
+        self.currentFitnessLineEdit.clear()
+
+        self.startPushButton.setEnabled(True)
+        self.outputPane.append("Population of %d individuals initialized.\n" % popSize)
+
+    def _startEvolution(self):
+        """Run the GA evolution synchronously on the main thread.
+
+        The HOMEO simulator backend (Box2D) is not thread-safe, so we
+        run on the main thread and call processEvents() in the progress
+        callback to keep the GUI responsive."""
+
+        self._setParametersEnabled(False)
+        self.startPushButton.setEnabled(False)
+        self.initializePopButton.setEnabled(False)
+        self.stopPushButton.setEnabled(True)
+
+        self._redirectStdout()
+
+        try:
+            self.gaSimulation.runGaSimulation(
+                self._population, progressCallback=self._onProgress)
+            completedNormally = not self.gaSimulation._stopRequested
+        except Exception as e:
+            self._restoreStdout()
+            QMessageBox.critical(self, "GA Error", str(e))
+            self._setParametersEnabled(True)
+            self.initializePopButton.setEnabled(True)
+            self.startPushButton.setEnabled(False)
+            self.stopPushButton.setEnabled(False)
+            return
+
+        self._onEvolutionFinished(completedNormally)
+
+    def _onProgress(self, gen, record, bestFitness):
+        """Progress callback invoked by runGaSimulation after each generation."""
+        self._onGenerationFinished(
+            gen,
+            record.get('avg', 0.0),
+            record.get('min', 0.0),
+            record.get('max', 0.0),
+            record.get('std', 0.0))
+        self._onBestFitnessUpdated(bestFitness)
+        QApplication.processEvents()
+
+    def _stopEvolution(self):
+        """Request a clean stop of the evolution."""
+        if self.gaSimulation is not None:
+            self.gaSimulation._stopRequested = True
+        self.stopPushButton.setEnabled(False)
+        self.outputPane.append("\n*** Stop requested. Finishing current evaluation... ***\n")
+
+    def _quit(self):
+        """Quit the GA GUI. Stop evolution first if running."""
+        if self.gaSimulation is not None:
+            self.gaSimulation._stopRequested = True
+        self._restoreStdout()
+        self.close()
+
+    def _onPopTypeChanged(self, text):
+        self.cloneFileButton.setEnabled(text == "Clones")
+
+    def _selectCloneGenome(self):
+        """Open a file dialog to select a logbook, then extract a genome from it."""
+        filename, _ = QFileDialog.getOpenFileName(
+            self, "Select Logbook File", "",
+            "Logbook files (*.lgb);;All files (*.*)")
+        if filename:
+            indId, ok = QInputDialog.getText(self, "Individual ID",
+                "Enter the ID of the individual to clone (e.g., '018-006'):")
+            if ok and indId:
+                genome = extractGenomeOfIndID(indId, filename)
+                if genome['genome'] != "Not Found":
+                    self._clonableGenome = genome
+                    self.cloneFileLabel.setText("Loaded: %s" % indId)
+                else:
+                    QMessageBox.warning(self, "Not Found",
+                        "Individual %s not found in logbook." % indId)
+
+    # --- Signal handler slots ---
+
+    def _onGenerationFinished(self, gen, avg, minFit, maxFit, std):
+        self.generationProgressBar.setValue(gen + 1)
+        self.currentGenerationLabel.setText("Generation: %d" % gen)
+        self.outputPane.append(
+            "Gen %d -- avg: %.4f  min: %.4f  max: %.4f  std: %.4f\n" %
+            (gen, avg, minFit, maxFit, std))
+
+    def _onBestFitnessUpdated(self, fitness):
+        self.currentFitnessLineEdit.setText("%.6f" % fitness)
+
+    def _onEvolutionFinished(self, completedNormally):
+        self._restoreStdout()
+        self._setParametersEnabled(True)
+        self.initializePopButton.setEnabled(True)
+        self.startPushButton.setEnabled(False)
+        self.stopPushButton.setEnabled(False)
+        if completedNormally:
+            self.outputPane.append("\n=== Evolution completed successfully ===\n")
+        else:
+            self.outputPane.append("\n=== Evolution stopped ===\n")
+
+    def _onError(self, message):
+        self._restoreStdout()
+        QMessageBox.critical(self, "GA Error", message)
+        self._setParametersEnabled(True)
+        self.initializePopButton.setEnabled(True)
+        self.startPushButton.setEnabled(False)
+        self.stopPushButton.setEnabled(False)
+
+    # --- Helpers ---
+
+    def _setParametersEnabled(self, enabled):
+        for w in (self.noIndividualsSpinBox, self.stepsSpinBox,
+                  self.generationsSpinBox, self.noUnitsSpinBox,
+                  self.cxProbSpinBox, self.mutProbSpinBox,
+                  self.indivProbSpinBox, self.tournamentSpinBox,
+                  self.experimentComboBox, self.noNoiseCheckBox,
+                  self.noUniselCheckBox, self.useDummyFitnessCheckBox,
+                  self.popTypeComboBox):
+            w.setEnabled(enabled)
+        self.cloneFileButton.setEnabled(
+            enabled and self.popTypeComboBox.currentText() == "Clones")
+
+    def _appendToOutput(self, text):
+        self.outputPane.moveCursor(QTextCursor.End)
+        self.outputPane.insertPlainText(text)
+        self.outputPane.moveCursor(QTextCursor.End)
+
+    def _redirectStdout(self):
+        self._originalStdout = sys.stdout
+        sys.stdout = self._stdoutStream
+
+    def _restoreStdout(self):
+        sys.stdout = self._originalStdout
     
             
 
@@ -141,6 +422,7 @@ class HomeoGASimulation(object):
                                    vrepPort = None):
         
         self.worldBeingResetLock = Lock()
+        self._stopRequested = False
         timeElapsed = None
         self._robotName = "Khepera"
         
@@ -151,9 +433,11 @@ class HomeoGASimulation(object):
                                                            10021,              # supervisor port
                                                            '127.0.0.1',
                                                            10020,              # robot port
-                                                           robotName = self._robotName)              
+                                                           robotName = self._robotName)
         elif simulatorBackend == "HOMEO":
             self.simulatorBackend =  SimulatorBackendHOMEO(robotName = self._robotName, lock = self.worldBeingResetLock)
+        else:
+            self.simulatorBackend = None
 
         "Directory to save simulations'data, used to save logbook and history and passed to HomeoQt simulation and other classes"
         self.dataDir = os.path.join(HomeoGASimulation.dataDirRoot,('SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))))
@@ -161,8 +445,9 @@ class HomeoGASimulation(object):
             os.mkdir(self.dataDir)
         except OSError:
             print("WARNING: Saving to existing directory", self.dataDir)
-         
-        self.simulatorBackend.setDataDir(self.dataDir)
+
+        if self.simulatorBackend is not None:
+            self.simulatorBackend.setDataDir(self.dataDir)
 
         'General parameters for the experiment'
         self.experimentParams = {'dataDir' : self.dataDir, 'backendSimulator':self.simulatorBackend, 'noNoise' : noNoise, 'noUnisel' : noUnisel}
@@ -212,10 +497,12 @@ class HomeoGASimulation(object):
         "1. Create individual types [Homeostat genome], define type of genes, define population"
             
         'GA simulation will minimize fitness (distance from target)'
-        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-        
-        'Homeostat genome is a list plus an ID'     
-        creator.create("Individual", list, fitness=creator.FitnessMin, ID=None)   
+        if not hasattr(creator, 'FitnessMin'):
+            creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+
+        'Homeostat genome is a list plus an ID'
+        if not hasattr(creator, 'Individual'):
+            creator.create("Individual", list, fitness=creator.FitnessMin, ID=None)   
         
     
                     
@@ -370,28 +657,32 @@ class HomeoGASimulation(object):
         self._type = 'random'
         return self.toolbox.population(n=self.popSize)
 
-    def runGaSimulation(self, pop):
+    def runGaSimulation(self, pop, progressCallback=None):
         """Execute a complete GA run. Could be either over a population of clones
            or over a truly randomly generated  population.
            All parameters (popsize, gen, cxProb, etc.) as well as DEAP-specific tools,
            are stored in class's ivars.
-           Save fitness data to logbook"""
-          
+           Save fitness data to logbook.
+
+           If progressCallback is provided it is called after generation 0 and
+           after each subsequent generation with (gen, record, bestFitness).
+           Set self._stopRequested = True to interrupt the run cleanly."""
+
         'Record time for naming logbook pickled object and computing time statistics'
+        self._stopRequested = False
         timeStarted = time()
-        timeElapsed = None        
+        timeElapsed = None
         try:
             gen = 0
             for i, ind in enumerate(pop):
                 ind.ID = str(gen).zfill(self.IDPad)+"-"+str(i+1).zfill(self.IDPad)
-                            
-                    
+
+
             print("Start of evolution")
-            
+
             # Evaluate the entire population
             print("-- Generation 0 --")
-#             fitnesses = list(self.toolbox.map(self.toolbox.evaluate, pop))
-            fitnesses = list(self.toolbox.map(self.evaluateGenomeFitness, pop))
+            fitnesses = list(self.toolbox.map(self.toolbox.evaluate, pop))
             for ind, fit in zip(pop, fitnesses):
                 ind.fitness.values = fit
                 "record the data about the newly evaluated individual's genome in the logbook"
@@ -403,13 +694,23 @@ class HomeoGASimulation(object):
             for ind in pop:
                 print(ind.ID+", ", end="")
             print()
+
+            # Report gen-0 progress
+            if progressCallback:
+                record0 = self.stats.compile(pop)
+                self.logbook.record(gen=0, evaluations=len(pop), **record0)
+                progressCallback(0, record0, self.hof[0].fitness.values[0])
+
             #print "  With ID's ", sorted([ind.ID for ind in pop])
-            
+
             # Begin the evolution
             # Main loop over generations
             for g in range(self.generSize):
+                if self._stopRequested:
+                    break
+
                 print("-- Generation %s --" % str(g+1))
-                
+
                 # Select the next generation individuals with previously defined select function
                 offspring = self.toolbox.select(pop, len(pop))
                 # Clone the selected individuals
@@ -433,38 +734,40 @@ class HomeoGASimulation(object):
                     else:
                         print("NO")
                 hDebug('ga',str(mated) + " individuals mated")
-        
+
                 hDebug('eval,ga', "Now mutating individuals")
                 mutants = 0
-                for mutant in offspring:                
+                for mutant in offspring:
                     if np.random.uniform() < self.mutationProb:
                         self.toolbox.mutate(mutant)
                         del mutant.fitness.values
                         mutants += 1
                 hDebug('eval ga', str(mutants)+ "  mutants generated")
-            
+
                 # Evaluate the individuals with an invalid fitness
-                # (Fitnesses have become invalid for all mutated and crossed-over individuals) 
+                # (Fitnesses have become invalid for all mutated and crossed-over individuals)
                 hDebug('eval', "Evaluating individual with invalid fitness")
                 invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-               
-                "Change the ID's of the invalid ind's" 
+
+                "Change the ID's of the invalid ind's"
                 for i, ind in enumerate(invalid_ind):
                     #print "The old ind's ID was: ", ind.ID
-                    ind.ID = str(g+1).zfill(self.IDPad) + "-"+str(i+1).zfill(self.IDPad) 
+                    ind.ID = str(g+1).zfill(self.IDPad) + "-"+str(i+1).zfill(self.IDPad)
                     #print "Now changed to: ", ind.ID
-    
+
                 'Re-evaluate'
                 fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
                 for ind, fit in zip(invalid_ind, fitnesses):
+                    if self._stopRequested:
+                        break
                     ind.fitness.values = fit
-                    
+
                     "record the data about the newly evaluated individual's genome in the logbook"
                     self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
                     #print "direct ind's name is %s and fitness is: %.2f" %(ind.ID, ind.fitness.values[0])
 
                 hDebug('eval', str(len(invalid_ind)) + " individuals evaluated")
-                
+
                 # The population is entirely replaced by the offspring
                 pop[:] = offspring
                 print("  Pop now includes: ", end="")
@@ -476,17 +779,21 @@ class HomeoGASimulation(object):
                 record = self.stats.compile(pop)
                 self.logbook.record(gen=g+1, evaluations = len(invalid_ind), **record)
                 self.hof.update(pop)
+
+                if progressCallback:
+                    progressCallback(g+1, record, self.hof[0].fitness.values[0])
+
                 "save logbook and history after each generation"
-                timeElapsed = time() - timeStarted 
+                timeElapsed = time() - timeStarted
                 self.saveLogbook(pop, timeElapsed,timeStarted)
                 self.saveHistory(timeStarted)
                 #self.hist.update(pop)
 
                 #print "   Generation " + str(g+1) + " with ID's: ", sorted([ind.ID for ind in pop])
-                             
+
             #print genomeDecoder(4, tools.selBest(pop,10)[0])
             #self.simulationEnvironQuit()
-            timeElapsed = time() - timeStarted 
+            timeElapsed = time() - timeStarted
             print("-- End of (successful) evolution --")
             print("Total time elapsed: ", str(datetime.timedelta(seconds=timeElapsed)))
             print("-- Cleaning up trajectory files --")
@@ -494,16 +801,18 @@ class HomeoGASimulation(object):
             'Record general GA run info to logbook and save logbook and history'
             self.saveLogbook(pop, timeElapsed, timeStarted)
             self.saveHistory(timeStarted)
-            
-            self.simulatorBackend.quit()
-            
+
+            if self.simulatorBackend is not None:
+                self.simulatorBackend.quit()
+
             #best_ind = tools.selBest(pop, 1)[0]
             #print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
-        
+
         except TCPConnectionError as e:
-            hDebug("network major",("TCP connection error: \n" + e.value + "Cleaning up and quitting...")) 
+            hDebug("network major",("TCP connection error: \n" + e.value + "Cleaning up and quitting..."))
             hDebug("network",("Trying to quit simulation environment %s" % self.simulatorBackend))
-            self.simulatorBackend.quit()
+            if self.simulatorBackend is not None:
+                self.simulatorBackend.quit()
         #=======================================================================
         # except VREP_Error as e:
         #     "Try to close connection to V-REP"
@@ -687,21 +996,19 @@ class HomeoGASimulation(object):
         if self.simulatorBackend.name == "VREP":
             self.simulatorBackend.connect()
         self.experimentParams['homeoGenome']= genome
-        self._simulation.initializeExperSetup(**self.experimentParams)
+        self._simulation.initializeExperSetup(
+            message="Building Homeostat from genome %s" % genome.ID,
+            **self.experimentParams)
 
-        "testing"
-#         sleep(1)
-        "end testing"
-        
         hDebug('network', "Trying to connect to supervisor")
-#         self._supervisor.clientConnect()
         self.simulatorBackend.connect()
         hDebug('network', "Connected")
-        hDebug('network', "Resetting Webots")
+        hDebug('network', "Resetting simulation world")
         self.simulatorBackend.reset()
         if self.simulatorBackend.name == "HOMEO":
-#             print " recreating experimental setup just for HOMEO backend"
-            self._simulation.initializeExperSetup(**self.experimentParams)
+            self._simulation.initializeExperSetup(
+                message="Rebuilding world after reset",
+                **self.experimentParams)
         hDebug('network', "Closing connection to supervisor")
         self.simulatorBackend.close()
 #         self._supervisor.close()
@@ -805,23 +1112,7 @@ def selTournamentRemove(individuals, k, tournsize):
     
                 
 if __name__ == '__main__':
-    #app = QApplication(sys.argv)
-    #simulGUI = HomeoGASimulGUI()
-    logD = "/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/SimsData-2015-05-01-16-34-48"
-    logL = 'Logbook-2015-05-01-16-34-48.lgb'
-    id = '018-006'
-    logF = os.path.join(logD,logL)
-    genome = extractGenomeOfIndID(id,logF)
-#     genome = ''
-#    print [round(x,3) for x in genome['genome']]
-#    print [round(x,3) for x in genomeDecoder(6, genome['genome'])]
-    #print genomePrettyPrinter(6, genomeDecoder(6, genome['genome']))
-#     simul = HomeoGASimulation(popSize=3, stepsSize=100, generSize = 0,  clonableGenome = genome, debugging = 'ga major', simulatorBackend = "WEBOTS")
-    simul = HomeoGASimulation(popSize=2, stepsSize=10, generSize = 0,  clonableGenome = genome, debugging = 'network', simulatorBackend = "HOMEO", noUnisel = True, noNoise = True)
-    #simul.test()
-    #simul.runOneGenSimulation()
-#     simul.runGaSimulation(simul.generatePopOfClones(cloneName='018-006'))
-    simul.runGaSimulation(simul.generateRandomPop())
-    #simul.showGenealogyTree(simul.hist, simul.toolbox)
-    #simulGUI.show()
-    #app.exec_()
+    app = QApplication(sys.argv)
+    simulGUI = HomeoGASimulGUI()
+    simulGUI.show()
+    sys.exit(app.exec_())
