@@ -9,12 +9,15 @@ class SFSpinBox(QSpinBox):
     only when editing is finished
     '''
     editingValueFinished = pyqtSignal(int)       # emitted by the modified spinbox
-    
+
     def __init__(self, parent = None):
         super(SFSpinBox, self).__init__(parent)
         self.editingFinished.connect( self.__handleEditingFinished)
         self.valueChanged.connect(self.__handleValueChanged)
         self.__before = 0
+
+    def setValue(self, val):
+        super(SFSpinBox, self).setValue(int(val))
         
     def __handleValueChanged(self, aValue):
         if not self.hasFocus():
@@ -35,12 +38,15 @@ class SFDoubleSpinBox(QDoubleSpinBox):
     only when editing is finished
     '''
     editingValueFinished = pyqtSignal(float) # emitted by the modified doublespinbox
-    
+
     def __init__(self, parent = None):
         super(SFDoubleSpinBox, self).__init__(parent)
         self.editingFinished.connect( self.__handleEditingFinished)
         self.valueChanged.connect(self.__handleValueChanged)
         self.__before = 0
+
+    def setValue(self, val):
+        super(SFDoubleSpinBox, self).setValue(float(val))
     
     def __handleValueChanged(self, aValue):
         if not self.hasFocus():

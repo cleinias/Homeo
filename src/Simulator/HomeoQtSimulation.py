@@ -210,13 +210,13 @@ class HomeoQtSimulation(QObject):
     def initializeExperSetup(self, **params):
         '''Initialize the homeostat to the current experimental set up by calling the function
            in module HomeoExperiment corresponding to the string stored in self.currentExperiment'''
-        
+
         print("Initializing experimental setup")
-        
-        if params == None:
+
+        if not params:
             self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)()
         else:
-            self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)(**params)
+            self._homeostat = getattr(Simulator.HomeoExperiments,self.currentExperiment)(params)
         self._dataFilename = self.currentExperiment + '--Plot-Data'
         #----------------------------------------------------------------------------- #
         # FIXME 
@@ -441,6 +441,7 @@ class HomeoQtSimulation(QObject):
         self.homeostatFilename = aFilename
         self.homeostatIsSaved = True
         self.dataAreSaved = True
+        self.initializeLiveData()
 
 #===============================================================================
 # Changing simulation values methods
@@ -491,7 +492,7 @@ class HomeoQtSimulation(QObject):
 #===============================================================================
         
     def usesSocket(self):
-        return self.homeostat._usesSocket 
+        return getattr(self.homeostat, '_usesSocket', False)
       
       
 #===============================================================================
