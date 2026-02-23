@@ -75,7 +75,8 @@ class Homeostat(object):
         self._dataCollector = HomeoDataCollector()
         self._collectsData = True                       # default is to collect data. Can be turned off via accessor.
         self._slowingFactor = 10                        # Default slowing time is 10 milliseconds 
-        self._isRunning = False                         # a new homeostat is not running 
+        self._isRunning = False                         # a new homeostat is not running
+        self._headless = False                          # when True, skip signal emissions for GUI
         self._usesSocket = False
         if ip != None:
             self._ip = ip
@@ -86,7 +87,8 @@ class Homeostat(object):
         return self._time
     def setTime(self,aValue):
         self._time = aValue
-        emitter(self).homeostatTimeChanged.emit(self._time)
+        if not self._headless:
+            emitter(self).homeostatTimeChanged.emit(self._time)
     time = property(fget = lambda self: self.getTime(),
                     fset = lambda self, value: self.setTime(value))
 
@@ -246,8 +248,10 @@ class Homeostat(object):
                     if unit.isActive():
                         unit.selfUpdate()
                 self.time +=  1
-                emitter(self).homeostatTimeChanged.emit(self.time)
-                time.sleep(sleepTime / 1000)               # sleep accepts seconds, slowingFactor is in milliseconds
+                if not self._headless:
+                    emitter(self).homeostatTimeChanged.emit(self.time)
+                if sleepTime > 0:
+                    time.sleep(sleepTime / 1000)           # sleep accepts seconds, slowingFactor is in milliseconds
         else:
             sys.stderr.write('Warning: Homeostat is not ready to start')
             
@@ -287,7 +291,8 @@ class Homeostat(object):
                     if self.collectsData:
                         self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
                     self.time += 1
-                    time.sleep(sleepTime / 1000)               # sleep accepts seconds, slowingFactor is in milliseconds
+                    if sleepTime > 0:
+                        time.sleep(sleepTime / 1000)           # sleep accepts seconds, slowingFactor is in milliseconds
         else:
             sys.stderr.write('Warning: Homeostat is not ready to start')
 

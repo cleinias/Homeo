@@ -5,6 +5,7 @@ Created on Mar 15, 2013
 '''
 from Helpers.General_Helper_Functions import Singleton
 import numpy as np
+import random
 import sys
 
 class HomeoNoise(object, metaclass=Singleton):
@@ -306,7 +307,7 @@ class HomeoNoise(object, metaclass=Singleton):
             noiseValue =  np.random.normal(0, self._noise / 3.)
         
         "trim noise within the interval { -noise, noise}"
-        return np.clip(noiseValue, -self.noise, self.noise)
+        return max(-self._noise, min(self._noise, noiseValue))
             
     def getNoiseDistortingNormalProportional(self):
         '''Returns a distorting noise (centered around 0), normally distributed
@@ -328,7 +329,7 @@ class HomeoNoise(object, metaclass=Singleton):
         noiseValue = np.random.normal(0, maxNoise / 3.)
     
         "trim noise within the interval (0, 2 *noise)"
-        return np.clip(noiseValue, minNoise, maxNoise)
+        return max(minNoise, min(maxNoise, noiseValue))
         
 
     def getNoiseDistortingUniformLinear(self):
@@ -347,6 +348,34 @@ class HomeoNoise(object, metaclass=Singleton):
         maxNoise = self._noise * abs(self._current)
         noiseValue = np.random.uniform(- maxNoise, maxNoise)
 
-        return noiseValue 
+        return noiseValue
 
+    @staticmethod
+    def connNoise(current, noise):
+        '''Inlined distorting-normal-proportional noise for connections.
+           Equivalent to getNoiseDistortingNormalProportional but avoids
+           singleton re-init, string dispatch, and numpy scalar overhead.'''
+        if noise == 0:
+            return 0.0
+        bound = noise * abs(current) if current != 0 else noise
+        val = random.gauss(0, bound / 3.0)
+        if val < -bound:
+            return -bound
+        if val > bound:
+            return bound
+        return val
+
+    @staticmethod
+    def unitNoise(noise):
+        '''Inlined distorting-normal-linear noise for units.
+           Equivalent to getNoiseDistortingNormalLinear but avoids
+           singleton re-init, string dispatch, and numpy scalar overhead.'''
+        if noise == 0:
+            return 0.0
+        val = random.gauss(0, noise / 3.0)
+        if val < -noise:
+            return -noise
+        if val > noise:
+            return noise
+        return val
 

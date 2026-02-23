@@ -286,14 +286,7 @@ class HomeoConnection(object):
             The noise  is computed with the help of the HomeoNoise utility class. 
             Several different algorithms are available, see the instance methods of HomeoNoise for details'''
         
-        newNoise = HomeoNoise()
-        newNoise.withCurrentAndNoise(self.incomingUnit.currentOutput, self._noise)
-
-        newNoise.normal()          # select noise as normally (Gaussian) distributed around the value for the unit's connection noise"
-        newNoise.distorting()      # select  noise as distorting the current"
-        newNoise.proportional()    # consider the noise on the communication line as a ratio of the current being transmitted"
-        
-        connNoise = newNoise.getNoise()
+        connNoise = HomeoNoise.connNoise(self._incomingUnit.currentOutput, self._noise)
         hDebug('conn', ("The noise on the connection is %f" % connNoise))
         return (self._incomingUnit.currentOutput * self.switch * self.weight) + connNoise
     
