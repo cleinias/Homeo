@@ -187,6 +187,7 @@ class HomeoUnit(object):
         (an instance of HomeoSimulation or by the graphic interface)
         '''
         self._showUniselectorAction = False
+        self._headless = False
         self._viscosity = HomeoUnit.DefaultParameters['viscosity']
         self._maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
         self._outputRange = HomeoUnit.DefaultParameters['outputRange']
@@ -357,28 +358,16 @@ class HomeoUnit(object):
     def getCriticalDeviation(self):
         return self._criticalDeviation
     
-    def setCriticalDeviation(self,aValue):       
+    def setCriticalDeviation(self,aValue):
         try:
             aValue = float(aValue)
-
-#            '''Ugly hack to convert the magnified integer value we received from the slider 
-#               into a float within Deviation range'''
-#            if ((not -self.maxDeviation <= aValue <= self.maxDeviation) and 
-#                    (-self.maxDeviation <= aValue/HomeoUnit.precision <= self.maxDeviation)):
-#                    self._criticalDeviation = self.clipDeviation(aValue/HomeoUnit.precision)
-#            else:
-#                self._criticalDeviation = self.clipDeviation(aValue)
             self._criticalDeviation = self.clipDeviation(aValue)
-              
-            emitter(self).criticalDeviationChanged.emit(self._criticalDeviation)
-            emitter(self).criticalDeviationChangedLineEdit.emit(str(round(self._criticalDeviation, 5)))
-            scaledValueToEmit = int(floor(self._criticalDeviation * HomeoUnit.precision))
-            emitter(self).criticalDeviationScaledChanged.emit(scaledValueToEmit)
 
-#            sys.stderr.write('Unit %s just emitted the signal criticalDeviationScaledChanged with value %s\n'
-#                             % (self.name, int(floor(self._criticalDeviation * HomeoUnit.precision))))
-#            sys.stderr.write('Unit %s just emitted the signal criticalDeviationChanged with value %s\n'
-#                             % (self.name, self._criticalDeviation))
+            if not self._headless:
+                emitter(self).criticalDeviationChanged.emit(self._criticalDeviation)
+                emitter(self).criticalDeviationChangedLineEdit.emit(str(round(self._criticalDeviation, 5)))
+                scaledValueToEmit = int(floor(self._criticalDeviation * HomeoUnit.precision))
+                emitter(self).criticalDeviationScaledChanged.emit(scaledValueToEmit)
         except ValueError:
             sys.stderr.write("Tried to assign a non-numeric value to unit %s's Critical Deviation. The value was: %s\n" % (self.name, aValue))
     
@@ -582,14 +571,12 @@ class HomeoUnit(object):
         
     def setCurrentOutput(self, aValue):
         self._currentOutput = aValue
-        #print "In setcurrentOutput at time: %d. Value passed: %f unit: %s dev: %f output: %f" %(self.time, aValue, self.name, self.criticalDeviation, self._currentOutput)
 
-        emitter(self).currentOutputChanged.emit(self._currentOutput)
-        emitter(self).currentOutputChangedLineEdit.emit(str(round(self._currentOutput, 5)))
-#        sys.stderr.write( 'Unit %s just emitted the signal currentOutputChanged \n' % self.name)   
-        "For testing"
-        if self._debugMode == True:
-            sys.stderr.write(self.name + " curr output: " + str(self._currentOutput)+'\n')
+        if not self._headless:
+            emitter(self).currentOutputChanged.emit(self._currentOutput)
+            emitter(self).currentOutputChangedLineEdit.emit(str(round(self._currentOutput, 5)))
+            if self._debugMode == True:
+                sys.stderr.write(self.name + " curr output: " + str(self._currentOutput)+'\n')
 
     currentOutput = property(fget = lambda self: self.getCurrentOutput(),
                              fset = lambda self, aBoolean: self.setCurrentOutput(aBoolean))
@@ -626,8 +613,9 @@ class HomeoUnit(object):
 
     def setInputTorque(self,aValue):
         self._inputTorque = aValue
-        emitter(self).inputTorqueChanged.emit(self._inputTorque)
-        emitter(self).inputTorqueChangedLineEdit.emit(str(round(self._inputTorque, 5)))
+        if not self._headless:
+            emitter(self).inputTorqueChanged.emit(self._inputTorque)
+            emitter(self).inputTorqueChangedLineEdit.emit(str(round(self._inputTorque, 5)))
 
 
     inputTorque = property(fget = lambda self: self.getInputTorque(),
@@ -1127,7 +1115,7 @@ class HomeoUnit(object):
         '''Clip the unit's criticalDeviation value if it exceeds its maximum or minimum. 
             Keep the sign of aValue'''
             
-        return np.clip(aValue,self.minDeviation,self.maxDeviation)
+        return max(self.minDeviation, min(self.maxDeviation, aValue))
 
     def newRandomNeedlePosition(self):
         '''Compute a random value for the needle position within the accepted range'''
@@ -1203,7 +1191,8 @@ class HomeoUnit(object):
                (outRange / devRange ) + self.outputRange['low'])
                         
         "2.Clipping"
-        self.currentOutput = np.clip(out, self.outputRange['low'],self.outputRange['high'])
+        lo, hi = self.outputRange['low'], self.outputRange['high']
+        self.currentOutput = max(lo, min(hi, out))
 
     def computeTorque(self):
         '''In order to closely simulate Asbhy's implementation, 
@@ -1426,13 +1415,7 @@ class HomeoUnit(object):
         '''Apply the unit's internal noise to the critical deviation and update accordingly.  
            Computation of noise uses the utility HomeoNoise class'''
         
-        newNoise = HomeoNoise()
-        newNoise.withCurrentAndNoise(self.criticalDeviation, self.noise)
-        newNoise.distorting()    # since the noise is a distortion randomly select either a positive or negative value for noise"
-        newNoise.normal()        # compute a value for noise by choosing a normally distributed random value centered around 0."
-#        newNoise.proportional()  # consider noise as the ratio of the current affected by noise"
-        newNoise.linear()        # consider noise as  proportional to the  absolute magnitude of the noise parameter
-        addedNoise = newNoise.getNoise()
+        addedNoise = HomeoNoise.unitNoise(self.noise)
         hDebug('unit', ("Noise for unit %s is: %f" % (self.name, addedNoise)))
 #        sys.stderr.write("New noise is %f at time: %u\n" % (addedNoise, self.time))
 #        self.criticalDeviation = np.clip((self.criticalDeviation + addedNoise), self.minDeviation, self.maxDeviation)    # apply the noise to the critical deviation value"

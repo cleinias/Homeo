@@ -298,6 +298,9 @@ def run_headless(topology='fixed', total_steps=10000, report_interval=500,
     # collection (initial/final state is logged separately to file)
     hom.slowingFactor = 0
     hom.collectsData = False
+    hom._headless = True
+    for u in hom.homeoUnits:
+        u._headless = True
 
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']

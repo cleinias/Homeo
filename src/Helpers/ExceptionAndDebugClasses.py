@@ -54,6 +54,8 @@ class HomeoDebug(object):
     @classmethod
     def printDebugMesg(cls,codes,debugString):
         "Method to be used by all classes wishing to print error messages"
+        if not cls.debugCodes:
+            return
         if set(codes.split()) <= HomeoDebug.debugCodes:
             stderr.write(debugString+"\n")
 
