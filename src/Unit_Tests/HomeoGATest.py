@@ -329,5 +329,39 @@ class StatFileDecoderTest(unittest.TestCase):
                 os.unlink(outFile)
 
 
+class ExperimentAttributesTest(unittest.TestCase):
+    """Tests for experiment function attributes (fitnessSign, noEvolvedUnits)"""
+
+    def setUp(self):
+        import Simulator.HomeoExperiments as exps
+        self.exps = exps
+
+    def testPhototaxisFitnessSign(self):
+        """Phototaxis experiment has fitnessSign == 1 (minimise distance)"""
+        self.assertEqual(self.exps.initializeBraiten2_2_Full_GA_phototaxis.fitnessSign, 1)
+
+    def testScototaxisFitnessSign(self):
+        """Scototaxis experiment has fitnessSign == -1 (negate distance)"""
+        self.assertEqual(self.exps.initializeBraiten2_2_Full_GA_scototaxis.fitnessSign, -1)
+
+    def testPhototaxisNoEvolvedUnits(self):
+        """Phototaxis experiment has noEvolvedUnits == 4"""
+        self.assertEqual(self.exps.initializeBraiten2_2_Full_GA_phototaxis.noEvolvedUnits, 4)
+
+    def testScototaxisNoEvolvedUnits(self):
+        """Scototaxis experiment has noEvolvedUnits == 4"""
+        self.assertEqual(self.exps.initializeBraiten2_2_Full_GA_scototaxis.noEvolvedUnits, 4)
+
+    def testExistingExperimentsFitnessSign(self):
+        """Existing experiment functions have fitnessSign == 1 (backward compat)"""
+        for name in ['initializeBraiten2_2_Full_GA',
+                      'initializeBraiten2_2_NoUnisel_Full_GA',
+                      'initializeBraiten2_2_NoUnisel_No_Noise_Full_GA',
+                      'initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE']:
+            func = getattr(self.exps, name)
+            self.assertEqual(func.fitnessSign, 1,
+                             "%s should have fitnessSign == 1" % name)
+
+
 if __name__ == '__main__':
     unittest.main()

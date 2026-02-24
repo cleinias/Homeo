@@ -2477,6 +2477,43 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     return hom
 
 initializeBraiten2_2_Full_GA.noEvolvedUnits = 4
+initializeBraiten2_2_Full_GA.fitnessSign = 1
+
+
+def initializeBraiten2_2_Full_GA_phototaxis(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Phototaxis GA experiment (negative light intensity).
+    The robot seeks the light source. Fitness = distance (minimised).'''
+    hom = initializeBraiten2_2_Full_GA(
+        homeoGenome=homeoGenome, noHomeoParameters=noHomeoParameters,
+        backendSimulator=backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, transducers=transducers)
+    if backendSimulator is not None:
+        target = backendSimulator.kheperaSimulation.allBodies['TARGET']
+        target.userData['intensity'] = -100
+        target.userData['lightIntensity'] = -100
+    return hom
+
+initializeBraiten2_2_Full_GA_phototaxis.noEvolvedUnits = 4
+initializeBraiten2_2_Full_GA_phototaxis.fitnessSign = 1  # minimise distance
+
+
+def initializeBraiten2_2_Full_GA_scototaxis(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Scototaxis GA experiment (positive light intensity, default).
+    The robot avoids the light source. Fitness = -distance (minimised).'''
+    hom = initializeBraiten2_2_Full_GA(
+        homeoGenome=homeoGenome, noHomeoParameters=noHomeoParameters,
+        backendSimulator=backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, transducers=transducers)
+    # Light intensity is already positive (100) by default
+    return hom
+
+initializeBraiten2_2_Full_GA_scototaxis.noEvolvedUnits = 4
+initializeBraiten2_2_Full_GA_scototaxis.fitnessSign = -1  # negate: minimising = maximising distance
+
 
 def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=False, dataDir = None):
     '''
@@ -2492,6 +2529,7 @@ def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=Fa
     return hom
 
 initializeBraiten2_2_NoUnisel_Full_GA.noEvolvedUnits = 4
+initializeBraiten2_2_NoUnisel_Full_GA.fitnessSign = 1
 
 def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=4, dataDir = None, raw=False):
     raise NotImplementedError
@@ -2800,6 +2838,7 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
     return hom
 
 initializeBraiten2_2_NoUnisel_No_Noise_Full_GA.noEvolvedUnits = 4
+initializeBraiten2_2_NoUnisel_No_Noise_Full_GA.fitnessSign = 1
 
 def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,noHomeoParameters=4, dataDir = None, raw=False):
     raise NotImplementedError
@@ -3111,6 +3150,7 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
     return hom
 
 initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE.noEvolvedUnits = 4
+initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE.fitnessSign = 1
 
 #===============================================================================
 # Utility functions
