@@ -457,9 +457,14 @@ class HomeoGASimulGUI(QWidget):
             enabled and self.popTypeComboBox.currentText() == "Clones")
 
     def _appendToOutput(self, text):
+        sb = self.outputPane.verticalScrollBar()
+        atBottom = sb.value() >= sb.maximum() - 4
         self.outputPane.moveCursor(QTextCursor.End)
         self.outputPane.insertPlainText(text)
-        self.outputPane.moveCursor(QTextCursor.End)
+        if atBottom:
+            sb.setValue(sb.maximum())
+        else:
+            sb.setValue(sb.value())
 
     def _redirectStdout(self):
         self._originalStdout = sys.stdout
