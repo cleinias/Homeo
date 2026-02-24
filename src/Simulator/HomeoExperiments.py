@@ -3165,8 +3165,8 @@ def basicBraiten2Tranducers(backendSimulator, world):
     
     try:
         backendSimulator.start(world)
-    except:
-        raise Exception("I cannot start the backend simulator %s. Aborting..." % backendSimulator.name) 
+    except Exception as e:
+        raise Exception("I cannot start the backend simulator %s. Aborting...\nCause: %s" % (backendSimulator.name, e)) from e
     
     "2. get transducers"    
     transducers = {"rightWheelTransd" : backendSimulator.getWheel('right'), 
