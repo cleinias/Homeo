@@ -200,7 +200,7 @@ class HomeoGASimulGUI(QWidget):
 
         self.generationsSpinBox = QSpinBox()
         self.generationsSpinBox.setRange(0, 10000)
-        self.generationsSpinBox.setValue(1)
+        self.generationsSpinBox.setValue(100)
 
         self.noUnitsSpinBox = QSpinBox()
         self.noUnitsSpinBox.setRange(2, 20)
