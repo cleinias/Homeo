@@ -227,7 +227,7 @@ class HomeoGASimulGUI(QWidget):
 
         self.workersSpinBox = QSpinBox()
         self.workersSpinBox.setRange(1, os.cpu_count() or 4)
-        self.workersSpinBox.setValue(1)
+        self.workersSpinBox.setValue(4)
         self.workersSpinBox.setToolTip("Number of parallel worker processes (HOMEO backend only)")
 
         self.experimentComboBox = QComboBox()
