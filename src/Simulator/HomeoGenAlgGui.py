@@ -59,9 +59,23 @@ _worker_config = {}
 
 
 def _init_worker(config):
-    """Pool initializer: copy config into the module-level dict."""
+    """Pool initializer: copy config into the module-level dict.
+
+    Also nullifies the inherited pyglet GL context so that
+    _has_gl_context() in KheperaSimulator correctly returns False.
+    Without this, forkserver workers inherit a stale context reference
+    from the parent process, causing shader compilation to fail when
+    KheperaWheel tries to create pyglet shapes.
+    """
     global _worker_config
     _worker_config = config
+
+    # Clear stale pyglet GL context inherited from the parent process
+    try:
+        import pyglet.gl
+        pyglet.gl.current_context = None
+    except Exception:
+        pass
 
 
 def _evaluate_genome_worker(genome):
@@ -623,7 +637,8 @@ class HomeoGASimulation(object):
                 'fitnessSign': self.fitnessSign,
             }
 
-            self._pool = multiprocessing.Pool(
+            ctx = multiprocessing.get_context('forkserver')
+            self._pool = ctx.Pool(
                 nWorkers, initializer=_init_worker, initargs=(config,))
             self.toolbox.register('map', self._pool.map)
             self.toolbox.register("evaluate", _evaluate_genome_worker)
