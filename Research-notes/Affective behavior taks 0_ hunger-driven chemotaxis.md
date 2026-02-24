@@ -1,0 +1,13 @@
+
+# Background
+
+Evolutionary robotics has proved to be a useful tool for the study of basic theories of behaviour.[#VargasDiPaoloHarveyHusbands2014, #HarveyDiPaoloWoodQuinnTuci2005, #Nolfi2000] Its method consists in developing virtual stylized scenarios in which simulated robots, controlled by an algorithm that translates a general theory of behaviour into robotic controllers, carry out different tasks. The simulated robots are then tested on their performance in the chosen tasks—photo- and chemo-taxes; discrimination among geometric figures—in varied environments and different bodily conditions, including lesions. Successful completion of the tasks provides a measure of validation for the theoretical model of organism/environment interaction that the robotic environment embodies. 
+The proposed research will follow this methodology, but it will apply a different model of behaviour: the one based on general homeostasis (GHT). Di Paolo and others have explored minimally affective tasks.[#DiPaolo2003, #IkegamiSuzuki2008]. Once equipped with internal batteries rechargeable by approaching a light source, robots perform phototaxis by reaching the source on the basis of the stimuli coming from sensors located on the opposite side of their bodies.  Since the motivator (the 'affect' or 'drive') of the robot's behaviour is its need to maintain the perceived battery level above a minimal threshold, the robot's monitoring of the battery level becomes a proxy for a living organism's interoception of its somato-visceral states. This behaviour is a paradigm of `affective' behaviour. Beer has proposed a similar model for ``minimally cognitive,” not affective, tasks.[#Beer2003]. 
+
+# Goal
+Show that homeostasis-controlled robots can carry out phototaxis and possibly other kind of tactic tasks, while experiencing an internal hunger-like drive produced by slowly discharging batteries. Systematic lesion studies will test the robustness and limitation of the GHT theoretical framework.
+
+# Description
+
+Development of a purely homeostatic robotic controller driving a robot performing tactic (i.e. "affective") tasks while experiencing an internal hunger-like drive produced from by discharging batteries. WP-1 extends the Researcher's existing simulation model (see CV refs. [enu:Homeo-prototype-2]{reference-type="ref" reference="enu:Homeo-prototype-2"} and [enu:Homeo-prototype]{reference-type="ref" reference="enu:Homeo-prototype"}) through the use of genetic algorithms to provide initial stable conditions before performing systematic lesion studies to test the robustness and limitations of the GHT approach.
+Deliverable: DLV 1.1 Robotic controller for mono-modal affective tasks (Software)
