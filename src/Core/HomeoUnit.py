@@ -3,6 +3,8 @@ from Core.HomeoUniselectorAshby import *
 from Core.HomeoUniselector import *
 from Core.HomeoUniselectorUniformRandom import  *
 from Core.HomeoConnection import *
+from Core.HomeoJIT import (_jit_unit_noise, _jit_compute_torque,
+                           _jit_needle_position_base, _jit_compute_output)
 from Helpers.General_Helper_Functions import withAllSubclasses
 import numpy as np
 import sys, pickle
@@ -188,6 +190,7 @@ class HomeoUnit(object):
         '''
         self._showUniselectorAction = False
         self._headless = False
+        self._jit_dirty = True
         self._viscosity = HomeoUnit.DefaultParameters['viscosity']
         self._maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
         self._outputRange = HomeoUnit.DefaultParameters['outputRange']
@@ -277,8 +280,18 @@ class HomeoUnit(object):
         self.uniselectorTimeInterval = HomeoUnit.uniselectorTimeIntervalFromWeight(essent_params[2])
         self.maxDeviation=HomeoUnit.maxDeviationFromWeight(essent_params[3])                               
     
-    #===============================================================================   
-        
+    #===============================================================================
+
+    def _sync_jit_arrays(self):
+        """Extract active connection parameters into numpy arrays for JIT loop."""
+        active = [c for c in self._inputConnections
+                  if c.isActive() and c.incomingUnit.isActive()]
+        self._jit_incoming_units = [c._incomingUnit for c in active]
+        self._jit_switches = np.array([c._switch for c in active], dtype=np.float64)
+        self._jit_weights = np.array([c._weight for c in active], dtype=np.float64)
+        self._jit_noises = np.array([c._noise for c in active], dtype=np.float64)
+        self._jit_outputs = np.empty(len(active), dtype=np.float64)
+        self._jit_dirty = False
 
     
     def allValuesChanged(self):
@@ -1183,29 +1196,46 @@ class HomeoUnit(object):
         '''Scale the current criticalDeviation to the output range.
            Clip the output to within the allowed output range.'''
 
+        if self._headless:
+            self._currentOutput = _jit_compute_output(
+                self._criticalDeviation, self.minDeviation,
+                self._maxDeviation, self._outputRange['low'],
+                self._outputRange['high'])
+            return
+
         "1. Scaling"
         outRange = float((self.outputRange['high'] - self.outputRange['low']))
         lowDev = self.minDeviation
         devRange = float(self.maxDeviation - lowDev)
         out = ((self.criticalDeviation - lowDev) *
                (outRange / devRange ) + self.outputRange['low'])
-                        
+
         "2.Clipping"
         lo, hi = self.outputRange['low'], self.outputRange['high']
         self.currentOutput = max(lo, min(hi, out))
 
     def computeTorque(self):
-        '''In order to closely simulate Asbhy's implementation, 
+        '''In order to closely simulate Asbhy's implementation,
         computeTorque would have to compute the torque affecting the needle
-        by solving a set of differential equations whose coefficients 
-        represents the weighted values of the input connections. This is the 
-        approach followed by Capehart (1967) in his simulaton of the Homeostat 
+        by solving a set of differential equations whose coefficients
+        represents the weighted values of the input connections. This is the
+        approach followed by Capehart (1967) in his simulaton of the Homeostat
         in Fortran. See the comment to the method newNeedlePosition for a discussion.
-        
-        Here we simply compute the sum of the weighted input values extracted from 
+
+        Here we simply compute the sum of the weighted input values extracted from
         the inputsCollection on all the connections that are active'''
 
-        activeConnections = [conn for conn in self.inputConnections if (conn.isActive() and 
+        if self._headless:
+            if self._jit_dirty:
+                self._sync_jit_arrays()
+            for i, u in enumerate(self._jit_incoming_units):
+                self._jit_outputs[i] = u._currentOutput
+            self._inputTorque = _jit_compute_torque(
+                self._jit_outputs, self._jit_switches,
+                self._jit_weights, self._jit_noises)
+            return
+
+        activeConnections = [conn for conn in self.inputConnections if (conn.isActive() and
                                                                         conn.incomingUnit.isActive())]
         #=======================================================================
         # print "For Unit %s the active connections are" % self.name
@@ -1241,12 +1271,18 @@ class HomeoUnit(object):
             sys.stderr.write('\n')
 
     def newLinearNeedlePosition(self,aTorqueValue):
-        '''See method newNeedlePosition for an extended comment on how 
-        to compute the displacement of the needle. Briefly, here we just sum 
+        '''See method newNeedlePosition for an extended comment on how
+        to compute the displacement of the needle. Briefly, here we just sum
         aTorqueValue to the current deviation.
-        
+
         Internal noise is computed in method updateDeviationWithNoise, while noise
         on the connections is computed by HomeoConnections when they return values'''
+
+        if self._headless:
+            return _jit_needle_position_base(
+                aTorqueValue, self._viscosity,
+                HomeoUnit.DefaultParameters['maxViscosity'],
+                self._needleUnit._mass, self._criticalDeviation)
 
         totalForce = aTorqueValue    
         '''NOTE: the HomeoUnit method that computes aTorqueValue (passed to this method)
@@ -1392,8 +1428,7 @@ class HomeoUnit(object):
                 weightChanges.append(change)
                 conn.newWeight(changedWeight)
         self.uniselector.advance()
-
-
+        self._jit_dirty = True
 
         "For debugging"
         if self._showUniselectorAction:
@@ -1412,9 +1447,13 @@ class HomeoUnit(object):
         return self.currentVelocity * (self._physicalParameters['lengthEquivalence'] / self._physicalParameters['timeEquivalence'])
 
     def updateDeviationWithNoise(self):
-        '''Apply the unit's internal noise to the critical deviation and update accordingly.  
+        '''Apply the unit's internal noise to the critical deviation and update accordingly.
            Computation of noise uses the utility HomeoNoise class'''
-        
+
+        if self._headless:
+            self._criticalDeviation += _jit_unit_noise(self._noise)
+            return
+
         addedNoise = HomeoNoise.unitNoise(self.noise)
         hDebug('unit', ("Noise for unit %s is: %f" % (self.name, addedNoise)))
 #        sys.stderr.write("New noise is %f at time: %u\n" % (addedNoise, self.time))

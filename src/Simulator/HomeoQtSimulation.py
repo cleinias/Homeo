@@ -244,7 +244,8 @@ class HomeoQtSimulation(QObject):
 #            if self.liveDataOn:
             self.updateLiveData()
             time.sleep(self._simulDelay / 1000)
-            QApplication.processEvents()
+            if QApplication.instance() is not None:
+                QApplication.processEvents()
 
     def pause(self):
         "Pause the simulation" 
@@ -263,7 +264,8 @@ class HomeoQtSimulation(QObject):
             self._homeostat.runOnce()
             self.updateLiveData()
 #            time.sleep(self._simulDelay / 1000)
-            QApplication.processEvents() 
+            if QApplication.instance() is not None:
+                QApplication.processEvents() 
 
     
     def updateLiveData(self):

@@ -4,6 +4,7 @@ Created on Mar 13, 2013
 @author: stefano
 '''
 from Core.HomeoDataCollector import  *
+from Core.HomeoJIT import warmup_jit
 from Helpers.General_Helper_Functions import withAllSubclasses
 import time, sys, pickle
 from Helpers.QObjectProxyEmitter import emitter
@@ -237,7 +238,13 @@ class Homeostat(object):
                                  unit.currentOutput,
                                  unit.criticalDeviation))
             "END TESTING"
-            
+
+            if getattr(self, '_headless', False):
+                warmup_jit()
+                for unit in self.homeoUnits:
+                    if unit.isActive():
+                        unit._sync_jit_arrays()
+
             while self.time < ticks:
                 for unit in self.homeoUnits:
                     if self.collectsData:

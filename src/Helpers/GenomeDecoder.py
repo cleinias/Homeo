@@ -18,25 +18,30 @@ def main(argv):
     except:
         raise            
             
-def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2):
+def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2, noEvolvedUnits=None):
     """Read a GA stat file and convert the values in the genome
        (all in (0,1) range) to the actual value used by the units.
-       
+
        The GA stat file structure is composed by identical line containing
        Run Number
        Final Distance
        Run time
-       genome for each unit (essentParam each for each unit in noUnits)
-       connection weights   (noUnits^2)  
+       genome for each unit (essentParam each for each evolved unit)
+       connection weights   (noEvolvedUnits * noUnits)
+
+       noEvolvedUnits defaults to noUnits for backward compatibility
+       with old 60-gene logbooks.
        """
+    if noEvolvedUnits is None:
+        noEvolvedUnits = noUnits
     headers = ['Run', 'Dist.', 'Time']
-    for unit in range(noUnits):
+    for unit in range(noEvolvedUnits):
         headers.append('U'+str(unit+1)+'-mass')
         headers.append('U'+str(unit+1)+'-visc')
         headers.append('U'+str(unit+1)+'-unis-time')
         headers.append('U'+str(unit+1)+'-maxDev')
 
-    for connIn in range(noUnits):
+    for connIn in range(noEvolvedUnits):
         for connOut in range(noUnits):
             headers.append('Conn-W-'+str(connIn+1)+'-to-'+str(connOut+1))
 
@@ -63,39 +68,47 @@ def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2):
         fileOut.write(line[2]+"\t")              # Run Time
         "Converting genome and printing to file"
         lineAsFloats = [float(x) for x in line]
-        convertedGenome = genomeDecoder(noUnits, lineAsFloats[3:])
+        convertedGenome = genomeDecoder(noUnits, lineAsFloats[3:], noEvolvedUnits=noEvolvedUnits)
         for value in convertedGenome:
             fileOut.write(str(round(value, rounding))+"\t")
         fileOut.write("\n")        
     fileOut.close()
     
-def genomeDecoder(noUnits, genome):
+def genomeDecoder(noUnits, genome, noEvolvedUnits=None):
     """Convert the values in the genome to the actual value used by the units
-       Accepts a list of floats (values all in (0,1) range) whose length is: 
-       noUnits*essentVars + noUnits**2
-       Depends on Units having 4 essential variables
+       Accepts a list of floats (values all in (0,1) range) whose length is:
+       noEvolvedUnits*essentVars + noEvolvedUnits*noUnits
+       Depends on Units having 4 essential variables.
+       noEvolvedUnits defaults to noUnits for backward compatibility
+       with old 60-gene logbooks.
        Return a list of actual values.
     """
+    if noEvolvedUnits is None:
+        noEvolvedUnits = noUnits
     decodedValues = []
     essenVar = 4
     "Converting units' values"
-    for unit in range(noUnits):
+    for unit in range(noEvolvedUnits):
         decodedValues.append(HomeoUnit.massFromWeight(genome[(unit*essenVar) + 0]))                    # Mass
         decodedValues.append(HomeoUnit.viscosityfromWeight(genome[(unit*essenVar) +1]))               # Viscosity
         decodedValues.append(HomeoUnit.uniselectorTimeIntervalFromWeight(genome[(unit*essenVar) +2])) # UniselectorTiming (integer)
         decodedValues.append(HomeoUnit.maxDeviationFromWeight(genome[(unit*essenVar) + 3]))            # maxDeviation (integer)
 
     "Converting connection weights"
-    for conn in range(noUnits*noUnits):
-        decodedValues.append(HomeoConnection.connWeightFromGAWeight(genome[(essenVar*noUnits)+conn]))
+    offset = essenVar * noEvolvedUnits
+    for conn in range(noEvolvedUnits * noUnits):
+        decodedValues.append(HomeoConnection.connWeightFromGAWeight(genome[offset + conn]))
 
     return decodedValues
 
-def genomePrettyPrinter(noUnits, decodedGenome):
-    "Return a string with all decoded values preceded by labels "
+def genomePrettyPrinter(noUnits, decodedGenome, noEvolvedUnits=None):
+    """Return a string with all decoded values preceded by labels.
+       noEvolvedUnits defaults to noUnits for backward compatibility."""
+    if noEvolvedUnits is None:
+        noEvolvedUnits = noUnits
     outString = ''
     essVar = 4
-    for unit in range(noUnits):
+    for unit in range(noEvolvedUnits):
         outString += 'mass: '
         outString += str(round(decodedGenome[(unit*essVar)+0],3))           # Mass
         outString += '\tvisc: '
@@ -106,15 +119,14 @@ def genomePrettyPrinter(noUnits, decodedGenome):
         outString += str(round(decodedGenome[(unit*essVar)+3],3))            # maxDeviation (integer)
         outString += '\n'
 
-    for connIn in range(noUnits):
+    for connIn in range(noEvolvedUnits):
         #outString += '\t'
         for connOut in range(noUnits):
             outString += (str(connIn+1) + ' to ' +  str(connOut+1) + ': ')
-            outString += str(round(decodedGenome[(noUnits*essVar)+(noUnits*connIn) + connOut],3))
-#            print " reading weight at: %d as from %d to %d" %(((noUnits*essVar)+(noUnits*connIn) + connOut), connIn+1 , connOut + 1)
-            outString += '\t'   
+            outString += str(round(decodedGenome[(noEvolvedUnits*essVar)+(noUnits*connIn) + connOut],3))
+            outString += '\t'
         outString += '\n'
-    return outString 
+    return outString
     
 if __name__ == "__main__":
     main(sys.argv[0])

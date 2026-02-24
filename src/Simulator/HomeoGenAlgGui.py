@@ -15,6 +15,7 @@ from deap.tools.mutation import mutFlipBit
 # import dill as pickle
 from pickle import dump
 from Simulator.HomeoQtSimulation import HomeoQtSimulation
+import Simulator.HomeoExperiments
 from Helpers.SimulationThread import SimulationThread
 from Helpers.GenomeDecoder import genomeDecoder, genomePrettyPrinter
 from PyQt5.QtCore import *
@@ -50,6 +51,73 @@ from Helpers.StatsAnalyzer import extractGenomeOfIndID
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO,SimulatorBackendVREP,SimulatorBackendWEBOTS
 from threading import Lock
 from glob import glob
+
+
+# --- Module-level configuration for multiprocessing workers ---
+# Set by _init_worker() in each spawned worker process.
+_worker_config = {}
+
+
+def _init_worker(config):
+    """Pool initializer: copy config into the module-level dict."""
+    global _worker_config
+    _worker_config = config
+
+
+def _evaluate_genome_worker(genome):
+    """Standalone fitness evaluation for use with multiprocessing.Pool.
+
+    Creates its own SimulatorBackendHOMEO and HomeoQtSimulation per call,
+    avoiding all shared state. Reads experiment parameters from the
+    module-level _worker_config dict (set by _init_worker at pool start).
+    """
+    cfg = _worker_config
+    experiment = cfg['experiment']
+    stepsSize = cfg['stepsSize']
+    dataDir = cfg['dataDir']
+
+    backend = SimulatorBackendHOMEO(robotName='Khepera', lock=None)
+    backend.setDataDir(dataDir)
+
+    sim = HomeoQtSimulation(experiment=experiment, dataDir=dataDir)
+    sim.maxRuns = stepsSize
+
+    params = dict(cfg['experimentParams'])
+    params['homeoGenome'] = genome
+    params['backendSimulator'] = backend
+
+    sim.initializeExperSetup(
+        message="Building Homeostat from genome %s" % genome.ID,
+        **params)
+
+    backend.connect()
+    backend.reset()
+    sim.initializeExperSetup(
+        message="Rebuilding world after reset", **params)
+    backend.close()
+    backend.connect()
+
+    backend.setRobotModel(genome.ID)
+    sim.homeostat.connectUnitsToNetwork()
+    sim.maxRuns = stepsSize
+    sim.initializeLiveData()
+
+    # Enable headless/JIT optimizations for GA evaluation
+    hom = sim.homeostat
+    hom._headless = True
+    hom._collectsData = False
+    hom._slowingFactor = 0
+    for u in hom.homeoUnits:
+        u._headless = True
+
+    timeNow = time()
+    for i in range(stepsSize):
+        sim.step()
+
+    finalDis = backend.finalDisFromTarget()
+    print(" Evaluation for model %s took time: %s with fitness %.5f" % (
+        genome.ID, str(datetime.timedelta(seconds=time() - timeNow)), finalDis))
+    return finalDis,
 
 
 class QTextEditStream(QObject):
@@ -156,6 +224,11 @@ class HomeoGASimulGUI(QWidget):
         self.tournamentSpinBox.setRange(2, 20)
         self.tournamentSpinBox.setValue(3)
 
+        self.workersSpinBox = QSpinBox()
+        self.workersSpinBox.setRange(1, os.cpu_count() or 4)
+        self.workersSpinBox.setValue(1)
+        self.workersSpinBox.setToolTip("Number of parallel worker processes (HOMEO backend only)")
+
         self.experimentComboBox = QComboBox()
         self.experimentComboBox.addItems([
             "initializeBraiten2_2_Full_GA",
@@ -181,6 +254,7 @@ class HomeoGASimulGUI(QWidget):
         paramLayout.addRow("Mutation prob:", self.mutProbSpinBox)
         paramLayout.addRow("Indiv. mutation prob:", self.indivProbSpinBox)
         paramLayout.addRow("Tournament size:", self.tournamentSpinBox)
+        paramLayout.addRow("Workers:", self.workersSpinBox)
         paramLayout.addRow("Experiment:", self.experimentComboBox)
         paramLayout.addRow(self.noNoiseCheckBox)
         paramLayout.addRow(self.noUniselCheckBox)
@@ -237,6 +311,7 @@ class HomeoGASimulGUI(QWidget):
             noUnisel=self.noUniselCheckBox.isChecked(),
             clonableGenome=self._clonableGenome,
             simulatorBackend=backend,
+            nWorkers=self.workersSpinBox.value(),
         )
 
         if self.useDummyFitnessCheckBox.isChecked():
@@ -419,7 +494,8 @@ class HomeoGASimulation(object):
                                    clonableGenome = None,
                                    debugging = None,
                                    simulatorBackend = "VREP",
-                                   vrepPort = None):
+                                   vrepPort = None,
+                                   nWorkers = 1):
         
         self.worldBeingResetLock = Lock()
         self._stopRequested = False
@@ -457,8 +533,11 @@ class HomeoGASimulation(object):
             HomeoDebug.addDebugCodes(debugging)
     
         self.popSize = popSize
-        self.genomeSize = (noUnits*essentParams)+noUnits**2   
-        self.stepsSize = stepsSize    
+        self.noUnits = noUnits
+        exp_func = getattr(Simulator.HomeoExperiments, exp)
+        self.noEvolvedUnits = getattr(exp_func, 'noEvolvedUnits', noUnits)
+        self.genomeSize = (self.noEvolvedUnits * essentParams) + (self.noEvolvedUnits * noUnits)
+        self.stepsSize = stepsSize
         self.generSize = generSize
         self.experiment = exp
         self.cxProb = cxProb 
@@ -518,40 +597,41 @@ class HomeoGASimulation(object):
         'Operator to create a list of identical individual of given genome'
         self.toolbox.register('popClones', tools.initRepeat, list, self.toolbox.individualClone)                            
         
-        "Operator to use scoop's parallel processing capabilities"
-#         self.toolbox.register('map',futures.map)
+        "Register map and evaluate functions (parallel or serial)"
+        self.nWorkers = nWorkers
+        self._pool = None
 
-        "Operator to use standard (serial) map function"
-        self.toolbox.register('map',map)
-        
-        "Operator to use the multiprocessing module"
-#         pool = multiprocessing.Pool()
-#         self.toolbox.register("map", pool.map)
- 
-        "Operator to use pathos multiprocessing package"
-#         p = Pool(4)
-#         self.toolbox.register('map', p.map)
+        if nWorkers > 1 and simulatorBackend == "HOMEO":
+            config = {
+                'experiment': exp,
+                'experimentParams': {
+                    'dataDir': self.dataDir,
+                    'noNoise': noNoise,
+                    'noUnisel': noUnisel,
+                },
+                'stepsSize': stepsSize,
+                'dataDir': self.dataDir,
+            }
 
-#         "Operator to use playdoh multiprocessing package"
-#         self.toolbox.register("map", pd_map)
+            self._pool = multiprocessing.Pool(
+                nWorkers, initializer=_init_worker, initargs=(config,))
+            self.toolbox.register('map', self._pool.map)
+            self.toolbox.register("evaluate", _evaluate_genome_worker)
+            print("Using %d worker processes for parallel evaluation" % nWorkers)
+        else:
+            self.toolbox.register('map', map)
+            self.toolbox.register("evaluate", self.evaluateGenomeFitness)
 
-        
         hDebug('ga',("Population defined.\nIndividual defined with genome size = " + str(self.genomeSize) +"\n"))
-        
+
         "1.1 defining statistics tools"
         self.stats.register("avg", np.mean)
         self.stats.register("std", np.std)
         self.stats.register("min", np.min)
         self.stats.register("max", np.max)
-        
-        
-        "2. Registering GA operators"
-        
-        self.toolbox.register("evaluate", self.evaluateGenomeFitness)
-#         self.toolbox.register("evaluate", self.evaluateGenomeFitnessSUPER_DUMMY)   #For testing purposes
 
         self.toolbox.register("mate", tools.cxTwoPoint)
-        self.toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 2, indpb=self.indivProb)            
+        self.toolbox.register("mutate", tools.mutGaussian, mu = 0, sigma = 0.2, indpb=self.indivProb)            
         self.toolbox.register("select", tools.selTournament, tournsize=self.tournamentSize)
         " FIXME---> NEED TO REMOVE SELECTED INDIVIDUALS FROM ASPIRANTS POOL <-----"
         #self.toolbox.register("select", tools.selBest)
@@ -577,6 +657,8 @@ class HomeoGASimulation(object):
                             initPop=self.popSize,
                             generations=self.generSize,
                             genomeSize=self.genomeSize,
+                            noEvolvedUnits=self.noEvolvedUnits,
+                            noUnits=self.noUnits,
                             length=self.stepsSize,
                             cxProb=self.cxProb,
                             mutationProb=self.mutationProb,
@@ -637,10 +719,10 @@ class HomeoGASimulation(object):
         """Generate an individual with given genome.
            Assumes 'genome' is a dictionary with keys indivId, fitness, and genome"""
         ind = indivClass(genome['genome'])
-        ind.ID = genome["indivId"] 
-        "FIX ME !!! Need to return an individual with pre-filled fitness for cloned populations"
-#         ind.fitness = genome['fitness']       
-        return ind      
+        ind.ID = genome["indivId"]
+        if 'fitness' in genome and genome['fitness'] is not None:
+            ind.fitness.values = genome['fitness']
+        return ind
 
     def generatePopOfClones(self, cloneName =''):
         """Generate a population of identical clones from
@@ -770,6 +852,12 @@ class HomeoGASimulation(object):
 
                 # The population is entirely replaced by the offspring
                 pop[:] = offspring
+
+                # Elitism: re-insert the best individual from the previous
+                # generation if it was lost during selection/variation.
+                if self.hof and not any(self.indEq(ind, self.hof[0]) for ind in pop):
+                    worst = max(range(len(pop)), key=lambda i: pop[i].fitness.values[0])
+                    pop[worst] = self.toolbox.clone(self.hof[0])
                 print("  Pop now includes: ", end="")
                 for ind in pop:
                     print(ind.ID+", ", end="")
@@ -829,10 +917,14 @@ class HomeoGASimulation(object):
             if timeElapsed is not None:
                 self.saveLogbook(pop, timeElapsed, timeStarted)
                 self.saveHistory(timeStarted)
-            else: 
+            else:
                 'TimeElapsed still unbound: we did not even get started.'
                 pass
             raise
+        finally:
+            if self._pool is not None:
+                self._pool.close()
+                self._pool.join()
         
             
 
@@ -1028,6 +1120,14 @@ class HomeoGASimulation(object):
         self._simulation.maxRuns = self.stepsSize
         "Initialize live data recording and display "
         self._simulation.initializeLiveData()
+
+        # Enable headless/JIT optimizations for GA evaluation
+        hom = self._simulation.homeostat
+        hom._headless = True
+        hom._collectsData = False
+        hom._slowingFactor = 0
+        for u in hom.homeoUnits:
+            u._headless = True
 
         #self._simulThread.start()
         timeNow = time()

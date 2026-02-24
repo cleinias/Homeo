@@ -155,11 +155,13 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
         """The internal simulator's resetWorld resets a simulation
            to initial conditions.
            Use the instance's lock to prevent access to the world before it is properly set up"""
-        try:
+        if self.lock is not None:
             self.lock.acquire()
+        try:
             self.kheperaSimulation.resetWorld()
         finally:
-            self.lock.release()
+            if self.lock is not None:
+                self.lock.release()
         
     def resetPhysics(self):
         "Do nothing: no comparable function is needed in HOMEO"
@@ -193,8 +195,11 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
     def start(self, world):
         """Internal simulator is started by creating the experimental setup.
            Use the instance's lock to prevent access to the world before it is properly set up"""
-        
-        with self.lock:
+
+        if self.lock is not None:
+            with self.lock:
+                self.kheperaSimulation.setupWorld(world)
+        else:
             self.kheperaSimulation.setupWorld(world)
     
     def quit(self):
