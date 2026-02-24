@@ -206,11 +206,28 @@ current value). The bounds decorator clips occasional out-of-range values.
 ### 4.4 Fitness function
 
 ```
-fitness(genome) = Euclidean distance from robot to TARGET at end of simulation
+fitness(genome) = fitnessSign × Euclidean distance from robot to TARGET at end of simulation
 ```
 
-This is a **minimisation** objective (DEAP weight = −1.0). A fitness of 0
-means the robot reached the target exactly.
+This is a **minimisation** objective (DEAP weight = −1.0). Each experiment
+function declares a `fitnessSign` attribute that controls the optimisation
+direction:
+
+| Experiment | `fitnessSign` | Light intensity | Behaviour | Effect |
+|------------|---------------|-----------------|-----------|--------|
+| `initializeBraiten2_2_Full_GA_phototaxis` | +1 | −100 (negative) | Robot seeks light source | Minimise distance directly |
+| `initializeBraiten2_2_Full_GA_scototaxis` | −1 | +100 (positive, default) | Robot avoids light source | Negate distance: minimising = maximising distance |
+| `initializeBraiten2_2_Full_GA` | +1 | +100 (positive, default) | Original experiment | Minimise distance directly |
+
+For **phototaxis** (negative light intensity), the robot should approach the
+light source, so `fitnessSign = 1` and DEAP minimises the raw distance.
+
+For **scototaxis** (positive light intensity), the robot should flee the
+light source, so `fitnessSign = -1` negates the distance before DEAP
+minimises it — effectively maximising the distance from the target.
+
+The `fitnessSign` is read from the experiment function at GA initialisation
+and propagated through the worker configuration for parallel evaluation.
 
 ### 4.5 Evolution loop
 

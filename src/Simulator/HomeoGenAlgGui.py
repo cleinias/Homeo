@@ -115,9 +115,10 @@ def _evaluate_genome_worker(genome):
         sim.step()
 
     finalDis = backend.finalDisFromTarget()
+    fitness = cfg.get('fitnessSign', 1) * finalDis
     print(" Evaluation for model %s took time: %s with fitness %.5f" % (
-        genome.ID, str(datetime.timedelta(seconds=time() - timeNow)), finalDis))
-    return finalDis,
+        genome.ID, str(datetime.timedelta(seconds=time() - timeNow)), fitness))
+    return fitness,
 
 
 class QTextEditStream(QObject):
@@ -231,6 +232,8 @@ class HomeoGASimulGUI(QWidget):
 
         self.experimentComboBox = QComboBox()
         self.experimentComboBox.addItems([
+            "initializeBraiten2_2_Full_GA_phototaxis",
+            "initializeBraiten2_2_Full_GA_scototaxis",
             "initializeBraiten2_2_Full_GA",
             "initializeBraiten2_2_NoUnisel_Full_GA",
             "initializeBraiten2_2_NoUnisel_No_Noise_Full_GA",
@@ -536,6 +539,7 @@ class HomeoGASimulation(object):
         self.noUnits = noUnits
         exp_func = getattr(Simulator.HomeoExperiments, exp)
         self.noEvolvedUnits = getattr(exp_func, 'noEvolvedUnits', noUnits)
+        self.fitnessSign = getattr(exp_func, 'fitnessSign', 1)
         self.genomeSize = (self.noEvolvedUnits * essentParams) + (self.noEvolvedUnits * noUnits)
         self.stepsSize = stepsSize
         self.generSize = generSize
@@ -611,6 +615,7 @@ class HomeoGASimulation(object):
                 },
                 'stepsSize': stepsSize,
                 'dataDir': self.dataDir,
+                'fitnessSign': self.fitnessSign,
             }
 
             self._pool = multiprocessing.Pool(
@@ -664,8 +669,9 @@ class HomeoGASimulation(object):
                             mutationProb=self.mutationProb,
                             indivProb=self.indivProb,
                             tournSize=self.tournamentSize,
-                            timeElapsed = str(datetime.timedelta(seconds=timeElapsed)), 
-                            finalPop = len(pop), 
+                            fitnessSign=self.fitnessSign,
+                            timeElapsed = str(datetime.timedelta(seconds=timeElapsed)),
+                            finalPop = len(pop),
                             finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop],
                             type = self._type,
                             cloneName = clone) 
@@ -1144,9 +1150,10 @@ class HomeoGASimulation(object):
         self.worldBeingResetLock.release()
         hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
         finalDis =self.simulatorBackend.finalDisFromTarget()
+        fitness = self.fitnessSign * finalDis
         hDebug('eval', ("Final distance from target was: " + str(finalDis)))
-        print(" Evaluation for model %s took time: %s with fitness %.5f" %(genome.ID, str(datetime.timedelta(seconds=time()- timeNow)), finalDis))
-        return finalDis,                                       # Return a tuple, as required by DEAP
+        print(" Evaluation for model %s took time: %s with fitness %.5f" %(genome.ID, str(datetime.timedelta(seconds=time()- timeNow)), fitness))
+        return fitness,                                       # Return a tuple, as required by DEAP
         
     def finalDisFromTargetFromFile(self, target):
         """Compute the distance between robot and target at the end of the simulation.
