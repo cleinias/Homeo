@@ -136,14 +136,15 @@ def minMaxAvgFromLogbook(logbook):
     
     return (gens,fit_mins,fit_maxs,fit_avgs)
 
-def indivsDecodedFromLogbook(logbook, noUnits=6):
-    """Extracts all the individual genomes from the logbook, 
-    with associated fitnesses and individual's name of form #gen-#"""
+def indivsDecodedFromLogbook(logbook, noUnits=6, noEvolvedUnits=None):
+    """Extracts all the individual genomes from the logbook,
+    with associated fitnesses and individual's name of form #gen-#.
+    noEvolvedUnits defaults to noUnits for backward compatibility."""
     rawIndivs = [x for x in logbook if "genome" in x]
     indivs = []
     for ind in rawIndivs:
         fit = ind["fitness"]
-        decodedInd = genomeDecoder(noUnits,ind["genome"])
+        decodedInd = genomeDecoder(noUnits, ind["genome"], noEvolvedUnits=noEvolvedUnits)
         name = ind["indivId"]
         indivs.append((decodedInd, fit, name))
         print("ind: %s\t has fitness: %.2f" % ( name, fit[0]))
@@ -164,22 +165,25 @@ def hallOfFame(logbook, num=10, max=False):
                                                         num, max=max))
                                                          
 
-def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6):
-    """Return a list containing a list of of  headers and 
+def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6, noEvolvedUnits=None):
+    """Return a list containing a list of of  headers and
        a sorted list (by fitness)
        of decoded individual genomes passed as a list of
        tuples with genome at [0], fitness at [1], and name at [2].
-       Assumes 4 essential variables for homeoUnits"""
-    
+       Assumes 4 essential variables for homeoUnits.
+       noEvolvedUnits defaults to noUnits for backward compatibility."""
+    if noEvolvedUnits is None:
+        noEvolvedUnits = noUnits
+
     'Construct headers'
     headers = ['Fitness', 'IndivID']
-    for unit in range(noUnits):
+    for unit in range(noEvolvedUnits):
         headers.append('U'+str(unit+1)+'-mass')
         headers.append('U'+str(unit+1)+'-visc')
         headers.append('U'+str(unit+1)+'-unis-time')
         headers.append('U'+str(unit+1)+'-maxDev')
 
-    for connIn in range(noUnits):
+    for connIn in range(noEvolvedUnits):
         for connOut in range(noUnits):
             headers.append('Conn-W-'+str(connIn+1)+'-to-'+str(connOut+1))
 
@@ -195,18 +199,21 @@ def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6):
     else:
         return [headers,sorted(individuals, key=itemgetter(0), reverse=False)[:num]]
 
-def genomeAndFitnessPrettyPrinter(individuals, noUnits=6):
-    """Tabulate individuals with their headers """
-    
+def genomeAndFitnessPrettyPrinter(individuals, noUnits=6, noEvolvedUnits=None):
+    """Tabulate individuals with their headers.
+       noEvolvedUnits defaults to noUnits for backward compatibility."""
+    if noEvolvedUnits is None:
+        noEvolvedUnits = noUnits
+
     'Construct headers'
     headers = ['Fitness', 'IndivID']
-    for unit in range(noUnits):
+    for unit in range(noEvolvedUnits):
         headers.append('U'+str(unit+1)+'-mass')
         headers.append('U'+str(unit+1)+'-visc')
         headers.append('U'+str(unit+1)+'-unis-time')
         headers.append('U'+str(unit+1)+'-maxDev')
 
-    for connIn in range(noUnits):
+    for connIn in range(noEvolvedUnits):
         for connOut in range(noUnits):
             headers.append('Conn-W-'+str(connIn+1)+'-to-'+str(connOut+1))
 

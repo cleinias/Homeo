@@ -4,6 +4,7 @@ Created on Mar 17, 2013
 @author: stefano
 '''
 from  Core.HomeoUnit import *
+from Core.HomeoJIT import _jit_needle_position_newtonian
 import numpy as np
 from math import sqrt
 from Helpers.General_Helper_Functions import *
@@ -109,17 +110,21 @@ class HomeoUnitNewtonian(HomeoUnit):
 
     
     def newLinearNeedlePosition(self, aTorqueValue):
-        '''Computes the new position of the needle taking into consideration 
+        '''Computes the new position of the needle taking into consideration
            (a simplified version of) the forces acting on the needle'''
 
+        if self._headless:
+            return _jit_needle_position_newtonian(
+                aTorqueValue, self._viscosity, self._currentVelocity,
+                self._needleUnit._mass, self._criticalDeviation)
 
-        '''First, add to the  force acting on the needle the drag force 
-           produced by the fluid in the trough the  needle is moving through. 
-           In the original Homeostat,  other factors related to the  physical 
-           characteristics of the device, affect the net force affecting the needle,  
-           including the potential through the trough, the friction at the vane, etc. 
+        '''First, add to the  force acting on the needle the drag force
+           produced by the fluid in the trough the  needle is moving through.
+           In the original Homeostat,  other factors related to the  physical
+           characteristics of the device, affect the net force affecting the needle,
+           including the potential through the trough, the friction at the vane, etc.
            These factors are ignored here'''
-        
+
         totalForce = aTorqueValue + self.drag()
         "Then compute displacement according to Newton's second law"    
             

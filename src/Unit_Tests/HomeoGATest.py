@@ -121,6 +121,46 @@ class GenomeDecoderTest(unittest.TestCase):
         self.assertIn('mass:', result)
         self.assertIn('visc:', result)
 
+    def testTrimmedGenomeDecoder(self):
+        """genomeDecoder with noEvolvedUnits < noUnits produces correct length"""
+        noUnits = 6
+        noEvolvedUnits = 4
+        essentParams = 4
+        genomeSize = noEvolvedUnits * essentParams + noEvolvedUnits * noUnits  # 40
+        genome = np.random.uniform(0, 1, size=genomeSize)
+        decoded = genomeDecoder(noUnits, genome, noEvolvedUnits=noEvolvedUnits)
+        expectedLen = noEvolvedUnits * essentParams + noEvolvedUnits * noUnits  # 40
+        self.assertEqual(len(decoded), expectedLen)
+
+    def testTrimmedGenomeConnectionWeights(self):
+        """Trimmed genome decodes connection weights correctly"""
+        noUnits = 6
+        noEvolvedUnits = 4
+        essentParams = 4
+        genomeSize = noEvolvedUnits * essentParams + noEvolvedUnits * noUnits  # 40
+        genome = np.random.uniform(0, 1, size=genomeSize)
+        decoded = genomeDecoder(noUnits, genome, noEvolvedUnits=noEvolvedUnits)
+        # Connection weights start after noEvolvedUnits * essentParams = 16 decoded values
+        connStart = noEvolvedUnits * essentParams
+        for i in range(noEvolvedUnits * noUnits):
+            weight = decoded[connStart + i]
+            self.assertGreaterEqual(weight, -1.0)
+            self.assertLessEqual(weight, 1.0)
+
+    def testTrimmedGenomePrettyPrinter(self):
+        """genomePrettyPrinter works with noEvolvedUnits < noUnits"""
+        noUnits = 6
+        noEvolvedUnits = 4
+        essentParams = 4
+        genomeSize = noEvolvedUnits * essentParams + noEvolvedUnits * noUnits
+        genome = np.random.uniform(0, 1, size=genomeSize)
+        decoded = genomeDecoder(noUnits, genome, noEvolvedUnits=noEvolvedUnits)
+        result = genomePrettyPrinter(noUnits, decoded, noEvolvedUnits=noEvolvedUnits)
+        self.assertIsInstance(result, str)
+        self.assertIn('mass:', result)
+        # Should have 4 mass lines (evolved units), not 6
+        self.assertEqual(result.count('mass:'), noEvolvedUnits)
+
     def testMassFromWeightBoundaries(self):
         """massFromWeight maps 0 to minMass and 1 to maxMass"""
         minMass = HomeoUnit.DefaultParameters['minMass']
@@ -160,8 +200,9 @@ class HomeoGASimulationTest(unittest.TestCase):
         self.assertEqual(self.ga.stepsSize, 10)
 
     def testGenomeSize(self):
-        """Genome size is noUnits*essentParams + noUnits^2"""
-        expected = 4 * 4 + 4 ** 2  # 32
+        """Genome size is noEvolvedUnits*essentParams + noEvolvedUnits*noUnits"""
+        # For 4-unit system where all units are evolved: 4*4 + 4*4 = 32
+        expected = 4 * 4 + 4 * 4  # 32
         self.assertEqual(self.ga.genomeSize, expected)
 
     def testCreateRandomGenome(self):
@@ -228,6 +269,37 @@ class HomeoGASimulationTest(unittest.TestCase):
         for op in required_ops:
             self.assertTrue(hasattr(self.ga.toolbox, op),
                             "Toolbox missing operator: %s" % op)
+
+
+@unittest.skipUnless(HAS_BOX2D, "Box2D not installed — HOMEO backend unavailable")
+class HomeoGASimulationTrimmedGenomeTest(unittest.TestCase):
+    """Test that 6-unit system with 4 evolved units produces trimmed genome"""
+
+    @classmethod
+    def setUpClass(cls):
+        from Simulator.HomeoGenAlgGui import HomeoGASimulation
+        cls.ga = HomeoGASimulation(
+            popSize=4,
+            stepsSize=10,
+            generSize=1,
+            noUnits=6,
+            essentParams=4,
+            simulatorBackend="HOMEO",
+        )
+
+    def testTrimmedGenomeSize(self):
+        """6-unit system with 4 evolved units has genome size 40"""
+        # noEvolvedUnits=4 from experiment attribute, noUnits=6
+        # genomeSize = 4*4 + 4*6 = 40
+        self.assertEqual(self.ga.genomeSize, 40)
+        self.assertEqual(self.ga.noEvolvedUnits, 4)
+        self.assertEqual(self.ga.noUnits, 6)
+
+    def testTrimmedIndividualGenomeLength(self):
+        """Individuals have genome length matching trimmed genome size"""
+        pop = self.ga.generateRandomPop(randomSeed=42)
+        for ind in pop:
+            self.assertEqual(len(ind), 40)
 
 
 class StatFileDecoderTest(unittest.TestCase):

@@ -2165,35 +2165,26 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     4 real units: two for either Motor and two for the sensors, plus 2 HomeoInput Units
     to interface to the outside world.
     
-    The homeoGenome parameter contains values in the (-1,1) range for all 6 units plus
-    all their connections (for a total of 60 values in the default case), even though only 32 "genes" 
-    are used: the essential parameters for the first 4 units (4 * 4) and the connection parameters 
-    for the 4 real units (4*4)
-    
-    The single units' essential values (mass, viscosity, uniselector timing, maxDeviation, etc.) 
-    and the weights of *all* the connections are passed to the method in the homeoGenome list.
-    
-    In general, the length of homeoGenome must be equal to 
-    no_units*(no_essent_params + no_units) 
-    
-    In this experiments no_units = 6, hence the length of homeoGenome is
-    6*(no_essent_params + 6)
-    
+    The homeoGenome parameter contains values in the (0,1) range for the 4 evolved
+    units (motors and eyes) and their connections. The 2 sensor-only HomeoUnitInput
+    units have no genes — their parameters are fixed.
+
+    genomeSize = noEvolvedUnits * noHomeoParameters + noEvolvedUnits * noTotalUnits
+               = 4 * 4 + 4 * 6 = 40
+
     The array is structured as follows:
-    1. 0 to no_units * no_essent_params     (= 0 to 6 * no_essent_params - 1)
-       contain the essential parameters of units 1 to 6.
-    
-    2. (no_units * no_essent_params) - 1 to end of array
-       contain the weights of the single units's connections (excepts self connections)
-       in strict numerical order. 
-       
-    The order of the units in the homeoGenome list is 
+    1. Indices 0 to noEvolvedUnits * noHomeoParameters - 1 (= 0 to 15)
+       contain the essential parameters of the 4 evolved units.
+
+    2. Indices noEvolvedUnits * noHomeoParameters to end (= 16 to 39)
+       contain the connection weights for the 4 evolved units
+       (6 connections each, one per unit in the fully-connected homeostat).
+
+    The order of the evolved units in the genome is:
     1. Left Motor
     2. Right Motor
-    3. Left Sensor
-    4. Right sensor
-    5. Right HomeoInput Unit
-    6. Left HomeoInput Unit   
+    3. Left Sensor (eye)
+    4. Right Sensor (eye)   
     
     Initialize the homeostat to be **fully connected** (real units only)
     
@@ -2355,14 +2346,13 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
 
     '''Set up homeostat's initial connections,
        according to input list.'''
-    "Left motor's connections are contained in the input list at positions 24:29"
-    
+
     if noNoise == True:
         incoming_conn_noise = 0.0
     else:
         incoming_conn_noise = 0.05           # General constraint
-    
-    offset = 24
+
+    offset = initializeBraiten2_2_Full_GA.noEvolvedUnits * noHomeoParameters
     for connection in leftMotor.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -2370,7 +2360,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
         connection.status = True
         offset += 1
 
-    "Right motor's connections are contained in the input list at positions 30:35"
+    "Right motor's connections"
     for connection in rightMotor.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -2378,7 +2368,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
         connection.status = True
         offset += 1
     
-    "Left eye's connections are contained in the input list at positions 36:41"
+    "Left eye's connections"
     for connection in leftEye.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -2386,7 +2376,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
         connection.status = True    
         offset += 1
 
-    "Right eye's connections are contained in the input list at positions 42:47"
+    "Right eye's connections"
     for connection in rightEye.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -2486,6 +2476,8 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     hDebug('unit', "Homeostat initialized")
     return hom
 
+initializeBraiten2_2_Full_GA.noEvolvedUnits = 4
+
 def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=False, dataDir = None):
     '''
     Initialize a homeostat according to initializeBraiten2_2_Full_GA, then turn 
@@ -2498,6 +2490,8 @@ def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=Fa
     for unit in hom.homeoUnits:
         unit.uniselectorActive = False
     return hom
+
+initializeBraiten2_2_NoUnisel_Full_GA.noEvolvedUnits = 4
 
 def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=4, dataDir = None, raw=False):
     raise NotImplementedError
@@ -2678,10 +2672,10 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
 
     '''Set up homeostat's initial connections,
        according to input list.'''
-    "Left motor's connections are contained in the input list at positions 24:29"
+    "Left motor's connections"
     incoming_conn_noise = 0           # General constraint
     
-    offset = 24
+    offset = 4 * homeoParameters  # noEvolvedUnits * noHomeoParameters
     for connection in leftMotor.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -2689,7 +2683,7 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
         connection.status = True
         offset += 1
 
-    "Right motor's connections are contained in the input list at positions 30:35"
+    "Right motor's connections"
     for connection in rightMotor.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -2697,7 +2691,7 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
         connection.status = True
         offset += 1
     
-    "Left eye's connections are contained in the input list at positions 36:41"
+    "Left eye's connections"
     for connection in leftEye.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -2705,7 +2699,7 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
         connection.status = True    
         offset += 1
 
-    "Right eye's connections are contained in the input list at positions 42:47"
+    "Right eye's connections"
     for connection in rightEye.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -2800,12 +2794,12 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
         
     return hom
 
-    
+
     'Return the properly configured homeostat'
     hDebug('unit', "Homeostat initialized")
     return hom
 
- 
+initializeBraiten2_2_NoUnisel_No_Noise_Full_GA.noEvolvedUnits = 4
 
 def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,noHomeoParameters=4, dataDir = None, raw=False):
     raise NotImplementedError
@@ -2989,10 +2983,10 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
 
     '''Set up homeostat's initial connections,
        according to input list.'''
-    "Left motor's connections are contained in the input list at positions 24:29"
+    "Left motor's connections"
     incoming_conn_noise = 0           # General constraint
     
-    offset = 24
+    offset = 4 * homeoParameters  # noEvolvedUnits * noHomeoParameters
     for connection in leftMotor.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -3000,7 +2994,7 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
         connection.status = True
         offset += 1
 
-    "Right motor's connections are contained in the input list at positions 30:35"
+    "Right motor's connections"
     for connection in rightMotor.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -3008,7 +3002,7 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
         connection.status = True
         offset += 1
     
-    "Left eye's connections are contained in the input list at positions 36:41"
+    "Left eye's connections"
     for connection in leftEye.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -3016,7 +3010,7 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
         connection.status = True    
         offset += 1
 
-    "Right eye's connections are contained in the input list at positions 42:47"
+    "Right eye's connections"
     for connection in rightEye.inputConnections:
         connection.newWeightGA(homeoGenome[offset])
         connection.noise = incoming_conn_noise
@@ -3111,11 +3105,12 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
         
     return hom
 
-    
+
     'Return the properly configured homeostat'
     hDebug('unit', "Homeostat initialized")
     return hom
 
+initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE.noEvolvedUnits = 4
 
 #===============================================================================
 # Utility functions
