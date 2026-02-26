@@ -1,0 +1,1183 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass scrartcl
+\begin_preamble
+% Use the mionoPro fonts. See MinionPro.pdf for the options
+%\usepackage[fullfamily,opticals,normalsize,footnotefigures]{MinionPro}
+
+%The following package is needed to have interrupted lists
+\usepackage{mdwlist}
+
+% adds microtypography support 
+\usepackage{microtype}
+
+\usepackage{enumitem}
+%this is for eliminating rows b/t items with setlist nolistsep
+\setlist{nolistsep}  
+
+% For a smaller caption in float figures
+\addtokomafont{caption}{\small}
+
+% Koma command to reduce the caption indent in figures
+\setcapindent{1em}
+
+\usepackage{colortbl} 
+\usepackage{tabularx}
+\usepackage[greek, italian, german, french, english]{babel}
+\languageattribute{greek}{polutoniko} 
+\usepackage[T1]{fontenc}
+
+% Jurabib setup for old-fashioned citations-in-footnote style
+% Uncomment AND 
+% Do not forget to select the jox style
+
+%\usepackage[oxford=true]{jurabib}
+%\jurabibsetup{
+%     authorformat=and,
+%     titleformat=italic,
+%     citefull=first
+%}
+% \renewcommand{\bibapifont}[1]{``#1''}
+
+
+% Jurabib setup for Harvard style
+
+\usepackage{jurabib}
+\jurabibsetup{authorformat=smallcaps,authorformat=year,round}
+\jbyearaftertitle
+% In the next line, add a comma or a semicolon just after #1 
+% to obtain the classical separation between date and page number
+\renewcommand{\jbcitationyearformat}[1]{\unskip,\space#1}
+
+
+% To use Jurabib idem or ibidem uncomment next line
+\jbuseidemhrule
+
+% To convert all endnotes to endnotes uncomment the next TWO lines
+%\usepackage{endnotes}
+%\let\footnote=\endnote
+
+% To eliminate the date on first page uncomment the next line
+%\date{}
+
+% To eliminate the final bibliography replace \thebibliography
+% with \nobibliography (and the correct arguments) at the end of 
+% the file. You will have to do it on the LaTeX source, though
+
+% The following allows to change the paragraph spacing
+% in the printout without changing the screen spacing
+% Note: the value set here will override (not be added to) 
+% LyX's settings in  Layout>Document>Layout
+%
+\usepackage{setspace}
+\onehalfspace
+ 
+% The next bit shows the comment environment inside a grey box
+% Comment it out for final print 
+% show my Comments?
+\RequirePackage{colortbl, tabularx}
+\renewenvironment{comment}
+{% replaces \begin{comment}
+\noindent
+\tabularx{\textwidth}{|>{\columncolor[gray]{0.9}}X|}
+\hline
+\emph{\textbf{Comment:}}
+}
+{% replaces \end{comment}
+\endtabularx\hrule
+}
+%
+% End of comment printing bit
+% 
+
+%
+% This bit changes the heading numbering:
+%
+% It removes the chapter number and it removes all the dots after
+% the subsection numbers. It produces numbers "Wittgenstein style":
+% for instance the first section of chapter 2 becomes 1 and not 2.1 as 
+% standard LaTeX wouldl have it. In general, we have numbering of the
+% form 1.2345 instead of 1.1.2.3.4.5 
+%
+\renewcommand\thesection{\arabic{section}}
+\renewcommand\thesubsection{\thesection.\arabic{subsection}}
+\renewcommand\thesubsubsection{\thesubsection\arabic{subsubsection}}
+\renewcommand\theparagraph{\thesubsubsection\arabic{paragraph}}
+\renewcommand\thesubparagraph{\theparagraph\arabic{subparagraph}}
+
+%The following command is needed when working in "outline mode", i.e. when 
+% the documents has a long sequence of headings only (with no text in between)
+% that would run off the bottom of the page in the pdf file (due to
+% LaTeX rule of not allowing a page break directly after a heading.)
+% Comment it out for final printings.
+
+ \renewcommand\@afterheading{} 
+
+%\AtBeginDocument{\selectlanguage{english}}
+\end_preamble
+\use_default_options false
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman palatino
+\font_sans helvet
+\font_typewriter cmtl
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc true
+\font_osf true
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing double
+\use_hyperref false
+\papersize letterpaper
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 5
+\tocdepth 5
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Homeostat's units and CTRNN's neurons
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
+Brief comparison between Ashby's and Beer's notations
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+State equations of a CTRNN unit
+\end_layout
+
+\begin_layout Standard
+Canonical state equations of a CTRNN's neuron in a network of 
+\begin_inset Formula $N$
+\end_inset
+
+ elements are 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "BeerGallagher1992"
+
+\end_inset
+
+, 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "DiPaolo2000"
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+\tau_{i}\dot{y_{i}}=-y_{i}+\sum_{j=1}^{N}w_{ji}z_{j}+I_{i}\label{eq:CTRNN-unit-general-eq}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+z_{j}=\frac{1}{1+e^{b_{j}-y_{j}}}\label{eq:CTRNN-unit-logistic-eq}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula $\tau$
+\end_inset
+
+ is the time constant (
+\begin_inset Formula $=RC$
+\end_inset
+
+ in the equivalent circuit) that allows for temporal summation of the incoming
+ input, 
+\begin_inset Formula $y_{i}$
+\end_inset
+
+represents the cell potential of neuron 
+\begin_inset Formula $y$
+\end_inset
+
+, or the 
+\emph on
+value
+\emph default
+ of the neuron, 
+\begin_inset Formula $w_{ji}$
+\end_inset
+
+ is the weight of the connection from neuron 
+\begin_inset Formula $j$
+\end_inset
+
+ to neuron 
+\begin_inset Formula $i$
+\end_inset
+
+, and 
+\begin_inset Formula $I_{i}$
+\end_inset
+
+ is the incoming input, which is set to 
+\begin_inset Formula $0$
+\end_inset
+
+ for all non input neurons.
+ The 
+\begin_inset Formula $z$
+\end_inset
+
+ function is the ordinary sigmoid function that converts the potential of
+ the neuron into a value in the interval 
+\begin_inset Formula $[0,1]$
+\end_inset
+
+ as a function of the neuron's potential, 
+\begin_inset Formula $y$
+\end_inset
+
+, and the neuron's bias, 
+\begin_inset Formula $b$
+\end_inset
+
+.
+ The bias term is the parameter in the neuron's state equation that allows
+ for spatial summation of inputs.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+This equation was originally proposes by 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Hop84a"
+
+\end_inset
+
+, on the basis of an analogy between neural networks and 
+\begin_inset Formula $RC$
+\end_inset
+
+ electronic circuits, and expressed in terms of resistance, capacitance,
+ and voltage potential, input current, (
+\begin_inset Formula $R,C,V,I$
+\end_inset
+
+) for a neuron 
+\begin_inset Formula $i$
+\end_inset
+
+ as: 
+\begin_inset Formula $C_{i}\dot{u_{i}}=-\frac{u_{i}}{R_{i}}+\sum_{j}T_{ij}V_{j}+I_{i}$
+\end_inset
+
+, where the summative term represents the weighted inputs to neuron 
+\begin_inset Formula $i$
+\end_inset
+
+, the second term represents transmembrane resistance, and the final term,
+ 
+\begin_inset Formula $I_{i}$
+\end_inset
+
+, is the externally applied input to the neuron.
+ Normalizing with 
+\begin_inset Formula $\tau_{i}=R_{i}C_{i}$
+\end_inset
+
+ leads to eq.
+ 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:CTRNN-unit-general-eq"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Plain Layout
+See 
+\begin_inset CommandInset citation
+LatexCommand cite
+after ":30"
+key "Beer1990"
+
+\end_inset
+
+.
+ Although this formulation has now become canonical in the evolutionary
+ robotics literature, Beer's original formulas were more complex and included
+ additional parameters describing the intrinsic currents generated within
+ a neuron as well as the leak currents flowing out of it (
+\begin_inset CommandInset citation
+LatexCommand cite
+after ":51"
+key "Beer1990"
+
+\end_inset
+
+).
+ As these complications were ignored by the subsequent literature, we will
+ not discuss them here, although it should not be exceedingly difficult
+ to incorporate them in the model, especially because Beer, following 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Hop84a"
+
+\end_inset
+
+, models biological neurons on the basis of electronic circuits.
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Subsection
+State equation of a Homeostat unit
+\end_layout
+
+\begin_layout Standard
+Ashby describes the behavior of the 4-unit Homeostat as follows in 
+\emph on
+Design of a Brain
+\emph default
+:
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+\begin_inset CommandInset citation
+LatexCommand cite
+after " p. 247, 19/12"
+key "Ashby1960"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{dx_{i}}{dt}=\dot{x_{i}}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+\frac{d}{dt}(m\dot{x})=-k\dot{x_{i}}+l(p-q)(a_{i1}x_{1}+...+a_{i4}x_{4})\label{eq:Ashby-unit-eq}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula $x_{i}$
+\end_inset
+
+ is the 
+\begin_inset Formula $i$
+\end_inset
+
+ unit's needle's angle of deviation, 
+\begin_inset Formula $m$
+\end_inset
+
+ is its moment of inertia, 
+\begin_inset Formula $p$
+\end_inset
+
+ and 
+\begin_inset Formula $q$
+\end_inset
+
+ are the potentials at the opposite ends of the fluid-filled trough, 
+\begin_inset Formula $k$
+\end_inset
+
+ represents the frictional forces acting on the needle's movement, and 
+\begin_inset Formula $l$
+\end_inset
+
+ 
+\begin_inset Quotes eld
+\end_inset
+
+depends on the valve,
+\begin_inset Quotes erd
+\end_inset
+
+ i.e.
+ it is a gain parameter.
+ Rewriting 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:Ashby-unit-eq"
+
+\end_inset
+
+ in notation closer to CTRNN's would give us, for a Homeostat of 
+\begin_inset Formula $N$
+\end_inset
+
+ units:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+m\ddot{x}_{i}=-k\dot{x}_{i}+l(p-q)\sum_{j=1}^{N}a_{ij}x_{j}\label{eq:Unit-CTRNN-not}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In Ashby's device, the gain parameter, 
+\begin_inset Formula $l$
+\end_inset
+
+, and the difference in potential, 
+\begin_inset Formula $p-q$
+\end_inset
+
+, are the same for all units,
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Or so it seems from Ashby's discussions of his device in all published descripti
+ons he gave.
+ At any rate, they are never mentioned in the concrete experiments carried
+ out with the homeostat.
+\end_layout
+
+\end_inset
+
+ thus allowing to slightly simplify the equation by assuming a constant
+ gain factor 
+\begin_inset Formula $g=l(p-q)$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+m\ddot{x}_{i}=-k\dot{x}_{i}+g\sum a_{ij}x_{j}\label{eq:Unit-CTRNN-not-with-constant}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Greyedout
+status collapsed
+
+\begin_layout Plain Layout
+My implementation substantially follows equation 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:Unit-CTRNN-not"
+
+\end_inset
+
+, with the difference that it does 
+\emph on
+not 
+\emph default
+assume 
+\begin_inset Formula $l$
+\end_inset
+
+, 
+\begin_inset Formula $p$
+\end_inset
+
+, and 
+\begin_inset Formula $q$
+\end_inset
+
+ to be the same across all units.
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For a slightly different take on the issue: notice that the homeostat's
+ units cold also be seen as oscillators.
+ Start with a single unit.
+ If we provide a negative self-connection, and assume no frictional forces
+ (i.e.
+ the viscosity of the fluid in the trough is 0), then 
+\begin_inset Formula $-k\dot{x}$
+\end_inset
+
+ in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:Unit-CTRNN-not-with-constant"
+
+\end_inset
+
+ becomes 0 and 
+\begin_inset Formula $g\sum a_{ij}x_{i}$
+\end_inset
+
+ becomes simply 
+\begin_inset Formula $-ga_{jj}x$
+\end_inset
+
+, with 
+\begin_inset Formula $a_{ii}$
+\end_inset
+
+being the weight of the self-connection.
+ Putting 
+\begin_inset Formula $ga_{ii=}k$
+\end_inset
+
+, the unit's behavior is described by 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+m\ddot{x}=-kx
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+which is the canonical equation for a harmonic oscillator.
+ If we add a viscosity factor 
+\begin_inset Formula $v$
+\end_inset
+
+ due to the trough's fluid and assume it proportional to velocity, we obtain
+ the canonical equation for a damped oscillator: 
+\begin_inset Formula $m\ddot{x}=-v\dot{x}-kx$
+\end_inset
+
+ .
+ Thus, the basic building block of a Homeostat is a damped harmonic oscillator.
+ And a Homeostat (leaving uniselectors' action aside) is simply a collection
+ of variously coupled harmonic oscillators.
+ 
+\end_layout
+
+\begin_layout Standard
+On the other hand, in a 
+\begin_inset Quotes eld
+\end_inset
+
+real-world
+\begin_inset Quotes erd
+\end_inset
+
+ translation of the homeostat we can assume that the real world input the
+ unit are connected to are not self-regulating, i.e.
+ they are not (damped) harmonic oscillators.
+ It follows that a 
+\emph on
+single
+\emph default
+ negatively self-connected unit connected to the 
+\begin_inset Quotes eld
+\end_inset
+
+real
+\begin_inset Quotes erd
+\end_inset
+
+ environment is equivalent to a driven harmonic oscillator:
+\begin_inset Formula 
+\[
+m\ddot{x}=-v\dot{x}-kx+aF(t)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula $F(t)$
+\end_inset
+
+ and 
+\begin_inset Formula $a$
+\end_inset
+
+ are, respectively, the input the unit is receiving from the environment
+ and the weight it assigns to that input.
+ A 
+\begin_inset Quotes eld
+\end_inset
+
+real world
+\begin_inset Quotes erd
+\end_inset
+
+ Homeostat (or its equivalent homeostat simulation, if possible) is thus
+ a collection of driven harmonic oscillators (uniselectors' actions aside).
+\end_layout
+
+\begin_layout Subsection
+Comparison between the two
+\end_layout
+
+\begin_layout Standard
+The comparison between
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:CTRNN-unit-general-eq"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:Unit-CTRNN-not"
+
+\end_inset
+
+ can be carried out at three levels: the general shape of the description
+ (the model), the terms involved, and the relation between a unit's value
+ (i.e.
+ potential and rotation angle, resp., for CTRNNs and Ashby) and a unit's
+ output.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+The mathematical model
+\end_layout
+
+\begin_layout Standard
+Here is where we find the greatest difference between the two.
+ Although the models are remarkably similar, the important difference is
+ that the value 
+\begin_inset Formula $y$
+\end_inset
+
+ (potential) of CTRNN unit is defined in terms of its 
+\emph on
+first
+\emph default
+ derivative, whereas the value 
+\begin_inset Formula $x$
+\end_inset
+
+ of a Ashbian unit is expressed in term of its 
+\emph on
+second 
+\emph default
+and first derivatives.
+ 
+\end_layout
+
+\begin_layout Standard
+Mechanically interpreted in traditional notation: 
+\begin_inset Formula $F=ma$
+\end_inset
+
+ or 
+\begin_inset Formula $m\dot{v}=F$
+\end_inset
+
+, and 
+\begin_inset Formula $v=\dot{s}$
+\end_inset
+
+, with the traditional abbreviations for mass, acceleration, velocity and
+ displacement, where the force 
+\begin_inset Formula $F$
+\end_inset
+
+ acting on the object can be further decomposed in a reactive frictional
+ force proportional to velocity plus the active forces acting on the object
+ (assuming, that is, the simplest mathematical model of friction).
+ Thus the unit is fundamentally modeled as a Newtonian object rotating on
+ a friction-affected pivot, and the basic parameters affecting its value
+ (angular position) are its mass (or moment of inertia) and the friction
+ it exerts (assuming the difference in potential is a constant; otherwise
+ it would have one additional parameter): 
+\begin_inset Formula $m,k,(p-q)$
+\end_inset
+
+.
+ If we try to interpret the CTRNN unit mechanically, for the sake of comparing
+ it to the Homeostat, we see that 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:CTRNN-unit-general-eq"
+
+\end_inset
+
+ can be read as the model of an 
+\emph on
+Aristotelian 
+\emph default
+object, that is, an object whose velocity is proportional to the forces
+ it is subjected to.
+ In other words, the CTRNN unit is normally at rest in absence of incoming
+ forces (its biological equivalent, the real neuron having an appropriately
+ called resting potential), whereas a Homeostat's unit in the same situation
+ is in uniform motion.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
+Not really sure about the preceding point.
+ Here is a tentative but perhaps better discussion.
+ Notice, however, that there is really no notion of inertial mass in Aristotelia
+n physics, so the interpretation of 
+\begin_inset Formula $C_{i}$
+\end_inset
+
+ as such is not quite correct.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The problem is that a straightforward 
+\begin_inset Quotes eld
+\end_inset
+
+Aristotelian
+\begin_inset Quotes erd
+\end_inset
+
+ dynamical model would have velocity equal to force over mass (
+\begin_inset Formula $F=mv$
+\end_inset
+
+ or, rather, 
+\begin_inset Formula $v=\frac{F}{m}$
+\end_inset
+
+, in differential term: 
+\begin_inset Formula $\dot{ms}=F$
+\end_inset
+
+).
+ Now, assuming, in the CTRNN case, that the forces are equal to the incoming
+ inputs plus the externally applied current, and using 
+\begin_inset Formula $y$
+\end_inset
+
+ to represent the mechanical displacement, an Aristotelian model would give
+ us the following equation: 
+\begin_inset Formula $m\dot{y}=\sum_{j}w_{ij}y_{j}+I_{i}$
+\end_inset
+
+.
+ Comparing this equation with eq.
+ 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:CTRNN-unit-general-eq"
+
+\end_inset
+
+ makes the problem clear: we are missing a term.
+ Namely, 
+\begin_inset Formula $-y_{i}$
+\end_inset
+
+.
+ If we rewrite the equation according to its original formulation, though,
+ namely as 
+\begin_inset Formula $C_{i}\dot{y_{i}}=-\frac{y_{i}}{R_{i}}+\sum_{j}w_{ij}y_{j}+I_{i}$
+\end_inset
+
+, we can perhaps make some progress.
+ Now this shows, interpreted mechanically, that the applied force has three
+ components, one of which is proportional to displacement 
+\begin_inset Formula $y$
+\end_inset
+
+ and to a resistive factor 
+\begin_inset Formula $R$
+\end_inset
+
+, and the other two are dependent on the directly applied forces.
+ This is not quite the original Aristotelian dynamical model, which explains
+ friction as proportional to mass (and therefore contained in the 
+\begin_inset Formula $C_{i}$
+\end_inset
+
+ term in the equation).
+ Furthermore, having a resistive force proportional to displacement models,
+ in mechanical terms, the resistance encountered when driving a stake through
+ the ground, i.e.
+ the resistance of an extended object entering a viscous fluid.
+ I suppose what I am saying is that the electro-mechanical device that would
+ (approximately) realize the CTRNN equation and be as close as possible
+ to Ashby's contraption would be made up of 
+\end_layout
+
+\begin_layout Enumerate
+highly viscous 
+\begin_inset Quotes eld
+\end_inset
+
+wells
+\begin_inset Quotes erd
+\end_inset
+
+ (with and electric potential between surface and bottom) with 
+\begin_inset Quotes eld
+\end_inset
+
+stakes
+\begin_inset Quotes erd
+\end_inset
+
+ being driven in and out of them.
+ This part would implement the 
+\begin_inset Formula $-\frac{y_{i}}{R_{i}}$
+\end_inset
+
+ term.
+\end_layout
+
+\begin_layout Enumerate
+very heavy friction in the mechanism's joints, surface, etc.
+ This would approximate the Aristotelian modeling of force being proportional
+ to velocity and not to acceleration, and thus the 
+\begin_inset Formula $C_{i}\dot{y_{i}}$
+\end_inset
+
+ component instead of the 
+\begin_inset Formula $m\ddot{y_{i}}$
+\end_inset
+
+ component in Ashby's model.
+\end_layout
+
+\begin_layout Standard
+Now the second big difference is that there is a linear function (in fact,
+ the identity function) in Ashby's model, whereas there is a non-linear
+ function, the logistic one, in CTRNN case.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
+Go on from here
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The main difference, of course, is that whereas Ashby's Units have an identity
+ function from unit's value to output, CTRNN units have a sigmoid, hence
+ a non-linear, though continuosly differentiable function.
+ The reason behind the adoption of a sigmoid function nonlinear function
+ is due to the wish to model the frequency coding properties of real neurons,
+ since such a function converts, over a short time span, a neuron's value
+ into a firing frequency.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
+Say something on frequency coding for real value as the job being performed
+ here by the sigmoid function.
+\end_layout
+
+\begin_layout Plain Layout
+Notice, BTW, that Ashby is perfectly aware of the spiking, frequency coding
+ capacities of the nervous system (obviously).
+ See for instance 
+\begin_inset CommandInset citation
+LatexCommand cite
+after " p. 57"
+key "Ashby1947"
+
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Term to term
+\end_layout
+
+\begin_layout Standard
+Now for the equivalence with Ashby's Homeostat.
+ Its units are electro-mechanical contraptions where the values of interest
+ to the modeler are the physical properties of the constantly moving parts
+ and the forces acting on them.
+ The state of a unit is thus represented by the velocity of the needle,
+ the mechanical force acting on it (that is, the torque produced by the
+ magnets coiled around its pivot as a result of the incoming currents from
+ the other units), the mass of the needle, and the resistance the needle
+ encounters in its movement through the fluid-filled trough.
+ A term by term equivalence is can perhaps be found by interpreting the
+ capacitance 
+\begin_inset Formula $C_{i}$
+\end_inset
+
+ and resistance 
+\begin_inset Formula $R_{i}$
+\end_inset
+
+ of the CTRNN model as being, roughly, functional equivalent to, respectively,
+ mass and friction in Ashby's model.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
+Eliminate the stuff that follows this comment until the end of this subsubsectio
+n
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In mechanical terms, since the decay constant 
+\begin_inset Formula $\tau$
+\end_inset
+
+ represents the neuron's resistance to a change of state, it is equivalent
+ to needle's mass providing an inertial resistance against change of velocity.
+ The bias term 
+\begin_inset Formula $b$
+\end_inset
+
+ represents a neuron's resistance against firing and is equivalent to the
+ the frictional resistive forces acting against the needle's displacement.
+ The weights of the incoming connections, 
+\begin_inset Formula $w_{ji},$
+\end_inset
+
+ are obviously equivalent to the various resistors values on the incoming
+ currents, while the incoming current, 
+\begin_inset Formula $I_{i},$
+\end_inset
+
+ is normally equal to 
+\begin_inset Formula $0$
+\end_inset
+
+ unless the Homeostat's operator decides to manually manipulate one or more
+ of the units (as in Ashby's various experiments), in which case it corresponds
+ to the external force acting on the needle.
+ 
+\end_layout
+
+\begin_layout Subsection
+Conclusion
+\end_layout
+
+\begin_layout Standard
+Since in the original Homeostat all units are constructionally identical,
+ the only free parameters governing the evolution of the network are the
+ weights 
+\begin_inset Formula $w_{ij}$
+\end_inset
+
+ controlling the connections between the units.
+ If, on the other hand, we consider the possibility of a 
+\begin_inset Quotes eld
+\end_inset
+
+generalized
+\begin_inset Quotes erd
+\end_inset
+
+ Homeostat (rather easily realizable through a computer simulation, continuous
+ or discrete), we should consider all the parameters in eq.
+ 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:Unit-CTRNN-not"
+
+\end_inset
+
+ as being independent, as we can easily construct units with different masses,
+ different viscosities, potentials, gains, etc.
+ That means that the simulation (and training, perhaps via GA techniques)
+ of a homeostat of 
+\begin_inset Formula $j$
+\end_inset
+
+ units would entail the determination of 
+\begin_inset Formula $4$
+\end_inset
+
+ parameters per unit (mass, viscosity, gain and potential) + 
+\begin_inset Formula $j$
+\end_inset
+
+ weights, totaling 
+\begin_inset Formula $j(j+4)$
+\end_inset
+
+ networks parameters.
+ This number is actually not very different from the CTRNN standard of 
+\begin_inset Formula $j(j+2)$
+\end_inset
+
+ (weight, plus time constant and bias).
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Comment
+status open
+
+\begin_layout Plain Layout
+Add something on the lack of plausibility of Ashby's units as neuron (even
+ highly simplified), and their more likely identification as higher level
+ functional units with possibly little connection to the biological details.
+ In other words, suggest that a naturalistic interpretation, or, even a
+ mimetic, interpretation of the Homeostat is not plausible.
+ See whether the dates for the early 
+\begin_inset Formula $RC$
+\end_inset
+
+ models of the neuron (Hodgkin?) overlap with the composition dates of 
+\emph on
+DofB
+\emph default
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "/home/stefano/Documents/Projects/Homeostat/Biblios/Homeostat-Jurabib,/home/stefano/Documents/Projects/Homeostat/Biblios/Recurrent-Neural-Network-Biblios-Lee-Giles-up-to-1991"
+options "jurabib"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

@@ -1,0 +1,553 @@
+#LyX 2.0.0svn created this file. For more info see http://www.lyx.org/
+\lyxformat 410
+\begin_document
+\begin_header
+\textclass memoir
+\begin_preamble
+% adds microtypography support 
+\usepackage{microtype}
+
+\tightlists
+
+\usepackage{colortbl} 
+\usepackage{tabularx}
+
+
+
+% load biblatex (remember to comment jurabib out)
+%
+% author-year style in citation, standard bibliographic style
+%\usepackage[citestyle=authoryear-ibid, bibstyle=authoryear, sorting=nyt]{biblatex}
+
+
+% To convert all endnotes to endnotes uncomment the next TWO lines
+%\usepackage{endnotes}
+%\let\footnote=\endnote
+
+% To eliminate the date on first page uncomment the next line
+%\date{}
+
+% To eliminate the final bibliography replace \thebibliography
+% with \nobibliography (and the correct arguments) at the end of 
+% the file. You will have to do it on the LaTeX source, though
+
+
+% load footmisc with the [para] option to have multiple footnotes 
+% in a single paragraph at the bottom of the page
+% Must be loaded AFTER the package SETSPACE
+% Notice also that this package will produce fatal errors
+ % IF there are comments in a footnote
+% AND %  the next bit of code (which prints comments in a box) is active
+
+\usepackage{footmisc}
+
+
+%
+% This bit changes the heading numbering:
+%
+% It removes the chapter number and it removes all the dots after
+% the subsection numbers. It produces numbers "Wittgenstein style":
+% for instance the first section of chapter 2 becomes 1 and not 2.1 as 
+% standard LaTeX wouldl have it. In general, we have numbering of the
+% form 1.2345 instead of 1.1.2.3.4.5 
+%
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection\arabic{subsubsection}}
+\renewcommand{\theparagraph}{\thesubsubsection\arabic{paragraph}}
+\renewcommand{\thesubparagraph}{\theparagraph\arabic{subparagraph}}
+
+%The following command is needed when working in "outline mode", i.e. when 
+% the documents has a long sequence of headings only (with no text in between)
+% that would run off the bottom of the page in the pdf file (due to
+% LaTeX rule of not allowing a page break directly after a heading.)
+% Comment it out for final printings.
+
+%\renewcommand\@afterheading{} 
+% The following allows to change the paragraph spacing
+% in the printout without changing the screen spacing
+% Note: the value set here will override (not be added to) 
+% LyX's settings in  Layout>Document>Layout
+%
+
+%\AtBeginDocument{\selectlanguage{english}}
+\end_preamble
+\options article
+\use_default_options true
+\maintain_unincluded_children false
+\language american
+\inputencoding utf8-plain
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+On replicating DiPaolo's 2000 experiment in 
+\noun on
+Homeo
+\end_layout
+
+\begin_layout Author
+Stefano Franchi
+\end_layout
+
+\begin_layout Section
+What this note describes
+\end_layout
+
+\begin_layout Standard
+DiPaolo 2000 describes a (simulated) binocular mobile robot performing a
+ phototactic task.
+ It replicates the field-inversion experiments carried out in the 1960s
+ by Taylor and Kohler.
+ The robot's controller is an 
+\begin_inset Quotes eld
+\end_inset
+
+augmented
+\begin_inset Quotes erd
+\end_inset
+
+ 
+\noun on
+ctrnn
+\noun default
+.
+ It is is augmented from a standard (Beer-like) 
+\noun on
+ctrnn
+\noun default
+, because it includes some ultrastability features derived from Ashby's
+ theory.
+ This note describes DiPaolo technical setup (briefly) and discusses the
+ setup required to replicate it within an (augmented) 
+\noun on
+Homeo 
+\noun default
+system, i.e.
+ my reimplementation of Ashby's original approach
+\end_layout
+
+\begin_layout Section
+Di Paolo setup from his 2000 article
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Greyedout
+status collapsed
+
+\begin_layout Plain Layout
+Insert here a brief description on the basis of my notes.
+ Briefly: CTRRN setup + GA evolution + homeostatic (ultrastability) rules
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Setup of the replicated experiment 
+\end_layout
+
+\begin_layout Subsection
+General experimental setup
+\end_layout
+
+\begin_layout Standard
+The experimental setup needs three software components:
+\end_layout
+
+\begin_layout Enumerate
+A simulated robotic environment providing a world, robot, etc.
+\end_layout
+
+\begin_layout Enumerate
+A software layer interacting with the environment and with the robotic controlle
+r
+\end_layout
+
+\begin_layout Enumerate
+A robotic controller
+\end_layout
+
+\begin_layout Standard
+The most likely choices are:
+\end_layout
+
+\begin_layout Enumerate
+The 
+\noun on
+Stage
+\noun default
+ (2.5d) or 
+\noun on
+Gazebo 
+\noun default
+(3d) simulation environments
+\end_layout
+
+\begin_layout Enumerate
+The 
+\noun on
+Player
+\noun default
+ environment
+\end_layout
+
+\begin_layout Enumerate
+A Homeostat(s) built on the Smalltalk 
+\noun on
+Homeo
+\noun default
+ framework
+\end_layout
+
+\begin_layout Standard
+A brief description of what is needed for and provided by the 
+\noun on
+Player
+\noun default
+ and 
+\noun on
+Stage/Gazebo
+\noun default
+ environments and by the 
+\noun on
+Homeo
+\noun default
+ setup follows.
+\end_layout
+
+\begin_layout Subsection
+The 
+\noun on
+Player/Stage/Gazebo
+\noun default
+ simulated robotic environment
+\end_layout
+
+\begin_layout Standard
+From the point of view of this particular experiment, the main difference
+ between 
+\noun on
+Stage
+\noun default
+ and 
+\noun on
+Gazebo
+\noun default
+ is that the former does 
+\emph on
+not 
+\emph default
+provide a light source object.
+ On the other hand, the 
+\noun on
+Stage
+\emph on
+ 
+\emph default
+\noun default
+environment is much simpler and lighter than 
+\noun on
+Gazebo
+\noun default
+, and thus preferable.
+ If 
+\noun on
+Stage
+\noun default
+ is chosen, the light source would have to be simulated with fiducials and
+ and an algorithms to convert a fiducial reading (i.e.
+ a distance in meters) to an square-law decreasing intensity-level (i.e.
+ as a luminance).
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+See my manuscript notes on the conversion algorithm
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In either case, the environments need:
+\end_layout
+
+\begin_layout Enumerate
+a 
+\begin_inset Quotes eld
+\end_inset
+
+physical
+\begin_inset Quotes erd
+\end_inset
+
+ description of the world, including light sources
+\end_layout
+
+\begin_layout Enumerate
+a 
+\begin_inset Quotes eld
+\end_inset
+
+physical
+\begin_inset Quotes erd
+\end_inset
+
+ description of the robot(s) living in that world 
+\end_layout
+
+\begin_layout Standard
+A prototype world and a prototype robot (
+\emph on
+Braiten
+\emph default
+) have been built in 
+\noun on
+Stage
+\noun default
+ (vers.
+ 2).
+ No prototypes have been built in 
+\noun on
+Gazebo
+\noun default
+.
+ More in details, the whole simulation (controller aside) is contained in
+ three (series of) files:
+\end_layout
+
+\begin_layout Itemize
+a .world file
+\end_layout
+
+\begin_layout Itemize
+a .cfg (configuration) file 
+\end_layout
+
+\begin_layout Itemize
+a .inc (include) file 
+\end_layout
+
+\begin_layout Standard
+From Jennifer Owens's tutorial:
+\end_layout
+
+\begin_layout Quote
+The .world file tells Player/Stage what things are available to put in the
+ world.
+ In this file you describe your robot, any items which populate the world
+ and the layout of the world.
+ 
+\end_layout
+
+\begin_layout Quote
+The .inc file follows the same syntax and format of a .world file but it can
+ be included.
+ So if there is an object in your world that you might want to use in other
+ worlds, such as a model of a robot, putting the robot description in a
+ .inc file just makes it easier to copy over, it also means that if you ever
+ want to change your robot description then you only need to do it in one
+ place and your multiple simulations are changed too.
+ 
+\end_layout
+
+\begin_layout Quote
+The .cfg file is what Player reads to get all the information about the robot
+ that you are going to use.
+ This file tells Player which drivers it needs to use in order to interact
+ with the robot.
+ If you want to make a simulation, the driver is always Stage (this is how
+ Player uses Stage in the same way it uses a robot: it thinks that it is
+ a hardware driver and communicates with it as such).
+ 
+\end_layout
+
+\begin_layout Quote
+The .cfg file tells Player how to talk to the driver, and how to interpret
+ any data from the driver so that it can be presented to your code.
+ Items described in the .world file should be described in the .cfg file if
+ you want your code to be able to interact with that item (such as a robot),
+ if you don't need your code to interact with the item then this isn't necessary.
+ The .cfg file does all this specification using interfaces and drivers.
+\end_layout
+
+\begin_layout Standard
+The world file for a simple Braitenberg environment, including a Braitenberg
+ robot, and a 
+\noun on
+Player
+\noun default
+ configuration file has been made.
+ They are in:
+\end_layout
+
+\begin_layout Standard
+/home/stefano/Documents/Projects/Homeostat/Simulator/Docs
+\begin_inset Newline newline
+\end_inset
+
+/Robotic_simulators/Player-stage/stage/worlds/Braitenberg-sims/
+\end_layout
+
+\begin_layout Standard
+and they are called, respectively:
+\end_layout
+
+\begin_layout Itemize
+braitenberg.world (the world)
+\end_layout
+
+\begin_layout Itemize
+braitenberg-sim.cfg (the Player config file)
+\end_layout
+
+\begin_layout Itemize
+braiten.inc (the robot)
+\end_layout
+
+\begin_layout Itemize
+map-empty.inc (the map of the simulation)
+\end_layout
+
+\begin_layout Standard
+Additional support files are in the subfolder 
+\begin_inset Quotes eld
+\end_inset
+
+images.
+\begin_inset Quotes erd
+\end_inset
+
+ Notice that these files use the 2008 versions of both Player and Stage,
+ and will need to be updated to the current versions of both packages.
+\end_layout
+
+\begin_layout Subsection
+The interaction with the 
+\noun on
+Player
+\noun default
+ layer
+\end_layout
+
+\begin_layout Subsection
+
+\noun on
+Homeo
+\noun default
+ setup
+\end_layout
+
+\begin_layout Subsubsection
+General software setup
+\end_layout
+
+\begin_layout Standard
+Homeo needs to talk to the Player software layer to impart commands to the
+ robot and to read values from the environment.
+ This is where most of the technical problems are.
+ The standard interface to the 
+\noun on
+Player
+\noun default
+ robot layer is provided by a c or c++ interface library.
+ Additionally, a SWIG-generated Python library is provided.
+ No interface with VisualWorks is ready out of the box.
+ There are various ways around this problem, none of which is too simple
+ to implement.
+ See related document in Appendix below a summary of the various possibilities
+ and a discussion thereof.
+\end_layout
+
+\begin_layout Subsubsection
+Specific Homeo setup
+\end_layout
+
+\begin_layout Paragraph
+Homeo Framework additions
+\end_layout
+
+\begin_layout Standard
+As of now, Homeo provides only the means to build completely self-enclosed
+ Homeostats, since HomeoUnits can only connect to other HomeoUnits.
+ We need to add input/output units that can read/write values from/to the
+ outside.
+\end_layout
+
+\begin_layout Paragraph
+Simulator additions
+\end_layout
+
+\begin_layout Standard
+The interface to the simulation needs to be designed and implemented.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage clearpage
+\end_inset
+
+
+\begin_inset CommandInset include
+LatexCommand include
+filename "/home/stefano/Documents/Projects/Homeostat/Simulator/General-setup-for-Homeo-experiments-2011.lyx"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

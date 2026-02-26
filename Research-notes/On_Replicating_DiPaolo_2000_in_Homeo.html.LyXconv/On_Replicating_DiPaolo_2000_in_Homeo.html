@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<meta name="generator" content="http://www.nongnu.org/elyxer/"/>
+<meta name="create-date" content="2011-01-19"/>
+<link rel="stylesheet" href="http://www.nongnu.org/elyxer/lyx.css" type="text/css" media="screen"/>
+<title>On replicating DiPaolo’s 2000 experiment in Homeo</title>
+</head>
+<body>
+<div id="globalWrapper">
+
+<h1 class="title">
+On replicating DiPaolo’s 2000 experiment in <span class="versalitas">Homeo</span>
+</h1>
+<h2 class="author">
+Stefano Franchi
+</h2>
+<h2 class="Section">
+<a class="toc" name="toc-Section-0.1">0.1</a> What this note describes
+</h2>
+<div class="Unindented">
+DiPaolo 2000 describes a (simulated) binocular mobile robot performing a phototactic task. It replicates the field-inversion experiments carried out in the 1960s by Taylor and Kohler. The robot’s controller is an “augmented” <span class="versalitas">ctrnn</span>. It is is augmented from a standard (Beer-like) <span class="versalitas">ctrnn</span>, because it includes some ultrastability features derived from Ashby’s theory. This note describes DiPaolo technical setup (briefly) and discusses the setup required to replicate it within an (augmented) <span class="versalitas">Homeo </span>system, i.e. my reimplementation of Ashby’s original approach
+</div>
+<h2 class="Section">
+<a class="toc" name="toc-Section-0.2">0.2</a> Di Paolo setup from his 2000 article
+</h2>
+<div class="Unindented">
+
+<span class="greyedout">
+Insert here a brief description on the basis of my notes. Briefly: CTRRN setup + GA evolution + homeostatic (ultrastability) rules
+</span>
+</div>
+<h2 class="Section">
+<a class="toc" name="toc-Section-0.3">0.3</a> Setup of the replicated experiment 
+</h2>
+<h3 class="Subsection">
+<a class="toc" name="toc-Subsection-0.3.1">0.3.1</a> General experimental setup
+</h3>
+<div class="Unindented">
+The experimental setup needs three software components:
+</div>
+<ol>
+
+<li>
+A simulated robotic environment providing a world, robot, etc.
+</li>
+<li>
+A software layer interacting with the environment and with the robotic controller
+</li>
+<li>
+A robotic controller
+</li>
+</ol>
+<div class="Unindented">
+The most likely choices are:
+</div>
+<ol>
+
+<li>
+The <span class="versalitas">Stage</span> (2.5d) or <span class="versalitas">Gazebo </span>(3d) simulation environments
+</li>
+<li>
+The <span class="versalitas">Player</span> environment
+</li>
+<li>
+A Homeostat(s) built on the Smalltalk <span class="versalitas">Homeo</span> framework
+</li>
+</ol>
+<div class="Unindented">
+A brief description of what is needed for and provided by the <span class="versalitas">Player</span> and <span class="versalitas">Stage/Gazebo</span> environments and by the <span class="versalitas">Homeo</span> setup follows.
+</div>
+<h3 class="Subsection">
+<a class="toc" name="toc-Subsection-0.3.2">0.3.2</a> The <span class="versalitas">Player/Stage/Gazebo</span> simulated robotic environment
+</h3>
+<div class="Unindented">
+From the point of view of this particular experiment, the main difference between <span class="versalitas">Stage</span> and <span class="versalitas">Gazebo</span> is that the former does <i>not </i>provide a light source object. On the other hand, the <span class="versalitas">Stage<i> </i></span>environment is much simpler and lighter than <span class="versalitas">Gazebo</span>, and thus preferable. If <span class="versalitas">Stage</span> is chosen, the light source would have to be simulated with fiducials and and an algorithms to convert a fiducial reading (i.e. a distance in meters) to an square-law decreasing intensity-level (i.e. as a luminance).<span class="FootMarker"> [A→] </span>
+<span class="Foot">
+<span class="FootMarker">[→A] </span>See my manuscript notes on the conversion algorithm
+</span>
+</div>
+<div class="Indented">
+In either case, the environments need:
+</div>
+<ol>
+
+<li>
+a “physical” description of the world, including light sources
+</li>
+<li>
+a “physical” description of the robot(s) living in that world 
+</li>
+</ol>
+<div class="Unindented">
+A prototype world and a prototype robot (<i>Braiten</i>) have been built in <span class="versalitas">Stage</span> (vers. 2). No prototypes have been built in <span class="versalitas">Gazebo</span>. More in details, the whole simulation (controller aside) is contained in three (series of) files:
+</div>
+<ul>
+
+<li>
+a .world ﬁle
+</li>
+<li>
+a .cfg (conﬁguration) ﬁle 
+</li>
+<li>
+a .inc (include) ﬁle 
+</li>
+</ul>
+<div class="Unindented">
+From Jennifer Owens’s tutorial:
+</div>
+<blockquote class="Quote">
+The .world ﬁle tells Player/Stage what things are available to put in the world. In this ﬁle you describe your robot, any items which populate the world and the layout of the world. 
+</blockquote>
+<blockquote class="Quote">
+The .inc ﬁle follows the same syntax and format of a .world ﬁle but it can be included. So if there is an object in your world that you might want to use in other worlds, such as a model of a robot, putting the robot description in a .inc ﬁle just makes it easier to copy over, it also means that if you ever want to change your robot description then you only need to do it in one place and your multiple simulations are changed too. 
+</blockquote>
+<blockquote class="Quote">
+The .cfg ﬁle is what Player reads to get all the information about the robot that you are going to use. This ﬁle tells Player which drivers it needs to use in order to interact with the robot. If you want to make a simulation, the driver is always Stage (this is how Player uses Stage in the same way it uses a robot: it thinks that it is a hardware driver and communicates with it as such). 
+</blockquote>
+<blockquote class="Quote">
+The .cfg ﬁle tells Player how to talk to the driver, and how to interpret any data from the driver so that it can be presented to your code. Items described in the .world ﬁle should be described in the .cfg ﬁle if you want your code to be able to interact with that item (such as a robot), if you don’t need your code to interact with the item then this isn’t necessary. The .cfg ﬁle does all this speciﬁcation using interfaces and drivers.
+</blockquote>
+<div class="Unindented">
+The world file for a simple Braitenberg environment, inclusing a Braitenberg robot, and a <span class="versalitas">Player</span> configuration file has been made. They are in:
+</div>
+<div class="Indented">
+
+</div>
+<div class="Indented">
+and they are called, respectively:
+</div>
+<ul>
+
+<li>
+braitenberg.world (the world)
+</li>
+<li>
+braitenberg-sim.cfg (the Player config file)
+</li>
+<li>
+braiten.inc (the robot)
+</li>
+<li>
+map-empty.inc (the map of the simulation)
+</li>
+</ul>
+<div class="Unindented">
+Additional support files are in the subfolder “images.” Notice that these files use the 2008 versions of both Player and Stage, and will need to be updated to the current versions of both packages.
+</div>
+<h3 class="Subsection">
+<a class="toc" name="toc-Subsection-0.3.3">0.3.3</a> The interaction with <span class="versalitas">Player</span> layer
+</h3>
+<h3 class="Subsection">
+<a class="toc" name="toc-Subsection-0.3.4">0.3.4</a> <span class="versalitas">Homeo</span> setup
+</h3>
+<h4 class="Subsubsection">
+<a class="toc" name="toc-Subsubsection-0.3.4.1">0.3.4.1</a> General software setup
+</h4>
+<div class="Unindented">
+Homeo needs to talk to the Player software layer to impart commands to the robot and to read values from the environment. This is where most of the technical problems are. The standard interface to the <span class="versalitas">Player</span> robot layer is provided by a c or c++ interface library. Additionally, a SWIG-generated Python library is provided. No interface with VisualWorks is ready out of the box. There are various ways around this problem, none of which is too simple to implement. See related document in Appendix below a summary of the various possibilities and a discussion thereof.
+</div>
+<h4 class="Subsubsection">
+<a class="toc" name="toc-Subsubsection-0.3.4.2">0.3.4.2</a> Specific Homeo setup
+</h4>
+<div class="Paragraph">
+<a class="toc" name="toc-Paragraph-1"></a>Homeo Framework additions
+</div>
+<div class="Unindented">
+As of now, Homeo provides only the means to build completely self-enclosed Homeostats, since HomeoUnits can only connect to other HomeoUnits. We need to add input/output units that can read/write values from/to the outside.
+</div>
+<div class="Paragraph">
+<a class="toc" name="toc-Paragraph-2"></a>Simulator additions
+</div>
+<div class="Unindented">
+The interface to the simulation needs to be designed and implemented.
+</div>
+<div class="Indented">
+
+<span class="Newpage">
+
+</span>
+<h1 class="Section">
+<a class="toc" name="toc-Section-A">A</a> <a class="toc" name="toc-Section-A">A</a> General setup for Homeo experiments:
+</h1>
+<ol>
+
+<li>
+Simulation environment: Player/Stage (possibly Gazebo)
+<ul>
+
+<li>
+Version currently used: vers. 2.0.4 (latest Debian install)
+</li>
+</ul>
+<div class="Unindented">
+Look into installing latest version from source. Check compatibility with Java Client first
+</div>
+<ul>
+
+<li>
+Installed latest player/Stage version. Incompatible with Java Client
+</li>
+</ul>
+</li>
+<li>
+Client software to interact with Simulation: 
+<ol>
+
+<li>
+Java Player client: Version 2.1 (latest)
+</li>
+<li>
+Smalltalk port of libplayerc through SWIG (in progress) (playerc_bindings)
+</li>
+</ol>
+</li>
+<li>
+Robot controller environment: VisualWorks Smalltalk plus playerc_bindings or VisualWorks Smalltalk plus JavaConnect
+</li>
+<li>
+All possible ways to interface to player/stage from Smalltalk:
+<ol>
+
+<li>
+<i>Use Java Player client and JavaConnect.</i>
+<div class="Unindented">
+Note that it requires Player/Client version 2 at most
+</div>
+<div class="Description">
+<span class="Description-entry">Status: </span><i>It works. </i>
+</div>
+<ul>
+
+<li class="nested">
+
+<div class="Description">
+<span class="Description-entry">Works </span>in Xubuntu 32 bits sandbox
+</div>
+</li>
+</ul>
+</li>
+<li>
+<i>Use SWIG-generated Java interface to libplayerc, produced directly from the player/stage sources.</i>
+<div class="Description">
+<span class="Description-entry">Status: </span>All relevant files have been generated, but cannot get JavaConnect to work (crashes the JVM).
+</div>
+</li>
+<li>
+<i>Use SWIG-generated Smalltalk interface to libplayerc, produced directly from the player/stage sources</i>.
+<div class="Description">
+<span class="Description-entry">Status: </span><i>Does not work.</i> Trying to connect to the player crashes the libplayerc client process, due, most likely, to a pointer error.
+</div>
+</li>
+<li>
+<i>Use Pharo (or a Pharo-ported to VisualWorks) interface to Player/Stage</i>.
+<div class="Description">
+<span class="Description-entry">Status. </span><i>Used to work</i>, haven’t tried recently. Pharo’s player/client interface is fairly incomplete though, and it seems to support only player/client version 2 (since it has been derived from the JavaPlayer 2 code). In particular, it does not support the fiducial interface, which is crucial for the experiments above (in version 2, at least. May been able to do without fiducials in version 3 of player/stage).
+</div>
+</li>
+<li>
+<i>Build an interface to libplayerc yourself from the Player/Stage sources.</i>
+<div class="Description">
+<span class="Description-entry">Status: </span>Since VisualWorks’ automatic DLL/C builder does not work (old parser chokes on the include files), it will have to be done completely by hand. Probably way over my head.
+</div>
+</li>
+<li>
+<i>Build a self-standing, minimal server app based on libplayerc that understands the </i>khepera <i>basic protocol on some port, and use that to talk to Player/Client.</i>
+<div class="Description">
+<span class="Description-entry">Status: </span>Besides seeming quite farfetched (two servers running?), I doubt I would have the skills to do it. Or I doubt I would have the time needed to learn the skills needed to do it, which comes down to the same. 
+</div>
+</li>
+</ol>
+</li>
+</ol>
+</div>
+
+<hr/>
+<p>Copyright (C) 2011 Stefano Franchi</p>
+</div>
+</body>
+</html>

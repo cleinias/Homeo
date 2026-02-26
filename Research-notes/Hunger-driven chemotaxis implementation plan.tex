@@ -1,0 +1,209 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\setmainfont{Minion Pro}
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{fancyvrb}
+\usepackage{xcolor}
+\usepackage[colorlinks=true, linkcolor=blue!60!black, urlcolor=blue!60!black]{hyperref}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{parskip}
+
+% Code listing style
+\definecolor{codebg}{gray}{0.95}
+\usepackage{listings}
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framerule=0pt,
+  xleftmargin=1em,
+  xrightmargin=1em,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  keywordstyle=\bfseries,
+  commentstyle=\itshape\color{gray},
+}
+
+\title{\bfseries Hunger-Driven Chemotaxis\\[0.3em]
+  \large Implementation Plan}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\section{Overview}
+
+The experiment extends the existing phototaxis setup with an internal \textbf{battery} that depletes over time and recharges when the robot is near the light source. A new \textbf{interoceptive HomeoUnit} monitors battery level, acting as a ``hunger drive'' that influences motor behaviour through the homeostat's own homeostatic dynamics.
+
+\section{Architecture Mapping}
+
+\begin{center}
+\begin{tabular}{@{}p{4cm}p{9.5cm}@{}}
+\toprule
+\textbf{Concept} & \textbf{Implementation} \\
+\midrule
+Robot with sensors/motors & Already exists: \texttt{KheperaRobot} + \texttt{HOMEO\_DiffMotor}\,/\,\texttt{HOMEO\_LightSensor} transducers \\[0.5em]
+Battery that discharges & \textbf{New}: \texttt{Battery} object in \texttt{KheperaSimulator}, tracked as a body/state in the simulation \\[0.5em]
+Interoceptive ``hunger'' sensor & \textbf{New}: \texttt{HOMEO\_BatterySensor} transducer + a \texttt{HomeoUnitInput} reading battery level \\[0.5em]
+Battery recharges near light & \textbf{New}: logic in \texttt{advanceSim()} that recharges battery proportionally to light irradiance at robot position \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Step-by-step Plan}
+
+\subsection{Step 1: Add Battery to KheperaSimulator}
+
+Add a simple battery model to \texttt{KheperaSimulator.py}:
+
+\begin{lstlisting}
+class KheperaBattery:
+    def __init__(self, capacity=1.0, discharge_rate=0.001,
+                 recharge_factor=0.01):
+        self.capacity = capacity
+        self.level = capacity          # starts full
+        self.discharge_rate = discharge_rate
+        self.recharge_factor = recharge_factor
+
+    def tick(self, irradiance=0.0):
+        """Discharge, then recharge proportionally to
+        irradiance at robot's position."""
+        self.level -= self.discharge_rate
+        self.level += self.recharge_factor * irradiance
+        self.level = max(0.0, min(self.capacity, self.level))
+        return self.level
+
+    def range(self):
+        return (0.0, self.capacity)
+\end{lstlisting}
+
+\subsection{Step 2: Wire battery into KheperaRobot and advanceSim}
+
+\begin{itemize}[nosep]
+  \item Give \texttt{KheperaRobot} an optional \texttt{battery} attribute (default \texttt{None} for backward compatibility).
+  \item In \texttt{KheperaSimulation.advanceSim()}, if the robot has a battery, compute the total irradiance at the robot's current position from all detectable lights, then call \texttt{battery.tick(irradiance)}.
+\end{itemize}
+
+The battery discharges every simulation step and recharges only when the robot is close enough to the light to receive non-negligible irradiance---exactly the ``hunger'' dynamic from the research note.
+
+\subsection{Step 3: Add HOMEO\_BatterySensor transducer}
+
+In \texttt{RobotSimulator/Transducer.py}, following the existing \texttt{HOMEO\_LightSensor} pattern:
+
+\begin{lstlisting}
+class HOMEO_BatterySensor(Transducer):
+    """Interoceptive transducer that reads the
+    robot's battery level."""
+
+    def __init__(self, robotRef):
+        self.robot = robotRef
+
+    def read(self):
+        return self.robot.battery.level
+
+    def range(self):
+        return self.robot.battery.range()
+
+    def act(self):
+        raise TransducerException(
+            "Battery sensor cannot act")
+\end{lstlisting}
+
+This bridges the robot's internal state (battery) to the homeostat via a standard \texttt{HomeoUnitInput}, just like \texttt{HOMEO\_LightSensor} bridges external light readings.
+
+\subsection{Step 4: Create world setup function with battery}
+
+In \texttt{KheperaSimulator.py}, add a new world setup method:
+
+\begin{lstlisting}
+def kheperaBraitenberg2_HOMEO_World_battery(self):
+    """Like kheperaBraitenberg2_HOMEO_World
+    but with a battery."""
+    world = self.kheperaBraitenberg2_HOMEO_World()
+    self.allBodies[self.robotName].battery = \
+        KheperaBattery()
+    return world
+\end{lstlisting}
+
+\subsection{Step 5: Create experiment function in HomeoExperiments.py}
+
+Add a new GA experiment function that builds an \textbf{8-unit homeostat}:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Unit} & \textbf{Type} & \textbf{Role} \\
+\midrule
+Left Motor      & \texttt{HomeoUnitNewtonianActuator} & Drives left wheel \\
+Right Motor     & \texttt{HomeoUnitNewtonianActuator} & Drives right wheel \\
+Left Eye        & \texttt{HomeoUnitNewtonian}          & Processes left eye input \\
+Right Eye       & \texttt{HomeoUnitNewtonian}          & Processes right eye input \\
+\textbf{Hunger} & \texttt{HomeoUnitNewtonian}          & Processes battery level \\
+Left Sensor     & \texttt{HomeoUnitInput}               & Reads left eye irradiance \\
+Right Sensor    & \texttt{HomeoUnitInput}               & Reads right eye irradiance \\
+\textbf{Battery Sensor} & \texttt{HomeoUnitInput}      & Reads battery level \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The \textbf{Hunger unit} is a standard \texttt{HomeoUnitNewtonian} that receives input from the Battery Sensor (and potentially from other units). Its essential parameter values are evolved by the GA. When battery is low, the Battery Sensor feeds a high ``hunger'' deviation into the Hunger unit, which propagates through the homeostat's connections to influence motor outputs---the homeostatic dynamics themselves determine \emph{how} hunger affects behaviour.
+
+\textbf{Genome structure}: 5 evolved units $\times$ 4 essential params $+$ 5 evolved units $\times$ 8 total units $=$ \textbf{60 genes} (up from 40 in the standard phototaxis experiment).
+
+\subsection{Step 6: Define fitness function}
+
+Three options:
+
+\begin{description}[style=nextline]
+  \item[Option A --- Battery survival] Fitness = number of ticks the battery remains above~0 (or above some threshold).
+  \item[Option B --- Average battery level] Robots that stay near the light maintain high battery over the run.
+  \item[Option C --- Combined] Final distance to target $\times$ battery penalty.
+\end{description}
+
+A new method on the backend (e.g., \texttt{averageBatteryLevel()}) would report the battery metric.
+
+\subsection{Step 7: Lesion studies (future)}
+
+Once a successful controller is evolved, systematic lesion studies would remove the Hunger unit or lesion specific connections (e.g., Hunger$\to$Motor) and compare performance. These don't require new code---just experiment variants that disable specific connections after loading an evolved genome.
+
+\section{Key Design Decisions}
+
+\begin{enumerate}
+  \item \textbf{How many units?} 8-unit homeostat with distinct interoceptive channel, or feed battery into existing eye units (losing the separate ``interoceptive'' channel)?
+
+  \item \textbf{Fitness measure}: Battery survival time vs.\ average battery level vs.\ distance-based?
+
+  \item \textbf{Battery parameters}: Discharge rate and recharge factor determine task difficulty. Fixed or included in the GA?
+
+  \item \textbf{Genome size}: 60 genes (from 40) is manageable but increases search space---may need larger population or more generations.
+\end{enumerate}
+
+\section{Files to Modify/Create}
+
+\begin{center}
+\small
+\begin{tabular}{@{}p{5.5cm}p{8cm}@{}}
+\toprule
+\textbf{File} & \textbf{Change} \\
+\midrule
+\texttt{KheperaSimulator.py} & Add \texttt{KheperaBattery} class; wire into \texttt{KheperaRobot} and \texttt{advanceSim}; add battery world setup \\[0.3em]
+\texttt{Transducer.py} & Add \texttt{HOMEO\_BatterySensor} class \\[0.3em]
+\texttt{HomeoExperiments.py} & Add hunger-phototaxis experiment function \\[0.3em]
+\texttt{HomeoGenAlgGui.py} & Add experiment to combo box; possibly add battery-based fitness path \\[0.3em]
+\texttt{SimulatorBackend.py} & Add \texttt{averageBatteryLevel()} or similar method \\[0.3em]
+\texttt{HomeoGATest.py} & Tests for new experiment attributes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

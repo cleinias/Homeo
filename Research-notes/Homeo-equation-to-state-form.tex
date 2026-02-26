@@ -1,0 +1,555 @@
+%% LyX 2.4.4 created this file.  For more info, see https://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[oneside,english,article, 11pt]{memoir}
+\usepackage[T1]{fontenc}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\usepackage{color}
+\definecolor{note_fontcolor}{rgb}{0.800781, 0.800781, 0.800781}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[authoryear]{natbib}
+\OnehalfSpacing
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+%% The greyedout annotation environment
+\newenvironment{lyxgreyedout}
+{\normalfont\normalsize\textcolor{note_fontcolor}\bgroup\ignorespaces}
+{\ignorespacesafterend\egroup}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
+\theoremstyle{plain}
+\newtheorem{thm}{\protect\theoremname}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\addbibresource{/home/stefano/Documents/Biblios/Italian-philosophy.bib}
+\addbibresource{/home/stefano/Documents/Biblios/Stefano-Franchi-Works.bib}
+\addbibresource{/home/stefano/Documents/Books/Play-and-Passivity/Dissertation-references.bib}
+\addbibresource{/home/stefano/Documents/Biblios/additional-refs-for-Il-Pensiero-Vivente.bib}
+
+\ifdefined\showcaptionsetup
+ % Caption package is used. Advise subfig not to load it again.
+ \PassOptionsToPackage{caption=false}{subfig}
+\fi
+\usepackage{subfig}
+\makeatother
+
+\usepackage{babel}
+\providecommand{\theoremname}{Theorem}
+
+\begin{document}
+\title{Converting Homeostat equations into state form}
+\maketitle
+
+\chapter{Converting Homeostat's general equation into state form }
+
+The following note tries to convert the general equation of the homeostat
+and of a homeostat-driven vehicle into state form in order to carry
+out some mathematical analysis on the resulting systems.
+
+\section{Homeostat general equation}
+
+The general equation of a single unit $i$ of a $N$ units homeostat
+is:
+
+\begin{equation}
+m_{i}\ddot{y_{i}}=-v_{i}\dot{y_{i}}+\sum_{j=1}^{N}w_{ij}y_{j}+c_{i}u_{i}\label{eq:homeo-unit-general}
+\end{equation}
+
+where $m_{i}$ is the mass of unit $i$'s needle, $v_{i}$ is the
+viscosity of unit $i$'s medium, $w_{ij}$ is the weight of the connection
+from unit $j$ to unit $i$, and $u_{i}$is the (possible) input to
+unit $i$ (possibly multiplied by a unit-specific coefficient $c_{i}$).
+Assuming the state variables, for each unit $i$, are $\begin{bmatrix}x_{i_{1}}\\
+x_{i_{2}}
+\end{bmatrix}=\begin{bmatrix}y_{i}\\
+\dot{y_{i}}
+\end{bmatrix}$, that our $y$ (the output) is equal to $y_{i}$ and that the input
+is $c,$ we have that $\dot{y}_{i}=\dot{x}_{i_{1}}=x_{i_{2}}$ and
+$\ddot{y}_{i}=\dot{x}_{i_{2}}=\frac{1}{m}(-vx_{i_{2}}+\sum_{j=1}^{N}w_{ij}x_{j_{1}}+u_{i})$. 
+
+Now for the state form. We need to convert the above expression into
+a general expression of the form $\dot{x}_{i}=Ax+Bu$, $y=Cx$ with
+$A,B,C$ as matrices. First, for the order of the matrices: $x$ is
+a vector (column matrix) of size $2i\,x\,1$, and $u$ is a vector
+of size $2i\,x\,1.$Hence the $A$ matrix will be of size $2i\,x\,2i$,
+$B$ will be of size $2i\,x\,1$ and $C$ will be $1\,x\,2i$. Our
+final equations of the homeostat in state form, will thus be the following:
+\begin{equation}
+\dot{x}=\begin{bmatrix}0 & 1 & 0 & 0 & 0 & 0\\
+\frac{w_{11}}{m_{1}} & -\frac{v_{1}}{m_{1}} & \frac{w_{12}}{m_{1}} & 0 & \frac{w_{1i}}{m_{1}} & 0\\
+... & ... & ... & ... & ... & ...\\
+... & ... & ... & ... & ... & ...\\
+\frac{w_{1i}}{m_{i}} & 0 & \frac{w_{2i}}{m_{i}} & 0 & \frac{w_{ii}}{m_{i}} & -\frac{v_{i}}{m_{i}}\\
+0 & 0 & 0 & 0 & 0 & 1
+\end{bmatrix}\begin{bmatrix}x_{1_{1}}\\
+x_{1_{2}}\\
+...\\
+...\\
+x_{i_{1}}\\
+x_{i_{2}}
+\end{bmatrix}+\begin{bmatrix}0\\
+\frac{c_{1}}{m_{1}}\\
+0\\
+...\\
+0\\
+\frac{c_{i}}{m_{i}}
+\end{bmatrix}u\label{eq:H-State-Form-1}
+\end{equation}
+
+In other words: every $2i$-long odd-numbered row of the $A$ matrix
+will have all zero except for the position $2^{nd}$, $4^{th}$, $6^{th}$,
+etc. position, which will contain a $1.$ The even numbered rows of
+the $A$ matrix will have the weights divided by the masses in all
+the odd-numbered columns, and the (negative) viscosity divided by
+the mass in the $2^{nd}$, $4^{th}$, $6^{th}$, etc. position. The
+$B$ matrix will have all zeroes in the odd-numbered rows and the
+unit's input coefficient divided by the unit's mass in the even-numbered
+rows. For the second equation, we will have:
+
+\begin{equation}
+y=\begin{bmatrix}1 & 0 & ... & ... & 1 & 0\end{bmatrix}x\label{eq:H-State-Form-2}
+\end{equation}
+
+As an example, for a 2-unit homeostat, the matrices would thus be:\medskip{}
+
+\begin{center}
+$A=\begin{bmatrix}0 & 1 & 0 & 0\\
+\frac{w_{11}}{m_{1}} & -\frac{v_{1}}{m_{1}} & \frac{w_{12}}{m_{1}} & 0\\
+0 & 0 & 0 & 1\\
+\frac{w_{12}}{m_{2}} & 0 & \frac{w_{22}}{m_{2}} & -\frac{v_{2}}{m_{2}}
+\end{bmatrix}$ $B=\begin{bmatrix}0\\
+\frac{c_{1}}{m_{1}}\\
+0\\
+\frac{c_{2}}{m_{2}}
+\end{bmatrix}$ $C=\begin{bmatrix}1 & 0 & 1 & 0\end{bmatrix}$
+\par\end{center}
+
+and with the default value in Homeo of $m_{1}=m_{2}=100$ and $v_{1}=v_{2}=10$,
+$c_{1}=c_{2}=1$ we obtain the matrices:
+
+\begin{center}
+$A^{'=}\left[\begin{array}{rrrr}
+0 & 1 & 0 & 0\\
+\frac{w_{22}}{100} & -\frac{1}{10} & \frac{w_{12}}{100} & 0\\
+0 & 0 & 0 & 1\\
+\frac{w_{12}}{100} & 0 & \frac{w_{22}}{100} & -\frac{1}{10}
+\end{array}\right]$$B^{'}=\begin{bmatrix}0\\
+\frac{1}{100}\\
+0\\
+\frac{1}{100}
+\end{bmatrix}$$C^{'}=C=\begin{bmatrix}1 & 0 & 1 & 0\end{bmatrix}$
+\par\end{center}
+
+\section{Controllability}
+
+Controllability theorem (see Murray):
+\begin{thm}
+A system is completely controllable if and only if $rank(\Gamma)=n$,
+where $n$ is the dimension of the state variable and $\Gamma=\begin{bmatrix}B & AB & ... & A^{n-1}B\end{bmatrix}$
+is the system's controllability matrix
+\end{thm}
+Let us try for a 2 units homeostat, in which case $A$ and $B$ are
+defined as above, $n=4$ and $\Gamma=\begin{bmatrix}B & AB & A^{2}B & A^{3}B\end{bmatrix}.$
+The symbolic calculation is rather hard to do by hand, but with Sage
+to the rescue we obtain the scary looking matrix:
+
+$\Gamma=\left(\begin{array}{rrrr}
+0 & \frac{c_{1}}{m_{1}} & -\frac{c_{1}v_{1}}{m_{1}^{2}} & \frac{c_{1}{\left(\frac{v_{1}^{2}}{m_{1}^{2}}+\frac{w_{11}}{m_{1}}\right)}}{m_{1}}+\frac{c_{2}w_{12}}{m_{1}m_{2}}\\
+\frac{c_{1}}{m_{1}} & -\frac{c_{1}v_{1}}{m_{1}^{2}} & \frac{c_{1}{\left(\frac{v_{1}^{2}}{m_{1}^{2}}+\frac{w_{11}}{m_{1}}\right)}}{m_{1}}+\frac{c_{2}w_{12}}{m_{1}m_{2}} & -\frac{c_{1}{\left(\frac{v_{1}{\left(\frac{v_{1}^{2}}{m_{1}^{2}}+\frac{w_{11}}{m_{1}}\right)}}{m_{1}}+\frac{v_{1}w_{11}}{m_{1}^{2}}\right)}}{m_{1}}-\frac{c_{2}{\left(\frac{v_{1}w_{12}}{m_{1}^{2}}+\frac{v_{2}w_{12}}{m_{1}m_{2}}\right)}}{m_{2}}\\
+0 & \frac{c_{2}}{m_{2}} & -\frac{c_{2}v_{2}}{m_{2}^{2}} & \frac{c_{2}{\left(\frac{v_{2}^{2}}{m_{2}^{2}}+\frac{w_{22}}{m_{2}}\right)}}{m_{2}}+\frac{c_{1}w_{12}}{m_{1}m_{2}}\\
+\frac{c_{2}}{m_{2}} & -\frac{c_{2}v_{2}}{m_{2}^{2}} & \frac{c_{2}{\left(\frac{v_{2}^{2}}{m_{2}^{2}}+\frac{w_{22}}{m_{2}}\right)}}{m_{2}}+\frac{c_{1}w_{12}}{m_{1}m_{2}} & -\frac{c_{2}{\left(\frac{v_{2}{\left(\frac{v_{2}^{2}}{m_{2}^{2}}+\frac{w_{22}}{m_{2}}\right)}}{m_{2}}+\frac{v_{2}w_{22}}{m_{2}^{2}}\right)}}{m_{2}}-\frac{c_{1}{\left(\frac{v_{1}w_{12}}{m_{1}m_{2}}+\frac{v_{2}w_{12}}{m_{2}^{2}}\right)}}{m_{1}}
+\end{array}\right)$
+
+\medskip{}
+
+whose rank is indeed 4. Hence the system is controllable, \emph{assuming
+all the coefficient are indeed different!} 
+
+Notice that setting the constants $m_{1,}m_{2,}v_{1,}v_{2}$ to their
+default values in Homeo of, respectively, $100,100,10,10$ and the
+constant $c_{1,}c_{2}$ to $1,$the resulting matrix would be:
+
+\[
+\Gamma^{'}=\mbox{\ensuremath{\left[\begin{array}{rrrr}
+0 & \frac{1}{100} & -\frac{1}{1000} & \frac{w_{11}}{10000}+\frac{w_{12}}{10000}+\frac{1}{10000}\\
+\frac{1}{100} & -\frac{1}{1000} & \frac{w_{11}}{10000}+\frac{w_{12}}{10000}+\frac{1}{10000} & -\frac{w_{11}}{50000}-\frac{w_{12}}{50000}-\frac{1}{100000}\\
+0 & \frac{1}{100} & -\frac{1}{1000} & \frac{w_{12}}{10000}+\frac{w_{22}}{10000}+\frac{1}{10000}\\
+\frac{1}{100} & -\frac{1}{1000} & \frac{w_{12}}{10000}+\frac{w_{22}}{10000}+\frac{1}{10000} & -\frac{w_{12}}{50000}-\frac{w_{22}}{50000}-\frac{1}{100000}
+\end{array}\right]}}
+\]
+\medskip{}
+which has still $rank=4$. The interesting question now is how to
+pick appropriate values for all the coefficients, so that the system
+does indeed remain stable. Notice that if all the weights are the
+same, the system becomes uncontrollable, as the $\Gamma's$ rank does
+indeed drop. For instance, with $w_{11}=w_{12}=w_{21}=w_{22}=1$,
+we obtain the following matrix:
+
+$\Gamma^{''}=\left(\begin{array}{rrrr}
+0 & \frac{1}{100} & -\frac{1}{1000} & \frac{3}{10000}\\
+\frac{1}{100} & -\frac{1}{1000} & \frac{3}{10000} & -\frac{1}{20000}\\
+0 & \frac{1}{100} & -\frac{1}{1000} & \frac{3}{10000}\\
+\frac{1}{100} & -\frac{1}{1000} & \frac{3}{10000} & -\frac{1}{20000}
+\end{array}\right)$whose rank is obviously 2, for the $3^{rd}$and $4^{th}$ rows just
+repeat the first two rows. We can regain rank by setting weights to
+be all different, of course, but also just by differentiating the
+weights of the first unit from the weight of the second one. With
+$w_{11}=w_{12}=1$ and $w_{21}=w_{22}=2$, we have the matrix
+
+$\left(\begin{array}{rrrr}
+0 & \frac{1}{100} & -\frac{1}{1000} & \frac{3}{10000}\\
+\frac{1}{100} & -\frac{1}{1000} & \frac{3}{10000} & -\frac{1}{20000}\\
+0 & \frac{1}{100} & -\frac{1}{1000} & \frac{1}{2500}\\
+\frac{1}{100} & -\frac{1}{1000} & \frac{1}{2500} & -\frac{7}{100000}
+\end{array}\right)$ whose rank is indeed 4.\medskip{}
+
+But let us look at observability first.
+
+\section{Observability}
+
+Observability theorem (see ???):
+\begin{thm}
+A system is completely observable, iff $rank(\Omega)=n,$ where $n$
+is the dimension of the state variable and $\Omega=\begin{bmatrix}C\\
+CA\\
+...\\
+CA^{n-1}
+\end{bmatrix}$ is the system's observability matrix.
+\end{thm}
+Computing the observability matrix for our 2 unit sample homeostat
+we obtain the following matrix:
+
+$\Omega=\left(\begin{array}{rrrr}
+1 & 0 & 1 & 0\\
+0 & 1 & 0 & 1\\
+\frac{w_{11}}{m_{1}}+\frac{w_{12}}{m_{2}} & -\frac{v_{1}}{m_{1}} & \frac{w_{12}}{m_{1}}+\frac{w_{22}}{m_{2}} & -\frac{v_{2}}{m_{2}}\\
+-\frac{v_{1}w_{11}}{m_{1}^{2}}-\frac{v_{2}w_{12}}{m_{2}^{2}} & \frac{v_{1}^{2}}{m_{1}^{2}}+\frac{w_{11}}{m_{1}}+\frac{w_{12}}{m_{2}} & -\frac{v_{1}w_{12}}{m_{1}^{2}}-\frac{v_{2}w_{22}}{m_{2}^{2}} & \frac{v_{2}^{2}}{m_{2}^{2}}+\frac{w_{12}}{m_{1}}+\frac{w_{22}}{m_{2}}
+\end{array}\right)$
+
+\medskip{}
+
+whose rank is indeed 4, as it can be easily seen. Hence the system
+is completely observable---assuming all the coefficient are indeed
+different! With Homeo's default values, as above, the $\Omega$ matrix
+looks like the following:
+
+\begin{center}
+$\Omega^{'}=\left[\begin{array}{rrrr}
+1 & 0 & 1 & 0\\
+0 & 1 & 0 & 1\\
+\frac{w_{11}}{100}+\frac{w_{12}}{100} & -\frac{1}{10} & \frac{w_{12}}{100}+\frac{w_{22}}{100} & -\frac{1}{10}\\
+-\frac{w_{11}}{1000}-\frac{w_{12}}{1000} & \frac{w_{11}}{100}+\frac{w_{12}}{100}+\frac{1}{100} & -\frac{w_{12}}{1000}-\frac{w_{22}}{1000} & \frac{w_{12}}{100}+\frac{w_{22}}{100}+\frac{1}{100}
+\end{array}\right]$
+\par\end{center}
+
+TO BE CONTINUED....
+
+\chapter{Describing a NN-controlled Braitenberg vehicle according to control
+theory}
+
+The goal is to get insights about the behavior of a Braitenberg vehicle
+from its description according to control theory. In particular, the
+eventual goal is to try to reverse engineer the NN controller so to
+speak. That is: 
+\begin{itemize}
+\item Describe mathematically a Braitenberg vehicle (first Type 1, then,
+eventually, Type 2) that achieves some predefined goal (for instance:
+goal-seeking, or wandering) and then try to infer what the parameters
+of the controller must be like in order for those those goals to be
+achieved
+
+The hope is that this description would produce get some insights
+on the dynamic behavior of the vehicle and, hopefully, help determine
+the parameters' range either for direct manipulation of the NN or
+for GA's work.
+\end{itemize}
+
+\section{Preliminaries}
+
+General points about this exercise:
+\begin{itemize}
+\item Start with type 1
+\item Simplify vehicle's internal dynamics as much as possible. Indeed,
+start with no dynamics (as in Braitenberg's work, in a certain sense)
+\item Simplify input structure as much as possible
+\end{itemize}
+
+\section{From differential equations to state space form, in general}
+\begin{enumerate}
+\item Provide a description of the system as a differential equation describing
+the temporal evolution of the system's state
+\item The system with state $\mathbf{x}\in\mathbb{R}^{n}$ (the \emph{state
+vector}), input $\mathbf{u}\in\mathbb{R}^{m}$ (the \emph{input vector}
+representing the control variables ) and output $\mathbf{y}\in\mathbb{R}^{p}$
+(the signal vector representing the measured signal) is represented
+by 
+\[
+\frac{dx}{dt}=f(x,u),\,\,\,\,\,y=h(x,u)
+\]
+
+where $f:\mathbb{R}^{n}\times\mathbb{R}^{m}\rightarrow\mathbb{R}^{n}$and
+$h:\mathbb{R}^{n}\times\mathbb{R}^{m}\rightarrow\mathbb{R}^{p}$ are
+smooth mappings (Murray:34)
+\item If the functions $f,h$ are linear in $x$ and $u$, the system is
+called \emph{linear} and can be represented as:
+
+\[
+\dot{x}=Ax+Bu,\,\,\,\,y=Cx+Dx
+\]
+
+where $A:n\times n$ is the \emph{system matrix}, $B:n\times p$ is
+the \emph{control matrix}, $C:p\times n$ is the \emph{sensor matrix
+}and $D$ is the \emph{direct term} (frequently absent when the control
+signal does not directly influence the system's output)
+\item If the differential equation are not linear, linearize them around
+an operating point (and look for possible problems involving linearizations)
+\end{enumerate}
+
+\section{A pure Braitenberg-1 vehicle with no NN and no physics}
+
+Let us start with a pure Braitenberg Type-1 vehicle (both \emph{a}
+and \emph{b} subtypes), with no physics of its own and no independent
+controller, moving on a straight line. In fact, let us assume that
+the whole environment is mono-dimensional. Let us also assume the
+vehicle has a omnidirectional sensor receptive to a stimulus source
+emitting a stimulus $S$ of intensity $I_{s}$ and located at $s$
+on the line. 
+
+Now, a Braitenberg vehicle of this kind, ignoring the system physics
+for the time being, can be modeled by focusing on the state-dependent
+system's output $y$ (the transformation of the outside world's input
+to the system into a ``perceived'' output, i.e. a sensor reading)
+the system's output's dependent actuator commands $u.$ The system's
+state is simply its (global) position, hence \textbf{$\mathbf{x}=x$},
+the input function $y(x)$ will be a function of the distance $\Vert s-x\Vert$
+between the vehicle and the stimulus source and the stimulus's intensity
+$I_{s}$. If the latter is inversely proportional to the distance
+between the source and the robot, then $I_{s-x}=\frac{S}{1+\Vert s-x\Vert}$,
+whereas $I_{s-x}=\frac{S}{1+\Vert s-x\Vert^{2}}$ if it is inversely
+proportional to the square of the distance (as real lights would be)
+and $y=f(I_{s-x})$ where $f$ may be a simple scaling parameter or
+a more complex and possibly non linear function (as explicitly hinted
+by Braitenberg himself.)
+
+The input to the system, in the present case in which we have no NN
+controller, would then be a simple multiplicative factor of the system's
+output $u=Ky$ for vehicles of type 1\emph{b} with a direct connection
+(the farther away, hence the smaller the stimulus, the weaker the
+actuator) and $u=\frac{K}{y}$ for vehicles of type 1\emph{a} with
+an inverse connection (the farther away, hence the smaller the stimulus,
+the stronger the actuator)\emph{.} Thus, we can model a standard,
+no physics, Type 1\emph{a }stimulus-avoider vehicle with a control
+signal inversely proportional to the stimulus in an environment with
+a linearly decreasing stimulus with the two equations: 
+\begin{equation}
+\dot{x}=u,\,\,\,y=\frac{\alpha S}{1+\Vert s-x\Vert},\,\,\,u=Ky\label{Type-1a}
+\end{equation}
+
+If the intensity $I_{s}$ is decreasing according to the inverse square
+law, we would have:
+\begin{equation}
+\dot{x}=u,\,\,\,y=\frac{\alpha S}{1+\Vert s-x\Vert^{2}},\,\,\,u=Ky\label{eq:Type-1a-quadr}
+\end{equation}
+
+(we added a multiplicative constant $\alpha\in[0,1]$ indicating the
+efficiency of the sensor in converting the actual intensity into a
+perceived stimulus). For a control signal proportionally decreasing
+with distance (the closer to the source, the weaker the stimulus)
+modeling a stimulus-seeker, type 1\emph{b} vehicle the equations become:
+
+\begin{equation}
+\dot{x}=u,\,\,\,y=\frac{\alpha S}{1+\Vert s-x\Vert},\,\,\,u=\frac{K}{y},\,\textrm{or}\,\,\dot{x}=u,\,\,\,y=\frac{\alpha S}{1+\Vert s-x\Vert^{2}},\,\,\,u=\frac{K}{y}\label{eq:Type-1-b}
+\end{equation}
+
+As these equations model a Type 1 vehicle with omni-directional sensors,
+they can also be assumed to provide a simplified model of a vehicle
+with a skirt of sensors, in which case the function $y$ could be
+interpreted as the (possibly weighted) average of the various sensors
+along the skirts. 
+
+\subsection{Directional sensors}
+
+Let us now add the limitation that the sensor pointing is forward
+and has a field of view $180^{\circ}$. In other words the sensor
+does not see any stimulus behind the (point-like) robot. With this
+limitation, the stimulus will be received only if the distance $s-x$
+is positive (source in front of the robot) and zero otherwise. We
+approximate the required behavior by multiplying the perceived intensity
+by the logistic function scaled to the distance $(s-x)$: $\frac{1}{1+e^{\beta(s-x)}}$,
+which will have value 0 whenever the distance $(s-x)$ is negative
+and whose transition from 1 to 0 is sufficiently steep with a sufficiently
+small negative factor $\beta$. Our function $y$ will thus become
+$y=\frac{\alpha S}{1+\Vert s-x\Vert^{(2)}}*\frac{1}{1+e^{\beta(s-x)}}$,
+which can be slightly simplified to $y=\frac{\alpha S}{1+\Vert s-x\Vert^{(2)}+e^{\beta(s-x)}}$.%
+\begin{lyxgreyedout}
+Notice that this expression is not general at all and it applies only
+to the 1-D case. I will have to come up with a better expression for
+the 2D case, in which we have sensors with arbitrary fields of view
+$\theta$ located on a robot with heading $\rho$ (while the source
+can be anywhere in the plane.%
+\end{lyxgreyedout}
+
+Alternatively, we cold use a piece-wise function for $y$ defined
+as above if the angle $\theta$ between the robot's heading and the
+source's location falls within an angle $\phi$ representing the range
+of the sensor, and zero otherwise. Assuming sensors' bilateral symmetry:
+
+\[
+y=\begin{cases}
+\frac{\alpha S}{1+\Vert s-x\Vert^{(2)}} & -\frac{\phi}{2}\le\theta\le\frac{\phi}{2}\\
+0 & otherwise
+\end{cases}
+\]
+
+In our 1-dimensional case, with $\phi=\pi$, and the sign of $cos\,\theta$
+equal to the the sign of $(s-x)$, we have the equivalent formulation
+
+\[
+y=\begin{cases}
+\frac{\alpha S}{1+\Vert s-x\Vert^{(2)}} & (s-x)\ge0\\
+0 & (s-x)<0
+\end{cases}
+\]
+
+for a forward-looking sensor, with conditions switched for a rear-looking
+one. %
+\begin{lyxgreyedout}
+The problem with this solution is that the $y$ is now not only non-linear
+(as it was the case for the logistic function), but not even differentiable
+at $(s-x)=0$, which represents the only fixed point of the system
+considered so far. Hence the existence/uniqueness of the solution
+may be problematic (see Strogatz 27). %
+\end{lyxgreyedout}
+
+
+\subsection{Qualitative analysis}
+
+For a qualitative analysis, it is useful to express the equations
+as a single differential equation of $\dot{x},$ thereby obtaining
+the following for the system of Type 1\emph{a} with omnidirectional
+sensor:
+
+\begin{equation}
+\dot{x}=\frac{\alpha KS}{1+\Vert s-x\Vert^{(2)}}\label{eq:Type1-a-system}
+\end{equation}
+
+and respectively, for Type 1\emph{b }with omnidirectional sensor
+\begin{equation}
+\dot{x}=\frac{K(1+\Vert s-x\Vert^{(2)})}{\alpha S}\label{eq:Type1-b-system}
+\end{equation}
+where the parenthesis around the quadratic term indicates that the
+stimulus-decreasing function can be linear or quadratic. 
+
+A qualitative analysis in terms of phase portrait of the systems represented
+by equations \eqref{fig:Type-1a-and1b-phase-omnidir-portraits} and
+\eqref{eq:Type1-b-system} is shown in figure \eqref{fig:Type-1a-and1b-phase-omnidir-portraits}.
+It is obvious that Type 1b as an unstable fixed point as $s$, whereas
+Type 1a has no fixed points at all. 
+
+\begin{figure}
+\subfloat[Type 1\emph{a}, ``the closer the stronger'']{
+
+\includegraphics[scale=0.7]{Images/Braiten-1a-omni-phase-portrait}
+
+}\subfloat[Type 1\emph{b}, ``the closer, the weaker'']{
+
+\includegraphics[scale=0.7]{Images/Braiten-1b-omni-phase-portrait}
+
+}\caption{\label{fig:Type-1a-and1b-phase-omnidir-portraits}Omnidirectional
+sensors Type 1a and Type 1b phase portraits with a stimulus source
+at location $s=5.$ All other relevant parameters $(\alpha,S,K)$
+are equal to 1. }
+
+\end{figure}
+
+With the forward-looking sensors, instead, we would have: 
+
+\begin{equation}
+\dot{x}=\frac{\alpha KS}{1+\Vert s-x\Vert^{(2)}+e^{\beta(s-x)}}\label{eq:Type1-a-system-1}
+\end{equation}
+
+and respectively, for Type 1\emph{b }with forward-looking sensor
+\begin{equation}
+\dot{x}=\frac{K(1+\Vert s-x\Vert^{(2)}}{\alpha S}*\frac{1}{1+e^{\beta(s-x)}}=\frac{K(1+\Vert s-x\Vert^{(2)})}{\alpha S(1+e^{\beta(s-x)})}\label{eq:Type1-b-system-1}
+\end{equation}
+
+The phase portraits of these two systems are illustrated in figure
+\ref{fig:Type-1a-and1b-phase-directional-portraits}. 
+\begin{figure}
+
+\subfloat[Type 1\emph{a}, ``the closer the stronger'' ]{
+
+\includegraphics[scale=0.7]{Images/Braiten-1a-phase-portrait}
+
+}\subfloat[Type 1\emph{b}, ``the closer, the weaker'']{
+
+\includegraphics[scale=0.7]{Images/Braiten-1b-phase-portrait}}\caption{\label{fig:Type-1a-and1b-phase-directional-portraits}Type 1a and
+Type 1b phase portraits with a stimulus source at location $s=5.$
+All other relevant parameters ($\alpha,S,K,$) are equal to 1. The
+logistic function factor $\beta=-100$.}
+
+\end{figure}
+
+The phase portraits show that in either case there is a fixed point
+at $x_{0}=s$, and indeed all points to the right, ($x_{0}>s)$ are
+fixed points as well.  In other words, both vehicles are stimulus-seekers,
+whit the difference that Type 1a rushes to the source (it is ``aggressive,''
+Braitenberg would say) and the Type 1b, on the contrary, starts very
+fast and slows down as it approaches the source (it is ``timid'').
+
+\section{Still to do from here on}
+
+\subsection{Find a better and more general solution for directionality of sensors,
+extensible to 2D case}
+
+\subsection{Multimodal inputs and multi-inputs}
+
+\subsection{Connection of NN to system}
+
+Looking ahead, a NN-controlled Type-1 vehicle would replace the expressions
+for $y$ and $u$ with more complex functions. In fact, it would replace
+them with a whole, possibly recurrent network with input \emph{$I_{s}$}
+and output $u$.
+
+However, before we get to NN-controlled vehicles, we need to investigate
+a conversion into state form. The equations in \eqref{Type-1a}, \eqref{eq:Type-1a-quadr},
+and \eqref{eq:Type-1-b}, are non-linear, thereby a linearization
+is necessary and we need to decide around which points to linearize.%
+\begin{lyxgreyedout}
+I NEED TO CHECK: HOSANHA AS WELL AS MURRAY/ASTROM ON LINEARIZATION,
+THE BOOK ON FEEDBACK CONTROL OF DYNAMIC SYSTEM FOR NON-LINEAR SYSTEMS,
+RANO (THE GUY WHO DID THE MODEL FOR TYPE 2) FOR EXAMPLES, AND BEER
+FOR THE ANALYSIS OF CTRNN%
+\end{lyxgreyedout}
+{} 
+
+
+\section{A Braitenberg-1 with a NN controller}
+
+\section{A Braitenberg-1 with a Homeo controller}
+
+\section{A Braitenberg-1 with physics and no NN controller}
+
+Assuming a more realistic physical setup and a second order differential
+equation governing the motion of the Type 1 vehicle, the differential
+equations above (for Type 1\emph{a} and Type 1\emph{b}) now become,
+respectively:
+\[
+\ddot{x}=\frac{kS}{1+\Vert s-x\Vert^{2}}-V\dot{x}\,\,\,,\,\,\,\ddot{x}=\Vert s-x\Vert^{2}*kS-V\dot{x}
+\]
+
+where $V$ is a constant indicating the velocity-proportional friction
+coefficient. In this case, our state becomes $x=\begin{bmatrix}x_{1}\\
+x_{2}
+\end{bmatrix}=\begin{bmatrix}x\\
+\dot{x}
+\end{bmatrix}$ and the linearization of the system involves computing the Jacobian,
+which is...
+
+CONTINUE HERE
+\end{document}

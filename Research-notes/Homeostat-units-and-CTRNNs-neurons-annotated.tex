@@ -1,0 +1,532 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\setmainfont{Minion Pro}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{mdframed}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage[colorlinks=true, linkcolor=blue!60!black]{hyperref}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{parskip}
+
+% Correction environment
+\newmdenv[
+  backgroundcolor=orange!8,
+  linecolor=red!70!black,
+  linewidth=1.2pt,
+  leftmargin=0.5em,
+  rightmargin=0.5em,
+  innertopmargin=0.6em,
+  innerbottommargin=0.6em,
+  skipabove=0.8em,
+  skipbelow=0.8em,
+]{corrbox}
+
+\newenvironment{correction}{%
+  \begin{corrbox}\noindent\textbf{Correction.}\enspace\ignorespaces
+}{%
+  \end{corrbox}%
+}
+
+% Grey note environment (replaces LyX greyedout)
+\newenvironment{authorsnote}{%
+  \par\noindent\color{gray}\itshape\ignorespaces
+}{%
+  \par\normalcolor\upshape
+}
+
+% Stub citations
+\newcommand{\citeref}[1]{{\small[\textsc{#1}]}}
+
+\title{Homeostat's Units and CTRNN's Neurons\\[0.4em]
+  \large Annotated Edition with Corrections}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent\textit{The following reproduces the original text of the research note, with inline corrections appended after each passage that requires amendment. Two summary sections appear at the end.}
+
+\bigskip
+\hrule
+\bigskip
+
+%%% ============================================================
+\subsection*{1\quad State equations of a CTRNN unit}
+
+Canonical state equations of a CTRNN's neuron in a network of $N$
+elements are \citeref{Beer\,\&\,Gallagher\,1992}, \citeref{Di\,Paolo\,2000}:
+
+\begin{equation}
+\tau_{i}\dot{y}_{i}=-y_{i}+\sum_{j=1}^{N}w_{ji}z_{j}+I_{i}\label{eq:CTRNN-unit-general-eq}
+\end{equation}
+
+\begin{equation}
+z_{j}=\frac{1}{1+e^{b_{j}-y_{j}}}\label{eq:CTRNN-unit-logistic-eq}
+\end{equation}
+
+where $\tau$ is the time constant ($=RC$ in the equivalent circuit)
+that allows for temporal summation of the incoming input, $y_{i}$\,represents
+the cell potential of neuron $y$, or the \emph{value} of the neuron,
+$w_{ji}$ is the weight of the connection from neuron $j$ to neuron
+$i$, and $I_{i}$ is the incoming input, which is set to $0$ for
+all non-input neurons. The $z$ function is the ordinary sigmoid function
+that converts the potential of the neuron into a value in the interval
+$[0,1]$ as a function of the neuron's potential, $y$, and the neuron's
+bias, $b$. The bias term is the parameter in the neuron's state equation
+that allows for spatial summation of inputs.
+
+\begin{correction}
+\textbf{(a)}~The sigmoid in eq.~\eqref{eq:CTRNN-unit-logistic-eq} can be rewritten as
+$z_j = \frac{1}{1+e^{-(y_j - b_j)}}$.
+Beer's standard convention uses $\frac{1}{1+e^{-(y_j+\theta_j)}}$, so the document's $b_j = -\theta_j$.
+The parameter $b$ as defined here is a \emph{threshold} (higher $b$ = harder to activate), not a bias in Beer's sense (higher $\theta$ = easier to activate). Calling it ``bias'' may confuse readers who consult Beer's papers directly.
+
+\medskip\noindent
+\textbf{(b)}~The claim that ``the bias term is the parameter in the neuron's \emph{state equation} that allows for spatial summation of inputs'' is doubly incorrect.
+First, $b$ does not appear in the state equation~\eqref{eq:CTRNN-unit-general-eq} at all---it appears only in the output equation~\eqref{eq:CTRNN-unit-logistic-eq}.
+Second, $b$ does not perform spatial summation; the $\sum_{j}w_{ji}z_j$ term does that. The bias (or threshold) shifts the activation curve, determining at what level of net input the neuron begins to fire appreciably.
+\end{correction}
+
+\medskip
+\noindent\textit{[Footnote in original:]} This equation was originally proposed by Hopfield \citeref{Hopfield\,1984}, on the basis
+of an analogy between neural networks and $RC$ electronic circuits,
+and expressed in terms of resistance, capacitance, and voltage potential,
+input current, ($R,C,V,I$) for a neuron $i$ as: $C_{i}\dot{u}_{i}=-\frac{u_{i}}{R_{i}}+\sum_{j}T_{ij}V_{j}+I_{i}$,
+where the summative term represents the weighted inputs to neuron
+$i$, the second term represents transmembrane resistance, and the
+final term, $I_{i}$, is the externally applied input to the neuron.
+Normalizing with $\tau_{i}=R_{i}C_{i}$ leads to eq. \eqref{eq:CTRNN-unit-general-eq}.
+
+\begin{correction}
+The normalization step is incomplete as stated. Dividing Hopfield's equation by $C_i$ and substituting $\tau_i = R_i C_i$ yields:
+\[
+\tau_i \dot{u}_i = -u_i + R_i \sum_j T_{ij}V_j + R_i I_i
+\]
+Reaching eq.~\eqref{eq:CTRNN-unit-general-eq} requires \emph{also} absorbing $R_i$ into the weights ($w_{ji} = R_i T_{ji}$) and into the input ($I_i^{\text{new}} = R_i I_i^{\text{old}}$). This is standard practice but should be stated.
+\end{correction}
+
+%%% ============================================================
+\subsection*{2\quad State equation of a Homeostat unit}
+
+Ashby describes the behavior of the 4-unit Homeostat as follows in
+\emph{Design of a Brain} \citeref{Ashby\,1960,\,p.\,247}:
+
+\[
+\frac{dx_{i}}{dt}=\dot{x}_{i}
+\]
+
+\begin{equation}
+\frac{d}{dt}(m\dot{x})=-k\dot{x}_{i}+l(p-q)(a_{i1}x_{1}+\ldots+a_{i4}x_{4})\label{eq:Ashby-unit-eq}
+\end{equation}
+
+\begin{correction}
+The left-hand side of eq.~\eqref{eq:Ashby-unit-eq} is missing the subscript~$i$. It should read $\frac{d}{dt}(m\dot{x}_i)$, i.e.\ $m\ddot{x}_i$ for constant~$m$.
+\end{correction}
+
+\noindent where $x_{i}$ is the $i$-th unit's needle's angle of deviation, $m$
+is its moment of inertia, $p$ and $q$ are the potentials at the
+opposite ends of the fluid-filled trough, $k$ represents the frictional
+forces acting on the needle's movement, and $l$ ``depends on the
+valve,'' i.e.\ it is a gain parameter. Rewriting \eqref{eq:Ashby-unit-eq}
+in notation closer to CTRNN's would give us, for a Homeostat of $N$
+units:
+
+\begin{equation}
+m\ddot{x}_{i}=-k\dot{x}_{i}+l(p-q)\sum_{j=1}^{N}a_{ij}x_{j}\label{eq:Unit-CTRNN-not}
+\end{equation}
+
+\begin{correction}
+Note the weight subscript convention: in eq.~\eqref{eq:CTRNN-unit-general-eq}, $w_{ji}$ denotes the weight \emph{from}~$j$ \emph{to}~$i$ (first subscript = source). Here in eq.~\eqref{eq:Unit-CTRNN-not}, $a_{ij}$ multiplies $x_j$, so it is the weight \emph{from}~$j$ \emph{to}~$i$ (first subscript = destination). Thus $a_{ij} \equiv w_{ji}$---the subscript orderings are \emph{opposite}. This is never mentioned in the text and can cause confusion when comparing the two systems term by term.
+\end{correction}
+
+\noindent In Ashby's device, the gain parameter, $l$, and the difference in
+potential, $p-q$, are the same for all units, thus allowing to slightly simplify the equation by assuming a constant
+gain factor $g=l(p-q)$:
+
+\begin{equation}
+m\ddot{x}_{i}=-k\dot{x}_{i}+g\sum a_{ij}x_{j}\label{eq:Unit-CTRNN-not-with-constant}
+\end{equation}
+
+\begin{authorsnote}
+My implementation substantially follows equation~\eqref{eq:Unit-CTRNN-not},
+with the difference that it does not assume $l$, $p$, and $q$ to be the same across all units.
+\end{authorsnote}
+
+\subsubsection*{2.1\quad Numerical implementation of Ashby's equation}
+
+\noindent\textit{[This subsection is not part of the original note. It documents how the Homeo simulator codebase actually implements eq.~\eqref{eq:Unit-CTRNN-not}, based on a code review of the \texttt{Core/} classes.]}
+
+\medskip
+
+The claim in the author's note above is confirmed by the code. Furthermore, the Aristotelian\,/\,Newtonian distinction discussed in Section~3 is not merely theoretical---it is architecturally encoded in the class hierarchy. Three unit classes implement three different physics models:
+
+\medskip
+\begin{center}
+\begin{tabular}{@{}llp{6.5cm}@{}}
+\toprule
+\textbf{Class} & \textbf{Physics} & \textbf{Equation} \\
+\midrule
+\texttt{HomeoUnit} (base) & Aristotelian & $v = F/m$; viscosity as a multiplicative attenuator of force \\[0.3em]
+\texttt{HomeoUnitAristotelian} & Aristotelian & $v = (F + \mathrm{drag})/m$; viscosity as drag proportional to force \\[0.3em]
+\texttt{HomeoUnitNewtonian} & \textbf{Newtonian} & $ma = F_{\mathrm{input}} - v\,\dot{x}$; Stokes-law drag proportional to velocity \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+
+The \texttt{HomeoUnitNewtonian} class---the one used in all GA experiments and robotic simulations---implements eq.~\eqref{eq:Unit-CTRNN-not} through a four-step discrete-time integration with $\Delta t = 1$:
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Torque} (\texttt{HomeoUnit.computeTorque}). Computes the weighted sum of all incoming outputs:
+\[
+\mathrm{inputTorque} = \sum_{j} \bigl(\mathrm{output}_j \times \mathrm{switch}_{ij} \times \mathrm{weight}_{ij} + \mathrm{noise}_{ij}\bigr)
+\]
+This is the $\sum a_{ij}\,x_j$ term, with weights, polarity (switch), and connection noise.
+
+\item \textbf{Drag} (\texttt{HomeoUnitNewtonian.stokesLawDrag}). Computes viscous friction as:
+\[
+\mathrm{drag} = -\,\mathrm{viscosity}\times\mathrm{currentVelocity}
+\]
+This is the $-k\,\dot{x}_i$ term.
+
+\item \textbf{Position update} (\texttt{HomeoUnitNewtonian.newLinearNeedlePosition}). Combines torque and drag into acceleration, then applies the standard kinematic equation:
+\begin{align*}
+\mathrm{totalForce} &= \mathrm{inputTorque} + \mathrm{drag} \\
+a &= \mathrm{totalForce}\;/\;\mathrm{mass} \\
+x_{t+1} &= x_t + v_t + \tfrac{1}{2}\,a
+\end{align*}
+This is $x_{t+1} = x_t + v_t\,\Delta t + \frac{1}{2}a\,\Delta t^2$ with $\Delta t=1$.
+
+\item \textbf{Velocity update} (\texttt{HomeoUnitNewtonian.selfUpdate}). The new velocity is recovered from the displacement:
+\[
+v_{t+1} = 2\,(x_{t+1} - x_t) - v_t
+\]
+Since $x_{t+1}-x_t = v_t + \frac{1}{2}a$, this simplifies to $v_{t+1} = v_t + a$, i.e.\ $v_{t+1}=v_t + a\,\Delta t$.
+\end{enumerate}
+
+\noindent Steps 3 and 4 together constitute the \textbf{velocity Verlet} integration scheme (second-order accurate in position), applied to the ODE
+\[
+m\,\ddot{x}_i = -\mathrm{viscosity}\cdot\dot{x}_i + \sum_j a_{ij}\,x_j
+\]
+which is exactly eq.~\eqref{eq:Unit-CTRNN-not} with per-unit mass and viscosity, and with Ashby's $l(p{-}q)$ absorbed into the per-connection weights.
+
+Each unit holds its own instance variables for mass (\texttt{needleUnit.mass}), viscosity (\texttt{self.viscosity}), and self-connection weight (\texttt{self.potentiometer}), confirming that the implementation follows the general equation~\eqref{eq:Unit-CTRNN-not} with independent per-unit parameters, not the constant-gain simplification~\eqref{eq:Unit-CTRNN-not-with-constant}.
+
+\paragraph{Integration step size and alignment with CTRNN practice.}
+In the standard CTRNN literature, the forward Euler update
+\[
+y_i(t+h) \;=\; y_i(t) \;+\; h\;\frac{1}{\tau_i}\bigl(\textstyle\sum_j w_{ji}\,\sigma(y_j+\theta_j) + I_i - y_i(t)\bigr)
+\]
+depends on an explicit step size parameter~$h$, which controls
+the granularity of the discrete-time integration. A necessary stability
+constraint is $h < \tau_{\min}$: if $h \geq \tau_i$ for any unit, the
+update factor $(1 - h/\tau_i)$ goes negative and the integration
+diverges. Typical values in the literature are $h=0.01$--$0.1$ with
+$\tau \geq 1$. Beer's canonical C++ CTRNN library provides both a
+forward Euler step (\texttt{EulerStep}) and a 4th-order Runge--Kutta
+step (\texttt{RK4Step}), though forward Euler is used overwhelmingly
+in practice. DiPaolo uses forward Euler with 5~sub-steps per
+sensory-motor cycle to improve accuracy without changing method.
+
+In the Homeo codebase, the equivalent parameter $\Delta t$ is implicitly
+set to~1: there is no explicit step size variable, and each call to
+\texttt{step()} advances time by one unit. This is viable because
+(a)~the velocity Verlet scheme is second-order accurate (vs.\ Euler's
+first order), hence more tolerant of large steps; (b)~the system is
+heavily damped (viscosity), suppressing instability; and
+(c)~Ashby's original parameters were tuned for unit timesteps on his
+physical machine.
+
+An explicit $\Delta t$ parameter could, however, be introduced into
+the Verlet integration to bring it in line with CTRNN practice. The
+modified update would read:
+\begin{align*}
+x_{t+\Delta t} &= x_t + v_t\,\Delta t + \tfrac{1}{2}\,a_t\,\Delta t^2 \\
+v_{t+\Delta t} &= v_t + \tfrac{1}{2}(a_t + a_{t+\Delta t})\,\Delta t
+\end{align*}
+Setting $\Delta t < 1$ and running multiple sub-steps per logical
+timestep would increase integration accuracy at the cost of
+proportionally more computation---the same trade-off that CTRNN
+practitioners navigate when choosing~$h$. This would be particularly
+relevant if future experiments use lower mass values or stronger
+connection weights, both of which increase the effective stiffness of
+the system and thus demand finer temporal resolution.
+
+\subsubsection*{2.2\quad Harmonic oscillators}
+
+For a slightly different take on the issue: notice that the homeostat's
+units could also be seen as oscillators. Start with a single unit.
+If we provide a negative self-connection, and assume no frictional
+forces (i.e.\ the viscosity of the fluid in the trough is 0), then
+$-k\dot{x}$ in \eqref{eq:Unit-CTRNN-not-with-constant} becomes 0 and
+$g\sum a_{ij}x_{i}$ becomes simply $-ga_{jj}x$, with $a_{ii}$~being
+the weight of the self-connection. Putting $ga_{ii}=k$, the unit's
+behavior is described by
+\[
+m\ddot{x}=-kx
+\]
+which is the canonical equation for a harmonic oscillator.
+
+\begin{correction}
+\textbf{(a)}~The expression ``$g\sum a_{ij}x_{i}$ becomes simply $-ga_{jj}x$'' contains two subscript errors.
+For a single unit~$i$ with only a self-connection, the sum $g\sum_j a_{ij}x_j$ reduces to $g\cdot a_{ii}\cdot x_i$. The subscript should be $a_{ii}$ (not $a_{jj}$), and the summation variable should be $x_j$ (not $x_i$). Since the self-connection is negative ($a_{ii}<0$), this equals $-g|a_{ii}|\,x_i$.
+
+\medskip\noindent
+\textbf{(b)}~The symbol~$k$ is being silently repurposed. In Ashby's equation~\eqref{eq:Unit-CTRNN-not-with-constant}, $k$ is the \emph{friction coefficient} (multiplying $\dot{x}$, opposing velocity). Here, ``putting $ga_{ii}=k$,'' it becomes the \emph{spring constant} (multiplying $x$, providing a restoring force). Then in the next paragraph, viscosity is introduced under a new symbol~$v$. The reuse of~$k$ for a physically different quantity without comment is confusing. A distinct symbol (e.g.\ $\kappa = g|a_{ii}|$) would be clearer.
+\end{correction}
+
+\noindent If we add
+a viscosity factor $v$ due to the trough's fluid and assume it proportional
+to velocity, we obtain the canonical equation for a damped oscillator:
+$m\ddot{x}=-v\dot{x}-kx$. Thus, the basic building block of a Homeostat
+is a damped harmonic oscillator. And a Homeostat (leaving uniselectors'
+action aside) is simply a collection of variously coupled harmonic
+oscillators.
+
+On the other hand, in a ``real-world'' translation of the homeostat
+we can assume that the real-world inputs the units are connected to
+are not self-regulating, i.e.\ they are not (damped) harmonic oscillators.
+It follows that a \emph{single} negatively self-connected unit connected
+to the ``real'' environment is equivalent to a driven harmonic oscillator:
+\[
+m\ddot{x}=-v\dot{x}-kx+aF(t)
+\]
+where $F(t)$ and $a$ are, respectively, the input the unit is receiving
+from the environment and the weight it assigns to that input. A ``real
+world'' Homeostat (or its equivalent homeostat simulation, if possible)
+is thus a collection of driven harmonic oscillators (uniselectors'
+actions aside).
+
+%%% ============================================================
+\subsection*{3\quad Comparison between the two}
+
+The comparison between~\eqref{eq:CTRNN-unit-general-eq} and \eqref{eq:Unit-CTRNN-not}
+can be carried out at three levels: the general shape of the description
+(the model), the terms involved, and the relation between a unit's
+value (i.e.\ potential and rotation angle, respectively, for CTRNNs and Ashby)
+and a unit's output.
+
+\subsubsection*{3.1\quad The mathematical model}
+
+Here is where we find the greatest difference between the two. Although
+the models are remarkably similar, the important difference is that
+the value $y$ (potential) of a CTRNN unit is defined in terms of its
+\emph{first} derivative, whereas the value $x$ of an Ashbian unit
+is expressed in terms of its \emph{second} and first derivatives.
+
+Mechanically interpreted in traditional notation: $F=ma$ or $m\dot{v}=F$,
+and $v=\dot{s}$, with the traditional abbreviations for mass, acceleration,
+velocity and displacement, where the force $F$ acting on the object
+can be further decomposed into a reactive frictional force proportional
+to velocity plus the active forces acting on the object (assuming
+the simplest mathematical model of friction). Thus the unit
+is fundamentally modeled as a Newtonian object rotating on a friction-affected
+pivot, and the basic parameters affecting its value (angular position)
+are its mass (or moment of inertia) and the friction it exerts (assuming
+the difference in potential is a constant; otherwise it would have
+one additional parameter): $m,k,(p{-}q)$. If we try to interpret the
+CTRNN unit mechanically, for the sake of comparing it to the Homeostat,
+we see that \eqref{eq:CTRNN-unit-general-eq} can be read as the model
+of an \emph{Aristotelian} object, that is, an object whose velocity
+is proportional to the forces it is subjected to. In other words,
+the CTRNN unit is normally at rest in absence of incoming forces (its
+biological equivalent, the real neuron, having an appropriately called
+resting potential), whereas a Homeostat's unit in the same situation
+is in uniform motion.
+
+The problem is that a straightforward ``Aristotelian'' dynamical
+model would have velocity equal to force over mass ($F=mv$ or, rather,
+$v=\frac{F}{m}$; in differential terms: $\dot{ms}=F$).
+
+\begin{correction}
+``$\dot{ms}=F$'' should be ``$m\dot{s}=F$.'' The time derivative applies to the displacement~$s$, not to the mass. The intended expression is $m\dot{s}=F$, i.e.\ force equals mass times velocity---the Aristotelian model.
+\end{correction}
+
+\noindent Now, assuming, in the CTRNN case, that the forces are equal to the incoming inputs
+plus the externally applied current, and using $y$ to represent the
+mechanical displacement, an Aristotelian model would give us the following
+equation: $m\dot{y}=\sum_{j}w_{ij}y_{j}+I_{i}$. Comparing this equation
+with eq.~\eqref{eq:CTRNN-unit-general-eq} makes the problem clear:
+we are missing a term. Namely, $-y_{i}$. If we rewrite the equation
+according to its original formulation, namely as $C_{i}\dot{y}_{i}=-\frac{y_{i}}{R_{i}}+\sum_{j}w_{ij}y_{j}+I_{i}$,
+we can perhaps make some progress. Now this shows, interpreted mechanically,
+that the applied force has three components, one of which is proportional
+to displacement $y$ and to a resistive factor $R$, and the other
+two are dependent on the directly applied forces. This is not quite
+the original Aristotelian dynamical model, which explains friction
+as proportional to mass (and therefore contained in the $C_{i}$ term
+in the equation). Furthermore, having a resistive force proportional
+to displacement models, in mechanical terms, the resistance encountered
+when driving a stake through the ground, i.e.\ the resistance of an
+extended object entering a viscous fluid. I suppose what I am saying
+is that the electro-mechanical device that would (approximately) realize
+the CTRNN equation and be as close as possible to Ashby's contraption
+would be made up of
+\begin{enumerate}[leftmargin=2em]
+\item highly viscous ``wells'' (with an electric potential between surface
+and bottom) with ``stakes'' being driven in and out of them. This
+part would implement the $-\frac{y_{i}}{R_{i}}$ term.
+\item very heavy friction in the mechanism's joints, surfaces, etc. This
+would approximate the Aristotelian modeling of force being proportional
+to velocity and not to acceleration, and thus the $C_{i}\dot{y}_{i}$
+component instead of the $m\ddot{y}_{i}$ component in Ashby's model.
+\end{enumerate}
+
+Now the second big difference is that there is a linear function (in
+fact, the identity function) in Ashby's model, whereas there is a
+non-linear function, the logistic one, in the CTRNN case.
+
+The main difference, of course, is that whereas Ashby's Units have
+an identity function from unit's value to output, CTRNN units have
+a sigmoid, hence a non-linear, though continuously differentiable function.
+The reason behind the adoption of a sigmoid nonlinear function
+is due to the wish to model the frequency-coding properties of real
+neurons, since such a function converts, over a short time span, a
+neuron's value into a firing frequency.
+
+\subsubsection*{3.2\quad Term to term}
+
+Now for the equivalence with Ashby's Homeostat. Its units are electro-mechanical
+contraptions where the values of interest to the modeler are the physical
+properties of the constantly moving parts and the forces acting on
+them. The state of a unit is thus represented by the velocity of the
+needle, the mechanical force acting on it (that is, the torque produced
+by the magnets coiled around its pivot as a result of the incoming
+currents from the other units), the mass of the needle, and the resistance
+the needle encounters in its movement through the fluid-filled trough.
+A term-by-term equivalence can perhaps be found by interpreting
+the capacitance $C_{i}$ and resistance $R_{i}$ of the CTRNN model
+as being, roughly, functionally equivalent to, respectively, mass and
+friction in Ashby's model.
+
+In mechanical terms, since the decay constant $\tau$ represents the
+neuron's resistance to a change of state, it is equivalent to the needle's
+mass providing an inertial resistance against change of velocity.
+The bias term $b$ represents a neuron's resistance against firing
+and is equivalent to the frictional resistive forces acting against
+the needle's displacement. The weights of the incoming connections,
+$w_{ji},$ are obviously equivalent to the various resistors' values
+on the incoming currents, while the incoming current, $I_{i},$ is
+normally equal to $0$ unless the Homeostat's operator decides to
+manually manipulate one or more of the units (as in Ashby's various
+experiments), in which case it corresponds to the external force acting
+on the needle.
+
+\begin{correction}
+The mapping of the bias~$b$ to friction is incorrect. In the CTRNN, the bias~$b$ (or threshold, in this document's sign convention) shifts the sigmoid activation curve---it determines at what level of net input the neuron begins to fire. It has no direct mechanical analog in Ashby's device.
+
+The term that is functionally analogous to friction/damping is the $-y_i$ leak term in eq.~\eqref{eq:CTRNN-unit-general-eq} (or $-y_i/R_i$ in Hopfield's original form): it pulls the neuron's state back toward rest, just as $-k\dot{x}_i$ pulls the needle's velocity toward zero. Of course the analogy is imperfect---the leak opposes \emph{displacement} while friction opposes \emph{velocity}---which is precisely the first-order vs.\ second-order (Aristotelian vs.\ Newtonian) distinction correctly identified earlier.
+
+A more defensible term-by-term mapping would be:
+
+\medskip
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{CTRNN} & \textbf{Homeostat} \\
+\midrule
+$\tau_i$ (time constant $= R_i C_i$) & $m_i$ (mass / moment of inertia)\\
+$-y_i$ (leak / passive decay) & $-k\dot{x}_i$ (viscous friction)\\
+$w_{ji}$ (connection weights) & $a_{ij}$ (connection weights)\\
+$I_i$ (external input current) & external force on needle\\
+$b_j$ (sigmoid threshold) & \textit{no direct analog}\\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{correction}
+
+%%% ============================================================
+\subsection*{4\quad Conclusion}
+
+Since in the original Homeostat all units are constructionally identical,
+the only free parameters governing the evolution of the network are
+the weights $w_{ij}$ controlling the connections between the units.
+If, on the other hand, we consider the possibility of a ``generalized''
+Homeostat (rather easily realizable through a computer simulation,
+continuous or discrete), we should consider all the parameters in
+eq.~\eqref{eq:Unit-CTRNN-not} as being independent, as we can easily
+construct units with different masses, different viscosities, potentials,
+gains, etc. That means that the simulation (and training, perhaps
+via GA techniques) of a homeostat of $j$ units would entail the determination
+of $4$ parameters per unit (mass, viscosity, gain, and potential)
+${}+ j$ weights, totaling $j(j+4)$ network parameters. This number
+is actually not very different from the CTRNN standard of $j(j+2)$
+(weights, plus time constant and bias).
+
+%%% ============================================================
+%%% ============================================================
+\newpage
+\section*{What is wrong}
+
+The following substantive errors affect the mathematical or conceptual content of the note.
+
+\begin{enumerate}[leftmargin=2em]
+
+\item \textbf{Bias $b$ mislocated and misdescribed.}
+The text states that the bias is ``the parameter in the neuron's state equation that allows for spatial summation of inputs.'' In fact $b$ appears only in the output (sigmoid) equation~\eqref{eq:CTRNN-unit-logistic-eq}, not in the state equation~\eqref{eq:CTRNN-unit-general-eq}. It does not perform spatial summation (which is done by $\sum w_{ji}z_j$); it shifts the activation threshold.
+
+\item \textbf{Sigmoid sign convention opposite to Beer's.}
+The document defines $z_j = \frac{1}{1+e^{b_j - y_j}}$, making $b_j$ a \emph{threshold} (higher $b$ = harder to activate). Beer's standard parameterization uses $\frac{1}{1+e^{-(y_j+\theta_j)}}$, making $\theta_j$ a \emph{bias} (higher $\theta$ = easier to activate). Since $b_j = -\theta_j$, calling $b$ a ``bias'' without comment is misleading.
+
+\item \textbf{Missing subscript in Ashby's equation.}
+The left-hand side of eq.~\eqref{eq:Ashby-unit-eq} reads $\frac{d}{dt}(m\dot{x})$ but should be $\frac{d}{dt}(m\dot{x}_i)$, since the right-hand side is indexed by~$i$.
+
+\item \textbf{Wrong subscripts in the harmonic oscillator derivation.}
+The text writes ``$g\sum a_{ij}x_{i}$ becomes simply $-ga_{jj}x$.''
+Both subscripts are wrong: for a self-connection of unit~$i$, the sum $g\sum_j a_{ij}x_j$ reduces to $g\cdot a_{ii}\cdot x_i$. The correct statement uses $a_{ii}$ (not $a_{jj}$) and $x_j$ in the sum (not $x_i$).
+
+\item \textbf{Symbol $k$ silently repurposed.}
+In Ashby's equation, $k$ is the friction coefficient (multiplying $\dot{x}$). In the oscillator derivation, $k$ becomes the spring constant ($ga_{ii}$, multiplying $x$). Viscosity is then introduced under a new symbol~$v$. The reuse of~$k$ for a physically different quantity is never flagged.
+
+\item \textbf{Derivative on wrong symbol.}
+The ``Aristotelian'' model is written as ``$\dot{ms}=F$'' but should be ``$m\dot{s}=F$'' (the time derivative applies to the displacement, not the mass).
+
+\item \textbf{Bias mapped to friction in the term-by-term comparison.}
+The text claims the bias~$b$ ``is equivalent to the frictional resistive forces acting against the needle's displacement.'' This mapping is incorrect. The $-y_i$ leak term (or $-y_i/R_i$ in Hopfield's form) is the functional analog of friction/damping. The bias~$b$ shifts the sigmoid threshold and has no direct mechanical counterpart in Ashby's device.
+
+\item \textbf{Hopfield-to-Beer normalization elides a step.}
+The footnote states that ``normalizing with $\tau_i = R_i C_i$ leads to eq.~(1).'' In fact, reaching eq.~\eqref{eq:CTRNN-unit-general-eq} also requires absorbing $R_i$ into the weights ($w_{ji} = R_i T_{ji}$) and into the input.
+
+\item \textbf{Weight subscript conventions are opposite and uncommented.}
+The CTRNN equation uses $w_{ji}$ (first subscript = source), while the Homeostat rewrite uses $a_{ij}$ (first subscript = destination). Both denote the weight from~$j$ to~$i$, but the index ordering is reversed. A comparative note never mentions this.
+
+\end{enumerate}
+
+%%% ============================================================
+\section*{What is correct}
+
+\begin{enumerate}[leftmargin=2em]
+
+\item \textbf{The Aristotelian vs.\ Newtonian distinction.}
+The central insight of the note---that the CTRNN is a first-order (velocity $\propto$ force, ``Aristotelian'') system while the Homeostat is a second-order (acceleration $\propto$ force, Newtonian) system---is correct and illuminating. It concisely captures the deepest structural difference between the two architectures.
+
+\item \textbf{The harmonic oscillator interpretation.}
+A single Homeostat unit with a negative self-connection and no friction is indeed a harmonic oscillator; with viscosity, a damped harmonic oscillator; with external input, a driven damped harmonic oscillator. The conclusion that the Homeostat is a system of coupled oscillators follows correctly.
+
+\item \textbf{CTRNN and Hopfield equations.}
+The CTRNN state equation~\eqref{eq:CTRNN-unit-general-eq} and the Hopfield equation in the footnote are correctly stated and correctly related (modulo the elided normalization step).
+
+\item \textbf{Ashby's equation and its rewrite.}
+Equations~\eqref{eq:Unit-CTRNN-not} and~\eqref{eq:Unit-CTRNN-not-with-constant} are correct renderings of Ashby's dynamics in modern summation notation.
+
+\item \textbf{The mapping $\tau_i \leftrightarrow m_i$.}
+Identifying the CTRNN time constant (capacitance $\times$ resistance) with the Homeostat's mass (inertia resisting change) is the standard and correct electrical--mechanical analogy.
+
+\item \textbf{The parameter count.}
+The calculation that a generalized Homeostat of $j$ units has $j(j+4)$ free parameters, versus $j(j+2)$ for a CTRNN, is correct: 4~unit-level parameters (mass, viscosity, gain, potential) plus $j^2$~weights, versus 2~unit-level parameters (time constant, bias) plus $j^2$~weights.
+
+\item \textbf{Identity vs.\ sigmoid output function.}
+The observation that Ashby's units use an identity output function while CTRNNs use a sigmoid, and that this sigmoid models frequency coding in real neurons, is correct.
+
+\item \textbf{The ``driven oscillator'' real-world interpretation.}
+The argument that a Homeostat unit connected to non-self-regulating real-world inputs behaves as a driven harmonic oscillator is physically sound.
+
+\end{enumerate}
+
+\end{document}

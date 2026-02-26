@@ -1,0 +1,440 @@
+%% LyX 2.3.6.1 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[letterpaper,english]{scrartcl}
+\usepackage[osf]{mathpazo}
+\usepackage{helvet}
+\renewcommand{\ttdefault}{cmtl}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{luainputenc}
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+\usepackage{color}
+\definecolor{note_fontcolor}{rgb}{0.800781, 0.800781, 0.800781}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage{setspace}
+\usepackage{microtype}
+\doublespacing
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+% Backwards compatibility for LuaTeX < 0.90
+\@ifundefined{pageheight}{\let\pageheight\pdfpageheight}{}
+\@ifundefined{pagewidth}{\let\pagewidth\pdfpagewidth}{}
+\pageheight\paperheight
+\pagewidth\paperwidth
+
+%% The greyedout annotation environment
+\newenvironment{lyxgreyedout}
+  {\textcolor{note_fontcolor}\bgroup\ignorespaces}
+  {\ignorespacesafterend\egroup}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+% Use the mionoPro fonts. See MinionPro.pdf for the options
+%\usepackage[fullfamily,opticals,normalsize,footnotefigures]{MinionPro}
+
+%The following package is needed to have interrupted lists
+\usepackage{mdwlist}
+
+% adds microtypography support 
+
+\usepackage{enumitem}
+%this is for eliminating rows b/t items with setlist nolistsep
+\setlist{nolistsep}  
+
+% For a smaller caption in float figures
+\addtokomafont{caption}{\small}
+
+% Koma command to reduce the caption indent in figures
+\setcapindent{1em}
+
+\usepackage{colortbl} 
+\usepackage{tabularx}
+\usepackage[greek, italian, german, french, english]{babel}
+\languageattribute{greek}{polutoniko} 
+\usepackage[T1]{fontenc}
+
+% Jurabib setup for old-fashioned citations-in-footnote style
+% Uncomment AND 
+% Do not forget to select the jox style
+
+%\usepackage[oxford=true]{jurabib}
+%\jurabibsetup{
+%     authorformat=and,
+%     titleformat=italic,
+%     citefull=first
+%}
+% \renewcommand{\bibapifont}[1]{``#1''}
+
+
+% Jurabib setup for Harvard style
+
+\usepackage{jurabib}
+\jurabibsetup{authorformat=smallcaps,authorformat=year,round}
+\jbyearaftertitle
+% In the next line, add a comma or a semicolon just after #1 
+% to obtain the classical separation between date and page number
+\renewcommand{\jbcitationyearformat}[1]{\unskip,\space#1}
+
+
+% To use Jurabib idem or ibidem uncomment next line
+\jbuseidemhrule
+
+% To convert all endnotes to endnotes uncomment the next TWO lines
+%\usepackage{endnotes}
+%\let\footnote=\endnote
+
+% To eliminate the date on first page uncomment the next line
+%\date{}
+
+% To eliminate the final bibliography replace \thebibliography
+% with \nobibliography (and the correct arguments) at the end of 
+% the file. You will have to do it on the LaTeX source, though
+
+% The following allows to change the paragraph spacing
+% in the printout without changing the screen spacing
+% Note: the value set here will override (not be added to) 
+% LyX's settings in  Layout>Document>Layout
+%
+\usepackage{setspace}
+\onehalfspace
+ 
+% The next bit shows the comment environment inside a grey box
+% Comment it out for final print 
+% show my Comments?
+\RequirePackage{colortbl, tabularx}
+\renewenvironment{comment}
+{% replaces \begin{comment}
+\noindent
+\tabularx{\textwidth}{|>{\columncolor[gray]{0.9}}X|}
+\hline
+\emph{\textbf{Comment:}}
+}
+{% replaces \end{comment}
+\endtabularx\hrule
+}
+%
+% End of comment printing bit
+% 
+
+%
+% This bit changes the heading numbering:
+%
+% It removes the chapter number and it removes all the dots after
+% the subsection numbers. It produces numbers "Wittgenstein style":
+% for instance the first section of chapter 2 becomes 1 and not 2.1 as 
+% standard LaTeX wouldl have it. In general, we have numbering of the
+% form 1.2345 instead of 1.1.2.3.4.5 
+%
+\renewcommand\thesection{\arabic{section}}
+\renewcommand\thesubsection{\thesection.\arabic{subsection}}
+\renewcommand\thesubsubsection{\thesubsection\arabic{subsubsection}}
+\renewcommand\theparagraph{\thesubsubsection\arabic{paragraph}}
+\renewcommand\thesubparagraph{\theparagraph\arabic{subparagraph}}
+
+%The following command is needed when working in "outline mode", i.e. when 
+% the documents has a long sequence of headings only (with no text in between)
+% that would run off the bottom of the page in the pdf file (due to
+% LaTeX rule of not allowing a page break directly after a heading.)
+% Comment it out for final printings.
+
+ \renewcommand\@afterheading{} 
+
+%\AtBeginDocument{\selectlanguage{english}}
+
+\makeatother
+
+\usepackage{babel}
+\begin{document}
+\title{Homeostat's units and CTRNN's neurons}
+
+\maketitle
+\begin{comment}
+Brief comparison between Ashby's and Beer's notations
+\end{comment}
+
+
+\subsection{State equations of a CTRNN unit}
+
+Canonical state equations of a CTRNN's neuron in a network of $N$
+elements are \cite{BeerGallagher1992}, \cite{DiPaolo2000}:
+
+\begin{equation}
+\tau_{i}\dot{y_{i}}=-y_{i}+\sum_{j=1}^{N}w_{ji}z_{j}+I_{i}\label{eq:CTRNN-unit-general-eq}
+\end{equation}
+
+\begin{equation}
+z_{j}=\frac{1}{1+e^{b_{j}-y_{j}}}\label{eq:CTRNN-unit-logistic-eq}
+\end{equation}
+
+where $\tau$ is the time constant ($=RC$ in the equivalent circuit)
+that allows for temporal summation of the incoming input, $y_{i}$represents
+the cell potential of neuron $y$, or the \emph{value} of the neuron,
+$w_{ji}$ is the weight of the connection from neuron $j$ to neuron
+$i$, and $I_{i}$ is the incoming input, which is set to $0$ for
+all non input neurons. The $z$ function is the ordinary sigmoid function
+that converts the potential of the neuron into a value in the interval
+$[0,1]$ as a function of the neuron's potential, $y$, and the neuron's
+bias, $b$. The bias term is the parameter in the neuron's state equation
+that allows for spatial summation of inputs.\footnote{This equation was originally proposes by \cite{Hop84a}, on the basis
+of an analogy between neural networks and $RC$ electronic circuits,
+and expressed in terms of resistance, capacitance, and voltage potential,
+input current, ($R,C,V,I$) for a neuron $i$ as: $C_{i}\dot{u_{i}}=-\frac{u_{i}}{R_{i}}+\sum_{j}T_{ij}V_{j}+I_{i}$,
+where the summative term represents the weighted inputs to neuron
+$i$, the second term represents transmembrane resistance, and the
+final term, $I_{i}$, is the externally applied input to the neuron.
+Normalizing with $\tau_{i}=R_{i}C_{i}$ leads to eq. \eqref{eq:CTRNN-unit-general-eq}.
+
+See \cite[:30]{Beer1990}. Although this formulation has now become
+canonical in the evolutionary robotics literature, Beer's original
+formulas were more complex and included additional parameters describing
+the intrinsic currents generated within a neuron as well as the leak
+currents flowing out of it (\cite[:51]{Beer1990}). As these complications
+were ignored by the subsequent literature, we will not discuss them
+here, although it should not be exceedingly difficult to incorporate
+them in the model, especially because Beer, following \cite{Hop84a},
+models biological neurons on the basis of electronic circuits.} 
+
+\subsection{State equation of a Homeostat unit}
+
+Ashby describes the behavior of the 4-unit Homeostat as follows in
+\emph{Design of a Brain}:\footnote{\cite[ p. 247, 19/12]{Ashby1960}}
+
+\[
+\frac{dx_{i}}{dt}=\dot{x_{i}}
+\]
+
+\begin{equation}
+\frac{d}{dt}(m\dot{x})=-k\dot{x_{i}}+l(p-q)(a_{i1}x_{1}+...+a_{i4}x_{4})\label{eq:Ashby-unit-eq}
+\end{equation}
+
+where $x_{i}$ is the $i$ unit's needle's angle of deviation, $m$
+is its moment of inertia, $p$ and $q$ are the potentials at the
+opposite ends of the fluid-filled trough, $k$ represents the frictional
+forces acting on the needle's movement, and $l$ ``depends on the
+valve,'' i.e. it is a gain parameter. Rewriting \eqref{eq:Ashby-unit-eq}
+in notation closer to CTRNN's would give us, for a Homeostat of $N$
+units:
+
+\begin{equation}
+m\ddot{x}_{i}=-k\dot{x}_{i}+l(p-q)\sum_{j=1}^{N}a_{ij}x_{j}\label{eq:Unit-CTRNN-not}
+\end{equation}
+
+In Ashby's device, the gain parameter, $l$, and the difference in
+potential, $p-q$, are the same for all units,\footnote{Or so it seems from Ashby's discussions of his device in all published
+descriptions he gave. At any rate, they are never mentioned in the
+concrete experiments carried out with the homeostat.} thus allowing to slightly simplify the equation by assuming a constant
+gain factor $g=l(p-q)$:
+
+\begin{equation}
+m\ddot{x}_{i}=-k\dot{x}_{i}+g\sum a_{ij}x_{j}\label{eq:Unit-CTRNN-not-with-constant}
+\end{equation}
+
+\begin{lyxgreyedout}
+My implementation substantially follows equation \ref{eq:Unit-CTRNN-not},
+with the difference that it does \emph{not }assume $l$, $p$, and
+$q$ to be the same across all units. %
+\end{lyxgreyedout}
+
+For a slightly different take on the issue: notice that the homeostat's
+units cold also be seen as oscillators. Start with a single unit.
+If we provide a negative self-connection, and assume no frictional
+forces (i.e. the viscosity of the fluid in the trough is 0), then
+$-k\dot{x}$ in \ref{eq:Unit-CTRNN-not-with-constant} becomes 0 and
+$g\sum a_{ij}x_{i}$ becomes simply $-ga_{jj}x$, with $a_{ii}$being
+the weight of the self-connection. Putting $ga_{ii=}k$, the unit's
+behavior is described by 
+
+\[
+m\ddot{x}=-kx
+\]
+
+which is the canonical equation for a harmonic oscillator. If we add
+a viscosity factor $v$ due to the trough's fluid and assume it proportional
+to velocity, we obtain the canonical equation for a damped oscillator:
+$m\ddot{x}=-v\dot{x}-kx$ . Thus, the basic building block of a Homeostat
+is a damped harmonic oscillator. And a Homeostat (leaving uniselectors'
+action aside) is simply a collection of variously coupled harmonic
+oscillators. 
+
+On the other hand, in a ``real-world'' translation of the homeostat
+we can assume that the real world input the unit are connected to
+are not self-regulating, i.e. they are not (damped) harmonic oscillators.
+It follows that a \emph{single} negatively self-connected unit connected
+to the ``real'' environment is equivalent to a driven harmonic oscillator:
+\[
+m\ddot{x}=-v\dot{x}-kx+aF(t)
+\]
+
+where $F(t)$ and $a$ are, respectively, the input the unit is receiving
+from the environment and the weight it assigns to that input. A ``real
+world'' Homeostat (or its equivalent homeostat simulation, if possible)
+is thus a collection of driven harmonic oscillators (uniselectors'
+actions aside).
+
+\subsection{Comparison between the two}
+
+The comparison between\eqref{eq:CTRNN-unit-general-eq} and \eqref{eq:Unit-CTRNN-not}
+can be carried out at three levels: the general shape of the description
+(the model), the terms involved, and the relation between a unit's
+value (i.e. potential and rotation angle, resp., for CTRNNs and Ashby)
+and a unit's output. 
+
+\subsubsection{The mathematical model}
+
+Here is where we find the greatest difference between the two. Although
+the models are remarkably similar, the important difference is that
+the value $y$ (potential) of CTRNN unit is defined in terms of its
+\emph{first} derivative, whereas the value $x$ of a Ashbian unit
+is expressed in term of its \emph{second }and first derivatives. 
+
+Mechanically interpreted in traditional notation: $F=ma$ or $m\dot{v}=F$,
+and $v=\dot{s}$, with the traditional abbreviations for mass, acceleration,
+velocity and displacement, where the force $F$ acting on the object
+can be further decomposed in a reactive frictional force proportional
+to velocity plus the active forces acting on the object (assuming,
+that is, the simplest mathematical model of friction). Thus the unit
+is fundamentally modeled as a Newtonian object rotating on a friction-affected
+pivot, and the basic parameters affecting its value (angular position)
+are its mass (or moment of inertia) and the friction it exerts (assuming
+the difference in potential is a constant; otherwise it would have
+one additional parameter): $m,k,(p-q)$. If we try to interpret the
+CTRNN unit mechanically, for the sake of comparing it to the Homeostat,
+we see that \eqref{eq:CTRNN-unit-general-eq} can be read as the model
+of an \emph{Aristotelian }object, that is, an object whose velocity
+is proportional to the forces it is subjected to. In other words,
+the CTRNN unit is normally at rest in absence of incoming forces (its
+biological equivalent, the real neuron having an appropriately called
+resting potential), whereas a Homeostat's unit in the same situation
+is in uniform motion. 
+
+\begin{comment}
+Not really sure about the preceding point. Here is a tentative but
+perhaps better discussion. Notice, however, that there is really no
+notion of inertial mass in Aristotelian physics, so the interpretation
+of $C_{i}$ as such is not quite correct.
+\end{comment}
+
+The problem is that a straightforward ``Aristotelian'' dynamical
+model would have velocity equal to force over mass ($F=mv$ or, rather,
+$v=\frac{F}{m}$, in differential term: $\dot{ms}=F$). Now, assuming,
+in the CTRNN case, that the forces are equal to the incoming inputs
+plus the externally applied current, and using $y$ to represent the
+mechanical displacement, an Aristotelian model would give us the following
+equation: $m\dot{y}=\sum_{j}w_{ij}y_{j}+I_{i}$. Comparing this equation
+with eq. \eqref{eq:CTRNN-unit-general-eq} makes the problem clear:
+we are missing a term. Namely, $-y_{i}$. If we rewrite the equation
+according to its original formulation, though, namely as $C_{i}\dot{y_{i}}=-\frac{y_{i}}{R_{i}}+\sum_{j}w_{ij}y_{j}+I_{i}$,
+we can perhaps make some progress. Now this shows, interpreted mechanically,
+that the applied force has three components, one of which is proportional
+to displacement $y$ and to a resistive factor $R$, and the other
+two are dependent on the directly applied forces. This is not quite
+the original Aristotelian dynamical model, which explains friction
+as proportional to mass (and therefore contained in the $C_{i}$ term
+in the equation). Furthermore, having a resistive force proportional
+to displacement models, in mechanical terms, the resistance encountered
+when driving a stake through the ground, i.e. the resistance of an
+extended object entering a viscous fluid. I suppose what I am saying
+is that the electro-mechanical device that would (approximately) realize
+the CTRNN equation and be as close as possible to Ashby's contraption
+would be made up of 
+\begin{enumerate}
+\item highly viscous ``wells'' (with and electric potential between surface
+and bottom) with ``stakes'' being driven in and out of them. This
+part would implement the $-\frac{y_{i}}{R_{i}}$ term.
+\item very heavy friction in the mechanism's joints, surface, etc. This
+would approximate the Aristotelian modeling of force being proportional
+to velocity and not to acceleration, and thus the $C_{i}\dot{y_{i}}$
+component instead of the $m\ddot{y_{i}}$ component in Ashby's model.
+\end{enumerate}
+Now the second big difference is that there is a linear function (in
+fact, the identity function) in Ashby's model, whereas there is a
+non-linear function, the logistic one, in CTRNN case.
+
+\begin{comment}
+Go on from here
+\end{comment}
+
+The main difference, of course, is that whereas Ashby's Units have
+an identity function from unit's value to output, CTRNN units have
+a sigmoid, hence a non-linear, though continuosly differentiable function.
+The reason behind the adoption of a sigmoid function nonlinear function
+is due to the wish to model the frequency coding properties of real
+neurons, since such a function converts, over a short time span, a
+neuron's value into a firing frequency. 
+
+\begin{comment}
+Say something on frequency coding for real value as the job being
+performed here by the sigmoid function.
+
+Notice, BTW, that Ashby is perfectly aware of the spiking, frequency
+coding capacities of the nervous system (obviously). See for instance
+\cite[ p. 57]{Ashby1947}.
+\end{comment}
+
+
+\subsubsection{Term to term}
+
+Now for the equivalence with Ashby's Homeostat. Its units are electro-mechanical
+contraptions where the values of interest to the modeler are the physical
+properties of the constantly moving parts and the forces acting on
+them. The state of a unit is thus represented by the velocity of the
+needle, the mechanical force acting on it (that is, the torque produced
+by the magnets coiled around its pivot as a result of the incoming
+currents from the other units), the mass of the needle, and the resistance
+the needle encounters in its movement through the fluid-filled trough.
+A term by term equivalence is can perhaps be found by interpreting
+the capacitance $C_{i}$ and resistance $R_{i}$ of the CTRNN model
+as being, roughly, functional equivalent to, respectively, mass and
+friction in Ashby's model. 
+
+\begin{comment}
+Eliminate the stuff that follows this comment until the end of this
+subsubsection
+\end{comment}
+
+In mechanical terms, since the decay constant $\tau$ represents the
+neuron's resistance to a change of state, it is equivalent to needle's
+mass providing an inertial resistance against change of velocity.
+The bias term $b$ represents a neuron's resistance against firing
+and is equivalent to the the frictional resistive forces acting against
+the needle's displacement. The weights of the incoming connections,
+$w_{ji},$ are obviously equivalent to the various resistors values
+on the incoming currents, while the incoming current, $I_{i},$ is
+normally equal to $0$ unless the Homeostat's operator decides to
+manually manipulate one or more of the units (as in Ashby's various
+experiments), in which case it corresponds to the external force acting
+on the needle. 
+
+\subsection{Conclusion}
+
+Since in the original Homeostat all units are constructionally identical,
+the only free parameters governing the evolution of the network are
+the weights $w_{ij}$ controlling the connections between the units.
+If, on the other hand, we consider the possibility of a ``generalized''
+Homeostat (rather easily realizable through a computer simulation,
+continuous or discrete), we should consider all the parameters in
+eq. \eqref{eq:Unit-CTRNN-not} as being independent, as we can easily
+construct units with different masses, different viscosities, potentials,
+gains, etc. That means that the simulation (and training, perhaps
+via GA techniques) of a homeostat of $j$ units would entail the determination
+of $4$ parameters per unit (mass, viscosity, gain and potential)
++ $j$ weights, totaling $j(j+4)$ networks parameters. This number
+is actually not very different from the CTRNN standard of $j(j+2)$
+(weight, plus time constant and bias). 
+
+\begin{comment}
+Add something on the lack of plausibility of Ashby's units as neuron
+(even highly simplified), and their more likely identification as
+higher level functional units with possibly little connection to the
+biological details. In other words, suggest that a naturalistic interpretation,
+or, even a mimetic, interpretation of the Homeostat is not plausible.
+See whether the dates for the early $RC$ models of the neuron (Hodgkin?)
+overlap with the composition dates of \emph{DofB} 
+\end{comment}
+
+\bibliographystyle{jurabib}
+\bibliography{/home/stefano/Documents/Projects/Homeostat/Biblios/Homeostat-Jurabib,/home/stefano/Documents/Projects/Homeostat/Biblios/Recurrent-Neural-Network-Biblios-Lee-Giles-up-to-1991}
+
+\end{document}
