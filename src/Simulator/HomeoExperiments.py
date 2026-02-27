@@ -2560,18 +2560,26 @@ initializeBraiten2_2_Full_GA_phototaxis_continuous.fitnessSign = 1  # minimise d
 
 def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
                                            dataDir=None, noNoise=False,
-                                           topology='random'):
+                                           topology='random',
+                                           evolve_dt_fast=True):
     '''Shared helper for weight-free continuous (OU) GA experiments.
 
-    Genome: 20 genes = 4 units x 5 params per unit.
-    Per-unit gene order: [mass, viscosity, tau_a, maxDeviation, dt_fast].
+    When evolve_dt_fast=True (default):
+        Genome: 20 genes = 4 units x 5 params per unit.
+        Per-unit gene order: [mass, viscosity, tau_a, maxDeviation, dt_fast].
+
+    When evolve_dt_fast=False:
+        Genome: 16 genes = 4 units x 4 params per unit.
+        Per-unit gene order: [mass, viscosity, tau_a, maxDeviation].
+        dt_fast is fixed at 1.0 for all units.
+
     Connection weights are NOT in the genome — they are initialised to small
     random values and evolved online by the OU process.
 
     Parameters
     ----------
     homeoGenome : array-like
-        20-element array with values in [0, 1).
+        20-element (evolve_dt_fast=True) or 16-element (False) array, values in [0, 1).
     backendSimulator : simulator backend
         The robotic simulator backend (HOMEO, VREP, WEBOTS).
     dataDir : str, optional
@@ -2619,16 +2627,17 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     leftEyeSensorOnly = HomeoUnitInput(transducer=leftEyeSensorTransd)
     rightEyeSensorOnly = HomeoUnitInput(transducer=rightEyeSensorTransd)
 
-    "2. Decode genome: 5 genes per unit"
-    genes_per_unit = 5
+    "2. Decode genome"
+    genes_per_unit = 5 if evolve_dt_fast else 4
     evolved_units = [leftMotor, rightMotor, leftEye, rightEye]
     for i, unit in enumerate(evolved_units):
         base = i * genes_per_unit
-        unit.mass = HomeoUnit.massFromWeight(homeoGenome[base + 0])
+        unit.mass = 1.0 + homeoGenome[base + 0] * 9.0       # [1, 10] — responsive range
         unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
         # gene 2 = tau_a (applied after uniselector swap below)
         unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])
-        unit.dt_fast = HomeoUnit.dtFastFromWeight(homeoGenome[base + 4])
+        if evolve_dt_fast:
+            unit.dt_fast = HomeoUnit.dtFastFromWeight(homeoGenome[base + 4])
 
     "3. Build fully-connected homeostat"
     hom.addFullyConnectedUnit(leftMotor)
@@ -2648,8 +2657,14 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
 
     leftMotor.name = 'Left Motor'
     leftMotor.noise = unit_noise
+    leftMotor._maxSpeedFraction = 0.8
+    leftMotor._switchingRate = 0.5
+    leftMotor._maxSpeed = None              # force recalculation from new fraction
     rightMotor.name = 'Right Motor'
     rightMotor.noise = unit_noise
+    rightMotor._maxSpeedFraction = 0.8
+    rightMotor._switchingRate = 0.5
+    rightMotor._maxSpeed = None
     leftEye.name = 'Left Eye'
     leftEye.noise = unit_noise
     rightEye.name = 'Right Eye'
@@ -2764,6 +2779,27 @@ def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed(homeoGenome, noHome
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.noEvolvedUnits = 4
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.fitnessSign = 1
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.genomeSize = 20
+
+
+def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Weight-free phototaxis GA experiment with continuous (OU) uniselectors
+    and fixed dt_fast = 1.0 (same integration timestep as Experiments 1-2).
+    Fixed Braitenberg cross-wiring topology.
+
+    Genome: 16 genes = 4 units x 4 params [mass, viscosity, tau_a, maxDeviation].
+    dt_fast is fixed at 1.0 — not in the genome.
+    Connection weights are initialised to small random values and evolved online
+    by the Ornstein-Uhlenbeck process — they are NOT in the genome.
+    '''
+    return _setup_continuous_weightfree_homeostat(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, topology='fixed', evolve_dt_fast=False)
+
+initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.noEvolvedUnits = 4
+initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.fitnessSign = 1
+initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.genomeSize = 16
 
 
 def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=False, dataDir = None):

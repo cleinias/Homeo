@@ -248,14 +248,14 @@ def _ashby_fixed_topology(hom, mass_range=(1, 10),
 
         for conn in u.inputConnections:
             if conn.incomingUnit == u:
-                # Self-connection: random weight but protected from uniselector
-                conn.newWeight(np.random.uniform(-1, 1))
+                # Self-connection: small random weight, protected from uniselector
+                conn.newWeight(np.random.uniform(-0.1, 0.1))
                 conn.noise = np.random.uniform(0, 0.05)
                 conn.state = 'manual'
                 conn.status = True
             elif conn.status:
-                # Active cross-connection: randomize weight, put under uniselector
-                conn.newWeight(np.random.uniform(-1, 1))
+                # Active cross-connection: small random weight, under uniselector
+                conn.newWeight(np.random.uniform(-0.1, 0.1))
                 conn.noise = np.random.uniform(0, 0.1)
                 conn.state = 'uniselector'
 
@@ -296,9 +296,12 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
         # Override mass to a responsive range (setRandomValues doesn't touch it)
         u.mass = np.random.uniform(*mass_range)
 
-        # Randomize all connections (sets all active with random weights,
-        # noise, and state='uniselector')
-        u.randomizeAllConnectionValues()
+        # Set all connections active with small random weights
+        for conn in u.inputConnections:
+            conn.newWeight(np.random.uniform(-0.1, 0.1))
+            conn.noise = np.random.uniform(0, 0.1)
+            conn.state = 'uniselector'
+            conn.status = True
 
         # Activate uniselector and set type
         u.uniselectorActive = True
@@ -314,7 +317,7 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
             u._maxSpeed = None  # force recalculation from new fraction
 
 
-def run_headless(topology='fixed', total_steps=10000, report_interval=500,
+def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  light_intensity=100, early_stop_distance=None, quiet=False,
                  uniselector_type='ashby', continuous_params=None):
     '''Run the Ashby phototaxis experiment headless and print the trajectory.
@@ -621,8 +624,8 @@ if __name__ == '__main__':
 
     topology = 'random' if '--random-topology' in sys.argv else 'fixed'
 
-    # Parse --steps N (default 10000)
-    total_steps = 10000
+    # Parse --steps N (default 60000)
+    total_steps = 60000
     if '--steps' in sys.argv:
         idx = sys.argv.index('--steps')
         if idx + 1 < len(sys.argv):

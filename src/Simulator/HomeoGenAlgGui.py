@@ -43,7 +43,8 @@ except ImportError:
 from RobotSimulator.WebotsTCPClient import WebotsTCPClient
 # from socket import error as SocketError
 import os
-from math import sqrt
+from math import sqrt, ceil as math_ceil
+import math
 from time import time, strftime, localtime, sleep
 from tabulate import tabulate
 from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDebug
@@ -124,14 +125,26 @@ def _evaluate_genome_worker(genome):
     for u in hom.homeoUnits:
         u._headless = True
 
+    # Compute actual tick count.  stepsSize means "simulated seconds".
+    # When units have dt_fast < 1, more ticks are needed to cover the
+    # same simulated time.  Use the smallest dt_fast across all evolved
+    # units (those with the attribute) to determine the conversion.
+    min_dt_fast = 1.0
+    for u in hom.homeoUnits:
+        dt = getattr(u, '_dt_fast', 1.0)
+        if dt < min_dt_fast:
+            min_dt_fast = dt
+    actual_ticks = int(math.ceil(stepsSize / min_dt_fast))
+
     timeNow = time()
-    for i in range(stepsSize):
+    for i in range(actual_ticks):
         sim.step()
 
     finalDis = backend.finalDisFromTarget()
     fitness = cfg.get('fitnessSign', 1) * finalDis
-    print(" Evaluation for model %s took time: %s with fitness %.5f" % (
-        genome.ID, str(datetime.timedelta(seconds=time() - timeNow)), fitness))
+    print(" Evaluation for model %s (%d ticks, min_dt=%.2f) took time: %s with fitness %.5f" % (
+        genome.ID, actual_ticks, min_dt_fast,
+        str(datetime.timedelta(seconds=time() - timeNow)), fitness))
     return fitness,
 
 
@@ -250,6 +263,7 @@ class HomeoGASimulGUI(QWidget):
             "initializeBraiten2_2_Full_GA_phototaxis_continuous",
             "initializeBraiten2_2_Full_GA_continuous_weightfree",
             "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed",
+            "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt",
             "initializeBraiten2_2_Full_GA_scototaxis",
             "initializeBraiten2_2_Full_GA",
             "initializeBraiten2_2_NoUnisel_Full_GA",
@@ -1159,24 +1173,29 @@ class HomeoGASimulation(object):
         for u in hom.homeoUnits:
             u._headless = True
 
+        # Compute actual tick count (stepsSize = simulated seconds).
+        min_dt_fast = 1.0
+        for u in hom.homeoUnits:
+            dt = getattr(u, '_dt_fast', 1.0)
+            if dt < min_dt_fast:
+                min_dt_fast = dt
+        actual_ticks = int(math.ceil(self.stepsSize / min_dt_fast))
+
         #self._simulThread.start()
         timeNow = time()
-        hDebug('eval' , "Simulation started at time: " +  str(timeNow))  
-        hDebug('eval', ("Now computing exactly " + str(self.stepsSize) + " steps...."))
+        hDebug('eval' , "Simulation started at time: " +  str(timeNow))
+        hDebug('eval', ("Now computing %d ticks (%d sim-seconds, min_dt=%.2f)..." % (actual_ticks, self.stepsSize, min_dt_fast)))
         self.worldBeingResetLock.acquire()
-#         for sensor in self.simulatorBackend.world.allBodies[self._robotName].sensors.values():
-#             print  sensor.shape.pos
-        for i in range(self.stepsSize):
+        for i in range(actual_ticks):
             hDebug('eval', ("Step: "+ str(i+1)+"\n"))
-#             print "step: ",i+1
             self._simulation.step()
-        #self._simulation.go()
         self.worldBeingResetLock.release()
         hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
         finalDis =self.simulatorBackend.finalDisFromTarget()
         fitness = self.fitnessSign * finalDis
         hDebug('eval', ("Final distance from target was: " + str(finalDis)))
-        print(" Evaluation for model %s took time: %s with fitness %.5f" %(genome.ID, str(datetime.timedelta(seconds=time()- timeNow)), fitness))
+        print(" Evaluation for model %s (%d ticks, min_dt=%.2f) took time: %s with fitness %.5f" %(
+            genome.ID, actual_ticks, min_dt_fast, str(datetime.timedelta(seconds=time()- timeNow)), fitness))
         return fitness,                                       # Return a tuple, as required by DEAP
         
     def finalDisFromTargetFromFile(self, target):
