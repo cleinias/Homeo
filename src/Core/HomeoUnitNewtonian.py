@@ -37,17 +37,27 @@ class HomeoUnitNewtonian(HomeoUnit):
         
         "initialize according to superclass first"
         super(HomeoUnitNewtonian, self).__init__()
-        
+        self._dt_fast = 1.0
+        self._lastAcceleration = 0.0
 
+    def getDtFast(self):
+        return self._dt_fast
+
+    def setDtFast(self, value):
+        if value > 0:
+            self._dt_fast = float(value)
+
+    dt_fast = property(fget=lambda self: self.getDtFast(),
+                       fset=lambda self, value: self.setDtFast(value))
 
     def clearFutureValues(self):
         "sets to 0 the internal values used for computing future states. "
-
 
         self.nextDeviation =  0
         self.inputTorque =  0
         self.currentOutput = 0
         self.currentVelocity = 0
+        self._lastAcceleration = 0.0
         
 #===============================================================================  
 # Running methods
@@ -115,9 +125,11 @@ class HomeoUnitNewtonian(HomeoUnit):
            (a simplified version of) the forces acting on the needle'''
 
         if self._headless:
-            return _jit_needle_position_newtonian(
+            new_pos, acc = _jit_needle_position_newtonian(
                 aTorqueValue, self._viscosity, self._currentVelocity,
-                self._needleUnit._mass, self._criticalDeviation)
+                self._needleUnit._mass, self._criticalDeviation, self._dt_fast)
+            self._lastAcceleration = acc
+            return new_pos
 
         '''First, add to the  force acting on the needle the drag force
            produced by the fluid in the trough the  needle is moving through.
@@ -129,8 +141,9 @@ class HomeoUnitNewtonian(HomeoUnit):
         totalForce = aTorqueValue + self.drag()
         "Then compute displacement according to Newton's second law"    
             
-        acceleration = totalForce / self.needleUnit.mass                   # As per  Newton's second law 
-        displacement = self.currentVelocity + (1 / 2. * acceleration)      #  x - x0 = v0t + 1/2 a t, with t obviously =  1 
+        acceleration = totalForce / self.needleUnit.mass                   # As per  Newton's second law
+        self._lastAcceleration = acceleration
+        displacement = self.currentVelocity * self._dt_fast + (1 / 2. * acceleration * self._dt_fast**2)
 
         try:
             #print "My name is %s and I have a fileOut object to write to: %s " % (self.name, self._fileOut)
@@ -246,19 +259,16 @@ class HomeoUnitNewtonian(HomeoUnit):
         else:
             self.uniselectorActivated = 0
 
-        ''''4. Compute new current velocity according to classic Newtonian formula: x-x0 = 1/2t (v-v0)  where:
-        x0 = criticalDeviation
-        x = newDeviation
-        v0 = currentVelocity
-        Solving for v we get: v = 2(x-x0) - v0'''
+        '''4. Compute new current velocity: v_new = v_old + a * dt_fast.
+        When dt_fast = 1.0 this is equivalent to the old Verlet-derived
+        formula v = 2*(x_new - x_old) - v_old.'''
 
         if not (self.minDeviation < self.nextDeviation < self.maxDeviation):
             newDeviation = self.clipDeviation(self.nextDeviation)
             self.currentVelocity = 0
-            "currentVelocity := newDeviation-criticalDeviation."             #old version"
         else:
             newDeviation = self.nextDeviation
-            self.currentVelocity = 2 * (newDeviation -self. criticalDeviation) - self.currentVelocity
+            self.currentVelocity = self.currentVelocity + self._lastAcceleration * self._dt_fast
 
         "5. updates the needle's position (critical deviation) with clipping, if necessary, and updates the output"
 

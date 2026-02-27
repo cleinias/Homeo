@@ -86,21 +86,23 @@ def _jit_needle_position_base(torque, viscosity, max_viscosity, mass, crit_dev):
 
 
 @njit(cache=True)
-def _jit_needle_position_newtonian(torque, viscosity, current_velocity, mass, crit_dev):
+def _jit_needle_position_newtonian(torque, viscosity, current_velocity, mass, crit_dev, dt_fast):
     """Replacement for HomeoUnitNewtonian.newLinearNeedlePosition() arithmetic.
 
     Newtonian model with Stokes drag inline:
     drag = -viscosity * current_velocity
     totalForce = torque + drag
     acceleration = totalForce / mass
-    displacement = current_velocity + 0.5 * acceleration
+    displacement = current_velocity * dt_fast + 0.5 * acceleration * dt_fast * dt_fast
     new_pos = crit_dev + displacement
+
+    Returns (new_pos, acceleration).
     """
     drag = -viscosity * current_velocity
     totalForce = torque + drag
     acceleration = totalForce / mass
-    displacement = current_velocity + 0.5 * acceleration
-    return crit_dev + displacement
+    displacement = current_velocity * dt_fast + 0.5 * acceleration * dt_fast * dt_fast
+    return crit_dev + displacement, acceleration
 
 
 @njit(cache=True)
@@ -128,5 +130,5 @@ def warmup_jit():
     dummy = np.array([0.5], dtype=np.float64)
     _jit_compute_torque(dummy, dummy, dummy, dummy)
     _jit_needle_position_base(1.0, 0.5, 10.0, 100.0, 0.0)
-    _jit_needle_position_newtonian(1.0, 0.5, 0.1, 100.0, 0.0)
+    _jit_needle_position_newtonian(1.0, 0.5, 0.1, 100.0, 0.0, 1.0)
     _jit_compute_output(0.0, -10.0, 10.0, -1.0, 1.0)

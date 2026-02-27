@@ -248,6 +248,8 @@ class HomeoGASimulGUI(QWidget):
         self.experimentComboBox.addItems([
             "initializeBraiten2_2_Full_GA_phototaxis",
             "initializeBraiten2_2_Full_GA_phototaxis_continuous",
+            "initializeBraiten2_2_Full_GA_continuous_weightfree",
+            "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed",
             "initializeBraiten2_2_Full_GA_scototaxis",
             "initializeBraiten2_2_Full_GA",
             "initializeBraiten2_2_NoUnisel_Full_GA",
@@ -560,7 +562,8 @@ class HomeoGASimulation(object):
         exp_func = getattr(Simulator.HomeoExperiments, exp)
         self.noEvolvedUnits = getattr(exp_func, 'noEvolvedUnits', noUnits)
         self.fitnessSign = getattr(exp_func, 'fitnessSign', 1)
-        self.genomeSize = (self.noEvolvedUnits * essentParams) + (self.noEvolvedUnits * noUnits)
+        self.genomeSize = getattr(exp_func, 'genomeSize',
+                                   (self.noEvolvedUnits * essentParams) + (self.noEvolvedUnits * noUnits))
         self.stepsSize = stepsSize
         self.generSize = generSize
         self.experiment = exp
