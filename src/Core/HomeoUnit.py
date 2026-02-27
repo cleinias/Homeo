@@ -161,10 +161,23 @@ class HomeoUnit(object):
         '''Convert a GA parameter in the [0,1) range to a valid maxDeviation value'''
         return ((HomeoUnit.DefaultParameters['maxTheoreticalDeviation'] - HomeoUnit.DefaultParameters['minTheoreticalDeviation']) * maxDevParam) + HomeoUnit.DefaultParameters['minTheoreticalDeviation']
     
-    @classmethod    
+    @classmethod
     def massFromWeight(cls,massParam):
         '''Convert a GA parameter in the [0,1) range to a valid mass value'''
         return ((HomeoUnit.DefaultParameters['maxMass']-HomeoUnit.DefaultParameters['minMass']) * massParam) + HomeoUnit.DefaultParameters['minMass']
+
+    @classmethod
+    def tauAFromWeight(cls, param):
+        '''Map a GA gene in [0, 1) to tau_a in [100, 10000] logarithmically.
+        tau_a = 100 * (100 ** param)
+        Maps: 0 -> 100, 0.5 -> 1000, 1 -> 10000.'''
+        return 100.0 * (100.0 ** param)
+
+    @classmethod
+    def dtFastFromWeight(cls, param):
+        '''Map a GA gene in [0, 1) to dt_fast in [0.2, 2.0] linearly.
+        Maps: 0 -> 0.2, ~0.444 -> 1.0, 1 -> 2.0.'''
+        return 0.2 + param * 1.8
 
     #===========================================================================
     #  INITIALIZATIONS AND GETTERS, SETTERS, PROPERTIES

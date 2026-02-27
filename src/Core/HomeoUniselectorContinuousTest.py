@@ -180,5 +180,111 @@ class HomeoUnitStressLevelTest(unittest.TestCase):
         self.assertAlmostEqual(unit.stressLevel(), 0.5)
 
 
+class HomeoUnitDtFastTest(unittest.TestCase):
+    '''Test dt_fast property on HomeoUnitNewtonian'''
+
+    def setUp(self):
+        self.unit = HomeoUnitNewtonian()
+
+    def testDefaultDtFast(self):
+        '''Default dt_fast should be 1.0'''
+        self.assertEqual(self.unit.dt_fast, 1.0)
+
+    def testSetDtFast(self):
+        '''dt_fast setter should accept positive values'''
+        self.unit.dt_fast = 0.5
+        self.assertEqual(self.unit.dt_fast, 0.5)
+
+    def testRejectNonPositiveDtFast(self):
+        '''dt_fast setter should reject non-positive values'''
+        self.unit.dt_fast = 0.5
+        self.unit.dt_fast = 0
+        self.assertEqual(self.unit.dt_fast, 0.5)
+        self.unit.dt_fast = -1.0
+        self.assertEqual(self.unit.dt_fast, 0.5)
+
+    def testBackwardsCompatibility(self):
+        '''With dt_fast=1.0, displacement formula should match the old Verlet-derived result.
+        Old: displacement = v + 0.5*a (implicit dt=1)
+        New: displacement = v*dt_fast + 0.5*a*dt_fast^2 = v + 0.5*a when dt_fast=1'''
+        self.unit.dt_fast = 1.0
+        self.unit._criticalDeviation = 0.0
+        self.unit._currentVelocity = 0.3
+        self.unit._viscosity = 0.5
+        self.unit._needleUnit._mass = 10.0
+
+        torque = 2.0
+        drag = -0.5 * 0.3  # -viscosity * velocity
+        total_force = torque + drag
+        acceleration = total_force / 10.0
+        expected_displacement = 0.3 * 1.0 + 0.5 * acceleration * 1.0**2
+        expected_pos = 0.0 + expected_displacement
+
+        result = self.unit.newLinearNeedlePosition(torque)
+        self.assertAlmostEqual(result, expected_pos, places=10)
+
+    def testDisplacementScalesWithDtFast(self):
+        '''Displacement should scale with dt_fast: smaller dt_fast -> smaller displacement'''
+        self.unit._criticalDeviation = 0.0
+        self.unit._currentVelocity = 0.3
+        self.unit._viscosity = 0.5
+        self.unit._needleUnit._mass = 10.0
+
+        self.unit.dt_fast = 1.0
+        pos_dt1 = self.unit.newLinearNeedlePosition(2.0)
+
+        self.unit._criticalDeviation = 0.0
+        self.unit._currentVelocity = 0.3
+        self.unit.dt_fast = 0.5
+        pos_dt05 = self.unit.newLinearNeedlePosition(2.0)
+
+        # With smaller dt_fast, displacement should be smaller
+        self.assertLess(abs(pos_dt05), abs(pos_dt1))
+
+
+class HomeoUnitConversionFunctionsTest(unittest.TestCase):
+    '''Test tauAFromWeight and dtFastFromWeight class methods'''
+
+    def testTauAFromWeightBoundaries(self):
+        '''tauAFromWeight(0) = 100, tauAFromWeight(1) = 10000'''
+        from Core.HomeoUnit import HomeoUnit
+        self.assertAlmostEqual(HomeoUnit.tauAFromWeight(0.0), 100.0)
+        self.assertAlmostEqual(HomeoUnit.tauAFromWeight(1.0), 10000.0)
+
+    def testTauAFromWeightMonotonic(self):
+        '''tauAFromWeight should be monotonically increasing'''
+        from Core.HomeoUnit import HomeoUnit
+        prev = HomeoUnit.tauAFromWeight(0.0)
+        for p in np.linspace(0.01, 1.0, 50):
+            current = HomeoUnit.tauAFromWeight(p)
+            self.assertGreater(current, prev)
+            prev = current
+
+    def testTauAFromWeightMidpoint(self):
+        '''tauAFromWeight(0.5) should be geometric mean of 100 and 10000 = 1000'''
+        from Core.HomeoUnit import HomeoUnit
+        self.assertAlmostEqual(HomeoUnit.tauAFromWeight(0.5), 1000.0)
+
+    def testDtFastFromWeightBoundaries(self):
+        '''dtFastFromWeight(0) = 0.2, dtFastFromWeight(1) = 2.0'''
+        from Core.HomeoUnit import HomeoUnit
+        self.assertAlmostEqual(HomeoUnit.dtFastFromWeight(0.0), 0.2)
+        self.assertAlmostEqual(HomeoUnit.dtFastFromWeight(1.0), 2.0)
+
+    def testDtFastFromWeightMonotonic(self):
+        '''dtFastFromWeight should be monotonically increasing'''
+        from Core.HomeoUnit import HomeoUnit
+        prev = HomeoUnit.dtFastFromWeight(0.0)
+        for p in np.linspace(0.01, 1.0, 50):
+            current = HomeoUnit.dtFastFromWeight(p)
+            self.assertGreater(current, prev)
+            prev = current
+
+    def testDtFastFromWeightMidpoint(self):
+        '''dtFastFromWeight(0.5) should be 1.1 (linear midpoint of [0.2, 2.0])'''
+        from Core.HomeoUnit import HomeoUnit
+        self.assertAlmostEqual(HomeoUnit.dtFastFromWeight(0.5), 1.1)
+
+
 if __name__ == "__main__":
     unittest.main()
