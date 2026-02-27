@@ -2,6 +2,7 @@ from Core.HomeoNeedleUnit import *
 from Core.HomeoUniselectorAshby import *
 from Core.HomeoUniselector import *
 from Core.HomeoUniselectorUniformRandom import  *
+from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 from Core.HomeoConnection import *
 from Core.HomeoJIT import (_jit_unit_noise, _jit_compute_torque,
                            _jit_needle_position_base, _jit_compute_output)
@@ -966,7 +967,16 @@ class HomeoUnit(object):
         return (self.nextDeviation >= (self.critThreshold * self.maxDeviation) or
                 self.nextDeviation <= (self.critThreshold * self.minDeviation))
 
-#------------------------------------------------------------------------------ 
+    def stressLevel(self):
+        '''Return a continuous measure in [0, 1] of how critical the essential variable is.
+        0 = at equilibrium (deviation = 0), 1 = at the limit (deviation = maxDeviation).
+        Used by HomeoUniselectorContinuous to modulate noise intensity.'''
+
+        if self.maxDeviation == 0:
+            return 0.0
+        return min(abs(self.criticalDeviation) / self.maxDeviation, 1.0)
+
+#------------------------------------------------------------------------------
 
 #============================================================================
 # CONNECTION METHODS
@@ -1139,39 +1149,56 @@ class HomeoUnit(object):
         '''This is the master loop for the HomeoUnit. It goes through the following sequence:
         1. Compute new needle's deviation (nextDeviation (includes reading inputs))
         2. Update times
-        3. Check whether it's time to check the essential value and if so do it 
-           and  update the counter (uniselectorTime) [this might change the weight of the connections]
+        3. Weight adaptation: either discrete uniselector (periodic check + random resampling)
+           or continuous uniselector (Ornstein-Uhlenbeck drift every timestep)
         4. Move the needle to new position and compute new output'''
 
         "1. compute where the needle should move to"
         "Testing"
         if self._debugMode:
-            sys.stderr.write('Current Deviat. at time: %s for unit %s is %f' 
-                             % self.name, str(self.time), str(self.criticalDeviation)) 
+            sys.stderr.write('Current Deviat. at time: %s for unit %s is %f'
+                             % self.name, str(self.time), str(self.criticalDeviation))
             sys.stderr.write('\n')
-        
+
         self.computeNextDeviation()
 
         "2. update times"
         self.updateTime()
-        self.updateUniselectorTime()
 
-        '''3. check whether it's time to check the uniselector/detection mechanism and if so do it. 
-           Register that the uniselector is active in an instance variable'''
-        if (self.uniselectorTime >= self.uniselectorTimeInterval and
-            self.uniselectorActive):
-            if self.essentialVariableIsCritical():
-                if self.debugMode == True:
-                    sys.stderr.write(('############################################Operating uniselector for unit %s' % self.name))
-                self.operateUniselector()
-                self.uniselectorActivated = 1
+        '''3. Weight adaptation --- two modes depending on uniselector type.
+           Discrete (Ashby/UniformRandom): periodic check + random resampling.
+           Continuous (OU process): evolve weights every timestep.'''
+
+        if self.uniselectorActive:
+            if isinstance(self.uniselector, HomeoUniselectorContinuous):
+                "Continuous mode: evolve weights at every timestep"
+                stress = self.stressLevel()
+                if self._headless:
+                    if self._jit_dirty:
+                        self._sync_jit_arrays()
+                    self.uniselector.evolve_weights_jit(
+                        self._jit_weights, self._jit_switches, stress)
+                else:
+                    self.uniselector.evolve_weights(self.inputConnections, stress)
+                self._jit_dirty = True
             else:
-                self.uniselectorActivated = 0
-            self.uniselectorTime = 0
+                "Discrete mode: original periodic uniselector logic"
+                self.updateUniselectorTime()
+                if self.uniselectorTime >= self.uniselectorTimeInterval:
+                    if self.essentialVariableIsCritical():
+                        if self.debugMode == True:
+                            sys.stderr.write(('############################################Operating uniselector for unit %s' % self.name))
+                        self.operateUniselector()
+                        self.uniselectorActivated = 1
+                    else:
+                        self.uniselectorActivated = 0
+                    self.uniselectorTime = 0
+                else:
+                    self.uniselectorActivated = 0
         else:
-            self.uniselectorActivated = 0        
+            self.uniselectorActivated = 0
 
-        '''4. updates the needle's position (critical deviation) with clipping, 
+        '''4. updates the needle's position (critical deviation) with clipping,
             if necessary, and updates the output'''
         self.criticalDeviation = self.clipDeviation(self.nextDeviation)
         self.computeOutput()

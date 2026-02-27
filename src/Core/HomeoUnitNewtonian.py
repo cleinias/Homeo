@@ -5,6 +5,7 @@ Created on Mar 17, 2013
 '''
 from  Core.HomeoUnit import *
 from Core.HomeoJIT import _jit_needle_position_newtonian
+from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 import numpy as np
 from math import sqrt
 from Helpers.General_Helper_Functions import *
@@ -199,42 +200,58 @@ class HomeoUnitNewtonian(HomeoUnit):
     def selfUpdate(self):
         '''This is the master loop for the unit. It goes through the following sequence:
            1. compute new needle's deviation (nextDeviation (includes reading inputs))
-           2. check whether it's time to check the essential value and if so do it and 
-              update the counter (uniselectorTime) [this might change the weight of the connections]
+           2. weight adaptation: either discrete uniselector (periodic check + random resampling)
+              or continuous uniselector (Ornstein-Uhlenbeck drift every timestep)
            3. Compute the new velocity on the basis of the displacement
            4. Move the needle to new position and compute new output'''
 
-        
+
         "1. compute where the needle should move to"
 
         self.computeNextDeviation()
 
         "2. update times"
         self.updateTime()
-        self.updateUniselectorTime()
 
-        '''3. check whether it's time to check the uniselector/detection mechanism and if so do it. 
-           Register that the uniselector is active in an instance variable'''
-        
-        if (self.uniselectorTime >= self.uniselectorTimeInterval and
-            self.uniselectorActive):
-            if self.essentialVariableIsCritical():
-                if self.debugMode == True:
-                    sys.stderr.write(('############################################ Operating uniselector for unit %s' % self.name))
-                self.operateUniselector()
-                self.uniselectorActivated = 1
+        '''3. Weight adaptation --- two modes depending on uniselector type.
+           Discrete (Ashby/UniformRandom): periodic check + random resampling.
+           Continuous (OU process): evolve weights every timestep.'''
+
+        if self.uniselectorActive:
+            if isinstance(self.uniselector, HomeoUniselectorContinuous):
+                "Continuous mode: evolve weights at every timestep"
+                stress = self.stressLevel()
+                if self._headless:
+                    if self._jit_dirty:
+                        self._sync_jit_arrays()
+                    self.uniselector.evolve_weights_jit(
+                        self._jit_weights, self._jit_switches, stress)
+                else:
+                    self.uniselector.evolve_weights(self.inputConnections, stress)
+                self._jit_dirty = True
             else:
-                self.uniselectorActivated = 0
-            self.uniselectorTime = 0
+                "Discrete mode: original periodic uniselector logic"
+                self.updateUniselectorTime()
+                if self.uniselectorTime >= self.uniselectorTimeInterval:
+                    if self.essentialVariableIsCritical():
+                        if self.debugMode == True:
+                            sys.stderr.write(('############################################ Operating uniselector for unit %s' % self.name))
+                        self.operateUniselector()
+                        self.uniselectorActivated = 1
+                    else:
+                        self.uniselectorActivated = 0
+                    self.uniselectorTime = 0
+                else:
+                    self.uniselectorActivated = 0
         else:
-            self.uniselectorActivated = 0        
+            self.uniselectorActivated = 0
 
         ''''4. Compute new current velocity according to classic Newtonian formula: x-x0 = 1/2t (v-v0)  where:
         x0 = criticalDeviation
         x = newDeviation
         v0 = currentVelocity
         Solving for v we get: v = 2(x-x0) - v0'''
-        
+
         if not (self.minDeviation < self.nextDeviation < self.maxDeviation):
             newDeviation = self.clipDeviation(self.nextDeviation)
             self.currentVelocity = 0
@@ -244,7 +261,7 @@ class HomeoUnitNewtonian(HomeoUnit):
             self.currentVelocity = 2 * (newDeviation -self. criticalDeviation) - self.currentVelocity
 
         "5. updates the needle's position (critical deviation) with clipping, if necessary, and updates the output"
-    
+
         self.criticalDeviation = newDeviation
         self.computeOutput()
         self.nextDeviation = 0
