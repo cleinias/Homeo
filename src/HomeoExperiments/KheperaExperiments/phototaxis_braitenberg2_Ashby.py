@@ -95,7 +95,8 @@ import numpy as np
 
 def setup_phototaxis(topology='fixed', backendSimulator=None,
                      mass_range=(1, 10), max_speed_fraction=0.8,
-                     switching_rate=0.5, light_intensity=100):
+                     switching_rate=0.5, light_intensity=100,
+                     uniselector_type='ashby', continuous_params=None):
     '''Set up an Ashby-style phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -112,6 +113,13 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         switching_rate:     logistic sigmoid steepness for motor output.
         light_intensity:    intensity of the light source (negative for
                             a "darkness source").
+        uniselector_type:   'ashby' (default discrete stepping switch),
+                            'random' (uniform random), or
+                            'continuous' (Ornstein-Uhlenbeck weight drift).
+        continuous_params:  dict of HomeoUniselectorContinuous parameters
+                            (tau_a, theta, sigma_base, sigma_crit,
+                            stress_exponent).  Only used when
+                            uniselector_type='continuous'.  None = defaults.
 
     Returns:
         (hom, backend) - the configured Homeostat and the backend simulator
@@ -135,6 +143,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         exp_name = 'phototaxis_braitenberg2_Ashby_fixed'
     if light_intensity < 0:
         exp_name += '_dark'
+    if uniselector_type == 'continuous':
+        exp_name += '_continuous'
     backendSimulator.kheperaSimulation.experimentName = exp_name
 
     hom = initializeBraiten2_2Pos(backendSimulator=backendSimulator)
@@ -148,7 +158,9 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
 
     kwargs = dict(mass_range=mass_range,
                   max_speed_fraction=max_speed_fraction,
-                  switching_rate=switching_rate)
+                  switching_rate=switching_rate,
+                  uniselector_type=uniselector_type,
+                  continuous_params=continuous_params)
     if topology == 'random':
         _ashby_random_topology(hom, **kwargs)
     else:
@@ -157,8 +169,34 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     return hom, backendSimulator
 
 
+def _set_uniselector_type(unit, uniselector_type, continuous_params=None):
+    '''Set the uniselector on a unit according to the requested type.
+
+    Parameters:
+        unit:              HomeoUnit instance
+        uniselector_type:  'ashby', 'random', or 'continuous'
+        continuous_params: dict of HomeoUniselectorContinuous overrides
+    '''
+    from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
+    from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
+    from Core.HomeoUniselectorUniformRandom import HomeoUniselectorUniformRandom
+
+    if uniselector_type == 'continuous':
+        unis = HomeoUniselectorContinuous()
+        if continuous_params:
+            for key, val in continuous_params.items():
+                setattr(unis, key, val)
+        unit.uniselector = unis
+    elif uniselector_type == 'random':
+        unit.uniselector = HomeoUniselectorUniformRandom()
+    else:
+        # Default: Ashby stepping switch (already the default on new units)
+        pass
+
+
 def _ashby_fixed_topology(hom, mass_range=(1, 10),
-                          max_speed_fraction=0.8, switching_rate=0.5):
+                          max_speed_fraction=0.8, switching_rate=0.5,
+                          uniselector_type='ashby', continuous_params=None):
     '''Randomize unit parameters and connection weights, keeping the
     Braitenberg cross-wiring topology intact.
 
@@ -183,6 +221,8 @@ def _ashby_fixed_topology(hom, mass_range=(1, 10),
                             Default 0.5.  The actuator default is 0.1
                             which makes moderate deviations produce
                             almost no speed.
+        uniselector_type:   'ashby', 'random', or 'continuous'.
+        continuous_params:  dict of HomeoUniselectorContinuous parameters.
     '''
 
     for u in hom.homeoUnits:
@@ -196,8 +236,9 @@ def _ashby_fixed_topology(hom, mass_range=(1, 10),
         # Override mass to a responsive range (setRandomValues doesn't touch it)
         u.mass = np.random.uniform(*mass_range)
 
-        # Activate uniselector
+        # Activate uniselector and set type
         u.uniselectorActive = True
+        _set_uniselector_type(u, uniselector_type, continuous_params)
 
         # Motor-specific overrides
         if 'Motor' in u.name:
@@ -220,7 +261,8 @@ def _ashby_fixed_topology(hom, mass_range=(1, 10),
 
 
 def _ashby_random_topology(hom, mass_range=(1, 10),
-                           max_speed_fraction=0.8, switching_rate=0.5):
+                           max_speed_fraction=0.8, switching_rate=0.5,
+                           uniselector_type='ashby', continuous_params=None):
     '''Fully randomize all connections between the 4 real units.
 
     Every connection on motors and eyes gets a random weight and is
@@ -236,6 +278,8 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
                             Default 0.8.
         switching_rate:     logistic sigmoid steepness for motor output.
                             Default 0.5.
+        uniselector_type:   'ashby', 'random', or 'continuous'.
+        continuous_params:  dict of HomeoUniselectorContinuous parameters.
     '''
 
     for u in hom.homeoUnits:
@@ -256,8 +300,9 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
         # noise, and state='uniselector')
         u.randomizeAllConnectionValues()
 
-        # Activate uniselector
+        # Activate uniselector and set type
         u.uniselectorActive = True
+        _set_uniselector_type(u, uniselector_type, continuous_params)
 
         # Protect self-connection from uniselector
         u.inputConnections[0].state = 'manual'
@@ -270,7 +315,8 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
 
 
 def run_headless(topology='fixed', total_steps=10000, report_interval=500,
-                 light_intensity=100, early_stop_distance=None, quiet=False):
+                 light_intensity=100, early_stop_distance=None, quiet=False,
+                 uniselector_type='ashby', continuous_params=None):
     '''Run the Ashby phototaxis experiment headless and print the trajectory.
 
     Parameters:
@@ -282,6 +328,8 @@ def run_headless(topology='fixed', total_steps=10000, report_interval=500,
         early_stop_distance:  if set, stop when the robot gets closer than
                               this distance to the target
         quiet:                if True, suppress per-tick output (for batch mode)
+        uniselector_type:     'ashby', 'random', or 'continuous'
+        continuous_params:    dict of HomeoUniselectorContinuous overrides
 
     Returns:
         dict with keys: hom, backend, final_dist, min_dist, min_t,
@@ -292,7 +340,9 @@ def run_headless(topology='fixed', total_steps=10000, report_interval=500,
         log_homeostat_conditions, log_homeostat_conditions_json)
 
     hom, backend = setup_phototaxis(topology=topology,
-                                    light_intensity=light_intensity)
+                                    light_intensity=light_intensity,
+                                    uniselector_type=uniselector_type,
+                                    continuous_params=continuous_params)
 
     # Headless optimizations: disable the per-tick sleep and in-memory data
     # collection (initial/final state is logged separately to file)
@@ -378,7 +428,8 @@ def run_headless(topology='fixed', total_steps=10000, report_interval=500,
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               report_interval=500, light_intensity=100,
-              early_stop_distance=None):
+              early_stop_distance=None,
+              uniselector_type='ashby', continuous_params=None):
     '''Run a batch of experiments and print a summary table.
 
     Parameters:
@@ -388,6 +439,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
         report_interval:      ticks between position checks
         light_intensity:      intensity (negative for darkness)
         early_stop_distance:  stop run early if robot gets this close
+        uniselector_type:     'ashby', 'random', or 'continuous'
+        continuous_params:    dict of HomeoUniselectorContinuous overrides
 
     Returns:
         list of result dicts (one per run, without hom/backend)
@@ -406,7 +459,9 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          report_interval=report_interval,
                          light_intensity=light_intensity,
                          early_stop_distance=early_stop_distance,
-                         quiet=True)
+                         quiet=True,
+                         uniselector_type=uniselector_type,
+                         continuous_params=continuous_params)
         elapsed = time.time() - t0
         # Drop non-serialisable objects before storing
         r.pop('hom'); r.pop('backend')
@@ -590,14 +645,19 @@ if __name__ == '__main__':
         if idx + 1 < len(sys.argv):
             n_batch = int(sys.argv[idx + 1])
 
+    # Parse --continuous (use Ornstein-Uhlenbeck weight drift)
+    uniselector_type = 'continuous' if '--continuous' in sys.argv else 'ashby'
+
     if '--visualize' in sys.argv:
         run_visualized(topology=topology)
     elif n_batch is not None:
         run_batch(n_runs=n_batch, topology=topology,
                   total_steps=total_steps,
                   light_intensity=light_intensity,
-                  early_stop_distance=early_stop_distance)
+                  early_stop_distance=early_stop_distance,
+                  uniselector_type=uniselector_type)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
-                     early_stop_distance=early_stop_distance)
+                     early_stop_distance=early_stop_distance,
+                     uniselector_type=uniselector_type)

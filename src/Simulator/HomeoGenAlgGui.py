@@ -247,6 +247,7 @@ class HomeoGASimulGUI(QWidget):
         self.experimentComboBox = QComboBox()
         self.experimentComboBox.addItems([
             "initializeBraiten2_2_Full_GA_phototaxis",
+            "initializeBraiten2_2_Full_GA_phototaxis_continuous",
             "initializeBraiten2_2_Full_GA_scototaxis",
             "initializeBraiten2_2_Full_GA",
             "initializeBraiten2_2_NoUnisel_Full_GA",

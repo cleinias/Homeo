@@ -2515,6 +2515,49 @@ initializeBraiten2_2_Full_GA_scototaxis.noEvolvedUnits = 4
 initializeBraiten2_2_Full_GA_scototaxis.fitnessSign = -1  # negate: minimising = maximising distance
 
 
+def initializeBraiten2_2_Full_GA_phototaxis_continuous(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Phototaxis GA experiment with continuous (Ornstein-Uhlenbeck) uniselectors.
+
+    Same as phototaxis (negative light intensity, robot seeks the light source,
+    fitness = distance minimised) but replaces the discrete Ashby stepping switch
+    with a continuous stochastic weight drift on all evolved units.
+
+    The genome structure is identical to the standard phototaxis experiment
+    (40 genes: 4x4 unit params + 4x6 connection weights).  The uniselector_timing
+    gene (gene index 2 within each unit's 4-gene block) still sets
+    uniselectorTimeInterval on the unit, but it is ignored by the continuous
+    uniselector — the timescale separation is handled by tau_a instead.
+
+    Continuous uniselector parameters use defaults from
+    HomeoUniselectorContinuous.DefaultParameters.
+    '''
+    from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
+
+    hom = initializeBraiten2_2_Full_GA(
+        homeoGenome=homeoGenome, noHomeoParameters=noHomeoParameters,
+        backendSimulator=backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, transducers=transducers)
+
+    # Set negative light intensity (darkness source / phototaxis)
+    if backendSimulator is not None:
+        target = backendSimulator.kheperaSimulation.allBodies['TARGET']
+        target.userData['intensity'] = -100
+        target.userData['lightIntensity'] = -100
+
+    # Replace discrete uniselectors with continuous OU process on evolved units
+    if not noUnisel:
+        for unit in hom.homeoUnits:
+            if unit.uniselectorActive:
+                unit.uniselector = HomeoUniselectorContinuous()
+
+    return hom
+
+initializeBraiten2_2_Full_GA_phototaxis_continuous.noEvolvedUnits = 4
+initializeBraiten2_2_Full_GA_phototaxis_continuous.fitnessSign = 1  # minimise distance
+
+
 def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=False, dataDir = None):
     '''
     Initialize a homeostat according to initializeBraiten2_2_Full_GA, then turn 
