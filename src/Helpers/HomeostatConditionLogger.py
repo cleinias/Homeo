@@ -148,12 +148,16 @@ def log_homeostat_conditions(homeostat, filepath, label='', experiment_name=''):
         f.write(_connections_table(snap) + '\n\n')
 
 
-def log_homeostat_conditions_json(homeostat, filepath, label='', experiment_name=''):
+def log_homeostat_conditions_json(homeostat, filepath, label='', experiment_name='',
+                                  seed=None):
     """Add a snapshot under label key in a JSON file.
 
     If the file already exists, the existing content is preserved
     and the new snapshot is added (or replaced) under the label key.
     The experiment title and date/time are stored as top-level fields.
+
+    Parameters:
+        seed:  RNG seed used for this run (written once on first call).
     """
 
     snap = _snapshot(homeostat)
@@ -166,6 +170,9 @@ def log_homeostat_conditions_json(homeostat, filepath, label='', experiment_name
     if experiment_name and 'experiment' not in data:
         data['experiment'] = experiment_name.replace('_', ' ').title()
         data['date'] = time.strftime("%Y-%m-%d %H:%M:%S")
+
+    if seed is not None and 'seed' not in data:
+        data['seed'] = seed
 
     data[label] = snap
 

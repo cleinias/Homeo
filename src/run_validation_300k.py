@@ -18,6 +18,7 @@ import time
 import datetime
 import json
 import math
+import numpy as np
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SRC_DIR)
@@ -91,7 +92,7 @@ def restore_from_json(homeostat, json_path):
 # ---------------------------------------------------------------------------
 
 def run_standalone(exp_num, uniselector_type, json_path, total_steps,
-                   state_log=False, state_log_interval=100):
+                   state_log=False, state_log_interval=100, seed=None):
     """Run a standalone experiment with weights restored from JSON."""
     from HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby import setup_phototaxis
     from Helpers.HomeostatConditionLogger import (
@@ -101,9 +102,9 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps,
     print("PROGRESS: Exp %d started — Standalone %s (restored weights), %dk steps" % (
         exp_num, label, total_steps // 1000), flush=True)
 
-    hom, backend = setup_phototaxis(
+    hom, backend, seed = setup_phototaxis(
         topology='fixed', light_intensity=-100,
-        uniselector_type=uniselector_type)
+        uniselector_type=uniselector_type, seed=seed)
 
     # Restore final weights from original 60k run
     restore_from_json(hom, json_path)
@@ -126,14 +127,16 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps,
     log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.log')
     json_log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS (restored)', exp_name)
-    log_homeostat_conditions_json(hom, json_log_path, 'INITIAL CONDITIONS (restored)', exp_name)
+    log_homeostat_conditions_json(hom, json_log_path, 'INITIAL CONDITIONS (restored)', exp_name,
+                                  seed=seed)
 
     # Optional per-tick state logger
     if state_log:
         from Helpers.HomeostatStateLogger import HomeostatStateLogger
         state_log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.statelog')
         state_logger = HomeostatStateLogger(
-            hom, sim, state_log_path, log_interval=state_log_interval)
+            hom, sim, state_log_path, log_interval=state_log_interval, seed=seed)
+        state_logger.log_tick(0)  # capture initial state before any dynamics
         hom._state_logger = state_logger
 
     def dist_to_target():
@@ -173,11 +176,18 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps,
 # ---------------------------------------------------------------------------
 
 def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
-                  state_log=False, state_log_interval=100):
+                  state_log=False, state_log_interval=100, seed=None):
     """Replay a GA genome for an extended run."""
+    import random as _random
     from deap import base, creator
     from Simulator.SimulatorBackend import SimulatorBackendHOMEO
     from Simulator.HomeoQtSimulation import HomeoQtSimulation
+
+    # Seed both RNGs before any stochastic initialization
+    if seed is None:
+        seed = int.from_bytes(os.urandom(4), 'big')
+    np.random.seed(seed)
+    _random.seed(seed)
 
     label = '16-gene fixed-dt' if len(genome_raw) == 16 else '20-gene variable-dt'
     print("PROGRESS: Exp %d started — GA replay %s (ID %s), %dk steps" % (
@@ -252,7 +262,9 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
         state_log_path = os.path.join(log_dir, exp_label + '-' + genome_id +
                                       '-' + timestamp + '.statelog')
         state_logger = HomeostatStateLogger(
-            hom, khep_sim, state_log_path, log_interval=state_log_interval)
+            hom, khep_sim, state_log_path, log_interval=state_log_interval,
+            seed=seed)
+        state_logger.log_tick(0)  # capture initial state before any dynamics
         hom._state_logger = state_logger
 
     def dist_to_target():
