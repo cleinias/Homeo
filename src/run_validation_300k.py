@@ -90,7 +90,8 @@ def restore_from_json(homeostat, json_path):
 # Standalone experiment runners (Exp 1 & 2)
 # ---------------------------------------------------------------------------
 
-def run_standalone(exp_num, uniselector_type, json_path, total_steps):
+def run_standalone(exp_num, uniselector_type, json_path, total_steps,
+                   state_log=False, state_log_interval=100):
     """Run a standalone experiment with weights restored from JSON."""
     from HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby import setup_phototaxis
     from Helpers.HomeostatConditionLogger import (
@@ -127,6 +128,14 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps):
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS (restored)', exp_name)
     log_homeostat_conditions_json(hom, json_log_path, 'INITIAL CONDITIONS (restored)', exp_name)
 
+    # Optional per-tick state logger
+    if state_log:
+        from Helpers.HomeostatStateLogger import HomeostatStateLogger
+        state_log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.statelog')
+        state_logger = HomeostatStateLogger(
+            hom, sim, state_log_path, log_interval=state_log_interval)
+        hom._state_logger = state_logger
+
     def dist_to_target():
         rx, ry = robot.body.position[0], robot.body.position[1]
         return math.sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
@@ -146,6 +155,11 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps):
     final_dist = dist_to_target()
     sim.saveTrajectory()
 
+    # Close state logger if active
+    if state_log and hom._state_logger is not None:
+        hom._state_logger.close()
+        hom._state_logger = None
+
     # Log final conditions
     log_homeostat_conditions(hom, log_path, 'FINAL CONDITIONS')
     log_homeostat_conditions_json(hom, json_log_path, 'FINAL CONDITIONS')
@@ -158,7 +172,8 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps):
 # GA genome replay runners (Exp 3 & 4)
 # ---------------------------------------------------------------------------
 
-def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps):
+def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
+                  state_log=False, state_log_interval=100):
     """Replay a GA genome for an extended run."""
     from deap import base, creator
     from Simulator.SimulatorBackend import SimulatorBackendHOMEO
@@ -229,6 +244,17 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps):
     robot = khep_sim.allBodies['Khepera']
     target_pos = (7, 7)
 
+    # Optional per-tick state logger
+    if state_log:
+        from Helpers.HomeostatStateLogger import HomeostatStateLogger
+        timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
+        exp_label = experiment_name.replace('initializeBraiten2_2_Full_', '')
+        state_log_path = os.path.join(log_dir, exp_label + '-' + genome_id +
+                                      '-' + timestamp + '.statelog')
+        state_logger = HomeostatStateLogger(
+            hom, khep_sim, state_log_path, log_interval=state_log_interval)
+        hom._state_logger = state_logger
+
     def dist_to_target():
         rx, ry = robot.body.position[0], robot.body.position[1]
         return math.sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
@@ -259,6 +285,11 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps):
         min_t = total_steps
 
     khep_sim.saveTrajectory()
+
+    # Close state logger if active
+    if state_log and hom._state_logger is not None:
+        hom._state_logger.close()
+        hom._state_logger = None
 
     print("PROGRESS: Exp %d finished — final_dist=%.4f, min_dist=%.4f (t=%d)" % (
         exp_num, final_dist, min_dist, min_t), flush=True)

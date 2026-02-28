@@ -319,7 +319,8 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
 
 def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  light_intensity=100, early_stop_distance=None, quiet=False,
-                 uniselector_type='ashby', continuous_params=None):
+                 uniselector_type='ashby', continuous_params=None,
+                 state_log=False, state_log_interval=1):
     '''Run the Ashby phototaxis experiment headless and print the trajectory.
 
     Parameters:
@@ -333,11 +334,13 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         quiet:                if True, suppress per-tick output (for batch mode)
         uniselector_type:     'ashby', 'random', or 'continuous'
         continuous_params:    dict of HomeoUniselectorContinuous overrides
+        state_log:            if True, write per-tick .statelog file
+        state_log_interval:   log every N-th tick (default 1)
 
     Returns:
         dict with keys: hom, backend, final_dist, min_dist, min_t,
                         steps_run, final_x, final_y, early_stopped,
-                        log_path, json_path
+                        log_path, json_path, state_log_path
     '''
     from Helpers.HomeostatConditionLogger import (
         log_homeostat_conditions, log_homeostat_conditions_json)
@@ -367,6 +370,15 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     json_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
     log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name)
+
+    # Optional per-tick state logger
+    state_log_path = None
+    if state_log:
+        from Helpers.HomeostatStateLogger import HomeostatStateLogger
+        state_log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.statelog')
+        state_logger = HomeostatStateLogger(
+            hom, sim, state_log_path, log_interval=state_log_interval)
+        hom._state_logger = state_logger
 
     def dist_to_target():
         rx, ry = robot.body.position[0], robot.body.position[1]
@@ -418,6 +430,11 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
 
     sim.saveTrajectory()
 
+    # Close state logger if active
+    if state_log and hom._state_logger is not None:
+        hom._state_logger.close()
+        hom._state_logger = None
+
     # Log final conditions
     log_homeostat_conditions(hom, log_path, 'FINAL CONDITIONS')
     log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
@@ -426,7 +443,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 final_dist=final_dist, min_dist=min_dist, min_t=min_t,
                 steps_run=steps_run, final_x=final_x, final_y=final_y,
                 early_stopped=early_stopped,
-                log_path=log_path, json_path=json_path)
+                log_path=log_path, json_path=json_path,
+                state_log_path=state_log_path)
 
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
