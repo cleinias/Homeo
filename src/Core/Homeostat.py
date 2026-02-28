@@ -78,6 +78,7 @@ class Homeostat(object):
         self._slowingFactor = 10                        # Default slowing time is 10 milliseconds 
         self._isRunning = False                         # a new homeostat is not running
         self._headless = False                          # when True, skip signal emissions for GUI
+        self._state_logger = None                       # optional HomeostatStateLogger
         self._usesSocket = False
         if ip != None:
             self._ip = ip
@@ -255,6 +256,8 @@ class Homeostat(object):
                     if unit.isActive():
                         unit.selfUpdate()
                 self.time +=  1
+                if self._state_logger is not None:
+                    self._state_logger.log_tick(self.time)
                 if not getattr(self, '_headless', False):
                     emitter(self).homeostatTimeChanged.emit(self.time)
                 if sleepTime > 0:
