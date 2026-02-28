@@ -37,10 +37,12 @@ class HomeostatStateLogger:
         filepath:     output .statelog path
         log_interval: only log every N-th tick (default 1 = every tick)
         target_pos:   (x, y) of the light source (default (7, 7))
+        seed:         RNG seed used for this run (logged in metadata header)
     '''
 
     def __init__(self, homeostat, khepera_sim, filepath,
-                 log_interval=1, target_pos=(7, 7)):
+                 log_interval=1, target_pos=(7, 7), seed=None):
+        self._seed = seed
         self._hom = homeostat
         self._sim = khepera_sim
         self._robot = khepera_sim.allBodies['Khepera']
@@ -111,6 +113,8 @@ class HomeostatStateLogger:
         f = self._f
         f.write('# HomeostatStateLog v1\n')
         f.write('# date\t%s\n' % time.strftime('%Y-%m-%d %H:%M:%S'))
+        if self._seed is not None:
+            f.write('# seed\t%d\n' % self._seed)
         f.write('# log_interval\t%d\n' % self._interval)
         f.write('# target_x\t%.3f\n' % self._target[0])
         f.write('# target_y\t%.3f\n' % self._target[1])

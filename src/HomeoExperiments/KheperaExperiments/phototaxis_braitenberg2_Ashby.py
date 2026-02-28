@@ -86,6 +86,7 @@ Usage
 '''
 
 import os
+import random
 import time
 import threading
 from math import sqrt, degrees
@@ -96,7 +97,8 @@ import numpy as np
 def setup_phototaxis(topology='fixed', backendSimulator=None,
                      mass_range=(1, 10), max_speed_fraction=0.8,
                      switching_rate=0.5, light_intensity=100,
-                     uniselector_type='ashby', continuous_params=None):
+                     uniselector_type='ashby', continuous_params=None,
+                     seed=None):
     '''Set up an Ashby-style phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -120,12 +122,21 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             (tau_a, theta, sigma_base, sigma_crit,
                             stress_exponent).  Only used when
                             uniselector_type='continuous'.  None = defaults.
+        seed:               RNG seed for reproducibility.  If None, a
+                            random seed is generated from os.urandom().
 
     Returns:
-        (hom, backend) - the configured Homeostat and the backend simulator
+        (hom, backend, seed) - the configured Homeostat, the backend
+                               simulator, and the RNG seed used
     '''
     from Simulator.SimulatorBackend import SimulatorBackendHOMEO
     from Simulator.HomeoExperiments import initializeBraiten2_2Pos
+
+    # Seed both RNGs before any stochastic initialization
+    if seed is None:
+        seed = int.from_bytes(os.urandom(4), 'big')
+    np.random.seed(seed)
+    random.seed(seed)
 
     if backendSimulator is None:
         lock = threading.Lock()
@@ -166,7 +177,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     else:
         _ashby_fixed_topology(hom, **kwargs)
 
-    return hom, backendSimulator
+    return hom, backendSimulator, seed
 
 
 def _set_uniselector_type(unit, uniselector_type, continuous_params=None):
@@ -320,7 +331,7 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
 def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  light_intensity=100, early_stop_distance=None, quiet=False,
                  uniselector_type='ashby', continuous_params=None,
-                 state_log=False, state_log_interval=1):
+                 state_log=False, state_log_interval=1, seed=None):
     '''Run the Ashby phototaxis experiment headless and print the trajectory.
 
     Parameters:
@@ -336,19 +347,21 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         continuous_params:    dict of HomeoUniselectorContinuous overrides
         state_log:            if True, write per-tick .statelog file
         state_log_interval:   log every N-th tick (default 1)
+        seed:                 RNG seed for reproducibility (None = random)
 
     Returns:
         dict with keys: hom, backend, final_dist, min_dist, min_t,
                         steps_run, final_x, final_y, early_stopped,
-                        log_path, json_path, state_log_path
+                        log_path, json_path, state_log_path, seed
     '''
     from Helpers.HomeostatConditionLogger import (
         log_homeostat_conditions, log_homeostat_conditions_json)
 
-    hom, backend = setup_phototaxis(topology=topology,
-                                    light_intensity=light_intensity,
-                                    uniselector_type=uniselector_type,
-                                    continuous_params=continuous_params)
+    hom, backend, seed = setup_phototaxis(topology=topology,
+                                          light_intensity=light_intensity,
+                                          uniselector_type=uniselector_type,
+                                          continuous_params=continuous_params,
+                                          seed=seed)
 
     # Headless optimizations: disable the per-tick sleep and in-memory data
     # collection (initial/final state is logged separately to file)
@@ -369,7 +382,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.log')
     json_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
-    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name)
+    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name,
+                                  seed=seed)
 
     # Optional per-tick state logger
     state_log_path = None
@@ -377,7 +391,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         from Helpers.HomeostatStateLogger import HomeostatStateLogger
         state_log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.statelog')
         state_logger = HomeostatStateLogger(
-            hom, sim, state_log_path, log_interval=state_log_interval)
+            hom, sim, state_log_path, log_interval=state_log_interval, seed=seed)
+        state_logger.log_tick(0)  # capture initial state before any dynamics
         hom._state_logger = state_logger
 
     def dist_to_target():
@@ -444,7 +459,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 steps_run=steps_run, final_x=final_x, final_y=final_y,
                 early_stopped=early_stopped,
                 log_path=log_path, json_path=json_path,
-                state_log_path=state_log_path)
+                state_log_path=state_log_path, seed=seed)
 
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
@@ -555,7 +570,7 @@ def run_visualized(topology='fixed'):
     from Helpers.HomeostatConditionLogger import (
         log_homeostat_conditions, log_homeostat_conditions_json)
 
-    hom, backend = setup_phototaxis(topology=topology)
+    hom, backend, seed = setup_phototaxis(topology=topology)
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target_pos = sim.allBodies['TARGET'].position
