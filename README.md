@@ -1,10 +1,54 @@
-Homeo is a software simulation  inspired by   W.R. Ashby's Homeostat device as described in his books _Design for a Brain_ and _Introduction to Cybernetics_.
+# Homeo
 
-Homeo  includes a simulation of all the  components of Ashby's original Homeostat (Units, Uniselectors, etc), plus 
-- a Gui front-end that allows  runnning the interactive manipulation of the simulated device
-- Data-logging facilities
--Graphing capabilities of the logged data
+A software simulation of W. Ross Ashby's Homeostat, as described in
+*Design for a Brain* (1952) and *Introduction to Cybernetics* (1956).
 
-Homeo extends Ashby's original models to an unlimited number of Homeostatic units, and it generalizes and supplement Ashby's model of a homeostatic unit.
+## Features
 
-Homeo also includes a robotic component that allows a homeostat to be used as the controller of virtual robots built in robotic simulation software.
+- Full simulation of all components of Ashby's original Homeostat
+  (units, uniselectors, connections)
+- Interactive GUI (PyQt5) for running and manipulating the simulated device
+- Data logging and graphing capabilities
+- Extensible to an arbitrary number of homeostatic units
+- Generalized and supplemented model of a homeostatic unit, including
+  Newtonian physics and continuous (Ornstein-Uhlenbeck) uniselectors
+- Robotic component: use a homeostat as the controller of virtual robots
+  in simulation environments (Webots, V-REP/CoppeliaSim)
+
+## Getting started
+
+```bash
+pip install -r requirements.txt
+cd src
+python -m Simulator.HomeoQtSimulation   # launch the GUI
+```
+
+## Running tests
+
+```bash
+cd src
+python -m pytest Unit_Tests/ -x -q
+```
+
+## Project structure
+
+```
+src/
+  Core/           # Homeostat core classes (units, connections, uniselectors)
+  Helpers/        # Utility modules (signals, general helpers)
+  Simulator/      # Simulation runners (CLI and GUI), GA experiments
+  Unit_Tests/     # Pytest test suite
+  HomeoExperiments/  # Predefined experiment configurations
+  KheperaSimulator/  # Khepera robot integration
+  RobotSimulator/    # Generic robot simulator
+  Webots/            # Webots robot controller
+resources/        # GUI resources (icons, images)
+```
+
+See [CODE_OVERVIEW.md](CODE_OVERVIEW.md) for a detailed walkthrough of the
+codebase, and [ROBOTIC_OVERVIEW.md](ROBOTIC_OVERVIEW.md) for the robotic
+integration.
+
+## License
+
+See [license.txt](license.txt) for details.

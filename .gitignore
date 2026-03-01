@@ -1,27 +1,45 @@
-## Compiled source ##
-################
-*.pyc
-*.class
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Compiled source
+*.so
+*.o
 *.dll
 *.exe
-*.o
-*.so
+*.class
 
-## Qt and Qt-creator created files ##
-#####################################
-moc_*
+# Testing / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.nbc
+*.nbi
+
+# IDE
+.idea/
+.vscode/
 *.user
+.project
+.pydevproject
+.settings/
 
-
-## Webots files ##
-##################
+# Qt / Qt Creator
+moc_*
 *.wproj
 
-
-# Packages #
-############
-# it's better to unpack these files and commit the raw source
-# git has its own built in compression methods
+# Packages
 *.7z
 *.dmg
 *.gz
@@ -31,37 +49,20 @@ moc_*
 *.tar
 *.zip
 
-# Logs and databases #
-######################
+# Logs and databases
 *.log
 *.sql
 *.sqlite
 
-# Backup files #
-################
-*.lyx~
-
-
-# Compiled documents from lyx and compiled images from svg ##
-#############################################################
-
-*.tex
-*.pdf
-*.lyx#
-*.ps
-*.eps
-*.bcf
-*.backup
-*.aux
-*.bbl
-
-
-## Homeo created ddata files ##
-###############################
-
+# Homeo simulation data
 *.csv
 *.traj
+*.hist
+*.lgb
+*.pickled
+*.statelog
 
-# Allow all files in ExperimentReports (overrides *.pdf, *.tex, *.log above)
-!ExperimentReports/
-!ExperimentReports/**
+# OS
+.DS_Store
+.directory
+Thumbs.db

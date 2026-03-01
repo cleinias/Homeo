@@ -40,7 +40,7 @@ class HomeoSimulationControllerGui(QDialog):
         _simulThread                <aSimulationThread>    The QT thread holding the simulation run
     '''    
    
-    dataDirRoot = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/'
+    dataDirRoot = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'SimulationsData')
 
     def __init__(self, parent = None, simulatorBackend = 'VREP', experiment=None):
         '''
@@ -56,7 +56,7 @@ class HomeoSimulationControllerGui(QDialog):
         "Directory to save simulations'data, used to save logbook and history and passed to HomeoQt simulation and other classes"
         self.dataDir = os.path.join(HomeoSimulationControllerGui.dataDirRoot,('SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))))
         try:
-            os.mkdir(self.dataDir)
+            os.makedirs(self.dataDir)
         except OSError:
             print("Saving to existing directory", self.dataDir)
         'save dataDir path to a file, so Webots trajectory supervisor can read it'

@@ -557,7 +557,7 @@ class HomeoGASimulation(object):
         "Directory to save simulations'data, used to save logbook and history and passed to HomeoQt simulation and other classes"
         self.dataDir = os.path.join(HomeoGASimulation.dataDirRoot,('SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))))
         try:
-            os.mkdir(self.dataDir)
+            os.makedirs(self.dataDir)
         except OSError:
             print("WARNING: Saving to existing directory", self.dataDir)
 
