@@ -40,9 +40,9 @@ def initialize10UnitHomeostat(params=None):
         hom.addFullyConnectedUnit(unit)
     return hom
     
-def initializeAshbySimulation(params=None):
+def initializeAshbySimulation(**params):
     '''Returns a Homeostat with
-       four fully connected units with random values to the simulator 
+       four fully connected units with random values to the simulator
        (as per Ashby basic design)'''
     hom = Homeostat()
     for i in range(4):
@@ -53,9 +53,9 @@ def initializeAshbySimulation(params=None):
     'Return the properly configured homeostat'
     return hom
 
-def initializeAshbyNoNoiseSimulation(params=None):
+def initializeAshbyNoNoiseSimulation(**params):
     '''Returns a Homeostat with
-       four fully connected units with random values to the simulator 
+       four fully connected units with random values to the simulator
        (as per Ashby basic design)
        Set all noises values to 0 for testing purposes'''
     hom = Homeostat()
@@ -3462,4 +3462,280 @@ def basicBraiten2Tranducers(backendSimulator, world):
                    "leftEyeTransd"    : backendSimulator.getSensor('left')} 
    
     return transducers
+
+
+# ===============================================================
+#  Ashby's 7 Original Experiments — GUI-friendly setup functions
+#
+#  Each returns a configured Homeostat ready to run.
+#  Per-tick callbacks (trainer, constraint, connectivity toggling)
+#  are NOT installed here — they are handled by the GUI subclass.
+#  Adapted from AshbyOriginalExperiments.py (headless version).
+# ===============================================================
+
+def _ashby_make_unit(name, mass=100, viscosity=None, noise=None,
+                     potentiometer=None, switch=-1,
+                     uniselector_active=True, uniselector_interval=100,
+                     maxDeviation=None):
+    '''Create and configure a HomeoUnitNewtonian for Ashby experiments.'''
+    unit = HomeoUnitNewtonian()
+    unit.setRandomValues()
+    unit.name = name
+    unit.mass = mass
+    if viscosity is not None:
+        unit.viscosity = viscosity
+    if noise is not None:
+        unit.noise = noise
+    if potentiometer is not None:
+        unit.potentiometer = potentiometer
+    unit.switch = switch
+    unit.uniselectorActive = uniselector_active
+    unit.uniselectorTimeInterval = uniselector_interval
+    if maxDeviation is not None:
+        unit.maxDeviation = maxDeviation
+    return unit
+
+
+def _ashby_disable_all_cross_connections(hom):
+    '''Disable all non-self connections in the homeostat.'''
+    for unit in hom.homeoUnits:
+        for i in range(1, len(unit.inputConnections)):
+            unit.inputConnections[i].status = False
+
+
+def _ashby_enable_connection(from_unit, to_unit, weight=None,
+                             state='uniselector', noise=0.05):
+    '''Enable and configure the connection from from_unit to to_unit.'''
+    for conn in to_unit.inputConnections:
+        if conn.incomingUnit is from_unit:
+            if weight is not None:
+                conn.newWeight(weight)
+            conn.state = state
+            conn.noise = noise
+            conn.status = True
+            return conn
+    return None
+
+
+def initializeAshbyExp1BasicUltrastability(**params):
+    '''Exp 1: Basic Ultrastability (DftB 8/3--8/4).
+
+    4 fully connected units, all under uniselector control.
+    Start from random parameters; observe that the system finds a stable field.
+    '''
+    HomeoUnit.clearNames()
+    hom = Homeostat()
+    for i in range(4):
+        unit = _ashby_make_unit('Unit_%d' % (i + 1),
+                                uniselector_active=True,
+                                uniselector_interval=100)
+        hom.addFullyConnectedUnit(unit)
+    return hom
+
+
+def initializeAshbyExp2SelfReorganization(**params):
+    '''Exp 2: Self-Reorganization in 3-Unit Circle (DftB 8/5).
+
+    3 units in a ring: Motor->Sensor->Env->Motor.
+    Env->Motor: fixed negative (manual).
+    Motor->Sensor: uniselector-controlled.
+    Sensor->Env: hand-controlled (manual), will be reversed by user.
+    4th unit is inactive.
+    '''
+    HomeoUnit.clearNames()
+    hom = Homeostat()
+
+    unit1 = _ashby_make_unit('Motor', uniselector_active=True, uniselector_interval=100)
+    unit2 = _ashby_make_unit('Sensor', uniselector_active=False)
+    unit3 = _ashby_make_unit('Env', uniselector_active=False)
+    unit4 = HomeoUnitNewtonian()
+    unit4.name = 'UNUSED'
+
+    for u in [unit1, unit2, unit3, unit4]:
+        hom.addFullyConnectedUnit(u)
+
+    unit4.disactivate()
+    _ashby_disable_all_cross_connections(hom)
+    unit3.disactivateSelfConn()
+
+    # Wire the ring: Env->Motor (fixed negative)
+    _ashby_enable_connection(unit3, unit1, weight=-0.5, state='manual')
+    # Motor->Sensor (uniselector-controlled)
+    _ashby_enable_connection(unit1, unit2, state='uniselector')
+    # Sensor->Env (hand-controlled, positive — user will reverse)
+    _ashby_enable_connection(unit2, unit3, weight=0.5, state='manual')
+
+    return hom
+
+
+def initializeAshbyExp3Training(**params):
+    '''Exp 3: Training by Punishment (DftB 8/9).
+
+    3 units in a triangle. Trainer callback (installed by GUI) punishes
+    when units 1 and 2 move in the same direction.
+    4th unit is inactive.
+    '''
+    HomeoUnit.clearNames()
+    hom = Homeostat()
+
+    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
+    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
+    unit3 = _ashby_make_unit('Unit_3', uniselector_active=False)
+    unit4 = HomeoUnitNewtonian()
+    unit4.name = 'UNUSED'
+
+    for u in [unit1, unit2, unit3, unit4]:
+        hom.addFullyConnectedUnit(u)
+
+    unit4.disactivate()
+    _ashby_disable_all_cross_connections(hom)
+
+    _ashby_enable_connection(unit1, unit2, state='uniselector')
+    _ashby_enable_connection(unit2, unit3, weight=0.5, state='manual')
+    _ashby_enable_connection(unit3, unit1, weight=-0.5, state='manual')
+
+    return hom
+
+
+def initializeAshbyExp4AlternatingEnvironments(**params):
+    '''Exp 4: Alternating Environments (DftB 8/10).
+
+    2 fully connected units.
+    Unit1->Unit2: hand-controlled (commutator H, toggled by user).
+    Unit2->Unit1: uniselector-controlled.
+    Self-connections: manual.
+    Units 3 and 4 are inactive.
+    '''
+    HomeoUnit.clearNames()
+    hom = Homeostat()
+
+    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
+    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
+    unit3 = HomeoUnitNewtonian()
+    unit3.name = 'UNUSED_3'
+    unit4 = HomeoUnitNewtonian()
+    unit4.name = 'UNUSED_4'
+
+    for u in [unit1, unit2, unit3, unit4]:
+        hom.addFullyConnectedUnit(u)
+
+    unit3.disactivate()
+    unit4.disactivate()
+
+    # Unit 2 receives from Unit 1: hand-controlled (commutator H)
+    for conn in unit2.inputConnections:
+        if conn.incomingUnit is unit1:
+            conn.state = 'manual'
+
+    # Unit 1 receives from Unit 2: uniselector-controlled
+    for conn in unit1.inputConnections:
+        if conn.incomingUnit is unit2:
+            conn.state = 'uniselector'
+
+    return hom
+
+
+def initializeAshbyExp5Constraint(**params):
+    '''Exp 5: Constraint / Glass Fibre (DftB 8/11).
+
+    3 fully connected units. Units 1 and 2 constrained to move together
+    (constraint callback installed by GUI). User releases constraint mid-run.
+    4th unit is inactive.
+    '''
+    HomeoUnit.clearNames()
+    hom = Homeostat()
+
+    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
+    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
+    unit3 = _ashby_make_unit('Unit_3', uniselector_active=True, uniselector_interval=100)
+    unit4 = HomeoUnitNewtonian()
+    unit4.name = 'UNUSED'
+
+    for u in [unit1, unit2, unit3, unit4]:
+        hom.addFullyConnectedUnit(u)
+
+    unit4.disactivate()
+
+    return hom
+
+
+def initializeAshbyExp6Habituation(**params):
+    '''Exp 6: Habituation (DftB 14/6).
+
+    2 units joined: 1<->2.
+    Connection 1->2: uniselector-controlled.
+    Connection 2->1: manual, fixed negative.
+    User delivers repeated stimuli to unit 1.
+    Units 3 and 4 are inactive.
+    '''
+    HomeoUnit.clearNames()
+    hom = Homeostat()
+
+    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
+    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
+    unit3 = HomeoUnitNewtonian()
+    unit3.name = 'UNUSED_3'
+    unit4 = HomeoUnitNewtonian()
+    unit4.name = 'UNUSED_4'
+
+    for u in [unit1, unit2, unit3, unit4]:
+        hom.addFullyConnectedUnit(u)
+
+    unit3.disactivate()
+    unit4.disactivate()
+
+    # 1->2: uniselector-controlled
+    for conn in unit2.inputConnections:
+        if conn.incomingUnit is unit1:
+            conn.state = 'uniselector'
+
+    # 2->1: manual, fixed negative feedback
+    for conn in unit1.inputConnections:
+        if conn.incomingUnit is unit2:
+            conn.newWeight(-0.3)
+            conn.state = 'manual'
+
+    return hom
+
+
+def initializeAshbyExp7Multistable(**params):
+    '''Exp 7: Multistable System (DftB 16/8).
+
+    3 units: 2<->1<->3, conditional connectivity.
+    Unit 1 interacts with 2 when above zero, with 3 when below.
+    2<->3 connections disabled. Connectivity callback installed by GUI.
+    4th unit is inactive.
+    '''
+    HomeoUnit.clearNames()
+    hom = Homeostat()
+
+    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
+    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
+    unit3 = _ashby_make_unit('Unit_3', uniselector_active=True, uniselector_interval=100)
+    unit4 = HomeoUnitNewtonian()
+    unit4.name = 'UNUSED'
+
+    for u in [unit1, unit2, unit3, unit4]:
+        hom.addFullyConnectedUnit(u)
+
+    unit4.disactivate()
+
+    # 2->1: uniselector
+    _ashby_enable_connection(unit2, unit1, state='uniselector')
+    # 3->1: uniselector
+    _ashby_enable_connection(unit3, unit1, state='uniselector')
+    # 1->2: uniselector (toggled by callback)
+    _ashby_enable_connection(unit1, unit2, state='uniselector')
+    # 1->3: uniselector (toggled by callback)
+    _ashby_enable_connection(unit1, unit3, state='uniselector')
+
+    # Disable direct 2<->3 connections
+    for conn in unit2.inputConnections:
+        if conn.incomingUnit is unit3:
+            conn.status = False
+    for conn in unit3.inputConnections:
+        if conn.incomingUnit is unit2:
+            conn.status = False
+
+    return hom
 

@@ -42,16 +42,16 @@ class HomeoSimulationControllerGui(QDialog):
    
     dataDirRoot = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/'
 
-    def __init__(self, parent = None, simulatorBackend = 'VREP'):
+    def __init__(self, parent = None, simulatorBackend = 'VREP', experiment=None):
         '''
         Build all the widgets and layouts and set them up with proper connections
-        Initialize the iVars to hold on to the simulation being run 
+        Initialize the iVars to hold on to the simulation being run
         '''
 
         super(HomeoSimulationControllerGui,self).__init__(parent)
-        
+
         "Create the simulation"
-        self._simulation = HomeoQtSimulation()
+        self._simulation = HomeoQtSimulation(experiment=experiment)
         
         "Directory to save simulations'data, used to save logbook and history and passed to HomeoQt simulation and other classes"
         self.dataDir = os.path.join(HomeoSimulationControllerGui.dataDirRoot,('SimsData-'+strftime("%Y-%m-%d-%H-%M-%S", localtime(time()))))
@@ -421,7 +421,7 @@ class HomeoSimulationControllerGui(QDialog):
         homeoGuiSize = (780,800)
         
         'size of unit connections subwindow'
-        unitConnectionsSize = (520,120)
+        unitConnectionsSize = (555,140)
         
         'sizes of widgets in pixels'
         unitNameLineEditSize = (151,16)   
@@ -842,8 +842,8 @@ class HomeoSimulationControllerGui(QDialog):
             unitLeftSideLayout.addWidget(unitConnectionsScrollA)
             
             'Combine left and right side'
-            unitLayout.addLayout(unitLeftSideLayout)
-            unitLayout.addLayout(unitRightSideLayout)
+            unitLayout.addLayout(unitLeftSideLayout, 1)
+            unitLayout.addLayout(unitRightSideLayout, 0)
             allUnitsLayout.addLayout(unitLayout)
         allUnitScrollA.setWidget(mainWidget)
         mainLayout.addWidget(allUnitScrollA)

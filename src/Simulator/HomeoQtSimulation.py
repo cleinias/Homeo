@@ -197,6 +197,7 @@ class HomeoQtSimulation(QObject):
         self.maxDataPoints = 50
         self.liveDataWindow = {}
         self.panningCharts = True       # default is to use panning charts. Can be changed in the Gui
+        self.tick_callbacks = []        # list of callables, each called with (homeostat, tick) after every runOnce()
                 
     def initializeLiveData(self):
         "set up the liveData dictionary for live graphing"
@@ -241,6 +242,8 @@ class HomeoQtSimulation(QObject):
 
         while self._homeostat.time  < self._maxRuns  and self._isRunning == True:
             self._homeostat.runOnce()
+            for cb in self.tick_callbacks:
+                cb(self._homeostat, self._homeostat.time)
 #            if self.liveDataOn:
             self.updateLiveData()
             time.sleep(self._simulDelay / 1000)
@@ -262,6 +265,8 @@ class HomeoQtSimulation(QObject):
         "Advance the simulation one step"
         if self._homeostat.time  < self._maxRuns:
             self._homeostat.runOnce()
+            for cb in self.tick_callbacks:
+                cb(self._homeostat, self._homeostat.time)
             self.updateLiveData()
 #            time.sleep(self._simulDelay / 1000)
             if QApplication.instance() is not None:
@@ -474,6 +479,7 @@ class HomeoQtSimulation(QObject):
         self.initializeExperSetup()
         self._homeostat.flushData()
         self._dataAreSaved = True
+        self.tick_callbacks = []
         self.initializeLiveData()
         self.allUnitValuesChanged()
     

@@ -14,7 +14,10 @@ class SimulationThread(QThread):
  
     def __del__(self):
         self.exiting = True
-        self.exit()
+        try:
+            self.exit()
+        except RuntimeError:
+            pass
     
     def run(self):
         self.exec_()
