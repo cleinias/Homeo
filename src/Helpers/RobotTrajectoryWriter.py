@@ -136,8 +136,8 @@ class RobotTrajectoryWriter(object):
         except IOError:
             dataDir = os.getcwd()
         
-        curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")                    
-        trajFilename = 'trajData-'+curDateTime+"-ID-"+ modelName+'.traj'
+        curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")
+        trajFilename = 'trajData-ID-'+modelName+'-'+curDateTime+'.traj'
         print("Saving data to: ", os.path.join(dataDir,trajFilename))                 
         return  os.path.join(dataDir, trajFilename)
     
@@ -152,7 +152,7 @@ class RobotTrajectoryWriter(object):
         if self.experimentName:
             trajFilename = self.experimentName + '-' + curDateTime + '.traj'
         else:
-            trajFilename = 'trajData-'+curDateTime+"-ID-"+ modelName+'.traj'
+            trajFilename = 'trajData-ID-'+modelName+'-'+curDateTime+'.traj'
         return  os.path.join(dataDir, trajFilename)
     
     def setDataDir(self, dataDir):

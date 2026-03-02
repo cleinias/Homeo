@@ -136,19 +136,61 @@ def minMaxAvgFromLogbook(logbook):
     
     return (gens,fit_mins,fit_maxs,fit_avgs)
 
-def indivsDecodedFromLogbook(logbook, noUnits=6, noEvolvedUnits=None):
+def _logbook_layout(logbook):
+    """Extract genome layout info from logbook metadata record.
+
+    Returns (noUnits, noEvolvedUnits, layout) where layout is one of
+    'classic', 'weightfree', or 'weightfree_dt'.
+    Falls back to (6, 6, 'classic') for old logbooks without metadata.
+    """
+    # The metadata record is typically the last entry without a 'genome' key
+    meta = None
+    for rec in reversed(logbook):
+        if 'exp' in rec and 'genome' not in rec:
+            meta = rec
+            break
+
+    if meta is None:
+        return 6, 6, None   # old logbook, classic layout
+
+    noUnits = meta.get('noUnits', 6)
+    noEvolvedUnits = meta.get('noEvolvedUnits', noUnits)
+    genomeSize = meta.get('genomeSize', None)
+    exp_name = meta.get('exp', '')
+
+    # Determine layout from experiment name or genome size
+    if 'weightfree' in exp_name:
+        if genomeSize is not None and genomeSize == noEvolvedUnits * 4:
+            return noUnits, noEvolvedUnits, 'weightfree'
+        else:
+            return noUnits, noEvolvedUnits, 'weightfree_dt'
+
+    return noUnits, noEvolvedUnits, None
+
+
+def indivsDecodedFromLogbook(logbook, noUnits=None, noEvolvedUnits=None):
     """Extracts all the individual genomes from the logbook,
     with associated fitnesses and individual's name of form #gen-#.
-    noEvolvedUnits defaults to noUnits for backward compatibility."""
+
+    Automatically detects the genome layout from logbook metadata.
+    noUnits and noEvolvedUnits can be overridden for old logbooks."""
+    meta_noUnits, meta_noEvolved, layout = _logbook_layout(logbook)
+    if noUnits is None:
+        noUnits = meta_noUnits
+    if noEvolvedUnits is None:
+        noEvolvedUnits = meta_noEvolved
+
     rawIndivs = [x for x in logbook if "genome" in x]
     indivs = []
     for ind in rawIndivs:
         fit = ind["fitness"]
-        decodedInd = genomeDecoder(noUnits, ind["genome"], noEvolvedUnits=noEvolvedUnits)
+        decodedInd = genomeDecoder(noUnits, ind["genome"],
+                                   noEvolvedUnits=noEvolvedUnits,
+                                   layout=layout)
         name = ind["indivId"]
         indivs.append((decodedInd, fit, name))
         print("ind: %s\t has fitness: %.2f" % ( name, fit[0]))
-    return indivs
+    return indivs, layout
 
 def hallOfFameInds(indivs, num, max=False):
     """Return the best num individuals from indivs (a list of individuals).
@@ -160,64 +202,65 @@ def hallOfFameInds(indivs, num, max=False):
 def hallOfFame(logbook, num=10, max=False):
     """Return a string containing a formatted and sorted hall of fame list
        of individuals extracted from the logbook"""
-    
-    return genomeAndFitnessPrettyPrinter(hallOfFameInds(indivsDecodedFromLogbook(logbook),
-                                                        num, max=max))
+    indivs, layout = indivsDecodedFromLogbook(logbook)
+    meta_noUnits, meta_noEvolved, _ = _logbook_layout(logbook)
+    return genomeAndFitnessPrettyPrinter(hallOfFameInds(indivs, num, max=max),
+                                         noUnits=meta_noUnits,
+                                         noEvolvedUnits=meta_noEvolved,
+                                         layout=layout)
                                                          
 
-def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6, noEvolvedUnits=None):
+def _genome_headers(noUnits, noEvolvedUnits, layout=None):
+    """Build column headers matching the genome layout."""
+    headers = ['Fitness', 'IndivID']
+    if layout in ('weightfree', 'weightfree_dt'):
+        for unit in range(noEvolvedUnits):
+            u = 'U' + str(unit + 1)
+            headers += [u + '-mass', u + '-visc', u + '-tau_a', u + '-maxDev']
+            if layout == 'weightfree_dt':
+                headers.append(u + '-dt_fast')
+    else:
+        for unit in range(noEvolvedUnits):
+            u = 'U' + str(unit + 1)
+            headers += [u + '-mass', u + '-visc', u + '-unis-time', u + '-maxDev']
+        for connIn in range(noEvolvedUnits):
+            for connOut in range(noUnits):
+                headers.append('Conn-W-' + str(connIn + 1) + '-to-' + str(connOut + 1))
+    return headers
+
+
+def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6, noEvolvedUnits=None,
+                         layout=None):
     """Return a list containing a list of of  headers and
        a sorted list (by fitness)
        of decoded individual genomes passed as a list of
        tuples with genome at [0], fitness at [1], and name at [2].
-       Assumes 4 essential variables for homeoUnits.
        noEvolvedUnits defaults to noUnits for backward compatibility."""
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
 
-    'Construct headers'
-    headers = ['Fitness', 'IndivID']
-    for unit in range(noEvolvedUnits):
-        headers.append('U'+str(unit+1)+'-mass')
-        headers.append('U'+str(unit+1)+'-visc')
-        headers.append('U'+str(unit+1)+'-unis-time')
-        headers.append('U'+str(unit+1)+'-maxDev')
-
-    for connIn in range(noEvolvedUnits):
-        for connOut in range(noUnits):
-            headers.append('Conn-W-'+str(connIn+1)+'-to-'+str(connOut+1))
+    headers = _genome_headers(noUnits, noEvolvedUnits, layout)
 
     '''Flattens list of tuples including individual genomes and fitnesses to a list of lists.'''
     individuals = []
-    for ind in decodedIndivs:        
+    for ind in decodedIndivs:
         b = []
         b.append(ind[2])
         individuals.append(list(ind[1])+b+ind[0])
-    
+
     if len(individuals)< num:
         return [headers,sorted(individuals, key=itemgetter(0), reverse=False)]
     else:
         return [headers,sorted(individuals, key=itemgetter(0), reverse=False)[:num]]
 
-def genomeAndFitnessPrettyPrinter(individuals, noUnits=6, noEvolvedUnits=None):
+def genomeAndFitnessPrettyPrinter(individuals, noUnits=6, noEvolvedUnits=None,
+                                  layout=None):
     """Tabulate individuals with their headers.
        noEvolvedUnits defaults to noUnits for backward compatibility."""
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
 
-    'Construct headers'
-    headers = ['Fitness', 'IndivID']
-    for unit in range(noEvolvedUnits):
-        headers.append('U'+str(unit+1)+'-mass')
-        headers.append('U'+str(unit+1)+'-visc')
-        headers.append('U'+str(unit+1)+'-unis-time')
-        headers.append('U'+str(unit+1)+'-maxDev')
-
-    for connIn in range(noEvolvedUnits):
-        for connOut in range(noUnits):
-            headers.append('Conn-W-'+str(connIn+1)+'-to-'+str(connOut+1))
-
-
+    headers = _genome_headers(noUnits, noEvolvedUnits, layout)
     return tabulate(individuals, headers, tablefmt='orgtbl')
 
 def extractGenomeOfIndID(indID, logbookFileWithPath):

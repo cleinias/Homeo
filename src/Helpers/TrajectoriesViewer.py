@@ -12,7 +12,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from Helpers.TrajectoryGrapher import graphTrajectory
-from Helpers.StatsAnalyzer import plotFitnessesFromLogBook, genomeAndFitnessList, indivsDecodedFromLogbook, showGenealogyTree
+from Helpers.StatsAnalyzer import plotFitnessesFromLogBook, genomeAndFitnessList, indivsDecodedFromLogbook, showGenealogyTree, _logbook_layout
 import sys
 import os
 from glob import glob
@@ -246,17 +246,17 @@ class TrajectoryViewer(QWidget):
 
     def _populate(self):
         """ Fill the trajectory list with trajectories from the
-            current directory in self._dirPath. """
-     
+            current directory in self._dirPath, sorted reverse-alphabetically
+            so that Hall-of-Fame individual IDs are easy to locate. """
+
         # In case we're repopulating, clear the list
         self.TrajList.clear()
-     
+
         # Create a list item for each trajectory file,
         # setting the text appropriately
-        for trajectory in self._trajectories():
+        for trajectory in sorted(self._trajectories(), reverse=True):
             item = QListWidgetItem(self.TrajList)
             item.setText(trajectory)
-        self.TrajList.sortItems(order=Qt.DescendingOrder)
 
     def setOpeningPath(self):
         '''Return the default data directory via simulations_data_dir(),
@@ -343,11 +343,18 @@ class TrajectoryViewer(QWidget):
            a list of headers at [0] and a list of rows at [1]"""
 
         if self._currentLogbook is not None:
-            decodedInds = indivsDecodedFromLogbook(self._currentLogbook)
+            decodedInds, layout = indivsDecodedFromLogbook(self._currentLogbook)
+            meta_noUnits, meta_noEvolved, _ = _logbook_layout(self._currentLogbook)
             if all:
-                hof = genomeAndFitnessList(decodedInds, num=len(decodedInds))
+                hof = genomeAndFitnessList(decodedInds, num=len(decodedInds),
+                                           noUnits=meta_noUnits,
+                                           noEvolvedUnits=meta_noEvolved,
+                                           layout=layout)
             else:
-                hof = genomeAndFitnessList(decodedInds, num = 10)
+                hof = genomeAndFitnessList(decodedInds, num=10,
+                                           noUnits=meta_noUnits,
+                                           noEvolvedUnits=meta_noEvolved,
+                                           layout=layout)
             self.hofWidget.clear()
             self.hofWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
             self.hofWidget.setRowCount(len(hof[1]))
