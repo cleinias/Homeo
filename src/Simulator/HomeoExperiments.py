@@ -2802,6 +2802,241 @@ initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.fitnessSign = 1
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.genomeSize = 16
 
 
+# ===============================================================
+#  Simplified 2+2 vehicle (no eye intermediaries) — GA init funcs
+#
+#  2 HomeoUnitInput (sensors) + 2 HomeoUnitNewtonianActuator (motors).
+#  Sensors connect directly to contra-lateral motors (Braitenberg
+#  cross-wiring).  Motor self-connections are always negative.
+# ===============================================================
+
+def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
+                                                  dataDir=None, noNoise=False,
+                                                  topology='fixed',
+                                                  evolve_dt_fast=True):
+    '''Shared helper for weight-free continuous (OU) GA experiments using the
+    simplified 2+2 vehicle (no eye intermediaries).
+
+    When evolve_dt_fast=True (default):
+        Genome: 10 genes = 2 units x 5 params per unit.
+        Per-unit gene order: [mass, viscosity, tau_a, maxDeviation, dt_fast].
+
+    When evolve_dt_fast=False:
+        Genome: 8 genes = 2 units x 4 params per unit.
+        Per-unit gene order: [mass, viscosity, tau_a, maxDeviation].
+        dt_fast is fixed at 1.0 for all units.
+
+    Connection weights are NOT in the genome — they are initialised to small
+    random values and evolved online by the OU process.  Motor self-connections
+    are always negative (guaranteed stability per 2-unit homeostat analysis).
+
+    Parameters
+    ----------
+    homeoGenome : array-like
+        10-element (evolve_dt_fast=True) or 8-element (False) array, values in [0, 1).
+    backendSimulator : simulator backend
+        The robotic simulator backend (HOMEO, VREP, WEBOTS).
+    dataDir : str, optional
+        Data output directory.
+    noNoise : bool
+        If True, set all noise to 0.
+    topology : str
+        'fixed'  — only Braitenberg cross-wired connections are active
+                    (Left Sensor -> Right Motor, Right Sensor -> Left Motor).
+        'random' — all connections on motor units are active.
+    '''
+    from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
+
+    worlds = {
+        'WEBOTS_World': '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt',
+        'VREP_World': '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt',
+        'HOMEO_World': 'kheperaBraitenberg2_HOMEO_World'
+    }
+
+    try:
+        world = worlds[backendSimulator.name + '_World']
+    except:
+        raise Exception("I cannot use backend simulator %s yet" % backendSimulator.name)
+
+    transducers = basicBraiten2Tranducers(backendSimulator, world)
+    if transducers is None:
+        raise Exception("Could not build transducers for simulator backend ", backendSimulator.name)
+
+    "1. Create homeostat and units"
+    hom = Homeostat()
+    hom._host = backendSimulator.host
+    hom._port = backendSimulator.port
+    HomeoUnit.clearNames()
+
+    rightWheel = transducers["rightWheelTransd"]
+    leftWheel = transducers["leftWheelTransd"]
+    leftSensorTransd = transducers["leftEyeTransd"]
+    rightSensorTransd = transducers["rightEyeTransd"]
+
+    # Only 4 units: 2 motors + 2 sensor inputs (no eyes)
+    leftMotor = HomeoUnitNewtonianActuator(transducer=leftWheel)
+    rightMotor = HomeoUnitNewtonianActuator(transducer=rightWheel)
+    leftSensor = HomeoUnitInput(transducer=leftSensorTransd)
+    rightSensor = HomeoUnitInput(transducer=rightSensorTransd)
+
+    "2. Decode genome — only motor units are evolved"
+    genes_per_unit = 5 if evolve_dt_fast else 4
+    evolved_units = [leftMotor, rightMotor]
+    for i, unit in enumerate(evolved_units):
+        base = i * genes_per_unit
+        unit.mass = 1.0 + homeoGenome[base + 0] * 9.0       # [1, 10]
+        unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
+        # gene 2 = tau_a (applied after uniselector swap below)
+        unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])
+        if evolve_dt_fast:
+            unit.dt_fast = HomeoUnit.dtFastFromWeight(homeoGenome[base + 4])
+
+    "3. Build fully-connected homeostat"
+    hom.addFullyConnectedUnit(leftMotor)
+    hom.addFullyConnectedUnit(rightMotor)
+    hom.addFullyConnectedUnit(leftSensor)
+    hom.addFullyConnectedUnit(rightSensor)
+
+    "4. Name units and set noise"
+    if noNoise:
+        unit_noise = 0
+        conn_noise = 0.0
+    else:
+        unit_noise = 0.05
+        conn_noise = 0.05
+
+    leftMotor.name = 'Left Motor'
+    leftMotor.noise = unit_noise
+    leftMotor._maxSpeedFraction = 0.8
+    leftMotor._switchingRate = 0.5
+    leftMotor._maxSpeed = None
+    rightMotor.name = 'Right Motor'
+    rightMotor.noise = unit_noise
+    rightMotor._maxSpeedFraction = 0.8
+    rightMotor._switchingRate = 0.5
+    rightMotor._maxSpeed = None
+    leftSensor.name = 'Left Sensor'
+    leftSensor.noise = unit_noise
+    rightSensor.name = 'Right Sensor'
+    rightSensor.noise = unit_noise
+
+    "5. Disable sensor-only units (pure input transducers)"
+    leftSensor.uniselectorActive = False
+    rightSensor.uniselectorActive = False
+    for conn in leftSensor.inputConnections:
+        conn.status = False
+    for conn in rightSensor.inputConnections:
+        conn.status = False
+
+    "6. Configure connections on motor units according to topology"
+    for unit in evolved_units:
+        "Self-connection: negative (pass negative value to newWeight), manual"
+        unit.inputConnections[0].newWeight(-np.random.uniform(0.01, 0.1))
+        unit.inputConnections[0].noise = conn_noise
+        unit.inputConnections[0].state = 'manual'
+        unit.inputConnections[0].status = True
+
+    if topology == 'fixed':
+        "Braitenberg cross-wiring: disable all non-self connections first"
+        for unit in evolved_units:
+            for conn in unit.inputConnections[1:]:
+                conn.status = False
+
+        "Then activate only the direct sensor-to-motor cross-wired paths"
+        cross_wiring = {
+            'Left Motor': 'Right Sensor',
+            'Right Motor': 'Left Sensor',
+        }
+        for unit in evolved_units:
+            source_name = cross_wiring[unit.name]
+            for conn in unit.inputConnections:
+                if conn.incomingUnit.name == source_name:
+                    conn.newWeight(np.random.uniform(-0.1, 0.1))
+                    conn.noise = conn_noise
+                    conn.state = 'uniselector'
+                    conn.status = True
+    else:
+        "Random topology: all connections on motor units are active"
+        for unit in evolved_units:
+            for conn in unit.inputConnections[1:]:
+                conn.newWeight(np.random.uniform(-0.1, 0.1))
+                conn.noise = conn_noise
+                conn.state = 'uniselector'
+                conn.status = True
+
+    "7. Swap uniselectors to continuous (OU) and set tau_a from genome"
+    for i, unit in enumerate(evolved_units):
+        unit.uniselectorActive = True
+        unis = HomeoUniselectorContinuous()
+        unis.tau_a = HomeoUnit.tauAFromWeight(homeoGenome[i * genes_per_unit + 2])
+        unit.uniselector = unis
+
+    "8. Set negative light intensity (phototaxis)"
+    if backendSimulator is not None:
+        target = backendSimulator.kheperaSimulation.allBodies['TARGET']
+        target.userData['intensity'] = -100
+        target.userData['lightIntensity'] = -100
+
+    "9. Socket setup for WEBOTS"
+    if backendSimulator.name == "WEBOTS":
+        hom._usesSocket = True
+        hom.connectUnitsToNetwork()
+
+    hDebug('unit', "Homeostat initialized (direct 2+2, weight-free continuous, topology=%s)" % topology)
+    return hom
+
+
+def initializeBraiten2_direct_GA_continuous_weightfree(homeoGenome, noHomeoParameters=5,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors.
+    All connections on motor units are active (random topology).
+
+    Genome: 10 genes = 2 units x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
+    '''
+    return _setup_continuous_weightfree_homeostat_direct(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, topology='random')
+
+initializeBraiten2_direct_GA_continuous_weightfree.noEvolvedUnits = 2
+initializeBraiten2_direct_GA_continuous_weightfree.fitnessSign = 1
+initializeBraiten2_direct_GA_continuous_weightfree.genomeSize = 10
+
+
+def initializeBraiten2_direct_GA_continuous_weightfree_fixed(homeoGenome, noHomeoParameters=5,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors.
+    Fixed Braitenberg cross-wiring: Left Sensor -> Right Motor, Right Sensor -> Left Motor.
+
+    Genome: 10 genes = 2 units x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
+    '''
+    return _setup_continuous_weightfree_homeostat_direct(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, topology='fixed')
+
+initializeBraiten2_direct_GA_continuous_weightfree_fixed.noEvolvedUnits = 2
+initializeBraiten2_direct_GA_continuous_weightfree_fixed.fitnessSign = 1
+initializeBraiten2_direct_GA_continuous_weightfree_fixed.genomeSize = 10
+
+
+def initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors
+    and fixed dt_fast = 1.0.  Fixed Braitenberg cross-wiring.
+
+    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation].
+    '''
+    return _setup_continuous_weightfree_homeostat_direct(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, topology='fixed', evolve_dt_fast=False)
+
+initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.noEvolvedUnits = 2
+initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.fitnessSign = 1
+initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.genomeSize = 8
+
+
 def initializeBraiten2_2_NoUnisel_Full_GA(homeoGenome, homeoParameters=4, raw=False, dataDir = None):
     '''
     Initialize a homeostat according to initializeBraiten2_2_Full_GA, then turn 

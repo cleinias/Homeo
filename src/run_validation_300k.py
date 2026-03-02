@@ -7,7 +7,9 @@ Exp 3 & 4: Replay best GA genome with fresh OU weight discovery.
 Usage:
     python run_validation_300k.py                  # orchestrate all 4
     python run_validation_300k.py --exp 1          # run experiment 1 only
-    python run_validation_300k.py --steps 500000   # override step count
+    python run_validation_300k.py --steps 400000   # override step count
+    python run_validation_300k.py --state-log      # enable per-tick state logging
+    python run_validation_300k.py --log-interval 100  # state log every N ticks
 """
 
 import sys
@@ -22,11 +24,14 @@ import numpy as np
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SRC_DIR)
+# Research data lives in sibling Cybernetics-research repo
+RESEARCH_ROOT = os.path.join(os.path.dirname(PROJECT_ROOT), 'Cybernetics-research')
+SIMS_DATA = os.path.join(RESEARCH_ROOT, 'SimulationsData')
 
 # Saved JSON condition files from the original 60k runs
-EXP1_JSON = os.path.join(PROJECT_ROOT, 'SimulationsData', 'SimsData-2026-02-27',
+EXP1_JSON = os.path.join(SIMS_DATA, 'SimsData-2026-02-27',
     'phototaxis_braitenberg2_Ashby_fixed_dark-2026-02-27-00-39-03.json')
-EXP2_JSON = os.path.join(PROJECT_ROOT, 'SimulationsData', 'SimsData-2026-02-27',
+EXP2_JSON = os.path.join(SIMS_DATA, 'SimsData-2026-02-27',
     'phototaxis_braitenberg2_Ashby_fixed_dark_continuous-2026-02-27-00-39-03.json')
 
 # Best genomes from GA experiments (raw [0,1) values)
@@ -201,8 +206,8 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
     genome = creator.Individual(genome_raw)
     genome.ID = genome_id
 
-    # Set up data directory
-    sims_root = os.path.join(PROJECT_ROOT, 'SimulationsData')
+    # Set up data directory (in research repo)
+    sims_root = SIMS_DATA
     log_dir = os.path.join(sims_root, 'SimsData-' + time.strftime("%Y-%m-%d"))
     os.makedirs(log_dir, exist_ok=True)
 
@@ -311,28 +316,32 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
 # Individual experiment entry points
 # ---------------------------------------------------------------------------
 
-def run_exp1(total_steps):
-    run_standalone(1, 'ashby', EXP1_JSON, total_steps)
+def run_exp1(total_steps, state_log=False, state_log_interval=100):
+    run_standalone(1, 'ashby', EXP1_JSON, total_steps,
+                   state_log=state_log, state_log_interval=state_log_interval)
 
-def run_exp2(total_steps):
-    run_standalone(2, 'continuous', EXP2_JSON, total_steps)
+def run_exp2(total_steps, state_log=False, state_log_interval=100):
+    run_standalone(2, 'continuous', EXP2_JSON, total_steps,
+                   state_log=state_log, state_log_interval=state_log_interval)
 
-def run_exp3(total_steps):
+def run_exp3(total_steps, state_log=False, state_log_interval=100):
     run_ga_replay(3,
         'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt',
-        EXP3_GENOME, EXP3_ID, total_steps)
+        EXP3_GENOME, EXP3_ID, total_steps,
+        state_log=state_log, state_log_interval=state_log_interval)
 
-def run_exp4(total_steps):
+def run_exp4(total_steps, state_log=False, state_log_interval=100):
     run_ga_replay(4,
         'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed',
-        EXP4_GENOME, EXP4_ID, total_steps)
+        EXP4_GENOME, EXP4_ID, total_steps,
+        state_log=state_log, state_log_interval=state_log_interval)
 
 
 # ---------------------------------------------------------------------------
 # Subprocess entry point (--exp N)
 # ---------------------------------------------------------------------------
 
-def run_single(exp_num, total_steps):
+def run_single(exp_num, total_steps, state_log=False, state_log_interval=100):
     os.chdir(SRC_DIR)
     if SRC_DIR not in sys.path:
         sys.path.insert(0, SRC_DIR)
@@ -343,21 +352,24 @@ def run_single(exp_num, total_steps):
         3: run_exp3,
         4: run_exp4,
     }
-    runners[exp_num](total_steps)
+    runners[exp_num](total_steps, state_log=state_log,
+                     state_log_interval=state_log_interval)
 
 
 # ---------------------------------------------------------------------------
 # Orchestrator (default mode)
 # ---------------------------------------------------------------------------
 
-def orchestrate(total_steps):
+def orchestrate(total_steps, state_log=False, state_log_interval=100):
     timestamp = time.strftime('%Y-%m-%d-%H-%M-%S')
-    log_dir = os.path.join(SRC_DIR, '..', 'SimulationsData',
-                           'validation-300k-' + timestamp)
+    log_dir = os.path.join(SIMS_DATA,
+                           'validation-%dk-%s' % (total_steps // 1000, timestamp))
     os.makedirs(log_dir, exist_ok=True)
 
     print("=" * 60)
     print("  Validation: 4 Experiments x %dk Steps" % (total_steps // 1000))
+    if state_log:
+        print("  State logging: ON (interval=%d)" % state_log_interval)
     print("=" * 60)
     print("  Log directory : %s" % os.path.abspath(log_dir))
     print("=" * 60)
@@ -375,6 +387,8 @@ def orchestrate(total_steps):
     for exp_num in [1, 2, 3, 4]:
         cmd = [sys.executable, os.path.abspath(__file__),
                '--exp', str(exp_num), '--steps', str(total_steps)]
+        if state_log:
+            cmd += ['--state-log', '--log-interval', str(state_log_interval)]
         log_path = os.path.join(log_dir, 'exp%d.log' % exp_num)
         log_file = open(log_path, 'w', buffering=1)
         proc = subprocess.Popen(
@@ -425,8 +439,15 @@ if __name__ == '__main__':
     if '--steps' in sys.argv:
         total_steps = int(sys.argv[sys.argv.index('--steps') + 1])
 
+    state_log = '--state-log' in sys.argv
+    state_log_interval = 100
+    if '--log-interval' in sys.argv:
+        state_log_interval = int(sys.argv[sys.argv.index('--log-interval') + 1])
+
     if '--exp' in sys.argv:
         exp_num = int(sys.argv[sys.argv.index('--exp') + 1])
-        run_single(exp_num, total_steps)
+        run_single(exp_num, total_steps, state_log=state_log,
+                   state_log_interval=state_log_interval)
     else:
-        orchestrate(total_steps)
+        orchestrate(total_steps, state_log=state_log,
+                    state_log_interval=state_log_interval)
