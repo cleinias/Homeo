@@ -112,7 +112,8 @@ def run_single(exp_num, n_workers):
 
 def orchestrate():
     timestamp = time.strftime('%Y-%m-%d-%H-%M-%S')
-    log_dir = os.path.join(SRC_DIR, '..', 'SimulationsData',
+    from Helpers.General_Helper_Functions import simulations_data_dir
+    log_dir = os.path.join(simulations_data_dir(),
                            'phototaxis-comparison-' + timestamp)
     os.makedirs(log_dir, exist_ok=True)
 

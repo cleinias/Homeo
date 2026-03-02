@@ -514,7 +514,8 @@ class HomeoGASimulation(object):
     allowable error classes names. 
     '''
     
-    dataDirRoot = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'SimulationsData')
+    from Helpers.General_Helper_Functions import simulations_data_dir as _sdd
+    dataDirRoot = _sdd()
            
     def __init__(self,parent=None, stepsSize = 1000, 
                                    popSize=150,

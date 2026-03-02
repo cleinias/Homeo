@@ -24,9 +24,8 @@ import numpy as np
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SRC_DIR)
-# Research data lives in sibling Cybernetics-research repo
-RESEARCH_ROOT = os.path.join(os.path.dirname(PROJECT_ROOT), 'Cybernetics-research')
-SIMS_DATA = os.path.join(RESEARCH_ROOT, 'SimulationsData')
+from Helpers.General_Helper_Functions import simulations_data_dir
+SIMS_DATA = simulations_data_dir()
 
 # Saved JSON condition files from the original 60k runs
 EXP1_JSON = os.path.join(SIMS_DATA, 'SimsData-2026-02-27',

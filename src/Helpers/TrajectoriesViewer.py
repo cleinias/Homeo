@@ -259,12 +259,10 @@ class TrajectoryViewer(QWidget):
         self.TrajList.sortItems(order=Qt.DescendingOrder)
 
     def setOpeningPath(self):
-        '''Return the default data directory.
-           Uses SimulationsData/ at the project root if it exists,
-           otherwise falls back to a path from ~/.HomeoSimDataDir.txt
-           or the current working directory.'''
-        projectRoot = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        simsDir = os.path.join(projectRoot, 'SimulationsData')
+        '''Return the default data directory via simulations_data_dir(),
+           falling back to ~/.HomeoSimDataDir.txt or cwd.'''
+        from Helpers.General_Helper_Functions import simulations_data_dir
+        simsDir = simulations_data_dir()
         if os.path.isdir(simsDir):
             return simsDir
         try:

@@ -320,8 +320,8 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
         # 3. Pickle homeostat and set experiment name (Ashby experiments only)
         if exp_num >= 1:
             exp_name = 'Ashby_Experiment_%d' % exp_num
-            pickle_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-                os.path.abspath(__file__)))), 'SimulationsData', 'AshbyExperiments')
+            from Helpers.General_Helper_Functions import simulations_data_dir
+            pickle_dir = os.path.join(simulations_data_dir(), 'AshbyExperiments')
             os.makedirs(pickle_dir, exist_ok=True)
             pickle_path = os.path.join(pickle_dir, exp_name + '.pickled')
             self._simulation.homeostat.saveTo(pickle_path)

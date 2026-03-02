@@ -217,8 +217,8 @@ def main():
     args = parser.parse_args()
 
     if args.output_dir is None:
-        base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        args.output_dir = os.path.join(base, 'SimulationsData', 'AshbyExperiments')
+        from Helpers.General_Helper_Functions import simulations_data_dir
+        args.output_dir = os.path.join(simulations_data_dir(), 'AshbyExperiments')
 
     if args.exp is not None:
         run_experiment(args.exp, seed=args.seed,

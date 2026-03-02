@@ -40,7 +40,8 @@ class HomeoSimulationControllerGui(QDialog):
         _simulThread                <aSimulationThread>    The QT thread holding the simulation run
     '''    
    
-    dataDirRoot = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'SimulationsData')
+    from Helpers.General_Helper_Functions import simulations_data_dir as _sdd
+    dataDirRoot = _sdd()
 
     def __init__(self, parent = None, simulatorBackend = 'VREP', experiment=None):
         '''
