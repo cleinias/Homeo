@@ -55,6 +55,7 @@ moc_*
 *.sqlite
 
 # Homeo simulation data
+SimulationsData/
 *.csv
 *.traj
 *.hist
