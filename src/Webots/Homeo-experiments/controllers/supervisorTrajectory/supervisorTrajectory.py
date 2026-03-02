@@ -3,7 +3,7 @@
 # Description:   A simple controller for the supervisor 
 #                to record a robot's trajectory to file
 # Author:        Stefano Franchi
-# Modifications: 
+# Modifications: Updated March 2026 for Webots R2025a
 
 from controller import Supervisor
 import time 
@@ -56,7 +56,7 @@ class supervisorTrajectory(Supervisor):
                  lightIsOn=lightIsOnField.getSFBool()
                  lightIntensity=(light.getField("intensity")).getSFFloat()
                  posFile.write(l+'\t%f\t%f\t%f\t%s\n' % (lightPos[0],
-                                                              lightPos[2],
+                                                              lightPos[1],
                                                               lightIntensity,
                                                               lightIsOn))
                  posFile.flush()
@@ -66,8 +66,8 @@ class supervisorTrajectory(Supervisor):
                  break
          posFile.write("# Vehicle's initial position at:\n")
          posFile.write('%f\t %f\n\n\n' % (initialPos[0],
-                                        initialPos[2]))
-         posFile.write("# Vehicle's coordinates (x and z in Webots term, as y is the vertical axis)\n")
+                                        initialPos[1]))
+         posFile.write("# Vehicle's coordinates (x and y in Webots term, as z is the vertical axis)\n")
          posFile.flush()
        
          while True:
@@ -86,7 +86,7 @@ class supervisorTrajectory(Supervisor):
     #        print "position:",  pos
     #        print float(trans[1])
             posFile.write('%f\t%f\n' % (trans[0],
-                                        trans[2]))
+                                        trans[1]))
             posFile.flush()
             if self.checkModelName:
                 posFile = self.trajFileRename(posFile, fullPathTrajFileName,khepModelField)   
@@ -104,10 +104,11 @@ class supervisorTrajectory(Supervisor):
          try:
              homeDir = os.getenv('HOME')
              dataDirSource = open(os.path.join(homeDir,'.HomeoSimDataDir.txt'),'r')
-             dataDir = dataDirSource.read()
+             dataDir = dataDirSource.read().strip()
              dataDirSource.close()
          except IOError:
              dataDir = os.getcwd()
+         os.makedirs(dataDir, exist_ok=True)
              
          curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")                    
          trajFilename = 'trajData-'+curDateTime+"-ID-"+ modelName+'.traj'

@@ -22,6 +22,7 @@ except ImportError:
     vrep = None
 from time import sleep
 import os
+import shutil
 from subprocess import check_output
 from os import system
 from os.path import split
@@ -243,12 +244,12 @@ class SimulatorBackendWEBOTS(SimulatorBackendAbstract):
            and the previous tcp/ip socket is no longer valid. """
            
         try:
-            self._supervisor._clientSocket.send("R")
-            response = self._supervisor._clientSocket.recv(100) 
+            self._supervisor._clientSocket.send(b"R")
+            response = self._supervisor._clientSocket.recv(100).decode()
             hDebug('network',("Reset Webots simulation: received back "+ response + " from server"))
             try:
                 while True:
-                    self._supervisor._clientSocket.send(".")
+                    self._supervisor._clientSocket.send(b".")
                     sleep(0.05)
             except SocketError:
                 pass
@@ -260,8 +261,8 @@ class SimulatorBackendWEBOTS(SimulatorBackendAbstract):
            which is then used to name the trajectory file"""
            
         try:
-            self._supervisor._clientSocket.send("M,"+modelName)
-            response = self._supervisor._clientSocket.recv(100) 
+            self._supervisor._clientSocket.send(("M,"+modelName).encode())
+            response = self._supervisor._clientSocket.recv(100).decode()
             hDebug('network',("Reset robot's model to: " + modelName + ". Received back: " + response))
         except SocketError:
             raise TCPConnectionError("Could not set model name of Webots robot")
@@ -270,8 +271,8 @@ class SimulatorBackendWEBOTS(SimulatorBackendAbstract):
         "Quit Webots application"
         
         try:
-            self._supervisor._clientSocket.send("Q")
-            response = self._supervisor._clientSocket.recv(100) 
+            self._supervisor._clientSocket.send(b"Q")
+            response = self._supervisor._clientSocket.recv(100).decode()
             hDebug('network', "Quit Webots: received back " + response + " from server")
         except SocketError:
             hDebug('network',  "Sorry, I lost the connection to Webots and could not could not quit")
@@ -281,8 +282,8 @@ class SimulatorBackendWEBOTS(SimulatorBackendAbstract):
     def resetPhysics(self):
         "Reset Webots simulation physics"
         try:
-            self._supervisor._clientSocket.send("P")
-            response = self._supervisor._clientSocket.recv(100) 
+            self._supervisor._clientSocket.send(b"P")
+            response = self._supervisor._clientSocket.recv(100).decode()
             hDebug('network', ("Reset Webots simulation physics: received back %s from server" % response))
         except SocketError:
             raise TCPConnectionError("Could not reset Webots simulation's physics")
@@ -305,14 +306,14 @@ class SimulatorBackendWEBOTS(SimulatorBackendAbstract):
         evaluate the distance between a node with 'DEF' = 'TARGET'
         and the KHEPERA robot"""
         
-        self._supervisor._clientSocket.send("D")
-        response = float(self._supervisor._clientSocket.recv(100)) 
+        self._supervisor._clientSocket.send(b"D")
+        response = float(self._supervisor._clientSocket.recv(100).decode())
         return response
     
     def isRunning(self):
         'Check if Webots is running'
         webots_running = False
-        if 'webots-bin' in check_output(['ps','ax']):
+        if b'webots-bin' in check_output(['ps','ax']):
                 webots_running = True
         return webots_running
 
@@ -323,7 +324,10 @@ class SimulatorBackendWEBOTS(SimulatorBackendAbstract):
         """
         if not self.isRunning():
             hDebug('network',("Is webots-running: " + str(self.isRunning())))
-            callString = "/usr/local/webots/webots " +"--mode="+ mode+ " " +world + " &"
+            webots_exe = os.path.join(os.environ.get("WEBOTS_HOME", "/usr/local/webots"), "webots")
+            if not os.path.isfile(webots_exe):
+                webots_exe = shutil.which("webots") or "webots"
+            callString = webots_exe + " " + "--mode=" + mode + " " + world + " &"
             hDebug('network',callString)
             system(callString)
             'Wait for webots to start listening to commands (in seconds)'

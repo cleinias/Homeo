@@ -23,6 +23,18 @@ from Helpers.GenomeDecoder import genomePrettyPrinter, genomeDecoder
 from KheperaSimulator.KheperaSimulator import KheperaSimulation
 import os
 
+# Base directory for the 'src' tree, computed from this file's location.
+# Used to build world-file paths without hardcoding the user's home directory.
+_SRC_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
+
+def _webots_world(filename):
+    "Return absolute path to a Webots world file in the standard location."
+    return os.path.join(_SRC_DIR, 'Webots', 'Homeo-experiments', 'worlds', filename)
+
+def _vrep_scene(filename):
+    "Return absolute path to a V-REP scene file in the standard location."
+    return os.path.join(_SRC_DIR, 'VREP', 'Homeo-Scenes', filename)
+
 
 '''
 Module HomeoExperiments provides initializations data for various experiments to be conducted with the homeo package.
@@ -498,7 +510,7 @@ def initializeBraiten1_1Arist(raw=True,params=None):
     
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-1-1-HOMEO.wbt'   
+    webotsWorld = _webots_world('khepera-braitenberg-1-1-HOMEO.wbt')   
     '''Webots parameters for tcp/ip communication
        (Defined in webots world specified above) '''
     kheperaPort = 10020
@@ -654,7 +666,7 @@ def initializeBraiten1_1(raw=False,params=None):
     
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-1-1-HOMEO.wbt'   
+    webotsWorld = _webots_world('khepera-braitenberg-1-1-HOMEO.wbt')   
     '''Webots parameters for tcp/ip communication
        (Defined in webots world specified above) '''
     kheperaPort = 10020
@@ -811,7 +823,7 @@ def initializeBraiten1_2(raw=False,params=None):
              
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-1-1-HOMEO.wbt'   
+    webotsWorld = _webots_world('khepera-braitenberg-1-1-HOMEO.wbt')   
 
     '''Webots parameters for tcp/ip communication
        (Defined in webots world specified above
@@ -971,7 +983,7 @@ def initializeBraiten1_3(params=None):
      
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-1-1-HOMEO.wbt'   
+    webotsWorld = _webots_world('khepera-braitenberg-1-1-HOMEO.wbt')   
 
     '''Webots parameters for tcp/ip communication
        (Defined in webots world specified above
@@ -1162,8 +1174,8 @@ def initializeBraiten2_2(raw=False,params=None, simulator = None, backendSimulat
     host = '127.0.0.1'
     WebotsKheperaPort = 10020
     VREPKheperaPort = 19997
-    WEBOTS_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
-    VREP_World = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt'
+    WEBOTS_World = _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt')
+    VREP_World = _vrep_scene('khepera-braitenberg-2-HOMEO.ttt')
     HOMEO_World = 'kheperaBraitenberg2_HOMEO_World'
 
     """Get the simulator-specific transducer units
@@ -1416,7 +1428,7 @@ def initializeBraiten2_2Aristotelian(raw=True,params=None):
              
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
+    webotsWorld = _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt')
        
 
     '''Webots parameters for tcp/ip communication
@@ -1657,7 +1669,7 @@ def initializeBraiten2_2_Full(raw=False,params=None):
              
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
+    webotsWorld = _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt')
        
 
     '''Webots parameters for tcp/ip communication
@@ -1900,7 +1912,7 @@ def initializeBraiten2_7_Full(raw=False):
              
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt'
+    webotsWorld = _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt')
        
 
     '''Webots parameters for tcp/ip communication
@@ -2204,8 +2216,8 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
                       
 ''' 
     worlds = {
-              'WEBOTS_World' : '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt',
-              'VREP_World' : '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt',
+              'WEBOTS_World' : _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt'),
+              'VREP_World' : _vrep_scene('khepera-braitenberg-2-HOMEO.ttt'),
               'HOMEO_World' : 'kheperaBraitenberg2_HOMEO_World'
               }
     
@@ -2595,8 +2607,8 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
     worlds = {
-        'WEBOTS_World': '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt',
-        'VREP_World': '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt',
+        'WEBOTS_World': _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt'),
+        'VREP_World': _vrep_scene('khepera-braitenberg-2-HOMEO.ttt'),
         'HOMEO_World': 'kheperaBraitenberg2_HOMEO_World'
     }
 
@@ -2848,8 +2860,8 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
     worlds = {
-        'WEBOTS_World': '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO.wbt',
-        'VREP_World': '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/VREP/Homeo-Scenes/khepera-braitenberg-2-HOMEO.ttt',
+        'WEBOTS_World': _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt'),
+        'VREP_World': _vrep_scene('khepera-braitenberg-2-HOMEO.ttt'),
         'HOMEO_World': 'kheperaBraitenberg2_HOMEO_World'
     }
 
@@ -3085,7 +3097,7 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
              
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO-NO-NOISE.wbt'
+    webotsWorld = _webots_world('khepera-braitenberg-2-HOMEO-NO-NOISE.wbt')
     webotsMode = "fast"              #for GA experiments, run simulation as fast as possible 
 
     '''Webots parameters for tcp/ip communication
@@ -3397,7 +3409,7 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
 
     "1. setup webots"
     "PUT THE CORRECT WEBOTS WORLD HERE WITH COMPLETE PATH"  
-    webotsWorld = '/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/src/Webots/Homeo-experiments/worlds/khepera-braitenberg-2-HOMEO-NO-NOISE.wbt'
+    webotsWorld = _webots_world('khepera-braitenberg-2-HOMEO-NO-NOISE.wbt')
     webotsMode = "fast"              #for GA experiments, run simulation as fast as possible 
 
     '''Webots parameters for tcp/ip communication
