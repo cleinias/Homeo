@@ -3986,7 +3986,8 @@ initializeBraiten3c_GA_continuous_weightfree_open.genomeSize = 10
 
 def add_battery_to_homeostat(hom, backend, recharge_quality=None,
                              capacity=1.0, discharge_rate=0.001,
-                             recharge_factor=0.01, invert=False):
+                             recharge_factor=0.01, invert=False,
+                             wire_stress=False):
     """Add a battery sensor unit to an existing homeostat.
 
     Creates the battery on the robot, creates the battery sensor
@@ -4007,6 +4008,10 @@ def add_battery_to_homeostat(hom, backend, recharge_quality=None,
     invert : bool
         If False, sensor reads battery level (satiation).
         If True, sensor reads (capacity - level) (hunger).
+    wire_stress : bool
+        If True, set _stress_source on all units with active OU uniselectors
+        to compute stress from hunger (1 - level/capacity) instead of
+        their own deviation.
 
     Returns
     -------
@@ -4031,6 +4036,12 @@ def add_battery_to_homeostat(hom, backend, recharge_quality=None,
     for conn in battery_unit.inputConnections:
         conn.status = False
 
+    if wire_stress:
+        battery = robot.battery
+        for unit in hom.homeoUnits:
+            if unit.uniselectorActive:
+                unit._stress_source = lambda bat=battery: 1.0 - bat.level / bat.capacity
+
     return battery_unit
 
 
@@ -4048,7 +4059,8 @@ def initializeHungerPhototaxis_GA_continuous_weightfree(homeoGenome, noHomeoPara
         homeoGenome, backendSimulator, dataDir=dataDir,
         noNoise=noNoise, topology='fixed')
 
-    add_battery_to_homeostat(hom, backendSimulator, recharge_quality='light')
+    add_battery_to_homeostat(hom, backendSimulator, recharge_quality='light',
+                            wire_stress=True)
 
     return hom
 
@@ -4071,7 +4083,8 @@ def initializeHungerChemotaxis3c_GA_continuous_weightfree(homeoGenome, noHomeoPa
         homeoGenome, backendSimulator, dataDir=dataDir,
         noNoise=noNoise, topology='fixed', evolve_dt_fast=True)
 
-    add_battery_to_homeostat(hom, backendSimulator, recharge_quality='organic')
+    add_battery_to_homeostat(hom, backendSimulator, recharge_quality='organic',
+                            wire_stress=True)
 
     return hom
 

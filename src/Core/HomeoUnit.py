@@ -226,9 +226,9 @@ class HomeoUnit(object):
         self._criticalDeviation = 0
         self._nextDeviation = 0
         self._inputTorque = 0
-        self._currentOutput = 0 
-                
+        self._currentOutput = 0
 
+        self._stress_source = None  # Optional callable → float in [0,1]
 
         "sets the correspondence between the simulation units and real physical units"
         self._physicalParameters=dict(timeEquivalence = 1,            # 1 simulation tick corresponds to 1 second of physical time"
@@ -983,8 +983,13 @@ class HomeoUnit(object):
     def stressLevel(self):
         '''Return a continuous measure in [0, 1] of how critical the essential variable is.
         0 = at equilibrium (deviation = 0), 1 = at the limit (deviation = maxDeviation).
-        Used by HomeoUniselectorContinuous to modulate noise intensity.'''
+        Used by HomeoUniselectorContinuous to modulate noise intensity.
 
+        If _stress_source is set (a callable returning float in [0,1]),
+        it overrides the default deviation-based computation.'''
+
+        if self._stress_source is not None:
+            return self._stress_source()
         if self.maxDeviation == 0:
             return 0.0
         return min(abs(self.criticalDeviation) / self.maxDeviation, 1.0)
