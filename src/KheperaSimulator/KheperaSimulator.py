@@ -222,6 +222,48 @@ b2Body.update = b2BodyDefaultUpdate
 
 "Khepera simulation classes"
 
+
+class KheperaBattery:
+    """Simple battery model: constant discharge, irradiance-proportional recharge.
+
+    The battery depletes at a fixed rate each tick and recharges proportionally
+    to the irradiance received from a configurable energy source.  Level is
+    clamped to [0, capacity].
+    """
+
+    def __init__(self, capacity=1.0, discharge_rate=0.001, recharge_factor=0.01):
+        self.capacity = capacity
+        self.level = capacity
+        self.discharge_rate = discharge_rate
+        self.recharge_factor = recharge_factor
+        self._cumulative_level = 0.0
+        self._tick_count = 0
+
+    def tick(self, irradiance=0.0):
+        """Advance the battery by one simulation tick.
+
+        Discharge at a constant rate and recharge proportionally to
+        *irradiance*.  The level is clamped to [0, capacity].
+        """
+        self.level += -self.discharge_rate + self.recharge_factor * irradiance
+        if self.level < 0.0:
+            self.level = 0.0
+        elif self.level > self.capacity:
+            self.level = self.capacity
+        self._cumulative_level += self.level
+        self._tick_count += 1
+
+    def average_level(self):
+        """Return the time-averaged battery level since creation (or last reset)."""
+        if self._tick_count == 0:
+            return self.level
+        return self._cumulative_level / self._tick_count
+
+    def range(self):
+        """Return (min, max) range of the battery level."""
+        return (0.0, self.capacity)
+
+
 class KheperaRobot(object):
     """The body of a Khepera-like robot.
        The body is implemented as a simple circle with two wheels and light sensors.
@@ -358,6 +400,9 @@ class KheperaRobot(object):
         
         self.detectableLights = []
         self.detectableSources = {}   # quality -> [body, ...]
+
+        self.battery = None                    # opt-in; None = no battery
+        self._battery_recharge_quality = None  # which quality recharges ('light', 'organic', etc.)
 
         "Add a pyglet shape to robot's body for rendering"
         self.setRenderingParameters(color = color)
@@ -900,6 +945,17 @@ class KheperaSimulation(object):
         self.currentStep += 1
         
         self.trajectoryWriter.runOnce(position=self.allBodies[self.robotName].body)
+
+        robot = self.allBodies[self.robotName]
+        if robot.battery is not None:
+            quality = robot._battery_recharge_quality
+            if quality is not None:
+                sources = robot.detectableSources.get(quality, [])
+            else:
+                sources = robot.detectableLights
+            irrad = robot.irradAtSensor('leftEye', sources)
+            robot.battery.tick(irrad)
+
         "for testing irradiance function"
 #         print self.allBodies["kheperaRobot"].irradAtSensor('CenterEye', [self.allBodies['TARGET']])
 #         print "kheperaRobot vels: %.5f , %.5f  FW_speeds: %.3f, %.3f location: %s  angle: %.3f. LeftWheel W-FW-vector:%s RightWheel W-FW-vector:%s " % (self.allBodies['kheperaRobot'].wheels['left'].getCurrentSpeed(),

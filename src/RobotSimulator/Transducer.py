@@ -367,6 +367,30 @@ class HOMEO_QualitySensor(Transducer):
         raise TransducerException("Quality sensor %s cannot act" % self._eye)
 
 
+class HOMEO_BatterySensor(Transducer):
+    """Interoceptive transducer that reads the robot's battery level.
+
+    With invert=False (default) the sensor reads the battery level directly
+    (satiation signal: high when full, low when depleted).
+    With invert=True it reads (capacity - level), giving a hunger signal
+    (high when depleted, low when full).
+    """
+
+    def __init__(self, robotRef, invert=False):
+        self.robot = robotRef
+        self._invert = invert
+
+    def read(self):
+        level = self.robot.battery.level
+        return (self.robot.battery.capacity - level) if self._invert else level
+
+    def range(self):
+        return self.robot.battery.range()
+
+    def act(self):
+        raise TransducerException("Battery sensor cannot act")
+
+
 class TransducerTCP(object):
     '''
     TransducerTCP is an abstract class. Its subclasses control a robot's input /output interfaces

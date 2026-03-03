@@ -49,6 +49,7 @@ class HomeostatStateLogger:
         self._target = target_pos
         self._interval = max(1, int(log_interval))
         self._headless = getattr(homeostat, '_headless', False)
+        self._has_battery = self._robot.battery is not None
 
         # Compute minimum dt_fast across all units for physical time column
         self._min_dt_fast = 1.0
@@ -99,6 +100,8 @@ class HomeostatStateLogger:
         for i, name in enumerate(self._unit_names):
             if self._has_ou[i]:
                 cols.append('sigma_%s' % name)
+        if self._has_battery:
+            cols.append('battery_level')
         self._columns = cols
         self._ncols = len(cols)
 
@@ -141,6 +144,14 @@ class HomeostatStateLogger:
                 f.write('%s_stress_exponent\t%.6f\n' % (
                     prefix, unis._stress_exponent))
                 f.write('%s_ou_dt\t%.6f\n' % (prefix, unis._dt))
+
+        if self._has_battery:
+            bat = self._robot.battery
+            f.write('# battery_capacity\t%.6f\n' % bat.capacity)
+            f.write('# battery_discharge_rate\t%.6f\n' % bat.discharge_rate)
+            f.write('# battery_recharge_factor\t%.6f\n' % bat.recharge_factor)
+            rq = getattr(self._robot, '_battery_recharge_quality', None)
+            f.write('# battery_recharge_quality\t%s\n' % (rq if rq else 'all'))
 
         # Connection states (manual vs uniselector)
         conn_states = []
@@ -205,6 +216,10 @@ class HomeostatStateLogger:
                 stress = unit.stressLevel()
                 sigma = unit.uniselector.sigma(stress)
                 vals.append('%.6f' % sigma)
+
+        # Battery level column
+        if self._has_battery:
+            vals.append('%.6f' % self._robot.battery.level)
 
         self._f.write('\t'.join(vals) + '\n')
 

@@ -34,11 +34,12 @@ try:
     from RobotSimulator import WebotsTCPClient
     from RobotSimulator.Transducer import (VREP_DiffMotor, VREP_LightSensor,
         HOMEO_DiffMotor, HOMEO_LightSensor, HOMEO_QualitySensor,
+        HOMEO_BatterySensor,
         WebotsDiffMotorTCP, WebotsLightSensorTCP)
 except ImportError:
     WebotsTCPClient = None
     VREP_DiffMotor = VREP_LightSensor = None
-    HOMEO_DiffMotor = HOMEO_LightSensor = HOMEO_QualitySensor = None
+    HOMEO_DiffMotor = HOMEO_LightSensor = HOMEO_QualitySensor = HOMEO_BatterySensor = None
     WebotsDiffMotorTCP = WebotsLightSensorTCP = None
 
 try:
@@ -227,8 +228,16 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
         return HOMEO_QualitySensor(sensorName, quality,
                                    self.kheperaSimulation.allBodies[self._robotName])
 
+    def getBatterySensor(self, invert=False):
+        """Return an interoceptive battery sensor transducer.
+           invert=False: satiation signal; invert=True: hunger signal."""
 
-       
+        return HOMEO_BatterySensor(
+            self.kheperaSimulation.allBodies[self._robotName],
+            invert=invert)
+
+
+
 class SimulatorBackendWEBOTS(SimulatorBackendAbstract):
     "Interface to the Webots robotic simulator backend"
     

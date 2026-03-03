@@ -3981,6 +3981,106 @@ initializeBraiten3c_GA_continuous_weightfree_open.genomeSize = 10
 
 
 # ===============================================================
+#  Hunger-driven chemotaxis — composable battery layer
+# ===============================================================
+
+def add_battery_to_homeostat(hom, backend, recharge_quality=None,
+                             capacity=1.0, discharge_rate=0.001,
+                             recharge_factor=0.01, invert=False):
+    """Add a battery sensor unit to an existing homeostat.
+
+    Creates the battery on the robot, creates the battery sensor
+    transducer and HomeoUnitInput, connects it to all existing units,
+    and disables its input connections (pure sensor).
+
+    Parameters
+    ----------
+    hom : Homeostat
+        The homeostat to extend.
+    backend : SimulatorBackendHOMEO
+        The backend simulator (provides robot reference).
+    recharge_quality : str or None
+        Which source quality recharges the battery ('light', 'organic', etc.).
+        If None, uses all detectableLights.
+    capacity, discharge_rate, recharge_factor : float
+        Battery model parameters.
+    invert : bool
+        If False, sensor reads battery level (satiation).
+        If True, sensor reads (capacity - level) (hunger).
+
+    Returns
+    -------
+    HomeoUnitInput
+        The battery sensor unit added to the homeostat.
+    """
+    from KheperaSimulator.KheperaSimulator import KheperaBattery
+
+    robot = backend.kheperaSimulation.allBodies['Khepera']
+    robot.battery = KheperaBattery(capacity, discharge_rate, recharge_factor)
+    robot._battery_recharge_quality = recharge_quality
+
+    battery_transd = backend.getBatterySensor(invert=invert)
+    battery_unit = HomeoUnitInput(transducer=battery_transd)
+    battery_unit.name = 'Battery'
+    battery_unit.noise = 0.05
+    battery_unit.uniselectorActive = False
+
+    hom.addFullyConnectedUnit(battery_unit)
+
+    # Disable all input connections on the battery unit (pure sensor)
+    for conn in battery_unit.inputConnections:
+        conn.status = False
+
+    return battery_unit
+
+
+def initializeHungerPhototaxis_GA_continuous_weightfree(homeoGenome, noHomeoParameters=5,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Hunger-driven phototaxis: Braiten2-direct (4 units) + battery sensor (5th unit).
+
+    The battery recharges from 'light' sources.  Fitness = average battery level
+    (maximised).
+
+    Genome: 10 genes = 2 motors x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
+    '''
+    hom = _setup_continuous_weightfree_homeostat_direct(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, topology='fixed')
+
+    add_battery_to_homeostat(hom, backendSimulator, recharge_quality='light')
+
+    return hom
+
+initializeHungerPhototaxis_GA_continuous_weightfree.noEvolvedUnits = 2
+initializeHungerPhototaxis_GA_continuous_weightfree.fitnessSign = 1
+initializeHungerPhototaxis_GA_continuous_weightfree.genomeSize = 10
+
+
+def initializeHungerChemotaxis3c_GA_continuous_weightfree(homeoGenome, noHomeoParameters=5,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Hunger-driven chemotaxis: Braiten3c (10 units) + battery sensor (11th unit).
+
+    The battery recharges from 'organic' sources.  Fitness = average battery level
+    (maximised).
+
+    Genome: 10 genes = 2 motors x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
+    '''
+    hom = _setup_braitenberg_3c_homeostat(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, topology='fixed', evolve_dt_fast=True)
+
+    add_battery_to_homeostat(hom, backendSimulator, recharge_quality='organic')
+
+    return hom
+
+initializeHungerChemotaxis3c_GA_continuous_weightfree.noEvolvedUnits = 2
+initializeHungerChemotaxis3c_GA_continuous_weightfree.fitnessSign = 1
+initializeHungerChemotaxis3c_GA_continuous_weightfree.genomeSize = 10
+
+
+# ===============================================================
 #  Ashby's 7 Original Experiments — GUI-friendly setup functions
 #
 #  Each returns a configured Homeostat ready to run.

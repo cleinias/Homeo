@@ -78,6 +78,12 @@ _EXP_FUNC_MAP = {
         'initializeBraiten3c_GA_continuous_weightfree_fixed',
     'initializeBraiten3c_GA_continuous_weightfree_open':
         'initializeBraiten3c_GA_continuous_weightfree_open',
+
+    # Hunger-driven chemotaxis
+    'initializeHungerPhototaxis_GA_continuous_weightfree':
+        'initializeHungerPhototaxis_GA_continuous_weightfree',
+    'initializeHungerChemotaxis3c_GA_continuous_weightfree':
+        'initializeHungerChemotaxis3c_GA_continuous_weightfree',
 }
 
 
