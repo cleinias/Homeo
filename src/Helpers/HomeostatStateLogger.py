@@ -140,6 +140,22 @@ class HomeostatStateLogger:
                 f.write('%s_sigma_crit\t%.6f\n' % (prefix, unis._sigma_crit))
                 f.write('%s_stress_exponent\t%.6f\n' % (
                     prefix, unis._stress_exponent))
+                f.write('%s_ou_dt\t%.6f\n' % (prefix, unis._dt))
+
+        # Connection states (manual vs uniselector)
+        conn_states = []
+        for key, source in zip(self._conn_keys, self._conn_sources):
+            if source[0] == 'conn':
+                state = source[2].state  # 'manual' or 'uniselector'
+            else:
+                # JIT mode: find the matching connection object
+                unit = source[1]
+                jit_idx = source[2]
+                active = [c for c in unit.inputConnections
+                          if c.isActive() and c.incomingUnit.isActive()]
+                state = active[jit_idx].state if jit_idx < len(active) else 'unknown'
+            conn_states.append('%s=%s' % (key, state))
+        f.write('# conn_states\t%s\n' % ','.join(conn_states))
 
     def log_tick(self, tick):
         '''Write one row of state data.  Call after all units have updated.'''

@@ -7,6 +7,9 @@ matplotlib>=3.8
 # Real-time charting in the GUI
 pyqtgraph>=0.14
 
+# Post-mortem analysis (StatelogAnalyzer)
+pandas>=2.1
+
 # Genetic-algorithm experiments
 deap>=1.4
 dill>=0.3

@@ -3711,6 +3711,275 @@ def basicBraiten2Tranducers(backendSimulator, world):
     return transducers
 
 
+def braiten3cTransducers(backendSimulator, world):
+    """Return 10 transducers for Braitenberg Vehicle 3c:
+    2 wheel motors + 8 quality-filtered sensors (one pair per quality).
+
+    The robot must already have 8 sensor fixtures: leftEye, rightEye,
+    leftTempEye, rightTempEye, leftOxyEye, rightOxyEye, leftOrgEye, rightOrgEye.
+    """
+
+    "1. start backend simulation with correct world"
+    try:
+        backendSimulator.start(world)
+    except Exception as e:
+        raise Exception("I cannot start the backend simulator %s. Aborting...\nCause: %s"
+                        % (backendSimulator.name, e)) from e
+
+    "2. get transducers"
+    transducers = {
+        "rightWheelTransd": backendSimulator.getWheel('right'),
+        "leftWheelTransd":  backendSimulator.getWheel('left'),
+        # Light sensors use the existing leftEye/rightEye fixtures
+        "leftLightTransd":  backendSimulator.getQualitySensor('leftEye', 'light'),
+        "rightLightTransd": backendSimulator.getQualitySensor('rightEye', 'light'),
+        # Temperature
+        "leftTempTransd":   backendSimulator.getQualitySensor('leftTempEye', 'temperature'),
+        "rightTempTransd":  backendSimulator.getQualitySensor('rightTempEye', 'temperature'),
+        # Oxygen
+        "leftOxyTransd":    backendSimulator.getQualitySensor('leftOxyEye', 'oxygen'),
+        "rightOxyTransd":   backendSimulator.getQualitySensor('rightOxyEye', 'oxygen'),
+        # Organic matter
+        "leftOrgTransd":    backendSimulator.getQualitySensor('leftOrgEye', 'organic'),
+        "rightOrgTransd":   backendSimulator.getQualitySensor('rightOrgEye', 'organic'),
+    }
+
+    return transducers
+
+
+def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
+                                    dataDir=None, noNoise=False,
+                                    topology='fixed',
+                                    evolve_dt_fast=True):
+    '''Setup a 10-unit homeostat for Braitenberg Vehicle 3c (multi-quality).
+
+    2 motor units (evolved via genome) + 8 sensor input units (pure transducers).
+
+    When evolve_dt_fast=True:
+        Genome: 10 genes = 2 motors x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
+    When evolve_dt_fast=False:
+        Genome: 8 genes = 2 motors x 4 params [mass, viscosity, tau_a, maxDeviation].
+
+    Connection weights are NOT in the genome — they are initialised to small
+    random values and evolved online by the OU process.
+
+    Parameters
+    ----------
+    topology : str
+        'fixed'  — Braitenberg's wiring (Vehicles p.12):
+                    Light: crossed excitatory, Temp: uncrossed excitatory,
+                    O2: crossed inhibitory, Organic: uncrossed inhibitory.
+        'open'   — all 16 sensor->motor connections active.
+    '''
+    from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
+
+    worlds = {
+        'HOMEO_World': 'kheperaBraitenberg3c_HOMEO_World'
+    }
+
+    try:
+        world = worlds[backendSimulator.name + '_World']
+    except KeyError:
+        raise Exception("I cannot use backend simulator %s for Braiten3c yet"
+                        % backendSimulator.name)
+
+    transducers = braiten3cTransducers(backendSimulator, world)
+    if transducers is None:
+        raise Exception("Could not build transducers for simulator backend ",
+                        backendSimulator.name)
+
+    "1. Create homeostat and units"
+    hom = Homeostat()
+    hom._host = backendSimulator.host
+    hom._port = backendSimulator.port
+    HomeoUnit.clearNames()
+
+    # Motors
+    leftMotor = HomeoUnitNewtonianActuator(transducer=transducers["leftWheelTransd"])
+    rightMotor = HomeoUnitNewtonianActuator(transducer=transducers["rightWheelTransd"])
+
+    # Sensor-only units (8 of them)
+    leftLight  = HomeoUnitInput(transducer=transducers["leftLightTransd"])
+    rightLight = HomeoUnitInput(transducer=transducers["rightLightTransd"])
+    leftTemp   = HomeoUnitInput(transducer=transducers["leftTempTransd"])
+    rightTemp  = HomeoUnitInput(transducer=transducers["rightTempTransd"])
+    leftOxy    = HomeoUnitInput(transducer=transducers["leftOxyTransd"])
+    rightOxy   = HomeoUnitInput(transducer=transducers["rightOxyTransd"])
+    leftOrg    = HomeoUnitInput(transducer=transducers["leftOrgTransd"])
+    rightOrg   = HomeoUnitInput(transducer=transducers["rightOrgTransd"])
+
+    "2. Decode genome — only motor units are evolved"
+    genes_per_unit = 5 if evolve_dt_fast else 4
+    evolved_units = [leftMotor, rightMotor]
+    for i, unit in enumerate(evolved_units):
+        base = i * genes_per_unit
+        unit.mass = 1.0 + homeoGenome[base + 0] * 9.0       # [1, 10]
+        unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
+        # gene 2 = tau_a (applied after uniselector swap below)
+        unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])
+        if evolve_dt_fast:
+            unit.dt_fast = HomeoUnit.dtFastFromWeight(homeoGenome[base + 4])
+
+    "3. Build fully-connected homeostat"
+    all_units = [leftMotor, rightMotor,
+                 leftLight, rightLight, leftTemp, rightTemp,
+                 leftOxy, rightOxy, leftOrg, rightOrg]
+    for unit in all_units:
+        hom.addFullyConnectedUnit(unit)
+
+    "4. Name units and set noise"
+    if noNoise:
+        unit_noise = 0
+        conn_noise = 0.0
+    else:
+        unit_noise = 0.05
+        conn_noise = 0.05
+
+    leftMotor.name = 'Left Motor'
+    leftMotor.noise = unit_noise
+    leftMotor._maxSpeedFraction = 0.8
+    leftMotor._switchingRate = 0.5
+    leftMotor._maxSpeed = None
+    rightMotor.name = 'Right Motor'
+    rightMotor.noise = unit_noise
+    rightMotor._maxSpeedFraction = 0.8
+    rightMotor._switchingRate = 0.5
+    rightMotor._maxSpeed = None
+
+    sensor_names = {
+        leftLight: 'Left Light', rightLight: 'Right Light',
+        leftTemp: 'Left Temp',   rightTemp: 'Right Temp',
+        leftOxy: 'Left Oxy',     rightOxy: 'Right Oxy',
+        leftOrg: 'Left Org',     rightOrg: 'Right Org',
+    }
+    for unit, name in sensor_names.items():
+        unit.name = name
+        unit.noise = unit_noise
+
+    "5. Disable sensor-only units (pure input transducers)"
+    sensor_units = [leftLight, rightLight, leftTemp, rightTemp,
+                    leftOxy, rightOxy, leftOrg, rightOrg]
+    for su in sensor_units:
+        su.uniselectorActive = False
+        for conn in su.inputConnections:
+            conn.status = False
+
+    "6. Configure connections on motor units"
+    for unit in evolved_units:
+        "Self-connection: negative, manual (stability guarantee)"
+        unit.inputConnections[0].newWeight(-np.random.uniform(0.01, 0.1))
+        unit.inputConnections[0].noise = conn_noise
+        unit.inputConnections[0].state = 'manual'
+        unit.inputConnections[0].status = True
+
+    # Disable motor-to-motor cross-connections
+    for conn in leftMotor.inputConnections:
+        if conn.incomingUnit is rightMotor:
+            conn.status = False
+    for conn in rightMotor.inputConnections:
+        if conn.incomingUnit is leftMotor:
+            conn.status = False
+
+    if topology == 'fixed':
+        "Braitenberg's Vehicle 3c wiring"
+        # First disable all non-self connections on motors
+        for unit in evolved_units:
+            for conn in unit.inputConnections[1:]:
+                conn.status = False
+
+        # Braitenberg 3c wiring table (Vehicles p.12):
+        #   quality     | wiring    | sign  | left motor source | right motor source
+        #   Light       | crossed   | +     | Right Light       | Left Light
+        #   Temperature | uncrossed | +     | Left Temp         | Right Temp
+        #   Oxygen      | crossed   | -     | Right Oxy         | Left Oxy
+        #   Organic     | uncrossed | -     | Left Org          | Right Org
+        fixed_wiring = {
+            leftMotor: [
+                ('Right Light', +1),
+                ('Left Temp',   +1),
+                ('Right Oxy',   -1),
+                ('Left Org',    -1),
+            ],
+            rightMotor: [
+                ('Left Light',  +1),
+                ('Right Temp',  +1),
+                ('Left Oxy',    -1),
+                ('Right Org',   -1),
+            ],
+        }
+        for motor, wiring_list in fixed_wiring.items():
+            for source_name, sign in wiring_list:
+                for conn in motor.inputConnections:
+                    if conn.incomingUnit.name == source_name:
+                        init_weight = sign * np.random.uniform(0.01, 0.1)
+                        conn.newWeight(init_weight)
+                        conn.noise = conn_noise
+                        conn.state = 'uniselector'
+                        conn.status = True
+    else:
+        "Open topology: all 16 sensor->motor connections active"
+        for unit in evolved_units:
+            for conn in unit.inputConnections[1:]:
+                if conn.incomingUnit in sensor_units:
+                    conn.newWeight(np.random.uniform(-0.1, 0.1))
+                    conn.noise = conn_noise
+                    conn.state = 'uniselector'
+                    conn.status = True
+
+    "7. Swap uniselectors to continuous (OU) and set tau_a from genome"
+    for i, unit in enumerate(evolved_units):
+        unit.uniselectorActive = True
+        unis = HomeoUniselectorContinuous()
+        unis.tau_a = HomeoUnit.tauAFromWeight(homeoGenome[i * genes_per_unit + 2])
+        unit.uniselector = unis
+
+    "8. Set negative light intensity (phototaxis — robot approaches light)"
+    if backendSimulator is not None:
+        target = backendSimulator.kheperaSimulation.allBodies['TARGET']
+        target.userData['intensity'] = -100
+        target.userData['lightIntensity'] = -100
+
+    "9. Socket setup for WEBOTS"
+    if backendSimulator.name == "WEBOTS":
+        hom._usesSocket = True
+        hom.connectUnitsToNetwork()
+
+    hDebug('unit', "Homeostat initialized (Braiten3c, topology=%s)" % topology)
+    return hom
+
+
+def initializeBraiten3c_GA_continuous_weightfree_fixed(homeoGenome, noHomeoParameters=5,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Braitenberg Vehicle 3c with fixed Braitenberg wiring and variable dt_fast.
+
+    Genome: 10 genes = 2 motors x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
+    '''
+    return _setup_braitenberg_3c_homeostat(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, topology='fixed', evolve_dt_fast=True)
+
+initializeBraiten3c_GA_continuous_weightfree_fixed.noEvolvedUnits = 2
+initializeBraiten3c_GA_continuous_weightfree_fixed.fitnessSign = 1
+initializeBraiten3c_GA_continuous_weightfree_fixed.genomeSize = 10
+
+
+def initializeBraiten3c_GA_continuous_weightfree_open(homeoGenome, noHomeoParameters=5,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Braitenberg Vehicle 3c with open topology (all 16 sensor->motor connections).
+
+    Genome: 10 genes = 2 motors x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
+    '''
+    return _setup_braitenberg_3c_homeostat(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, topology='open', evolve_dt_fast=True)
+
+initializeBraiten3c_GA_continuous_weightfree_open.noEvolvedUnits = 2
+initializeBraiten3c_GA_continuous_weightfree_open.fitnessSign = 1
+initializeBraiten3c_GA_continuous_weightfree_open.genomeSize = 10
+
+
 # ===============================================================
 #  Ashby's 7 Original Experiments — GUI-friendly setup functions
 #

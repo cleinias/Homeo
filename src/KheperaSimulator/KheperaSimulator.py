@@ -357,7 +357,8 @@ class KheperaRobot(object):
            set by one to the world setting methods in the KheperaSimulation class'"""
         
         self.detectableLights = []
-        
+        self.detectableSources = {}   # quality -> [body, ...]
+
         "Add a pyglet shape to robot's body for rendering"
         self.setRenderingParameters(color = color)
 
@@ -567,7 +568,14 @@ class KheperaRobot(object):
            in the robot's world."""
         
         return self.irradAtSensor(sensorName, self.detectableLights)
-            
+
+    def getSensorReadByQuality(self, sensorName, quality):
+        """Return irradiance at sensorName from sources of the given quality only."""
+        sources = self.detectableSources.get(quality, [])
+        if not sources and quality == 'light':
+            sources = self.detectableLights   # backward compat fallback
+        return self.irradAtSensor(sensorName, sources)
+
     def rotateTo(self, angleRad):
         """Rotate robot and its jointed bodies to angleRad.
           Calling function must also call the step function of the containing world
@@ -982,9 +990,150 @@ class KheperaSimulation(object):
         self.allBodies[kheperaRobotDefaultName].detectableLights = lights                  
         
         return kheperaWorld
-    
+
+    def kheperaBraitenberg3c_HOMEO_World(self):
+        """Create a multi-quality environment for Braitenberg Vehicle 3c.
+
+        The world contains 5 point sources of 4 different qualities
+        (light, temperature, oxygen, organic matter) and a robot with
+        8 sensors (one pair per quality).
+
+        Source layout:
+          LIGHT1  at (7,7) yellow  intensity 100
+          TEMP1   at (7,7) red     intensity  80  (co-located with light)
+          TEMP2   at (1,7) red     intensity  80
+          OXY1    at (2,2) cyan    intensity 100
+          ORG1    at (6,1) green   intensity 100
+        """
+
+        'Constants'
+        kheperaRobotDefaultColor  = (1.0, 0.0, 0.0, 0.5)
+        kheperaRobotDefaultName = "Khepera"
+        kheperaRobotDefaultID = 'Unspecified'
+        kheperaDefaultPosition = (4, 4)
+        lightDefaultRadius = .06
+
+        "Create the Box2D world"
+        kheperaWorld = b2World(gravity=(0, 0))
+
+        'Add a robot'
+        self.robotName = kheperaRobotDefaultName
+        self.allBodies[self.robotName] = KheperaRobot(
+            world=kheperaWorld, unit='mm',
+            color=kheperaRobotDefaultColor,
+            name=kheperaRobotDefaultName,
+            ID=kheperaRobotDefaultID,
+            initialPose=kheperaDefaultPosition)
+        robot = self.allBodies[self.robotName]
+
+        'Add extra sensor pairs to the robot'
+        # Sensor geometry defaults (same as the built-in leftEye/rightEye)
+        kheperaEyeDefaultMaxValue  = 100
+        kheperaEyeDefaultMaxRange  = 10
+        kheperaEyeDefaultAngleRange = 90
+        kheperaEyeDefaultDiameterRatio = 0.1
+
+        # Temperature sensors at +/- 45 degrees
+        tempRightPose = (robot.diameter/2 * sin(radians(45)),
+                         robot.diameter/2 * cos(radians(45)))
+        tempLeftPose  = (-robot.diameter/2 * sin(radians(45)),
+                          robot.diameter/2 * cos(radians(45)))
+        robot.addSensor(tempLeftPose, 'leftTempEye',
+                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
+                        maxRange=kheperaEyeDefaultMaxRange,
+                        angleRange=kheperaEyeDefaultAngleRange,
+                        maxValue=kheperaEyeDefaultMaxValue)
+        robot.addSensor(tempRightPose, 'rightTempEye',
+                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
+                        maxRange=kheperaEyeDefaultMaxRange,
+                        angleRange=kheperaEyeDefaultAngleRange,
+                        maxValue=kheperaEyeDefaultMaxValue)
+
+        # Oxygen sensors at +/- 10 degrees
+        oxyRightPose = (robot.diameter/2 * sin(radians(10)),
+                        robot.diameter/2 * cos(radians(10)))
+        oxyLeftPose  = (-robot.diameter/2 * sin(radians(10)),
+                         robot.diameter/2 * cos(radians(10)))
+        robot.addSensor(oxyLeftPose, 'leftOxyEye',
+                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
+                        maxRange=kheperaEyeDefaultMaxRange,
+                        angleRange=kheperaEyeDefaultAngleRange,
+                        maxValue=kheperaEyeDefaultMaxValue)
+        robot.addSensor(oxyRightPose, 'rightOxyEye',
+                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
+                        maxRange=kheperaEyeDefaultMaxRange,
+                        angleRange=kheperaEyeDefaultAngleRange,
+                        maxValue=kheperaEyeDefaultMaxValue)
+
+        # Organic matter sensors at +/- 35 degrees
+        orgRightPose = (robot.diameter/2 * sin(radians(35)),
+                        robot.diameter/2 * cos(radians(35)))
+        orgLeftPose  = (-robot.diameter/2 * sin(radians(35)),
+                         robot.diameter/2 * cos(radians(35)))
+        robot.addSensor(orgLeftPose, 'leftOrgEye',
+                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
+                        maxRange=kheperaEyeDefaultMaxRange,
+                        angleRange=kheperaEyeDefaultAngleRange,
+                        maxValue=kheperaEyeDefaultMaxValue)
+        robot.addSensor(orgRightPose, 'rightOrgEye',
+                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
+                        maxRange=kheperaEyeDefaultMaxRange,
+                        angleRange=kheperaEyeDefaultAngleRange,
+                        maxValue=kheperaEyeDefaultMaxValue)
+
+        'Define source specifications: (name, quality, position, color, intensity)'
+        source_specs = [
+            ('LIGHT1', 'light',       (7, 7), (1.0, 1.0, 0.0, 1.0), 100),
+            ('TEMP1',  'temperature',  (7, 7), (1.0, 0.2, 0.2, 1.0),  80),
+            ('TEMP2',  'temperature',  (1, 7), (1.0, 0.2, 0.2, 1.0),  80),
+            ('OXY1',   'oxygen',       (2, 2), (0.0, 0.8, 0.8, 1.0), 100),
+            ('ORG1',   'organic',      (6, 1), (0.2, 0.8, 0.2, 1.0), 100),
+        ]
+
+        allLightBodies = []
+        for srcName, quality, position, color, intensity in source_specs:
+            body = kheperaWorld.CreateBody(
+                self.KheperaWorldLightDef(color, position,
+                                          intensity=intensity, name=srcName))
+            for fixDef in self.KheperaWorldLightFixtureDefs(lightDefaultRadius):
+                body.CreateFixture(fixDef)
+
+            if _has_gl_context():
+                body.userData['pygletShape'] = makePygletCircle(
+                    center=(0, 0), r=lightDefaultRadius, numPoints=100,
+                    orientation=0, draw_mode=GL_TRIANGLE_FAN)
+            else:
+                body.userData['pygletShape'] = None
+
+            body.userData['name'] = srcName
+            body.userData['quality'] = quality
+            body.userData['lightPos'] = (position[0], 0, position[1])
+            body.userData['lightIntensity'] = intensity
+            body.userData['lightIsOn'] = True
+
+            self.allBodies[srcName] = body
+            allLightBodies.append(body)
+
+            # Populate detectableSources by quality
+            robot.detectableSources.setdefault(quality, []).append(body)
+
+        # Backward compat: detectableLights = light-quality sources
+        robot.detectableLights = robot.detectableSources.get('light', [])
+
+        # TARGET alias points to LIGHT1 for fitness computation compatibility
+        self.allBodies['TARGET'] = self.allBodies['LIGHT1']
+
+        "Set up trajectory writer with all source bodies"
+        self.trajectoryWriter = RobotTrajectoryWriter(
+            kheperaRobotDefaultID,
+            (kheperaDefaultPosition[0], 0, kheperaDefaultPosition[1]),
+            allLightBodies, dataDir=self.dataDir,
+            experimentName=self.experimentName)
+
+        return kheperaWorld
+
    #============================================================================
-   # END EXPERIMENTAL WORLD SETUP 
+   # END EXPERIMENTAL WORLD SETUP
    #============================================================================
 
 

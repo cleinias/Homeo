@@ -58,18 +58,28 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False):
     'Compute initial and final distance'
     initPosData = [trajData[:,0][0], trajData[:,1][0]]
     finalPos = [trajData[:,0][-1],trajData[:,1][-1]]
-    initialDistance = sqrt((lightsOnDic['TARGET'][0]- initPosData[0])**2+ (lightsOnDic['TARGET'][1] - initPosData[1])**2)
-    finalDistance = sqrt((lightsOnDic['TARGET'][0]- finalPos[0])**2+ (lightsOnDic['TARGET'][1] - finalPos[1])**2)
+    # Use TARGET if present, otherwise fall back to LIGHT1 or first source
+    target = lightsOnDic.get('TARGET') or lightsOnDic.get('LIGHT1')
+    if target is None and lightsOnDic:
+        target = next(iter(lightsOnDic.values()))
+    if target is not None:
+        initialDistance = sqrt((target[0] - initPosData[0])**2 + (target[1] - initPosData[1])**2)
+        finalDistance = sqrt((target[0] - finalPos[0])**2 + (target[1] - finalPos[1])**2)
+    else:
+        initialDistance = finalDistance = 0.0
     ticks = len(trajData)
 
     'build plot'
     fig, ax = plt.subplots()
 
     margin = 1.5
-    xmin = min(trajData[:,0].min(), lightsOnDic['TARGET'][0]) - margin
-    xmax = max(trajData[:,0].max(), lightsOnDic['TARGET'][0]) + margin
-    ymin = min(trajData[:,1].min(), lightsOnDic['TARGET'][1]) - margin
-    ymax = max(trajData[:,1].max(), lightsOnDic['TARGET'][1]) + margin
+    # Compute bounds from all sources plus trajectory
+    all_source_x = [s[0] for s in lightsOnDic.values()] if lightsOnDic else [0]
+    all_source_y = [s[1] for s in lightsOnDic.values()] if lightsOnDic else [0]
+    xmin = min(trajData[:,0].min(), min(all_source_x)) - margin
+    xmax = max(trajData[:,0].max(), max(all_source_x)) + margin
+    ymin = min(trajData[:,1].min(), min(all_source_y)) - margin
+    ymax = max(trajData[:,1].max(), max(all_source_y)) + margin
 
     # Draw radial irradiance gradient as background
     target = lightsOnDic.get('TARGET')
@@ -113,7 +123,18 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False):
 
     for lightName, light in lightsOnDic.items():
         lightPos = (light[0],light[1])
-        ax.add_artist(Circle(lightPos, 0.15, alpha=1, color='black', zorder=3))
+        # Color markers by quality based on source name prefix
+        marker_color = 'black'
+        name_lower = lightName.lower()
+        if name_lower.startswith('temp'):
+            marker_color = _QUALITY_COLORS['temperature']
+        elif name_lower.startswith('oxy'):
+            marker_color = _QUALITY_COLORS['oxygen']
+        elif name_lower.startswith('org'):
+            marker_color = _QUALITY_COLORS['organic']
+        elif name_lower.startswith('light') or name_lower == 'target':
+            marker_color = _QUALITY_COLORS['light']
+        ax.add_artist(Circle(lightPos, 0.15, alpha=1, color=marker_color, zorder=3))
     startPose = (trajData[0][0],trajData[0][1])
     startMark = Circle(startPose, 0.05, alpha=1, color='green', zorder=3)
     ax.add_artist(startMark) #draw starting position in green
@@ -130,19 +151,35 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False):
     else:
         plt.show()
     
+_QUALITY_COLORS = {
+    'light':       'gold',
+    'temperature': 'red',
+    'oxygen':      'cyan',
+    'organic':     'limegreen',
+}
+
 def readLightsFromHeader(dataFileHeader):
-    """Read the lights position from a trajectory file header""" 
-    
-    lightPosList = []
-    lightsList = ["LIGHT" + str(i+1) for i in range(10)]
-    lightsList.append("TARGET")
+    """Read source positions from a trajectory file header.
+
+    Recognizes any header line with format:
+        NAME  x  y  intensity  True
+    where NAME is any non-numeric word.  Returns a dict of
+    {name: [x, y, intensity]} for sources that are turned on.
+    """
+
     lightsOnDic = {}
     for line in dataFileHeader:
-        if (any(x in lightsList for x in line.split()) and ("True" in line.split())):
-            lightsAt = [float(line.split()[1]),float(line.split()[2]),float(line.split()[3])]
-            lightsOnDic[line.split()[0]]=lightsAt #dictionary of turned on lights, each represented as a list including x, y coordinates and light intensity
+        parts = line.split()
+        if len(parts) >= 5 and parts[-1] == 'True':
+            name = parts[0]
+            try:
+                x = float(parts[1])
+                y = float(parts[2])
+                intensity = float(parts[3])
+                lightsOnDic[name] = [x, y, intensity]
+            except (ValueError, IndexError):
+                continue
     return lightsOnDic
-    'read initial position'
 
 def readInitPosFromHeader(dataFileHeader):
     for lineNo in range(len(dataFileHeader)):

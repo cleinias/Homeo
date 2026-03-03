@@ -33,12 +33,12 @@ from Helpers.General_Helper_Functions import distance
 try:
     from RobotSimulator import WebotsTCPClient
     from RobotSimulator.Transducer import (VREP_DiffMotor, VREP_LightSensor,
-        HOMEO_DiffMotor, HOMEO_LightSensor,
+        HOMEO_DiffMotor, HOMEO_LightSensor, HOMEO_QualitySensor,
         WebotsDiffMotorTCP, WebotsLightSensorTCP)
 except ImportError:
     WebotsTCPClient = None
     VREP_DiffMotor = VREP_LightSensor = None
-    HOMEO_DiffMotor = HOMEO_LightSensor = None
+    HOMEO_DiffMotor = HOMEO_LightSensor = HOMEO_QualitySensor = None
     WebotsDiffMotorTCP = WebotsLightSensorTCP = None
 
 try:
@@ -216,9 +216,16 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
     def getSensor(self,eye):
         """Return a transducer to a HOMEO's khepera-like robot's 'eye'.
            Eye is a string: 'left' or 'right'"""
-        
+
         return HOMEO_LightSensor(eye, self.kheperaSimulation.allBodies[self._robotName])
-    
+
+    def getQualitySensor(self, sensorName, quality):
+        """Return a quality-filtered sensor transducer.
+           sensorName: fixture name (e.g. 'leftTempEye')
+           quality: 'light', 'temperature', 'oxygen', 'organic'"""
+
+        return HOMEO_QualitySensor(sensorName, quality,
+                                   self.kheperaSimulation.allBodies[self._robotName])
 
 
        

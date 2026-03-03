@@ -72,6 +72,12 @@ _EXP_FUNC_MAP = {
         'initializeBraiten2_2_Full_GA',
     'initializeBraiten2_2_Full_GA_scototaxis':
         'initializeBraiten2_2_Full_GA_scototaxis',
+
+    # Braitenberg Vehicle 3c (multi-quality, 10 units, 2 evolved)
+    'initializeBraiten3c_GA_continuous_weightfree_fixed':
+        'initializeBraiten3c_GA_continuous_weightfree_fixed',
+    'initializeBraiten3c_GA_continuous_weightfree_open':
+        'initializeBraiten3c_GA_continuous_weightfree_open',
 }
 
 

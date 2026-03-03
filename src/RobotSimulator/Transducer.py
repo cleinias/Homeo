@@ -339,6 +339,34 @@ class HOMEO_LightSensor(Transducer):
         "Eyes cannot act"
         raise TransducerException("HOMEO sensor %s cannot act" %self._eye)
 
+
+class HOMEO_QualitySensor(Transducer):
+    """Sensor transducer that reads from sources of a specific quality only.
+
+    Unlike HOMEO_LightSensor which reads from all detectable lights,
+    this sensor filters by quality (e.g. 'light', 'temperature',
+    'oxygen', 'organic') using KheperaRobot.getSensorReadByQuality().
+    """
+
+    def __init__(self, sensorName, quality, robotRef):
+        # sensorName: fixture name (e.g. 'rightTempEye')
+        # quality: 'light', 'temperature', 'oxygen', 'organic'
+        self._eye = sensorName
+        self._quality = quality
+        self.robot = robotRef
+        self._transdFunction = self.robot.getSensorReadByQuality
+        self._range = self.robot.getMaxSensorRange(self._eye)
+
+    def read(self):
+        return self._transdFunction(self._eye, self._quality)
+
+    def range(self):
+        return (0, self._range)
+
+    def act(self):
+        raise TransducerException("Quality sensor %s cannot act" % self._eye)
+
+
 class TransducerTCP(object):
     '''
     TransducerTCP is an abstract class. Its subclasses control a robot's input /output interfaces
