@@ -199,7 +199,7 @@ def _set_uniselector_type(unit, uniselector_type, continuous_params=None):
             for key, val in continuous_params.items():
                 setattr(unis, key, val)
         unit.uniselector = unis
-    elif uniselector_type == 'random':
+    elif uniselector_type == 'random':commit the files
         unit.uniselector = HomeoUniselectorUniformRandom()
     else:
         # Default: Ashby stepping switch (already the default on new units)
