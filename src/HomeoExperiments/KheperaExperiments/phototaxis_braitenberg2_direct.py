@@ -464,9 +464,9 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
         log_dir = os.path.dirname(results[0]['log_path'])
         csv_name = f'batch_direct_{mode}_{time.strftime("%Y-%m-%d-%H-%M-%S")}.csv'
         csv_path = os.path.join(log_dir, csv_name)
-        fields = ['run', 'final_dist', 'min_dist', 'min_t', 'steps_run',
+        fields = ['run', 'seed', 'final_dist', 'min_dist', 'min_t', 'steps_run',
                   'early_stopped', 'final_x', 'final_y', 'wall_time',
-                  'log_path', 'json_path']
+                  'log_path', 'json_path', 'state_log_path']
         with open(csv_path, 'w', newline='') as f:
             w = _csv.DictWriter(f, fieldnames=fields)
             w.writeheader()
