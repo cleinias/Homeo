@@ -33,9 +33,28 @@ Initialization modes
    All connections between the 2 motors are active (including inter-motor).
    Sensor-only units remain input-only.
 
+3. Fixed weights (--fixed-weights): the non-adaptive baseline.
+   Braitenberg's vehicle 2b ("aggression"): each sensor excites the
+   contra-lateral motor with a fixed weight of +1.0.  No uniselector, no
+   noise, no random parameters, so a run depends only on the start pose.
+   Motor dynamics as in phototaxis_braitenberg2_control (mass 1, viscosity
+   0, -0.9 damping self-connection).  Ignores --random-topology/--continuous.
+
+Start pose (any mode)
+---------------------
+   Default: robot at (4, 4), heading 0; the light at (7, 7) is in view.
+   --random-heading   random heading, default position
+   --random-start     random heading and a random position 2-6 units from
+                      the light
+   Both are drawn from the run's seed, and the batch CSV records the start
+   pose and whether either eye could see the light at the start.
+
 
 Usage
 -----
+    # Fixed-weight baseline, 20 runs from random start poses
+    python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct --fixed-weights --random-start --batch 20
+
     # Headless, fixed topology (default)
     python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct
 
@@ -64,7 +83,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      mass_range=(1, 10), max_speed_fraction=0.8,
                      switching_rate=0.5, light_intensity=100,
                      uniselector_type='ashby', continuous_params=None,
-                     seed=None):
+                     seed=None, fixed_weights=False):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -83,6 +102,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         uniselector_type:   'ashby' (default), 'random', or 'continuous'.
         continuous_params:  dict of HomeoUniselectorContinuous overrides.
         seed:               RNG seed for reproducibility.
+        fixed_weights:      if True, build the non-adaptive Braitenberg 2b
+                            baseline (see _direct_fixed_weights); topology,
+                            mass_range, uniselector_type and
+                            continuous_params are then ignored.
 
     Returns:
         (hom, backend, seed)
@@ -111,13 +134,15 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     os.makedirs(log_dir, exist_ok=True)
     backendSimulator.kheperaSimulation.dataDir = log_dir
 
-    if topology == 'random':
+    if fixed_weights:
+        exp_name = 'phototaxis_braitenberg2_direct_control'
+    elif topology == 'random':
         exp_name = 'phototaxis_braitenberg2_direct_random'
     else:
         exp_name = 'phototaxis_braitenberg2_direct_fixed'
     if light_intensity < 0:
         exp_name += '_dark'
-    if uniselector_type == 'continuous':
+    if uniselector_type == 'continuous' and not fixed_weights:
         exp_name += '_continuous'
     backendSimulator.kheperaSimulation.experimentName = exp_name
 
@@ -173,7 +198,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                   switching_rate=switching_rate,
                   uniselector_type=uniselector_type,
                   continuous_params=continuous_params)
-    if topology == 'random':
+    if fixed_weights:
+        _direct_fixed_weights(hom, max_speed_fraction=max_speed_fraction,
+                              switching_rate=switching_rate)
+    elif topology == 'random':
         _direct_random_topology(hom, **kwargs)
     else:
         _direct_fixed_topology(hom, **kwargs)
@@ -257,6 +285,101 @@ def _direct_fixed_topology(hom, mass_range=(1, 10),
                 conn.status = True
 
 
+# Fixed-weight baseline (Braitenberg 2b) parameters
+CONTROL_CROSS_WEIGHT = 1.0    # sensor -> contra-lateral motor, excitatory
+CONTROL_SELF_WEIGHT = -0.9    # motor self-connection (damping)
+CONTROL_MASS = 1.0
+CONTROL_VISCOSITY = 0.0
+
+
+def _direct_fixed_weights(hom, max_speed_fraction=0.8, switching_rate=0.5):
+    '''Non-adaptive baseline: Braitenberg's vehicle 2b ("aggression").
+
+    Each sensor excites the contra-lateral motor with a fixed weight
+    (CONTROL_CROSS_WEIGHT); inter-motor connections are off.  No uniselector,
+    no noise and no random parameters, so a run depends only on the start pose.
+
+    Motor dynamics follow phototaxis_braitenberg2_control: mass 1 and zero
+    viscosity, so each tick's input acts immediately, and a damping
+    self-connection, so a motor slows down when its input fades.  Motors start
+    at zero deviation (zero wheel speed), so, as in Braitenberg's vehicle,
+    the robot does not move until an eye sees the light.
+    '''
+    for u in hom.homeoUnits:
+        if 'Sensor' in u.name:
+            u.noise = 0
+            continue
+
+        u.mass = CONTROL_MASS
+        u.viscosity = CONTROL_VISCOSITY
+        u.noise = 0
+        u.uniselectorActive = False
+        u.criticalDeviation = 0.0
+        u._maxSpeedFraction = max_speed_fraction
+        u._switchingRate = switching_rate
+        u._maxSpeed = None  # force recalculation from new fraction
+
+        for conn in u.inputConnections[1:]:
+            conn.status = False
+        u.inputConnections[0].newWeight(CONTROL_SELF_WEIGHT)
+        u.inputConnections[0].noise = 0
+        u.inputConnections[0].state = 'manual'
+        u.inputConnections[0].status = True
+
+    cross_wiring = {
+        'Left Motor': 'Right Sensor',
+        'Right Motor': 'Left Sensor',
+    }
+    for u in hom.homeoUnits:
+        if u.name not in cross_wiring:
+            continue
+        for conn in u.inputConnections:
+            if conn.incomingUnit.name == cross_wiring[u.name]:
+                conn.newWeight(CONTROL_CROSS_WEIGHT)
+                conn.noise = 0
+                conn.state = 'manual'
+                conn.status = True
+
+
+def set_start_pose(robot, x=None, y=None, heading=None):
+    '''Place the robot at (x, y) with the given heading (degrees, same
+    convention as the .traj "heading" column); None keeps the current value.
+
+    Moves the wheel bodies with the chassis, rotating them about its centre,
+    so the wheel joints stay intact (KheperaRobot.rotateTo/moveTo do not).
+    Call before the first simulation step.
+    '''
+    from math import radians, cos, sin
+    from Box2D import b2Vec2
+
+    body = robot.body
+    ox, oy = body.position[0], body.position[1]
+    nx = ox if x is None else x
+    ny = oy if y is None else y
+    delta = 0.0 if heading is None else radians(heading) - body.angle
+    c, s = cos(delta), sin(delta)
+    for wheel in robot.wheels.values():
+        rx, ry = wheel.body.position[0] - ox, wheel.body.position[1] - oy
+        wheel.body.position = b2Vec2(nx + c * rx - s * ry, ny + s * rx + c * ry)
+        wheel.body.angle += delta
+    body.position = b2Vec2(nx, ny)
+    body.angle += delta
+
+
+def _random_start_pose(target_pos, random_position):
+    '''Draw a start pose from np.random (so it follows the run's seed):
+    a uniform heading, and if random_position, a position at a uniform
+    distance of 2-6 units and uniform bearing from the light.
+    Returns (x, y, heading); x and y are None when not randomised.'''
+    heading = np.random.uniform(0, 360)
+    if not random_position:
+        return None, None, heading
+    d = np.random.uniform(2.0, 6.0)
+    bearing = np.random.uniform(0, 2 * np.pi)
+    return (target_pos[0] + d * np.cos(bearing),
+            target_pos[1] + d * np.sin(bearing), heading)
+
+
 def _direct_random_topology(hom, mass_range=(1, 10),
                             max_speed_fraction=0.8, switching_rate=0.5,
                             uniselector_type='ashby', continuous_params=None):
@@ -299,11 +422,17 @@ def _direct_random_topology(hom, mass_range=(1, 10),
 def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  light_intensity=100, early_stop_distance=None, quiet=False,
                  uniselector_type='ashby', continuous_params=None,
-                 state_log=False, state_log_interval=1, seed=None):
+                 state_log=False, state_log_interval=1, seed=None,
+                 fixed_weights=False, random_heading=False, random_start=False):
     '''Run the simplified 2+2 phototaxis experiment headless.
 
     Parameters and return value are the same as in
-    phototaxis_braitenberg2_Ashby.run_headless().
+    phototaxis_braitenberg2_Ashby.run_headless(), plus:
+        fixed_weights:  run the non-adaptive Braitenberg 2b baseline.
+        random_heading: start with a random heading (seeded).
+        random_start:   random heading and position 2-6 units from the light.
+    The returned dict also has start_x, start_y, start_heading, start_dist
+    and start_sees_light (whether either eye saw the light at the start).
     '''
     from Helpers.HomeostatConditionLogger import (
         log_homeostat_conditions, log_homeostat_conditions_json)
@@ -312,7 +441,17 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                                           light_intensity=light_intensity,
                                           uniselector_type=uniselector_type,
                                           continuous_params=continuous_params,
-                                          seed=seed)
+                                          seed=seed,
+                                          fixed_weights=fixed_weights)
+    robot = backend.kheperaSimulation.allBodies['Khepera']
+    target_pos = (7, 7)
+    if random_heading or random_start:
+        set_start_pose(robot, *_random_start_pose(target_pos, random_start))
+    start_x, start_y = robot.body.position[0], robot.body.position[1]
+    start_heading = degrees(robot.body.angle) % 360
+    start_dist = sqrt((start_x - target_pos[0])**2 + (start_y - target_pos[1])**2)
+    start_sees_light = (robot.getSensorRead('leftEye') != 0 or
+                        robot.getSensorRead('rightEye') != 0)
 
     hom.slowingFactor = 0
     hom.collectsData = False
@@ -321,8 +460,6 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         u._headless = True
 
     sim = backend.kheperaSimulation
-    robot = sim.allBodies['Khepera']
-    target_pos = (7, 7)
     exp_name = sim.experimentName
 
     # Log initial conditions
@@ -348,10 +485,14 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         rx, ry = robot.body.position[0], robot.body.position[1]
         return sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
 
-    mode_label = 'fixed topology' if topology == 'fixed' else 'random topology'
+    if fixed_weights:
+        mode_label = 'fixed weights, no uniselector'
+    else:
+        mode_label = 'fixed topology' if topology == 'fixed' else 'random topology'
     if not quiet:
         print(f'=== Phototaxis: Braitenberg 2 Direct 2+2 ({mode_label}) ===')
-        print(f'Robot start: ({robot.body.position[0]:.3f}, {robot.body.position[1]:.3f})')
+        print(f'Robot start: ({start_x:.3f}, {start_y:.3f})  heading {start_heading:.1f}  '
+              f'light {"in view" if start_sees_light else "NOT in view"}')
         print(f'Light target: {target_pos}')
         print(f'Initial distance: {dist_to_target():.3f}')
         print()
@@ -407,17 +548,24 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 steps_run=steps_run, final_x=final_x, final_y=final_y,
                 early_stopped=early_stopped,
                 log_path=log_path, json_path=json_path,
-                state_log_path=state_log_path, seed=seed)
+                state_log_path=state_log_path, seed=seed,
+                start_x=start_x, start_y=start_y, start_heading=start_heading,
+                start_dist=start_dist, start_sees_light=start_sees_light)
 
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               report_interval=500, light_intensity=100,
               early_stop_distance=None,
-              uniselector_type='ashby', continuous_params=None):
+              uniselector_type='ashby', continuous_params=None,
+              fixed_weights=False, random_heading=False, random_start=False):
     '''Run a batch of experiments and print a summary table.'''
     import csv as _csv
 
     mode = 'dark' if light_intensity < 0 else 'light'
+    if fixed_weights:
+        kind = 'control'
+    else:
+        kind = 'continuous' if uniselector_type == 'continuous' else 'ashby'
     print(f'=== Batch (direct 2+2): {n_runs} runs, {mode}, {total_steps} ticks budget ===')
     print()
 
@@ -431,13 +579,18 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          early_stop_distance=early_stop_distance,
                          quiet=True,
                          uniselector_type=uniselector_type,
-                         continuous_params=continuous_params)
+                         continuous_params=continuous_params,
+                         fixed_weights=fixed_weights,
+                         random_heading=random_heading,
+                         random_start=random_start)
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
         r['run'] = i + 1
         r['wall_time'] = elapsed
         results.append(r)
-        print(f'  final_dist={r["final_dist"]:.3f}  min_dist={r["min_dist"]:.3f}  '
+        print(f'  start=({r["start_x"]:.2f},{r["start_y"]:.2f}) hdg={r["start_heading"]:.0f} '
+              f'sees_light={r["start_sees_light"]}  '
+              f'final_dist={r["final_dist"]:.3f}  min_dist={r["min_dist"]:.3f}  '
               f'steps={r["steps_run"]}  early_stop={r["early_stopped"]}  '
               f'wall={elapsed:.1f}s', flush=True)
 
@@ -459,12 +612,14 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     print(f'Mean final dist: {np.mean(dists):.3f}  (std {np.std(dists):.3f})')
     print(f'Mean min dist:   {np.mean(mins):.3f}  (std {np.std(mins):.3f})')
     print(f'Early stops:     {stops}/{n_runs}')
+    print(f'Light in view at start: {sum(1 for r in results if r["start_sees_light"])}/{n_runs}')
 
     if results:
         log_dir = os.path.dirname(results[0]['log_path'])
-        csv_name = f'batch_direct_{mode}_{time.strftime("%Y-%m-%d-%H-%M-%S")}.csv'
+        csv_name = f'batch_direct_{kind}_{mode}_{time.strftime("%Y-%m-%d-%H-%M-%S")}.csv'
         csv_path = os.path.join(log_dir, csv_name)
-        fields = ['run', 'seed', 'final_dist', 'min_dist', 'min_t', 'steps_run',
+        fields = ['run', 'seed', 'start_x', 'start_y', 'start_heading', 'start_dist',
+                  'start_sees_light', 'final_dist', 'min_dist', 'min_t', 'steps_run',
                   'early_stopped', 'final_x', 'final_y', 'wall_time',
                   'log_path', 'json_path', 'state_log_path']
         with open(csv_path, 'w', newline='') as f:
@@ -476,7 +631,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     return results
 
 
-def run_visualized(topology='fixed'):
+def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
+                   random_start=False, seed=None, uniselector_type='ashby'):
     '''Run the simplified 2+2 phototaxis experiment with the pyglet visualizer.'''
     import pyglet
     from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
@@ -485,7 +641,10 @@ def run_visualized(topology='fixed'):
                            GL_COLOR_BUFFER_BIT)
     from KheperaSimulator.KheperaSimulator import KheperaCamera
 
-    mode_label = 'fixed' if topology == 'fixed' else 'random'
+    if fixed_weights:
+        mode_label = 'fixed weights'
+    else:
+        mode_label = 'fixed' if topology == 'fixed' else 'random'
     window = pyglet.window.Window(width=800, height=600, resizable=True,
                                   caption=f'Phototaxis Direct 2+2 ({mode_label})')
 
@@ -498,10 +657,14 @@ def run_visualized(topology='fixed'):
     from Helpers.HomeostatConditionLogger import (
         log_homeostat_conditions, log_homeostat_conditions_json)
 
-    hom, backend, seed = setup_phototaxis(topology=topology)
+    hom, backend, seed = setup_phototaxis(topology=topology, seed=seed,
+                                          uniselector_type=uniselector_type,
+                                          fixed_weights=fixed_weights)
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target_pos = sim.allBodies['TARGET'].position
+    if random_heading or random_start:
+        set_start_pose(robot, *_random_start_pose(target_pos, random_start))
     exp_name = sim.experimentName
 
     timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
@@ -618,14 +781,24 @@ if __name__ == '__main__':
         if idx + 1 < len(sys.argv):
             seed = int(sys.argv[idx + 1])
 
+    fixed_weights = '--fixed-weights' in sys.argv
+    random_start = '--random-start' in sys.argv
+    random_heading = '--random-heading' in sys.argv
+    if fixed_weights and ('--continuous' in sys.argv or '--random-topology' in sys.argv):
+        print('Note: --fixed-weights ignores --continuous and --random-topology')
+
     if '--visualize' in sys.argv:
-        run_visualized(topology=topology)
+        run_visualized(topology=topology, fixed_weights=fixed_weights,
+                       random_heading=random_heading, random_start=random_start,
+                       seed=seed, uniselector_type=uniselector_type)
     elif n_batch is not None:
         run_batch(n_runs=n_batch, topology=topology,
                   total_steps=total_steps,
                   light_intensity=light_intensity,
                   early_stop_distance=early_stop_distance,
-                  uniselector_type=uniselector_type)
+                  uniselector_type=uniselector_type,
+                  fixed_weights=fixed_weights,
+                  random_heading=random_heading, random_start=random_start)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
@@ -633,4 +806,5 @@ if __name__ == '__main__':
                      uniselector_type=uniselector_type,
                      state_log=state_log,
                      state_log_interval=state_log_interval,
-                     seed=seed)
+                     seed=seed, fixed_weights=fixed_weights,
+                     random_heading=random_heading, random_start=random_start)
