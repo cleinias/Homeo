@@ -7,24 +7,16 @@ def simulations_data_dir():
     """Return the root SimulationsData directory.
 
     Resolution order:
-      1. ~/.HomeoSimDataDir.txt (if it exists and the path looks valid)
-      2. Sibling Cybernetics-research/SimulationsData/ repo
-      3. Homeo/SimulationsData/ (legacy fallback)
+      1. Sibling Cybernetics-research/SimulationsData/ repo
+      2. Homeo/SimulationsData/ (legacy fallback)
 
     The directory is created if it does not exist.
-    """
-    # 1. ~/.HomeoSimDataDir.txt
-    dot_file = os.path.join(os.path.expanduser("~"), ".HomeoSimDataDir.txt")
-    if os.path.isfile(dot_file):
-        try:
-            with open(dot_file) as f:
-                d = f.read().strip()
-            if d:
-                os.makedirs(d, exist_ok=True)
-                return d
-        except OSError:
-            pass
 
+    ~/.HomeoSimDataDir.txt is deliberately NOT consulted: HomeoGeneralGUI and
+    SimulatorBackend write the *current session* directory there (for Webots
+    controllers), so using it as the root nested every later run inside the
+    last session's folder.
+    """
     # Locate Homeo project root  (…/Homeo)
     # General_Helper_Functions.py lives at  src/Helpers/
     _this = os.path.dirname(os.path.abspath(__file__))      # src/Helpers
@@ -32,13 +24,13 @@ def simulations_data_dir():
     _homeo = os.path.dirname(_src)                           # Homeo
     _parent = os.path.dirname(_homeo)                        # Python-port
 
-    # 2. Sibling Cybernetics-research repo
+    # 1. Sibling Cybernetics-research repo
     research = os.path.join(_parent, "Cybernetics-research", "SimulationsData")
     if os.path.isdir(os.path.join(_parent, "Cybernetics-research")):
         os.makedirs(research, exist_ok=True)
         return research
 
-    # 3. Legacy fallback
+    # 2. Legacy fallback
     legacy = os.path.join(_homeo, "SimulationsData")
     os.makedirs(legacy, exist_ok=True)
     return legacy
