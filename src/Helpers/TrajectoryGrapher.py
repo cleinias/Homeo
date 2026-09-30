@@ -10,7 +10,10 @@ Usage:
 
 With several files, all trajectories are drawn on one chart, each in its own
 colour, with a legend below the plot that identifies each run by the part of
-its filename that differs from the others (usually the timestamp).
+its filename that differs from the others (usually the timestamp).  In the
+interactive window, clicking a legend entry hides/shows that trajectory, and
+the first entry, "ALL on / off", hides or shows them all (keys: 'a' shows
+all, 'n' hides all).  This works in the toolbar's zoom and pan modes too.
 
 @author: stefano
 '''
@@ -132,8 +135,10 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     xmin, xmax, ymin, ymax = _plotBounds([t for _, t, _ in runs], lightsOnDic)
     # Size the figure to the data's aspect ratio (equal axes would otherwise leave
     # empty bands), plus room for the title, x label and legend rows.
-    ncol = min(len(runs), 4 if len(runs) <= 12 else 5)
-    legendRows = ceil(len(runs) / ncol)
+    interactive = output_path is None
+    nEntries = len(runs) + (1 if interactive else 0)    # + the "ALL on / off" entry
+    ncol = min(nEntries, 4 if nEntries <= 12 else 5)
+    legendRows = ceil(nEntries / ncol)
     width = 9.0
     plotHeight = width * min(max((ymax - ymin) / (xmax - xmin), 0.35), 1.5)
     fig, ax = plt.subplots(figsize=(width, plotHeight + 1.0 + 0.25 * legendRows),
@@ -141,17 +146,19 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     _drawIrradianceBackground(ax, lightsOnDic, (xmin, xmax, ymin, ymax), dark)
 
     finalDistances = []
+    runArtists = []      # per run: [trajectory line, end marker, start marker]
     for (label, trajData, ticks), color in zip(runs, colors):
         if target is not None:
             finalDistance = _distance(target, trajData[-1])
             finalDistances.append(finalDistance)
             label = "%s  (d=%.2f)" % (label, finalDistance)
-        ax.plot(trajData[:,0], trajData[:,1], color=color, linewidth=0.8, alpha=0.85,
-                zorder=2, label=label)
-        ax.plot(*trajData[-1], marker='o', markersize=6, color=color,
-                markeredgecolor='black', linestyle='none', zorder=5)
-        ax.plot(*trajData[0], marker='o', markersize=4, color='green',
-                linestyle='none', zorder=4)
+        line, = ax.plot(trajData[:,0], trajData[:,1], color=color, linewidth=0.8, alpha=0.85,
+                        zorder=2, label=label)
+        end, = ax.plot(*trajData[-1], marker='o', markersize=6, color=color,
+                       markeredgecolor='black', linestyle='none', zorder=5)
+        start, = ax.plot(*trajData[0], marker='o', markersize=4, color='green',
+                         linestyle='none', zorder=4)
+        runArtists.append([line, end, start])
 
     _drawSources(ax, lightsOnDic, asMarkers=True)
     ax.set_aspect('equal')
@@ -162,19 +169,80 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     title = "%d trajectories" % len(runs) + (": %s" % common.rstrip('-_ ') if common else "")
     ax.set_title(title, fontsize=10)
     if output_path is None:
-        fig.canvas.manager.set_window_title(title)
+        fig.canvas.manager.set_window_title(
+            title + "   [click legend entries to hide/show; a = all, n = none]")
     if finalDistances:
         ax.set_xlabel("Final distance: mean %.3f   min %.3f   max %.3f    Time: %s"
                       % (np.mean(finalDistances), min(finalDistances), max(finalDistances),
                          _formatTicks(max(t for _, _, t in runs))), fontsize=9)
 
-    legend = fig.legend(loc='outside lower center', ncol=ncol, fontsize=8,
+    handles, labels = ax.get_legend_handles_labels()
+    if interactive:
+        from matplotlib.lines import Line2D
+        handles = [Line2D([], [], color='black')] + handles
+        labels = ['ALL on / off'] + labels
+    legend = fig.legend(handles, labels, loc='outside lower center', ncol=ncol, fontsize=8,
                         frameon=False, handlelength=2.0, columnspacing=1.5)
     for handle in legend.legend_handles:     # thick, opaque swatches: the plotted
         handle.set_linewidth(4)              # lines are thin and translucent
         handle.set_alpha(1.0)
+    if interactive:
+        legend.get_texts()[0].set_fontweight('bold')
+        _enableLegendToggles(fig, legend, runArtists)
 
     _showOrSave(fig, output_path)
+
+
+def _enableLegendToggles(fig, legend, runArtists):
+    """Make the legend an on/off switch board for the trajectories.
+
+    Clicking a legend entry (swatch or label) hides or shows that run's
+    trajectory and its start/end markers; a hidden run's entry is dimmed.
+    The first legend entry, "ALL on / off", hides every run if all are shown
+    and shows every run otherwise.  Keys: 'a' shows all runs, 'n' hides all.
+    runArtists must be in the order of the legend entries after the first.
+
+    Clicks are hit-tested directly rather than through matplotlib pick
+    events: the toolbar's zoom and pan modes lock the canvas and suppress
+    pick events for as long as they stay active, whereas the legend lies
+    outside the axes, where those tools ignore clicks.
+    """
+    allHandle, allText = legend.legend_handles[0], legend.get_texts()[0]
+    entries = list(zip(runArtists, legend.legend_handles[1:], legend.get_texts()[1:]))
+    for handle in legend.legend_handles:
+        handle.set_pickradius(6)     # used by Line2D.contains() for the swatch
+
+    def setVisible(entry, visible):
+        artists, handle, text = entry
+        for artist in artists:
+            artist.set_visible(visible)
+        handle.set_alpha(1.0 if visible else 0.2)
+        text.set_alpha(1.0 if visible else 0.35)
+
+    def setAllVisible(visible):
+        for entry in entries:
+            setVisible(entry, visible)
+        fig.canvas.draw_idle()
+
+    def onClick(event):
+        if event.button != 1:
+            return
+        if allHandle.contains(event)[0] or allText.contains(event)[0]:
+            setAllVisible(not all(entry[0][0].get_visible() for entry in entries))
+            return
+        for entry in entries:
+            _, handle, text = entry
+            if handle.contains(event)[0] or text.contains(event)[0]:
+                setVisible(entry, not entry[0][0].get_visible())
+                fig.canvas.draw_idle()
+                return
+
+    def onKey(event):
+        if event.key in ('a', 'n'):
+            setAllVisible(event.key == 'a')
+
+    fig.canvas.mpl_connect('button_press_event', onClick)
+    fig.canvas.mpl_connect('key_press_event', onKey)
 
 
 def loadTrajectory(trajDataFilename, maxPoints=MAX_PLOT_POINTS):
