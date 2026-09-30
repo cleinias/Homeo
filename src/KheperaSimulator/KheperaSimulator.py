@@ -457,6 +457,27 @@ class KheperaRobot(object):
         sensorFixture.userData['color'] = (0., 0.8, 0., 0.5)
         sensorFixture.userData['position'] = circleShape.pos
 
+    def irradAtCentre(self, lightsList, maxValue=100):
+        """Return the irradiance at the robot's geometric centre, independent of heading.
+
+        Acts as an omnidirectional receptor: each source contributes
+        |intensity| * attenuation(distance), with no viewing-angle, cosine or
+        range limits.  The magnitude is used because phototaxis worlds give
+        lights a negative intensity to invert the eyes' response.  The total
+        saturates at maxValue (default 100, the same as the eye sensors), which
+        also keeps it finite when the robot reaches a source.
+        """
+        irrad = 0.0
+        for light in lightsList:
+            lightPos = b2Vec2(light.userData['lightPos'][0], light.userData['lightPos'][2])
+            d = (lightPos - self.body.position).length
+            a = light.userData['attenVec']
+            denom = a[0] + a[1] * d + a[2] * d**2
+            if denom <= 0:
+                return maxValue
+            irrad += abs(light.userData['intensity']) / denom
+        return min(irrad, maxValue)
+
     def irradAtSensor(self, sensorName, lightsList):
         """Return a scalar representing the intensity of the light 
            (irradiance) falling upon the sensor sensorName as a function of 
@@ -946,15 +967,30 @@ class KheperaSimulation(object):
         
         self.trajectoryWriter.runOnce(position=self.allBodies[self.robotName].body)
 
+    def tickBattery(self):
+        """Advance the robot's battery by one Homeostat tick.
+
+        Registered as a Homeostat tick hook by add_battery_to_homeostat(), so it
+        runs once per tick rather than once per physics sub-step (advanceSim()
+        runs once per wheel command, i.e. twice per tick).
+
+        Single-quality worlds (e.g. Braiten2) leave detectableSources empty, so
+        'light' falls back to detectableLights.  Irradiance is measured at the
+        robot's centre (heading-independent, always non-negative): phototaxis
+        worlds use negative light intensity to make the vehicle approach the
+        light, which must not turn recharge into drain.
+        """
         robot = self.allBodies[self.robotName]
-        if robot.battery is not None:
-            quality = robot._battery_recharge_quality
-            if quality is not None:
-                sources = robot.detectableSources.get(quality, [])
-            else:
-                sources = robot.detectableLights
-            irrad = robot.irradAtSensor('leftEye', sources)
-            robot.battery.tick(irrad)
+        if robot.battery is None:
+            return
+        quality = robot._battery_recharge_quality
+        if quality is None:
+            sources = robot.detectableLights
+        else:
+            sources = robot.detectableSources.get(quality)
+            if sources is None:
+                sources = robot.detectableLights if quality == 'light' else []
+        robot.battery.tick(robot.irradAtCentre(sources))
 
         "for testing irradiance function"
 #         print self.allBodies["kheperaRobot"].irradAtSensor('CenterEye', [self.allBodies['TARGET']])

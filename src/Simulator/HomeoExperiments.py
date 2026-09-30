@@ -4023,6 +4023,7 @@ def add_battery_to_homeostat(hom, backend, recharge_quality=None,
     robot = backend.kheperaSimulation.allBodies['Khepera']
     robot.battery = KheperaBattery(capacity, discharge_rate, recharge_factor)
     robot._battery_recharge_quality = recharge_quality
+    hom._tick_hooks.append(backend.kheperaSimulation.tickBattery)
 
     battery_transd = backend.getBatterySensor(invert=invert)
     battery_unit = HomeoUnitInput(transducer=battery_transd)

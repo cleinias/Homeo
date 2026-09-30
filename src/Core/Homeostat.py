@@ -79,6 +79,7 @@ class Homeostat(object):
         self._isRunning = False                         # a new homeostat is not running
         self._headless = False                          # when True, skip signal emissions for GUI
         self._state_logger = None                       # optional HomeostatStateLogger
+        self._tick_hooks = []                           # callables run once after each tick (e.g. robot battery)
         self._usesSocket = False
         if ip != None:
             self._ip = ip
@@ -256,6 +257,8 @@ class Homeostat(object):
                     if unit.isActive():
                         unit.selfUpdate()
                 self.time +=  1
+                for hook in getattr(self, '_tick_hooks', ()):   # getattr: older pickled homeostats lack it
+                    hook()
                 if self._state_logger is not None:
                     self._state_logger.log_tick(self.time)
                 if not getattr(self, '_headless', False):
