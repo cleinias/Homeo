@@ -86,7 +86,7 @@ def setup_hunger_phototaxis(seed=None, capacity=1.0, discharge_rate=0.001,
 
     add_battery_to_homeostat(hom, backend, recharge_quality='light',
                             capacity=capacity, discharge_rate=discharge_rate,
-                            recharge_factor=recharge_factor,
+                            recharge_factor=recharge_factor, invert=True,
                             wire_stress=True)
 
     return hom, backend, seed
