@@ -248,6 +248,7 @@ def replay(genome, steps, experiment_func, seed, output_path, log_interval=1,
             print("  tick %d/%d  (%.1fs elapsed)" % (tick, actual_ticks, elapsed))
 
     logger.close()
+    backend.kheperaSimulation.saveTrajectory()
     elapsed = time.time() - t0
 
     final_dist = backend.finalDisFromTarget()

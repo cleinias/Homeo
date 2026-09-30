@@ -50,10 +50,10 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False):
     initPos = readInitPosFromHeader(dataFileHeader)
 
     'read trajectory data'
-    try:
-        trajData = np.loadtxt(trajDataFilename, skiprows=len(dataFileHeader))
-    except Exception as e:
-        print("Cannot open the file: ", e)
+    trajData = np.loadtxt(trajDataFilename, skiprows=len(dataFileHeader), ndmin=2)
+    if trajData.shape[0] == 0:
+        raise ValueError("The file contains a header but no trajectory data "
+                         "(the simulation's trajectory was never written to disk).")
 
     'Compute initial and final distance'
     initPosData = [trajData[:,0][0], trajData[:,1][0]]

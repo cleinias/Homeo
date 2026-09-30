@@ -139,6 +139,7 @@ def _evaluate_genome_worker(genome):
     timeNow = time()
     for i in range(actual_ticks):
         sim.step()
+    backend.kheperaSimulation.saveTrajectory()   # close (and flush) the .traj file
 
     finalDis = backend.finalDisFromTarget()
     fitness = cfg.get('fitnessSign', 1) * finalDis
@@ -1191,6 +1192,8 @@ class HomeoGASimulation(object):
             hDebug('eval', ("Step: "+ str(i+1)+"\n"))
             self._simulation.step()
         self.worldBeingResetLock.release()
+        if self.simulatorBackend.name == "HOMEO":
+            self.simulatorBackend.kheperaSimulation.saveTrajectory()   # close (and flush) the .traj file
         hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
         finalDis =self.simulatorBackend.finalDisFromTarget()
         fitness = self.fitnessSign * finalDis
