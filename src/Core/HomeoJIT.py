@@ -19,6 +19,34 @@ import numpy as np
 
 
 @njit(cache=True)
+def _jit_seed(seed):
+    """Seed the RNG that the JIT functions in this module actually draw from."""
+    np.random.seed(seed)
+
+
+def seed_jit_rng(seed):
+    """Make the noise drawn inside this module's JIT functions reproducible.
+
+    Numba's nopython mode keeps its OWN random state, entirely separate from the
+    one np.random.seed() touches at Python level.  Seeding only at Python level
+    therefore left every draw in _jit_unit_noise(), _jit_needle_position_base()
+    and HomeoUniselectorContinuous.evolve_weights_jit() running off an unseeded
+    stream: initial conditions were reproducible (they are drawn in Python,
+    before any JIT call), but trajectories were not.  Three runs of one seed gave
+    three different trajectories, which is how this was found.
+
+    The seed must be set from inside nopython mode to reach that state, which is
+    what _jit_seed does.  With numba absent, njit degrades to a no-op and the
+    call simply re-seeds NumPy, which is already correct.
+
+    Note: numba's random state is per-thread, so this seeds the thread that calls
+    it.  Headless batch runs update the units on the calling thread, so one call
+    per run is enough; a threaded run loop would need one call per worker.
+    """
+    _jit_seed(seed)
+
+
+@njit(cache=True)
 def _jit_unit_noise(noise):
     """Replacement for HomeoNoise.unitNoise().
     Distorting-normal-linear noise: Gaussian(0, noise/3) clipped to [-noise, noise].

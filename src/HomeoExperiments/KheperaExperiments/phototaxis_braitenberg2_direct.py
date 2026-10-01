@@ -131,6 +131,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         seed = int.from_bytes(os.urandom(4), 'big')
     np.random.seed(seed)
     random.seed(seed)
+    # Numba keeps a separate random state that np.random.seed() does not reach;
+    # without this the trajectory is not reproducible from the seed.
+    from Core.HomeoJIT import seed_jit_rng
+    seed_jit_rng(seed)
 
     if backendSimulator is None:
         lock = threading.Lock()
