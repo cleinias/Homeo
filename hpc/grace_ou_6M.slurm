@@ -7,7 +7,6 @@
 #SBATCH --time=04:00:00
 #SBATCH --output=logs/%x-%A_%a.out
 #SBATCH --error=logs/%x-%A_%a.err
-#SBATCH --account=132691544879
 #
 # Replication of the 2026-09-30 overnight batch with the three defects fixed:
 #   - the OU uniselector now actually runs in headless mode
@@ -16,6 +15,12 @@
 #
 # 20 independent runs, 6M steps each, one core per run.  Sequentially this took
 # 12.5 hours; as an array it is one run's wall time.
+#
+# The project account is deliberately not in this file (public repo).  Either
+# export it once on Grace --- Slurm honours it as a default:
+#     export SBATCH_ACCOUNT=<your project account>     # e.g. in ~/.bashrc
+# or pass it per submission:
+#     sbatch --account=<your project account> grace_ou_6M.slurm
 #
 # Submit from the directory containing this file:
 #     mkdir -p logs && sbatch grace_ou_6M.slurm
