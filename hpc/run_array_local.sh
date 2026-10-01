@@ -7,9 +7,25 @@
 #     bash hpc/run_array_local.sh --dry-run
 #
 # Mirrors grace_ou_6M.slurm exactly -- same seeds (20260930 + task), same flags
-# (--continuous --batch 1 --start-at-rest --traj-interval 200), same per-task
-# HOMEO_DATA_DIR and NUMBA_CACHE_DIR -- so the output is directly comparable
-# with a Grace array and `aggregate_array.py` reads it unchanged.
+# (--continuous --batch 1 --start-at-rest --traj-interval 200 --run-tag <NN>),
+# same shared HOMEO_DATA_DIR and per-task NUMBA_CACHE_DIR -- so the output is
+# directly comparable with a Grace array and `aggregate_array.py` reads it
+# unchanged.
+#
+# LAYOUT.  All tasks write into ONE directory, <rundir>/SimsData-<date>/, and
+# every filename ends with the task serial before its extension:
+#
+#     phototaxis_braitenberg2_direct_fixed_continuous-<timestamp>-07.json
+#     batch_direct_continuous_light_<timestamp>-07.csv
+#     run_task-07.out
+#
+# Until 2026-10-01 each task got its own task_<i>/ directory and filenames were
+# distinguished only by a "%Y-%m-%d-%H-%M-%S" timestamp.  Both halves of that
+# were a mistake: the per-task directories had to be merged by hand before the
+# results could be used, and the merge silently overwrote files, because tasks
+# that started within the same second produced byte-identical names.  In the
+# 2026-10-01 20-run array, tasks 2 and 3 both stamped 13-23-38.  The serial
+# makes names unique by construction instead of by luck of the clock.
 #
 # Why this exists: an expired allocation, or anything else that makes Grace
 # unavailable. Grace is still the better venue -- there all 20 tasks run on 20
@@ -20,14 +36,15 @@
 # run; 4 concurrent runs slow each other by ~1.25x, giving ~45 min per run and
 # ~3.7 h for the full 20. Re-measure with `-n 1 -s 200000` on other hardware.
 #
-# Re-runnable: a task whose batch CSV already exists is skipped, so an
-# interrupted batch can be resumed by invoking the same command with -o
-# pointing at the existing run directory.
+# Re-runnable: a task whose own batch CSV (batch_*-<NN>.csv) already exists is
+# skipped, so an interrupted batch can be resumed by invoking the same command
+# with -o pointing at the existing run directory.
 #
 # SPLITTING ACROSS TWO MACHINES.  The tasks are independent and seeded purely by
 # index, so a split is exact: the union of two partial runs is the same 20 runs
 # one machine would have produced.  Give each machine a disjoint range, then
-# merge the task_* directories and aggregate as usual.  Divide the ranges in
+# copy one machine's data files in beside the other's -- the serials keep them
+# from colliding -- and aggregate as usual.  Divide the ranges in
 # proportion to measured throughput, and remember a machine finishes in whole
 # waves of <workers> tasks, so a range that straddles a wave boundary buys
 # nothing.  Example with a 4-core workstation (~45 min/task when 4 run at once)
@@ -40,7 +57,7 @@
 #     ssh server 'cd ~/Homeo && PYTHON=$HOME/homeo-venv/bin/python \
 #         nohup bash hpc/run_array_local.sh -a 13-20 -o $HOME/ou6M &'
 #     # then pull its results in and aggregate the lot:
-#     rsync -a server:ou6M/task_* "$RUN"/
+#     rsync -a server:ou6M/SimsData-*/ "$RUN"/SimsData-*/
 #     python3 hpc/aggregate_array.py "$RUN"
 #
 # Put the output on real disk: a tmpfs /tmp is RAM, and 20 tasks of trajectory
@@ -87,7 +104,14 @@ TRAJ_INTERVAL=200
 RUNDIR=""
 DRY_RUN=0
 
-usage() { sed -n '2,28p' "${BASH_SOURCE[0]}" | sed 's/^# \?//'; exit 0; }
+# Print the whole leading comment block, rather than a hardcoded line range:
+# the range silently went stale every time the header was edited.
+usage() {
+    awk 'NR == 1 { next }
+         /^#/    { sub(/^# ?/, ""); print; next }
+         { exit }' "${BASH_SOURCE[0]}"
+    exit 0
+}
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -110,7 +134,16 @@ if [ -z "$RUNDIR" ]; then
         echo "!! could not resolve the SimulationsData directory" >&2; exit 1; }
     RUNDIR="$data_root/ou6M-local-$(date +%Y-%m-%d-%H-%M-%S)"
 fi
-mkdir -p "$RUNDIR/logs"
+# One directory for every task's output.  Kept as a dated subdirectory rather
+# than $RUNDIR itself so that PROVENANCE.txt and the numba cache do not sit
+# among the data files, and so the name matches what the experiment code
+# produces on its own ("SimsData-<date>").
+# This must match the name the experiment derives for itself from the date, so
+# that the .out logs land beside the data and task_done() looks in the right
+# place.  An array straddling midnight is the one case where it will not: the
+# tasks after midnight make their own dated directory.
+DATADIR="$RUNDIR/SimsData-$(date +%Y-%m-%d)"
+mkdir -p "$DATADIR"
 
 n_tasks=$(( LAST - FIRST + 1 ))
 waves=$(( (n_tasks + WORKERS - 1) / WORKERS ))
@@ -144,7 +177,8 @@ echo "== local array run"
 echo "   tasks      : $FIRST-$LAST  ($n_tasks tasks)"
 echo "   workers    : $WORKERS concurrent  ->  $waves waves"
 echo "   steps/task : $STEPS   traj-interval $TRAJ_INTERVAL"
-echo "   output     : $RUNDIR"
+echo "   output     : $DATADIR"
+echo "                (one directory for all tasks; filenames carry the serial)"
 echo "   code       : $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned checkout')"
 echo
 
@@ -156,16 +190,31 @@ echo
     echo "cpu  $(lscpu 2>/dev/null | sed -n 's/^Model name: *//p' | head -1)"
 } > "$RUNDIR/PROVENANCE.txt"
 
-task_done() {   # a task counts as finished once its batch CSV exists
-    compgen -G "$RUNDIR/task_$1/*/batch_*.csv" >/dev/null 2>&1
+task_done() {   # a task counts as finished once its own batch CSV exists
+    # The CSV is named ...-<serial>.csv, so a task is identified by its serial
+    # rather than by a directory.  The legacy per-task path is still accepted so
+    # that an array started under the old layout can be resumed with -o.
+    local s; s=$(printf '%02d' "$1")
+    compgen -G "$DATADIR/batch_*-$s.csv" >/dev/null 2>&1 ||
+        compgen -G "$RUNDIR/task_$1/*/batch_*.csv" >/dev/null 2>&1
 }
 
 run_task() {
-    local i="$1" seed=$(( 20260930 + $1 ))
-    local tdir="$RUNDIR/task_$i"
-    mkdir -p "$tdir" "$RUNDIR/.numba/task_$i"
-    # Per-task caches: concurrent tasks must not share a numba cache directory.
-    export HOMEO_DATA_DIR="$tdir"
+    local i="$1" seed=$(( 20260930 + $1 )) serial
+    serial=$(printf '%02d' "$i")
+    mkdir -p "$DATADIR" "$RUNDIR/.numba/task_$i"
+    # ALL tasks write into one directory.  They used to get one directory each,
+    # which meant the results had to be merged by hand afterwards -- and that
+    # merge was lossy, because filenames were distinguished only by a
+    # whole-second timestamp and tasks starting in the same second produced
+    # identical names.  --run-tag makes every filename carry the task serial, so
+    # a shared directory is collision-free by construction.
+    # NB: HOMEO_DATA_DIR is the data ROOT, not the final directory -- the
+    # experiment appends "SimsData-<date>" to it itself.  Pointing it at
+    # $DATADIR (which already ends in SimsData-<date>) would nest a second one.
+    export HOMEO_DATA_DIR="$RUNDIR"
+    # The numba cache, by contrast, MUST stay per-task: concurrent tasks
+    # corrupt a shared cache.  It is a build artifact, not data.
     export NUMBA_CACHE_DIR="$RUNDIR/.numba/task_$i"
     cd "$HOMEO_SRC/src" || return 1
     "$PYTHON" -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct \
@@ -175,7 +224,8 @@ run_task() {
         --seed "$seed" \
         --start-at-rest \
         --traj-interval "$TRAJ_INTERVAL" \
-        > "$RUNDIR/logs/task_$i.out" 2>&1
+        --run-tag "$serial" \
+        > "$DATADIR/run_task-$serial.out" 2>&1
 }
 
 started=0; skipped=0
@@ -207,10 +257,10 @@ echo
 printf '== finished: %d started, %d skipped, %dh%02dm elapsed\n' \
        "$started" "$skipped" $(( elapsed / 3600 )) $(( elapsed % 3600 / 60 ))
 
-ok=$(find "$RUNDIR" -name 'batch_*.csv' 2>/dev/null | wc -l)
+ok=$(find "$RUNDIR" -name 'batch_*.csv' 2>/dev/null | wc -l)   # one per task
 echo "   tasks with results: $ok/$n_tasks"
 if [ "$ok" -lt "$n_tasks" ]; then
-    echo "   !! missing results -- check $RUNDIR/logs/"
+    echo "   !! missing results -- check $DATADIR/run_task-*.out"
     echo "      re-run the same command with -o $RUNDIR to retry only the missing tasks"
 fi
 echo

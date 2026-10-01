@@ -75,6 +75,7 @@ import random
 import time
 import threading
 from math import sqrt, degrees
+from Helpers.General_Helper_Functions import run_tag
 
 import numpy as np
 
@@ -522,8 +523,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     # Log initial conditions
     timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
     log_dir = sim.dataDir
-    log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.log')
-    json_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.json')
+    log_path = os.path.join(log_dir, exp_name + '-' + timestamp + run_tag() + '.log')
+    json_path = os.path.join(log_dir, exp_name + '-' + timestamp + run_tag() + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
     log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name,
                                   seed=seed)
@@ -532,7 +533,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     state_log_path = None
     if state_log:
         from Helpers.HomeostatStateLogger import HomeostatStateLogger
-        state_log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.statelog')
+        state_log_path = os.path.join(log_dir, exp_name + '-' + timestamp + run_tag() + '.statelog')
         state_logger = HomeostatStateLogger(
             hom, sim, state_log_path, log_interval=state_log_interval, seed=seed)
         state_logger.log_tick(0)
@@ -688,7 +689,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
 
     if results:
         log_dir = os.path.dirname(results[0]['log_path'])
-        csv_name = f'batch_direct_{kind}_{mode}_{time.strftime("%Y-%m-%d-%H-%M-%S")}.csv'
+        csv_name = (f'batch_direct_{kind}_{mode}_'
+                    f'{time.strftime("%Y-%m-%d-%H-%M-%S")}{run_tag()}.csv')
         csv_path = os.path.join(log_dir, csv_name)
         fields = ['run', 'seed', 'start_x', 'start_y', 'start_heading', 'start_dist',
                   'start_sees_light', 'acquired', 'first_acq',
@@ -742,8 +744,8 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
 
     timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
     log_dir = sim.dataDir
-    log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.log')
-    json_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.json')
+    log_path = os.path.join(log_dir, exp_name + '-' + timestamp + run_tag() + '.log')
+    json_path = os.path.join(log_dir, exp_name + '-' + timestamp + run_tag() + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
     log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name)
 
@@ -815,6 +817,16 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
 
 if __name__ == '__main__':
     import sys
+
+    # --run-tag NN: a serial appended to every output filename, just before the
+    # extension.  The HPC array scripts pass the array index, so the whole
+    # array's output can share one directory without same-second timestamp
+    # collisions.  Exported rather than threaded through: the filenames are
+    # built in several functions that do not see argv.
+    if '--run-tag' in sys.argv:
+        idx = sys.argv.index('--run-tag')
+        if idx + 1 < len(sys.argv):
+            os.environ['HOMEO_RUN_TAG'] = sys.argv[idx + 1]
 
     topology = 'random' if '--random-topology' in sys.argv else 'fixed'
 

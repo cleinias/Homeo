@@ -1,6 +1,7 @@
 from math import sqrt
 from ctypes import c_ubyte
 import os
+import re
 
 
 def simulations_data_dir():
@@ -52,6 +53,31 @@ def simulations_data_dir():
     legacy = os.path.join(_homeo, "SimulationsData")
     os.makedirs(legacy, exist_ok=True)
     return legacy
+
+
+def run_tag():
+    """Return the current run's serial as a filename suffix, or '' if unset.
+
+    Reads $HOMEO_RUN_TAG, set by --run-tag (see the experiment entry points) and
+    by the HPC array scripts, which pass the array index.  The value is appended
+    to every output filename just before the extension:
+
+        phototaxis_..._continuous-2026-10-01-13-23-38-02.json
+
+    Why this exists: output filenames were distinguished only by a
+    "%Y-%m-%d-%H-%M-%S" timestamp, so two array tasks that started within the
+    same second got byte-identical names.  That was harmless while each task
+    wrote to its own directory, but it silently lost files the moment an array's
+    results were merged into one folder -- which is now the default layout.  A
+    serial makes the names unique by construction rather than by luck of the
+    clock, and keeps them sortable by task.
+
+    Only [A-Za-z0-9._-] survives sanitising, so a tag can never introduce a
+    path separator or escape the output directory.
+    """
+    tag = os.environ.get('HOMEO_RUN_TAG', '')
+    tag = re.sub(r'[^A-Za-z0-9._-]', '', tag).lstrip('-.')
+    return '-' + tag if tag else ''
 
 
 def withAllSubclasses(aClass):

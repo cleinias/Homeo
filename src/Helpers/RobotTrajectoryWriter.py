@@ -12,6 +12,7 @@ import time
 import os
 from math import degrees, sqrt
 from os.path import exists
+from Helpers.General_Helper_Functions import run_tag
 
 
 class EnumerateClass(object):
@@ -214,9 +215,9 @@ class RobotTrajectoryWriter(object):
         dataDir = self.dataDir
         curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")
         if self.experimentName:
-            trajFilename = self.experimentName + '-' + curDateTime + '.traj'
+            trajFilename = self.experimentName + '-' + curDateTime + run_tag() + '.traj'
         else:
-            trajFilename = 'trajData-ID-'+modelName+'-'+curDateTime+'.traj'
+            trajFilename = 'trajData-ID-'+modelName+'-'+curDateTime+run_tag()+'.traj'
         return  os.path.join(dataDir, trajFilename)
     
     def setDataDir(self, dataDir):

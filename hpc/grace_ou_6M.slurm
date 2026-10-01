@@ -34,8 +34,15 @@ source "$HOMEO_SRC/hpc/load_python.sh"
 homeo_load_python || exit 1
 source "$VENV/bin/activate"
 
-# Output to scratch, one directory per array task.
-export HOMEO_DATA_DIR="$SCRATCH/homeo/ou6M-$SLURM_ARRAY_JOB_ID/task_$SLURM_ARRAY_TASK_ID"
+# Output to scratch, ONE directory shared by every array task.  Each task's
+# filenames carry its array index (--run-tag below), so a shared directory
+# cannot collide -- and the array needs no merging step afterwards.  Until
+# 2026-10-01 each task wrote to task_$SLURM_ARRAY_TASK_ID/ and filenames were
+# distinguished only by a whole-second timestamp, so merging the directories by
+# hand silently overwrote the files of any two tasks that started in the same
+# second.
+# HOMEO_DATA_DIR is the data ROOT: the experiment appends "SimsData-<date>".
+export HOMEO_DATA_DIR="$SCRATCH/homeo/ou6M-$SLURM_ARRAY_JOB_ID"
 mkdir -p "$HOMEO_DATA_DIR"
 
 # Per-task numba cache: concurrent tasks must not share one.
@@ -46,6 +53,8 @@ cd "$HOMEO_SRC/src"
 
 # Seed from the array index so the whole set is reproducible and distinct.
 SEED=$(( 20260930 + SLURM_ARRAY_TASK_ID ))
+# Zero-padded so the filenames sort by task.
+SERIAL=$(printf '%02d' "$SLURM_ARRAY_TASK_ID")
 
 echo "task $SLURM_ARRAY_TASK_ID  seed $SEED  out $HOMEO_DATA_DIR"
 # Provenance: which commit produced these results.
@@ -64,5 +73,6 @@ srun python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direc
      --steps 6000000 \
      --seed "$SEED" \
      --start-at-rest \
-     --traj-interval 200
+     --traj-interval 200 \
+     --run-tag "$SERIAL"
 echo "task $SLURM_ARRAY_TASK_ID done"
