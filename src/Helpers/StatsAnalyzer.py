@@ -11,6 +11,8 @@ import pickle
 import sys
 import os
 
+from Helpers.General_Helper_Functions import simulations_data_dir
+
 # Old logbook/history files were pickled with Python 2 + dill <= 0.3.x.
 # Two compatibility shims are needed:
 #   1. dill 0.4.x renamed 'dill.dill' to 'dill._dill'
@@ -48,7 +50,7 @@ def _load_pickle(fileObj):
 
 def main():
     "All function calls in the main() functions are for testing purposes only"  
-    dirL='/home/stefano/Documents/Projects/Homeostat/Simulator/Python-port/Homeo/SimulationsData/'
+    dirL = simulations_data_dir()
     fileL = 'History-2015-01-11-12-55-19.hist'
     filename = os.path.join(dirL,fileL)
     #logbook = pickle.load(open(filename, 'r'))

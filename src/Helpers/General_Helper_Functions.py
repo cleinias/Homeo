@@ -8,8 +8,9 @@ def simulations_data_dir():
 
     Resolution order:
       1. $HOMEO_DATA_DIR, if set (for HPC jobs writing to scratch)
-      2. Sibling Cybernetics-research/SimulationsData/ repo
-      3. Homeo/SimulationsData/ (legacy fallback)
+      2. Cybernetics-research/SimulationsData/, when Homeo is a submodule of it
+      3. Sibling Cybernetics-research/SimulationsData/ (pre-2026-10-01 layout)
+      4. Homeo/SimulationsData/ (standalone checkout fallback)
 
     The directory is created if it does not exist.
 
@@ -31,15 +32,23 @@ def simulations_data_dir():
     _this = os.path.dirname(os.path.abspath(__file__))      # src/Helpers
     _src  = os.path.dirname(_this)                           # src
     _homeo = os.path.dirname(_src)                           # Homeo
-    _parent = os.path.dirname(_homeo)                        # Python-port
+    _parent = os.path.dirname(_homeo)                        # parent of Homeo
 
-    # 2. Sibling Cybernetics-research repo
-    research = os.path.join(_parent, "Cybernetics-research", "SimulationsData")
-    if os.path.isdir(os.path.join(_parent, "Cybernetics-research")):
+    # 2. Homeo is a submodule of Cybernetics-research, so the research repo is
+    #    Homeo's own parent directory.  This is the layout since 2026-10-01.
+    if os.path.basename(_parent) == "Cybernetics-research":
+        research = os.path.join(_parent, "SimulationsData")
         os.makedirs(research, exist_ok=True)
         return research
 
-    # 3. Legacy fallback
+    # 3. Pre-2026-10-01 layout: Cybernetics-research sat next to Homeo.
+    sibling = os.path.join(_parent, "Cybernetics-research")
+    if os.path.isdir(sibling):
+        research = os.path.join(sibling, "SimulationsData")
+        os.makedirs(research, exist_ok=True)
+        return research
+
+    # 4. Standalone checkout (e.g. $SCRATCH on the cluster): keep data in the repo.
     legacy = os.path.join(_homeo, "SimulationsData")
     os.makedirs(legacy, exist_ok=True)
     return legacy
