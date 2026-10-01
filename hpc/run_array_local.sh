@@ -49,7 +49,22 @@ set -uo pipefail          # deliberately NOT -e: one failed task must not kill t
 
 _hpc_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOMEO_SRC="${HOMEO_SRC:-$(cd "$_hpc_dir/.." && pwd)}"
-PYTHON="${PYTHON:-python3}"
+
+# Pick an interpreter that can actually run the experiment.  Falling back to a
+# bare `python3` is a trap on any machine where the dependencies live in a venv:
+# the system interpreter often has numpy and nothing else, so every task dies
+# identically on the first missing import and the real cause is buried in eight
+# tracebacks.  Prefer an explicit $PYTHON, then an active venv, then the
+# conventional venv locations, and only then python3.
+if [ -z "${PYTHON:-}" ]; then
+    for _cand in "${VIRTUAL_ENV:-}/bin/python" \
+                 "$HOMEO_SRC/.venv/bin/python" \
+                 "$HOME/homeo-venv/bin/python" \
+                 "${SCRATCH:-/nonexistent}/homeo-venv/bin/python"; do
+        if [ -x "$_cand" ]; then PYTHON="$_cand"; break; fi
+    done
+    PYTHON="${PYTHON:-python3}"
+fi
 
 # Default to PHYSICAL cores, not nproc.  nproc counts hyperthreads, and these
 # runs are CPU-bound floating-point work that gains nothing from a second thread
@@ -95,6 +110,31 @@ mkdir -p "$RUNDIR/logs"
 
 n_tasks=$(( LAST - FIRST + 1 ))
 waves=$(( (n_tasks + WORKERS - 1) / WORKERS ))
+
+# Preflight: prove the chosen interpreter can import what a run needs, BEFORE
+# starting anything.  One clear message beats N identical buried tracebacks.
+# tabulate is listed because it is imported early, well before Box2D, so a
+# half-provisioned interpreter fails there and the error looks unrelated.
+missing=$(cd "$HOMEO_SRC/src" && "$PYTHON" - <<'PYEOF' 2>/dev/null
+import importlib, sys
+need = ['numpy', 'Box2D', 'pyglet', 'tabulate', 'PyQt5.QtCore']
+bad = []
+for m in need:
+    try:
+        importlib.import_module(m)
+    except Exception:
+        bad.append(m)
+print(' '.join(bad))
+PYEOF
+)
+if [ -n "${missing:-}" ] || ! "$PYTHON" -c 'pass' 2>/dev/null; then
+    echo "!! $PYTHON cannot run the experiment." >&2
+    [ -n "${missing:-}" ] && echo "   missing modules: $missing" >&2
+    echo "   Point PYTHON at the interpreter that has them, e.g." >&2
+    echo "       PYTHON=\$HOME/homeo-venv/bin/python bash $0 $*" >&2
+    echo "   or activate the venv first." >&2
+    exit 1
+fi
 
 echo "== local array run"
 echo "   tasks      : $FIRST-$LAST  ($n_tasks tasks)"
