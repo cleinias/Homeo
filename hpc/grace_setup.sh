@@ -88,6 +88,15 @@ print('  headless OK, final_dist %.3f' % r['final_dist'])
 "
 echo
 echo "== running the test suite:"
-python -m pytest -q Unit_Tests 2>&1 | tail -2
+# Do not let a failing test abort setup: with `set -o pipefail` a non-zero pytest
+# exit kills the pipeline and the script dies before saying it finished, which
+# reads as a broken environment when it is not.  Expect 184 passed / 1 failed --
+# HomeoUnitTest::testUnitNameUnique is order-dependent (it counts units created
+# earlier in the session) and fails in the full suite while passing alone.
+if python -m pytest -q Unit_Tests 2>&1 | tail -2; then
+    :
+else
+    echo "   (pytest reported failures -- see the tally above)"
+fi
 echo
 echo "Setup complete.  venv: $VENV"
