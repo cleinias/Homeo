@@ -25,8 +25,8 @@ set -euo pipefail
 HOMEO_SRC="${HOMEO_SRC:-$SCRATCH/Homeo}"
 VENV="${VENV:-$SCRATCH/homeo-venv}"
 
-module purge
-module load GCCcore/13.2.0 Python/3.11.5       # match grace_setup.sh
+source "$HOMEO_SRC/hpc/load_python.sh"
+homeo_load_python || exit 1
 source "$VENV/bin/activate"
 
 # Output to scratch, one directory per array task.
