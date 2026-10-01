@@ -7,8 +7,9 @@ def simulations_data_dir():
     """Return the root SimulationsData directory.
 
     Resolution order:
-      1. Sibling Cybernetics-research/SimulationsData/ repo
-      2. Homeo/SimulationsData/ (legacy fallback)
+      1. $HOMEO_DATA_DIR, if set (for HPC jobs writing to scratch)
+      2. Sibling Cybernetics-research/SimulationsData/ repo
+      3. Homeo/SimulationsData/ (legacy fallback)
 
     The directory is created if it does not exist.
 
@@ -17,6 +18,14 @@ def simulations_data_dir():
     controllers), so using it as the root nested every later run inside the
     last session's folder.
     """
+    # 1. Explicit override, e.g. $SCRATCH on a cluster.  An environment
+    #    variable, deliberately not a file: the old ~/.HomeoSimDataDir.txt
+    #    mechanism conflated "current session" with "root directory".
+    env_dir = os.environ.get('HOMEO_DATA_DIR')
+    if env_dir:
+        os.makedirs(env_dir, exist_ok=True)
+        return env_dir
+
     # Locate Homeo project root  (…/Homeo)
     # General_Helper_Functions.py lives at  src/Helpers/
     _this = os.path.dirname(os.path.abspath(__file__))      # src/Helpers
@@ -24,13 +33,13 @@ def simulations_data_dir():
     _homeo = os.path.dirname(_src)                           # Homeo
     _parent = os.path.dirname(_homeo)                        # Python-port
 
-    # 1. Sibling Cybernetics-research repo
+    # 2. Sibling Cybernetics-research repo
     research = os.path.join(_parent, "Cybernetics-research", "SimulationsData")
     if os.path.isdir(os.path.join(_parent, "Cybernetics-research")):
         os.makedirs(research, exist_ok=True)
         return research
 
-    # 2. Legacy fallback
+    # 3. Legacy fallback
     legacy = os.path.join(_homeo, "SimulationsData")
     os.makedirs(legacy, exist_ok=True)
     return legacy
