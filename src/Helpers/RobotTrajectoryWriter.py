@@ -21,11 +21,35 @@ class EnumerateClass(object):
             setattr(self, name, number)
 
 
+def configureTrajectoryDefaults(interval=1, enabled=True):
+    '''Set the defaults every later RobotTrajectoryWriter is built with.
+
+       Call this before the world is set up: each world-setting method in
+       KheperaSimulator constructs its own writer, and routing two arguments
+       through all of them (and through the visualizer and the GA workers)
+       would touch a dozen call sites for a setting that is global to a run.
+
+       interval: write one row every N recorded positions (1 = every one).
+       enabled:  False suppresses the trajectory file entirely.'''
+
+    RobotTrajectoryWriter.defaultInterval = max(1, int(interval))
+    RobotTrajectoryWriter.defaultEnabled = bool(enabled)
+
+
 class RobotTrajectoryWriter(object):
     State = EnumerateClass('SAVE CLOSEFILE NEWFILE DONOTHING')
     state = State.SAVE
-        
-    def __init__(self, modelName, initialPos, lights, dataDir = None, experimentName = None):
+
+    '''Run-wide defaults, set through configureTrajectoryDefaults().  A 6M-step
+       run writes ~12M rows (~600 MB); 20 of them filled 11.5 GB on 2026-09-30.
+       Decimating is lossless for every present use: the grapher thins to
+       50,000 points anyway, and fitness comes from the DEAP logbook, never
+       from these files.'''
+    defaultInterval = 1
+    defaultEnabled = True
+
+    def __init__(self, modelName, initialPos, lights, dataDir = None, experimentName = None,
+                 interval = None, enabled = None):
         """state determines the controller's behavior. Possible values:
            SAVE: save data to file
            CLOSEFILE: close existing traj file
@@ -37,9 +61,13 @@ class RobotTrajectoryWriter(object):
         self.experimentName = experimentName
         self.setDataDir(dataDir)
         self._state = self.State.SAVE
-        self.posFile = open(self.buildTrajFilename(modelName), 'w')
+        self._interval = self.defaultInterval if interval is None else max(1, int(interval))
+        self._enabled = self.defaultEnabled if enabled is None else bool(enabled)
+        self._rowCount = 0
+        self._pendingRow = None          # last skipped row, written on close
+        self.posFile = open(self.buildTrajFilename(modelName), 'w') if self._enabled else None
         self.writeTrajFileHeader(initialPos, lights)
-                
+
     def runOnce(self,position=None, transitionMessage=None, modelName = None, lights = None):     
             "update state if necessary"
             if transitionMessage is not None:
@@ -58,16 +86,22 @@ class RobotTrajectoryWriter(object):
                 self.writePosition(position)
             elif self._state == self.State.CLOSEFILE:
 #                print "I am in state CLOSE"
-                self.posFile.close()
+                self._flushPendingRow()
+                if self.posFile is not None:
+                    self.posFile.close()
                 self._state = self.State.DONOTHING
 #                print "I am in state DONOTHING"
             elif self._state == self.State.NEWFILE:
 #                print "I am in state NEWFILE"
+                self._flushPendingRow()
                 try:
-                    self.posFile.close()
+                    if self.posFile is not None:
+                        self.posFile.close()
                 except IOError:
                     print("Trajectory file already close")
-                self.posFile = open(self.buildTrajFilename(modelName = modelName), 'w')
+                self._rowCount = 0
+                self.posFile = (open(self.buildTrajFilename(modelName = modelName), 'w')
+                                if self._enabled else None)
                 self.writeTrajFileHeader(position,lights)
                 self._state = self.State.SAVE
 #                print "I am in state SAVE"
@@ -76,7 +110,15 @@ class RobotTrajectoryWriter(object):
                 pass
                      
     def writePosition(self, robotBody):
-        "Write robot state and light data to file"
+        '''Write robot state and light data to file, every self._interval-th call.
+
+           A skipped row is held in _pendingRow rather than dropped, so that
+           whenever the run ends the file's last line is the vehicle's true
+           final pose -- which is what the final-distance analyses read.'''
+
+        if self.posFile is None:
+            return
+
         rx = robotBody.position[0]
         ry = robotBody.position[1]
         heading = degrees(robotBody.angle) % 360
@@ -86,14 +128,36 @@ class RobotTrajectoryWriter(object):
             ly = light.position[1]
             dist = sqrt((rx - lx)**2 + (ry - ly)**2)
             parts.append('%f\t%f\t%f' % (lx, ly, dist))
-        self.posFile.write('\t'.join(parts) + '\n')
-        
+        row = '\t'.join(parts) + '\n'
+
+        self._rowCount += 1
+        if self._rowCount % self._interval != 0:
+            self._pendingRow = row
+            return
+        self._pendingRow = None
+        self.posFile.write(row)
+
+    def _flushPendingRow(self):
+        "Write the last skipped row, if any, so the file ends at the true final pose."
+
+        if self._pendingRow is not None and self.posFile is not None:
+            self.posFile.write(self._pendingRow)
+            self._pendingRow = None
+
+
     def writeTrajFileHeader(self, initialPos, lights):
         '''Write data file header with General info, followed
            by position of light sources and initial position of vehicle'''
-                             
+
+        if self.posFile is None:
+            return
+
         "Get position of the light sources"
         self.posFile.write("# Position data for Homeo simulation run\n#\n#\n")
+        if self._interval > 1:
+            '''Record the decimation, or a reader cannot tell a short run from a
+               sampled long one.  A comment line, so old readers skip it.'''
+            self.posFile.write("# Sampled every %d ticks\n" % self._interval)
         self.posFile.write("# Light sources positioned at:\n")
         
         for light in lights:

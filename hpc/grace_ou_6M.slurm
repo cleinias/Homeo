@@ -53,10 +53,16 @@ echo "code $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversion
 # --batch 1 (rather than a bare run) so each task writes a one-row summary CSV
 # carrying seed, start pose, acquired, first_acq and final distance -- the whole
 # array can then be aggregated by concatenating them.
+# --traj-interval 200: one row per 100 homeostat ticks, so 6M steps yield ~60k
+# trajectory points (~3 MB) instead of 12M (~600 MB).  The whole 20-task array
+# writes ~60 MB rather than 11.5 GB.  The vehicle's true final pose is always
+# written regardless of the interval, so final-distance figures are exact, and
+# the grapher thins to 50,000 points anyway.
 srun python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct \
      --continuous \
      --batch 1 \
      --steps 6000000 \
      --seed "$SEED" \
-     --start-at-rest
+     --start-at-rest \
+     --traj-interval 200
 echo "task $SLURM_ARRAY_TASK_ID done"

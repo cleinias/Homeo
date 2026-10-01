@@ -862,6 +862,28 @@ if __name__ == '__main__':
     if fixed_weights and ('--continuous' in sys.argv or '--random-topology' in sys.argv):
         print('Note: --fixed-weights ignores --continuous and --random-topology')
 
+    '''Trajectory volume.  Two rows are recorded per homeostat tick at ~50 bytes
+       each, so a 6M-step run writes ~600 MB and a batch of 20 wrote 11.5 GB on
+       2026-09-30.  --traj-interval decimates at write time; the final pose is
+       always kept, so final-distance analyses are unaffected.'''
+    from Helpers.RobotTrajectoryWriter import configureTrajectoryDefaults
+
+    traj_interval = 1
+    if '--traj-interval' in sys.argv:
+        idx = sys.argv.index('--traj-interval')
+        if idx + 1 < len(sys.argv):
+            traj_interval = max(1, int(sys.argv[idx + 1]))
+    traj_enabled = '--no-traj' not in sys.argv
+    configureTrajectoryDefaults(interval=traj_interval, enabled=traj_enabled)
+
+    if traj_enabled:
+        est_mb = total_steps * 2 * 50 / traj_interval / 1e6 * (n_batch or 1)
+        if est_mb > 200:
+            print('Warning: this will write about %.1f GB of trajectory data. '
+                  'Consider --traj-interval %d (keeps ~%d points per run).'
+                  % (est_mb / 1000, max(traj_interval, 200),
+                     total_steps * 2 // max(traj_interval, 200)))
+
     if '--visualize' in sys.argv:
         run_visualized(topology=topology, fixed_weights=fixed_weights,
                        random_heading=random_heading, random_start=random_start,
