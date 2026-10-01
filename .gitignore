@@ -26,6 +26,11 @@ ENV/
 htmlcov/
 *.nbc
 *.nbi
+# Scratch file written and re-read by HomeostatTest's pickling tests.
+# Pure test output (one of the two tests even deletes it), never an input,
+# but it used to be tracked, so every test run left the repo dirty.
+# No leading slash: the tests write it to the current working directory.
+pickled_homeostat_test
 
 # IDE
 .idea/
