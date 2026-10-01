@@ -7,7 +7,7 @@
 #SBATCH --time=04:00:00
 #SBATCH --output=logs/%x-%A_%a.out
 #SBATCH --error=logs/%x-%A_%a.err
-##SBATCH --account=XXXXXXXXXXXX      # <-- uncomment and set your project account
+#SBATCH --account=132691544879
 #
 # Replication of the 2026-09-30 overnight batch with the three defects fixed:
 #   - the OU uniselector now actually runs in headless mode
