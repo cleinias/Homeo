@@ -1,16 +1,24 @@
 #!/bin/bash
 # One-time environment setup for Homeo on TAMU HPRC Grace.
 #
-# Run this ONCE on a Grace login node, from your scratch space:
-#     cd $SCRATCH && bash /path/to/Homeo/hpc/grace_setup.sh
+# Bootstraps from nothing but a Grace login shell:
+#     cd $SCRATCH
+#     git clone --depth 1 https://github.com/cleinias/Homeo.git
+#     bash Homeo/hpc/grace_setup.sh
 #
-# It clones nothing: point HOMEO_SRC at the code you want to run.
+# It fetches the code (grace_sync_code.sh), builds the venv, then verifies both
+# headless operation and the test suite.  Run it once; afterwards
+# grace_sync_code.sh alone refreshes the code without rebuilding the venv.
 set -euo pipefail
 
 HOMEO_SRC="${HOMEO_SRC:-$SCRATCH/Homeo}"
 VENV="${VENV:-$SCRATCH/homeo-venv}"
+_hpc_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-source "$(dirname "${BASH_SOURCE[0]}")/load_python.sh"
+bash "$_hpc_dir/grace_sync_code.sh"
+echo
+
+source "$_hpc_dir/load_python.sh"
 homeo_load_python || exit 1
 echo
 

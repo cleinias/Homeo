@@ -48,6 +48,8 @@ cd "$HOMEO_SRC/src"
 SEED=$(( 20260930 + SLURM_ARRAY_TASK_ID ))
 
 echo "task $SLURM_ARRAY_TASK_ID  seed $SEED  out $HOMEO_DATA_DIR"
+# Provenance: which commit produced these results.
+echo "code $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned checkout')"
 # --batch 1 (rather than a bare run) so each task writes a one-row summary CSV
 # carrying seed, start pose, acquired, first_acq and final distance -- the whole
 # array can then be aggregated by concatenating them.
