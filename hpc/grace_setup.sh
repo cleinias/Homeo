@@ -22,7 +22,17 @@ source "$_hpc_dir/load_python.sh"
 homeo_load_python || exit 1
 echo
 
-python -m venv "$VENV"
+# Reuse an existing venv rather than recreating it.  `python -m venv` on a
+# populated venv rewrites bin/activate, which fails outright if that file is not
+# writable ("Errno 13 Permission denied: .../bin/activate") even though the venv
+# itself is perfectly usable.  Re-running this script must be safe.
+if [ -x "$VENV/bin/python" ]; then
+    echo "== reusing existing venv at $VENV"
+    echo "   (delete it and re-run if you want a clean one)"
+else
+    echo "== creating venv at $VENV"
+    python -m venv "$VENV"
+fi
 source "$VENV/bin/activate"
 python -m pip install --upgrade pip setuptools wheel
 
