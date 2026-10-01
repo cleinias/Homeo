@@ -55,10 +55,19 @@ python -m pip install --upgrade pip setuptools wheel
 python -m pip install swig
 python -m pip install --no-build-isolation box2d-py
 
+# PyQt5 is needed even for headless batch runs, which is not obvious: the Core
+# classes emit their signals through Helpers/QObjectProxyEmitter, whose SignalHub
+# is a QObject, so run_headless() ends up importing PyQt5.QtCore.  Only QtCore is
+# touched -- no QApplication, no display -- and the PyQt5 wheels are cp38-abi3,
+# so they install on Python 3.14 and work with DISPLAY unset (verified).
+#
+# The cleaner fix would be for QObjectProxyEmitter to degrade to a no-op emitter
+# when PyQt5 is absent, the way HomeoJIT degrades without numba. Until then the
+# simulation core has a hard dependency on a GUI toolkit.
 python -m pip install \
     numpy scipy pandas matplotlib \
     deap dill tabulate \
-    pyglet \
+    pyglet PyQt5 \
     pytest
 
 # numba is optional (HomeoJIT degrades silently to a no-op decorator) but gives
