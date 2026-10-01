@@ -23,6 +23,28 @@
 # Re-runnable: a task whose batch CSV already exists is skipped, so an
 # interrupted batch can be resumed by invoking the same command with -o
 # pointing at the existing run directory.
+#
+# SPLITTING ACROSS TWO MACHINES.  The tasks are independent and seeded purely by
+# index, so a split is exact: the union of two partial runs is the same 20 runs
+# one machine would have produced.  Give each machine a disjoint range, then
+# merge the task_* directories and aggregate as usual.  Divide the ranges in
+# proportion to measured throughput, and remember a machine finishes in whole
+# waves of <workers> tasks, so a range that straddles a wave boundary buys
+# nothing.  Example with a 4-core workstation (~45 min/task when 4 run at once)
+# and a slower 4-core server (~53 min/task):
+#
+#     RUN=.../SimulationsData/ou6M-2026-10-01
+#     # the faster machine takes 12, i.e. 3 waves:
+#     bash hpc/run_array_local.sh -a 1-12 -o "$RUN"
+#     # the slower one takes 8, i.e. 2 waves (PYTHON= if its venv is elsewhere):
+#     ssh server 'cd ~/Homeo && PYTHON=$HOME/homeo-venv/bin/python \
+#         nohup bash hpc/run_array_local.sh -a 13-20 -o $HOME/ou6M &'
+#     # then pull its results in and aggregate the lot:
+#     rsync -a server:ou6M/task_* "$RUN"/
+#     python3 hpc/aggregate_array.py "$RUN"
+#
+# Put the output on real disk: a tmpfs /tmp is RAM, and 20 tasks of trajectory
+# data in RAM on a small server will not end well.
 set -uo pipefail          # deliberately NOT -e: one failed task must not kill the batch
 
 _hpc_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
