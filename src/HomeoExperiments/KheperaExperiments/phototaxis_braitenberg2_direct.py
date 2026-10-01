@@ -78,6 +78,13 @@ from math import sqrt, degrees
 
 import numpy as np
 
+# A vehicle has "acquired" the source once it comes this close to it.  The
+# 2026-09-30 batch was bimodal with a wide gap (acquirers reached <0.01,
+# non-acquirers never beat their 4.24 start distance), so the exact value is
+# not critical, but it must be stated in any write-up.
+ACQUISITION_RADIUS = 1.0
+
+
 
 def setup_phototaxis(topology='fixed', backendSimulator=None,
                      mass_range=(1, 10), max_speed_fraction=0.8,
@@ -552,6 +559,11 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     min_dist = dist_to_target()
     min_t = 0
     early_stopped = False
+    '''Time of first acquisition: the tick at which the vehicle first comes
+       within ACQUISITION_RADIUS of the target.  Recorded here rather than
+       reconstructed from the .traj afterwards, which is what the 2026-09-30
+       analysis had to do.  None if it never acquires.'''
+    first_acq = None
 
     for target_tick in range(report_interval, total_steps + 1, report_interval):
         hom.runFor(target_tick)
@@ -564,6 +576,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         if d < min_dist:
             min_dist = d
             min_t = target_tick
+        if first_acq is None and d < ACQUISITION_RADIUS:
+            first_acq = target_tick
 
         if not quiet:
             print(f'{target_tick:>6}  {rx:>8.3f}  {ry:>8.3f}  {a:>7.1f}  {d:>7.3f}  {lsensor:>7.2f}  {rsensor:>7.2f}')
@@ -600,7 +614,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 log_path=log_path, json_path=json_path,
                 state_log_path=state_log_path, seed=seed,
                 start_x=start_x, start_y=start_y, start_heading=start_heading,
-                start_dist=start_dist, start_sees_light=start_sees_light)
+                start_dist=start_dist, start_sees_light=start_sees_light,
+                first_acq=first_acq, acquired=first_acq is not None)
 
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
@@ -608,8 +623,11 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               early_stop_distance=None,
               uniselector_type='ashby', continuous_params=None,
               fixed_weights=False, random_heading=False, random_start=False,
-              stable_integration=True, start_at_rest=False):
-    '''Run a batch of experiments and print a summary table.'''
+              stable_integration=True, start_at_rest=False, seed=None):
+    '''Run a batch of experiments and print a summary table.
+
+    With seed given, run i uses seed+i, so the batch is reproducible and an
+    array job can pin exactly one run per task with --batch 1 --seed N.'''
     import csv as _csv
 
     mode = 'dark' if light_intensity < 0 else 'light'
@@ -635,7 +653,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          random_heading=random_heading,
                          random_start=random_start,
                          stable_integration=stable_integration,
-                         start_at_rest=start_at_rest)
+                         start_at_rest=start_at_rest,
+                         seed=None if seed is None else seed + i)
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
         r['run'] = i + 1
@@ -672,7 +691,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
         csv_name = f'batch_direct_{kind}_{mode}_{time.strftime("%Y-%m-%d-%H-%M-%S")}.csv'
         csv_path = os.path.join(log_dir, csv_name)
         fields = ['run', 'seed', 'start_x', 'start_y', 'start_heading', 'start_dist',
-                  'start_sees_light', 'final_dist', 'min_dist', 'min_t', 'steps_run',
+                  'start_sees_light', 'acquired', 'first_acq',
+                  'final_dist', 'min_dist', 'min_t', 'steps_run',
                   'early_stopped', 'final_x', 'final_y', 'wall_time',
                   'log_path', 'json_path', 'state_log_path']
         with open(csv_path, 'w', newline='') as f:
@@ -854,7 +874,8 @@ if __name__ == '__main__':
                   uniselector_type=uniselector_type,
                   fixed_weights=fixed_weights,
                   random_heading=random_heading, random_start=random_start,
-                  stable_integration=stable_integration, start_at_rest=start_at_rest)
+                  stable_integration=stable_integration, start_at_rest=start_at_rest,
+                  seed=seed)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
