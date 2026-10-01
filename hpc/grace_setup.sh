@@ -24,21 +24,38 @@ echo
 
 python -m venv "$VENV"
 source "$VENV/bin/activate"
-python -m pip install --upgrade pip wheel
+python -m pip install --upgrade pip setuptools wheel
 
-# numba is optional (HomeoJIT degrades silently to a no-op decorator) but gives
-# a real speedup on the inner loops, and is NOT in requirements.txt.  box2d-py
-# needs swig to build; if the wheel is unavailable, `module load SWIG` first.
+# ---------------------------------------------------------------------------
+# box2d-py has NO wheel on PyPI for any current CPython (checked 2026-10-01:
+# none for cp311/312/313/314), so pip always builds it from source, and the
+# build runs swig.  Without swig it dies with
+#     error: command 'swig' failed: No such file or directory
 #
-# Python 3.14 is recent enough that some wheels may not exist yet -- if numba or
-# box2d-py fails here, drop numba (the code runs without it) and report the
-# box2d failure, which IS fatal.
+# The PyPI `swig` package provides the binary without needing a cluster module,
+# but it is a Python shim that imports its own package -- so inside pip's
+# isolated build environment it fails with "No module named 'swig'".  Hence
+# --no-build-isolation for this one install, which lets the shim see the venv
+# it was installed into.  Verified building box2d-py 2.3.8 on Python 3.14.
+#
+# A real swig binary works too (`module load SWIG`) and needs no special flag,
+# but the module is toolchain-gated on Grace like Python is, so the pip route
+# is the one that always works.
+# ---------------------------------------------------------------------------
+python -m pip install swig
+python -m pip install --no-build-isolation box2d-py
+
 python -m pip install \
     numpy scipy pandas matplotlib \
     deap dill tabulate \
-    box2d-py pyglet \
+    pyglet \
     pytest
+
+# numba is optional (HomeoJIT degrades silently to a no-op decorator) but gives
+# a real speedup on the inner loops, and is NOT in requirements.txt.
 python -m pip install numba || echo "!! numba unavailable for this Python; continuing without JIT"
+
+python -c "import Box2D; print('box2d-py OK:', Box2D.__version__)"
 
 echo
 echo "== verifying headless operation (no DISPLAY on compute nodes):"
