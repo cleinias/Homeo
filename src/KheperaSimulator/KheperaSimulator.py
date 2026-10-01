@@ -19,7 +19,20 @@ Created on Mar 13, 2015
 @author: stefano
 '''
 from Box2D import *
+import os
 import pyglet
+
+# pyglet creates a hidden "shadow window" the first time pyglet.window is
+# imported, which needs an X display.  On a machine with none -- an HPC compute
+# node, a headless server, a CI runner -- that import raises
+#     pyglet.display.xlib.NoSuchDisplayException: Cannot connect to "None"
+# and takes the whole process down before any simulation starts, even though
+# nothing here is going to draw anything.  The option has to be set before
+# pyglet.window is imported, so it belongs here rather than in a caller: by the
+# time an experiment script runs, this module has already been imported.
+if not (os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY')):
+    pyglet.options['shadow_window'] = False
+
 from pyglet import clock, font, image, window
 from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
                        GL_BLEND, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
