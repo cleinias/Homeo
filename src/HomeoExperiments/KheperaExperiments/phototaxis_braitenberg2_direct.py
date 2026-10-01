@@ -481,7 +481,7 @@ def _direct_random_topology(hom, mass_range=(1, 10),
 def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  light_intensity=100, early_stop_distance=None, quiet=False,
                  uniselector_type='ashby', continuous_params=None,
-                 state_log=False, state_log_interval=1, seed=None,
+                 state_log=False, state_log_interval=1, seed=None, heading=None,
                  fixed_weights=False, random_heading=False, random_start=False,
                  stable_integration=True, start_at_rest=False):
     '''Run the simplified 2+2 phototaxis experiment headless.
@@ -491,6 +491,11 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         fixed_weights:  run the non-adaptive Braitenberg 2b baseline.
         random_heading: start with a random heading (seeded).
         random_start:   random heading and position 2-6 units from the light.
+        heading:        a FIXED start heading in degrees, used when neither
+                        random_heading nor random_start is set.  Unlike the
+                        random poses it draws nothing, so a seed yields the same
+                        homeostat whatever the heading -- which is what lets two
+                        batches differing only in geometry be compared pairwise.
     The returned dict also has start_x, start_y, start_heading, start_dist
     and start_sees_light (whether either eye saw the light at the start).
     '''
@@ -509,6 +514,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     target_pos = (7, 7)
     if random_heading or random_start:
         set_start_pose(robot, *_random_start_pose(target_pos, random_start))
+    elif heading is not None:
+        set_start_pose(robot, heading=heading)
     start_x, start_y = robot.body.position[0], robot.body.position[1]
     start_heading = degrees(robot.body.angle) % 360
     start_dist = sqrt((start_x - target_pos[0])**2 + (start_y - target_pos[1])**2)
@@ -629,7 +636,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               uniselector_type='ashby', continuous_params=None,
               fixed_weights=False, random_heading=False, random_start=False,
               stable_integration=True, start_at_rest=False, seed=None,
-              state_log=False, state_log_interval=1):
+              state_log=False, state_log_interval=1, heading=None):
     '''Run a batch of experiments and print a summary table.
 
     With seed given, run i uses seed+i, so the batch is reproducible and an
@@ -671,6 +678,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          start_at_rest=start_at_rest,
                          state_log=state_log,
                          state_log_interval=state_log_interval,
+                         heading=heading,
                          seed=None if seed is None else seed + i)
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
@@ -892,6 +900,16 @@ if __name__ == '__main__':
     start_at_rest = '--start-at-rest' in sys.argv
     random_start = '--random-start' in sys.argv
     random_heading = '--random-heading' in sys.argv
+    # --heading DEG: a fixed start heading.  Default (None) leaves the robot as
+    # placed, i.e. heading 0.  Draws nothing from the RNG, unlike the random poses.
+    heading = None
+    if '--heading' in sys.argv:
+        idx = sys.argv.index('--heading')
+        if idx + 1 < len(sys.argv):
+            heading = float(sys.argv[idx + 1])
+        if random_heading or random_start:
+            raise SystemExit(
+                '--heading cannot be combined with --random-heading/--random-start')
     if fixed_weights and ('--continuous' in sys.argv or '--random-topology' in sys.argv):
         print('Note: --fixed-weights ignores --continuous and --random-topology')
 
@@ -930,7 +948,7 @@ if __name__ == '__main__':
                   fixed_weights=fixed_weights,
                   random_heading=random_heading, random_start=random_start,
                   stable_integration=stable_integration, start_at_rest=start_at_rest,
-                  seed=seed,
+                  seed=seed, heading=heading,
                   state_log=state_log, state_log_interval=state_log_interval)
     else:
         run_headless(topology=topology, total_steps=total_steps,
@@ -939,6 +957,7 @@ if __name__ == '__main__':
                      uniselector_type=uniselector_type,
                      state_log=state_log,
                      state_log_interval=state_log_interval,
+                     heading=heading,
                      seed=seed, fixed_weights=fixed_weights,
                      random_heading=random_heading, random_start=random_start,
                      stable_integration=stable_integration, start_at_rest=start_at_rest)
