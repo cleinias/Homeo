@@ -628,7 +628,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               early_stop_distance=None,
               uniselector_type='ashby', continuous_params=None,
               fixed_weights=False, random_heading=False, random_start=False,
-              stable_integration=True, start_at_rest=False, seed=None):
+              stable_integration=True, start_at_rest=False, seed=None,
+              state_log=False, state_log_interval=1):
     '''Run a batch of experiments and print a summary table.
 
     With seed given, run i uses seed+i, so the batch is reproducible and an
@@ -644,9 +645,18 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     print()
 
     results = []
+    _base_tag = os.environ.get('HOMEO_RUN_TAG')
     for i in range(n_runs):
         t0 = time.time()
         print(f'--- Run {i+1}/{n_runs} ---', flush=True)
+        # Every output file is named from a whole-second timestamp plus the run
+        # tag, so several runs in ONE process overwrite each other unless the tag
+        # distinguishes them.  With --batch 1 (how the HPC arrays invoke this)
+        # there is nothing to disambiguate, so the tag is left exactly as the
+        # array set it.
+        if n_runs > 1:
+            os.environ['HOMEO_RUN_TAG'] = (
+                '%s-r%02d' % (_base_tag, i + 1) if _base_tag else 'r%02d' % (i + 1))
         r = run_headless(topology=topology, total_steps=total_steps,
                          report_interval=report_interval,
                          light_intensity=light_intensity,
@@ -659,12 +669,19 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          random_start=random_start,
                          stable_integration=stable_integration,
                          start_at_rest=start_at_rest,
+                         state_log=state_log,
+                         state_log_interval=state_log_interval,
                          seed=None if seed is None else seed + i)
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
         r['run'] = i + 1
         r['wall_time'] = elapsed
         results.append(r)
+        if n_runs > 1:
+            if _base_tag is None:
+                os.environ.pop('HOMEO_RUN_TAG', None)
+            else:
+                os.environ['HOMEO_RUN_TAG'] = _base_tag
         print(f'  start=({r["start_x"]:.2f},{r["start_y"]:.2f}) hdg={r["start_heading"]:.0f} '
               f'sees_light={r["start_sees_light"]}  '
               f'final_dist={r["final_dist"]:.3f}  min_dist={r["min_dist"]:.3f}  '
@@ -913,7 +930,8 @@ if __name__ == '__main__':
                   fixed_weights=fixed_weights,
                   random_heading=random_heading, random_start=random_start,
                   stable_integration=stable_integration, start_at_rest=start_at_rest,
-                  seed=seed)
+                  seed=seed,
+                  state_log=state_log, state_log_interval=state_log_interval)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
