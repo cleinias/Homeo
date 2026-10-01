@@ -37,6 +37,13 @@ except ImportError:
 def _snapshot(homeostat):
     """Return a dict with 'units' and 'connections' lists."""
 
+    '''In headless mode with a continuous (OU) uniselector the evolved weights
+       live in each unit's JIT arrays, not on the connection objects.  Flush
+       them first so the snapshot records the weights the run actually used.'''
+    for u in homeostat.homeoUnits:
+        if hasattr(u, 'flushJitArrays'):
+            u.flushJitArrays()
+
     units = []
     for u in homeostat.homeoUnits:
         row = {

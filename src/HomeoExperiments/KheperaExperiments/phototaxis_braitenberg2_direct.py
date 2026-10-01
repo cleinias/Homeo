@@ -83,7 +83,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      mass_range=(1, 10), max_speed_fraction=0.8,
                      switching_rate=0.5, light_intensity=100,
                      uniselector_type='ashby', continuous_params=None,
-                     seed=None, fixed_weights=False):
+                     seed=None, fixed_weights=False,
+                     stable_integration=True, start_at_rest=False):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -197,7 +198,9 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                   max_speed_fraction=max_speed_fraction,
                   switching_rate=switching_rate,
                   uniselector_type=uniselector_type,
-                  continuous_params=continuous_params)
+                  continuous_params=continuous_params,
+                  stable_integration=stable_integration,
+                  start_at_rest=start_at_rest)
     if fixed_weights:
         _direct_fixed_weights(hom, max_speed_fraction=max_speed_fraction,
                               switching_rate=switching_rate)
@@ -229,7 +232,8 @@ def _set_uniselector_type(unit, uniselector_type, continuous_params=None):
 
 def _direct_fixed_topology(hom, mass_range=(1, 10),
                            max_speed_fraction=0.8, switching_rate=0.5,
-                           uniselector_type='ashby', continuous_params=None):
+                           uniselector_type='ashby', continuous_params=None,
+                           stable_integration=True, start_at_rest=False):
     '''Fixed Braitenberg cross-wiring: sensors connect directly to
     contra-lateral motors.  Inter-motor connections are disabled.
 
@@ -243,9 +247,8 @@ def _direct_fixed_topology(hom, mass_range=(1, 10),
         if 'Sensor' in u.name:
             continue
 
-        # Randomize unit parameters
-        u.setRandomValues()
-        u.mass = np.random.uniform(*mass_range)
+        # Randomize unit parameters (rejecting numerically unstable draws)
+        _randomize_unit_stably(u, mass_range, stable_integration, start_at_rest)
 
         # Motor-specific overrides
         u._maxSpeedFraction = max_speed_fraction
@@ -283,6 +286,50 @@ def _direct_fixed_topology(hom, mass_range=(1, 10),
                 conn.noise = np.random.uniform(0, 0.1)
                 conn.state = 'uniselector'
                 conn.status = True
+
+
+
+# --- Numerical-integration stability -----------------------------------------
+#
+# The Newtonian needle is integrated explicitly (HomeoJIT._jit_needle_position_
+# newtonian): with zero torque the velocity recursion is
+#       v <- v * (1 - viscosity * dt_fast / mass)
+# so the step is stable only while  viscosity * dt_fast / mass < 2.  Outside
+# that bound the needle diverges to its limit within a few dozen ticks with no
+# sensory input at all, which looks like -- but is not -- a saturated unit.
+# Random (mass, viscosity) draws violated this in 9 of the 20 runs of
+# 2026-09-30; see "Bimodal acquisition in OU chemotaxis".
+STABILITY_MARGIN = 1.8          # keep viscosity*dt/mass below this
+
+
+def _integration_ratio(unit):
+    "viscosity * dt_fast / mass -- must stay below 2 for the explicit step."
+    dt = getattr(unit, '_dt_fast', 1.0)
+    return unit.viscosity * dt / unit.mass if unit.mass else float('inf')
+
+
+def _randomize_unit_stably(u, mass_range, stable_integration=True,
+                           start_at_rest=False, max_tries=200):
+    """setRandomValues() + random mass, rejecting numerically unstable draws.
+
+    With stable_integration the (mass, viscosity) pair is resampled until
+    viscosity*dt_fast/mass < STABILITY_MARGIN, so the joint distribution is the
+    original one conditioned on the integrator being stable.  With
+    start_at_rest the needle starts centred and motionless, so the vehicle
+    begins stationary instead of mid-manoeuvre.
+    """
+    for _ in range(max_tries):
+        u.setRandomValues()
+        u.mass = np.random.uniform(*mass_range)
+        if not stable_integration or _integration_ratio(u) < STABILITY_MARGIN:
+            break
+    else:
+        u.viscosity = STABILITY_MARGIN * u.mass / getattr(u, '_dt_fast', 1.0)
+    if start_at_rest:
+        u.criticalDeviation = 0.0
+        u.currentOutput = 0.0
+        u._currentVelocity = 0.0
+        u._lastAcceleration = 0.0
 
 
 # Fixed-weight baseline (Braitenberg 2b) parameters
@@ -382,7 +429,8 @@ def _random_start_pose(target_pos, random_position):
 
 def _direct_random_topology(hom, mass_range=(1, 10),
                             max_speed_fraction=0.8, switching_rate=0.5,
-                            uniselector_type='ashby', continuous_params=None):
+                            uniselector_type='ashby', continuous_params=None,
+                            stable_integration=True, start_at_rest=False):
     '''Random topology: all connections between the 2 motors are active
     (including inter-motor and from sensors).  The system must discover
     useful weights.
@@ -393,8 +441,7 @@ def _direct_random_topology(hom, mass_range=(1, 10),
         if 'Sensor' in u.name:
             continue
 
-        u.setRandomValues()
-        u.mass = np.random.uniform(*mass_range)
+        _randomize_unit_stably(u, mass_range, stable_integration, start_at_rest)
 
         u._maxSpeedFraction = max_speed_fraction
         u._switchingRate = switching_rate
@@ -423,7 +470,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  light_intensity=100, early_stop_distance=None, quiet=False,
                  uniselector_type='ashby', continuous_params=None,
                  state_log=False, state_log_interval=1, seed=None,
-                 fixed_weights=False, random_heading=False, random_start=False):
+                 fixed_weights=False, random_heading=False, random_start=False,
+                 stable_integration=True, start_at_rest=False):
     '''Run the simplified 2+2 phototaxis experiment headless.
 
     Parameters and return value are the same as in
@@ -442,7 +490,9 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                                           uniselector_type=uniselector_type,
                                           continuous_params=continuous_params,
                                           seed=seed,
-                                          fixed_weights=fixed_weights)
+                                          fixed_weights=fixed_weights,
+                                          stable_integration=stable_integration,
+                                          start_at_rest=start_at_rest)
     robot = backend.kheperaSimulation.allBodies['Khepera']
     target_pos = (7, 7)
     if random_heading or random_start:
@@ -557,7 +607,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               report_interval=500, light_intensity=100,
               early_stop_distance=None,
               uniselector_type='ashby', continuous_params=None,
-              fixed_weights=False, random_heading=False, random_start=False):
+              fixed_weights=False, random_heading=False, random_start=False,
+              stable_integration=True, start_at_rest=False):
     '''Run a batch of experiments and print a summary table.'''
     import csv as _csv
 
@@ -582,7 +633,9 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          continuous_params=continuous_params,
                          fixed_weights=fixed_weights,
                          random_heading=random_heading,
-                         random_start=random_start)
+                         random_start=random_start,
+                         stable_integration=stable_integration,
+                         start_at_rest=start_at_rest)
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
         r['run'] = i + 1
@@ -782,6 +835,8 @@ if __name__ == '__main__':
             seed = int(sys.argv[idx + 1])
 
     fixed_weights = '--fixed-weights' in sys.argv
+    stable_integration = '--allow-unstable' not in sys.argv   # guard on by default
+    start_at_rest = '--start-at-rest' in sys.argv
     random_start = '--random-start' in sys.argv
     random_heading = '--random-heading' in sys.argv
     if fixed_weights and ('--continuous' in sys.argv or '--random-topology' in sys.argv):
@@ -798,7 +853,8 @@ if __name__ == '__main__':
                   early_stop_distance=early_stop_distance,
                   uniselector_type=uniselector_type,
                   fixed_weights=fixed_weights,
-                  random_heading=random_heading, random_start=random_start)
+                  random_heading=random_heading, random_start=random_start,
+                  stable_integration=stable_integration, start_at_rest=start_at_rest)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
@@ -807,4 +863,5 @@ if __name__ == '__main__':
                      state_log=state_log,
                      state_log_interval=state_log_interval,
                      seed=seed, fixed_weights=fixed_weights,
-                     random_heading=random_heading, random_start=random_start)
+                     random_heading=random_heading, random_start=random_start,
+                     stable_integration=stable_integration, start_at_rest=start_at_rest)

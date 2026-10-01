@@ -239,9 +239,11 @@ class HomeoUnitNewtonian(HomeoUnit):
                         self._sync_jit_arrays()
                     self.uniselector.evolve_weights_jit(
                         self._jit_weights, self._jit_switches, stress)
+                    '''Do NOT mark the arrays dirty here -- see the identical
+                       branch in HomeoUnit.selfUpdate() for why.'''
                 else:
                     self.uniselector.evolve_weights(self.inputConnections, stress)
-                self._jit_dirty = True
+                    self._jit_dirty = True
             else:
                 "Discrete mode: original periodic uniselector logic"
                 self.updateUniselectorTime()

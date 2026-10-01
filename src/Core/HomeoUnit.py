@@ -296,6 +296,27 @@ class HomeoUnit(object):
     
     #===============================================================================
 
+    def flushJitArrays(self):
+        """Write the JIT weight arrays back onto the connection objects.
+
+        In headless mode with a continuous (OU) uniselector the arrays carry the
+        weights the dynamics actually used, while the connection objects keep
+        their last synced values.  Call this before logging or inspecting
+        connections so that what is recorded is what was run.  A no-op when the
+        arrays are absent or stale.
+        """
+        if getattr(self, '_jit_dirty', True):
+            return
+        if not hasattr(self, '_jit_weights'):
+            return
+        active = [c for c in self._inputConnections
+                  if c.isActive() and c.incomingUnit.isActive()]
+        if len(active) != len(self._jit_weights):
+            return                      # topology changed since the last sync
+        for conn, w, s in zip(active, self._jit_weights, self._jit_switches):
+            conn._weight = float(abs(w))
+            conn._switch = float(s)
+
     def _sync_jit_arrays(self):
         """Extract active connection parameters into numpy arrays for JIT loop."""
         active = [c for c in self._inputConnections
@@ -1191,9 +1212,15 @@ class HomeoUnit(object):
                         self._sync_jit_arrays()
                     self.uniselector.evolve_weights_jit(
                         self._jit_weights, self._jit_switches, stress)
+                    '''Do NOT mark the arrays dirty here.  evolve_weights_jit()
+                       mutates them in place and they are authoritative until
+                       something edits the connection objects; marking them
+                       dirty makes the next tick rebuild them from the
+                       (unchanged) connections, discarding every OU step.
+                       Call flushJitArrays() to write them back for logging.'''
                 else:
                     self.uniselector.evolve_weights(self.inputConnections, stress)
-                self._jit_dirty = True
+                    self._jit_dirty = True
             else:
                 "Discrete mode: original periodic uniselector logic"
                 self.updateUniselectorTime()
