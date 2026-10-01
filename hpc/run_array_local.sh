@@ -57,10 +57,14 @@ HOMEO_SRC="${HOMEO_SRC:-$(cd "$_hpc_dir/.." && pwd)}"
 # tracebacks.  Prefer an explicit $PYTHON, then an active venv, then the
 # conventional venv locations, and only then python3.
 if [ -z "${PYTHON:-}" ]; then
-    for _cand in "${VIRTUAL_ENV:-}/bin/python" \
-                 "$HOMEO_SRC/.venv/bin/python" \
-                 "$HOME/homeo-venv/bin/python" \
-                 "${SCRATCH:-/nonexistent}/homeo-venv/bin/python"; do
+    # Build the candidate list guarding every variable: an unset VIRTUAL_ENV
+    # would make "${VIRTUAL_ENV:-}/bin/python" collapse to the absolute path
+    # /bin/python, which exists on most systems and would win the search.
+    _cands=()
+    [ -n "${VIRTUAL_ENV:-}" ] && _cands+=("$VIRTUAL_ENV/bin/python")
+    _cands+=("$HOMEO_SRC/.venv/bin/python" "$HOME/homeo-venv/bin/python")
+    [ -n "${SCRATCH:-}" ] && _cands+=("$SCRATCH/homeo-venv/bin/python")
+    for _cand in "${_cands[@]}"; do
         if [ -x "$_cand" ]; then PYTHON="$_cand"; break; fi
     done
     PYTHON="${PYTHON:-python3}"
