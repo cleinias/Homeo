@@ -157,7 +157,7 @@ class HomeoQtSimulation(QObject):
         self._simulDelay = aValue
         
     simulDelay = property(fget=lambda self: self.getSimulDelay(),
-                          fset = lambda self, value: self.setSimulDelay())
+                          fset = lambda self, value: self.setSimulDelay(value))
     
     def units(self):
         return self.homeostat.homeoUnits

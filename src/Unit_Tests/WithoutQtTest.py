@@ -67,6 +67,12 @@ class HomeoQtSimulationWithoutQtTest(unittest.TestCase):
         sim.homeostatFilename = 'some-name'
         self.assertEqual(sim.homeostatFilename, 'some-name')
 
+    def testSimulDelayCanBeSet(self):
+        "the simulDelay property sets the delay (its setter used to drop the value)"
+        sim = self.module.HomeoQtSimulation()
+        sim.simulDelay = 25
+        self.assertEqual(sim.simulDelay, 25)
+
     def testStepAndGoRunTheHomeostat(self):
         "step() and go() advance the homeostat, live data on, no Qt anywhere"
         sim = self.module.HomeoQtSimulation()
@@ -77,7 +83,8 @@ class HomeoQtSimulationWithoutQtTest(unittest.TestCase):
         for _ in range(5):
             sim.step()
         self.assertEqual(sim.homeostat.time, 5)
-        sim.go()                              # default 1 ms delay per step
+        sim.simulDelay = 0
+        sim.go()
         self.assertEqual(sim.homeostat.time, 10)
 
 
