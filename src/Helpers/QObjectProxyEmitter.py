@@ -73,6 +73,44 @@ SIGNAL_NAMES = (
     'unitUniselSoundChanged',
 )
 
+class NullSignal(object):
+    """Stands in for a pyqtSignal when PyQt5 is absent: emit() does nothing,
+    connect() raises.  Used by the null hub below and, through
+    NullSignalAttribute, by QObject subclasses that must also work without Qt
+    (Simulator/HomeoQtSimulation)."""
+    __slots__ = ('_name',)
+
+    def __init__(self, name):
+        self._name = name
+
+    def emit(self, *args):
+        pass
+
+    def connect(self, *args, **kwargs):
+        raise RuntimeError(
+            "cannot connect to signal %r: PyQt5 is not installed, so Homeo "
+            "signals are disabled in this process" % self._name)
+
+
+class NullSignalAttribute(object):
+    """Stands in for pyqtSignal(...) in a class body when PyQt5 is absent.
+
+        homeostatFilenameChanged = NullSignalAttribute(str)
+
+    takes the same arguments as pyqtSignal (and ignores them); reading the
+    attribute, from the class or from an instance, gives a NullSignal named
+    after it."""
+
+    def __init__(self, *types, **kwargs):
+        self._signal = None
+
+    def __set_name__(self, owner, name):
+        self._signal = NullSignal(name)
+
+    def __get__(self, instance, owner=None):
+        return self._signal
+
+
 try:
     from PyQt5.QtCore import QObject, pyqtSignal
     QT_AVAILABLE = True
@@ -144,21 +182,6 @@ if QT_AVAILABLE:
 
 else:
 
-    class _NullSignal(object):
-        """Stands in for a pyqtSignal when PyQt5 is absent."""
-        __slots__ = ('_name',)
-
-        def __init__(self, name):
-            self._name = name
-
-        def emit(self, *args):
-            pass
-
-        def connect(self, *args, **kwargs):
-            raise RuntimeError(
-                "cannot connect to signal %r: PyQt5 is not installed, so Homeo "
-                "signals are disabled in this process" % self._name)
-
     class _NullHub(object):
         """Stands in for SignalHub when PyQt5 is absent."""
         __slots__ = ()
@@ -170,7 +193,7 @@ else:
                 raise AttributeError(
                     "'SignalHub' object has no attribute %r" % name) from None
 
-    _NULL_SIGNALS = {name: _NullSignal(name) for name in SIGNAL_NAMES}
+    _NULL_SIGNALS = {name: NullSignal(name) for name in SIGNAL_NAMES}
     _NULL_HUB = _NullHub()
 
     def emitter(ob):

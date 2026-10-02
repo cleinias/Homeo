@@ -115,6 +115,34 @@ class EmitterWithoutQtTest(unittest.TestCase):
         self.assertEqual(vars(ob), {})
 
 
+class NullSignalAttributeTest(unittest.TestCase):
+    """The class-attribute stand-in for pyqtSignal, used by QObject subclasses
+    that must also work without Qt."""
+
+    def setUp(self):
+        class Holder(object):
+            somethingChanged = QObjectProxyEmitter.NullSignalAttribute(str)
+            otherChanged = QObjectProxyEmitter.NullSignalAttribute(object, int)
+        self.Holder = Holder
+
+    def testEmitDoesNothing(self):
+        "emit works from an instance, with any arguments, and does nothing"
+        h = self.Holder()
+        self.assertIsNone(h.somethingChanged.emit('x'))
+        self.assertIsNone(h.otherChanged.emit(1, 2))
+
+    def testConnectRaisesNamingTheSignal(self):
+        "connect raises, and the message names the signal"
+        with self.assertRaisesRegex(RuntimeError, 'somethingChanged'):
+            self.Holder().somethingChanged.connect(print)
+
+    def testEachAttributeIsItsOwnSignal(self):
+        "two attributes give two distinct signals; class and instance access agree"
+        h = self.Holder()
+        self.assertIsNot(h.somethingChanged, h.otherChanged)
+        self.assertIs(h.somethingChanged, self.Holder.somethingChanged)
+
+
 # Run in a fresh interpreter: hides PyQt5, runs a short headless phototaxis
 # experiment, then reports whether any part of PyQt5 got imported anyway.
 _HEADLESS_RUN = '''

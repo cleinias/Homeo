@@ -12,8 +12,20 @@ except ImportError:
     Simulator_HomeoExperiments = None  # vrep / robot simulator not available
 from datetime import datetime
 import os, pickle
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import QApplication
+# PyQt5 is optional.  The GUIs need it, but a headless run -- the GA's fitness
+# evaluations, a batch script -- does not: without QtCore the class is a plain
+# object whose two signals accept emit() and do nothing, and without QtWidgets
+# there is no event loop to keep responsive.  The two are separate because
+# QtWidgets can fail where QtCore loads (it needs the system's libGL).
+try:
+    from PyQt5.QtCore import *
+except ImportError:
+    from Helpers.QObjectProxyEmitter import NullSignalAttribute as pyqtSignal
+    QObject = object
+try:
+    from PyQt5.QtWidgets import QApplication
+except ImportError:
+    QApplication = None
 from collections import deque
 #from Core.HomeoUnit import setRandomValues
 
@@ -247,7 +259,7 @@ class HomeoQtSimulation(QObject):
 #            if self.liveDataOn:
             self.updateLiveData()
             time.sleep(self._simulDelay / 1000)
-            if QApplication.instance() is not None:
+            if QApplication is not None and QApplication.instance() is not None:
                 QApplication.processEvents()
 
     def pause(self):
@@ -269,7 +281,7 @@ class HomeoQtSimulation(QObject):
                 cb(self._homeostat, self._homeostat.time)
             self.updateLiveData()
 #            time.sleep(self._simulDelay / 1000)
-            if QApplication.instance() is not None:
+            if QApplication is not None and QApplication.instance() is not None:
                 QApplication.processEvents() 
 
     
