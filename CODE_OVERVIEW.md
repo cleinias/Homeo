@@ -10,7 +10,7 @@ All source code lives under `src/`. The four main directories are:
 
 - **`Core/`** -- The simulation engine: `Homeostat`, `HomeoUnit`, `HomeoConnection`, `HomeoUniselector`, and data-collection classes.
 - **`Simulator/`** -- Simulation runners (`HomeoSimulation` for headless runs, `HomeoQtSimulation` for the Qt event loop), GUI windows (`HomeoGeneralGUI`, `HomeoMinimalGui`, `HomeoGenAlgGui`), and predefined experiment setups (`HomeoExperiments`).
-- **`Helpers/`** -- Noise generation (`HomeoNoise`), PyQt signal proxying (`QObjectProxyEmitter`), trajectory and statistics utilities.
+- **`Helpers/`** -- Noise generation (`HomeoNoise`), PyQt signal proxying (`QObjectProxyEmitter`, with a null fallback when PyQt5 is absent), trajectory and statistics utilities.
 - **`Unit_Tests/`** -- Pytest test suite covering every core class.
 
 Additional directories (`RobotSimulator/`, `VREP/`, `Webots/`, `KheperaSimulator/`) contain integration code for controlling virtual robots with a homeostat; they are not required for the basic simulation.
@@ -129,7 +129,7 @@ The module `Simulator/HomeoExperiments.py` provides functions that return a full
 ## Dependencies
 
 - **Python 3**
-- **PyQt5** -- GUI and signal/slot infrastructure
+- **PyQt5** -- GUI and signal/slot infrastructure; also needed by the GA, whose engine lives in a GUI module.  Not needed for headless batch runs: without it, `QObjectProxyEmitter` hands the Core a null emitter
 - **NumPy** -- numerical computation throughout
 - **SciPy** -- statistical tests in the test suite
 - **Matplotlib** -- static plotting and data export

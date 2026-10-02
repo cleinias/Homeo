@@ -55,19 +55,19 @@ python -m pip install --upgrade pip setuptools wheel
 python -m pip install swig
 python -m pip install --no-build-isolation box2d-py
 
-# PyQt5 is needed even for headless batch runs, which is not obvious: the Core
-# classes emit their signals through Helpers/QObjectProxyEmitter, whose SignalHub
-# is a QObject, so run_headless() ends up importing PyQt5.QtCore.  Only QtCore is
-# touched -- no QApplication, no display -- and the PyQt5 wheels are cp38-abi3,
-# so they install on Python 3.14 and work with DISPLAY unset (verified).
+# PyQt5 is deliberately not installed: headless batch runs do not need it.  The
+# Core classes emit their signals through Helpers/QObjectProxyEmitter, which falls
+# back to a null emitter when PyQt5 is absent, the way HomeoJIT degrades without
+# numba.  The GA is the exception: HomeoGASimulation still lives in the GUI module
+# Simulator/HomeoGenAlgGui.py, so to run the GA here add `pip install PyQt5`
+# (the wheels are cp38-abi3, install on Python 3.14 and work with DISPLAY unset).
 #
-# The cleaner fix would be for QObjectProxyEmitter to degrade to a no-op emitter
-# when PyQt5 is absent, the way HomeoJIT degrades without numba. Until then the
-# simulation core has a hard dependency on a GUI toolkit.
+# pyglet is still needed, and it is not just a pip wheel: importing it loads the
+# system libGL and libX11, which must be present on the compute nodes.
 python -m pip install \
     numpy scipy pandas matplotlib \
     deap dill tabulate \
-    pyglet PyQt5 \
+    pyglet \
     pytest
 
 # numba is optional (HomeoJIT degrades silently to a no-op decorator) but gives
@@ -85,15 +85,20 @@ import pyglet; pyglet.options['shadow_window'] = False   # no GL context on comp
 import HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct as D
 r = D.run_headless(total_steps=500, quiet=True, seed=1, start_at_rest=True)
 print('  headless OK, final_dist %.3f' % r['final_dist'])
+from Helpers import QObjectProxyEmitter as Q
+print('  Qt signals: %s' % ('on (PyQt5 installed)' if Q.QT_AVAILABLE else 'off (PyQt5 absent, not needed)'))
 "
 echo
 echo "== running the test suite:"
 # Do not let a failing test abort setup: with `set -o pipefail` a non-zero pytest
 # exit kills the pipeline and the script dies before saying it finished, which
-# reads as a broken environment when it is not.  Expect 184 passed / 1 failed --
-# HomeoUnitTest::testUnitNameUnique is order-dependent (it counts units created
-# earlier in the session) and fails in the full suite while passing alone.
-if python -m pytest -q Unit_Tests 2>&1 | tail -2; then
+# reads as a broken environment when it is not.
+# --no-qt runs the suite as this environment is meant to be: PyQt5 hidden (even in
+# an older venv that has it), the Qt GUI test modules not collected, the GA-engine
+# tests skipped.  Expect about 161 passed / 17 skipped.  A few statistical tests
+# (HomeoNoiseTest, HomeoUniselectorAshbyTest) fail intermittently, as does the
+# order-dependent HomeoUnitTest::testUnitNameUnique; rerun before worrying.
+if python -m pytest -q --no-qt Unit_Tests 2>&1 | tail -2; then
     :
 else
     echo "   (pytest reported failures -- see the tally above)"

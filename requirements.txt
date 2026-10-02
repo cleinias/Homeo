@@ -1,5 +1,9 @@
-# Core simulation
+# GUI (and, for now, the GA, whose engine lives in a GUI module).
+# Headless batch runs do not need it: the Core falls back to a null signal
+# emitter without PyQt5.
 PyQt5>=5.15
+
+# Core simulation
 numpy>=2.0
 scipy>=1.10
 matplotlib>=3.8

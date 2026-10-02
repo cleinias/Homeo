@@ -177,23 +177,27 @@ waves=$(( (n_tasks + WORKERS - 1) / WORKERS ))
 
 # Preflight: prove the chosen interpreter can import what a run needs, BEFORE
 # starting anything.  One clear message beats N identical buried tracebacks.
-# tabulate is listed because it is imported early, well before Box2D, so a
-# half-provisioned interpreter fails there and the error looks unrelated.
+# It imports the run's own modules rather than a list of packages, so it tests
+# what a task actually does: a bare `import pyglet` succeeds on a node with no
+# libGL, where importing KheperaSimulator then fails.  HomeostatConditionLogger
+# is listed because the experiment imports it lazily, inside run_headless, and
+# it is what pulls in tabulate.  PyQt5 is not needed: without it the Core falls
+# back to a null signal emitter (Helpers/QObjectProxyEmitter).
 missing=$(cd "$HOMEO_SRC/src" && "$PYTHON" - <<'PYEOF' 2>/dev/null
-import importlib, sys
-need = ['numpy', 'Box2D', 'pyglet', 'tabulate', 'PyQt5.QtCore']
-bad = []
+import importlib
+need = ['Core.Homeostat', 'Simulator.HomeoExperiments',
+        'KheperaSimulator.KheperaSimulator', 'Helpers.HomeostatConditionLogger',
+        'HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct']
 for m in need:
     try:
         importlib.import_module(m)
-    except Exception:
-        bad.append(m)
-print(' '.join(bad))
+    except Exception as e:
+        print('      %s -- %s: %s' % (m, type(e).__name__, e))
 PYEOF
 )
 if [ -n "${missing:-}" ] || ! "$PYTHON" -c 'pass' 2>/dev/null; then
     echo "!! $PYTHON cannot run the experiment." >&2
-    [ -n "${missing:-}" ] && echo "   missing modules: $missing" >&2
+    [ -n "${missing:-}" ] && printf '   cannot import:\n%s\n' "$missing" >&2
     echo "   Point PYTHON at the interpreter that has them, e.g." >&2
     echo "       PYTHON=\$HOME/homeo-venv/bin/python bash $0 $*" >&2
     echo "   or activate the venv first." >&2
