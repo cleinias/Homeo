@@ -31,6 +31,19 @@ from math import sqrt, ceil
 # far more points than a chart can show.  The first and last points are always kept.
 MAX_PLOT_POINTS = 50000
 
+# Radius, in world units, beyond which a source produces NO sensor input at all.
+# irradAtSensor() returns 0 once targetDistance exceeds the eye's maxRange, which
+# KheperaSimulator sets to kheperaEyeDefaultMaxRange = 10 -- a hard cutoff, not a
+# fade: measured over the 600,020 samples of the 2026-10-01 6M array, the largest
+# reading anywhere beyond distance 10 is exactly 0.0000, against 1.0141 at 10.0.
+# The constant is duplicated here because it is a local inside KheperaSimulator's
+# methods and cannot be imported; --sensor-range overrides it.
+#
+# Drawing it matters: outside that circle the vehicle receives nothing whatever
+# its heading, so the region is the no-input state the equilibrium analysis calls
+# an attractor.  A run ending outside the circle has reached it.
+SENSOR_MAX_RANGE = 10.0
+
 
 def main(argv):
     import argparse
@@ -42,15 +55,20 @@ def main(argv):
     parser.add_argument('--dark', action='store_true',
                         help='Treat the light source as a darkness source '
                              '(reverses the irradiance gradient)')
+    parser.add_argument('--sensor-range', type=float, default=SENSOR_MAX_RANGE,
+                        help='Radius of the no-input ring drawn around the target, '
+                             'the distance beyond which a source gives zero sensor '
+                             'input (default %(default)s). 0 omits the ring.')
     parser.add_argument('--max-points', type=int, default=MAX_PLOT_POINTS,
                         help='Thin each trajectory to at most this many plotted points '
                              '(default %(default)s)')
     args = parser.parse_args(argv[1:])
     graphTrajectories(args.traj_files, output_path=args.output, dark=args.dark,
-                      maxPoints=args.max_points)
+                      maxPoints=args.max_points, sensorRange=args.sensor_range)
 
 
-def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MAX_PLOT_POINTS):
+def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MAX_PLOT_POINTS,
+                    sensorRange=SENSOR_MAX_RANGE):
     """Chart the vehicle's trajectory with matplotlib.
 
     The background shows a radial grey gradient centered on the light
@@ -82,8 +100,9 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MA
 
     'build plot'
     fig, ax = plt.subplots()
-    xmin, xmax, ymin, ymax = _plotBounds([trajData], lightsOnDic)
+    xmin, xmax, ymin, ymax = _plotBounds([trajData], lightsOnDic, sensorRange)
     _drawIrradianceBackground(ax, lightsOnDic, (xmin, xmax, ymin, ymax), dark)
+    _drawNoInputBoundary(ax, lightsOnDic, sensorRange)
 
     ax.plot(trajData[:,0], trajData[:,1], zorder=2)
     ax.set_title(os.path.split(trajDataFilename)[1])
@@ -107,7 +126,8 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MA
     _showOrSave(fig, output_path)
 
 
-def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints=MAX_PLOT_POINTS):
+def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints=MAX_PLOT_POINTS,
+                      sensorRange=SENSOR_MAX_RANGE):
     """Chart several trajectories on the same axes.
 
     Each trajectory gets its own colour; its end point is marked with a dot of
@@ -132,7 +152,7 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     target = _mainTarget(lightsOnDic)
     colors = _distinctColors(len(runs))
 
-    xmin, xmax, ymin, ymax = _plotBounds([t for _, t, _ in runs], lightsOnDic)
+    xmin, xmax, ymin, ymax = _plotBounds([t for _, t, _ in runs], lightsOnDic, sensorRange)
     # Size the figure to the data's aspect ratio (equal axes would otherwise leave
     # empty bands), plus room for the title, x label and legend rows.
     interactive = output_path is None
@@ -144,6 +164,7 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     fig, ax = plt.subplots(figsize=(width, plotHeight + 1.0 + 0.25 * legendRows),
                            layout='constrained')
     _drawIrradianceBackground(ax, lightsOnDic, (xmin, xmax, ymin, ymax), dark)
+    _drawNoInputBoundary(ax, lightsOnDic, sensorRange)
 
     finalDistances = []
     runArtists = []      # per run: [trajectory line, end marker, start marker]
@@ -302,11 +323,20 @@ def _distance(target, pos):
     return sqrt((target[0] - pos[0])**2 + (target[1] - pos[1])**2)
 
 
-def _plotBounds(trajectories, lightsOnDic):
+def _plotBounds(trajectories, lightsOnDic, boundaryRadius=0.0):
     """Axis limits enclosing every trajectory and every source, plus a margin
-       (at least 1.5, or 5% of the larger span for trajectories that roam far)."""
+       (at least 1.5, or 5% of the larger span for trajectories that roam far).
+
+       boundaryRadius, when given, also encloses the no-input ring around the
+       main target: a run that never leaves the lit region would otherwise put
+       the ring outside the axes, where it cannot be seen."""
     xs = [t[:,0] for t in trajectories] + [np.array([s[0] for s in lightsOnDic.values()] or [0])]
     ys = [t[:,1] for t in trajectories] + [np.array([s[1] for s in lightsOnDic.values()] or [0])]
+    if boundaryRadius:
+        target = _mainTarget(lightsOnDic)
+        if target is not None:
+            xs.append(np.array([target[0] - boundaryRadius, target[0] + boundaryRadius]))
+            ys.append(np.array([target[1] - boundaryRadius, target[1] + boundaryRadius]))
     xmin = min(x.min() for x in xs); xmax = max(x.max() for x in xs)
     ymin = min(y.min() for y in ys); ymax = max(y.max() for y in ys)
     margin = max(1.5, 0.05 * max(xmax - xmin, ymax - ymin))
@@ -339,6 +369,26 @@ def _drawIrradianceBackground(ax, lightsOnDic, bounds, dark):
     gray = 0.45 + 0.55 * gray
     ax.imshow(gray, extent=[xmin, xmax, ymin, ymax], origin='lower',
               cmap='gray', vmin=0, vmax=1, aspect='equal', zorder=0)
+
+
+def _drawNoInputBoundary(ax, lightsOnDic, radius=SENSOR_MAX_RANGE):
+    """Ring each source at the radius beyond which it gives no sensor input.
+
+    Everything outside the ring is the no-input region: zero irradiance at any
+    heading, so the vehicle is driven by nothing but its own noise.
+    """
+    if not radius:
+        return
+    target = _mainTarget(lightsOnDic)
+    if target is None:
+        return
+    ax.add_artist(Circle((target[0], target[1]), radius, fill=False,
+                         edgecolor='#5c5b54', linestyle=(0, (6, 4)), linewidth=1.2,
+                         alpha=0.9, zorder=2.5))
+    ax.annotate('no input beyond r=%g' % radius,
+                xy=(target[0], target[1] + radius), xytext=(0, 4),
+                textcoords='offset points', ha='center', va='bottom',
+                fontsize=7, color='#5c5b54', zorder=2.5)
 
 
 def _drawSources(ax, lightsOnDic, asMarkers=False):
