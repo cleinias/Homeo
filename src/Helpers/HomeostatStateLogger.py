@@ -96,6 +96,14 @@ class HomeostatStateLogger:
                      '%s_velocity' % name, '%s_torque' % name,
                      '%s_stress' % name]
         cols += self._conn_keys
+        # Cumulative uniselector firings, for the units that have one active.
+        # Discrete (Ashby) uniselectors fire; the continuous OU one never does,
+        # and its column simply stays 0, which is itself the thing worth seeing.
+        self._has_unisel = [bool(getattr(u, 'uniselectorActive', False))
+                            for u in self._units]
+        for i, name in enumerate(self._unit_names):
+            if self._has_unisel[i]:
+                cols.append('unisel_fires_%s' % name)
         for i, name in enumerate(self._unit_names):
             if self._has_ou[i]:
                 cols.append('sigma_%s' % name)
@@ -198,6 +206,11 @@ class HomeostatStateLogger:
                 _, unit, conn = source
                 w = conn.weight * conn.switch
             vals.append('%.6f' % w)
+
+        # Cumulative uniselector firing counts
+        for i, unit in enumerate(self._units):
+            if self._has_unisel[i]:
+                vals.append('%d' % getattr(unit, 'uniselectorActivationCount', 0))
 
         # OU sigma columns
         for i, unit in enumerate(self._units):

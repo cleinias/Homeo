@@ -216,6 +216,13 @@ class HomeoUnit(object):
         self._needleCompMethod = HomeoUnit.DefaultParameters['needleCompMethod']
         self._uniselectorActive = HomeoUnit.DefaultParameters['uniselectorActive']
         self._uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
+        '''How many times this unit's uniselector has actually fired, cumulative
+           over the run.  uniselectorActivated is a per-tick flag, cleared on the
+           very next tick, and the criticality check runs every
+           uniselectorTimeInterval (100) ticks -- so sampling the flag from a
+           state log at any coarser interval silently misses firings.  A monotone
+           counter is exact at any sampling interval.'''
+        self.uniselectorActivationCount = 0
         self._critThreshold = HomeoUnit.DefaultParameters['critThreshold']
         
         '''A new unit is turned off, hence its velocity is 0, and 
@@ -1230,6 +1237,7 @@ class HomeoUnit(object):
                             sys.stderr.write(('############################################Operating uniselector for unit %s' % self.name))
                         self.operateUniselector()
                         self.uniselectorActivated = 1
+                        self.uniselectorActivationCount += 1
                     else:
                         self.uniselectorActivated = 0
                     self.uniselectorTime = 0
