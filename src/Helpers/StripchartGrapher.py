@@ -92,6 +92,22 @@ def unitsIn(columns):
     return seen
 
 
+def valueNames(columns):
+    "The value parts a unit column can carry, e.g. critDev, stress, sigma."
+    units = unitsIn(columns)
+    out = []
+    for c in columns:
+        for u in units:
+            v = None
+            if c.startswith(u + '_'):
+                v = c[len(u) + 1:]
+            elif c.endswith('_' + u):
+                v = c[:-(len(u) + 1)].replace('unisel_', '')
+            if v and v not in out:
+                out.append(v)
+    return out
+
+
 def resolveSeries(columns, units, values, crossOnly, explicit):
     """Work out which columns to draw, and what to call them.
 
@@ -120,18 +136,32 @@ def resolveSeries(columns, units, values, crossOnly, explicit):
 
     known = unitsIn(columns)
     for value in values:
+        # A full column name given to --value is accepted as itself.  --column is
+        # the documented flag for that, but typing the name you can see in --list
+        # is the obvious move, and refusing it taught nothing: the old failure
+        # went looking for 'Left Motor_Left Motor_critDev', found nothing, and
+        # reported "nothing to draw: give --value", which the user just had.
+        if value in columns:
+            chosen.append((value, value))
+            continue
         wanted = units or known
+        matched = False
         for u in wanted:
             # sigma and the firing count are prefixed, the rest suffixed
             for cand in ('%s_%s' % (u, value), '%s_%s' % (value, u),
                          'unisel_%s_%s' % (value, u)):
                 if cand in columns:
                     chosen.append((cand, '%s %s' % (u, value)))
+                    matched = True
                     break
-            else:
-                if units:
-                    raise SystemExit(
-                        "unit %r has no value %r in this log; --list shows the columns" % (u, value))
+        if not matched:
+            raise SystemExit(
+                "no value %r here.\n"
+                "  --value takes the value part of a unit column (%s),\n"
+                "  combined with --unit (%s); a whole column name works too.\n"
+                "  --list shows every column in the file."
+                % (value, ', '.join(valueNames(columns)) or 'none found',
+                   ', '.join(known) or 'none found'))
 
     if not chosen:
         raise SystemExit('nothing to draw: give --value, --column or --cross (--list shows the columns)')
