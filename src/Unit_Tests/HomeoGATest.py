@@ -322,6 +322,65 @@ class GAGuiReexportTest(unittest.TestCase):
             self.assertIs(getattr(gui, name), getattr(engine, name), name)
 
 
+@unittest.skipUnless(HAS_BOX2D, "Box2D not installed — HOMEO backend unavailable")
+@unittest.skipUnless(HAS_QT_WIDGETS, "PyQt5 not installed — the GA GUI module needs it")
+class GAGuiSeedTest(unittest.TestCase):
+    """The GA GUI's seed field seeds the whole run."""
+
+    @classmethod
+    def setUpClass(cls):
+        from unittest import mock
+        from PyQt5.QtWidgets import QApplication, QMessageBox
+        from Simulator.HomeoGenAlg import HomeoGASimulation
+        cls.app = QApplication.instance() or QApplication([])
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.savedRoot = HomeoGASimulation.dataDirRoot
+        HomeoGASimulation.dataDirRoot = cls.tmp.name
+        cls.mock, cls.QMessageBox = mock, QMessageBox
+
+    @classmethod
+    def tearDownClass(cls):
+        from Simulator.HomeoGenAlg import HomeoGASimulation
+        HomeoGASimulation.dataDirRoot = cls.savedRoot
+        cls.tmp.cleanup()
+
+    def _guiRun(self, seed):
+        """Run a 4-individual, 1-generation GA from the GUI; return what it evaluated."""
+        from Simulator.HomeoGenAlgGui import HomeoGASimulGUI
+        gui = HomeoGASimulGUI()
+        gui.noIndividualsSpinBox.setValue(4)
+        gui.stepsSpinBox.setValue(100)
+        gui.generationsSpinBox.setValue(1)
+        gui.workersSpinBox.setValue(1)
+        gui.experimentComboBox.setCurrentText(
+            "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt")
+        gui.seedSpinBox.setValue(seed)
+        gui._initializePopulation()
+        self.assertEqual(gui.gaSimulation.randomSeed, seed)
+
+        def fail(*args):                  # an error dialog would block the test
+            raise RuntimeError(args[2])
+        # stdout redirection into the output pane is not what is tested here
+        with self.mock.patch.object(self.QMessageBox, 'critical', side_effect=fail), \
+             self.mock.patch.object(gui, '_redirectStdout'), \
+             self.mock.patch.object(gui, '_restoreStdout'):
+            gui._startEvolution()
+        return [(r['indivId'], list(r['fitness']), r['genome'], r['evalSeed'])
+                for r in gui.gaSimulation.logbook if 'indivId' in r]
+
+    def testSeedFieldMakesGuiRunsReproducible(self):
+        "the same seed gives the same run, another seed another run"
+        first = self._guiRun(7)
+        self.assertEqual(self._guiRun(7), first)
+        self.assertNotEqual(self._guiRun(8), first)
+
+    def testSeedFieldDefaultsTo64(self):
+        "the field starts at 64, the seed GUI runs always used"
+        from Simulator.HomeoGenAlgGui import HomeoGASimulGUI
+        gui = HomeoGASimulGUI()           # keep a reference: Qt deletes an unreferenced widget
+        self.assertEqual(gui.seedSpinBox.value(), 64)
+
+
 class StatFileDecoderTest(unittest.TestCase):
     """Tests for stat file decoding"""
 

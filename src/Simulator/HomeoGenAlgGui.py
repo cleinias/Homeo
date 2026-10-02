@@ -169,6 +169,14 @@ class HomeoGASimulGUI(QWidget):
         self.workersSpinBox.setValue(4)
         self.workersSpinBox.setToolTip("Number of parallel worker processes (HOMEO backend only)")
 
+        self.seedSpinBox = QSpinBox()
+        self.seedSpinBox.setRange(0, 2**31 - 1)
+        self.seedSpinBox.setValue(64)
+        self.seedSpinBox.setToolTip(
+            "Seed for the whole run: the initial population, selection, crossover,\n"
+            "mutation and every fitness evaluation's noise.  The same seed and\n"
+            "parameters give the same run, whatever the number of workers.")
+
         self.experimentComboBox = QComboBox()
         self.experimentComboBox.addItems([
             "initializeBraiten2_2_Full_GA_phototaxis",
@@ -201,6 +209,7 @@ class HomeoGASimulGUI(QWidget):
         paramLayout.addRow("Indiv. mutation prob:", self.indivProbSpinBox)
         paramLayout.addRow("Tournament size:", self.tournamentSpinBox)
         paramLayout.addRow("Workers:", self.workersSpinBox)
+        paramLayout.addRow("Random seed:", self.seedSpinBox)
         paramLayout.addRow("Experiment:", self.experimentComboBox)
         paramLayout.addRow(self.noNoiseCheckBox)
         paramLayout.addRow(self.noUniselCheckBox)
@@ -267,9 +276,11 @@ class HomeoGASimulGUI(QWidget):
         popType = self.popTypeComboBox.currentText()
         if popType == "Clones" and self._clonableGenome is not None:
             self._population = self.gaSimulation.generatePopOfClones(
-                cloneName=self._clonableGenome.get('indivId', 'clone'))
+                cloneName=self._clonableGenome.get('indivId', 'clone'),
+                randomSeed=self.seedSpinBox.value())
         else:
-            self._population = self.gaSimulation.generateRandomPop()
+            self._population = self.gaSimulation.generateRandomPop(
+                randomSeed=self.seedSpinBox.value())
 
         gens = self.generationsSpinBox.value()
         self.generationProgressBar.setRange(0, gens + 1)
@@ -278,7 +289,8 @@ class HomeoGASimulGUI(QWidget):
         self.currentFitnessLineEdit.clear()
 
         self.startPushButton.setEnabled(True)
-        self.outputPane.append("Population of %d individuals initialized.\n" % popSize)
+        self.outputPane.append("Population of %d individuals initialized (seed %d).\n"
+                               % (popSize, self.seedSpinBox.value()))
 
     def _startEvolution(self):
         """Run the GA evolution synchronously on the main thread.
@@ -394,7 +406,7 @@ class HomeoGASimulGUI(QWidget):
                   self.indivProbSpinBox, self.tournamentSpinBox,
                   self.experimentComboBox, self.noNoiseCheckBox,
                   self.noUniselCheckBox, self.useDummyFitnessCheckBox,
-                  self.popTypeComboBox):
+                  self.popTypeComboBox, self.seedSpinBox):
             w.setEnabled(enabled)
         self.cloneFileButton.setEnabled(
             enabled and self.popTypeComboBox.currentText() == "Clones")

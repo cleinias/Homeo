@@ -15,6 +15,10 @@ Usage:
     python run_direct_vehicle_ga.py --exp 1          # run experiment 1 only
     python run_direct_vehicle_ga.py --exp 2 --workers 4
     python run_direct_vehicle_ga.py --pop 150 --gen 50   # override defaults
+    python run_direct_vehicle_ga.py --noise-scheme genome
+                                    # how evaluations get their noise: individual
+                                    # (default), genome or generation -- see
+                                    # NOISE_SCHEMES in Simulator/HomeoGenAlg.py
 """
 
 import sys
@@ -33,6 +37,7 @@ SIMS_DATA = simulations_data_dir()
 DEFAULT_POP_SIZE = 150
 DEFAULT_GENERATIONS = 50
 DEFAULT_STEPS = 60000
+DEFAULT_NOISE_SCHEME = 'individual'
 
 
 # ---------------------------------------------------------------------------
@@ -41,7 +46,7 @@ DEFAULT_STEPS = 60000
 
 def run_ga_experiment(exp_num, exp_name, n_workers, seed,
                       pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
-                      steps=DEFAULT_STEPS):
+                      steps=DEFAULT_STEPS, noise_scheme=DEFAULT_NOISE_SCHEME):
     """Run a GA experiment with progress callback."""
     from Simulator.HomeoGenAlg import HomeoGASimulation
 
@@ -54,10 +59,11 @@ def run_ga_experiment(exp_num, exp_name, n_workers, seed,
 
     ga = HomeoGASimulation(
         stepsSize=steps, popSize=pop_size, generSize=generations,
-        exp=exp_name, simulatorBackend="HOMEO", nWorkers=n_workers)
+        exp=exp_name, simulatorBackend="HOMEO", nWorkers=n_workers,
+        noiseScheme=noise_scheme)
 
-    print("PROGRESS: Exp %d started — %s (%d pop x %d gen, %d workers)" % (
-        exp_num, exp_name, pop_size, generations, n_workers), flush=True)
+    print("PROGRESS: Exp %d started — %s (%d pop x %d gen, %d workers, seed %d, noise %s)" % (
+        exp_num, exp_name, pop_size, generations, n_workers, seed, noise_scheme), flush=True)
 
     pop = ga.generateRandomPop(randomSeed=seed)
     ga.runGaSimulation(pop, progressCallback=progress)
@@ -67,28 +73,29 @@ def run_ga_experiment(exp_num, exp_name, n_workers, seed,
 
 
 def run_exp1(n_workers, pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
-             steps=DEFAULT_STEPS):
+             steps=DEFAULT_STEPS, noise_scheme=DEFAULT_NOISE_SCHEME):
     """Exp 1: Direct 2+2, GA + OU, fixed dt_fast=1.0, 8-gene genome."""
     run_ga_experiment(1,
         "initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt",
         n_workers, seed=44, pop_size=pop_size, generations=generations,
-        steps=steps)
+        steps=steps, noise_scheme=noise_scheme)
 
 
 def run_exp2(n_workers, pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
-             steps=DEFAULT_STEPS):
+             steps=DEFAULT_STEPS, noise_scheme=DEFAULT_NOISE_SCHEME):
     """Exp 2: Direct 2+2, GA + OU, evolvable dt_fast, 10-gene genome."""
     run_ga_experiment(2,
         "initializeBraiten2_direct_GA_continuous_weightfree_fixed",
         n_workers, seed=45, pop_size=pop_size, generations=generations,
-        steps=steps)
+        steps=steps, noise_scheme=noise_scheme)
 
 
 # ---------------------------------------------------------------------------
 # Subprocess entry point (--exp N)
 # ---------------------------------------------------------------------------
 
-def run_single(exp_num, n_workers, pop_size, generations, steps):
+def run_single(exp_num, n_workers, pop_size, generations, steps,
+               noise_scheme=DEFAULT_NOISE_SCHEME):
     os.chdir(SRC_DIR)
     if SRC_DIR not in sys.path:
         sys.path.insert(0, SRC_DIR)
@@ -98,7 +105,7 @@ def run_single(exp_num, n_workers, pop_size, generations, steps):
         2: run_exp2,
     }
     runners[exp_num](n_workers, pop_size=pop_size, generations=generations,
-                     steps=steps)
+                     steps=steps, noise_scheme=noise_scheme)
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +113,7 @@ def run_single(exp_num, n_workers, pop_size, generations, steps):
 # ---------------------------------------------------------------------------
 
 def orchestrate(pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
-                steps=DEFAULT_STEPS):
+                steps=DEFAULT_STEPS, noise_scheme=DEFAULT_NOISE_SCHEME):
     timestamp = time.strftime('%Y-%m-%d-%H-%M-%S')
     log_dir = os.path.join(SIMS_DATA,
                            'direct-vehicle-ga-' + timestamp)
@@ -122,6 +129,7 @@ def orchestrate(pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
     print("  Population   : %d" % pop_size)
     print("  Generations  : %d" % generations)
     print("  Steps/indiv  : %d" % steps)
+    print("  Noise scheme : %s" % noise_scheme)
     print("  Log directory: %s" % os.path.abspath(log_dir))
     print("  CPU cores    : %d" % n_cores)
     print("  GA workers   : %d per experiment" % workers_per_ga)
@@ -141,7 +149,8 @@ def orchestrate(pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
                '--workers', str(workers_per_ga),
                '--pop', str(pop_size),
                '--gen', str(generations),
-               '--steps', str(steps)]
+               '--steps', str(steps),
+               '--noise-scheme', noise_scheme]
         log_path = os.path.join(log_dir, 'exp%d.log' % exp_num)
         log_file = open(log_path, 'w', buffering=1)
         proc = subprocess.Popen(
@@ -200,12 +209,19 @@ if __name__ == '__main__':
         generations = int(sys.argv[sys.argv.index('--gen') + 1])
     if '--steps' in sys.argv:
         steps = int(sys.argv[sys.argv.index('--steps') + 1])
+    noise_scheme = DEFAULT_NOISE_SCHEME
+    if '--noise-scheme' in sys.argv:
+        noise_scheme = sys.argv[sys.argv.index('--noise-scheme') + 1]
+        from Simulator.HomeoGenAlg import NOISE_SCHEMES
+        if noise_scheme not in NOISE_SCHEMES:
+            sys.exit("--noise-scheme must be one of %s, got %r"
+                     % (', '.join(NOISE_SCHEMES), noise_scheme))
 
     if '--exp' in sys.argv:
         exp_num = int(sys.argv[sys.argv.index('--exp') + 1])
         workers = 3
         if '--workers' in sys.argv:
             workers = int(sys.argv[sys.argv.index('--workers') + 1])
-        run_single(exp_num, workers, pop_size, generations, steps)
+        run_single(exp_num, workers, pop_size, generations, steps, noise_scheme)
     else:
-        orchestrate(pop_size, generations, steps)
+        orchestrate(pop_size, generations, steps, noise_scheme)
