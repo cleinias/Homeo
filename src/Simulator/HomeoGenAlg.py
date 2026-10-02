@@ -717,7 +717,8 @@ class HomeoGASimulation(object):
         self.recordGADataToLogbook(timeElapsed, pop)   
         logbookFilename = self.getTimeFormattedCompleteFilename(timeStarted, 'Logbook', 'lgb')
         try:
-            dump(self.logbook, open(logbookFilename, "wb"))
+            with open(logbookFilename, "wb") as f:
+                dump(self.logbook, f)
         except IOError: #as e:
             #sys.stderr.write("Could not save the logbook to file:" + e.__str__ + "\n")
             print("Could not save the logbook to file:") #, e.__str__
@@ -728,7 +729,8 @@ class HomeoGASimulation(object):
            the simulation started and save it in current directory"""
         historyFilename = self.getTimeFormattedCompleteFilename(timeStarted, 'History', 'hist')
         try:
-            dump(self.hist, open(historyFilename, "wb"))
+            with open(historyFilename, "wb") as f:
+                dump(self.hist, f)
         except IOError: #as e:
             #sys.stderr.write("Could not save the logbook to file:" + e.__str__ + "\n")
             print("Could not save the history to file:") #, e.__str__
