@@ -18,8 +18,19 @@ directory, which is the only place early enough for it to take effect.
 
 Only applied when there is genuinely no display, so a normal desktop run is
 unaffected and the GUI tests keep exercising real windows.
+
+It also adds the --no-qt option, which runs the suite as if PyQt5 were not
+installed: the simulation core must work without it (Helpers/QObjectProxyEmitter
+falls back to a null emitter), and this is how that is tested on a machine that
+does have PyQt5.  With the option, PyQt5 imports are blocked before any test
+module is collected, and the two modules that test Qt GUI code are not
+collected at all.  Without it, nothing here changes.
 """
 import os
+import sys
+import importlib.abc
+
+import pytest
 
 if not (os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY')):
     try:
@@ -30,7 +41,58 @@ if not (os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY')):
     except Exception:          # pyglet missing or too old to have the option
         pass
 
-    # Qt is only used for its signal/slot machinery in headless runs (the Core
-    # classes emit through a QObject), but a GUI test that constructs a widget
-    # needs a platform plugin that does not require a display.
+    # A GUI test that constructs a Qt widget needs a platform plugin that does
+    # not require a display.
     os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+
+
+# --no-qt ---------------------------------------------------------------------
+
+# Test modules that exercise Qt GUI code and import PyQt5 at module level.
+_QT_GUI_TEST_MODULES = ('HelpersGUITest.py', 'HomeoQtSimulationTest.py')
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        '--no-qt', action='store_true', default=False,
+        help='run as if PyQt5 were not installed: block its import and skip '
+             'the Qt GUI test modules')
+
+
+class _BlockPyQt5(importlib.abc.MetaPathFinder):
+    """Makes every import of PyQt5 fail as if it were not installed."""
+
+    def find_spec(self, fullname, path, target=None):
+        if fullname == 'PyQt5' or fullname.startswith('PyQt5.'):
+            raise ModuleNotFoundError(
+                "No module named %r (blocked by pytest --no-qt)" % fullname,
+                name=fullname)
+        return None
+
+
+def pytest_configure(config):
+    if not config.getoption('--no-qt'):
+        return
+    # The emitter decides at import time whether Qt is there, so the block must
+    # be in place before anything imports PyQt5.  If something (a plugin, say)
+    # already has, blocking now would silently test the Qt path instead.
+    loaded = sorted(m for m in sys.modules
+                    if m == 'PyQt5' or m.startswith('PyQt5.'))
+    if loaded:
+        raise pytest.UsageError(
+            '--no-qt: PyQt5 was imported before the suite started (%s), so it '
+            'cannot be hidden from the tests' % ', '.join(loaded))
+    sys.meta_path.insert(0, _BlockPyQt5())
+
+
+def pytest_ignore_collect(collection_path, config):
+    if config.getoption('--no-qt') and collection_path.name in _QT_GUI_TEST_MODULES:
+        return True
+    return None
+
+
+def pytest_report_header(config):
+    if config.getoption('--no-qt'):
+        return ('--no-qt: PyQt5 imports blocked; not collecting %s'
+                % ', '.join(_QT_GUI_TEST_MODULES))
+    return None

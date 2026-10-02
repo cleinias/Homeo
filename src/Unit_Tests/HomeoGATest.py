@@ -29,6 +29,16 @@ try:
 except ImportError:
     HAS_BOX2D = False
 
+# HomeoGASimulation lives in Simulator/HomeoGenAlgGui.py, a GUI module that
+# imports PyQt5 at module level, and runs each individual through
+# HomeoQtSimulation, a QObject.  So, unlike a headless phototaxis run, the GA
+# still needs PyQt5 (see the research journal TODO, 2026-10-02).
+try:
+    import PyQt5.QtWidgets
+    HAS_QT = True
+except ImportError:
+    HAS_QT = False
+
 
 class GenomeDecoderTest(unittest.TestCase):
     """Tests for genome encoding/decoding utilities"""
@@ -177,6 +187,7 @@ class GenomeDecoderTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed — HOMEO backend unavailable")
+@unittest.skipUnless(HAS_QT, "PyQt5 not installed — the GA engine still requires it")
 class HomeoGASimulationTest(unittest.TestCase):
     """Tests for HomeoGASimulation class — HOMEO backend only"""
 
@@ -272,6 +283,7 @@ class HomeoGASimulationTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed — HOMEO backend unavailable")
+@unittest.skipUnless(HAS_QT, "PyQt5 not installed — the GA engine still requires it")
 class HomeoGASimulationTrimmedGenomeTest(unittest.TestCase):
     """Test that 6-unit system with 4 evolved units produces trimmed genome"""
 
