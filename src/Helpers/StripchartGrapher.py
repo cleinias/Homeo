@@ -351,7 +351,12 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
         heights.append(6)
         heights.extend([1] * (extra - 1))
     nSeries = len({lab for s_ in strips for _, lab, _ in s_[2]})
-    titleIn, legendIn, bottomIn = 0.52, (0.30 if nSeries > 1 else 0.0), 0.55
+    # Reserve room for the legend's ACTUAL number of rows: a fixed allowance
+    # fitted one row, and a seven-series chart wrapped onto two and sat on the
+    # first strip's upper bound rule.
+    legendCols = min(5, max(1, nSeries))
+    legendRows = -(-nSeries // legendCols) if nSeries > 1 else 0
+    titleIn, legendIn, bottomIn = 0.52, 0.26 * legendRows, 0.55
     plotIn = 0.30 * sum(heights)
     figH = plotIn + titleIn + legendIn + bottomIn
     fig = plt.figure(figsize=(12, figH))
@@ -397,7 +402,7 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
     if len(handles) > 1:
         fig.legend(handles, labels, loc='upper center',
                    bbox_to_anchor=(0.5, 1 - titleIn / figH),
-                   ncol=min(5, len(handles)), frameon=False, fontsize=8, labelcolor=INK)
+                   ncol=legendCols, frameon=False, fontsize=8, labelcolor=INK)
 
     for ax in axes[:-1]:
         ax.set_xticklabels([])
