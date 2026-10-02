@@ -19,6 +19,11 @@ from pickle import dump
 from Simulator.HomeoQtSimulation import HomeoQtSimulation
 import Simulator.HomeoExperiments
 import numpy as np
+import random
+import re
+import zlib
+from contextlib import contextmanager
+from Core.HomeoJIT import seed_jit_rng
 import datetime
 from operator import attrgetter
 import multiprocessing
@@ -30,6 +35,82 @@ from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDe
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO,SimulatorBackendVREP,SimulatorBackendWEBOTS
 from threading import Lock
 from glob import glob
+
+
+# --- Reproducible evaluations ---
+#
+# A GA run draws from four random streams: numpy and Python's `random` in the
+# parent (the initial population; DEAP's selection, crossover and mutation; the
+# crossover/mutation coin flips), and, during each fitness evaluation, numpy
+# (the homeostat's initial values as it is built) and numba's own state (all the
+# noise while it runs).  Each evaluation gets its own seed, `evalSeed`, derived
+# from the GA's seed by the run's noise scheme and attached to the individual
+# before it is evaluated, so that it travels to a pool worker with the genome
+# and is logged with the fitness it produced.  The evaluation seeds its streams
+# from it; the serial path then restores the parent's numpy and `random` states,
+# so evaluations never shift the GA's own draws and a run gives the same result
+# with any number of workers.
+
+NOISE_SCHEMES = ('individual', 'genome', 'generation')
+"""How evaluations get their noise -- a research choice, so it is a GA parameter:
+   'individual'  each evaluation its own sequence, keyed by the individual's ID:
+                 independent noise per evaluation, as before seeding existed;
+   'genome'      keyed by the genome's exact values: identical genomes face the
+                 same noise and score the same;
+   'generation'  keyed by the generation: everyone in a generation faces the
+                 same noise (common random numbers)."""
+
+
+def _id_key(ID):
+    "Integers identifying an individual's ID: (generation, index) for 'GGG-III' IDs"
+    m = re.fullmatch(r'(\d+)-(\d+)', str(ID))
+    if m:
+        return [0, int(m.group(1)), int(m.group(2))]
+    return [1, zlib.crc32(str(ID).encode())]
+
+
+def evaluation_seed(gaSeed, noiseScheme, ind, generation):
+    """The seed for evaluating individual `ind`, created in `generation`, in a GA
+       run seeded with `gaSeed` (a non-negative int), under `noiseScheme`.
+
+       Derived through numpy's SeedSequence, so it is the same on every machine
+       and Python version (unlike hash()), and fits np.random.seed."""
+    if noiseScheme == 'individual':
+        key = [0] + _id_key(ind.ID)
+    elif noiseScheme == 'genome':
+        genes = np.asarray(list(ind), dtype=np.float64)
+        key = [1] + np.frombuffer(genes.tobytes(), dtype=np.uint32).tolist()
+    elif noiseScheme == 'generation':
+        key = [2, int(generation)]
+    else:
+        raise ValueError("noiseScheme must be one of %s, got %r" % (NOISE_SCHEMES, noiseScheme))
+    return int(np.random.SeedSequence([int(gaSeed)] + key).generate_state(1)[0])
+
+
+def seed_evaluation(seed):
+    """Seed every random stream a fitness evaluation draws from."""
+    np.random.seed(seed)       # numpy at Python level: building the homeostat
+    seed_jit_rng(seed)         # numba's own state: the noise while it runs
+    random.seed(seed)          # Python's random: HomeoNoise's non-JIT path
+
+
+@contextmanager
+def seeded_evaluation(seed):
+    """Run the enclosed evaluation from `seed`, then give the caller back its
+       numpy and Python `random` states.  A seed of None changes nothing (an
+       individual created outside a GA run has none).  Numba's state is not
+       restored: the GA itself never draws from it."""
+    if seed is None:
+        yield
+        return
+    numpy_state = np.random.get_state()
+    random_state = random.getstate()
+    seed_evaluation(seed)
+    try:
+        yield
+    finally:
+        np.random.set_state(numpy_state)
+        random.setstate(random_state)
 
 
 # --- Module-level configuration for multiprocessing workers ---
@@ -58,6 +139,12 @@ def _init_worker(config):
 
 
 def _evaluate_genome_worker(genome):
+    """Pool entry point: evaluate `genome` from its evalSeed (see seeded_evaluation)."""
+    with seeded_evaluation(getattr(genome, 'evalSeed', None)):
+        return _run_genome_evaluation(genome)
+
+
+def _run_genome_evaluation(genome):
     """Standalone fitness evaluation for use with multiprocessing.Pool.
 
     Creates its own SimulatorBackendHOMEO and HomeoQtSimulation per call,
@@ -156,8 +243,13 @@ class HomeoGASimulation(object):
                                    debugging = None,
                                    simulatorBackend = "VREP",
                                    vrepPort = None,
-                                   nWorkers = 1):
+                                   nWorkers = 1,
+                                   noiseScheme = 'individual'):
         
+        if noiseScheme not in NOISE_SCHEMES:
+            raise ValueError("noiseScheme must be one of %s, got %r" % (NOISE_SCHEMES, noiseScheme))
+        self.noiseScheme = noiseScheme
+        self.randomSeed = None          # set by generateRandomPop / generatePopOfClones
         self.worldBeingResetLock = Lock()
         self._stopRequested = False
         timeElapsed = None
@@ -285,7 +377,7 @@ class HomeoGASimulation(object):
             print("Using %d worker processes for parallel evaluation" % nWorkers)
         else:
             self.toolbox.register('map', map)
-            self.toolbox.register("evaluate", self.evaluateGenomeFitness)
+            self.toolbox.register("evaluate", self.evaluateGenomeFitnessSeeded)
 
         hDebug('ga',("Population defined.\nIndividual defined with genome size = " + str(self.genomeSize) +"\n"))
 
@@ -334,7 +426,9 @@ class HomeoGASimulation(object):
                             finalPop = len(pop),
                             finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop],
                             type = self._type,
-                            cloneName = clone) 
+                            cloneName = clone,
+                            randomSeed = self.randomSeed,
+                            noiseScheme = self.noiseScheme) 
 
 
         #=======================================================================
@@ -390,10 +484,20 @@ class HomeoGASimulation(object):
             ind.fitness.values = genome['fitness']
         return ind
 
-    def generatePopOfClones(self, cloneName =''):
+    def seedGA(self, randomSeed):
+        """Seed the GA's own random streams -- numpy (initial population,
+           crossover/mutation coin flips) and Python's random (DEAP's selection,
+           crossover and mutation) -- and remember the seed: every evaluation's
+           seed is derived from it."""
+        self.randomSeed = int(randomSeed)
+        np.random.seed(self.randomSeed)
+        random.seed(self.randomSeed)
+
+    def generatePopOfClones(self, cloneName ='', randomSeed = 64):
         """Generate a population of identical clones from
            genome stored in self.clonableGenome""" 
 
+        self.seedGA(randomSeed)
         self._type = "clones"
         self._cloneName = cloneName
         return self.toolbox.popClones(n=self.popSize)
@@ -401,7 +505,7 @@ class HomeoGASimulation(object):
     def generateRandomPop(self, randomSeed = 64):
         """Generate a population of random individual with given random seed"""
         
-        np.random.seed(randomSeed)   # For repeatable experiments
+        self.seedGA(randomSeed)   # For repeatable experiments
         self._type = 'random'
         return self.toolbox.population(n=self.popSize)
 
@@ -420,10 +524,15 @@ class HomeoGASimulation(object):
         self._stopRequested = False
         timeStarted = time()
         timeElapsed = None
+        if self.randomSeed is None:
+            print("No GA seed set (population not made by generateRandomPop or "
+                  "generatePopOfClones): seeding with 64")
+            self.seedGA(64)
         try:
             gen = 0
             for i, ind in enumerate(pop):
                 ind.ID = str(gen).zfill(self.IDPad)+"-"+str(i+1).zfill(self.IDPad)
+            self.assignEvalSeeds(pop, gen)
 
 
             print("Start of evolution")
@@ -434,7 +543,8 @@ class HomeoGASimulation(object):
             for ind, fit in zip(pop, fitnesses):
                 ind.fitness.values = fit
                 "record the data about the newly evaluated individual's genome in the logbook"
-                self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
+                self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind),
+                                    evalSeed = ind.evalSeed)
             self.hof.update(pop)
             self.hist.update(pop)
             print("  Evaluated %i individuals" % len(pop))
@@ -504,6 +614,7 @@ class HomeoGASimulation(object):
                     #print "Now changed to: ", ind.ID
 
                 'Re-evaluate'
+                self.assignEvalSeeds(invalid_ind, g+1)
                 fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
                 for ind, fit in zip(invalid_ind, fitnesses):
                     if self._stopRequested:
@@ -511,7 +622,8 @@ class HomeoGASimulation(object):
                     ind.fitness.values = fit
 
                     "record the data about the newly evaluated individual's genome in the logbook"
-                    self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind))
+                    self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind),
+                                        evalSeed = ind.evalSeed)
                     #print "direct ind's name is %s and fitness is: %.2f" %(ind.ID, ind.fitness.values[0])
 
                 hDebug('eval', str(len(invalid_ind)) + " individuals evaluated")
@@ -744,6 +856,17 @@ class HomeoGASimulation(object):
         finalDis = np.random.normal(loc=3, scale = 3)
         return finalDis,                   # Return a tuple, as required by DEAP (vide trailing comma)
     
+    def assignEvalSeeds(self, individuals, generation):
+        """Give each individual about to be evaluated its evaluation seed."""
+        for ind in individuals:
+            ind.evalSeed = evaluation_seed(self.randomSeed, self.noiseScheme, ind, generation)
+
+    def evaluateGenomeFitnessSeeded(self, genome):
+        """Serial-path evaluation: evaluateGenomeFitness from the genome's
+           evalSeed, leaving the GA's own random streams as they were."""
+        with seeded_evaluation(getattr(genome, 'evalSeed', None)):
+            return self.evaluateGenomeFitness(genome)
+
     def evaluateGenomeFitness(self,genome=None):
         """Run a simulation for a given number of steps on the given genome.
            Return final distance from target"""
