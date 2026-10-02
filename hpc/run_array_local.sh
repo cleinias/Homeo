@@ -7,6 +7,7 @@
 #     bash hpc/run_array_local.sh --dry-run
 #     bash hpc/run_array_local.sh --state-log --log-interval 200   # + weight traces
 #     bash hpc/run_array_local.sh --uniselector ashby      # discrete, not OU
+#     bash hpc/run_array_local.sh --random-heading         # heading from the seed
 #     bash hpc/run_array_local.sh --heading 45 --seeds 20261013,20261014,...
 #                                                  # chosen seeds, fixed heading
 #
@@ -111,6 +112,7 @@ STATE_LOG=0
 LOG_INTERVAL=200
 SEEDS=""
 HEADING=""
+RANDOM_HEADING=0
 UNISELECTOR=continuous""
 
 
@@ -134,6 +136,7 @@ while [ $# -gt 0 ]; do
         --log-interval)  LOG_INTERVAL="$2"; shift 2;;
         --seeds)         SEEDS="$2"; shift 2;;
         --heading)       HEADING="$2"; shift 2;;
+        --random-heading) RANDOM_HEADING=1; shift;;
         --uniselector)   UNISELECTOR="$2"; shift 2;;
         --dry-run)     DRY_RUN=1; shift;;
         -h|--help)     usage;;
@@ -159,6 +162,10 @@ fi
 # tasks after midnight make their own dated directory.
 DATADIR="$RUNDIR/SimsData-$(date +%Y-%m-%d)"
 mkdir -p "$DATADIR"
+
+if [ -n "$HEADING" ] && [ "$RANDOM_HEADING" -eq 1 ]; then
+    echo "--heading and --random-heading are mutually exclusive" >&2; exit 2
+fi
 
 case "$UNISELECTOR" in
     continuous|ashby) ;;
@@ -199,6 +206,7 @@ echo "   workers    : $WORKERS concurrent  ->  $waves waves"
 echo "   steps/task : $STEPS   traj-interval $TRAJ_INTERVAL"
 echo "   uniselector: $UNISELECTOR"
 [ -n "$HEADING" ] && echo "   heading    : $HEADING deg (fixed)"
+[ "$RANDOM_HEADING" -eq 1 ] && echo "   heading    : random, drawn from each run's seed"
 [ -n "$SEEDS" ]   && echo "   seeds      : explicit -- $SEEDS"
 if [ "$STATE_LOG" -eq 1 ]; then
     echo "   state log  : on, every $LOG_INTERVAL ticks (weights, stress, sigma)"
@@ -215,6 +223,7 @@ echo
     [ "$STATE_LOG" -eq 1 ] && echo "state log every $LOG_INTERVAL ticks"
     echo "uniselector $UNISELECTOR"
     [ -n "$HEADING" ] && echo "fixed heading $HEADING deg"
+    [ "$RANDOM_HEADING" -eq 1 ] && echo "random heading per run"
     [ -n "$SEEDS" ] && echo "seeds $SEEDS" 
     echo "code $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned')"
     echo "cpu  $(lscpu 2>/dev/null | sed -n 's/^Model name: *//p' | head -1)"
@@ -247,6 +256,12 @@ run_task() {
     heading_args=""
     if [ -n "$HEADING" ]; then
         heading_args="--heading $HEADING"
+    elif [ "$RANDOM_HEADING" -eq 1 ]; then
+        # Drawn from the run's own seed, and drawn AFTER the weights, so one seed
+        # gives the same homeostat at heading 0 and at a random heading -- which
+        # is what makes a random-heading batch a paired comparison against a
+        # heading-0 one rather than an independent sample.
+        heading_args="--random-heading"
     fi
     # The experiment selects the uniselector by the presence of --continuous;
     # omitting it gives Ashby's discrete one.
