@@ -1,6 +1,6 @@
-# GUI (and, for now, the GA, whose engine lives in a GUI module).
-# Headless batch runs do not need it: the Core falls back to a null signal
-# emitter without PyQt5.
+# GUI only.  Headless batch runs and the GA do not need it: without PyQt5 the
+# Core falls back to a null signal emitter and HomeoQtSimulation to a plain
+# object (the GA engine is Simulator/HomeoGenAlg.py, apart from its GUI).
 PyQt5>=5.15
 
 # Core simulation

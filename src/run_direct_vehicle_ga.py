@@ -43,7 +43,7 @@ def run_ga_experiment(exp_num, exp_name, n_workers, seed,
                       pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
                       steps=DEFAULT_STEPS):
     """Run a GA experiment with progress callback."""
-    from Simulator.HomeoGenAlgGui import HomeoGASimulation
+    from Simulator.HomeoGenAlg import HomeoGASimulation
 
     # Point data directory to Cybernetics-research
     HomeoGASimulation.dataDirRoot = SIMS_DATA

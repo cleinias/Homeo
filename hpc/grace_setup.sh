@@ -55,12 +55,12 @@ python -m pip install --upgrade pip setuptools wheel
 python -m pip install swig
 python -m pip install --no-build-isolation box2d-py
 
-# PyQt5 is deliberately not installed: headless batch runs do not need it.  The
-# Core classes emit their signals through Helpers/QObjectProxyEmitter, which falls
-# back to a null emitter when PyQt5 is absent, the way HomeoJIT degrades without
-# numba.  The GA is the exception: HomeoGASimulation still lives in the GUI module
-# Simulator/HomeoGenAlgGui.py, so to run the GA here add `pip install PyQt5`
-# (the wheels are cp38-abi3, install on Python 3.14 and work with DISPLAY unset).
+# PyQt5 is deliberately not installed: neither headless batch runs nor the GA
+# need it.  The Core classes emit their signals through
+# Helpers/QObjectProxyEmitter, which falls back to a null emitter when PyQt5 is
+# absent, the way HomeoJIT degrades without numba; HomeoQtSimulation, which every
+# GA evaluation runs through, falls back to a plain object; and the GA engine is
+# Simulator/HomeoGenAlg.py, apart from its GUI.
 #
 # pyglet is still needed, and it is not just a pip wheel: importing it loads the
 # system libGL and libX11, which must be present on the compute nodes.
@@ -94,8 +94,8 @@ echo "== running the test suite:"
 # exit kills the pipeline and the script dies before saying it finished, which
 # reads as a broken environment when it is not.
 # --no-qt runs the suite as this environment is meant to be: PyQt5 hidden (even in
-# an older venv that has it), the Qt GUI test modules not collected, the GA-engine
-# tests skipped.  Expect about 161 passed / 17 skipped.  A few statistical tests
+# an older venv that has it), the Qt GUI test modules not collected.  Expect about
+# 184 passed / 6 skipped (the Qt-only halves of a few tests).  A few statistical tests
 # (HomeoNoiseTest, HomeoUniselectorAshbyTest) fail intermittently, as does the
 # order-dependent HomeoUnitTest::testUnitNameUnique; rerun before worrying.
 if python -m pytest -q --no-qt Unit_Tests 2>&1 | tail -2; then

@@ -15,7 +15,8 @@ an internal Python simulator (HOMEO), Webots, and V-REP/CoppeliaSim.
 
 | File | Role |
 |------|------|
-| `Simulator/HomeoGenAlgGui.py` | GA simulation class and (stub) GUI |
+| `Simulator/HomeoGenAlg.py` | GA simulation class (`HomeoGASimulation`) and parallel-evaluation workers; no GUI, no PyQt5 |
+| `Simulator/HomeoGenAlgGui.py` | GA GUI; re-exports the engine for existing imports |
 | `Simulator/HomeoExperiments.py` | Experiment initialisation functions |
 | `Simulator/SimulatorBackend.py` | Abstraction over robotic simulators |
 | `Helpers/GenomeDecoder.py` | Genome decoding and pretty-printing |

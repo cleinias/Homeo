@@ -54,7 +54,7 @@ def run_ga_experiment(exp_num, exp_name, n_workers, seed):
     evaluation times) goes to stdout — the orchestrator captures it to
     a log file.  Only PROGRESS: lines reach the console.
     """
-    from Simulator.HomeoGenAlgGui import HomeoGASimulation
+    from Simulator.HomeoGenAlg import HomeoGASimulation
 
     def progress(gen, record, best_fitness):
         print("PROGRESS: Generation %d of Exp %d concluded — best=%.4f, avg=%.4f" % (

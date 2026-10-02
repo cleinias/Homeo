@@ -9,7 +9,7 @@ This software reproduces all the components of Ashby's machine -- units, connect
 All source code lives under `src/`. The four main directories are:
 
 - **`Core/`** -- The simulation engine: `Homeostat`, `HomeoUnit`, `HomeoConnection`, `HomeoUniselector`, and data-collection classes.
-- **`Simulator/`** -- Simulation runners (`HomeoSimulation` for headless runs, `HomeoQtSimulation` for the Qt event loop), GUI windows (`HomeoGeneralGUI`, `HomeoMinimalGui`, `HomeoGenAlgGui`), and predefined experiment setups (`HomeoExperiments`).
+- **`Simulator/`** -- Simulation runners (`HomeoSimulation` for headless runs, `HomeoQtSimulation` for the Qt event loop), GUI windows (`HomeoGeneralGUI`, `HomeoMinimalGui`, `HomeoGenAlgGui`), the GUI-free genetic-algorithm engine (`HomeoGenAlg`), and predefined experiment setups (`HomeoExperiments`).
 - **`Helpers/`** -- Noise generation (`HomeoNoise`), PyQt signal proxying (`QObjectProxyEmitter`, with a null fallback when PyQt5 is absent), trajectory and statistics utilities.
 - **`Unit_Tests/`** -- Pytest test suite covering every core class.
 
@@ -116,7 +116,7 @@ Three GUIs are available, each launched as a script from the `src/` directory:
 
 - **`python Simulator/HomeoGeneralGUI.py`** -- Full-featured interface: unit and connection configuration, real-time deviation charts, save/load, experiment selection.
 - **`python Simulator/HomeoMinimalGui.py`** -- Stripped-down interface with start/pause, save, and basic graphing.
-- **`python Simulator/HomeoGenAlgGui.py`** -- Genetic-algorithm interface for evolutionary parameter optimisation (requires the DEAP library).
+- **`python Simulator/HomeoGenAlgGui.py`** -- Genetic-algorithm interface for evolutionary parameter optimisation (requires the DEAP library).  The engine behind it, `Simulator/HomeoGenAlg.py`, runs without the GUI and without PyQt5, e.g. from `run_direct_vehicle_ga.py`.
 
 ### Predefined experiments
 
@@ -129,7 +129,7 @@ The module `Simulator/HomeoExperiments.py` provides functions that return a full
 ## Dependencies
 
 - **Python 3**
-- **PyQt5** -- GUI and signal/slot infrastructure; also needed by the GA, whose engine lives in a GUI module.  Not needed for headless batch runs: without it, `QObjectProxyEmitter` hands the Core a null emitter
+- **PyQt5** -- GUI and signal/slot infrastructure.  Not needed for headless batch runs or the GA: without it, `QObjectProxyEmitter` hands the Core a null emitter and `HomeoQtSimulation` becomes a plain object
 - **NumPy** -- numerical computation throughout
 - **SciPy** -- statistical tests in the test suite
 - **Matplotlib** -- static plotting and data export

@@ -29,16 +29,6 @@ try:
 except ImportError:
     HAS_BOX2D = False
 
-# HomeoGASimulation lives in Simulator/HomeoGenAlgGui.py, a GUI module that
-# imports PyQt5 at module level, and runs each individual through
-# HomeoQtSimulation, a QObject.  So, unlike a headless phototaxis run, the GA
-# still needs PyQt5 (see the research journal TODO, 2026-10-02).
-try:
-    import PyQt5.QtWidgets
-    HAS_QT = True
-except ImportError:
-    HAS_QT = False
-
 
 class GenomeDecoderTest(unittest.TestCase):
     """Tests for genome encoding/decoding utilities"""
@@ -187,14 +177,13 @@ class GenomeDecoderTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed — HOMEO backend unavailable")
-@unittest.skipUnless(HAS_QT, "PyQt5 not installed — the GA engine still requires it")
 class HomeoGASimulationTest(unittest.TestCase):
     """Tests for HomeoGASimulation class — HOMEO backend only"""
 
     @classmethod
     def setUpClass(cls):
         """Create a HomeoGASimulation with HOMEO backend and small parameters"""
-        from Simulator.HomeoGenAlgGui import HomeoGASimulation
+        from Simulator.HomeoGenAlg import HomeoGASimulation
         cls.ga = HomeoGASimulation(
             popSize=4,
             stepsSize=10,
@@ -283,13 +272,12 @@ class HomeoGASimulationTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed — HOMEO backend unavailable")
-@unittest.skipUnless(HAS_QT, "PyQt5 not installed — the GA engine still requires it")
 class HomeoGASimulationTrimmedGenomeTest(unittest.TestCase):
     """Test that 6-unit system with 4 evolved units produces trimmed genome"""
 
     @classmethod
     def setUpClass(cls):
-        from Simulator.HomeoGenAlgGui import HomeoGASimulation
+        from Simulator.HomeoGenAlg import HomeoGASimulation
         cls.ga = HomeoGASimulation(
             popSize=4,
             stepsSize=10,
@@ -312,6 +300,26 @@ class HomeoGASimulationTrimmedGenomeTest(unittest.TestCase):
         pop = self.ga.generateRandomPop(randomSeed=42)
         for ind in pop:
             self.assertEqual(len(ind), 40)
+
+
+try:
+    import PyQt5.QtWidgets
+    HAS_QT_WIDGETS = True
+except ImportError:
+    HAS_QT_WIDGETS = False
+
+
+@unittest.skipUnless(HAS_QT_WIDGETS, "PyQt5 not installed — the GA GUI module needs it")
+class GAGuiReexportTest(unittest.TestCase):
+    """The engine moved to Simulator/HomeoGenAlg.py; the GUI module still offers it."""
+
+    def testGuiModuleReexportsTheEngine(self):
+        "existing imports from HomeoGenAlgGui get the very same objects"
+        import Simulator.HomeoGenAlg as engine
+        import Simulator.HomeoGenAlgGui as gui
+        for name in ('HomeoGASimulation', 'selTournamentRemove',
+                     '_init_worker', '_evaluate_genome_worker'):
+            self.assertIs(getattr(gui, name), getattr(engine, name), name)
 
 
 class StatFileDecoderTest(unittest.TestCase):
