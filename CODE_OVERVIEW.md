@@ -112,11 +112,11 @@ data = hom.dataCollector.criticalDevAsNPArrayForAllUnits()
 
 `HomeoQtSimulation` (in `Simulator/HomeoQtSimulation.py`) integrates the simulation into the PyQt5 event loop, providing live charting and signal-based updates. It is not normally instantiated directly; instead, one of the GUI entry points creates it.
 
-Three GUIs are available, each launched as a script from the `src/` directory:
+Three GUIs are available, each launched as a module from the `src/` directory (`python -m`, so that the `Simulator` package is found whatever `PYTHONPATH` says; `python Simulator/X.py` works only if `src/` is on the path):
 
-- **`python Simulator/HomeoGeneralGUI.py`** -- Full-featured interface: unit and connection configuration, real-time deviation charts, save/load, experiment selection.
-- **`python Simulator/HomeoMinimalGui.py`** -- Stripped-down interface with start/pause, save, and basic graphing.
-- **`python Simulator/HomeoGenAlgGui.py`** -- Genetic-algorithm interface for evolutionary parameter optimisation (requires the DEAP library).  The engine behind it, `Simulator/HomeoGenAlg.py`, runs without the GUI and without PyQt5, e.g. from `run_direct_vehicle_ga.py`.
+- **`python -m Simulator.HomeoGeneralGUI`** -- Full-featured interface: unit and connection configuration, real-time deviation charts, save/load, experiment selection.
+- **`python -m Simulator.HomeoMinimalGui`** -- Stripped-down interface with start/pause, save, and basic graphing.
+- **`python -m Simulator.HomeoGenAlgGui`** -- Genetic-algorithm interface for evolutionary parameter optimisation (requires the DEAP library).  The engine behind it, `Simulator/HomeoGenAlg.py`, runs without the GUI and without PyQt5, e.g. from `run_direct_vehicle_ga.py`.
 
 ### Predefined experiments
 
