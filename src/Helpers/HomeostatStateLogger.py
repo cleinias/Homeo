@@ -63,7 +63,7 @@ class HomeostatStateLogger:
 
         # Build connection column info and JIT index mapping
         self._conn_keys = []       # list of "w_{unit}<-{from}" strings
-        self._conn_sources = []    # list of (unit, conn) or (unit, jit_idx) tuples
+        self._conn_sources = []    # list of ('auto', unit, conn, jit_idx) tuples
         self._has_ou = []          # per-unit: True if unit has OU uniselector
 
         from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
@@ -73,20 +73,22 @@ class HomeostatStateLogger:
                                 HomeoUniselectorContinuous)
             self._has_ou.append(has_ou)
 
-            if self._headless and hasattr(unit, '_jit_incoming_units'):
-                # Build mapping: JIT index -> connection identity
-                active = [c for c in unit.inputConnections
-                          if c.isActive() and c.incomingUnit.isActive()]
-                for jit_idx, conn in enumerate(active):
-                    col = 'w_%s<-%s' % (unit.name, conn.incomingUnit.name)
-                    self._conn_keys.append(col)
-                    self._conn_sources.append(('jit', unit, jit_idx))
-            else:
-                for conn in unit.inputConnections:
-                    if conn.isActive() and conn.incomingUnit.isActive():
-                        col = 'w_%s<-%s' % (unit.name, conn.incomingUnit.name)
-                        self._conn_keys.append(col)
-                        self._conn_sources.append(('conn', unit, conn))
+            # Record BOTH ways of reaching each weight and choose between them at
+            # read time, not here.  Binding the choice at construction was a
+            # silent data loss: the JIT branch tested for _jit_incoming_units,
+            # which _sync_jit_arrays() does not create until the first tick --
+            # i.e. always after this logger is built -- so every headless run
+            # took the connection branch.  In headless mode the connection
+            # objects are NOT the live weights: evolve_weights_jit() mutates the
+            # JIT arrays in place and never writes back (only flushJitArrays()
+            # does, which is why the INITIAL/FINAL json showed drift while the
+            # whole state log sat frozen at the initial values).
+            active = [c for c in unit.inputConnections
+                      if c.isActive() and c.incomingUnit.isActive()]
+            for jit_idx, conn in enumerate(active):
+                col = 'w_%s<-%s' % (unit.name, conn.incomingUnit.name)
+                self._conn_keys.append(col)
+                self._conn_sources.append(('auto', unit, conn, jit_idx))
 
         # Build column header
         cols = ['tick', 'phys_time', 'robot_x', 'robot_y', 'heading', 'distance',
@@ -152,17 +154,12 @@ class HomeostatStateLogger:
 
         # Connection states (manual vs uniselector)
         conn_states = []
-        for key, source in zip(self._conn_keys, self._conn_sources):
-            if source[0] == 'conn':
-                state = source[2].state  # 'manual' or 'uniselector'
-            else:
-                # JIT mode: find the matching connection object
-                unit = source[1]
-                jit_idx = source[2]
-                active = [c for c in unit.inputConnections
-                          if c.isActive() and c.incomingUnit.isActive()]
-                state = active[jit_idx].state if jit_idx < len(active) else 'unknown'
-            conn_states.append('%s=%s' % (key, state))
+        for key, (_, unit, conn, jit_idx) in zip(self._conn_keys,
+                                                 self._conn_sources):
+            # The connection object is kept for exactly this kind of lookup: its
+            # 'manual'/'uniselector' state is structural and does not drift, even
+            # where its weight is stale.
+            conn_states.append('%s=%s' % (key, conn.state))
         f.write('# conn_states\t%s\n' % ','.join(conn_states))
 
     def log_tick(self, tick):
@@ -197,13 +194,15 @@ class HomeostatStateLogger:
             vals.append('%.6f' % unit.inputTorque)
             vals.append('%.6f' % unit.stressLevel())
 
-        # Connection weights (signed = weight * switch)
-        for source in self._conn_sources:
-            if source[0] == 'jit':
-                _, unit, jit_idx = source
-                w = unit._jit_weights[jit_idx] * unit._jit_switches[jit_idx]
+        # Connection weights (signed = weight * switch).  The JIT arrays are
+        # authoritative whenever they exist: jit_weights holds magnitudes and
+        # jit_switches the signs, so their product is the signed weight.  They
+        # appear on the first tick, so this resolves per sample rather than once.
+        for _, unit, conn, jit_idx in self._conn_sources:
+            jw = getattr(unit, '_jit_weights', None)
+            if jw is not None and jit_idx < len(jw):
+                w = jw[jit_idx] * unit._jit_switches[jit_idx]
             else:
-                _, unit, conn = source
                 w = conn.weight * conn.switch
             vals.append('%.6f' % w)
 
