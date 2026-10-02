@@ -186,6 +186,33 @@ def abbreviate(label):
     return out
 
 
+def seriesBounds(column, meta):
+    """The band a series is confined to, as (low, high), or None if unbounded.
+
+    Drawn as a pair of rules so the limit is visible as a limit.  Without them
+    the axis frame reads as the bound -- a deviation clipped at -10 stops a
+    hair above the bottom spine and looks like it never arrives, when in this
+    array it sits exactly at -10.000000 for tens of samples per run.
+    """
+    if column.startswith('w_'):
+        return (-1.0, 1.0)              # HomeoUniselectorContinuous clips here
+    if column.endswith('_critDev'):
+        unit = column[:-len('_critDev')]
+        m = meta.get('unit_%s_maxDeviation' % unit)
+        if m:
+            return (-float(m), float(m))
+        return None
+    if column.endswith('_stress'):
+        return (0.0, 1.0)               # |critDev| / maxDeviation
+    if column.startswith('sigma_'):
+        unit = column[len('sigma_'):]
+        lo = meta.get('unit_%s_sigma_base' % unit)
+        hi = meta.get('unit_%s_sigma_crit' % unit)
+        if lo and hi:
+            return (float(lo), float(hi))
+    return None
+
+
 def isSigned(column):
     return (column.startswith(SIGNED_PREFIXES)
             or column.endswith(SIGNED_SUFFIXES))
@@ -224,8 +251,13 @@ def _formatTicks(v):
     return '%.1fM' % (v / 1e6) if v >= 1e6 else ('%.0fk' % (v / 1e3) if v >= 1e3 else '%g' % v)
 
 
-def _drawStrip(ax, tick, series, window, signed, showRaw, ylim=None):
-    """One strip: every series in `series` as (values, label, colour)."""
+def _drawStrip(ax, tick, series, window, signed, showRaw, ylim=None, bounds=None):
+    """One strip: every series in `series` as (values, label, colour).
+
+    `bounds` is the (low, high) band the series may occupy; it is drawn as two
+    rules and, on an unsmoothed strip, becomes the y range -- so a value sitting
+    at its limit is seen to sit there.
+    """
     if signed:
         ax.axhline(0, color=INK, lw=1.0, zorder=5)
     for values, label, color in series:
@@ -244,10 +276,24 @@ def _drawStrip(ax, tick, series, window, signed, showRaw, ylim=None):
     ax.set_xlim(tick[0], tick[-1])
     if ylim is not None:
         ax.set_ylim(*ylim)
-    for sp in ('top', 'right'):
+    elif bounds is not None and window <= 1:
+        # Raw data does reach its bounds, so show the whole band.  A smoothed
+        # line never approaches them, and forcing the band there would flatten
+        # it into the zero line, so smoothing keeps the autoscale.
+        pad = 0.04 * (bounds[1] - bounds[0])
+        ax.set_ylim(bounds[0] - pad, bounds[1] + pad)
+    if bounds is not None:
+        lo, hi = ax.get_ylim()
+        for y in bounds:
+            if lo <= y <= hi:
+                ax.axhline(y, color=INK2, lw=1.0, ls=(0, (5, 3)), alpha=0.85, zorder=4)
+        ticks = sorted({bounds[0], 0.0, bounds[1]} if signed else set(bounds))
+        ax.set_yticks([t for t in ticks if lo <= t <= hi])
+    # No bottom spine: a frame line under the data reads as a limit, and the
+    # limits are the dashed rules above.
+    for sp in ('top', 'right', 'bottom'):
         ax.spines[sp].set_visible(False)
-    for sp in ('left', 'bottom'):
-        ax.spines[sp].set_color(GRID)
+    ax.spines['left'].set_color(GRID)
     ax.tick_params(labelsize=7, length=2, colors=INK2)
 
 
@@ -288,12 +334,15 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
         if overlay:
             series = [(data[:, cols.index(c)], lab, SERIES_COLORS[i % len(SERIES_COLORS)])
                       for i, (c, lab) in enumerate(picked)]
-            strips.append((p, tick, series, w, any(isSigned(c) for c, _ in picked), picked))
+            # Only share a band when every overlaid series has the same one.
+            bs = {seriesBounds(c, meta) for c, _ in picked}
+            strips.append((p, tick, series, w, any(isSigned(c) for c, _ in picked),
+                           picked, bs.pop() if len(bs) == 1 else None))
         else:
             for i, (c, lab) in enumerate(picked):
                 strips.append((p, tick, [(data[:, cols.index(c)], lab,
                                           SERIES_COLORS[i % len(SERIES_COLORS)])],
-                               w, isSigned(c), [(c, lab)]))
+                               w, isSigned(c), [(c, lab)], seriesBounds(c, meta)))
 
     nRibbon = sum(1 for s in strips if ribbons and s[4] for _ in s[2])
     rowsPer = [1 + (len(s[2]) if ribbons and s[4] else 0) for s in strips]
@@ -319,9 +368,10 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
     row = 0
     axes = []
     for s in strips:
-        p, tick, series, w, signed, picked = s
+        p, tick, series, w, signed, picked, bounds = s
         ax = fig.add_subplot(gs[row]); row += 1
-        _drawStrip(ax, tick, series, w, signed, showRaw, ylim if signed else None)
+        _drawStrip(ax, tick, series, w, signed, showRaw,
+                   ylim if signed else None, bounds)
         label = os.path.basename(p)
         ax.set_ylabel('\n'.join(abbreviate(lab) for _, lab, _ in series)
                       if len(series) <= 2 else '%d series' % len(series),
