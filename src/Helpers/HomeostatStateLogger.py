@@ -209,7 +209,10 @@ class HomeostatStateLogger:
         # Cumulative uniselector firing counts
         for i, unit in enumerate(self._units):
             if self._has_unisel[i]:
-                vals.append('%d' % getattr(unit, 'uniselectorActivationCount', 0))
+                # No getattr default: a unit whose class forgets to keep this
+                # count should fail loudly, not log a plausible 0.  That default
+                # hid exactly such a miss in HomeoUnitNewtonian for a whole run.
+                vals.append('%d' % unit.uniselectorActivationCount)
 
         # OU sigma columns
         for i, unit in enumerate(self._units):

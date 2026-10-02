@@ -253,6 +253,12 @@ class HomeoUnitNewtonian(HomeoUnit):
                             sys.stderr.write(('############################################ Operating uniselector for unit %s' % self.name))
                         self.operateUniselector()
                         self.uniselectorActivated = 1
+                        # Counted here as well as in HomeoUnit.selfUpdate(): this
+                        # class overrides selfUpdate wholesale, so the superclass
+                        # version never runs for a Newtonian unit -- which is
+                        # every motor -- and the count stayed 0 while the weights
+                        # visibly moved.
+                        self.uniselectorActivationCount += 1
                     else:
                         self.uniselectorActivated = 0
                     self.uniselectorTime = 0
