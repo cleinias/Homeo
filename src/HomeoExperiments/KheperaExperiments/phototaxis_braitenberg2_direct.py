@@ -92,7 +92,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      switching_rate=0.5, light_intensity=100,
                      uniselector_type='ashby', continuous_params=None,
                      seed=None, fixed_weights=False,
-                     stable_integration=True, start_at_rest=False):
+                     stable_integration=True, start_at_rest=False,
+                     wiring='crossed', signs='++'):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -115,6 +116,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             baseline (see _direct_fixed_weights); topology,
                             mass_range, uniselector_type and
                             continuous_params are then ignored.
+        wiring, signs:      with fixed_weights, which fixed-weight vehicle:
+                            'crossed' (2b) or 'uncrossed' (2a), and the sign
+                            of each sensor->motor connection, left eye first
+                            ('++', '+-', '-+', '--').
 
     Returns:
         (hom, backend, seed)
@@ -148,7 +153,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     backendSimulator.kheperaSimulation.dataDir = log_dir
 
     if fixed_weights:
-        exp_name = 'phototaxis_braitenberg2_direct_control'
+        exp_name = ('phototaxis_braitenberg2_direct_control_'
+                    + control_variant_name(wiring, signs))
     elif topology == 'random':
         exp_name = 'phototaxis_braitenberg2_direct_random'
     else:
@@ -215,7 +221,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                   start_at_rest=start_at_rest)
     if fixed_weights:
         _direct_fixed_weights(hom, max_speed_fraction=max_speed_fraction,
-                              switching_rate=switching_rate)
+                              switching_rate=switching_rate,
+                              wiring=wiring, signs=signs)
     elif topology == 'random':
         _direct_random_topology(hom, **kwargs)
     else:
@@ -345,18 +352,45 @@ def _randomize_unit_stably(u, mass_range, stable_integration=True,
 
 
 # Fixed-weight baseline (Braitenberg 2b) parameters
-CONTROL_CROSS_WEIGHT = 1.0    # sensor -> contra-lateral motor, excitatory
+CONTROL_CROSS_WEIGHT = 1.0    # sensor -> motor, magnitude (sign set by `signs`)
 CONTROL_SELF_WEIGHT = -0.9    # motor self-connection (damping)
 CONTROL_MASS = 1.0
 CONTROL_VISCOSITY = 0.0
 
 
-def _direct_fixed_weights(hom, max_speed_fraction=0.8, switching_rate=0.5):
-    '''Non-adaptive baseline: Braitenberg's vehicle 2b ("aggression").
+CONTROL_WIRINGS = ('crossed', 'uncrossed')
+CONTROL_SIGNS = ('++', '+-', '-+', '--')
 
-    Each sensor excites the contra-lateral motor with a fixed weight
-    (CONTROL_CROSS_WEIGHT); inter-motor connections are off.  No uniselector,
-    no noise and no random parameters, so a run depends only on the start pose.
+
+def _control_sensor_motor_pairs(wiring):
+    '''(sensor, motor) pairs of the non-adaptive vehicle, LEFT EYE FIRST: the
+    first character of `signs` applies to the left eye's connection, the second
+    to the right eye's.  'crossed' is Braitenberg's 2b layout (each eye drives
+    the contra-lateral motor), 'uncrossed' his 2a (each eye drives the motor on
+    its own side).'''
+    if wiring == 'crossed':
+        return (('Left Sensor', 'Right Motor'), ('Right Sensor', 'Left Motor'))
+    if wiring == 'uncrossed':
+        return (('Left Sensor', 'Left Motor'), ('Right Sensor', 'Right Motor'))
+    raise ValueError("wiring must be one of %s, got %r" % (CONTROL_WIRINGS, wiring))
+
+
+def control_variant_name(wiring, signs):
+    "Filename-safe tag for a non-adaptive variant, e.g. 'crossed_pm' for crossed +-."
+    return '%s_%s' % (wiring, signs.replace('+', 'p').replace('-', 'm'))
+
+
+def _direct_fixed_weights(hom, max_speed_fraction=0.8, switching_rate=0.5,
+                          wiring='crossed', signs='++'):
+    '''Non-adaptive baseline: a fixed-weight Braitenberg 2 vehicle.
+
+    Each sensor drives one motor with a fixed weight of magnitude
+    CONTROL_CROSS_WEIGHT; inter-motor connections are off.  `wiring` chooses
+    which motor ('crossed', 2b, the default; or 'uncrossed', 2a) and `signs`
+    the sign of each connection, left eye first (see
+    _control_sensor_motor_pairs): the default, crossed '++', is Braitenberg's
+    2b ("aggression").  No uniselector, no noise and no random parameters, so
+    a run depends only on the start pose.
 
     Motor dynamics follow phototaxis_braitenberg2_control: mass 1 and zero
     viscosity, so each tick's input acts immediately, and a damping
@@ -385,19 +419,21 @@ def _direct_fixed_weights(hom, max_speed_fraction=0.8, switching_rate=0.5):
         u.inputConnections[0].state = 'manual'
         u.inputConnections[0].status = True
 
-    cross_wiring = {
-        'Left Motor': 'Right Sensor',
-        'Right Motor': 'Left Sensor',
-    }
-    for u in hom.homeoUnits:
-        if u.name not in cross_wiring:
-            continue
-        for conn in u.inputConnections:
-            if conn.incomingUnit.name == cross_wiring[u.name]:
-                conn.newWeight(CONTROL_CROSS_WEIGHT)
-                conn.noise = 0
-                conn.state = 'manual'
-                conn.status = True
+    if signs not in CONTROL_SIGNS:
+        raise ValueError("signs must be one of %s, got %r" % (CONTROL_SIGNS, signs))
+    units = {u.name: u for u in hom.homeoUnits}
+    for (sensor, motor), sign in zip(_control_sensor_motor_pairs(wiring), signs):
+        weight = CONTROL_CROSS_WEIGHT if sign == '+' else -CONTROL_CROSS_WEIGHT
+        matches = [c for c in units[motor].inputConnections
+                   if c.incomingUnit.name == sensor]
+        if len(matches) != 1:
+            raise RuntimeError('expected one %s -> %s connection, found %d'
+                               % (sensor, motor, len(matches)))
+        conn = matches[0]
+        conn.newWeight(weight)
+        conn.noise = 0
+        conn.state = 'manual'
+        conn.status = True
 
 
 def set_start_pose(robot, x=None, y=None, heading=None):
@@ -425,15 +461,19 @@ def set_start_pose(robot, x=None, y=None, heading=None):
     body.angle += delta
 
 
-def _random_start_pose(target_pos, random_position):
+DEFAULT_START_RANGE = (2.0, 6.0)
+
+
+def _random_start_pose(target_pos, random_position, start_range=DEFAULT_START_RANGE):
     '''Draw a start pose from np.random (so it follows the run's seed):
     a uniform heading, and if random_position, a position at a uniform
-    distance of 2-6 units and uniform bearing from the light.
+    distance within start_range (default 2-6 units) and uniform bearing
+    from the light.
     Returns (x, y, heading); x and y are None when not randomised.'''
     heading = np.random.uniform(0, 360)
     if not random_position:
         return None, None, heading
-    d = np.random.uniform(2.0, 6.0)
+    d = np.random.uniform(*start_range)
     bearing = np.random.uniform(0, 2 * np.pi)
     return (target_pos[0] + d * np.cos(bearing),
             target_pos[1] + d * np.sin(bearing), heading)
@@ -483,14 +523,17 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  uniselector_type='ashby', continuous_params=None,
                  state_log=False, state_log_interval=1, seed=None, heading=None,
                  fixed_weights=False, random_heading=False, random_start=False,
-                 stable_integration=True, start_at_rest=False):
+                 stable_integration=True, start_at_rest=False,
+                 wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE):
     '''Run the simplified 2+2 phototaxis experiment headless.
 
     Parameters and return value are the same as in
     phototaxis_braitenberg2_Ashby.run_headless(), plus:
-        fixed_weights:  run the non-adaptive Braitenberg 2b baseline.
+        fixed_weights:  run the non-adaptive Braitenberg 2 baseline.
+        wiring, signs:  with fixed_weights, which one (see setup_phototaxis).
         random_heading: start with a random heading (seeded).
-        random_start:   random heading and position 2-6 units from the light.
+        random_start:   random heading and position start_range units from
+                        the light (default 2-6).
         heading:        a FIXED start heading in degrees, used when neither
                         random_heading nor random_start is set.  Unlike the
                         random poses it draws nothing, so a seed yields the same
@@ -509,11 +552,12 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                                           seed=seed,
                                           fixed_weights=fixed_weights,
                                           stable_integration=stable_integration,
-                                          start_at_rest=start_at_rest)
+                                          start_at_rest=start_at_rest,
+                                          wiring=wiring, signs=signs)
     robot = backend.kheperaSimulation.allBodies['Khepera']
     target_pos = (7, 7)
     if random_heading or random_start:
-        set_start_pose(robot, *_random_start_pose(target_pos, random_start))
+        set_start_pose(robot, *_random_start_pose(target_pos, random_start, start_range))
     elif heading is not None:
         set_start_pose(robot, heading=heading)
     start_x, start_y = robot.body.position[0], robot.body.position[1]
@@ -555,7 +599,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         return sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
 
     if fixed_weights:
-        mode_label = 'fixed weights, no uniselector'
+        mode_label = 'fixed weights, no uniselector, %s %s' % (wiring, signs)
     else:
         mode_label = 'fixed topology' if topology == 'fixed' else 'random topology'
     if not quiet:
@@ -627,7 +671,9 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 state_log_path=state_log_path, seed=seed,
                 start_x=start_x, start_y=start_y, start_heading=start_heading,
                 start_dist=start_dist, start_sees_light=start_sees_light,
-                first_acq=first_acq, acquired=first_acq is not None)
+                first_acq=first_acq, acquired=first_acq is not None,
+                wiring=wiring if fixed_weights else '',
+                signs=signs if fixed_weights else '')
 
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
@@ -636,7 +682,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               uniselector_type='ashby', continuous_params=None,
               fixed_weights=False, random_heading=False, random_start=False,
               stable_integration=True, start_at_rest=False, seed=None,
-              state_log=False, state_log_interval=1, heading=None):
+              state_log=False, state_log_interval=1, heading=None,
+              wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE):
     '''Run a batch of experiments and print a summary table.
 
     With seed given, run i uses seed+i, so the batch is reproducible and an
@@ -645,7 +692,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
 
     mode = 'dark' if light_intensity < 0 else 'light'
     if fixed_weights:
-        kind = 'control'
+        kind = 'control_' + control_variant_name(wiring, signs)
     else:
         kind = 'continuous' if uniselector_type == 'continuous' else 'ashby'
     print(f'=== Batch (direct 2+2): {n_runs} runs, {mode}, {total_steps} ticks budget ===')
@@ -679,6 +726,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          state_log=state_log,
                          state_log_interval=state_log_interval,
                          heading=heading,
+                         wiring=wiring, signs=signs, start_range=start_range,
                          seed=None if seed is None else seed + i)
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
@@ -721,7 +769,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
         csv_name = (f'batch_direct_{kind}_{mode}_'
                     f'{time.strftime("%Y-%m-%d-%H-%M-%S")}{run_tag()}.csv')
         csv_path = os.path.join(log_dir, csv_name)
-        fields = ['run', 'seed', 'start_x', 'start_y', 'start_heading', 'start_dist',
+        fields = ['run', 'seed', 'wiring', 'signs',
+                  'start_x', 'start_y', 'start_heading', 'start_dist',
                   'start_sees_light', 'acquired', 'first_acq',
                   'final_dist', 'min_dist', 'min_t', 'steps_run',
                   'early_stopped', 'final_x', 'final_y', 'wall_time',
@@ -912,6 +961,32 @@ if __name__ == '__main__':
                 '--heading cannot be combined with --random-heading/--random-start')
     if fixed_weights and ('--continuous' in sys.argv or '--random-topology' in sys.argv):
         print('Note: --fixed-weights ignores --continuous and --random-topology')
+    # --signs XY / --uncrossed: which fixed-weight vehicle (only with
+    # --fixed-weights).  X is the sign of the left eye's connection, Y the right
+    # eye's; --uncrossed wires each eye to its own side's motor (2a) instead of
+    # the contra-lateral one (2b).
+    signs = '++'
+    if '--signs' in sys.argv:
+        idx = sys.argv.index('--signs')
+        signs = sys.argv[idx + 1] if idx + 1 < len(sys.argv) else ''
+        if signs not in CONTROL_SIGNS:
+            raise SystemExit('--signs must be one of %s, got %r'
+                             % (' '.join(CONTROL_SIGNS), signs))
+    wiring = 'uncrossed' if '--uncrossed' in sys.argv else 'crossed'
+    if not fixed_weights and ('--signs' in sys.argv or '--uncrossed' in sys.argv):
+        raise SystemExit('--signs and --uncrossed apply only with --fixed-weights')
+    # --start-range MIN MAX: distance from the light for --random-start (default 2 6).
+    start_range = DEFAULT_START_RANGE
+    if '--start-range' in sys.argv:
+        idx = sys.argv.index('--start-range')
+        try:
+            start_range = (float(sys.argv[idx + 1]), float(sys.argv[idx + 2]))
+        except (IndexError, ValueError):
+            raise SystemExit('--start-range needs two numbers, MIN MAX')
+        if not 0 < start_range[0] <= start_range[1]:
+            raise SystemExit('--start-range needs 0 < MIN <= MAX, got %g %g' % start_range)
+        if not random_start:
+            raise SystemExit('--start-range applies only with --random-start')
 
     '''Trajectory volume.  Two rows are recorded per homeostat tick at ~50 bytes
        each, so a 6M-step run writes ~600 MB and a batch of 20 wrote 11.5 GB on
@@ -949,7 +1024,8 @@ if __name__ == '__main__':
                   random_heading=random_heading, random_start=random_start,
                   stable_integration=stable_integration, start_at_rest=start_at_rest,
                   seed=seed, heading=heading,
-                  state_log=state_log, state_log_interval=state_log_interval)
+                  state_log=state_log, state_log_interval=state_log_interval,
+                  wiring=wiring, signs=signs, start_range=start_range)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
@@ -960,4 +1036,5 @@ if __name__ == '__main__':
                      heading=heading,
                      seed=seed, fixed_weights=fixed_weights,
                      random_heading=random_heading, random_start=random_start,
-                     stable_integration=stable_integration, start_at_rest=start_at_rest)
+                     stable_integration=stable_integration, start_at_rest=start_at_rest,
+                     wiring=wiring, signs=signs, start_range=start_range)
