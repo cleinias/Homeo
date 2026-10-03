@@ -47,7 +47,9 @@ MAX_PLOT_POINTS = 50000
 SENSOR_MAX_RANGE = 10.0
 
 
-def main(argv):
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
     import argparse
     parser = argparse.ArgumentParser(description='Chart one or more Homeostat trajectories.')
     parser.add_argument('traj_files', nargs='+', metavar='traj_file',

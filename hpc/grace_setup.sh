@@ -76,6 +76,11 @@ python -m pip install numba || echo "!! numba unavailable for this Python; conti
 
 python -c "import Box2D; print('box2d-py OK:', Box2D.__version__)"
 
+# Homeo itself, editable: puts src/ on the venv's path, so its modules import
+# from any directory, and installs the homeo-traj etc. commands.  Editable
+# because SimulationsData is located relative to the checkout.
+python -m pip install -e "$HOMEO_SRC"
+
 echo
 echo "== verifying headless operation (no DISPLAY on compute nodes):"
 cd "$HOMEO_SRC/src"

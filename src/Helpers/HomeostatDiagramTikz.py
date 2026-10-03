@@ -407,7 +407,7 @@ def _build_tikz(units_data, conns_data, title, show_inactive,
 # CLI
 # ---------------------------------------------------------------------------
 
-if __name__ == '__main__':
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description='Generate a TikZ topology diagram from a Homeostat log file.')
     parser.add_argument('log_path', help='Path to the .log file')
@@ -424,7 +424,7 @@ if __name__ == '__main__':
     parser.add_argument('--node-radius', type=float, default=1.2,
                         help='Node circle radius in cm (default: 1.2)')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     tex = generate_tikz_from_log(
         args.log_path,
@@ -438,3 +438,7 @@ if __name__ == '__main__':
 
     if not args.output:
         print(tex)
+
+
+if __name__ == '__main__':
+    main()

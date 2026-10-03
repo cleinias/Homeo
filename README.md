@@ -19,14 +19,35 @@ A software simulation of W. Ross Ashby's Homeostat, as described in
 
 ```bash
 pip install -r requirements.txt
-cd src
-python -m Simulator.HomeoQtSimulation   # launch the GUI
+pip install -e .                        # Homeo itself, editable
+python -m Simulator.HomeoQtSimulation   # launch the GUI, from any directory
+```
+
+The editable install (`pyproject.toml`) puts `src/` on Python's path, so the
+modules, which import each other as top-level packages (`from Helpers.X import
+...`), work from any directory instead of only from `src/`.  It must be
+editable: SimulationsData is located relative to the checkout.  On a
+distribution's system Python (e.g. Arch), whose packages already provide the
+dependencies:
+
+```bash
+pip install --user --break-system-packages --no-deps -e .
+```
+
+It also installs the analysis helpers as commands (in `~/.local/bin` for a
+`--user` install):
+
+```bash
+homeo-traj SimsData-*/run*.traj -o runs.pdf    # Helpers.TrajectoryGrapher
+homeo-strip run.statelog --value weight        # Helpers.StripchartGrapher
+homeo-statelog run.statelog                    # Helpers.StatelogAnalyzer
+homeo-tikz run.log -o topology.tex             # Helpers.HomeostatDiagramTikz
 ```
 
 ## Running tests
 
 ```bash
-cd src
+cd src                        # pytest.ini lives here
 python -m pytest Unit_Tests/ -x -q
 ```
 

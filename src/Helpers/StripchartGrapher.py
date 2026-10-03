@@ -431,7 +431,9 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
         plt.show()
 
 
-def main(argv):
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
     import argparse
     parser = argparse.ArgumentParser(
         description='Strip charts of logged homeostat state (.statelog files).',

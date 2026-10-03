@@ -1,0 +1,56 @@
+# Homeo as an installable package, so that its modules -- which import each
+# other as top-level packages (from Helpers.X import ..., from Core.Y import
+# ...) -- are importable from any directory, not only from src/.
+#
+# Install it EDITABLE, once per environment:
+#
+#     pip install -e .                    # a venv (Grace: grace_setup.sh does it)
+#     pip install --user --break-system-packages --no-deps -e .
+#                                         # a distribution's system Python (Arch)
+#
+# Editable, not a regular install: Helpers.General_Helper_Functions finds
+# SimulationsData relative to its own file, which must stay in the checkout.
+# --no-deps on a system Python: the dependencies come from the distribution's
+# packages there (pacman's Box2D is not even named box2d-py), and pip would
+# otherwise shadow them with its own copies in ~/.local.
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "homeo"
+version = "0.1.0"
+description = "Simulation of Ashby's homeostat and homeostat-controlled Braitenberg vehicles"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Stefano Franchi" }]
+# The same as requirements.txt, minus the optional parts (the extras below).
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.10",
+    "matplotlib>=3.8",
+    "pandas>=2.1",
+    "tabulate>=0.9",
+    "box2d-py>=2.3.8",
+    "pyglet>=2.1",
+]
+
+[project.optional-dependencies]
+gui = ["PyQt5>=5.15", "pyqtgraph>=0.14"]
+ga = ["deap>=1.4", "dill>=0.3"]
+test = ["pytest>=9.0"]
+
+[project.scripts]
+homeo-traj = "Helpers.TrajectoryGrapher:main"
+homeo-strip = "Helpers.StripchartGrapher:main"
+homeo-statelog = "Helpers.StatelogAnalyzer:main"
+homeo-tikz = "Helpers.HomeostatDiagramTikz:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["Core*", "Helpers*", "Simulator*", "KheperaSimulator*",
+           "RobotSimulator*", "HomeoExperiments*"]

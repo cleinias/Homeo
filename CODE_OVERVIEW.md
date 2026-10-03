@@ -112,7 +112,7 @@ data = hom.dataCollector.criticalDevAsNPArrayForAllUnits()
 
 `HomeoQtSimulation` (in `Simulator/HomeoQtSimulation.py`) integrates the simulation into the PyQt5 event loop, providing live charting and signal-based updates. It is not normally instantiated directly; instead, one of the GUI entry points creates it.
 
-Three GUIs are available, each launched as a module from the `src/` directory (`python -m`, so that the `Simulator` package is found whatever `PYTHONPATH` says; `python Simulator/X.py` works only if `src/` is on the path):
+Three GUIs are available, each launched as a module (`python -m`).  With Homeo installed editable (`pip install -e .`, see the README) this works from any directory; without it, only from `src/`:
 
 - **`python -m Simulator.HomeoGeneralGUI`** -- Full-featured interface: unit and connection configuration, real-time deviation charts, save/load, experiment selection.
 - **`python -m Simulator.HomeoMinimalGui`** -- Stripped-down interface with start/pause, save, and basic graphing.
