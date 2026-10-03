@@ -314,8 +314,10 @@ class SpinTest(unittest.TestCase):
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed — KheperaSimulator unavailable")
 class AristotelianMotorTest(unittest.TestCase):
     """--motor aristotelian: the true Braitenberg vehicle.  Each motor's output
-       is its sensor's reading on the previous tick times the connection's sign
-       -- no memory, no dynamics -- and the wheel speed is linear in it."""
+       depends only on its sensor's reading on the previous tick -- no memory,
+       no dynamics: s for an excitatory connection, 1 - s for an inhibitory one
+       (Braitenberg's Vehicle 3: slowed down from a resting drive) -- and the
+       wheel speed is linear in it."""
 
     def _run(self, wiring, signs, ticks, spin=0.0, heading=None, perturb_at=None):
         """Per tick: (sensor outputs before the tick, motor outputs and wheel
@@ -353,8 +355,8 @@ class AristotelianMotorTest(unittest.TestCase):
                 backend.kheperaSimulation.saveTrajectory()
         return rows
 
-    def testMotorOutputIsThePreviousSensorReadingTimesTheSign(self):
-        "every wiring: out(t+1) = sign x sensor(t), exactly, while the light drives the motors"
+    def testMotorOutputIsThePreviousSensorReading(self):
+        "every wiring: out(t+1) = s(t) if excitatory, 1 - s(t) if inhibitory, exactly"
         lit = 0
         for wiring, pairs in (
                 ('crossed', (('Left Sensor', 'Right Motor'), ('Right Sensor', 'Left Motor'))),
@@ -362,7 +364,7 @@ class AristotelianMotorTest(unittest.TestCase):
             for signs in D.CONTROL_SIGNS:
                 for sensors, motors, _, _ in self._run(wiring, signs, 150):
                     for (sensor, motor), sign in zip(pairs, signs):
-                        expected = sensors[sensor] * (1 if sign == '+' else -1)
+                        expected = sensors[sensor] if sign == '+' else 1 - sensors[sensor]
                         self.assertAlmostEqual(motors[motor], expected, places=12,
                                                msg=(wiring, signs, sensor, motor))
                         lit += sensors[sensor] != 0
@@ -400,6 +402,55 @@ class AristotelianMotorTest(unittest.TestCase):
         maxSpeed = units['Left Motor'].transducer.range()[1] * 0.8
         self.assertAlmostEqual(wheels['Left Motor'], 0.05 * maxSpeed, places=12)
         self.assertAlmostEqual(wheels['Right Motor'], -0.05 * maxSpeed, places=12)
+
+    def testSixUnitsAndConstantOutputs(self):
+        "Drive and Spin hold output 1 all run, with no inputs; only the intended links leave them"
+        rows = self._run('crossed', '--', 200, spin=0.05)
+        units = rows[-1][3]
+        self.assertEqual(sorted(units), sorted(['Left Motor', 'Right Motor', 'Left Sensor',
+                                                'Right Sensor', 'Drive', 'Spin']))
+        for name in D.CONSTANT_UNITS:
+            self.assertEqual(units[name].currentOutput, 1.0)
+            self.assertFalse(any(c.status for c in units[name].inputConnections))
+        links = {(c.incomingUnit.name, u.name): c.weight * c.switch
+                 for u in units.values() for c in u.inputConnections
+                 if c.status and c.incomingUnit.name in D.CONSTANT_UNITS}
+        self.assertEqual(links, {('Drive', 'Left Motor'): 1.0, ('Drive', 'Right Motor'): 1.0,
+                                 ('Spin', 'Left Motor'): 0.05, ('Spin', 'Right Motor'): -0.05})
+
+    def testOnlyInhibitedMotorsGetTheDrive(self):
+        "mixed signs: the inhibited motor has the drive, the excited one has not"
+        units = self._run('crossed', '+-', 1)[0][3]
+        # crossed +-: Left Sensor -> Right Motor (+), Right Sensor -> Left Motor (-)
+        drive = {m: [c.status for c in units[m].inputConnections if c.incomingUnit.name == 'Drive'][0]
+                 for m in ('Left Motor', 'Right Motor')}
+        self.assertEqual(drive, {'Left Motor': True, 'Right Motor': False})
+
+    def testInhibitedVehicleRacesInTheDark(self):
+        "no light in view: inhibited motors run at full speed, excited ones stand still"
+        _, _, wheels, units = self._run('crossed', '--', 20, heading=225)[-1]
+        maxSpeed = units['Left Motor'].transducer.range()[1] * 0.8
+        self.assertAlmostEqual(wheels['Left Motor'], maxSpeed, places=12)
+        self.assertAlmostEqual(wheels['Right Motor'], maxSpeed, places=12)
+        _, _, wheels, _ = self._run('crossed', '++', 20, heading=225)[-1]
+        self.assertEqual((wheels['Left Motor'], wheels['Right Motor']), (0.0, 0.0))
+
+    def testStartPoseDoesNotDependOnTheMotor(self):
+        "the constant units draw nothing: a seed's start pose is the same for both motors"
+        poses = set()
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ['HOMEO_DATA_DIR'] = tmp
+            try:
+                for motor in D.CONTROL_MOTORS:
+                    for signs in ('++', '--'):
+                        r = D.run_headless(total_steps=500, quiet=True, seed=20261009, fixed_weights=True,
+                                           signs=signs, motor=motor, random_start=True,
+                                           start_range=(2.0, 6.0), spin=0.05)
+                        r['backend'].kheperaSimulation.saveTrajectory()
+                        poses.add((r['start_x'], r['start_y'], r['start_heading']))
+            finally:
+                os.environ.pop('HOMEO_DATA_DIR', None)
+        self.assertEqual(len(poses), 1, poses)
 
     def testNamesAndValidation(self):
         self.assertEqual(D.control_variant_name('crossed', '+-', 'aristotelian'), 'arist_crossed_pm')

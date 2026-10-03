@@ -54,6 +54,12 @@ Initialization modes
       reading on the previous tick (times the connection's sign).  The
       wheel speed is linear in that output -- no sigmoid -- and its max is
       the same as the Newtonian vehicle's (max_speed_fraction of the range).
+      Two constant units, Drive and Spin (output 1, no inputs), give it a
+      resting drive and the spin as ordinary weighted inputs: a motor driven
+      by an inhibitory connection also receives Drive with weight 1, so its
+      output is 1 - s -- it races in the dark and comes to rest at full
+      intensity, Braitenberg's Vehicle 3 (p. 10) -- and the spin is Spin's
+      +-spin weights to the two motors.  6 units in all.
 
 Start pose (any mode)
 ---------------------
@@ -240,6 +246,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     rightMotor.name = 'Right Motor'
     leftSensor.name = 'Left Sensor'
     rightSensor.name = 'Right Sensor'
+
+    # The Aristotelian vehicle's two constant units (see add_constant_units).
+    if fixed_weights and motor == 'aristotelian':
+        add_constant_units(hom)
 
     # Disable all sensor connections (pure input transducers)
     leftSensor.uniselectorActive = False
@@ -475,6 +485,8 @@ def _direct_fixed_weights(hom, max_speed_fraction=0.8, switching_rate=0.5,
         if 'Sensor' in u.name:
             u.noise = 0
             continue
+        if u.name in CONSTANT_UNITS:
+            continue                    # set up by add_constant_units
 
         u.mass = ARIST_MASS if motor == 'aristotelian' else CONTROL_MASS
         u.viscosity = CONTROL_VISCOSITY
@@ -497,18 +509,74 @@ def _direct_fixed_weights(hom, max_speed_fraction=0.8, switching_rate=0.5,
     if signs not in CONTROL_SIGNS:
         raise ValueError("signs must be one of %s, got %r" % (CONTROL_SIGNS, signs))
     units = {u.name: u for u in hom.homeoUnits}
-    for (sensor, motor), sign in zip(_control_sensor_motor_pairs(wiring), signs):
+    for (sensor, motorName), sign in zip(_control_sensor_motor_pairs(wiring), signs):
         weight = CONTROL_CROSS_WEIGHT if sign == '+' else -CONTROL_CROSS_WEIGHT
-        matches = [c for c in units[motor].inputConnections
+        matches = [c for c in units[motorName].inputConnections
                    if c.incomingUnit.name == sensor]
         if len(matches) != 1:
             raise RuntimeError('expected one %s -> %s connection, found %d'
-                               % (sensor, motor, len(matches)))
+                               % (sensor, motorName, len(matches)))
         conn = matches[0]
         conn.newWeight(weight)
         conn.noise = 0
         conn.state = 'manual'
         conn.status = True
+        # Braitenberg's inhibition slows a motor down from a resting drive
+        # (Vehicle 3, p. 10): the Drive unit supplies it, so that the motor's
+        # output is DRIVE_WEIGHT - s, and it comes to rest at full intensity.
+        # An excitatory motor has no drive: output s, at rest in the dark.
+        if motor == 'aristotelian' and sign == '-':
+            _set_constant_input(units[motorName], 'Drive', DRIVE_WEIGHT)
+
+
+# The Aristotelian vehicle's constant units: no inputs, deviation held at the
+# maximum, so output 1 for the whole run (an Aristotelian unit with zero torque
+# keeps its deviation: x(t+1) = x(t)).  Drive gives an inhibited motor its
+# resting speed, Spin the baseline spin.  Two units, not one, because a motor
+# that is both inhibited and spun would need a single weight of 1 + spin, and
+# weights must lie in [-1, 1].  With DRIVE_WEIGHT 1 such a motor's output in
+# the dark, 1 + spin, is clipped at the deviation limit, so for an inhibited
+# vehicle in the dark the spin is half as strong (only the other wheel slows).
+CONSTANT_UNITS = ('Drive', 'Spin')
+DRIVE_WEIGHT = 1.0
+
+
+def add_constant_units(hom):
+    '''Add the Drive and Spin units, both with output 1 and every connection
+    into or out of them off.  Creating units and connections draws from
+    np.random, so its state is saved and restored: the start pose a seed
+    draws afterwards must not depend on whether these units exist, or the
+    runs would no longer pair with those of the other vehicles.'''
+    from Core.HomeoUnitAristotelian import HomeoUnitAristotelian
+    np_state, py_state = np.random.get_state(), random.getstate()
+    try:
+        for name in CONSTANT_UNITS:
+            unit = HomeoUnitAristotelian()
+            hom.addFullyConnectedUnit(unit)
+            unit.name = name
+            unit.uniselectorActive = False
+            unit.noise = 0
+            for conn in unit.inputConnections:
+                conn.status = False
+                conn.noise = 0
+            unit.criticalDeviation = unit.maxDeviation
+            unit.computeOutput()
+        for u in hom.homeoUnits:
+            for conn in u.inputConnections:
+                if conn.incomingUnit.name in CONSTANT_UNITS:
+                    conn.status = False
+    finally:
+        np.random.set_state(np_state)
+        random.setstate(py_state)
+
+
+def _set_constant_input(motor, source, weight):
+    "Connect a constant unit to a motor with a fixed, noiseless weight."
+    conn = [c for c in motor.inputConnections if c.incomingUnit.name == source][0]
+    conn.newWeight(weight)
+    conn.noise = 0
+    conn.state = 'manual'
+    conn.status = True
 
 
 def spin_tag(spin):
@@ -526,8 +594,17 @@ def apply_spin(hom, spin):
     decreases -- and spin < 0 counter-clockwise.  The offset is independent
     of the network, so with no light in view the vehicle turns at a constant
     rate, and with the light in view the offset adds to the light-driven
-    steering.'''
+    steering.
+
+    The Aristotelian vehicle gets the same offset as a network input instead:
+    its Spin unit (output 1) feeds the motors with weights +spin and -spin,
+    which for its memoryless, linear motors is the same wheel speed.'''
     units = {u.name: u for u in hom.homeoUnits}
+    if 'Spin' in units:
+        if spin:
+            _set_constant_input(units['Left Motor'], 'Spin', spin)
+            _set_constant_input(units['Right Motor'], 'Spin', -spin)
+        return
     units['Left Motor']._speedBias = spin
     units['Right Motor']._speedBias = -spin
 
