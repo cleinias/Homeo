@@ -14,6 +14,8 @@ its filename that differs from the others (usually the timestamp).  In the
 interactive window, clicking a legend entry hides/shows that trajectory, and
 the first entry, "ALL on / off", hides or shows them all (keys: 'a' shows
 all, 'n' hides all).  This works in the toolbar's zoom and pan modes too.
+The figure keeps its full size however many runs the legend lists: when it
+does not fit on the screen, the window scrolls instead of shrinking the plot.
 
 @author: stefano
 '''
@@ -210,8 +212,52 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     if interactive:
         legend.get_texts()[0].set_fontweight('bold')
         _enableLegendToggles(fig, legend, runArtists)
+        _makeScrollable(fig)
 
     _showOrSave(fig, output_path)
+
+
+def _makeScrollable(fig):
+    """Put the figure's canvas in a scroll area, with the figure's own size as
+    its minimum.
+
+    The figure is sized for its legend, 0.25 in per row, so with many runs it is
+    taller than the screen.  Qt then fits the window to the screen and the
+    constrained layout, which must keep the whole legend visible, takes the
+    difference out of the plot: at 200 runs the plot was a thumbnail.  Here the
+    canvas can grow with the window but never shrinks below the figure's size;
+    a smaller window scrolls instead.  The mouse wheel scrolls the window too.
+
+    A no-op on non-Qt backends.
+    """
+    window = getattr(fig.canvas.manager, 'window', None)
+    if window is None or not hasattr(window, 'takeCentralWidget'):
+        return
+    from matplotlib.backends.qt_compat import QtWidgets
+    canvas = fig.canvas
+    width, height = canvas.get_width_height()    # logical pixels, as Qt sizes widgets
+    window.takeCentralWidget()    # setCentralWidget alone would delete the canvas
+    scroll = QtWidgets.QScrollArea()
+    scroll.setWidgetResizable(True)
+    canvas.setMinimumSize(width, height)
+    scroll.setWidget(canvas)
+    window.setCentralWidget(scroll)
+
+    # Matplotlib accepts every wheel event; pass them on to the scroll area.
+    wheelEvent = canvas.wheelEvent
+    def scrollingWheelEvent(event):
+        wheelEvent(event)
+        event.ignore()
+    canvas.wheelEvent = scrollingWheelEvent
+
+    # Open as large as the figure, but no larger than the screen.
+    frame = 2 * scroll.frameWidth() + scroll.verticalScrollBar().sizeHint().width()
+    toolbar = getattr(fig.canvas.manager, 'toolbar', None)
+    extra = toolbar.sizeHint().height() if toolbar is not None else 0
+    available = window.screen().availableGeometry()
+    window.resize(min(width + frame, available.width()),
+                  min(height + frame + extra, int(available.height() * 0.95)))
+    canvas.setFocus()
 
 
 def _enableLegendToggles(fig, legend, runArtists):
