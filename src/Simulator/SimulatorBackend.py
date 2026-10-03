@@ -136,6 +136,8 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
         if KheperaSimulation is None:
             raise ImportError("KheperaSimulator requires Box2D. Install with: pip install box2d-py")
         self.kheperaSimulation = KheperaSimulation()
+        if dataDir is not None:
+            self.kheperaSimulation.setDataDir(dataDir)
         self.host = None
         self.port = None
 

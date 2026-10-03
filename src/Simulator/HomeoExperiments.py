@@ -19,6 +19,7 @@ from os import system
 from time import sleep 
 from Helpers.ExceptionAndDebugClasses import hDebug
 from Helpers.GenomeDecoder import genomePrettyPrinter, genomeDecoder
+from Helpers.General_Helper_Functions import dated_data_dir
 # from Helpers.VREP_Helper_Functions import connectToVREP
 from KheperaSimulator.KheperaSimulator import KheperaSimulation
 import os
@@ -3092,7 +3093,7 @@ def initializeBraiten2_2_NoUnisel_No_Noise_Full_GA(homeoGenome, homeoParameters=
         raw = False
     
     if dataDir == None:
-        dataDir = os.getcwd()
+        dataDir = dated_data_dir()
         
              
     "1. setup webots"
@@ -3401,7 +3402,7 @@ def initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE(**kwargs):#,n
         raw = kwargs['raw']
              
     if 'dataDir' not in kwargs:
-        dataDir = os.getcwd()
+        dataDir = dated_data_dir()
     else:
          dataDir =  kwargs['dataDir']
     

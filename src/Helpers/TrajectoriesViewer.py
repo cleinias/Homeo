@@ -271,7 +271,8 @@ class TrajectoryViewer(QWidget):
             dirPath = dataDirSource.read()
             dataDirSource.close()
         except IOError:
-            dirPath = os.getcwd()
+            from Helpers.General_Helper_Functions import simulations_data_dir
+            dirPath = simulations_data_dir()
         return dirPath
     
     def setDirpath(self, dirpath):        

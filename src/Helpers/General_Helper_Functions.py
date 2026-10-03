@@ -55,6 +55,22 @@ def simulations_data_dir():
     return legacy
 
 
+def dated_data_dir():
+    """Return today's data directory, simulations_data_dir()/SimsData-<date>,
+    creating it if needed.
+
+    The default home of output whose caller names no directory, and the same
+    directory the experiment scripts write to.  Defaults used to be the current
+    directory, so a run started anywhere other than a data directory left its
+    files there -- typically in src/, where every replay and GA test left a
+    stray trajData-ID-Unspecified-<timestamp>.traj.
+    """
+    import time
+    path = os.path.join(simulations_data_dir(), 'SimsData-' + time.strftime("%Y-%m-%d"))
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
 def run_tag():
     """Return the current run's serial as a filename suffix, or '' if unset.
 

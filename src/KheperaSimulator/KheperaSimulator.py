@@ -42,10 +42,9 @@ from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
 from pyglet.window import mouse, key
 from pyglet.math import Mat4, Vec3
 import numpy as np
-from os import getcwd
 
 from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2
-from Helpers.General_Helper_Functions import normalize
+from Helpers.General_Helper_Functions import normalize, dated_data_dir
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from time import sleep, time, strftime, localtime
 from datetime import datetime
@@ -833,7 +832,10 @@ class KheperaSimulation(object):
         self.timeStep = timeStep
         self.vel_iters = vel_iters
         self.pos_iters = pos_iters
-        self.dataDir = getcwd()
+        # Where trajectory files go until a caller sets its own directory: each
+        # world set up opens one at once, so the default must be a data
+        # directory, not the current one.
+        self.dataDir = dated_data_dir()
         self.experimentName = None
         self.allBodies = {} #Dictionary containing refs to all relevant bodies in the world
    
@@ -1461,7 +1463,7 @@ def runKheperaSimulator(headless = False, dataDir = None, HomeoWorld = None, Box
     """Runs the Khepera simulator either in headless mode (no graphics, for fast simulations) or with the openGl visualization class"""
     
     if dataDir is None:
-        dataDir = getcwd()
+        dataDir = dated_data_dir()
     print(dataDir)
     if not headless:
         app = KheperaSimulationVisualizer(Box2D_timeStep=Box2D_timeStep, Box2D_vel_iter=Box2D_vel_iter, 

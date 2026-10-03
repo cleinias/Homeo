@@ -194,10 +194,11 @@ def replay(genome, steps, experiment_func, seed, output_path, log_interval=1,
     data_dir = os.path.dirname(output_path)
 
     # Create backend and start world
+    # The data directory goes to the constructor: start() sets up the world,
+    # which opens a trajectory file at once.
     lock = threading.Lock()
-    backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera')
+    backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera', dataDir=data_dir)
     backend.start('kheperaBraitenberg2_HOMEO_World')
-    backend.setDataDir(data_dir)
 
     hom = _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby)
 
@@ -360,9 +361,8 @@ def replay_visualized(genome, experiment_func, seed, data_dir,
     glClearColor(0.55, 0.95, 1.0, 1.0)
 
     lock = threading.Lock()
-    backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera')
+    backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera', dataDir=data_dir)
     backend.start('kheperaBraitenberg2_HOMEO_World')
-    backend.setDataDir(data_dir)
 
     hom = _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby)
 

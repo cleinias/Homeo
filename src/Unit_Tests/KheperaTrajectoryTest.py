@@ -62,5 +62,48 @@ class TrajectoryFilesClosedTest(unittest.TestCase):
         self.assertEqual(len(rows), 5)
 
 
+@unittest.skipUnless(HAS_BOX2D, "Box2D not installed — KheperaSimulator unavailable")
+class DefaultDataDirTest(unittest.TestCase):
+    """With no data directory given, trajectory files go to today's data
+       directory -- never to the current directory, where they used to land as
+       stray trajData-ID-Unspecified-*.traj files."""
+
+    def setUp(self):
+        self.data = tempfile.TemporaryDirectory()      # stands in for SimulationsData
+        self.cwd = tempfile.TemporaryDirectory()       # wherever the run was started
+        self._oldcwd = os.getcwd()
+        self._oldenv = os.environ.get('HOMEO_DATA_DIR')
+        os.environ['HOMEO_DATA_DIR'] = self.data.name
+        os.chdir(self.cwd.name)
+
+    def tearDown(self):
+        os.chdir(self._oldcwd)
+        if self._oldenv is None:
+            os.environ.pop('HOMEO_DATA_DIR', None)
+        else:
+            os.environ['HOMEO_DATA_DIR'] = self._oldenv
+        self.cwd.cleanup()
+        self.data.cleanup()
+
+    def testWorldWithoutDataDirWritesToTodaysDataDir(self):
+        from Helpers.General_Helper_Functions import dated_data_dir
+        sim = KheperaSimulation()
+        sim.setupWorld('kheperaBraitenberg2_HOMEO_World')
+        sim.saveTrajectory()
+        self.assertEqual(os.listdir(self.cwd.name), [])
+        self.assertEqual(os.path.dirname(sim.trajectoryWriter.posFile.name), dated_data_dir())
+        self.assertTrue(dated_data_dir().startswith(self.data.name))
+
+    def testBackendPassesItsDataDirOnBeforeTheWorldStarts(self):
+        "SimulatorBackendHOMEO(dataDir=...) used to ignore its argument"
+        from Simulator.SimulatorBackend import SimulatorBackendHOMEO
+        with tempfile.TemporaryDirectory() as out:
+            backend = SimulatorBackendHOMEO(robotName='Khepera', dataDir=out)
+            backend.start('kheperaBraitenberg2_HOMEO_World')
+            backend.kheperaSimulation.saveTrajectory()
+            self.assertEqual(len(os.listdir(out)), 1)
+        self.assertEqual(os.listdir(self.cwd.name), [])
+
+
 if __name__ == "__main__":
     unittest.main()
