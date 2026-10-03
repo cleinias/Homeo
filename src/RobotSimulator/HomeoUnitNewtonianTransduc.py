@@ -49,6 +49,10 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
            unit's deviation to motor commands'''
         self._maxSpeedFraction = 0.2   # The maximum speed of a motor as a fraction of the actuator speed
         self._switchingRate = .1      # The speed at which the function switches from positive to negative, or the slope of the logistic curve     
+        '''A constant offset added to the commanded wheel speed, as a fraction
+           of the max speed: a tonic drive independent of the unit's deviation.
+           Opposite offsets on the two wheels give a baseline spin in place.'''
+        self._speedBias = 0.0
         
         'Open file for writing updated values, if needed'
         if filename is not None:
@@ -104,6 +108,10 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
                 raise HomeoUnitError("Cannot get max speed from Transducer")
         hDebug('unit', ("critDev for unit: %s is %.3f" % (self.name, self.criticalDeviation)))                  
         setSpeed = float(-self._maxSpeed) + ((2 * self._maxSpeed)/ (1+np_exp(- self._switchingRate * self.criticalDeviation)))
+        if self._speedBias:
+            # Clipped, so the bias cannot drive a wheel past the motor's limit.
+            setSpeed = min(self._maxSpeed, max(-self._maxSpeed,
+                                               setSpeed + self._speedBias * self._maxSpeed))
         setSpeed = round(setSpeed,3)
         hDebug('unit', ("Speed set by %s is %f with critDev: %.3f " % (self.name, setSpeed, self.criticalDeviation)))
         self.transducer.funcParameters = setSpeed

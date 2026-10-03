@@ -66,6 +66,9 @@ def _snapshot(homeostat):
         if _has_transducer_classes and isinstance(u, HomeoUnitNewtonianActuator):
             row['switchingRate'] = u._switchingRate
             row['maxSpeedFraction'] = u._maxSpeedFraction
+            # Only when set, so logs of unbiased runs are unchanged.
+            if getattr(u, '_speedBias', 0.0):
+                row['speedBias'] = u._speedBias
         if _has_transducer_classes and isinstance(u, HomeoUnitInput):
             row['alwaysPos'] = u.always_pos
         units.append(row)

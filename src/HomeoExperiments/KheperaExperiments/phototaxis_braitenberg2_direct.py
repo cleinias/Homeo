@@ -49,11 +49,27 @@ Start pose (any mode)
    Both are drawn from the run's seed, and the batch CSV records the start
    pose and whether either eye could see the light at the start.
 
+Baseline spin (any mode)
+------------------------
+   --spin RATE        a constant wheel-speed offset, +RATE x max speed on the
+                      left wheel and -RATE on the right, added after the
+                      motor sigmoid: the vehicle turns slowly in place when
+                      nothing drives it, and the offset adds to whatever the
+                      light drives.  RATE > 0 turns clockwise, < 0
+                      counter-clockwise.  0.05 is about 0.012 deg/tick, one
+                      revolution per ~30,000 ticks, against the 0.1-0.2
+                      deg/tick of light-driven steering.  Draws nothing from
+                      the RNG, so a seed gives the same start pose with and
+                      without a spin.
+
 
 Usage
 -----
     # Fixed-weight baseline, 20 runs from random start poses
     python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct --fixed-weights --random-start --batch 20
+
+    # The same with a slow clockwise baseline spin ("exploratory" mode)
+    python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct --fixed-weights --random-start --spin 0.05 --batch 20
 
     # Headless, fixed topology (default)
     python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct
@@ -93,7 +109,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      uniselector_type='ashby', continuous_params=None,
                      seed=None, fixed_weights=False,
                      stable_integration=True, start_at_rest=False,
-                     wiring='crossed', signs='++'):
+                     wiring='crossed', signs='++', spin=0.0):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -120,6 +136,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             'crossed' (2b) or 'uncrossed' (2a), and the sign
                             of each sensor->motor connection, left eye first
                             ('++', '+-', '-+', '--').
+        spin:               baseline spin, as a fraction of the motors' max
+                            speed; > 0 clockwise (see apply_spin).
 
     Returns:
         (hom, backend, seed)
@@ -163,6 +181,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         exp_name += '_dark'
     if uniselector_type == 'continuous' and not fixed_weights:
         exp_name += '_continuous'
+    exp_name += spin_tag(spin)
     backendSimulator.kheperaSimulation.experimentName = exp_name
 
     # --- Build the 4-unit homeostat ---
@@ -227,6 +246,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         _direct_random_topology(hom, **kwargs)
     else:
         _direct_fixed_topology(hom, **kwargs)
+    apply_spin(hom, spin)
 
     return hom, backendSimulator, seed
 
@@ -436,6 +456,27 @@ def _direct_fixed_weights(hom, max_speed_fraction=0.8, switching_rate=0.5,
         conn.status = True
 
 
+def spin_tag(spin):
+    "Filename tag for a baseline spin: '' for none, else e.g. '_cw0.05'."
+    if not spin:
+        return ''
+    return '_%s%g' % ('cw' if spin > 0 else 'ccw', abs(spin))
+
+
+def apply_spin(hom, spin):
+    '''Give the vehicle a baseline spin in place: a constant offset of
+    +spin x max speed on the left wheel and -spin x max speed on the right,
+    added to the speed each motor commands (HomeoUnitNewtonianActuator's
+    _speedBias).  spin > 0 turns the vehicle clockwise -- its heading
+    decreases -- and spin < 0 counter-clockwise.  The offset is independent
+    of the network, so with no light in view the vehicle turns at a constant
+    rate, and with the light in view the offset adds to the light-driven
+    steering.'''
+    units = {u.name: u for u in hom.homeoUnits}
+    units['Left Motor']._speedBias = spin
+    units['Right Motor']._speedBias = -spin
+
+
 def set_start_pose(robot, x=None, y=None, heading=None):
     '''Place the robot at (x, y) with the given heading (degrees, same
     convention as the .traj "heading" column); None keeps the current value.
@@ -524,13 +565,16 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  state_log=False, state_log_interval=1, seed=None, heading=None,
                  fixed_weights=False, random_heading=False, random_start=False,
                  stable_integration=True, start_at_rest=False,
-                 wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE):
+                 wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
+                 spin=0.0):
     '''Run the simplified 2+2 phototaxis experiment headless.
 
     Parameters and return value are the same as in
     phototaxis_braitenberg2_Ashby.run_headless(), plus:
         fixed_weights:  run the non-adaptive Braitenberg 2 baseline.
         wiring, signs:  with fixed_weights, which one (see setup_phototaxis).
+        spin:           baseline spin, fraction of max speed, > 0 clockwise
+                        (see apply_spin).
         random_heading: start with a random heading (seeded).
         random_start:   random heading and position start_range units from
                         the light (default 2-6).
@@ -553,7 +597,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                                           fixed_weights=fixed_weights,
                                           stable_integration=stable_integration,
                                           start_at_rest=start_at_rest,
-                                          wiring=wiring, signs=signs)
+                                          wiring=wiring, signs=signs, spin=spin)
     robot = backend.kheperaSimulation.allBodies['Khepera']
     target_pos = (7, 7)
     if random_heading or random_start:
@@ -602,6 +646,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         mode_label = 'fixed weights, no uniselector, %s %s' % (wiring, signs)
     else:
         mode_label = 'fixed topology' if topology == 'fixed' else 'random topology'
+    if spin:
+        mode_label += ', spin %g %s' % (abs(spin), 'CW' if spin > 0 else 'CCW')
     if not quiet:
         print(f'=== Phototaxis: Braitenberg 2 Direct 2+2 ({mode_label}) ===')
         print(f'Robot start: ({start_x:.3f}, {start_y:.3f})  heading {start_heading:.1f}  '
@@ -673,7 +719,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 start_dist=start_dist, start_sees_light=start_sees_light,
                 first_acq=first_acq, acquired=first_acq is not None,
                 wiring=wiring if fixed_weights else '',
-                signs=signs if fixed_weights else '')
+                signs=signs if fixed_weights else '',
+                spin=spin)
 
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
@@ -683,7 +730,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               fixed_weights=False, random_heading=False, random_start=False,
               stable_integration=True, start_at_rest=False, seed=None,
               state_log=False, state_log_interval=1, heading=None,
-              wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE):
+              wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
+              spin=0.0):
     '''Run a batch of experiments and print a summary table.
 
     With seed given, run i uses seed+i, so the batch is reproducible and an
@@ -695,6 +743,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
         kind = 'control_' + control_variant_name(wiring, signs)
     else:
         kind = 'continuous' if uniselector_type == 'continuous' else 'ashby'
+    kind += spin_tag(spin)
     print(f'=== Batch (direct 2+2): {n_runs} runs, {mode}, {total_steps} ticks budget ===')
     print()
 
@@ -727,6 +776,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          state_log_interval=state_log_interval,
                          heading=heading,
                          wiring=wiring, signs=signs, start_range=start_range,
+                         spin=spin,
                          seed=None if seed is None else seed + i)
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
@@ -769,7 +819,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
         csv_name = (f'batch_direct_{kind}_{mode}_'
                     f'{time.strftime("%Y-%m-%d-%H-%M-%S")}{run_tag()}.csv')
         csv_path = os.path.join(log_dir, csv_name)
-        fields = ['run', 'seed', 'wiring', 'signs',
+        fields = ['run', 'seed', 'wiring', 'signs', 'spin',
                   'start_x', 'start_y', 'start_heading', 'start_dist',
                   'start_sees_light', 'acquired', 'first_acq',
                   'final_dist', 'min_dist', 'min_t', 'steps_run',
@@ -785,7 +835,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
 
 
 def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
-                   random_start=False, seed=None, uniselector_type='ashby'):
+                   random_start=False, seed=None, uniselector_type='ashby',
+                   spin=0.0):
     '''Run the simplified 2+2 phototaxis experiment with the pyglet visualizer.'''
     import pyglet
     from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
@@ -812,7 +863,7 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
 
     hom, backend, seed = setup_phototaxis(topology=topology, seed=seed,
                                           uniselector_type=uniselector_type,
-                                          fixed_weights=fixed_weights)
+                                          fixed_weights=fixed_weights, spin=spin)
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target_pos = sim.allBodies['TARGET'].position
@@ -988,6 +1039,17 @@ if __name__ == '__main__':
         if not random_start:
             raise SystemExit('--start-range applies only with --random-start')
 
+    # --spin RATE: baseline spin, fraction of max speed, > 0 clockwise.
+    spin = 0.0
+    if '--spin' in sys.argv:
+        idx = sys.argv.index('--spin')
+        try:
+            spin = float(sys.argv[idx + 1])
+        except (IndexError, ValueError):
+            raise SystemExit('--spin needs a number, e.g. 0.05 (> 0 clockwise)')
+        if not -1 < spin < 1:
+            raise SystemExit('--spin is a fraction of max speed, |RATE| < 1, got %g' % spin)
+
     '''Trajectory volume.  Two rows are recorded per homeostat tick at ~50 bytes
        each, so a 6M-step run writes ~600 MB and a batch of 20 wrote 11.5 GB on
        2026-09-30.  --traj-interval decimates at write time; the final pose is
@@ -1013,7 +1075,7 @@ if __name__ == '__main__':
     if '--visualize' in sys.argv:
         run_visualized(topology=topology, fixed_weights=fixed_weights,
                        random_heading=random_heading, random_start=random_start,
-                       seed=seed, uniselector_type=uniselector_type)
+                       seed=seed, uniselector_type=uniselector_type, spin=spin)
     elif n_batch is not None:
         run_batch(n_runs=n_batch, topology=topology,
                   total_steps=total_steps,
@@ -1025,7 +1087,8 @@ if __name__ == '__main__':
                   stable_integration=stable_integration, start_at_rest=start_at_rest,
                   seed=seed, heading=heading,
                   state_log=state_log, state_log_interval=state_log_interval,
-                  wiring=wiring, signs=signs, start_range=start_range)
+                  wiring=wiring, signs=signs, start_range=start_range,
+                  spin=spin)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
@@ -1037,4 +1100,5 @@ if __name__ == '__main__':
                      seed=seed, fixed_weights=fixed_weights,
                      random_heading=random_heading, random_start=random_start,
                      stable_integration=stable_integration, start_at_rest=start_at_rest,
-                     wiring=wiring, signs=signs, start_range=start_range)
+                     wiring=wiring, signs=signs, start_range=start_range,
+                     spin=spin)

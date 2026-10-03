@@ -164,6 +164,128 @@ class CommandLineTest(unittest.TestCase):
             self.assertEqual((row['wiring'], row['signs']), ('uncrossed', '-+'))
             self.assertTrue(4.0 <= float(row['start_dist']) <= 8.0)
 
+    def testInvalidSpinIsRejected(self):
+        for args, message in ((('--spin', 'fast'), '--spin needs a number'),
+                              (('--spin', '1.5'), '|RATE| < 1')):
+            r = self._run('--fixed-weights', *args)
+            self.assertNotEqual(r.returncode, 0, args)
+            self.assertIn(message, r.stderr + r.stdout, args)
+
+    def testBatchCsvRecordsTheSpin(self):
+        "a spinning batch is named for its spin and records it"
+        src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        with tempfile.TemporaryDirectory() as tmp:
+            r = subprocess.run(
+                [sys.executable, '-m', 'HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct',
+                 '--batch', '1', '--steps', '500', '--seed', '3', '--no-traj',
+                 '--fixed-weights', '--signs', '+-', '--random-start', '--spin', '0.05'],
+                cwd=src, env=dict(os.environ, HOMEO_DATA_DIR=tmp), capture_output=True,
+                text=True, timeout=300)
+            self.assertEqual(r.returncode, 0, r.stderr[-1500:])
+            import csv, glob
+            csvs = glob.glob(os.path.join(tmp, '*', 'batch_direct_control_crossed_pm_cw0.05_*.csv'))
+            self.assertEqual(len(csvs), 1, os.listdir(tmp))
+            row = list(csv.DictReader(open(csvs[0])))[0]
+            self.assertEqual(float(row['spin']), 0.05)
+            jsons = glob.glob(os.path.join(tmp, '*', 'phototaxis_braitenberg2_direct_control_crossed_pm_cw0.05-*.json'))
+            self.assertEqual(len(jsons), 1)
+
+
+@unittest.skipUnless(HAS_BOX2D, "Box2D not installed — KheperaSimulator unavailable")
+class SpinTest(unittest.TestCase):
+    """--spin: a constant, opposite wheel-speed offset on the two motors."""
+
+    def _spin_in_the_dark(self, spin, ticks=3000):
+        """Heading change (deg) and displacement over `ticks`, starting at the
+           default position facing away from the light, so that only the spin
+           can move the vehicle."""
+        from math import degrees, hypot
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ['HOMEO_DATA_DIR'] = tmp
+            try:
+                hom, backend, _ = D.setup_phototaxis(seed=7, fixed_weights=True, spin=spin)
+                robot = backend.kheperaSimulation.allBodies['Khepera']
+                D.set_start_pose(robot, heading=225)
+                hom.slowingFactor = 0
+                hom.collectsData = False
+                hom._headless = True
+                for u in hom.homeoUnits:
+                    u._headless = True
+                a0, x0, y0 = robot.body.angle, robot.body.position[0], robot.body.position[1]
+                hom.runFor(ticks)
+                self.assertEqual((robot.getSensorRead('leftEye'),
+                                  robot.getSensorRead('rightEye')), (0, 0))
+                return (degrees(robot.body.angle - a0),
+                        hypot(robot.body.position[0] - x0, robot.body.position[1] - y0))
+            finally:
+                os.environ.pop('HOMEO_DATA_DIR', None)
+                backend.kheperaSimulation.saveTrajectory()
+
+    def testSpinTurnsInPlaceInTheRequestedDirection(self):
+        "positive spin turns clockwise (heading decreases), negative counter-clockwise, in place"
+        cw, cw_moved = self._spin_in_the_dark(0.05)
+        ccw, ccw_moved = self._spin_in_the_dark(-0.05)
+        still, still_moved = self._spin_in_the_dark(0.0)
+        self.assertLess(cw, -10)            # ~0.012 deg/tick
+        self.assertAlmostEqual(cw, -ccw, delta=0.5)
+        self.assertEqual(still, 0.0)
+        self.assertEqual(still_moved, 0.0)
+        self.assertLess(max(cw_moved, ccw_moved), 0.01)
+
+    def testSpinIsOppositeOnTheTwoMotorsAndNamed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ['HOMEO_DATA_DIR'] = tmp
+            try:
+                hom, backend, _ = D.setup_phototaxis(seed=7, fixed_weights=True, spin=0.05)
+            finally:
+                os.environ.pop('HOMEO_DATA_DIR', None)
+            backend.kheperaSimulation.saveTrajectory()
+        units = {u.name: u for u in hom.homeoUnits}
+        self.assertEqual((units['Left Motor']._speedBias, units['Right Motor']._speedBias),
+                         (0.05, -0.05))
+        self.assertEqual(backend.kheperaSimulation.experimentName,
+                         'phototaxis_braitenberg2_direct_control_crossed_pp_cw0.05')
+        self.assertEqual(D.spin_tag(0), '')
+        self.assertEqual(D.spin_tag(-0.1), '_ccw0.1')
+
+    def testWheelSpeedStaysWithinTheMotorLimit(self):
+        "the bias is clipped: a wheel never exceeds the motor's max speed"
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ['HOMEO_DATA_DIR'] = tmp
+            try:
+                hom, backend, _ = D.setup_phototaxis(seed=7, fixed_weights=True, spin=0.9)
+                hom.slowingFactor = 0
+                hom.collectsData = False
+                hom._headless = True
+                for u in hom.homeoUnits:
+                    u._headless = True
+                motors = [u for u in hom.homeoUnits if 'Motor' in u.name]
+                for t in range(50, 2001, 50):   # the light is in view: it drives too
+                    hom.runFor(t)
+                    for m in motors:
+                        # + 0.0005: the speed is rounded to 3 places after clipping
+                        self.assertLessEqual(abs(m.transducer.funcParameters),
+                                             m._maxSpeed + 0.0005)
+            finally:
+                os.environ.pop('HOMEO_DATA_DIR', None)
+                backend.kheperaSimulation.saveTrajectory()
+
+    def testSameSeedSamePoseWithOrWithoutSpin(self):
+        "the spin draws nothing, so a spinning batch pairs with a non-spinning one"
+        poses = set()
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ['HOMEO_DATA_DIR'] = tmp
+            try:
+                for spin in (0.0, 0.05):
+                    r = D.run_headless(total_steps=500, quiet=True, seed=31, fixed_weights=True,
+                                       random_start=True, start_range=(4.0, 8.0), spin=spin)
+                    r['backend'].kheperaSimulation.saveTrajectory()
+                    self.assertEqual(r['spin'], spin)
+                    poses.add((r['start_x'], r['start_y'], r['start_heading']))
+            finally:
+                os.environ.pop('HOMEO_DATA_DIR', None)
+        self.assertEqual(len(poses), 1, poses)
+
 
 if __name__ == "__main__":
     unittest.main()
