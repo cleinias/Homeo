@@ -867,6 +867,13 @@ class KheperaSimulation(object):
          
         if dataDir is not None:
             self.dataDir = dataDir
+        # Each world-setting method creates a new trajectory writer, which opens
+        # a file at once.  Close the current writer's file first: resetWorld
+        # does, but a world set up again without a reset (a GA evaluation builds
+        # the homeostat, resets, and builds again) would otherwise leave it open.
+        previousWriter = getattr(self, 'trajectoryWriter', None)
+        if previousWriter is not None:
+            previousWriter.runOnce(transitionMessage = "CLOSEFILE")
         
 #         if len(self.allBodies)>0:
 #             print "Robot is currently at: ", self.allBodies[self.robotName].body.position
