@@ -37,8 +37,23 @@ Initialization modes
    Braitenberg's vehicle 2b ("aggression"): each sensor excites the
    contra-lateral motor with a fixed weight of +1.0.  No uniselector, no
    noise, no random parameters, so a run depends only on the start pose.
-   Motor dynamics as in phototaxis_braitenberg2_control (mass 1, viscosity
-   0, -0.9 damping self-connection).  Ignores --random-topology/--continuous.
+   Ignores --random-topology/--continuous.  Two kinds of motor:
+
+   --motor newtonian (default): the homeostat's own motor units with frozen
+      weights.  Motor dynamics as in phototaxis_braitenberg2_control (mass 1,
+      viscosity 0, -0.9 self-connection) and a sigmoid from deviation to
+      wheel speed.  NOT a Braitenberg vehicle: each motor is a second-order
+      system, and the self-connection acts as a spring, not as damping, so
+      with zero viscosity the motor is an undamped oscillator -- under a
+      constant light the wheel speed swings every ~18 ticks.
+
+   --motor aristotelian: a true Braitenberg vehicle, with no dynamics.
+      Aristotelian units are first-order, x(t+1) = x(t) + torque / mass,
+      and with mass ARIST_MASS = 0.1 and self-weight -1 the self-connection
+      cancels x(t) exactly, so each motor's output equals its sensor's
+      reading on the previous tick (times the connection's sign).  The
+      wheel speed is linear in that output -- no sigmoid -- and its max is
+      the same as the Newtonian vehicle's (max_speed_fraction of the range).
 
 Start pose (any mode)
 ---------------------
@@ -66,6 +81,7 @@ Baseline spin (any mode)
 Usage
 -----
     # Fixed-weight baseline, 20 runs from random start poses
+    # (+ --motor aristotelian for the true Braitenberg vehicle)
     python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct --fixed-weights --random-start --batch 20
 
     # The same with a slow clockwise baseline spin ("exploratory" mode)
@@ -109,7 +125,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      uniselector_type='ashby', continuous_params=None,
                      seed=None, fixed_weights=False,
                      stable_integration=True, start_at_rest=False,
-                     wiring='crossed', signs='++', spin=0.0):
+                     wiring='crossed', signs='++', spin=0.0, motor='newtonian'):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -138,6 +154,9 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             ('++', '+-', '-+', '--').
         spin:               baseline spin, as a fraction of the motors' max
                             speed; > 0 clockwise (see apply_spin).
+        motor:              with fixed_weights, 'newtonian' (default) or
+                            'aristotelian' (the true Braitenberg vehicle; see
+                            _direct_fixed_weights).
 
     Returns:
         (hom, backend, seed)
@@ -146,6 +165,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     from Core.Homeostat import Homeostat
     from Core.HomeoUnit import HomeoUnit
     from RobotSimulator.HomeoUnitNewtonianTransduc import HomeoUnitNewtonianActuator
+    from RobotSimulator.HomeoUnitNewtonianTransduc import HomeoUnitAristotelianActuator
     from RobotSimulator.HomeoUnitNewtonianTransduc import HomeoUnitInput
     from Simulator.HomeoExperiments import basicBraiten2Tranducers
 
@@ -170,9 +190,13 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     os.makedirs(log_dir, exist_ok=True)
     backendSimulator.kheperaSimulation.dataDir = log_dir
 
+    if motor not in CONTROL_MOTORS:
+        raise ValueError("motor must be one of %s, got %r" % (CONTROL_MOTORS, motor))
+    if motor != 'newtonian' and not fixed_weights:
+        raise ValueError("motor=%r applies only with fixed_weights" % motor)
     if fixed_weights:
         exp_name = ('phototaxis_braitenberg2_direct_control_'
-                    + control_variant_name(wiring, signs))
+                    + control_variant_name(wiring, signs, motor))
     elif topology == 'random':
         exp_name = 'phototaxis_braitenberg2_direct_random'
     else:
@@ -199,8 +223,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     rightSensorTransd = transducers["rightEyeTransd"]
 
     # 2 motors + 2 sensor inputs (no eye intermediaries)
-    leftMotor = HomeoUnitNewtonianActuator(transducer=leftWheel)
-    rightMotor = HomeoUnitNewtonianActuator(transducer=rightWheel)
+    motorClass = (HomeoUnitAristotelianActuator if motor == 'aristotelian'
+                  else HomeoUnitNewtonianActuator)
+    leftMotor = motorClass(transducer=leftWheel)
+    rightMotor = motorClass(transducer=rightWheel)
     leftSensor = HomeoUnitInput(transducer=leftSensorTransd)
     rightSensor = HomeoUnitInput(transducer=rightSensorTransd)
 
@@ -241,7 +267,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     if fixed_weights:
         _direct_fixed_weights(hom, max_speed_fraction=max_speed_fraction,
                               switching_rate=switching_rate,
-                              wiring=wiring, signs=signs)
+                              wiring=wiring, signs=signs, motor=motor)
     elif topology == 'random':
         _direct_random_topology(hom, **kwargs)
     else:
@@ -380,6 +406,22 @@ CONTROL_VISCOSITY = 0.0
 
 CONTROL_WIRINGS = ('crossed', 'uncrossed')
 CONTROL_SIGNS = ('++', '+-', '-+', '--')
+CONTROL_MOTORS = ('newtonian', 'aristotelian')
+
+# The Aristotelian (Braitenberg) motor.  Its update is
+#     x(t+1) = x(t) + (w s(t) + c out(t)) / m,   out = x / maxDeviation,
+# so x(t) survives into x(t+1) with the factor 1 + c / (m maxDeviation).  The
+# self-weight c is DERIVED from the mass and the deviation range to make that
+# factor exactly 0 -- the unit then keeps no state, and x(t+1) = w s(t) / m,
+# i.e. out(t+1) = w s(t).  Change the mass or the range and c follows; set c
+# by hand and the memory silently comes back.  A connection weight must lie in
+# [-1, 1], so with maxDeviation 10 the mass can be at most 0.1.
+ARIST_MASS = 0.1
+
+
+def aristotelian_self_weight(unit):
+    "The self-weight that leaves an Aristotelian motor with no memory (see ARIST_MASS)."
+    return -unit.mass * unit.maxDeviation
 
 
 def _control_sensor_motor_pairs(wiring):
@@ -395,13 +437,16 @@ def _control_sensor_motor_pairs(wiring):
     raise ValueError("wiring must be one of %s, got %r" % (CONTROL_WIRINGS, wiring))
 
 
-def control_variant_name(wiring, signs):
-    "Filename-safe tag for a non-adaptive variant, e.g. 'crossed_pm' for crossed +-."
-    return '%s_%s' % (wiring, signs.replace('+', 'p').replace('-', 'm'))
+def control_variant_name(wiring, signs, motor='newtonian'):
+    '''Filename-safe tag for a non-adaptive variant, e.g. 'crossed_pm' for
+    crossed +-, 'arist_crossed_pm' for the same with Aristotelian motors.  The
+    Newtonian vehicle keeps its untagged names, which its existing runs have.'''
+    tag = '%s_%s' % (wiring, signs.replace('+', 'p').replace('-', 'm'))
+    return 'arist_' + tag if motor == 'aristotelian' else tag
 
 
 def _direct_fixed_weights(hom, max_speed_fraction=0.8, switching_rate=0.5,
-                          wiring='crossed', signs='++'):
+                          wiring='crossed', signs='++', motor='newtonian'):
     '''Non-adaptive baseline: a fixed-weight Braitenberg 2 vehicle.
 
     Each sensor drives one motor with a fixed weight of magnitude
@@ -412,29 +457,39 @@ def _direct_fixed_weights(hom, max_speed_fraction=0.8, switching_rate=0.5,
     2b ("aggression").  No uniselector, no noise and no random parameters, so
     a run depends only on the start pose.
 
-    Motor dynamics follow phototaxis_braitenberg2_control: mass 1 and zero
-    viscosity, so each tick's input acts immediately, and a damping
-    self-connection, so a motor slows down when its input fades.  Motors start
-    at zero deviation (zero wheel speed), so, as in Braitenberg's vehicle,
-    the robot does not move until an eye sees the light.
+    motor='newtonian': the homeostat's motor units, with dynamics as in
+    phototaxis_braitenberg2_control -- mass 1, zero viscosity, a -0.9
+    self-connection and a sigmoid to wheel speed.  The self-connection acts as
+    a spring, not as damping, so each motor is an undamped second-order
+    oscillator (see the module docstring).
+
+    motor='aristotelian': Aristotelian motor units with mass ARIST_MASS and the
+    self-weight that cancels their state (aristotelian_self_weight), so each
+    motor's output is its sensor's previous reading times the connection's
+    sign, and the wheel speed is linear in it.  This is Braitenberg's vehicle.
+
+    Either way motors start at zero deviation (zero wheel speed), so the robot
+    does not move until an eye sees the light (or a spin turns it).
     '''
     for u in hom.homeoUnits:
         if 'Sensor' in u.name:
             u.noise = 0
             continue
 
-        u.mass = CONTROL_MASS
+        u.mass = ARIST_MASS if motor == 'aristotelian' else CONTROL_MASS
         u.viscosity = CONTROL_VISCOSITY
         u.noise = 0
         u.uniselectorActive = False
         u.criticalDeviation = 0.0
         u._maxSpeedFraction = max_speed_fraction
-        u._switchingRate = switching_rate
-        u._maxSpeed = None  # force recalculation from new fraction
+        if motor == 'newtonian':
+            u._switchingRate = switching_rate
+            u._maxSpeed = None  # force recalculation from new fraction
 
         for conn in u.inputConnections[1:]:
             conn.status = False
-        u.inputConnections[0].newWeight(CONTROL_SELF_WEIGHT)
+        u.inputConnections[0].newWeight(aristotelian_self_weight(u) if motor == 'aristotelian'
+                                        else CONTROL_SELF_WEIGHT)
         u.inputConnections[0].noise = 0
         u.inputConnections[0].state = 'manual'
         u.inputConnections[0].status = True
@@ -566,13 +621,14 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  fixed_weights=False, random_heading=False, random_start=False,
                  stable_integration=True, start_at_rest=False,
                  wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
-                 spin=0.0):
+                 spin=0.0, motor='newtonian'):
     '''Run the simplified 2+2 phototaxis experiment headless.
 
     Parameters and return value are the same as in
     phototaxis_braitenberg2_Ashby.run_headless(), plus:
         fixed_weights:  run the non-adaptive Braitenberg 2 baseline.
         wiring, signs:  with fixed_weights, which one (see setup_phototaxis).
+        motor:          with fixed_weights, 'newtonian' or 'aristotelian'.
         spin:           baseline spin, fraction of max speed, > 0 clockwise
                         (see apply_spin).
         random_heading: start with a random heading (seeded).
@@ -597,7 +653,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                                           fixed_weights=fixed_weights,
                                           stable_integration=stable_integration,
                                           start_at_rest=start_at_rest,
-                                          wiring=wiring, signs=signs, spin=spin)
+                                          wiring=wiring, signs=signs, spin=spin,
+                                          motor=motor)
     robot = backend.kheperaSimulation.allBodies['Khepera']
     target_pos = (7, 7)
     if random_heading or random_start:
@@ -643,7 +700,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         return sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
 
     if fixed_weights:
-        mode_label = 'fixed weights, no uniselector, %s %s' % (wiring, signs)
+        mode_label = 'fixed weights, no uniselector, %s motors, %s %s' % (motor, wiring, signs)
     else:
         mode_label = 'fixed topology' if topology == 'fixed' else 'random topology'
     if spin:
@@ -720,6 +777,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 first_acq=first_acq, acquired=first_acq is not None,
                 wiring=wiring if fixed_weights else '',
                 signs=signs if fixed_weights else '',
+                motor=motor if fixed_weights else '',
                 spin=spin)
 
 
@@ -731,7 +789,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               stable_integration=True, start_at_rest=False, seed=None,
               state_log=False, state_log_interval=1, heading=None,
               wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
-              spin=0.0):
+              spin=0.0, motor='newtonian'):
     '''Run a batch of experiments and print a summary table.
 
     With seed given, run i uses seed+i, so the batch is reproducible and an
@@ -740,7 +798,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
 
     mode = 'dark' if light_intensity < 0 else 'light'
     if fixed_weights:
-        kind = 'control_' + control_variant_name(wiring, signs)
+        kind = 'control_' + control_variant_name(wiring, signs, motor)
     else:
         kind = 'continuous' if uniselector_type == 'continuous' else 'ashby'
     kind += spin_tag(spin)
@@ -776,7 +834,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          state_log_interval=state_log_interval,
                          heading=heading,
                          wiring=wiring, signs=signs, start_range=start_range,
-                         spin=spin,
+                         spin=spin, motor=motor,
                          seed=None if seed is None else seed + i)
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
@@ -819,7 +877,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
         csv_name = (f'batch_direct_{kind}_{mode}_'
                     f'{time.strftime("%Y-%m-%d-%H-%M-%S")}{run_tag()}.csv')
         csv_path = os.path.join(log_dir, csv_name)
-        fields = ['run', 'seed', 'wiring', 'signs', 'spin',
+        fields = ['run', 'seed', 'motor', 'wiring', 'signs', 'spin',
                   'start_x', 'start_y', 'start_heading', 'start_dist',
                   'start_sees_light', 'acquired', 'first_acq',
                   'final_dist', 'min_dist', 'min_t', 'steps_run',
@@ -836,7 +894,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
 
 def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
                    random_start=False, seed=None, uniselector_type='ashby',
-                   spin=0.0):
+                   spin=0.0, motor='newtonian'):
     '''Run the simplified 2+2 phototaxis experiment with the pyglet visualizer.'''
     import pyglet
     from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
@@ -863,7 +921,8 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
 
     hom, backend, seed = setup_phototaxis(topology=topology, seed=seed,
                                           uniselector_type=uniselector_type,
-                                          fixed_weights=fixed_weights, spin=spin)
+                                          fixed_weights=fixed_weights, spin=spin,
+                                          motor=motor)
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target_pos = sim.allBodies['TARGET'].position
@@ -1026,6 +1085,16 @@ if __name__ == '__main__':
     wiring = 'uncrossed' if '--uncrossed' in sys.argv else 'crossed'
     if not fixed_weights and ('--signs' in sys.argv or '--uncrossed' in sys.argv):
         raise SystemExit('--signs and --uncrossed apply only with --fixed-weights')
+    # --motor newtonian|aristotelian: the fixed-weight vehicle's motors.
+    motor = 'newtonian'
+    if '--motor' in sys.argv:
+        idx = sys.argv.index('--motor')
+        motor = sys.argv[idx + 1] if idx + 1 < len(sys.argv) else ''
+        if motor not in CONTROL_MOTORS:
+            raise SystemExit('--motor must be one of %s, got %r'
+                             % (' '.join(CONTROL_MOTORS), motor))
+        if not fixed_weights:
+            raise SystemExit('--motor applies only with --fixed-weights')
     # --start-range MIN MAX: distance from the light for --random-start (default 2 6).
     start_range = DEFAULT_START_RANGE
     if '--start-range' in sys.argv:
@@ -1075,7 +1144,8 @@ if __name__ == '__main__':
     if '--visualize' in sys.argv:
         run_visualized(topology=topology, fixed_weights=fixed_weights,
                        random_heading=random_heading, random_start=random_start,
-                       seed=seed, uniselector_type=uniselector_type, spin=spin)
+                       seed=seed, uniselector_type=uniselector_type, spin=spin,
+                       motor=motor)
     elif n_batch is not None:
         run_batch(n_runs=n_batch, topology=topology,
                   total_steps=total_steps,
@@ -1088,7 +1158,7 @@ if __name__ == '__main__':
                   seed=seed, heading=heading,
                   state_log=state_log, state_log_interval=state_log_interval,
                   wiring=wiring, signs=signs, start_range=start_range,
-                  spin=spin)
+                  spin=spin, motor=motor)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
@@ -1101,4 +1171,4 @@ if __name__ == '__main__':
                      random_heading=random_heading, random_start=random_start,
                      stable_integration=stable_integration, start_at_rest=start_at_rest,
                      wiring=wiring, signs=signs, start_range=start_range,
-                     spin=spin)
+                     spin=spin, motor=motor)

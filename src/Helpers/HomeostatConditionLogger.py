@@ -28,7 +28,7 @@ class _NumpyEncoder(json.JSONEncoder):
 
 try:
     from RobotSimulator.HomeoUnitNewtonianTransduc import (
-        HomeoUnitNewtonianActuator, HomeoUnitInput)
+        HomeoUnitNewtonianActuator, HomeoUnitAristotelianActuator, HomeoUnitInput)
     _has_transducer_classes = True
 except ImportError:
     _has_transducer_classes = False
@@ -69,6 +69,11 @@ def _snapshot(homeostat):
             # Only when set, so logs of unbiased runs are unchanged.
             if getattr(u, '_speedBias', 0.0):
                 row['speedBias'] = u._speedBias
+        if _has_transducer_classes and isinstance(u, HomeoUnitAristotelianActuator):
+            # Linear, no sigmoid: no switchingRate to record.
+            row['maxSpeedFraction'] = u._maxSpeedFraction
+            if u._speedBias:
+                row['speedBias'] = u._speedBias
         if _has_transducer_classes and isinstance(u, HomeoUnitInput):
             row['alwaysPos'] = u.always_pos
         units.append(row)
@@ -93,7 +98,7 @@ def _units_table(snapshot):
     """Format the units list as a tabulate grid."""
 
     # Determine if any actuator/input-specific columns are needed
-    has_actuator = any('switchingRate' in u for u in snapshot['units'])
+    has_actuator = any('maxSpeedFraction' in u for u in snapshot['units'])
     has_input = any('alwaysPos' in u for u in snapshot['units'])
 
     headers = ['Name', 'Type', 'Mass', 'Viscosity', 'MaxDev', 'CritDev',

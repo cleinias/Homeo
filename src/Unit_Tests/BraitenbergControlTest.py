@@ -164,6 +164,30 @@ class CommandLineTest(unittest.TestCase):
             self.assertEqual((row['wiring'], row['signs']), ('uncrossed', '-+'))
             self.assertTrue(4.0 <= float(row['start_dist']) <= 8.0)
 
+    def testInvalidMotorIsRejected(self):
+        for args, message in ((('--motor', 'aristotelian'), 'only with --fixed-weights'),
+                              (('--fixed-weights', '--motor', 'quantum'), '--motor must be one of')):
+            r = self._run(*args)
+            self.assertNotEqual(r.returncode, 0, args)
+            self.assertIn(message, r.stderr + r.stdout, args)
+
+    def testBatchCsvRecordsTheMotor(self):
+        "an Aristotelian batch is named for its motor and records it"
+        src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        with tempfile.TemporaryDirectory() as tmp:
+            r = subprocess.run(
+                [sys.executable, '-m', 'HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct',
+                 '--batch', '1', '--steps', '500', '--seed', '3', '--no-traj',
+                 '--fixed-weights', '--motor', 'aristotelian', '--random-start', '--spin', '0.05'],
+                cwd=src, env=dict(os.environ, HOMEO_DATA_DIR=tmp), capture_output=True,
+                text=True, timeout=300)
+            self.assertEqual(r.returncode, 0, r.stderr[-1500:])
+            import csv, glob
+            csvs = glob.glob(os.path.join(tmp, '*', 'batch_direct_control_arist_crossed_pp_cw0.05_*.csv'))
+            self.assertEqual(len(csvs), 1, os.listdir(tmp))
+            row = list(csv.DictReader(open(csvs[0])))[0]
+            self.assertEqual(row['motor'], 'aristotelian')
+
     def testInvalidSpinIsRejected(self):
         for args, message in ((('--spin', 'fast'), '--spin needs a number'),
                               (('--spin', '1.5'), '|RATE| < 1')):
@@ -285,6 +309,110 @@ class SpinTest(unittest.TestCase):
             finally:
                 os.environ.pop('HOMEO_DATA_DIR', None)
         self.assertEqual(len(poses), 1, poses)
+
+
+@unittest.skipUnless(HAS_BOX2D, "Box2D not installed — KheperaSimulator unavailable")
+class AristotelianMotorTest(unittest.TestCase):
+    """--motor aristotelian: the true Braitenberg vehicle.  Each motor's output
+       is its sensor's reading on the previous tick times the connection's sign
+       -- no memory, no dynamics -- and the wheel speed is linear in it."""
+
+    def _run(self, wiring, signs, ticks, spin=0.0, heading=None, perturb_at=None):
+        """Per tick: (sensor outputs before the tick, motor outputs and wheel
+           speeds after it).  perturb_at: a tick before which both motors'
+           deviations are set to arbitrary values, to show nothing carries over."""
+        rows = []
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ['HOMEO_DATA_DIR'] = tmp
+            try:
+                hom, backend, _ = D.setup_phototaxis(seed=7, fixed_weights=True, wiring=wiring,
+                                                     signs=signs, spin=spin, motor='aristotelian')
+                if heading is not None:
+                    D.set_start_pose(backend.kheperaSimulation.allBodies['Khepera'], heading=heading)
+                hom.slowingFactor = 0
+                hom.collectsData = False
+                hom._headless = True
+                for u in hom.homeoUnits:
+                    u._headless = True
+                units = {u.name: u for u in hom.homeoUnits}
+                for t in range(1, ticks + 1):
+                    if t == perturb_at:
+                        # A consistent state: the deviation AND the output that
+                        # goes with it (the self-connection feeds back the output).
+                        for name, dev in (('Left Motor', 7.3), ('Right Motor', -4.1)):
+                            units[name].criticalDeviation = dev
+                            units[name].computeOutput()
+                    sensors = {n: units[n].currentOutput for n in ('Left Sensor', 'Right Sensor')}
+                    hom.runFor(t)
+                    rows.append((sensors,
+                                 {n: units[n].currentOutput for n in ('Left Motor', 'Right Motor')},
+                                 {n: units[n].transducer.funcParameters for n in ('Left Motor', 'Right Motor')},
+                                 units))
+            finally:
+                os.environ.pop('HOMEO_DATA_DIR', None)
+                backend.kheperaSimulation.saveTrajectory()
+        return rows
+
+    def testMotorOutputIsThePreviousSensorReadingTimesTheSign(self):
+        "every wiring: out(t+1) = sign x sensor(t), exactly, while the light drives the motors"
+        lit = 0
+        for wiring, pairs in (
+                ('crossed', (('Left Sensor', 'Right Motor'), ('Right Sensor', 'Left Motor'))),
+                ('uncrossed', (('Left Sensor', 'Left Motor'), ('Right Sensor', 'Right Motor')))):
+            for signs in D.CONTROL_SIGNS:
+                for sensors, motors, _, _ in self._run(wiring, signs, 150):
+                    for (sensor, motor), sign in zip(pairs, signs):
+                        expected = sensors[sensor] * (1 if sign == '+' else -1)
+                        self.assertAlmostEqual(motors[motor], expected, places=12,
+                                               msg=(wiring, signs, sensor, motor))
+                        lit += sensors[sensor] != 0
+        self.assertGreater(lit, 1000)       # the light was really in view
+
+    def testNoStateCarriesOverFromTickToTick(self):
+        "an arbitrary deviation is gone after one tick: the motor has no memory"
+        rows = self._run('crossed', '++', 30, perturb_at=20)
+        sensors, motors = rows[19][0], rows[19][1]
+        self.assertNotEqual(sensors['Left Sensor'], 0)
+        self.assertAlmostEqual(motors['Right Motor'], sensors['Left Sensor'], places=12)
+        self.assertAlmostEqual(motors['Left Motor'], sensors['Right Sensor'], places=12)
+
+    def testWheelSpeedIsLinearWithTheNewtonianMax(self):
+        "wheel speed = output x max speed, the max being the Newtonian vehicle's (0.8 of the range)"
+        for _, motors, wheels, units in self._run('crossed', '++', 100):
+            for name in ('Left Motor', 'Right Motor'):
+                maxSpeed = units[name].transducer.range()[1] * 0.8
+                self.assertAlmostEqual(wheels[name], motors[name] * maxSpeed, places=9)
+        self.assertNotAlmostEqual(max(r[2]['Right Motor'] for r in self._run('crossed', '++', 100)), 0)
+
+    def testSelfWeightCancelsTheState(self):
+        "the self-weight is derived from the mass and the range: 1 + c/(m maxDev) = 0"
+        units = self._run('crossed', '++', 1)[0][3]
+        for name in ('Left Motor', 'Right Motor'):
+            u = units[name]
+            c = u.inputConnections[0].weight * u.inputConnections[0].switch
+            self.assertEqual(u.mass, D.ARIST_MASS)
+            self.assertAlmostEqual(1 + c / (u.mass * u.maxDeviation), 0.0, places=12)
+            self.assertEqual(type(u).__name__, 'HomeoUnitAristotelianActuator')
+
+    def testSpinIsTheSameWheelSpeedAsTheNewtonianOne(self):
+        "in the dark, spin 0.05 sets the wheels to +-0.05 x the shared max speed"
+        _, _, wheels, units = self._run('crossed', '++', 50, spin=0.05, heading=225)[-1]
+        maxSpeed = units['Left Motor'].transducer.range()[1] * 0.8
+        self.assertAlmostEqual(wheels['Left Motor'], 0.05 * maxSpeed, places=12)
+        self.assertAlmostEqual(wheels['Right Motor'], -0.05 * maxSpeed, places=12)
+
+    def testNamesAndValidation(self):
+        self.assertEqual(D.control_variant_name('crossed', '+-', 'aristotelian'), 'arist_crossed_pm')
+        self.assertEqual(D.control_variant_name('crossed', '+-'), 'crossed_pm')
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ['HOMEO_DATA_DIR'] = tmp
+            try:
+                with self.assertRaises(ValueError):
+                    D.setup_phototaxis(seed=1, motor='aristotelian')       # needs fixed_weights
+                with self.assertRaises(ValueError):
+                    D.setup_phototaxis(seed=1, fixed_weights=True, motor='quantum')
+            finally:
+                os.environ.pop('HOMEO_DATA_DIR', None)
 
 
 if __name__ == "__main__":

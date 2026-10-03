@@ -141,6 +141,14 @@ class HomeoUnitAristotelianActuator(HomeoUnitAristotelian):
         if transducer is not None:
             self.transducer = transducer
 
+        '''The max speed as a fraction of the actuator's range, and a constant
+           speed offset as a fraction of that max speed: the same two settings,
+           with the same meaning, as HomeoUnitNewtonianActuator's.  The
+           defaults (1.0, 0.0) leave the plain linear map from deviation to the
+           actuator's full range.'''
+        self._maxSpeedFraction = 1.0
+        self._speedBias = 0.0
+
     
     def setTransducer(self, aTransducer):
         self._transducer = aTransducer
@@ -155,7 +163,14 @@ class HomeoUnitAristotelianActuator(HomeoUnitAristotelian):
             then operate transducer on the unit value scaled 
             to the transducer range'''
         super(HomeoUnitAristotelianActuator, self).selfUpdate()
-        self.transducer.funcParameters = scaleTo([-self.maxDeviation,self.maxDeviation],self.transducer.range(),self.criticalDeviation)
+        setSpeed = scaleTo([-self.maxDeviation,self.maxDeviation],self.transducer.range(),self.criticalDeviation)
+        if self._maxSpeedFraction != 1.0:
+            setSpeed *= self._maxSpeedFraction        # the range is symmetric about 0
+        if self._speedBias:
+            maxSpeed = self.transducer.range()[1] * self._maxSpeedFraction
+            # Clipped, so the bias cannot drive a wheel past the motor's limit.
+            setSpeed = min(maxSpeed, max(-maxSpeed, setSpeed + self._speedBias * maxSpeed))
+        self.transducer.funcParameters = setSpeed
         self.transducer.act()
         
 class HomeoUnitInput(HomeoUnit):

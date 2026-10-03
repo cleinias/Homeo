@@ -20,6 +20,9 @@
 #     bash hpc/run_array_local.sh --fixed-weights --random-start --spin 0.05 ...
 #                                  # + a slow clockwise baseline spin in place
 #                                  # (fraction of max wheel speed; < 0 for CCW)
+#     bash hpc/run_array_local.sh --fixed-weights --motor aristotelian ...
+#                                  # the true Braitenberg vehicle: memoryless,
+#                                  # linear motors (default: newtonian)
 #
 # Mirrors grace_ou_6M.slurm exactly -- same seeds (20260930 + task), same flags
 # (--continuous --batch 1 --start-at-rest --traj-interval 200 --run-tag <NN>),
@@ -129,6 +132,7 @@ UNCROSSED=0
 RANDOM_START=0
 START_RANGE=""
 SPIN=""
+MOTOR=""
 UNISELECTOR=continuous""
 
 
@@ -159,6 +163,7 @@ while [ $# -gt 0 ]; do
         --random-start)  RANDOM_START=1; shift;;
         --start-range)   START_RANGE="$2 $3"; shift 3;;
         --spin)          SPIN="$2"; shift 2;;
+        --motor)         MOTOR="$2"; shift 2;;
         --uniselector)   UNISELECTOR="$2"; shift 2;;
         --dry-run)     DRY_RUN=1; shift;;
         -h|--help)     usage;;
@@ -194,9 +199,13 @@ fi
 if [ -n "$START_RANGE" ] && [ "$RANDOM_START" -eq 0 ]; then
     echo "--start-range applies only with --random-start" >&2; exit 2
 fi
-if [ "$FIXED_WEIGHTS" -eq 0 ] && { [ -n "$SIGNS" ] || [ "$UNCROSSED" -eq 1 ]; }; then
-    echo "--signs and --uncrossed apply only with --fixed-weights" >&2; exit 2
+if [ "$FIXED_WEIGHTS" -eq 0 ] && { [ -n "$SIGNS" ] || [ "$UNCROSSED" -eq 1 ] || [ -n "$MOTOR" ]; }; then
+    echo "--signs, --uncrossed and --motor apply only with --fixed-weights" >&2; exit 2
 fi
+case "$MOTOR" in
+    ""|newtonian|aristotelian) ;;
+    *) echo "--motor must be newtonian or aristotelian, got '$MOTOR'" >&2; exit 2;;
+esac
 case "$SIGNS" in
     ""|"++"|"+-"|"-+"|"--") ;;
     *) echo "--signs must be ++, +-, -+ or --, got '$SIGNS'" >&2; exit 2;;
@@ -250,7 +259,7 @@ echo "   tasks      : $FIRST-$LAST  ($n_tasks tasks)"
 echo "   workers    : $WORKERS concurrent  ->  $waves waves"
 echo "   steps/task : $STEPS   traj-interval $TRAJ_INTERVAL"
 if [ "$FIXED_WEIGHTS" -eq 1 ]; then
-    echo "   vehicle    : fixed weights (no homeostat), $([ "$UNCROSSED" -eq 1 ] && echo uncrossed || echo crossed), signs ${SIGNS:-++} (left eye, right eye)"
+    echo "   vehicle    : fixed weights (no homeostat), ${MOTOR:-newtonian} motors, $([ "$UNCROSSED" -eq 1 ] && echo uncrossed || echo crossed), signs ${SIGNS:-++} (left eye, right eye)"
 else
     echo "   uniselector: $UNISELECTOR"
 fi
@@ -277,7 +286,7 @@ echo
     echo "tasks $FIRST-$LAST, $WORKERS workers, $STEPS steps, traj-interval $TRAJ_INTERVAL"
     [ "$STATE_LOG" -eq 1 ] && echo "state log every $LOG_INTERVAL ticks"
     if [ "$FIXED_WEIGHTS" -eq 1 ]; then
-        echo "fixed weights, $([ "$UNCROSSED" -eq 1 ] && echo uncrossed || echo crossed), signs ${SIGNS:-++}"
+        echo "fixed weights, ${MOTOR:-newtonian} motors, $([ "$UNCROSSED" -eq 1 ] && echo uncrossed || echo crossed), signs ${SIGNS:-++}"
     else
         echo "uniselector $UNISELECTOR"
     fi
@@ -337,6 +346,7 @@ run_task() {
         vehicle_args+=(--fixed-weights)
         [ -n "$SIGNS" ] && vehicle_args+=(--signs "$SIGNS")
         [ "$UNCROSSED" -eq 1 ] && vehicle_args+=(--uncrossed)
+        [ -n "$MOTOR" ] && vehicle_args+=(--motor "$MOTOR")
     fi
     if [ "$RANDOM_START" -eq 1 ]; then
         vehicle_args+=(--random-start)

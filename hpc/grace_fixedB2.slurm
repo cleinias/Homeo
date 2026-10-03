@@ -12,11 +12,18 @@
 # (crossed/uncrossed x signs ++ +- -+ --) x 25 random start poses, 300,000
 # steps each, full trajectories (--traj-interval 1).
 #
-#     sbatch grace_fixedB2.slurm MIN MAX [SPIN]
+#     sbatch grace_fixedB2.slurm MIN MAX [SPIN [MOTOR]]
 #
 # MIN MAX: the distance from the light of the random start (--start-range).
 # SPIN:    baseline spin in place, fraction of max wheel speed, > 0 clockwise
 #          (--spin; default 0, no spin).
+# MOTOR:   newtonian (default) or aristotelian, the true Braitenberg vehicle
+#          (--motor; memoryless linear motors).  Aristotelian runs go to
+#          fixedB2-arist-...; e.g. the four Braitenberg baseline arrays:
+#              sbatch grace_fixedB2.slurm 2 6 0 aristotelian
+#              sbatch grace_fixedB2.slurm 4 8 0 aristotelian
+#              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian
+#              sbatch grace_fixedB2.slurm 4 8 0.05 aristotelian
 #
 # Task -> run, identical to the 2026-10-03 polus baseline
 # (SimulationsData/fixedB2-r4to8-traj1-2026-10-03), so the arrays pair
@@ -48,9 +55,14 @@
 set -euo pipefail
 
 if [ $# -lt 2 ]; then
-    echo "usage: sbatch grace_fixedB2.slurm MIN MAX [SPIN]" >&2; exit 2
+    echo "usage: sbatch grace_fixedB2.slurm MIN MAX [SPIN [MOTOR]]" >&2; exit 2
 fi
-START_MIN="$1"; START_MAX="$2"; SPIN="${3:-0}"
+START_MIN="$1"; START_MAX="$2"; SPIN="${3:-0}"; MOTOR="${4:-newtonian}"
+case "$MOTOR" in
+    newtonian) motor_tag="";;
+    aristotelian) motor_tag="-arist";;
+    *) echo "MOTOR must be newtonian or aristotelian, got '$MOTOR'" >&2; exit 2;;
+esac
 
 HOMEO_SRC="${HOMEO_SRC:-$SCRATCH/Homeo}"
 VENV="${VENV:-$SCRATCH/homeo-venv}"
@@ -69,7 +81,7 @@ SEED=$(( 20261004 + i % 25 ))
 # Zero-padded to 2 digits, as run_array_local.sh did on polus.
 SERIAL=$(printf '%02d' "$SLURM_ARRAY_TASK_ID")
 
-vehicle_args=(--fixed-weights --signs "$SIGNS")
+vehicle_args=(--fixed-weights --motor "$MOTOR" --signs "$SIGNS")
 [ "$WIRING" = uncrossed ] && vehicle_args+=(--uncrossed)
 spin_args=()
 spin_tag=""
@@ -80,7 +92,7 @@ fi
 
 # ONE output directory for the whole array; filenames carry the serial.
 # HOMEO_DATA_DIR is the data ROOT: the experiment appends "SimsData-<date>".
-RUN_NAME="fixedB2-r${START_MIN}to${START_MAX}${spin_tag}-traj1-$SLURM_ARRAY_JOB_ID"
+RUN_NAME="fixedB2${motor_tag}-r${START_MIN}to${START_MAX}${spin_tag}-traj1-$SLURM_ARRAY_JOB_ID"
 export HOMEO_DATA_DIR="$SCRATCH/homeo/$RUN_NAME"
 mkdir -p "$HOMEO_DATA_DIR"
 
@@ -96,12 +108,13 @@ if [ ! -e "$HOMEO_DATA_DIR/PROVENANCE.txt" ]; then
         echo "tasks 1-200: 8 wirings x 25 seeds (20261004-20261028), 300000 steps, traj-interval 1"
         echo "random start $START_MIN-$START_MAX from the light"
         echo "spin $SPIN x max wheel speed (> 0 clockwise)"
+        echo "motor $MOTOR"
         echo "code $CODE"
         echo "cpu  $(lscpu 2>/dev/null | sed -n 's/^Model name: *//p' | head -1)"
     } > "$HOMEO_DATA_DIR/PROVENANCE.txt"
 fi
 
-echo "task $SLURM_ARRAY_TASK_ID: $WIRING $SIGNS  seed $SEED  start $START_MIN-$START_MAX  spin $SPIN"
+echo "task $SLURM_ARRAY_TASK_ID: $MOTOR $WIRING $SIGNS  seed $SEED  start $START_MIN-$START_MAX  spin $SPIN"
 echo "out  $HOMEO_DATA_DIR"
 echo "code $CODE"
 
