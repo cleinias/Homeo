@@ -15,6 +15,16 @@ Usage:
     python replay_best_with_statelog.py --logbook path.lgb --indiv 016-014
     python replay_best_with_statelog.py --logbook path.lgb --visualize
     python replay_best_with_statelog.py --logbook path.lgb --ashby --steps 100000
+
+Reproducing a GA evaluation.  Logbooks written since GA runs became seeded
+(October 2026) record each individual's evalSeed.  For those, the replay builds
+and runs the homeostat through the GA's own code (prepare_genome_evaluation in
+Simulator/HomeoGenAlg.py), seeded with the logged evalSeed, for the logged run
+length, and reports whether it reproduced the logged fitness exactly.  --seed
+replays the same genome under other noise; --steps runs it for another length.
+Older logbooks have no evalSeed: their replay works as it always did (seed 45,
+60000 steps by default) and cannot reproduce the logged fitness.  The
+visualizer always uses the older path (it runs non-headless, unlike the GA).
 """
 
 import os
@@ -251,6 +261,78 @@ def replay(genome, steps, experiment_func, seed, output_path, log_interval=1,
     return final_dist
 
 
+class _Genome(list):
+    "A genome as the GA evaluates it: the genes, plus the individual's ID."
+    def __init__(self, genes, ID):
+        super().__init__(genes)
+        self.ID = ID
+
+
+def _swap_to_ashby(hom):
+    "Replace OU continuous uniselectors with Ashby discrete ones."
+    from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
+    from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
+    for u in hom.homeoUnits:
+        if isinstance(getattr(u, 'uniselector', None), HomeoUniselectorContinuous):
+            u.uniselector = HomeoUniselectorAshby()
+            print("  Swapped %s uniselector -> Ashby discrete" % u.name)
+
+
+def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, output_path,
+                        log_interval=1, use_ashby=False, model_name=None):
+    """Replay a genome headless exactly as the GA evaluated it, writing a
+       .statelog: the GA's own setup (prepare_genome_evaluation), seeded with
+       eval_seed, advanced with the same sim.step() calls.  Returns the final
+       distance from the target."""
+    from Simulator.HomeoGenAlg import prepare_genome_evaluation, seeded_evaluation
+
+    data_dir = os.path.dirname(output_path)
+    params = {'dataDir': data_dir,
+              'noNoise': meta.get('noNoise', False),
+              'noUnisel': meta.get('noUnisel', False)}
+    with seeded_evaluation(eval_seed):
+        sim, backend, actual_ticks, min_dt_fast = prepare_genome_evaluation(
+            _Genome(genome, indiv_id), exp_name, params, steps, data_dir,
+            modelName=model_name,
+            adjustHomeostat=_swap_to_ashby if use_ashby else None)
+        hom = sim.homeostat
+
+        # Run one tick so JIT arrays get created (headless mode initialises
+        # them lazily on the first selfUpdate): the logger constructor
+        # inspects _jit_incoming_units, so it must come after.
+        sim.step()
+        logger = HomeostatStateLogger(
+            hom, backend.kheperaSimulation, output_path,
+            log_interval=log_interval,
+            target_pos=(7, 7),
+            seed=eval_seed)
+
+        print("Running %d ticks (%d sim-seconds, min_dt=%.2f) ..." % (
+            actual_ticks, steps, min_dt_fast))
+        t0 = time.time()
+        logger.log_tick(1)
+        for tick in range(2, actual_ticks + 1):
+            before = hom.time
+            sim.step()
+            if hom.time == before:
+                # sim.step() stops at sim.maxRuns, as in the GA's evaluation
+                print("  Stopped at tick %d of %d, as the GA's evaluation does: "
+                      "HomeoQtSimulation.step() stops at maxRuns = %d"
+                      % (hom.time, actual_ticks, sim.maxRuns))
+                break
+            logger.log_tick(tick)
+            if tick % 10000 == 0:
+                logger.flush()
+                print("  tick %d/%d  (%.1fs elapsed)" % (tick, actual_ticks, time.time() - t0))
+
+        logger.close()
+        backend.kheperaSimulation.saveTrajectory()
+        final_dist = backend.finalDisFromTarget()
+    print("Done in %.1fs.  Final distance: %.4f" % (time.time() - t0, final_dist))
+    print("Statelog written to: %s" % output_path)
+    return final_dist
+
+
 def replay_visualized(genome, experiment_func, seed, data_dir,
                       use_ashby=False, model_name=None):
     """Replay a genome with the pyglet visualizer.
@@ -367,10 +449,13 @@ def main():
                         help='Path to DEAP logbook pickle (.lgb)')
     parser.add_argument('--indiv', default=None,
                         help='Individual ID to replay (default: best)')
-    parser.add_argument('--steps', type=int, default=DEFAULT_STEPS,
-                        help='Simulation steps (sim-seconds, default %d)' % DEFAULT_STEPS)
-    parser.add_argument('--seed', type=int, default=45,
-                        help='RNG seed (default: 45)')
+    parser.add_argument('--steps', type=int, default=None,
+                        help='Simulation steps (sim-seconds).  Default: the GA run length '
+                             'recorded in the logbook for logbooks with evalSeeds, '
+                             'else %d' % DEFAULT_STEPS)
+    parser.add_argument('--seed', type=int, default=None,
+                        help="RNG seed.  Default: the individual's logged evalSeed, which "
+                             "reproduces its GA evaluation; 45 for older logbooks")
     parser.add_argument('--output', '-o', default=None,
                         help='Output .statelog path (default: auto-generated)')
     parser.add_argument('--log-interval', type=int, default=1,
@@ -407,9 +492,24 @@ def main():
     print("  Individual: %s  fitness: %.5f  genome: %s" % (
         indiv_id, fitness, [round(g, 4) for g in genome]))
 
+    logged_seed = rec.get('evalSeed')
+    as_evaluated = logged_seed is not None and not args.visualize
+    if logged_seed is None:
+        print("  This logbook predates seeded GA evaluations (no evalSeed): the replay "
+              "cannot reproduce the logged fitness.")
+    if as_evaluated:
+        seed = logged_seed if args.seed is None else args.seed
+        steps = args.steps if args.steps is not None else (meta or {}).get('length', DEFAULT_STEPS)
+    else:
+        seed = 45 if args.seed is None and logged_seed is None else (
+            logged_seed if args.seed is None else args.seed)
+        steps = args.steps if args.steps is not None else DEFAULT_STEPS
+    print("  Seed: %d%s   Steps: %d" % (
+        seed, " (the logged evalSeed)" if seed == logged_seed else "", steps))
+
     # Build a descriptive model name for the .traj file
     unisel_tag = 'ashby' if args.ashby else 'OU'
-    model_name = 'replay-%s-%s-s%d' % (indiv_id, unisel_tag, args.seed)
+    model_name = 'replay-%s-%s-s%d' % (indiv_id, unisel_tag, seed)
 
     if args.visualize:
         # Output dir for trajectory files
@@ -417,23 +517,41 @@ def main():
         data_dir = os.path.join(simulations_data_dir(),
                                 'replay-%s' % timestamp)
         os.makedirs(data_dir, exist_ok=True)
-        replay_visualized(genome, exp_func, args.seed, data_dir,
+        replay_visualized(genome, exp_func, seed, data_dir,
                           use_ashby=args.ashby, model_name=model_name)
     else:
         # Output path for statelog
         if args.output:
-            output_path = args.output
+            output_path = os.path.abspath(args.output)
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
         else:
             timestamp = time.strftime('%Y-%m-%d-%H-%M-%S')
             output_dir = os.path.join(simulations_data_dir(),
                                       'replay-%s' % timestamp)
             os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir,
-                                       'replay-%s-%dk.statelog' % (indiv_id, args.steps // 1000))
+                                       'replay-%s-%dk.statelog' % (indiv_id, steps // 1000))
 
-        replay(genome, args.steps, exp_func, args.seed, output_path,
-               log_interval=args.log_interval, use_ashby=args.ashby,
-               model_name=model_name)
+        if not as_evaluated:
+            replay(genome, steps, exp_func, seed, output_path,
+                   log_interval=args.log_interval, use_ashby=args.ashby,
+                   model_name=model_name)
+            return
+
+        final_dist = replay_as_evaluated(
+            genome, indiv_id, exp_name, meta or {}, steps, seed, output_path,
+            log_interval=args.log_interval, use_ashby=args.ashby,
+            model_name=model_name)
+        if seed == logged_seed and steps == (meta or {}).get('length') and not args.ashby:
+            replayed = (meta or {}).get('fitnessSign', 1) * final_dist
+            if replayed == fitness:
+                print("Reproduced the logged fitness exactly: %r" % fitness)
+            else:
+                sys.exit("MISMATCH: replayed fitness %r, logged %r -- the replay does not "
+                         "repeat the GA's evaluation" % (replayed, fitness))
+        else:
+            print("Not a reproduction of the GA evaluation (other seed, length or "
+                  "uniselector): the logged fitness was %r" % fitness)
 
 
 if __name__ == '__main__':

@@ -144,25 +144,28 @@ def _evaluate_genome_worker(genome):
         return _run_genome_evaluation(genome)
 
 
-def _run_genome_evaluation(genome):
-    """Standalone fitness evaluation for use with multiprocessing.Pool.
+def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, dataDir,
+                              modelName=None, adjustHomeostat=None):
+    """Build the simulation for evaluating `genome` exactly as a GA evaluation
+       does, ready to run: returns (sim, backend, actual_ticks, min_dt_fast),
+       where sim.step() advances it one tick, actual_ticks is the evaluation's
+       length and min_dt_fast the smallest unit time step it was computed from.  Shared by the pool workers and replay_best_with_statelog.py,
+       so that a replay seeded with a logged evalSeed repeats the evaluation.
 
-    Creates its own SimulatorBackendHOMEO and HomeoQtSimulation per call,
-    avoiding all shared state. Reads experiment parameters from the
-    module-level _worker_config dict (set by _init_worker at pool start).
+       genome          a list of genes with an ID attribute
+       experiment      name of the experiment function in Simulator.HomeoExperiments
+       experimentParams  extra arguments for it ('dataDir', 'noNoise', 'noUnisel')
+       modelName       name for the trajectory file (default: genome.ID)
+       adjustHomeostat called with the homeostat once it is built, before its
+                       units are connected (a replay uses it to swap uniselectors)
     """
-    cfg = _worker_config
-    experiment = cfg['experiment']
-    stepsSize = cfg['stepsSize']
-    dataDir = cfg['dataDir']
-
     backend = SimulatorBackendHOMEO(robotName='Khepera', lock=None)
     backend.setDataDir(dataDir)
 
     sim = HomeoQtSimulation(experiment=experiment, dataDir=dataDir)
     sim.maxRuns = stepsSize
 
-    params = dict(cfg['experimentParams'])
+    params = dict(experimentParams)
     params['homeoGenome'] = genome
     params['backendSimulator'] = backend
 
@@ -174,10 +177,12 @@ def _run_genome_evaluation(genome):
     backend.reset()
     sim.initializeExperSetup(
         message="Rebuilding world after reset", **params)
+    if adjustHomeostat is not None:
+        adjustHomeostat(sim.homeostat)
     backend.close()
     backend.connect()
 
-    backend.setRobotModel(genome.ID)
+    backend.setRobotModel(genome.ID if modelName is None else modelName)
     sim.homeostat.connectUnitsToNetwork()
     sim.maxRuns = stepsSize
     sim.initializeLiveData()
@@ -200,6 +205,19 @@ def _run_genome_evaluation(genome):
         if dt < min_dt_fast:
             min_dt_fast = dt
     actual_ticks = int(math.ceil(stepsSize / min_dt_fast))
+    return sim, backend, actual_ticks, min_dt_fast
+
+
+def _run_genome_evaluation(genome):
+    """Standalone fitness evaluation for use with multiprocessing.Pool.
+
+    Creates its own SimulatorBackendHOMEO and HomeoQtSimulation per call,
+    avoiding all shared state. Reads experiment parameters from the
+    module-level _worker_config dict (set by _init_worker at pool start).
+    """
+    cfg = _worker_config
+    sim, backend, actual_ticks, min_dt_fast = prepare_genome_evaluation(
+        genome, cfg['experiment'], cfg['experimentParams'], cfg['stepsSize'], cfg['dataDir'])
 
     timeNow = time()
     for i in range(actual_ticks):
@@ -428,7 +446,9 @@ class HomeoGASimulation(object):
                             type = self._type,
                             cloneName = clone,
                             randomSeed = self.randomSeed,
-                            noiseScheme = self.noiseScheme) 
+                            noiseScheme = self.noiseScheme,
+                            noNoise = self.experimentParams['noNoise'],
+                            noUnisel = self.experimentParams['noUnisel']) 
 
 
         #=======================================================================

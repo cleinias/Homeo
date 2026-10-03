@@ -212,5 +212,84 @@ class SeededGARunTest(unittest.TestCase):
         self.assertEqual(len(set.union(*by_generation.values())), 2)
 
 
+# A small GA (experiment 2: evolvable dt_fast, so some evaluations stop at
+# maxRuns before their planned tick count) whose logbook the replay reads.
+_GA_FOR_REPLAY = '''
+import sys, glob
+sys.path.insert(0, {src!r})
+if __name__ == '__main__':
+    from Simulator.HomeoGenAlg import HomeoGASimulation
+    HomeoGASimulation.dataDirRoot = {out!r}
+    ga = HomeoGASimulation(stepsSize=100, popSize=6, generSize=1,
+                           exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed',
+                           simulatorBackend='HOMEO', nWorkers=2)
+    ga.runGaSimulation(ga.generateRandomPop(randomSeed=3))
+    print('LOGBOOK ' + sorted(glob.glob(ga.dataDir + '/Logbook-*.lgb'))[-1])
+'''
+
+
+@unittest.skipUnless('forkserver' in multiprocessing.get_all_start_methods(),
+                     'the GA pool uses the forkserver start method')
+class ReplayReproducesEvaluationTest(unittest.TestCase):
+    """replay_best_with_statelog.py repeats a logged GA evaluation exactly."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.env = dict(os.environ, NUMBA_CACHE_DIR=os.path.join(cls.tmp.name, 'numba'))
+        script = os.path.join(cls.tmp.name, 'ga.py')
+        with open(script, 'w') as f:
+            f.write(_GA_FOR_REPLAY.format(src=cls.src, out=cls.tmp.name))
+        result = subprocess.run([sys.executable, script], cwd=cls.src, env=cls.env,
+                                capture_output=True, text=True, timeout=900)
+        assert result.returncode == 0, result.stdout[-2000:] + result.stderr[-2000:]
+        cls.logbook = result.stdout.split('LOGBOOK ', 1)[1].splitlines()[0]
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def _replay(self, logbook, *args):
+        out = os.path.join(self.tmp.name, 'replay', '%d.statelog' % len(os.listdir(self.tmp.name)))
+        return subprocess.run([sys.executable, 'replay_best_with_statelog.py',
+                               '--logbook', logbook, '--output', out] + list(args),
+                              cwd=self.src, env=self.env, capture_output=True, text=True,
+                              timeout=600)
+
+    def _individuals(self, logbook):
+        import pickle
+        with open(logbook, 'rb') as f:
+            return [r for r in pickle.load(f) if 'indivId' in r]
+
+    def testEveryLoggedEvaluationIsReproduced(self):
+        "each individual's replay, from its evalSeed, gives its logged fitness exactly"
+        for rec in self._individuals(self.logbook):
+            r = self._replay(self.logbook, '--indiv', rec['indivId'])
+            self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
+            self.assertIn('Reproduced the logged fitness exactly', r.stdout, rec['indivId'])
+
+    def testAnotherSeedIsNotPassedOffAsAReproduction(self):
+        "--seed replays the genome under other noise, and says so"
+        r = self._replay(self.logbook, '--seed', '123')
+        self.assertEqual(r.returncode, 0, r.stderr[-1500:])
+        self.assertIn('Not a reproduction of the GA evaluation', r.stdout)
+
+    def testOldLogbookKeepsTheOldReplay(self):
+        "without evalSeeds the replay works as before and says it cannot reproduce"
+        import pickle
+        with open(self.logbook, 'rb') as f:
+            logbook = pickle.load(f)
+        for rec in logbook:
+            rec.pop('evalSeed', None)
+        old = os.path.join(self.tmp.name, 'old.lgb')
+        with open(old, 'wb') as f:
+            pickle.dump(logbook, f)
+        r = self._replay(old, '--steps', '100')
+        self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
+        self.assertIn('predates seeded GA evaluations', r.stdout)
+        self.assertIn('Seed: 45', r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
