@@ -44,6 +44,13 @@ MAX_PLOT_POINTS = 50000
 # Drawing it matters: outside that circle the vehicle receives nothing whatever
 # its heading, so the region is the no-input state the equilibrium analysis calls
 # an attractor.  A run ending outside the circle has reached it.
+#
+# Since the eye redesign of 2026-10-03 there is no such cut-off: irradAtSensor is
+# pure physics, and an eye stops seeing a light only where the irradiance falls
+# below its threshold (KheperaRobot.eyeResponse) -- never, for the default eye
+# (threshold 0); at 10 units from an intensity-100 light for a log eye with
+# threshold 1.  The ring is right for runs made before that; for later ones pass
+# the threshold distance, sqrt(intensity / threshold), or 0 to omit it.
 SENSOR_MAX_RANGE = 10.0
 
 

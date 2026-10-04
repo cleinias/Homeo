@@ -43,7 +43,7 @@ from pyglet.window import mouse, key
 from pyglet.math import Mat4, Vec3
 import numpy as np
 
-from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2
+from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2, log
 from Helpers.General_Helper_Functions import normalize, dated_data_dir
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from time import sleep, time, strftime, localtime
@@ -344,8 +344,8 @@ class KheperaRobot(object):
         khepheraRightEyeDefaultPose = (0.0235,  0.0585)   # =  21.8858 degrees from the forward direction (to the *right* of y axis)
         khepheraLeftEyeDefaultPose  = (-0.0235, 0.0585)   # = -21.8858 degrees from the forward direction (to the *left* of y axis)
         kheperaCenterEyeDefaultPose = (0,0.063)           # Straight center
-        kheperaEyeDefaultMaxValue   = 100                 # Default clipping value (saturation value) for eye sensors, same as in V_REP
-        kheperaEyeDefaultMaxRange   =  10                 # Default max range (in meters) for eye sensors, same as in V_REP
+        kheperaEyeDefaultMaxValue   = 100                 # Default saturation irradiance of eye sensors, same as in V_REP
+        kheperaEyeDefaultMaxRange   =  10                 # Radius of the eyes' field-of-view arc in the visualizer (rendering only)
         kheperaEyeDefaultAngleRange =  90                 # Default angle range for eye sensors, in degrees, same as in V_REP
         kheperaEyeDefaultDiameterRatio = 0.04             # Default size of the sensor radius as ratio of robot's size. For rendering only 
         kheperaEyeDefaultDiameterRatio = 0.1              # Default size of the sensor radius as ratio of robot's size. For rendering only 
@@ -381,17 +381,28 @@ class KheperaRobot(object):
     def getModelName(self):
         return self.body.userData['ID']
         
-    def addSensor(self, position, sensorName, diameter = 5, orientation = 0, maxRange = 10, angleRange = 90, maxValue = 100):
+    def addSensor(self, position, sensorName, diameter = 5, orientation = 0, maxRange = 10, angleRange = 90,
+                  maxValue = None, saturation = 100, threshold = 0, response = 'linear'):
         """Adds a Khepera-like object light sensor.
            Sensors are implemented as 5mm radius circle Box2D *fixture*  upon a KheperaRobotBody at
            a specified position. The irradiance is measured from the center of the circle
            Main parameters are:
         - orientation   (in degrees, default is 0, i/e normal to the robot's surface
                          through the center of sensor) 
-        - maxRange      (default = 10 meters, (same as in V-REP))
-        - angleRange    (default = 90 degrees (same as in V-REP))
-        - maxValue      (default = 100, saturation value (same as in V-REP))
+        - angleRange    (default = 90 degrees (same as in V-REP)): the field of view
+        - threshold, saturation, response: the eye's sensitivity -- the
+                        irradiance below which it responds 0 (default 0), the
+                        irradiance at which it responds 1 (default 100, as
+                        V-REP's saturation value), and the shape of the
+                        response in between, 'linear' or 'log' (Weber-Fechner).
+                        See eyeResponse.
+        - maxValue      older name for saturation, kept for existing callers
+        - maxRange      radius of the field-of-view arc drawn by the visualizer;
+                        rendering only.  An eye has no maximum distance: how far
+                        it sees follows from the light's intensity and its threshold.
         - diameter      (default = 5mm, for rendering purposes only"""
+        if maxValue is not None:
+            saturation = maxValue
 
         rotMatrix = np.asmatrix('0,1;-1,0')     #CW 90 rotation matrix
         positionVector = np.reshape(position, (2,1))
@@ -405,9 +416,9 @@ class KheperaRobot(object):
         
         "Store sensor's values"
         sensorFixture.userData = {}
-        sensorFixture.userData[sensorName + 'MaxValue'] = maxValue
-        sensorFixture.userData[sensorName + 'MaxRange'] = maxRange
         sensorFixture.userData[sensorName + 'AngleRange'] = angleRange
+        self.setEyeSensitivity(sensorName, threshold=threshold, saturation=saturation,
+                               response=response, fixture=sensorFixture)
         
                 
         "Cache angles (in degrees) of eye sensors from robot's normal heading for future computation of irradiance"
@@ -471,9 +482,7 @@ class KheperaRobot(object):
             targetDistance = vecToTarget.length
             lightIntensity = targetLight.userData['intensity']
             lightAttenVec = targetLight.userData['attenVec']
-            eyeMaxValue = sensorFixture.userData[sensorName+'MaxValue']
             eyeAngleRange = sensorFixture.userData[sensorName+'AngleRange']
-            eyeMaxRange = sensorFixture.userData[sensorName+'MaxRange']
             lightAmbRatio = targetLight.userData['ambRatio']
         
         
@@ -520,7 +529,7 @@ class KheperaRobot(object):
     #                                                                                            (targetDistance > eyeMaxRange or abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange/2))
     #         print targetDistance, degrees(acos(cosAngleToTarget))
             try:
-                if targetDistance > eyeMaxRange or (abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange / 2):
+                if abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange / 2:
                     sensorIrrad +=  0
                 else:        
                     directIntens = (lightIntensity * (1-lightAmbRatio)) * cosAngleToTarget
@@ -528,7 +537,7 @@ class KheperaRobot(object):
                                            (lightAttenVec[1]*targetDistance)+
                                            (lightAttenVec[2]*targetDistance**2))
         #             print "Irradiance: %.5f" % min((directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor, eyeMaxValue)            
-                    sensorIrrad +=  min((directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor, eyeMaxValue) # clip sensor's output to its max value
+                    sensorIrrad +=  (directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor
             except Exception as e:
                 print(e)
                 raise
@@ -569,24 +578,66 @@ class KheperaRobot(object):
     def getMaxSpeed(self):
         return {'right':self.wheels['right'].getMaxSpeed(),'left':self.wheels['left'].getMaxSpeed()}
     
-    def getMaxSensorRange(self,sensorName):
-        "Return the max range of the named sensor"
-        
-        return self.sensors[sensorName].userData[sensorName + 'MaxRange']
-    
+    def getMaxSensorValue(self,sensorName):
+        "Return the max value of the named sensor's response, which is normalised to [0, 1]"
+
+        return 1.0
+
+    EYE_RESPONSES = ('linear', 'log')
+
+    def setEyeSensitivity(self, sensorName, threshold=None, saturation=None, response=None,
+                          fixture=None):
+        '''Set the named eye's threshold, saturation (both irradiances) and
+        response shape; None leaves a value as it is.  See eyeResponse.'''
+        userData = (fixture if fixture is not None else self.sensors[sensorName]).userData
+        if threshold is not None:
+            userData[sensorName + 'Threshold'] = float(threshold)
+        if saturation is not None:
+            userData[sensorName + 'Saturation'] = float(saturation)
+        if response is not None:
+            userData[sensorName + 'Response'] = response
+        I0 = userData[sensorName + 'Threshold']
+        Isat = userData[sensorName + 'Saturation']
+        shape = userData[sensorName + 'Response']
+        if shape not in self.EYE_RESPONSES:
+            raise ValueError("eye response must be one of %s, got %r" % (self.EYE_RESPONSES, shape))
+        if not 0 <= I0 < Isat:
+            raise ValueError("eye %s needs 0 <= threshold < saturation, got %g, %g" % (sensorName, I0, Isat))
+        if shape == 'log' and I0 <= 0:
+            raise ValueError("a logarithmic eye needs a threshold > 0, got %g" % I0)
+
+    def eyeResponse(self, sensorName, irradiance):
+        """The named eye's response to the irradiance falling on it, in [0, 1]:
+        0 up to its threshold I0, 1 from its saturation Isat on, and in between
+            linear:  (I - I0) / (Isat - I0)
+            log:     log(I / I0) / log(Isat / I0)   (Weber-Fechner: S = k log(I / I0),
+                                                     k set so that S = 1 at Isat)
+        The response, not the irradiance, is what an eye reports: the physics
+        stops at irradAtSensor."""
+        userData = self.sensors[sensorName].userData
+        I0 = userData[sensorName + 'Threshold']
+        Isat = userData[sensorName + 'Saturation']
+        if irradiance <= I0:
+            return 0.0
+        if irradiance >= Isat:
+            return 1.0
+        if userData[sensorName + 'Response'] == 'log':
+            return log(irradiance / I0) / log(Isat / I0)
+        return (irradiance - I0) / (Isat - I0)
+
     def getSensorRead(self,sensorName):
-        """Convenience method: return the value read by sensor sensorName
-           as the sum of irradiances produced by all the existing lights 
-           in the robot's world."""
+        """Return the response of sensor sensorName (see eyeResponse) to the
+           sum of irradiances produced by all the existing lights in the
+           robot's world."""
         
-        return self.irradAtSensor(sensorName, self.detectableLights)
+        return self.eyeResponse(sensorName, self.irradAtSensor(sensorName, self.detectableLights))
 
     def getSensorReadByQuality(self, sensorName, quality):
-        """Return irradiance at sensorName from sources of the given quality only."""
+        """Return the response of sensorName to sources of the given quality only."""
         sources = self.detectableSources.get(quality, [])
         if not sources and quality == 'light':
             sources = self.detectableLights   # backward compat fallback
-        return self.irradAtSensor(sensorName, sources)
+        return self.eyeResponse(sensorName, self.irradAtSensor(sensorName, sources))
 
     def rotateTo(self, angleRad):
         """Rotate robot and its jointed bodies to angleRad.

@@ -23,6 +23,9 @@
 #     bash hpc/run_array_local.sh --fixed-weights --motor aristotelian ...
 #                                  # the true Braitenberg vehicle: memoryless,
 #                                  # linear motors (default: newtonian)
+#     bash hpc/run_array_local.sh ... --eye-response log --eye-saturation 0.5
+#                                  # the eyes' sensitivity: response linear|log,
+#                                  # saturation distance, --eye-threshold I0
 #
 # Mirrors grace_ou_6M.slurm exactly -- same seeds (20260930 + task), same flags
 # (--continuous --batch 1 --start-at-rest --traj-interval 200 --run-tag <NN>),
@@ -133,6 +136,7 @@ RANDOM_START=0
 START_RANGE=""
 SPIN=""
 MOTOR=""
+EYE_ARGS=()
 UNISELECTOR=continuous""
 
 
@@ -164,6 +168,8 @@ while [ $# -gt 0 ]; do
         --start-range)   START_RANGE="$2 $3"; shift 3;;
         --spin)          SPIN="$2"; shift 2;;
         --motor)         MOTOR="$2"; shift 2;;
+        --eye-response|--eye-threshold|--eye-saturation)
+                         EYE_ARGS+=("$1" "$2"); shift 2;;
         --uniselector)   UNISELECTOR="$2"; shift 2;;
         --dry-run)     DRY_RUN=1; shift;;
         -h|--help)     usage;;
@@ -266,6 +272,7 @@ fi
 [ -n "$HEADING" ] && echo "   heading    : $HEADING deg (fixed)"
 [ "$RANDOM_HEADING" -eq 1 ] && echo "   heading    : random, drawn from each run's seed"
 [ -n "$SPIN" ]    && echo "   spin       : $SPIN x max wheel speed ($(spin_dir))"
+[ ${#EYE_ARGS[@]} -gt 0 ] && echo "   eyes       : ${EYE_ARGS[*]}"
 [ "$RANDOM_START" -eq 1 ] && echo "   start      : random position ${START_RANGE/ /-} from the light (default 2-6), random heading"
 [ -n "$SEEDS" ]   && echo "   seeds      : explicit -- $SEEDS"
 if [ "$STATE_LOG" -eq 1 ]; then
@@ -294,6 +301,7 @@ echo
     [ "$RANDOM_HEADING" -eq 1 ] && echo "random heading per run"
     [ "$RANDOM_START" -eq 1 ] && echo "random start ${START_RANGE/ /-} from the light (default 2-6)"
     [ -n "$SPIN" ] && echo "spin $SPIN x max wheel speed ($(spin_dir))"
+    [ ${#EYE_ARGS[@]} -gt 0 ] && echo "eyes ${EYE_ARGS[*]}"
     [ -n "$SEEDS" ] && echo "seeds $SEEDS" 
     echo "code $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned')"
     echo "cpu  $(lscpu 2>/dev/null | sed -n 's/^Model name: *//p' | head -1)"
@@ -354,6 +362,7 @@ run_task() {
         [ -n "$START_RANGE" ] && vehicle_args+=(--start-range $START_RANGE)
     fi
     [ -n "$SPIN" ] && vehicle_args+=(--spin "$SPIN")
+    vehicle_args+=("${EYE_ARGS[@]}")
     # Per-tick state log: the weight, stress and sigma trajectories.  Left
     # unquoted at the call site so an empty value expands to nothing.
     state_log_args=""

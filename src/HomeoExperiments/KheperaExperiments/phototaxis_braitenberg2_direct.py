@@ -61,6 +61,20 @@ Initialization modes
       intensity, Braitenberg's Vehicle 3 (p. 10) -- and the spin is Spin's
       +-spin weights to the two motors.  6 units in all.
 
+The eyes (any mode)
+-------------------
+   An eye reports its response, in [0, 1], to the irradiance falling on it
+   (intensity x cos(angle) / d^2 inside its 90-degree field of view; see
+   KheperaRobot.eyeResponse): 0 up to its threshold I0, 1 from its
+   saturation Isat on, linear or logarithmic (Weber-Fechner) in between.
+   The defaults -- linear, I0 = 0, Isat = 100 -- saturate 1 unit from a light
+   of intensity 100, on the eye's axis.
+   --eye-saturation D   saturate at distance D instead: Isat = intensity / D^2
+   --eye-threshold I0   the threshold, an irradiance (default 0; 1 for a log
+                        eye, which then stops seeing an intensity-100 light
+                        10 units away)
+   --eye-response log   logarithmic response (default linear)
+
 Start pose (any mode)
 ---------------------
    Default: robot at (4, 4), heading 0; the light at (7, 7) is in view.
@@ -112,15 +126,12 @@ import os
 import random
 import time
 import threading
-from math import sqrt, degrees
+from math import sqrt, degrees, atan2
 from Helpers.General_Helper_Functions import run_tag
 
 import numpy as np
 
-# A vehicle has "acquired" the source once it comes this close to it.  The
-# 2026-09-30 batch was bimodal with a wide gap (acquirers reached <0.01,
-# non-acquirers never beat their 4.24 start distance), so the exact value is
-# not critical, but it must be stated in any write-up.
+# A vehicle has "acquired" the source once it comes this close to it.
 ACQUISITION_RADIUS = 1.0
 
 
@@ -131,7 +142,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      uniselector_type='ashby', continuous_params=None,
                      seed=None, fixed_weights=False,
                      stable_integration=True, start_at_rest=False,
-                     wiring='crossed', signs='++', spin=0.0, motor='newtonian'):
+                     wiring='crossed', signs='++', spin=0.0, motor='newtonian',
+                     eye_saturation=None, eye_threshold=None, eye_response=None):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -160,6 +172,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             ('++', '+-', '-+', '--').
         spin:               baseline spin, as a fraction of the motors' max
                             speed; > 0 clockwise (see apply_spin).
+        eye_saturation, eye_threshold, eye_response: the eyes' sensitivity
+                            (see configure_eyes); None keeps the default.
         motor:              with fixed_weights, 'newtonian' (default) or
                             'aristotelian' (the true Braitenberg vehicle; see
                             _direct_fixed_weights).
@@ -211,12 +225,13 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         exp_name += '_dark'
     if uniselector_type == 'continuous' and not fixed_weights:
         exp_name += '_continuous'
-    exp_name += spin_tag(spin)
+    exp_name += spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response)
     backendSimulator.kheperaSimulation.experimentName = exp_name
 
     # --- Build the 4-unit homeostat ---
     world = 'kheperaBraitenberg2_HOMEO_World'
     transducers = basicBraiten2Tranducers(backendSimulator, world)
+    configure_eyes(backendSimulator, eye_saturation, eye_threshold, eye_response)
 
     hom = Homeostat()
     hom._host = backendSimulator.host
@@ -579,6 +594,47 @@ def _set_constant_input(motor, source, weight):
     conn.status = True
 
 
+def eye_tag(saturation=None, threshold=None, response=None):
+    "Filename tag for non-default eyes, e.g. '_log_sat0.5'; '' for the default eyes."
+    tag = '_log' if response == 'log' else ''
+    if saturation is not None:
+        tag += '_sat%g' % saturation
+    if threshold is not None:
+        tag += '_thr%g' % threshold
+    return tag
+
+
+def configure_eyes(backend, saturation=None, threshold=None, response=None):
+    """Set both eyes' sensitivity (KheperaRobot.setEyeSensitivity).
+
+    saturation: a DISTANCE -- the eye saturates at `saturation` units from the
+                light, on its axis: Isat = intensity / saturation^2 (the light
+                has no ambient part and purely quadratic attenuation,
+                KheperaWorldLightDef's defaults, which is checked).
+    threshold:  an irradiance, I0.  A log eye needs one > 0 and gets 1 if none
+                is given, so that it stops seeing an intensity-100 light 10
+                units away -- as far as the old eyes' distance cut-off.
+    response:   'linear' or 'log'.
+    None leaves a setting at the eye's default (linear, I0 = 0, Isat = 100).
+    Returns the eyes' (threshold, saturation irradiance, response)."""
+    sim = backend.kheperaSimulation
+    robot = sim.allBodies['Khepera']
+    target = sim.allBodies['TARGET']
+    Isat = None
+    if saturation is not None:
+        if not saturation > 0:
+            raise ValueError('eye saturation distance must be > 0, got %r' % saturation)
+        if tuple(target.userData['attenVec']) != (0, 0, 1) or target.userData['ambRatio'] != 0:
+            raise ValueError('configure_eyes assumes purely quadratic attenuation and no ambient light')
+        Isat = abs(target.userData['intensity']) / saturation ** 2
+    if response == 'log' and threshold is None:
+        threshold = 1.0
+    for eye in ('leftEye', 'rightEye'):
+        robot.setEyeSensitivity(eye, threshold=threshold, saturation=Isat, response=response)
+    ud = robot.sensors['leftEye'].userData
+    return ud['leftEyeThreshold'], ud['leftEyeSaturation'], ud['leftEyeResponse']
+
+
 def spin_tag(spin):
     "Filename tag for a baseline spin: '' for none, else e.g. '_cw0.05'."
     if not spin:
@@ -698,7 +754,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  fixed_weights=False, random_heading=False, random_start=False,
                  stable_integration=True, start_at_rest=False,
                  wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
-                 spin=0.0, motor='newtonian'):
+                 spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
+                 eye_response=None):
     '''Run the simplified 2+2 phototaxis experiment headless.
 
     Parameters and return value are the same as in
@@ -731,7 +788,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                                           stable_integration=stable_integration,
                                           start_at_rest=start_at_rest,
                                           wiring=wiring, signs=signs, spin=spin,
-                                          motor=motor)
+                                          motor=motor, eye_saturation=eye_saturation,
+                                          eye_threshold=eye_threshold, eye_response=eye_response)
     robot = backend.kheperaSimulation.allBodies['Khepera']
     target_pos = (7, 7)
     if random_heading or random_start:
@@ -800,8 +858,10 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
        reconstructed from the .traj afterwards, which is what the 2026-09-30
        analysis had to do.  None if it never acquires.'''
     first_acq = None
+    rx, ry = robot.body.position[0], robot.body.position[1]
 
     for target_tick in range(report_interval, total_steps + 1, report_interval):
+        prev_x, prev_y = rx, ry
         hom.runFor(target_tick)
         rx, ry = robot.body.position[0], robot.body.position[1]
         d = dist_to_target()
@@ -827,6 +887,15 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     final_dist = dist_to_target()
     final_x, final_y = robot.body.position[0], robot.body.position[1]
     steps_run = target_tick
+    '''How the run ends, which "acquired" alone cannot tell: Braitenberg's
+       Aggressor hits the source at speed, his Love vehicle comes to rest near
+       it facing it, his Explorer comes to rest facing away.
+       final_speed: distance covered over the last report interval, per tick.
+       final_bearing: where the light is relative to the heading, in degrees,
+       0 = straight ahead, +-180 = straight behind, > 0 to the left.'''
+    final_speed = sqrt((final_x - prev_x)**2 + (final_y - prev_y)**2) / report_interval
+    final_bearing = (degrees(atan2(target_pos[1] - final_y, target_pos[0] - final_x)
+                             - robot.body.angle) + 180) % 360 - 180
 
     if not quiet:
         print()
@@ -855,6 +924,10 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 wiring=wiring if fixed_weights else '',
                 signs=signs if fixed_weights else '',
                 motor=motor if fixed_weights else '',
+                eye_response=eye_response or 'linear',
+                eye_threshold='' if eye_threshold is None else eye_threshold,
+                eye_saturation='' if eye_saturation is None else eye_saturation,
+                final_speed=final_speed, final_bearing=final_bearing,
                 spin=spin)
 
 
@@ -866,7 +939,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               stable_integration=True, start_at_rest=False, seed=None,
               state_log=False, state_log_interval=1, heading=None,
               wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
-              spin=0.0, motor='newtonian'):
+              spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
+              eye_response=None):
     '''Run a batch of experiments and print a summary table.
 
     With seed given, run i uses seed+i, so the batch is reproducible and an
@@ -878,7 +952,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
         kind = 'control_' + control_variant_name(wiring, signs, motor)
     else:
         kind = 'continuous' if uniselector_type == 'continuous' else 'ashby'
-    kind += spin_tag(spin)
+    kind += spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response)
     print(f'=== Batch (direct 2+2): {n_runs} runs, {mode}, {total_steps} ticks budget ===')
     print()
 
@@ -911,7 +985,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          state_log_interval=state_log_interval,
                          heading=heading,
                          wiring=wiring, signs=signs, start_range=start_range,
-                         spin=spin, motor=motor,
+                         spin=spin, motor=motor, eye_saturation=eye_saturation,
+                         eye_threshold=eye_threshold, eye_response=eye_response,
                          seed=None if seed is None else seed + i)
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
@@ -954,10 +1029,11 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
         csv_name = (f'batch_direct_{kind}_{mode}_'
                     f'{time.strftime("%Y-%m-%d-%H-%M-%S")}{run_tag()}.csv')
         csv_path = os.path.join(log_dir, csv_name)
-        fields = ['run', 'seed', 'motor', 'wiring', 'signs', 'spin',
+        fields = ['run', 'seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response', 'eye_threshold', 'eye_saturation',
                   'start_x', 'start_y', 'start_heading', 'start_dist',
                   'start_sees_light', 'acquired', 'first_acq',
                   'final_dist', 'min_dist', 'min_t', 'steps_run',
+                  'final_speed', 'final_bearing',
                   'early_stopped', 'final_x', 'final_y', 'wall_time',
                   'log_path', 'json_path', 'state_log_path']
         with open(csv_path, 'w', newline='') as f:
@@ -1196,6 +1272,33 @@ if __name__ == '__main__':
         if not -1 < spin < 1:
             raise SystemExit('--spin is a fraction of max speed, |RATE| < 1, got %g' % spin)
 
+    # --eye-saturation D / --eye-threshold I0 / --eye-response linear|log:
+    # the eyes' sensitivity (see configure_eyes).
+    eye_response = None
+    if '--eye-response' in sys.argv:
+        idx = sys.argv.index('--eye-response')
+        eye_response = sys.argv[idx + 1] if idx + 1 < len(sys.argv) else ''
+        if eye_response not in ('linear', 'log'):
+            raise SystemExit('--eye-response must be linear or log, got %r' % eye_response)
+    eye_threshold = None
+    if '--eye-threshold' in sys.argv:
+        idx = sys.argv.index('--eye-threshold')
+        try:
+            eye_threshold = float(sys.argv[idx + 1])
+        except (IndexError, ValueError):
+            raise SystemExit('--eye-threshold needs an irradiance, e.g. 1')
+        if eye_threshold < 0 or (eye_response == 'log' and eye_threshold == 0):
+            raise SystemExit('--eye-threshold must be >= 0 (> 0 for a log eye), got %g' % eye_threshold)
+    eye_saturation = None
+    if '--eye-saturation' in sys.argv:
+        idx = sys.argv.index('--eye-saturation')
+        try:
+            eye_saturation = float(sys.argv[idx + 1])
+        except (IndexError, ValueError):
+            raise SystemExit('--eye-saturation needs a distance, e.g. 0.5')
+        if not eye_saturation > 0:
+            raise SystemExit('--eye-saturation must be > 0, got %g' % eye_saturation)
+
     '''Trajectory volume.  Two rows are recorded per homeostat tick at ~50 bytes
        each, so a 6M-step run writes ~600 MB and a batch of 20 wrote 11.5 GB on
        2026-09-30.  --traj-interval decimates at write time; the final pose is
@@ -1235,7 +1338,8 @@ if __name__ == '__main__':
                   seed=seed, heading=heading,
                   state_log=state_log, state_log_interval=state_log_interval,
                   wiring=wiring, signs=signs, start_range=start_range,
-                  spin=spin, motor=motor)
+                  spin=spin, motor=motor, eye_saturation=eye_saturation,
+                  eye_threshold=eye_threshold, eye_response=eye_response)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
@@ -1248,4 +1352,5 @@ if __name__ == '__main__':
                      random_heading=random_heading, random_start=random_start,
                      stable_integration=stable_integration, start_at_rest=start_at_rest,
                      wiring=wiring, signs=signs, start_range=start_range,
-                     spin=spin, motor=motor)
+                     spin=spin, motor=motor, eye_saturation=eye_saturation,
+                     eye_threshold=eye_threshold, eye_response=eye_response)

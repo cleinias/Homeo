@@ -188,6 +188,14 @@ class CommandLineTest(unittest.TestCase):
             row = list(csv.DictReader(open(csvs[0])))[0]
             self.assertEqual(row['motor'], 'aristotelian')
 
+    def testInvalidEyeOptionsAreRejected(self):
+        for args, message in ((('--eye-response', 'cubic'), '--eye-response must be'),
+                              (('--eye-response', 'log', '--eye-threshold', '0'), '> 0 for a log eye'),
+                              (('--eye-saturation', '-1'), '--eye-saturation must be > 0')):
+            r = self._run('--fixed-weights', *args)
+            self.assertNotEqual(r.returncode, 0, args)
+            self.assertIn(message, r.stderr + r.stdout, args)
+
     def testInvalidSpinIsRejected(self):
         for args, message in ((('--spin', 'fast'), '--spin needs a number'),
                               (('--spin', '1.5'), '|RATE| < 1')):

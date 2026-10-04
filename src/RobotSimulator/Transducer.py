@@ -37,7 +37,7 @@ class Transducer(object):
     The basic methods (all defined in subclasses) are 
     
     act  ---  which activates the actuator by running robot.transdFunction(parameters)
-    sense --- which read the sensor by running robot.transdFunction(parameters) and returning a value
+    sense --- which reads the sensor by running robot.transdFunction(parameters) and returning a value
     range --- which returns a 2 value list containing the minimum and maximum values of the transducer 
     
     '''
@@ -311,16 +311,17 @@ class HOMEO_LightSensor(Transducer):
         self._range = self.getRange()
         
     def getRange(self):
-        "get sensor range"
+        "get the max of the sensor's response: the eye reports a response normalised to [0, 1]"
         try:
-            value = self.robot.getMaxSensorRange(self._eye)
+            value = self.robot.getMaxSensorValue(self._eye)
         except:
-            raise TransducerException("Cannot get maxRange of HOMEO sensor: " + self._eye)
+            raise TransducerException("Cannot get maxValue of HOMEO sensor: " + self._eye)
         return value
 
     def read(self):
-        """Return a value representing the sum of all the irradiances at 
-           the sensor's surface produced by the detectable light in the world."""
+        """Return the eye's response, in [0, 1], to the sum of all the
+           irradiances at the sensor's surface produced by the detectable
+           lights in the world (KheperaRobot.eyeResponse)."""
 #         value = 0
         try:
             value =  self._transdFunction(self._eye)
@@ -355,7 +356,7 @@ class HOMEO_QualitySensor(Transducer):
         self._quality = quality
         self.robot = robotRef
         self._transdFunction = self.robot.getSensorReadByQuality
-        self._range = self.robot.getMaxSensorRange(self._eye)
+        self._range = self.robot.getMaxSensorValue(self._eye)
 
     def read(self):
         return self._transdFunction(self._eye, self._quality)
@@ -650,6 +651,4 @@ class WebotsLightSensorDUMMY(WebotsLightSensorTCP):
         return readInput
         
     def reSeed(self):
-        self._randomGen.seed(self._seed)  
-       
-   
+        self._randomGen.seed(self._seed)

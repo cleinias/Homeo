@@ -12,7 +12,7 @@
 # (crossed/uncrossed x signs ++ +- -+ --) x 25 random start poses, 300,000
 # steps each, full trajectories (--traj-interval 1).
 #
-#     sbatch grace_fixedB2.slurm MIN MAX [SPIN [MOTOR]]
+#     sbatch grace_fixedB2.slurm MIN MAX [SPIN [MOTOR [EYE OPTIONS...]]]
 #
 # MIN MAX: the distance from the light of the random start (--start-range).
 # SPIN:    baseline spin in place, fraction of max wheel speed, > 0 clockwise
@@ -24,6 +24,10 @@
 #              sbatch grace_fixedB2.slurm 4 8 0 aristotelian
 #              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian
 #              sbatch grace_fixedB2.slurm 4 8 0.05 aristotelian
+# EYE OPTIONS: --eye-response linear|log, --eye-saturation D, --eye-threshold I0,
+#          passed to the experiment and named in the run directory, e.g.
+#              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian --eye-response log --eye-saturation 0.5
+#          writes to fixedB2-arist-r2to6-cw0.05-log-sat0.5-traj1-<jobid>.
 #
 # Task -> run, identical to the 2026-10-03 polus baseline
 # (SimulationsData/fixedB2-r4to8-traj1-2026-10-03), so the arrays pair
@@ -55,9 +59,20 @@
 set -euo pipefail
 
 if [ $# -lt 2 ]; then
-    echo "usage: sbatch grace_fixedB2.slurm MIN MAX [SPIN [MOTOR]]" >&2; exit 2
+    echo "usage: sbatch grace_fixedB2.slurm MIN MAX [SPIN [MOTOR [EYE OPTIONS...]]]" >&2; exit 2
 fi
 START_MIN="$1"; START_MAX="$2"; SPIN="${3:-0}"; MOTOR="${4:-newtonian}"
+shift $(( $# < 4 ? $# : 4 ))
+EYE_ARGS=(); eye_tag=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --eye-response)   [ "$2" = log ] && eye_tag+="-log";;
+        --eye-saturation) eye_tag+="-sat$2";;
+        --eye-threshold)  eye_tag+="-thr$2";;
+        *) echo "unknown eye option: $1" >&2; exit 2;;
+    esac
+    EYE_ARGS+=("$1" "$2"); shift 2
+done
 case "$MOTOR" in
     newtonian) motor_tag="";;
     aristotelian) motor_tag="-arist";;
@@ -92,7 +107,7 @@ fi
 
 # ONE output directory for the whole array; filenames carry the serial.
 # HOMEO_DATA_DIR is the data ROOT: the experiment appends "SimsData-<date>".
-RUN_NAME="fixedB2${motor_tag}-r${START_MIN}to${START_MAX}${spin_tag}-traj1-$SLURM_ARRAY_JOB_ID"
+RUN_NAME="fixedB2${motor_tag}-r${START_MIN}to${START_MAX}${spin_tag}${eye_tag}-traj1-$SLURM_ARRAY_JOB_ID"
 export HOMEO_DATA_DIR="$SCRATCH/homeo/$RUN_NAME"
 mkdir -p "$HOMEO_DATA_DIR"
 
@@ -109,6 +124,7 @@ if [ ! -e "$HOMEO_DATA_DIR/PROVENANCE.txt" ]; then
         echo "random start $START_MIN-$START_MAX from the light"
         echo "spin $SPIN x max wheel speed (> 0 clockwise)"
         echo "motor $MOTOR"
+        echo "eyes ${EYE_ARGS[*]:-default (linear, threshold 0, saturation 100)}"
         echo "code $CODE"
         echo "cpu  $(lscpu 2>/dev/null | sed -n 's/^Model name: *//p' | head -1)"
     } > "$HOMEO_DATA_DIR/PROVENANCE.txt"
@@ -123,6 +139,7 @@ srun python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direc
      "${vehicle_args[@]}" \
      --random-start --start-range "$START_MIN" "$START_MAX" \
      "${spin_args[@]}" \
+     "${EYE_ARGS[@]}" \
      --batch 1 \
      --steps 300000 \
      --seed "$SEED" \
