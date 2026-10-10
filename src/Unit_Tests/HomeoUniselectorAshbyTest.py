@@ -78,7 +78,7 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         self.uniselector.toggleBeeping()
         for index in range(2):
             self.uniselector.produceNewValue()
-            self.uniselector.advance
+            self.uniselector.advance()
 
     def testEquallySpacedValuesMatrix(self):
         '''
