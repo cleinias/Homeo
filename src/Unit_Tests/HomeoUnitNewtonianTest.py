@@ -210,3 +210,80 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
+
+class HomeoUnitNewtonianIntegratorTest(unittest.TestCase):
+    """The integrator, step by step, against a hand-computed recurrence.
+
+    The tests above leave the velocity at 0, the viscosity at its default of 0
+    and dt_fast at 1, so they check only the 1/2 a term.  Here a unit driven by
+    a constant torque F, with Stokes drag, follows
+
+        a  = (F - viscosity * v) / mass
+        x' = x + v * dt + a * dt^2 / 2
+        v' = v + a * dt
+
+    and both the Python path and the headless (JIT) path must reproduce it.
+    The parameters keep viscosity * dt / mass well below 2, where the explicit
+    drag update is stable, and the needle well inside its limits.
+    """
+
+    def makeUnit(self, mass, viscosity, dtFast, v0, torque, headless):
+        unit = HomeoUnitNewtonian()
+        unit.noise = 0
+        unit.uniselectorActive = False
+        unit.needleUnit.mass = mass
+        unit.viscosity = viscosity
+        unit.dt_fast = dtFast
+        unit.criticalDeviation = 0
+        unit.currentVelocity = v0
+        unit.disactivateSelfConn()
+        driver = HomeoUnit()
+        driver.currentOutput = 1.0
+        unit.addConnectionWithRandomValues(driver)
+        drive = unit.inputConnections[-1]
+        drive.newWeight(torque)
+        drive.noise = 0
+        unit._headless = headless
+        unit._jit_dirty = True
+        self.driver = driver                    # keep the driving unit alive
+        return unit
+
+    def expectedTrajectory(self, mass, viscosity, dtFast, v0, torque, steps):
+        x, v, xs, vs = 0.0, v0, [], []
+        for i in range(steps):
+            a = (torque - viscosity * v) / mass
+            x = x + v * dtFast + 0.5 * a * dtFast ** 2
+            v = v + a * dtFast
+            xs.append(x)
+            vs.append(v)
+        return xs, vs
+
+    def checkTrajectory(self, headless):
+        steps = 30
+        for dtFast in (0.5, 1.0, 2.0):
+            for mass, viscosity, v0, torque in ((5.0, 2.0, 0.3, 0.05),
+                                                (20.0, 0.5, -0.05, -0.02),
+                                                (2.0, 0.0, 0.05, 0.002)):
+                unit = self.makeUnit(mass, viscosity, dtFast, v0, torque, headless)
+                xs, vs = self.expectedTrajectory(mass, viscosity, dtFast, v0, torque, steps)
+                for step in range(steps):
+                    unit.selfUpdate()
+                    self.assertLess(abs(unit.criticalDeviation), unit.maxDeviation)
+                    self.assertAlmostEqual(unit.criticalDeviation, xs[step], delta=1e-9,
+                                           msg="x at step %d, dt %s, m %s, visc %s" % (step, dtFast, mass, viscosity))
+                    self.assertAlmostEqual(unit.currentVelocity, vs[step], delta=1e-9,
+                                           msg="v at step %d, dt %s, m %s, visc %s" % (step, dtFast, mass, viscosity))
+
+    def testTrajectoryPythonPath(self):
+        self.checkTrajectory(headless=False)
+
+    def testTrajectoryHeadlessPath(self):
+        self.checkTrajectory(headless=True)
+
+    def testClippingStopsTheNeedle(self):
+        "A needle driven past its limit sits at the limit with zero velocity"
+        unit = self.makeUnit(1.0, 0.0, 1.0, 5.0, 1.0, headless=False)
+        for step in range(20):
+            unit.selfUpdate()
+        self.assertEqual(unit.criticalDeviation, unit.maxDeviation)
+        self.assertEqual(unit.currentVelocity, 0)

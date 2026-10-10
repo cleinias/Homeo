@@ -23,5 +23,7 @@ tabulate>=0.9
 box2d-py>=2.3.8
 pyglet>=2.1
 
-# Testing
+# Testing.  numba is optional at run time (HomeoJIT falls back to pure Python)
+# but the tests should run with it: the HPC runs do.
 pytest>=9.0
+numba
