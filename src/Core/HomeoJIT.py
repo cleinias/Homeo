@@ -150,13 +150,25 @@ def _jit_compute_output(crit_dev, min_dev, max_dev, out_low, out_high):
     return out
 
 
+_warmed_up = False
+
+
 def warmup_jit():
     """Call each JIT function once with dummy data to trigger Numba compilation.
-    This is a one-time cost (~1s) at simulation start."""
-    _jit_unit_noise(0.1)
-    _jit_conn_noise(0.5, 0.1)
+    This is a one-time cost (~1s) at simulation start, so it runs once per
+    process.  The dummy calls use zero noise, so they draw no random numbers:
+    numba compiles a function on its first call whatever branch it takes, and
+    drawing here (as this did on every Homeostat.runFor() call) shifted the
+    random stream, so one seed gave a different run depending on how the run
+    was split into runFor() calls."""
+    global _warmed_up
+    if _warmed_up:
+        return
+    _jit_unit_noise(0.0)
+    _jit_conn_noise(0.5, 0.0)
     dummy = np.array([0.5], dtype=np.float64)
-    _jit_compute_torque(dummy, dummy, dummy, dummy)
+    _jit_compute_torque(dummy, dummy, dummy, np.zeros(1, dtype=np.float64))
     _jit_needle_position_base(1.0, 0.5, 10.0, 100.0, 0.0)
     _jit_needle_position_newtonian(1.0, 0.5, 0.1, 100.0, 0.0, 1.0)
     _jit_compute_output(0.0, -10.0, 10.0, -1.0, 1.0)
+    _warmed_up = True

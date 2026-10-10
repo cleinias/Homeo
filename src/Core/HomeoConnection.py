@@ -183,12 +183,27 @@ class HomeoConnection(object):
     def getNoise(self):
         return self._noise
     
+    def _markJitStale(self):
+        '''Tell the unit holding this connection that its JIT arrays no longer
+        match this connection.  Headless runs read a unit's connections from
+        those arrays, which the unit rebuilds from its connections when it is
+        marked dirty.  The connection's own flag stops the rebuild from first
+        writing the arrays' (older) values back over this change.'''
+        self._jitStale = True
+        # outgoingUnit is stored in the instance dictionary (the method named
+        # outgoingUnit below shadows the property), and is absent while the
+        # connection is being built.
+        owner = self.__dict__.get('outgoingUnit')
+        if owner is not None:
+            owner._jit_dirty = True
+
     def setNoise(self, aNoise):
         '''
         Must be between 0 and 1 included
         '''
         if  0 <=  aNoise <= 1:
             self._noise = aNoise
+            self._markJitStale()
         else:
             raise ConnectionError("Noise must be between 0 and 1")
         emitter(self).noiseChanged.emit(self._noise)
@@ -203,6 +218,7 @@ class HomeoConnection(object):
         '''raise an exception if the input value is neither "manual" or "uniselector"'''
         if aString in ['manual','uniselector']:                 
             self._state = aString
+            self._markJitStale()
         else:
             raise ConnectionError("The state value %s is not allowed. Only allowed values are manual and uniselector" % aString)
     
@@ -215,6 +231,7 @@ class HomeoConnection(object):
     def setStatus(self, aBoolean):
         if aBoolean in (True,False):
             self._status = aBoolean
+            self._markJitStale()
         else:
             raise ConnectionError('The status of a connection can only be a Boolean')
     
@@ -240,6 +257,7 @@ class HomeoConnection(object):
                 self._switch = np.sign(aWeight)
             else:
                 raise ConnectionError("A HomeoConnection weight must be between -1 and 1")
+        self._markJitStale()
         emitter(self).weightChanged.emit(self._weight)
         emitter(self).switchChanged.emit(self._switch)
 
@@ -267,6 +285,7 @@ class HomeoConnection(object):
         else:
             if 0 < aPositiveValue <= 1:
                 self._weight= aPositiveValue
+        self._markJitStale()
 #            QObject.emit(emitter(self), SIGNAL('weightChanged'), self._weight)
         "signal back to unit's potentiometer in case of self-connections"
         if self.incomingUnit == self.outgoingUnit:

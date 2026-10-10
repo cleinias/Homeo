@@ -1,10 +1,10 @@
 '''
 Regression tests for known bugs that change simulation results.
 
-Each test states the behaviour the code should have and fails on the code
-as it is, so each is marked xfail(strict=True): the suite stays green while
-the bug is there, and turns red as soon as the bug is fixed, so that the
-marker is removed and the test starts guarding the fix.
+Each test states the behaviour the code should have.  While its bug is in
+the code the test fails, so it is marked xfail(strict=True): the suite stays
+green, and turns red as soon as the bug is fixed.  The marker is then removed
+and the test guards the fix; the unmarked tests below are such guards.
 '''
 import os
 import random
@@ -49,8 +49,6 @@ def headlessHomeostat(units, seed, continuous=False):
 
 class HeadlessRunLoopTest(unittest.TestCase):
 
-    @pytest.mark.xfail(strict=True, reason='runFor() rebuilds the JIT weight '
-                       'arrays from the connections on every call, discarding the OU drift')
     def testOUDriftSurvivesStepping(self):
         "Stepping tick by tick (as the GA does) must evolve the OU weights as one runFor() does"
         ticks = 1500
@@ -63,8 +61,6 @@ class HeadlessRunLoopTest(unittest.TestCase):
             np.testing.assert_allclose(a._jit_weights * a._jit_switches,
                                        b._jit_weights * b._jit_switches, atol=1e-9)
 
-    @pytest.mark.xfail(strict=True, reason='runFor() calls warmup_jit() on every call, '
-                       'which draws from the random stream')
     def testChunkingDoesNotChangeTheTrajectory(self):
         "The same seed must give the same run whether it is run in one call or in chunks"
         whole = headlessHomeostat(4, seed=11)
@@ -75,8 +71,6 @@ class HeadlessRunLoopTest(unittest.TestCase):
         np.testing.assert_allclose([u.criticalDeviation for u in whole.homeoUnits],
                                    [u.criticalDeviation for u in chunked.homeoUnits], atol=1e-9)
 
-    @pytest.mark.xfail(strict=True, reason="headless evolve_weights_jit steps "
-                       "every active connection, 'manual' ones included")
     def testOULeavesManualConnectionsAlone(self):
         "In a headless OU run a 'manual' self-connection must keep its weight"
         hom = headlessHomeostat(2, seed=1, continuous=True)

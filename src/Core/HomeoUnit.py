@@ -324,31 +324,41 @@ class HomeoUnit(object):
 
         In headless mode with a continuous (OU) uniselector the arrays carry the
         weights the dynamics actually used, while the connection objects keep
-        their last synced values.  Call this before logging or inspecting
-        connections so that what is recorded is what was run.  A no-op when the
-        arrays are absent or stale.
+        their last synced values.  This brings the connections up to date, so
+        call it before logging or inspecting them.  A connection changed through
+        its own setters since the last sync (see HomeoConnection._markJitStale)
+        is newer than the arrays and is left as it is.  A no-op when there are
+        no arrays yet.
         """
-        if getattr(self, '_jit_dirty', True):
+        conns = getattr(self, '_jit_conns', None)
+        if conns is None:
             return
-        if not hasattr(self, '_jit_weights'):
-            return
-        active = [c for c in self._inputConnections
-                  if c.isActive() and c.incomingUnit.isActive()]
-        if len(active) != len(self._jit_weights):
-            return                      # topology changed since the last sync
-        for conn, w, s in zip(active, self._jit_weights, self._jit_switches):
-            conn._weight = float(abs(w))
-            conn._switch = float(s)
+        for conn, w, s in zip(conns, self._jit_weights, self._jit_switches):
+            if not getattr(conn, '_jitStale', False):
+                conn._weight = float(abs(w))
+                conn._switch = float(s)
 
     def _sync_jit_arrays(self):
-        """Extract active connection parameters into numpy arrays for JIT loop."""
+        """Extract active connection parameters into numpy arrays for JIT loop.
+
+        The arrays may hold weights the connections do not have yet (the
+        headless OU uniselector evolves only the arrays), so they are first
+        written back, and only then rebuilt from the connections.  Rebuilding
+        alone threw that evolution away every time it ran."""
+        self.flushJitArrays()
         active = [c for c in self._inputConnections
                   if c.isActive() and c.incomingUnit.isActive()]
+        self._jit_conns = active
         self._jit_incoming_units = [c._incomingUnit for c in active]
         self._jit_switches = np.array([c._switch for c in active], dtype=np.float64)
         self._jit_weights = np.array([c._weight for c in active], dtype=np.float64)
         self._jit_noises = np.array([c._noise for c in active], dtype=np.float64)
+        # Which connections the uniselector may change: only those it controls,
+        # as in the Python path (HomeoUniselectorContinuous.evolve_weights).
+        self._jit_evolvable = np.array([c._state == 'uniselector' for c in active], dtype=bool)
         self._jit_outputs = np.empty(len(active), dtype=np.float64)
+        for conn in active:
+            conn._jitStale = False
         self._jit_dirty = False
 
     
@@ -1235,7 +1245,8 @@ class HomeoUnit(object):
                     if self._jit_dirty:
                         self._sync_jit_arrays()
                     self.uniselector.evolve_weights_jit(
-                        self._jit_weights, self._jit_switches, stress)
+                        self._jit_weights, self._jit_switches, stress,
+                        self._jit_evolvable)
                     '''Do NOT mark the arrays dirty here.  evolve_weights_jit()
                        mutates them in place and they are authoritative until
                        something edits the connection objects; marking them

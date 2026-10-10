@@ -238,7 +238,8 @@ class HomeoUnitNewtonian(HomeoUnit):
                     if self._jit_dirty:
                         self._sync_jit_arrays()
                     self.uniselector.evolve_weights_jit(
-                        self._jit_weights, self._jit_switches, stress)
+                        self._jit_weights, self._jit_switches, stress,
+                        self._jit_evolvable)
                     '''Do NOT mark the arrays dirty here -- see the identical
                        branch in HomeoUnit.selfUpdate() for why.'''
                 else:
