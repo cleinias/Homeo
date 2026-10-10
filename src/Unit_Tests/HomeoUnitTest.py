@@ -117,13 +117,34 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertTrue(self.unit.name is not None)
 
     def testUnitNameUnique(self):
-        "Two units cannot have the sane name. Check on 100 units"
-        #Create 100 units, collects their names and check"
-        self.unitNames = []
-        for i in range(100):
-            newUnit = HomeoUnit()
-            self.unitNames.append(newUnit.name)
-        self.assertTrue(len(self.unitNames) == len(set(self.unitNames)))
+        "Two live units cannot have the same name. Check on 100 units"
+        # Keep the units alive: a unit references itself through its
+        # self-connection, so a discarded one is freed by the cyclic garbage
+        # collector at an unpredictable moment, and HomeoUnit.__del__ then
+        # releases its name for reuse.  Collecting only the names made the
+        # test fail whenever a collection happened inside the loop.
+        units = [HomeoUnit() for i in range(100)]
+        names = [unit.name for unit in units]
+        self.assertEqual(len(names), len(set(names)))
+
+    def testDeadUnitDoesNotReleaseLiveName(self):
+        "A dead unit carrying a live unit's name must not free that name when collected"
+        import gc
+        # A copy shares its original's name.
+        original = HomeoUnit()
+        duplicate = copy(original)
+        del duplicate
+        gc.collect()
+        self.assertNotEqual(HomeoUnit().name, original.name)
+        # A unit from before clearNames() shares the name of the live unit
+        # that took it over.
+        old = HomeoUnit()
+        HomeoUnit.clearNames()
+        live = HomeoUnit()
+        live.name = old.name
+        del old
+        gc.collect()
+        self.assertNotEqual(HomeoUnit().name, live.name)
                 
     def testApplicationInternalNoise(self):
         "Check that in presence of noise the unit's critical deviation is changed  and not changed when noise = 0."
@@ -212,7 +233,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.criticalDeviation = 2
         self.unit.computeOutput()
         self.unit.selfUpdate()
-        self.assertTrue((self.unit.criticalDeviation - (2 - 0.2)) < errorTolerance)
+        self.assertAlmostEqual(self.unit.criticalDeviation, 2 - 0.2, delta=errorTolerance)
         for i in range(200):
             self.unit.selfUpdate()
         self.assertTrue(abs(self.unit.criticalDeviation) < errorTolerance)
@@ -263,7 +284,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.computeOutput()
         expectedDev = self.unit.criticalDeviation + (self.unit.currentOutput /(self.unit.maxDeviation *2.))
         self.unit.selfUpdate()
-        self.assertTrue((self.unit.criticalDeviation - expectedDev) < errorTolerance)        
+        self.assertAlmostEqual(self.unit.criticalDeviation, expectedDev, delta=errorTolerance)        
         for i in range(10):
             expectedDev = self.unit.criticalDeviation + (self.unit.currentOutput / (self.unit.maxDeviation *2.))
             self.unit.selfUpdate()
@@ -289,7 +310,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.computeOutput()
         expectedDev = self.unit.criticalDeviation - (self.unit.currentOutput / (self.unit.maxDeviation * 2.))
         self.unit.selfUpdate()
-        self.assertTrue((self.unit.criticalDeviation - expectedDev ) < errorTolerance)
+        self.assertAlmostEqual(self.unit.criticalDeviation, expectedDev, delta=errorTolerance)
         runs = 1
         maxRuns = 10000
         while (abs(self.unit.criticalDeviation) > errorTolerance):
@@ -304,7 +325,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.computeOutput()
         expectedDev = self.unit.criticalDeviation - (self.unit.currentOutput / (self.unit.maxDeviation * 2.))
         self.unit.selfUpdate()
-        self.assertTrue((self.unit.criticalDeviation - expectedDev ) < errorTolerance)
+        self.assertAlmostEqual(self.unit.criticalDeviation, expectedDev, delta=errorTolerance)
         runs = 1
         maxRuns = 10000
         while (abs(self.unit.criticalDeviation) > errorTolerance):
@@ -449,9 +470,11 @@ class HomeoUnitTest(unittest.TestCase):
                 expectedDeviation = deviation  + expectedInputfromSelf + expectedInputfromOtherUnit
                 exceeded = abs(expectedDeviation) > self.unit.maxDeviation 
                 self.unit.selfUpdate()
-                if exceeded: 
-                    self.assertTrue(True)                              # If criticalDeviation value went at any time beyond clipping limits don't check. 
-                                                                       # clipping is tested in others test methods
+                if exceeded:
+                    # Past the limits the unit must sit at the limit.
+                    self.assertAlmostEqual(self.unit.criticalDeviation,
+                                           numpy.clip(expectedDeviation, self.unit.minDeviation, self.unit.maxDeviation),
+                                           delta=pow(10, -14))
                 else:
                     self.assertTrue(abs(expectedDeviation - self.unit.criticalDeviation)  < errorTolerance)
 
@@ -516,9 +539,11 @@ class HomeoUnitTest(unittest.TestCase):
                 expectedDeviation = deviation  + proportionalInput
                 exceeded = abs(expectedDeviation) > self.unit.maxDeviation 
                 self.unit.selfUpdate()
-                if exceeded: 
-                    self.assertTrue(True)                              # If criticalDeviation value went at any time beyond clipping limits don't check. 
-                                                                       # clipping is tested in others test methods
+                if exceeded:
+                    # Past the limits the unit must sit at the limit.
+                    self.assertAlmostEqual(self.unit.criticalDeviation,
+                                           numpy.clip(expectedDeviation, self.unit.minDeviation, self.unit.maxDeviation),
+                                           delta=pow(10, -14))
                 else:
                     self.assertTrue(abs(expectedDeviation - self.unit.criticalDeviation)  < errorTolerance)
 
@@ -583,13 +608,12 @@ class HomeoUnitTest(unittest.TestCase):
                 exceeded = abs(expectedDeviation)  > self.unit.maxDeviation 
                 self.unit.selfUpdate()
                 if exceeded:
-                    self.assertTrue(True)
-                    #expectedDeviation = self.unit.criticalDeviation                                                    
-                    # If criticalDeviation value went at any time  beyond clipping limits don't check. 
-                    # (This test is carried out in other unit tests) 
-                    # Reset computing deviation to avoid carrying the error over to next cycles"
+                    # Past the limits the unit must sit at the limit.
+                    self.assertAlmostEqual(self.unit.criticalDeviation,
+                                           numpy.clip(expectedDeviation, self.unit.minDeviation, self.unit.maxDeviation),
+                                           delta=pow(10, -14))
                 else:
-                    self.assertTrue(abs(expectedDeviation - self.unit.criticalDeviation  < errorTolerance))
+                    self.assertAlmostEqual(self.unit.criticalDeviation, expectedDeviation, delta=errorTolerance)
 
     def testComputeNextDeviationProportionalConnectedToNUnits(self):
         "Check the values of a unit connected to N other units"
@@ -651,13 +675,12 @@ class HomeoUnitTest(unittest.TestCase):
                 exceeded = abs(expectedDeviation)  > self.unit.maxDeviation 
                 self.unit.selfUpdate()
                 if exceeded:
-                    self.assertTrue(True)
-                    #expectedDeviation = self.unit.criticalDeviation                                                    
-                    # If criticalDeviation value went at any time  beyond clipping limits don't check. 
-                    # (This test is carried out in other unit tests) 
-                    # Reset computing deviation to avoid carrying the error over to next cycles"
+                    # Past the limits the unit must sit at the limit.
+                    self.assertAlmostEqual(self.unit.criticalDeviation,
+                                           numpy.clip(expectedDeviation, self.unit.minDeviation, self.unit.maxDeviation),
+                                           delta=pow(10, -14))
                 else:
-                    self.assertTrue(abs(expectedDeviation - self.unit.criticalDeviation  < errorTolerance))
+                    self.assertAlmostEqual(self.unit.criticalDeviation, expectedDeviation, delta=errorTolerance)
 
     def testComputeNextDeviationLinearSelfconnected(self):
         "Check the values of a single self-connected unit"
@@ -705,8 +728,11 @@ class HomeoUnitTest(unittest.TestCase):
                 nextDeviation = deviation + (self.unit.currentOutput * self.unit.potentiometer * self.unit.switch)
                 exceeded = abs(nextDeviation) >  self.unit.maxDeviation
                 self.unit.selfUpdate()
-                if exceeded: 
-                    self.assertTrue(True)
+                if exceeded:
+                    # Past the limits the unit must sit at the limit.
+                    self.assertAlmostEqual(self.unit.criticalDeviation,
+                                           numpy.clip(nextDeviation, self.unit.minDeviation, self.unit.maxDeviation),
+                                           delta=pow(10, -14))
                 else:
                     self.assertTrue(nextDeviation == self.unit.criticalDeviation)
 
@@ -756,8 +782,11 @@ class HomeoUnitTest(unittest.TestCase):
                 nextDeviation = deviation + ((self.unit.currentOutput * self.unit.potentiometer * self.unit.switch) / (self.unit.maxDeviation * 2))
                 exceeded = abs(nextDeviation) >  self.unit.maxDeviation
                 self.unit.selfUpdate()
-                if exceeded: 
-                    self.assertTrue(True)
+                if exceeded:
+                    # Past the limits the unit must sit at the limit.
+                    self.assertAlmostEqual(self.unit.criticalDeviation,
+                                           numpy.clip(nextDeviation, self.unit.minDeviation, self.unit.maxDeviation),
+                                           delta=pow(10, -14))
                 else:
                     self.assertTrue(nextDeviation == self.unit.criticalDeviation)
 
@@ -1309,14 +1338,10 @@ class HomeoUnitTest(unittest.TestCase):
         that holds it. A HomeUnit has no means of advancing its internal time counter.
         """
         
-        self.assertTrue(True, "A HomeoUnit does not advance its time, its controlling Homeostat does it")
-        #=======================================================================
-        # "Test for alternative implementations"
-        #
-        # oldUnitTime = self.unit.time 
-        # self.unit.selfUpdate()
-        # self.assertTrue(self.unit.time == oldUnitTime + 1)
-        #=======================================================================
+        oldUnitTime = self.unit.time
+        self.unit.selfUpdate()
+        self.assertEqual(self.unit.time, oldUnitTime,
+                         "A HomeoUnit does not advance its time, its controlling Homeostat does it")
 
     def testSelfUpdateAdvancesUniselectorTime(self):
         """
