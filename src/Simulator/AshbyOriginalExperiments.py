@@ -357,9 +357,14 @@ def setup_exp2_self_reorganization(seed=None):
     Connection 1->2: uniselector-controlled.
     Connection 2->3: hand-controlled (manual), will be reversed mid-run.
 
-    Unit 1 = Motor (agent), has uniselector.
-    Unit 2 = Sensor (agent), no uniselector.
+    Unit 1 = Motor (agent), no uniselector.
+    Unit 2 = Sensor (agent), has the uniselector.
     Unit 3 = Environment, no self-connection, no uniselector.
+
+    A uniselector re-draws its own unit's input connections, so the
+    uniselector that controls 1->2 is unit 2's ("the action 1 to 2 was
+    uniselector controlled", DftB 8/5).  Unit 1's inputs are all fixed or
+    hand-controlled, so its uniselector would have nothing to act on.
 
     The 4th unit is created but deactivated (Ashby's hardware had 4 slots).
 
@@ -370,8 +375,8 @@ def setup_exp2_self_reorganization(seed=None):
     hom = Homeostat()
 
     # Create 4 units (one will be inactive)
-    unit1 = _make_unit('Motor', uniselector_active=True, uniselector_interval=100)
-    unit2 = _make_unit('Sensor', uniselector_active=False)
+    unit1 = _make_unit('Motor', uniselector_active=False)
+    unit2 = _make_unit('Sensor', uniselector_active=True, uniselector_interval=100)
     unit3 = _make_unit('Env', uniselector_active=False)
     unit4 = HomeoUnitNewtonian()
     unit4.name = 'UNUSED'
@@ -392,7 +397,7 @@ def setup_exp2_self_reorganization(seed=None):
     # Unit 1 receives from unit 3 (Env->Motor): fixed negative
     _enable_connection(unit3, unit1, weight=-0.5, state='manual')
 
-    # Unit 2 receives from unit 1 (Motor->Sensor): uniselector-controlled
+    # Unit 2 receives from unit 1 (Motor->Sensor): controlled by unit 2's uniselector
     _enable_connection(unit1, unit2, state='uniselector')
 
     # Unit 3 receives from unit 2 (Sensor->Env): hand-controlled, positive
@@ -403,7 +408,8 @@ def setup_exp2_self_reorganization(seed=None):
         'reference': 'DftB 8/5, Fig. 8/5/1',
         'topology': '3 units in ring: Motor->Sensor->Env->Motor',
         'description': ('At reversal event, polarity of Sensor->Env '
-                         'is flipped; uniselector on Motor->Sensor compensates'),
+                         "is flipped; the Sensor's uniselector re-draws "
+                         'Motor->Sensor and compensates'),
     }
     return hom, seed, metadata
 

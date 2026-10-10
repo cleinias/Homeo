@@ -126,14 +126,11 @@ class AshbyExperimentWiringTest(unittest.TestCase):
                     if conn.isActive() and conn.state == 'uniselector']
         self.assertTrue(adaptive, 'no connection that a working uniselector can change')
 
-    @pytest.mark.xfail(strict=True, reason='the uniselector-controlled link is on the '
-                       'Sensor, whose uniselector is off')
     def testExp2HeadlessCanAdapt(self):
         from Simulator.AshbyOriginalExperiments import setup_exp2_self_reorganization
         hom, seed, meta = setup_exp2_self_reorganization(1)
         self.assertSomeConnectionCanAdapt(hom)
 
-    @pytest.mark.xfail(strict=True, reason='same wiring as the headless Exp 2')
     def testExp2GuiCanAdapt(self):
         from Simulator.HomeoExperiments import initializeAshbyExp2SelfReorganization
         self.assertSomeConnectionCanAdapt(initializeAshbyExp2SelfReorganization())

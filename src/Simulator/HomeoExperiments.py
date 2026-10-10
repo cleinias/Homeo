@@ -4055,15 +4055,17 @@ def initializeAshbyExp2SelfReorganization(**params):
 
     3 units in a ring: Motor->Sensor->Env->Motor.
     Env->Motor: fixed negative (manual).
-    Motor->Sensor: uniselector-controlled.
+    Motor->Sensor: uniselector-controlled, by the Sensor's uniselector (a
+    uniselector re-draws its own unit's inputs; the Motor's inputs are all
+    fixed, so its uniselector is off).
     Sensor->Env: hand-controlled (manual), will be reversed by user.
     4th unit is inactive.
     '''
     HomeoUnit.clearNames()
     hom = Homeostat()
 
-    unit1 = _ashby_make_unit('Motor', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Sensor', uniselector_active=False)
+    unit1 = _ashby_make_unit('Motor', uniselector_active=False)
+    unit2 = _ashby_make_unit('Sensor', uniselector_active=True, uniselector_interval=100)
     unit3 = _ashby_make_unit('Env', uniselector_active=False)
     unit4 = HomeoUnitNewtonian()
     unit4.name = 'UNUSED'
@@ -4077,7 +4079,7 @@ def initializeAshbyExp2SelfReorganization(**params):
 
     # Wire the ring: Env->Motor (fixed negative)
     _ashby_enable_connection(unit3, unit1, weight=-0.5, state='manual')
-    # Motor->Sensor (uniselector-controlled)
+    # Motor->Sensor (controlled by the Sensor's uniselector)
     _ashby_enable_connection(unit1, unit2, state='uniselector')
     # Sensor->Env (hand-controlled, positive — user will reverse)
     _ashby_enable_connection(unit2, unit3, weight=0.5, state='manual')
