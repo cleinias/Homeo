@@ -54,3 +54,7 @@ package-dir = { "" = "src" }
 where = ["src"]
 include = ["Core*", "Helpers*", "Simulator*", "KheperaSimulator*",
            "RobotSimulator*", "HomeoExperiments*"]
+
+[tool.ruff.lint]
+# Modules use CamelCase file names (HomeoExperiments.py etc.); renaming would break imports.
+ignore = ["N999"]
