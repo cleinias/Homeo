@@ -101,21 +101,21 @@ configuration.</p>''',
     2: '''<h3>Exp 2: Self-Reorganization (3-Unit Circle)</h3>
 <p><b>Reference:</b> DftB 8/5, Fig. 8/5/1</p>
 <p><b>Ashby's protocol:</b> Three units are connected in a ring:
-Motor &rarr; Sensor &rarr; Env &rarr; Motor. The Env&rarr;Motor connection
-is fixed negative. The Motor&rarr;Sensor connection is under uniselector
-control. The Sensor&rarr;Env connection is hand-controlled. The system
-first stabilizes with the current Sensor&rarr;Env polarity. Then the
+1 &rarr; 2 &rarr; 3 &rarr; 1. The 3&rarr;1 connection
+is fixed negative. The 1&rarr;2 connection is under the control of
+unit 2's uniselector. The 2&rarr;3 connection is hand-controlled. The system
+first stabilizes with the current 2&rarr;3 polarity. Then the
 experimenter reverses this connection, forcing the system to re-adapt.</p>
 <p><b>What to do:</b></p>
 <ol>
 <li>Press <b>Start</b> and let the system stabilize (watch the strip charts
 settle into a steady state).</li>
-<li>When stable, press <b>"Reverse Sensor&rarr;Env polarity"</b>.</li>
+<li>When stable, press <b>"Reverse 2&rarr;3 polarity"</b>.</li>
 <li>Observe the system destabilize and then re-adapt through uniselector
-action on the Motor&rarr;Sensor connection.</li>
+action on the 1&rarr;2 connection.</li>
 </ol>
 <p><b>Expected outcome:</b> After reversal, the system destabilizes briefly,
-then the uniselector on Motor&rarr;Sensor finds a compensating value,
+then unit 2's uniselector finds a compensating value for 1&rarr;2,
 restoring stability. This demonstrates self-reorganization.</p>''',
 
     3: '''<h3>Exp 3: Training by Punishment</h3>
@@ -403,7 +403,7 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
                                        'The system self-organizes automatically.'))
 
         elif self._exp_num == 2:
-            self._reverseBtn = QPushButton('Reverse Sensor->Env polarity')
+            self._reverseBtn = QPushButton('Reverse 2->3 polarity')
             self._reverseBtn.clicked.connect(self._reverseExp2Polarity)
             expLayout.addWidget(self._reverseBtn)
 
@@ -516,12 +516,12 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
     # -----------------------------------------------------------
 
     def _reverseExp2Polarity(self):
-        '''Exp 2: Reverse the Sensor->Env connection polarity.'''
+        '''Exp 2: Reverse the 2->3 connection polarity.'''
         hom = self._simulation.homeostat
-        env = hom.homeoUnits[2]   # Env
-        sensor = hom.homeoUnits[1]  # Sensor
-        for conn in env.inputConnections:
-            if conn.incomingUnit is sensor:
+        unit3 = hom.homeoUnits[2]
+        unit2 = hom.homeoUnits[1]
+        for conn in unit3.inputConnections:
+            if conn.incomingUnit is unit2:
                 conn.newWeight(conn.weight * conn.switch * -1)
                 break
         self._reverseBtn.setEnabled(False)

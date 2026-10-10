@@ -353,13 +353,19 @@ def setup_exp1_basic_ultrastability(seed=None):
 def setup_exp2_self_reorganization(seed=None):
     '''3 units in a ring: 1->2->3->1.
 
-    Connection 3->1: fixed negative (manual).
+    Connection 3->1: fixed negative (manual): "a movement of 3 made 1 move
+    in the opposite direction".
     Connection 1->2: uniselector-controlled.
-    Connection 2->3: hand-controlled (manual), will be reversed mid-run.
+    Connection 2->3: hand-controlled (manual), reversed mid-run (at R in
+    Fig. 8/5/1), after Sperry's crossing of nerves to antagonist muscles.
 
-    Unit 1 = Motor (agent), no uniselector.
-    Unit 2 = Sensor (agent), has the uniselector.
-    Unit 3 = Environment, no self-connection, no uniselector.
+    The units are named by Ashby's numbers only.  Ashby does not say which
+    of them, if any, stands for an environment, and reading them as sensor,
+    motor and environment led this setup astray before.
+
+    Unit 1: no uniselector.
+    Unit 2: has the uniselector.
+    Unit 3: no self-connection, no uniselector.
 
     A uniselector re-draws its own unit's input connections, so the
     uniselector that controls 1->2 is unit 2's ("the action 1 to 2 was
@@ -375,9 +381,9 @@ def setup_exp2_self_reorganization(seed=None):
     hom = Homeostat()
 
     # Create 4 units (one will be inactive)
-    unit1 = _make_unit('Motor', uniselector_active=False)
-    unit2 = _make_unit('Sensor', uniselector_active=True, uniselector_interval=100)
-    unit3 = _make_unit('Env', uniselector_active=False)
+    unit1 = _make_unit('Unit_1', uniselector_active=False)
+    unit2 = _make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
+    unit3 = _make_unit('Unit_3', uniselector_active=False)
     unit4 = HomeoUnitNewtonian()
     unit4.name = 'UNUSED'
 
@@ -390,34 +396,34 @@ def setup_exp2_self_reorganization(seed=None):
     # Disable all cross-connections
     _disable_all_cross_connections(hom)
 
-    # Disable env self-connection
+    # Disable unit 3's self-connection
     unit3.disactivateSelfConn()
 
     # Wire the ring: 1->2->3->1
-    # Unit 1 receives from unit 3 (Env->Motor): fixed negative
+    # Unit 1 receives from unit 3 (3->1): fixed negative
     _enable_connection(unit3, unit1, weight=-0.5, state='manual')
 
-    # Unit 2 receives from unit 1 (Motor->Sensor): controlled by unit 2's uniselector
+    # Unit 2 receives from unit 1 (1->2): controlled by unit 2's uniselector
     _enable_connection(unit1, unit2, state='uniselector')
 
-    # Unit 3 receives from unit 2 (Sensor->Env): hand-controlled, positive
+    # Unit 3 receives from unit 2 (2->3): hand-controlled, positive
     _enable_connection(unit2, unit3, weight=0.5, state='manual')
 
     metadata = {
         'experiment': 'Exp 2: Self-Reorganization (3-Unit Circle)',
         'reference': 'DftB 8/5, Fig. 8/5/1',
-        'topology': '3 units in ring: Motor->Sensor->Env->Motor',
-        'description': ('At reversal event, polarity of Sensor->Env '
-                         "is flipped; the Sensor's uniselector re-draws "
-                         'Motor->Sensor and compensates'),
+        'topology': '3 units in ring: 1->2->3->1',
+        'description': ('At reversal event, polarity of 2->3 '
+                         "is flipped; unit 2's uniselector re-draws "
+                         '1->2 and compensates'),
     }
     return hom, seed, metadata
 
 
 def exp2_reversal_event(hom):
-    '''Reverse polarity of the Sensor->Env connection (hand-controlled).'''
-    unit3 = hom.homeoUnits[2]  # Env
-    unit2 = hom.homeoUnits[1]  # Sensor
+    '''Reverse polarity of the 2->3 connection (hand-controlled).'''
+    unit3 = hom.homeoUnits[2]
+    unit2 = hom.homeoUnits[1]
     _, conn = find_connection(unit2, unit3)
     if conn is None:
         # Connection is on unit3 receiving from unit2

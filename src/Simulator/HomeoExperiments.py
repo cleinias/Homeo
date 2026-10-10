@@ -4053,20 +4053,20 @@ def initializeAshbyExp1BasicUltrastability(**params):
 def initializeAshbyExp2SelfReorganization(**params):
     '''Exp 2: Self-Reorganization in 3-Unit Circle (DftB 8/5).
 
-    3 units in a ring: Motor->Sensor->Env->Motor.
-    Env->Motor: fixed negative (manual).
-    Motor->Sensor: uniselector-controlled, by the Sensor's uniselector (a
-    uniselector re-draws its own unit's inputs; the Motor's inputs are all
-    fixed, so its uniselector is off).
-    Sensor->Env: hand-controlled (manual), will be reversed by user.
+    3 units in a ring: 1->2->3->1, named by Ashby's numbers only.
+    3->1: fixed negative (manual).
+    1->2: uniselector-controlled, by unit 2's uniselector (a uniselector
+    re-draws its own unit's inputs; unit 1's inputs are all fixed, so its
+    uniselector is off).
+    2->3: hand-controlled (manual), will be reversed by user.
     4th unit is inactive.
     '''
     HomeoUnit.clearNames()
     hom = Homeostat()
 
-    unit1 = _ashby_make_unit('Motor', uniselector_active=False)
-    unit2 = _ashby_make_unit('Sensor', uniselector_active=True, uniselector_interval=100)
-    unit3 = _ashby_make_unit('Env', uniselector_active=False)
+    unit1 = _ashby_make_unit('Unit_1', uniselector_active=False)
+    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
+    unit3 = _ashby_make_unit('Unit_3', uniselector_active=False)
     unit4 = HomeoUnitNewtonian()
     unit4.name = 'UNUSED'
 
@@ -4077,11 +4077,11 @@ def initializeAshbyExp2SelfReorganization(**params):
     _ashby_disable_all_cross_connections(hom)
     unit3.disactivateSelfConn()
 
-    # Wire the ring: Env->Motor (fixed negative)
+    # Wire the ring: 3->1 (fixed negative)
     _ashby_enable_connection(unit3, unit1, weight=-0.5, state='manual')
-    # Motor->Sensor (controlled by the Sensor's uniselector)
+    # 1->2 (controlled by unit 2's uniselector)
     _ashby_enable_connection(unit1, unit2, state='uniselector')
-    # Sensor->Env (hand-controlled, positive — user will reverse)
+    # 2->3 (hand-controlled, positive — user will reverse)
     _ashby_enable_connection(unit2, unit3, weight=0.5, state='manual')
 
     return hom
