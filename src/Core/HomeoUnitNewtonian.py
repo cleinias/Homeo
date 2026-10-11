@@ -124,26 +124,24 @@ class HomeoUnitNewtonian(HomeoUnit):
         '''Computes the new position of the needle taking into consideration
            (a simplified version of) the forces acting on the needle'''
 
-        if self._headless:
-            new_pos, acc = _jit_needle_position_newtonian(
-                aTorqueValue, self._viscosity, self._currentVelocity,
-                self._needleUnit._mass, self._criticalDeviation, self._dt_fast)
-            self._lastAcceleration = acc
-            return new_pos
-
-        '''First, add to the  force acting on the needle the drag force
-           produced by the fluid in the trough the  needle is moving through.
+        '''Newton's second law with the drag force produced by the fluid in
+           the trough the needle moves through (Stokes drag, -viscosity * v),
+           the torque held constant over the step.  The step is the exact
+           solution of m dv/dt = torque - viscosity * v (see
+           _jit_needle_position_newtonian, which both paths use): an explicit
+           step for the drag is unstable when viscosity * dt_fast / mass > 2.
            In the original Homeostat,  other factors related to the  physical
            characteristics of the device, affect the net force affecting the needle,
            including the potential through the trough, the friction at the vane, etc.
            These factors are ignored here'''
 
-        totalForce = aTorqueValue + self.drag()
-        "Then compute displacement according to Newton's second law"    
-            
-        acceleration = totalForce / self.needleUnit.mass                   # As per  Newton's second law
+        new_pos, acceleration = _jit_needle_position_newtonian(
+            aTorqueValue, self._viscosity, self._currentVelocity,
+            self._needleUnit._mass, self._criticalDeviation, self._dt_fast)
         self._lastAcceleration = acceleration
-        displacement = self.currentVelocity * self._dt_fast + (1 / 2. * acceleration * self._dt_fast**2)
+        if self._headless:
+            return new_pos
+        displacement = new_pos - self.criticalDeviation
 
         try:
             #print "My name is %s and I have a fileOut object to write to: %s " % (self.name, self._fileOut)
@@ -268,9 +266,9 @@ class HomeoUnitNewtonian(HomeoUnit):
         else:
             self.uniselectorActivated = 0
 
-        '''4. Compute new current velocity: v_new = v_old + a * dt_fast.
-        When dt_fast = 1.0 this is equivalent to the old Verlet-derived
-        formula v = 2*(x_new - x_old) - v_old.'''
+        '''4. Compute new current velocity: v_new = v_old + a * dt_fast, with a
+        the step's mean acceleration (see newLinearNeedlePosition).  At a stop
+        the needle halts.'''
 
         if not (self.minDeviation < self.nextDeviation < self.maxDeviation):
             newDeviation = self.clipDeviation(self.nextDeviation)

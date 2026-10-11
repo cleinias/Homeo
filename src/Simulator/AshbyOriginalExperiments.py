@@ -499,7 +499,7 @@ def setup_exp2_self_reorganization(seed=None):
     1 and 3 are pinned, and nothing can adapt).  1->2 starts positive: in
     Ashby's starting state "2 followed 1".  Over 30 seeds this gives Ashby's
     sequence (stable, destabilised by R, restabilised with 1->2 reversed by
-    the uniselector) in 27.
+    the uniselector) in 28.
 
     A uniselector re-draws its own unit's input connections, so the
     uniselector that controls 1->2 is unit 2's ("the action 1 to 2 was
@@ -898,7 +898,7 @@ def setup_exp5_constraint(seed=None, unused_slots=False):
     Ashby's "at first stable" and "in this case ... unstable".  Strongly
     damped units of equal mass (the fibre averages them).  Over 30 seeds
     the full sequence (stable, J destabilises, re-adapted with the fibre,
-    R destabilises) appears in 22; in 7 more the field found with the fibre
+    R destabilises) appears in 23; in 7 more the field found with the fibre
     is stable without it as well.
 
     unused_slots: add an inactive unit 4 (for the GUI).

@@ -89,8 +89,6 @@ class HeadlessRunLoopTest(unittest.TestCase):
 
 class NewtonianStabilityTest(unittest.TestCase):
 
-    @pytest.mark.xfail(strict=True, reason='Stokes drag is integrated explicitly, '
-                       'unstable when viscosity * dt_fast / mass > 2')
     def testDragDampsAtHighViscosity(self):
         "Under a constant torque, drag must hold the velocity near its terminal value F / viscosity"
         torque, viscosity = 0.1, 5.0

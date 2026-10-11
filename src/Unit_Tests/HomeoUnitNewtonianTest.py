@@ -212,19 +212,19 @@ if __name__ == "__main__":
     unittest.main()
 
 class HomeoUnitNewtonianIntegratorTest(unittest.TestCase):
-    """The integrator, step by step, against a hand-computed recurrence.
+    """The integrator, step by step, against the exact solution.
 
     The tests above leave the velocity at 0, the viscosity at its default of 0
     and dt_fast at 1, so they check only the 1/2 a term.  Here a unit driven by
-    a constant torque F, with Stokes drag, follows
+    a constant torque F, with Stokes drag c = viscosity, must follow the
+    solution of m dv/dt = F - c v at t = dt_fast, 2 dt_fast, ...:
 
-        a  = (F - viscosity * v) / mass
-        x' = x + v * dt + a * dt^2 / 2
-        v' = v + a * dt
+        v(t) = F/c + (v0 - F/c) e^(-c t / m)
+        x(t) = F t / c + (v0 - F/c) (m / c) (1 - e^(-c t / m))
 
-    and both the Python path and the headless (JIT) path must reproduce it.
-    The parameters keep viscosity * dt / mass well below 2, where the explicit
-    drag update is stable, and the needle well inside its limits.
+    (v0 + F t / m and v0 t + F t^2 / 2m without viscosity), on the Python
+    path and on the headless (JIT) path, for any c dt / m.  The needle stays
+    well inside its limits.
     """
 
     def makeUnit(self, mass, viscosity, dtFast, v0, torque, headless):
@@ -249,13 +249,17 @@ class HomeoUnitNewtonianIntegratorTest(unittest.TestCase):
         return unit
 
     def expectedTrajectory(self, mass, viscosity, dtFast, v0, torque, steps):
-        x, v, xs, vs = 0.0, v0, [], []
-        for i in range(steps):
-            a = (torque - viscosity * v) / mass
-            x = x + v * dtFast + 0.5 * a * dtFast ** 2
-            v = v + a * dtFast
-            xs.append(x)
-            vs.append(v)
+        xs, vs = [], []
+        for i in range(1, steps + 1):
+            t = i * dtFast
+            if viscosity == 0:
+                xs.append(v0 * t + torque * t ** 2 / (2 * mass))
+                vs.append(v0 + torque * t / mass)
+            else:
+                terminal = torque / viscosity
+                decay = math.exp(-viscosity * t / mass)
+                xs.append(terminal * t + (v0 - terminal) * mass / viscosity * (1 - decay))
+                vs.append(terminal + (v0 - terminal) * decay)
         return xs, vs
 
     def checkTrajectory(self, headless):
@@ -263,7 +267,9 @@ class HomeoUnitNewtonianIntegratorTest(unittest.TestCase):
         for dtFast in (0.5, 1.0, 2.0):
             for mass, viscosity, v0, torque in ((5.0, 2.0, 0.3, 0.05),
                                                 (20.0, 0.5, -0.05, -0.02),
-                                                (2.0, 0.0, 0.05, 0.002)):
+                                                (2.0, 0.0, 0.05, 0.002),
+                                                (1.0, 10.0, 0.2, 0.1),        # c dt / m up to 20
+                                                (100.0, 1e-3, 0.01, 0.01)):   # c dt / m ~ 1e-5
                 unit = self.makeUnit(mass, viscosity, dtFast, v0, torque, headless)
                 xs, vs = self.expectedTrajectory(mass, viscosity, dtFast, v0, torque, steps)
                 for step in range(steps):
