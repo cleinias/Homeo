@@ -8,7 +8,7 @@ from Core.HomeoJIT import (_jit_unit_noise, _jit_compute_torque,
                            _jit_needle_position_base, _jit_compute_output)
 from Helpers.General_Helper_Functions import withAllSubclasses
 import numpy as np
-import sys, pickle
+import sys, pickle, weakref
 from copy import copy
 from io import StringIO
 from Helpers.QObjectProxyEmitter import emitter
@@ -124,6 +124,10 @@ class HomeoUnit(object):
     precision = 10**5  
     
     allNames = set()        # set of units' unique names
+    # name -> the live unit registered under it.  A name may only be released
+    # by its owner: a dead unit from before clearNames(), or a copy, can carry
+    # the same name as a live unit and must not free it when it is collected.
+    _nameOwners = weakref.WeakValueDictionary()
         
     #===========================================================================
     #  END OF CLASS CONSTANTS 
@@ -145,6 +149,18 @@ class HomeoUnit(object):
     def clearNames(cls):
         '''Clear the set of HomeoUnits' names'''
         HomeoUnit.allNames = set()
+        HomeoUnit._nameOwners = weakref.WeakValueDictionary()
+
+    @classmethod
+    def _releaseName(cls, name, unit):
+        '''Release name unless a live unit other than unit owns it.
+        Called from __del__, unit's weak reference is already gone by then,
+        so an owner that is still found is someone else.'''
+        owner = HomeoUnit._nameOwners.get(name)
+        if owner is None or owner is unit:
+            HomeoUnit.allNames.discard(name)
+            if owner is unit:
+                del HomeoUnit._nameOwners[name]
     
     @classmethod
     def uniselectorTimeIntervalFromWeight(cls,uniselParam):
@@ -165,6 +181,18 @@ class HomeoUnit(object):
     def massFromWeight(cls,massParam):
         '''Convert a GA parameter in the [0,1) range to a valid mass value'''
         return ((HomeoUnit.DefaultParameters['maxMass']-HomeoUnit.DefaultParameters['minMass']) * massParam) + HomeoUnit.DefaultParameters['minMass']
+
+    # Mass range of the weight-free GA experiments: the responsive range of
+    # the Newtonian units, not massFromWeight's [minMass, maxMass]
+    weightfreeMassRange = (1.0, 10.0)
+
+    @classmethod
+    def massFromWeightWeightfree(cls, massParam):
+        '''Convert a GA parameter in the [0,1) range to the mass of a unit of
+        the weight-free GA experiments, in weightfreeMassRange.  The setups
+        and GenomeDecoder both use it.'''
+        low, high = cls.weightfreeMassRange
+        return low + massParam * (high - low)
 
     @classmethod
     def tauAFromWeight(cls, param):
@@ -244,7 +272,7 @@ class HomeoUnit(object):
     
         "give the unit  a default name"
         try:
-            HomeoUnit.allNames.discard(self.name)
+            HomeoUnit._releaseName(self.name, self)
         except AttributeError:
             self._name = None
         self.setDefaultName()
@@ -308,31 +336,41 @@ class HomeoUnit(object):
 
         In headless mode with a continuous (OU) uniselector the arrays carry the
         weights the dynamics actually used, while the connection objects keep
-        their last synced values.  Call this before logging or inspecting
-        connections so that what is recorded is what was run.  A no-op when the
-        arrays are absent or stale.
+        their last synced values.  This brings the connections up to date, so
+        call it before logging or inspecting them.  A connection changed through
+        its own setters since the last sync (see HomeoConnection._markJitStale)
+        is newer than the arrays and is left as it is.  A no-op when there are
+        no arrays yet.
         """
-        if getattr(self, '_jit_dirty', True):
+        conns = getattr(self, '_jit_conns', None)
+        if conns is None:
             return
-        if not hasattr(self, '_jit_weights'):
-            return
-        active = [c for c in self._inputConnections
-                  if c.isActive() and c.incomingUnit.isActive()]
-        if len(active) != len(self._jit_weights):
-            return                      # topology changed since the last sync
-        for conn, w, s in zip(active, self._jit_weights, self._jit_switches):
-            conn._weight = float(abs(w))
-            conn._switch = float(s)
+        for conn, w, s in zip(conns, self._jit_weights, self._jit_switches):
+            if not getattr(conn, '_jitStale', False):
+                conn._weight = float(abs(w))
+                conn._switch = float(s)
 
     def _sync_jit_arrays(self):
-        """Extract active connection parameters into numpy arrays for JIT loop."""
+        """Extract active connection parameters into numpy arrays for JIT loop.
+
+        The arrays may hold weights the connections do not have yet (the
+        headless OU uniselector evolves only the arrays), so they are first
+        written back, and only then rebuilt from the connections.  Rebuilding
+        alone threw that evolution away every time it ran."""
+        self.flushJitArrays()
         active = [c for c in self._inputConnections
                   if c.isActive() and c.incomingUnit.isActive()]
+        self._jit_conns = active
         self._jit_incoming_units = [c._incomingUnit for c in active]
         self._jit_switches = np.array([c._switch for c in active], dtype=np.float64)
         self._jit_weights = np.array([c._weight for c in active], dtype=np.float64)
         self._jit_noises = np.array([c._noise for c in active], dtype=np.float64)
+        # Which connections the uniselector may change: only those it controls,
+        # as in the Python path (HomeoUniselectorContinuous.evolve_weights).
+        self._jit_evolvable = np.array([c._state == 'uniselector' for c in active], dtype=bool)
         self._jit_outputs = np.empty(len(active), dtype=np.float64)
+        for conn in active:
+            conn._jitStale = False
         self._jit_dirty = False
 
     
@@ -797,9 +835,10 @@ class HomeoUnit(object):
         "aString must be a new name not present in HomeoUnit.allNames"
 
         if aString not in HomeoUnit.allNames: 
-            HomeoUnit.allNames.discard(self._name)
+            HomeoUnit._releaseName(self._name, self)
             self._name = aString
             HomeoUnit.allNames.add(aString)
+            HomeoUnit._nameOwners[aString] = self
             emitter(self).nameChanged.emit(self._name)
         else:
             raise HomeoUnitError("The name %s exists already" % aString)
@@ -1218,7 +1257,8 @@ class HomeoUnit(object):
                     if self._jit_dirty:
                         self._sync_jit_arrays()
                     self.uniselector.evolve_weights_jit(
-                        self._jit_weights, self._jit_switches, stress)
+                        self._jit_weights, self._jit_switches, stress,
+                        self._jit_evolvable)
                     '''Do NOT mark the arrays dirty here.  evolve_weights_jit()
                        mutates them in place and they are authoritative until
                        something edits the connection objects; marking them
@@ -1581,7 +1621,7 @@ class HomeoUnit(object):
             Subclasses' instances must call this method explicitly 
             to remove  their names'''
         if self._name is not None:
-            HomeoUnit.allNames.discard(self._name)
+            HomeoUnit._releaseName(self._name, self)
         
         
         

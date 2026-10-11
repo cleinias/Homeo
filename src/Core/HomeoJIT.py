@@ -117,20 +117,35 @@ def _jit_needle_position_base(torque, viscosity, max_viscosity, mass, crit_dev):
 def _jit_needle_position_newtonian(torque, viscosity, current_velocity, mass, crit_dev, dt_fast):
     """Replacement for HomeoUnitNewtonian.newLinearNeedlePosition() arithmetic.
 
-    Newtonian model with Stokes drag inline:
-    drag = -viscosity * current_velocity
-    totalForce = torque + drag
-    acceleration = totalForce / mass
-    displacement = current_velocity * dt_fast + 0.5 * acceleration * dt_fast * dt_fast
-    new_pos = crit_dev + displacement
+    Newtonian needle with Stokes drag, m dv/dt = torque - viscosity * v, the
+    torque held constant over the step.  The step is the exact solution of
+    that equation, so it is stable for any viscosity * dt_fast / mass (the
+    explicit step it replaces blew up beyond 2).  With b = viscosity *
+    dt_fast / mass:
 
-    Returns (new_pos, acceleration).
+        v_new = v e^-b + (torque dt / m) phi1(b)
+        x_new = x + v dt phi1(b) + (torque dt^2 / m) phi2(b)
+
+    phi1(b) = (1 - e^-b) / b and phi2(b) = (b - 1 + e^-b) / b^2, which tend to
+    1 and 1/2 as b -> 0: without viscosity this is the old step, exactly.
+
+    Returns (new_pos, acceleration), the acceleration being the step's mean,
+    (v_new - v) / dt_fast, so that v_new = v + acceleration * dt_fast.
     """
-    drag = -viscosity * current_velocity
-    totalForce = torque + drag
-    acceleration = totalForce / mass
-    displacement = current_velocity * dt_fast + 0.5 * acceleration * dt_fast * dt_fast
-    return crit_dev + displacement, acceleration
+    if dt_fast <= 0.0:
+        return crit_dev, 0.0
+    b = viscosity * dt_fast / mass
+    if abs(b) < 1e-4:
+        phi1 = 1.0 - b / 2.0 + b * b / 6.0
+        phi2 = 0.5 - b / 6.0 + b * b / 24.0
+    else:
+        em1 = np.expm1(-b)                  # e^-b - 1
+        phi1 = -em1 / b
+        phi2 = (b + em1) / (b * b)
+    impulse = torque * dt_fast / mass
+    new_velocity = current_velocity * (1.0 - b * phi1) + impulse * phi1
+    new_pos = crit_dev + current_velocity * dt_fast * phi1 + impulse * dt_fast * phi2
+    return new_pos, (new_velocity - current_velocity) / dt_fast
 
 
 @njit(cache=True)
@@ -150,13 +165,25 @@ def _jit_compute_output(crit_dev, min_dev, max_dev, out_low, out_high):
     return out
 
 
+_warmed_up = False
+
+
 def warmup_jit():
     """Call each JIT function once with dummy data to trigger Numba compilation.
-    This is a one-time cost (~1s) at simulation start."""
-    _jit_unit_noise(0.1)
-    _jit_conn_noise(0.5, 0.1)
+    This is a one-time cost (~1s) at simulation start, so it runs once per
+    process.  The dummy calls use zero noise, so they draw no random numbers:
+    numba compiles a function on its first call whatever branch it takes, and
+    drawing here (as this did on every Homeostat.runFor() call) shifted the
+    random stream, so one seed gave a different run depending on how the run
+    was split into runFor() calls."""
+    global _warmed_up
+    if _warmed_up:
+        return
+    _jit_unit_noise(0.0)
+    _jit_conn_noise(0.5, 0.0)
     dummy = np.array([0.5], dtype=np.float64)
-    _jit_compute_torque(dummy, dummy, dummy, dummy)
+    _jit_compute_torque(dummy, dummy, dummy, np.zeros(1, dtype=np.float64))
     _jit_needle_position_base(1.0, 0.5, 10.0, 100.0, 0.0)
     _jit_needle_position_newtonian(1.0, 0.5, 0.1, 100.0, 0.0, 1.0)
     _jit_compute_output(0.0, -10.0, 10.0, -1.0, 1.0)
+    _warmed_up = True

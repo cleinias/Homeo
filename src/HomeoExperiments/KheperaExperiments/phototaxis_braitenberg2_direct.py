@@ -381,19 +381,23 @@ def _direct_fixed_topology(hom, mass_range=(1, 10),
 
 # --- Numerical-integration stability -----------------------------------------
 #
-# The Newtonian needle is integrated explicitly (HomeoJIT._jit_needle_position_
-# newtonian): with zero torque the velocity recursion is
+# The Newtonian needle used to be integrated explicitly: with zero torque the
+# velocity recursion was
 #       v <- v * (1 - viscosity * dt_fast / mass)
-# so the step is stable only while  viscosity * dt_fast / mass < 2.  Outside
-# that bound the needle diverges to its limit within a few dozen ticks with no
-# sensory input at all, which looks like -- but is not -- a saturated unit.
+# so the step was stable only while  viscosity * dt_fast / mass < 2.  Outside
+# that bound the needle diverged to its limit within a few dozen ticks with no
+# sensory input at all, which looked like -- but was not -- a saturated unit.
 # Random (mass, viscosity) draws violated this in 9 of the 20 runs of
 # 2026-09-30; see "Bimodal acquisition in OU chemotaxis".
+# HomeoJIT._jit_needle_position_newtonian now takes the exact step, stable for
+# any ratio, so the guard below is no longer needed for the numerics.  It is
+# kept (on by default) so that the parameter distribution of these runs stays
+# the one of the earlier ones.
 STABILITY_MARGIN = 1.8          # keep viscosity*dt/mass below this
 
 
 def _integration_ratio(unit):
-    "viscosity * dt_fast / mass -- must stay below 2 for the explicit step."
+    "viscosity * dt_fast / mass (the old explicit step needed it below 2)."
     dt = getattr(unit, '_dt_fast', 1.0)
     return unit.viscosity * dt / unit.mass if unit.mass else float('inf')
 

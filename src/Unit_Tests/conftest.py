@@ -25,12 +25,20 @@ falls back to a null emitter), and this is how that is tested on a machine that
 does have PyQt5.  With the option, PyQt5 imports are blocked before any test
 module is collected, and the two modules that test Qt GUI code are not
 collected at all.  Without it, nothing here changes.
+
+Finally, every test runs on its own fixed random stream (_isolated_random_state
+below), so no test's outcome depends on which tests ran before it.
 """
 import os
+import random
 import sys
+import zlib
 import importlib.abc
 
+import numpy as np
 import pytest
+
+from Core.HomeoJIT import seed_jit_rng
 
 if not (os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY')):
     try:
@@ -89,6 +97,33 @@ def pytest_ignore_collect(collection_path, config):
     if config.getoption('--no-qt') and collection_path.name in _QT_GUI_TEST_MODULES:
         return True
     return None
+
+
+# Random state --------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def _isolated_random_state(request):
+    """Give every test its own fixed random stream, and leave nothing behind.
+
+    Without this, a test that seeds the global RNGs (the GA tests seed with 42,
+    BraitenbergControlTest with 11 and 5) fixes the stream for every test that
+    runs after it, so whether a statistical test passes depended on test order,
+    and a test could pass alone and fail in the full run.
+
+    Each test is seeded from its own node id, so its draws are the same whether
+    it runs alone or in the suite.  Python's and NumPy's states are restored
+    afterwards.  Numba's separate state cannot be read back, so it is only
+    seeded: that is enough, since every test seeds it again before running.
+    """
+    seed = zlib.crc32(request.node.nodeid.encode())
+    np_state = np.random.get_state()
+    py_state = random.getstate()
+    np.random.seed(seed)
+    random.seed(seed)
+    seed_jit_rng(seed)
+    yield
+    np.random.set_state(np_state)
+    random.setstate(py_state)
 
 
 def pytest_report_header(config):

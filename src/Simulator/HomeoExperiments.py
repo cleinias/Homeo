@@ -2645,7 +2645,7 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     evolved_units = [leftMotor, rightMotor, leftEye, rightEye]
     for i, unit in enumerate(evolved_units):
         base = i * genes_per_unit
-        unit.mass = 1.0 + homeoGenome[base + 0] * 9.0       # [1, 10] — responsive range
+        unit.mass = HomeoUnit.massFromWeightWeightfree(homeoGenome[base + 0])   # [1, 10]
         unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
         # gene 2 = tau_a (applied after uniselector swap below)
         unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])
@@ -2897,7 +2897,7 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
     evolved_units = [leftMotor, rightMotor]
     for i, unit in enumerate(evolved_units):
         base = i * genes_per_unit
-        unit.mass = 1.0 + homeoGenome[base + 0] * 9.0       # [1, 10]
+        unit.mass = HomeoUnit.massFromWeightWeightfree(homeoGenome[base + 0])   # [1, 10]
         unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
         # gene 2 = tau_a (applied after uniselector swap below)
         unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])
@@ -3814,7 +3814,7 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
     evolved_units = [leftMotor, rightMotor]
     for i, unit in enumerate(evolved_units):
         base = i * genes_per_unit
-        unit.mass = 1.0 + homeoGenome[base + 0] * 9.0       # [1, 10]
+        unit.mass = HomeoUnit.massFromWeightWeightfree(homeoGenome[base + 0])   # [1, 10]
         unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
         # gene 2 = tau_a (applied after uniselector swap below)
         unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])
@@ -4035,36 +4035,41 @@ def _ashby_enable_connection(from_unit, to_unit, weight=None,
 
 
 def initializeAshbyExp1BasicUltrastability(**params):
-    '''Exp 1: Basic Ultrastability (DftB 8/3--8/4).
+    '''Exp 1: Basic Ultrastability (DftB 8/4, Fig. 8/4/1).
 
-    4 fully connected units, all under uniselector control.
-    Start from random parameters; observe that the system finds a stable field.
+    Two units: 1->2 hand-controlled (reversed by the user), 2->1 on unit 1's
+    uniselector.  Same setup as the headless
+    AshbyOriginalExperiments.setup_exp1_basic_ultrastability, with units 3
+    and 4 inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-    for i in range(4):
-        unit = _ashby_make_unit('Unit_%d' % (i + 1),
-                                uniselector_active=True,
-                                uniselector_interval=100)
-        hom.addFullyConnectedUnit(unit)
+    from Simulator.AshbyOriginalExperiments import setup_exp1_basic_ultrastability
+    hom, seed, meta = setup_exp1_basic_ultrastability(unused_slots=True)
     return hom
 
 
 def initializeAshbyExp2SelfReorganization(**params):
     '''Exp 2: Self-Reorganization in 3-Unit Circle (DftB 8/5).
 
-    3 units in a ring: Motor->Sensor->Env->Motor.
-    Env->Motor: fixed negative (manual).
-    Motor->Sensor: uniselector-controlled.
-    Sensor->Env: hand-controlled (manual), will be reversed by user.
+    3 units in a ring: 1->2->3->1, named by Ashby's numbers only.
+    3->1: fixed negative (manual).
+    1->2: uniselector-controlled, by unit 2's uniselector (a uniselector
+    re-draws its own unit's inputs; unit 1's inputs are all fixed, so its
+    uniselector is off).
+    2->3: hand-controlled (manual), will be reversed by user.
     4th unit is inactive.
+    Strongly damped units, self-feedback on 1 and 3 only, 1->2 starting
+    positive: see AshbyOriginalExperiments.setup_exp2_self_reorganization.
     '''
+    from Simulator.AshbyOriginalExperiments import EXP2_VISCOSITY, EXP2_SELF_FEEDBACK
     HomeoUnit.clearNames()
     hom = Homeostat()
 
-    unit1 = _ashby_make_unit('Motor', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Sensor', uniselector_active=False)
-    unit3 = _ashby_make_unit('Env', uniselector_active=False)
+    unit1 = _ashby_make_unit('Unit_1', viscosity=EXP2_VISCOSITY, uniselector_active=False,
+                             potentiometer=np.random.uniform(*EXP2_SELF_FEEDBACK))
+    unit2 = _ashby_make_unit('Unit_2', viscosity=EXP2_VISCOSITY,
+                             uniselector_active=True, uniselector_interval=100)
+    unit3 = _ashby_make_unit('Unit_3', viscosity=EXP2_VISCOSITY, uniselector_active=False,
+                             potentiometer=np.random.uniform(*EXP2_SELF_FEEDBACK))
     unit4 = HomeoUnitNewtonian()
     unit4.name = 'UNUSED'
 
@@ -4073,13 +4078,14 @@ def initializeAshbyExp2SelfReorganization(**params):
 
     unit4.disactivate()
     _ashby_disable_all_cross_connections(hom)
-    unit3.disactivateSelfConn()
+    unit2.disactivateSelfConn()
 
-    # Wire the ring: Env->Motor (fixed negative)
+    # Wire the ring: 3->1 (fixed negative)
     _ashby_enable_connection(unit3, unit1, weight=-0.5, state='manual')
-    # Motor->Sensor (uniselector-controlled)
-    _ashby_enable_connection(unit1, unit2, state='uniselector')
-    # Sensor->Env (hand-controlled, positive — user will reverse)
+    # 1->2 (controlled by unit 2's uniselector), starting positive
+    conn = _ashby_enable_connection(unit1, unit2, state='uniselector')
+    conn.newWeight(abs(conn.weight))
+    # 2->3 (hand-controlled, positive — user will reverse)
     _ashby_enable_connection(unit2, unit3, weight=0.5, state='manual')
 
     return hom
@@ -4088,171 +4094,63 @@ def initializeAshbyExp2SelfReorganization(**params):
 def initializeAshbyExp3Training(**params):
     '''Exp 3: Training by Punishment (DftB 8/9).
 
-    3 units in a triangle. Trainer callback (installed by GUI) punishes
-    when units 1 and 2 move in the same direction.
-    4th unit is inactive.
+    3 units in a ring; the operator's tests and the trainer (installed by
+    the GUI) act on units 1 and 3.  Same setup as the headless
+    AshbyOriginalExperiments.setup_exp3_training, with unit 4 inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _ashby_make_unit('Unit_3', uniselector_active=False)
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit4.disactivate()
-    _ashby_disable_all_cross_connections(hom)
-
-    _ashby_enable_connection(unit1, unit2, state='uniselector')
-    _ashby_enable_connection(unit2, unit3, weight=0.5, state='manual')
-    _ashby_enable_connection(unit3, unit1, weight=-0.5, state='manual')
-
+    from Simulator.AshbyOriginalExperiments import setup_exp3_training
+    hom, seed, meta = setup_exp3_training(unused_slots=True)
     return hom
 
 
 def initializeAshbyExp4AlternatingEnvironments(**params):
     '''Exp 4: Alternating Environments (DftB 8/10).
 
-    2 fully connected units.
-    Unit1->Unit2: hand-controlled (commutator H, toggled by user).
-    Unit2->Unit1: uniselector-controlled.
-    Self-connections: manual.
-    Units 3 and 4 are inactive.
+    Two units: 1->2 is the commutator H (toggled by the user), 2->1 is on
+    unit 1's uniselector.  Same setup as the headless
+    AshbyOriginalExperiments.setup_exp4_alternating_environments, with
+    units 3 and 4 inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = HomeoUnitNewtonian()
-    unit3.name = 'UNUSED_3'
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED_4'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit3.disactivate()
-    unit4.disactivate()
-
-    # Unit 2 receives from Unit 1: hand-controlled (commutator H)
-    for conn in unit2.inputConnections:
-        if conn.incomingUnit is unit1:
-            conn.state = 'manual'
-
-    # Unit 1 receives from Unit 2: uniselector-controlled
-    for conn in unit1.inputConnections:
-        if conn.incomingUnit is unit2:
-            conn.state = 'uniselector'
-
+    from Simulator.AshbyOriginalExperiments import setup_exp4_alternating_environments
+    hom, seed, meta = setup_exp4_alternating_environments(unused_slots=True)
     return hom
 
 
 def initializeAshbyExp5Constraint(**params):
     '''Exp 5: Constraint / Glass Fibre (DftB 8/11).
 
-    3 fully connected units. Units 1 and 2 constrained to move together
-    (constraint callback installed by GUI). User releases constraint mid-run.
-    4th unit is inactive.
+    3 fully connected units; the user joins units 1 and 2 with the fibre
+    (J) and later removes it (R); the fibre callback is installed by the GUI.
+    Same setup as the headless AshbyOriginalExperiments.setup_exp5_constraint,
+    with unit 4 inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _ashby_make_unit('Unit_3', uniselector_active=True, uniselector_interval=100)
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit4.disactivate()
-
+    from Simulator.AshbyOriginalExperiments import setup_exp5_constraint
+    hom, seed, meta = setup_exp5_constraint(unused_slots=True)
     return hom
 
 
 def initializeAshbyExp6Habituation(**params):
-    '''Exp 6: Habituation (DftB 14/6).
+    '''Exp 6: Habituation (DftB 14/6, Fig. 14/6/1).
 
-    2 units joined: 1<->2.
-    Connection 1->2: uniselector-controlled.
-    Connection 2->1: manual, fixed negative.
-    User delivers repeated stimuli to unit 1.
-    Units 3 and 4 are inactive.
+    Two units joined 1->2 only, 1->2 on unit 2's uniselector; the user
+    delivers repeated stimuli to unit 1.  Same setup as the headless
+    AshbyOriginalExperiments.setup_exp6_habituation, with units 3 and 4
+    inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = HomeoUnitNewtonian()
-    unit3.name = 'UNUSED_3'
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED_4'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit3.disactivate()
-    unit4.disactivate()
-
-    # 1->2: uniselector-controlled
-    for conn in unit2.inputConnections:
-        if conn.incomingUnit is unit1:
-            conn.state = 'uniselector'
-
-    # 2->1: manual, fixed negative feedback
-    for conn in unit1.inputConnections:
-        if conn.incomingUnit is unit2:
-            conn.newWeight(-0.3)
-            conn.state = 'manual'
-
+    from Simulator.AshbyOriginalExperiments import setup_exp6_habituation
+    hom, seed, meta = setup_exp6_habituation(unused_slots=True)
     return hom
 
 
 def initializeAshbyExp7Multistable(**params):
     '''Exp 7: Multistable System (DftB 16/8).
 
-    3 units: 2<->1<->3, conditional connectivity.
-    Unit 1 interacts with 2 when above zero, with 3 when below.
-    2<->3 connections disabled. Connectivity callback installed by GUI.
-    4th unit is inactive.
+    3 units, 2 <-> 1 <-> 3; 1->2 and 1->3 by hand, 2->1 and 3->1 on unit 1's
+    uniselector; bars stop 2 and 3 above the centre (callback installed by
+    the GUI).  Same setup as the headless
+    AshbyOriginalExperiments.setup_exp7_multistable, with unit 4 inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _ashby_make_unit('Unit_3', uniselector_active=True, uniselector_interval=100)
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit4.disactivate()
-
-    # 2->1: uniselector
-    _ashby_enable_connection(unit2, unit1, state='uniselector')
-    # 3->1: uniselector
-    _ashby_enable_connection(unit3, unit1, state='uniselector')
-    # 1->2: uniselector (toggled by callback)
-    _ashby_enable_connection(unit1, unit2, state='uniselector')
-    # 1->3: uniselector (toggled by callback)
-    _ashby_enable_connection(unit1, unit3, state='uniselector')
-
-    # Disable direct 2<->3 connections
-    for conn in unit2.inputConnections:
-        if conn.incomingUnit is unit3:
-            conn.status = False
-    for conn in unit3.inputConnections:
-        if conn.incomingUnit is unit2:
-            conn.status = False
-
+    from Simulator.AshbyOriginalExperiments import setup_exp7_multistable
+    hom, seed, meta = setup_exp7_multistable(unused_slots=True)
     return hom
 

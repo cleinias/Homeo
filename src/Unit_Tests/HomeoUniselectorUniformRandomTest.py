@@ -15,14 +15,13 @@ class HomeoUniselectorUniformRandomTest(unittest.TestCase):
     """
     def setUp(self):
         self.uniselector = HomeoUniselectorUniformRandom()
-        
-        def testDefaultIntervalBounds(self):
-            """
-            Test uniselector's default values 
-            """
-            self.uniselector.restoreDefaults()
-            self.assertTrue(self.uniselector.lowerBound == -1 and
-                            self.uniselector.upperBound == 1)
+
+    def testDefaultIntervalBounds(self):
+        """
+        Test uniselector's default values
+        """
+        self.assertTrue(self.uniselector.lowerBound == -1 and
+                        self.uniselector.upperBound == 1)
 
     def testIntervalBounds(self):
         """

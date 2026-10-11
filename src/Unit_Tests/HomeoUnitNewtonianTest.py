@@ -210,3 +210,86 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
+
+class HomeoUnitNewtonianIntegratorTest(unittest.TestCase):
+    """The integrator, step by step, against the exact solution.
+
+    The tests above leave the velocity at 0, the viscosity at its default of 0
+    and dt_fast at 1, so they check only the 1/2 a term.  Here a unit driven by
+    a constant torque F, with Stokes drag c = viscosity, must follow the
+    solution of m dv/dt = F - c v at t = dt_fast, 2 dt_fast, ...:
+
+        v(t) = F/c + (v0 - F/c) e^(-c t / m)
+        x(t) = F t / c + (v0 - F/c) (m / c) (1 - e^(-c t / m))
+
+    (v0 + F t / m and v0 t + F t^2 / 2m without viscosity), on the Python
+    path and on the headless (JIT) path, for any c dt / m.  The needle stays
+    well inside its limits.
+    """
+
+    def makeUnit(self, mass, viscosity, dtFast, v0, torque, headless):
+        unit = HomeoUnitNewtonian()
+        unit.noise = 0
+        unit.uniselectorActive = False
+        unit.needleUnit.mass = mass
+        unit.viscosity = viscosity
+        unit.dt_fast = dtFast
+        unit.criticalDeviation = 0
+        unit.currentVelocity = v0
+        unit.disactivateSelfConn()
+        driver = HomeoUnit()
+        driver.currentOutput = 1.0
+        unit.addConnectionWithRandomValues(driver)
+        drive = unit.inputConnections[-1]
+        drive.newWeight(torque)
+        drive.noise = 0
+        unit._headless = headless
+        unit._jit_dirty = True
+        self.driver = driver                    # keep the driving unit alive
+        return unit
+
+    def expectedTrajectory(self, mass, viscosity, dtFast, v0, torque, steps):
+        xs, vs = [], []
+        for i in range(1, steps + 1):
+            t = i * dtFast
+            if viscosity == 0:
+                xs.append(v0 * t + torque * t ** 2 / (2 * mass))
+                vs.append(v0 + torque * t / mass)
+            else:
+                terminal = torque / viscosity
+                decay = math.exp(-viscosity * t / mass)
+                xs.append(terminal * t + (v0 - terminal) * mass / viscosity * (1 - decay))
+                vs.append(terminal + (v0 - terminal) * decay)
+        return xs, vs
+
+    def checkTrajectory(self, headless):
+        steps = 30
+        for dtFast in (0.5, 1.0, 2.0):
+            for mass, viscosity, v0, torque in ((5.0, 2.0, 0.3, 0.05),
+                                                (20.0, 0.5, -0.05, -0.02),
+                                                (2.0, 0.0, 0.05, 0.002),
+                                                (1.0, 10.0, 0.2, 0.1),        # c dt / m up to 20
+                                                (100.0, 1e-3, 0.01, 0.01)):   # c dt / m ~ 1e-5
+                unit = self.makeUnit(mass, viscosity, dtFast, v0, torque, headless)
+                xs, vs = self.expectedTrajectory(mass, viscosity, dtFast, v0, torque, steps)
+                for step in range(steps):
+                    unit.selfUpdate()
+                    self.assertLess(abs(unit.criticalDeviation), unit.maxDeviation)
+                    self.assertAlmostEqual(unit.criticalDeviation, xs[step], delta=1e-9,
+                                           msg="x at step %d, dt %s, m %s, visc %s" % (step, dtFast, mass, viscosity))
+                    self.assertAlmostEqual(unit.currentVelocity, vs[step], delta=1e-9,
+                                           msg="v at step %d, dt %s, m %s, visc %s" % (step, dtFast, mass, viscosity))
+
+    def testTrajectoryPythonPath(self):
+        self.checkTrajectory(headless=False)
+
+    def testTrajectoryHeadlessPath(self):
+        self.checkTrajectory(headless=True)
+
+    def testClippingStopsTheNeedle(self):
+        "A needle driven past its limit sits at the limit with zero velocity"
+        unit = self.makeUnit(1.0, 0.0, 1.0, 5.0, 1.0, headless=False)
+        for step in range(20):
+            unit.selfUpdate()
+        self.assertEqual(unit.criticalDeviation, unit.maxDeviation)
+        self.assertEqual(unit.currentVelocity, 0)

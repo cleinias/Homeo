@@ -58,8 +58,10 @@ class HomeoConnectionTest(unittest.TestCase):
         "Test default state of the connection units" 
         self.assertTrue(self.connection.state == 'uniselector') 
 
-        "switching from manual to uniselector and back"
-        self.connection.switchToUniselector
+        "switching from uniselector to manual and back"
+        self.connection.switchToManual()
+        self.assertTrue(self.connection.state == 'manual')
+        self.connection.switchToUniselector()
         self.assertTrue(self.connection.state == 'uniselector')
 
         self.connection.switchToManual()

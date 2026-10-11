@@ -12,6 +12,7 @@ from Core.HomeoConnection import HomeoConnection
 from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
 from Helpers.General_Helper_Functions import withAllSubclasses
 
+import math
 import unittest
 import numpy as np
 
@@ -204,22 +205,23 @@ class HomeoUnitDtFastTest(unittest.TestCase):
         self.assertEqual(self.unit.dt_fast, 0.5)
 
     def testBackwardsCompatibility(self):
-        '''With dt_fast=1.0, displacement formula should match the old Verlet-derived result.
-        Old: displacement = v + 0.5*a (implicit dt=1)
-        New: displacement = v*dt_fast + 0.5*a*dt_fast^2 = v + 0.5*a when dt_fast=1'''
+        '''With dt_fast=1.0 and no viscosity, displacement matches the old
+        Verlet-derived result, displacement = v + 0.5*a (implicit dt=1).
+        With viscosity the step is the exact solution of
+        m dv/dt = torque - viscosity * v (the old explicit step was unstable
+        for viscosity * dt_fast / mass > 2).'''
         self.unit.dt_fast = 1.0
         self.unit._criticalDeviation = 0.0
         self.unit._currentVelocity = 0.3
-        self.unit._viscosity = 0.5
+        self.unit._viscosity = 0.0
         self.unit._needleUnit._mass = 10.0
-
         torque = 2.0
-        drag = -0.5 * 0.3  # -viscosity * velocity
-        total_force = torque + drag
-        acceleration = total_force / 10.0
-        expected_displacement = 0.3 * 1.0 + 0.5 * acceleration * 1.0**2
-        expected_pos = 0.0 + expected_displacement
+        result = self.unit.newLinearNeedlePosition(torque)
+        self.assertAlmostEqual(result, 0.3 + 0.5 * torque / 10.0, places=12)
 
+        self.unit._viscosity = 0.5
+        terminal = torque / 0.5
+        expected_pos = terminal * 1.0 + (0.3 - terminal) * (10.0 / 0.5) * (1 - math.exp(-0.5 / 10.0))
         result = self.unit.newLinearNeedlePosition(torque)
         self.assertAlmostEqual(result, expected_pos, places=10)
 

@@ -330,10 +330,7 @@ class HomeoNoiseTest(unittest.TestCase):
         tests = 1000
         signs = [] 
         values = []
-        tolerance = 0.05
         self.unit.setRandomValues()
-        lowThreshold =  2 * (self.unit.noise) * tolerance
-        highThreshold = 2 * (self.unit.noise) * (1 - tolerance)
 
 #        "FIXME for debugging"
 #        self.unit.noise = 1
@@ -413,10 +410,7 @@ class HomeoNoiseTest(unittest.TestCase):
         tests = 1000
         signs = [] 
         values = []
-        tolerance = 0.05
         self.unit.setRandomValues()
-        lowThreshold =  2 * (self.unit.noise * abs(self.unit.criticalDeviation)) * tolerance
-        highThreshold = 2 * (self.unit.noise* abs(self.unit.criticalDeviation)) * (1 - tolerance)
 
 #        "FIXME for debugging"
 #        self.unit.noise = 1
@@ -444,7 +438,7 @@ class HomeoNoiseTest(unittest.TestCase):
 
         ''' Proportional: check if min and max values of noise values are 
             within boundaries of distribution, i.e:
-            0 and 2*(unit noise/unit current abs) '''
+            0 and 2*(unit noise * unit current abs) '''
         if values[0]  > 0:
             minAbsNoise = abs(values[0])
             maxAbsNoise = abs(values[tests-1])
@@ -453,7 +447,7 @@ class HomeoNoiseTest(unittest.TestCase):
             maxAbsNoise = abs(values[0])
     
         self.assertTrue(minAbsNoise >= 0  and
-                        maxAbsNoise <= (2 * self.unit.noise / abs(self.unit.criticalDeviation)))
+                        maxAbsNoise <= (2 * self.unit.noise * abs(self.unit.criticalDeviation)))
 
         "uniform: use 2-sample Kolmogorov-Smirnov test against a uniform distribution with a p-value > 0.05"
         if values[0] < 0:
@@ -624,7 +618,6 @@ class HomeoNoiseTest(unittest.TestCase):
         """
         tests = 1000
         values = []
-        tolerance = 0.05
         self.unit.setRandomValues()
 
         self.noise = HomeoNoise()
@@ -642,18 +635,15 @@ class HomeoNoiseTest(unittest.TestCase):
         values.sort()
 
 
-        minAbsNoise = abs(values[0]) 
-        maxAbsNoise = abs(values[tests-1])
         mean = numpy.mean(values)
 
-        "Distorting: mean is around 0 (plus or minus tolerance)"
-        self.assertTrue((mean >= (0 -  tolerance)) and
-                        ((mean <= (0 + tolerance))))
+        "Distorting: mean is around 0, within 5 standard errors (each value lies within +/- bound)"
+        self.assertLessEqual(abs(mean), 5 * (self.unit.noise) / numpy.sqrt(tests))
 
 
         "Linear:  all values within {-noise, +noise} interval"
-        self.assertTrue((minAbsNoise >= - self.unit.noise)  and
-                        (maxAbsNoise <= self.unit.noise))
+        self.assertTrue((values[0] >= - self.unit.noise)  and
+                        (values[-1] <= self.unit.noise))
 
         "Normal: check the distribution is confidently normal (p > 0.05)"
         k2,p =  stats.normaltest(values)  #D'Agostino-Pearson omnibus test
@@ -694,7 +684,6 @@ class HomeoNoiseTest(unittest.TestCase):
         """
         tests = 1000
         values = []
-        tolerance = 0.05
         self.unit.setRandomValues()
 #        "FIX ME for debugging"
 #        self.unit.criticalDeviation = 1
@@ -718,9 +707,8 @@ class HomeoNoiseTest(unittest.TestCase):
         maxNoise = values [tests-1]
         mean = numpy.mean(values)
 
-        "Distorting: mean is around 0 (plus or minus tolerance)"
-        self.assertTrue((mean >= (0 -  tolerance)) and
-                        ((mean <= (0 + tolerance))))
+        "Distorting: mean is around 0, within 5 standard errors (each value lies within +/- bound)"
+        self.assertLessEqual(abs(mean), 5 * (self.unit.noise * abs(self.unit.criticalDeviation)) / numpy.sqrt(tests))
 
         "Proportional: all values within {(current * -noise), (current * noise} interval"
         self.assertTrue(minNoise >= ( - (self.unit.noise) * abs(self.unit.criticalDeviation))  and
@@ -765,7 +753,6 @@ class HomeoNoiseTest(unittest.TestCase):
         """
         tests = 1000
         values = []
-        tolerance = 0.05
         self.unit.setRandomValues()
 #        "FIXME for debugging"
 #        self.unit.noise = 1
@@ -791,9 +778,8 @@ class HomeoNoiseTest(unittest.TestCase):
         maxNoise = values [tests-1]
         mean = numpy.mean(values)
 
-        "Distorting: mean is around 0 (plus or minus tolerance)"
-        self.assertTrue((mean >= (0 -  tolerance)) and
-                        ((mean <= (0 + tolerance))))
+        "Distorting: mean is around 0, within 5 standard errors (each value lies within +/- bound)"
+        self.assertLessEqual(abs(mean), 5 * (self.unit.noise * abs(self.unit.criticalDeviation)) / numpy.sqrt(tests))
 
         "Proportional: all values within {(current * -noise), (current * noise} interval"
         self.assertTrue(minNoise >= ( - (self.unit.noise) * abs(self.unit.criticalDeviation))  and
@@ -839,7 +825,6 @@ class HomeoNoiseTest(unittest.TestCase):
         """
         tests = 1000
         values = []
-        tolerance = 0.05
         self.unit.setRandomValues()
 
         self.noise = HomeoNoise()
@@ -860,9 +845,8 @@ class HomeoNoiseTest(unittest.TestCase):
         maxNoise = values [tests-1]
         mean = numpy.mean(values)
 
-        "Distorting: mean is around 0 (plus or minus tolerance)"
-        self.assertTrue((mean >= (0 -  tolerance)) and
-                        ((mean <= (0 + tolerance))))
+        "Distorting: mean is around 0, within 5 standard errors (each value lies within +/- bound)"
+        self.assertLessEqual(abs(mean), 5 * (self.unit.noise) / numpy.sqrt(tests))
 
         "Linear: all values within {-noise,  noise} interval"
         self.assertTrue(minNoise >= ( - self.unit.noise)  and

@@ -40,13 +40,6 @@ class HomeoUniselectorTest(unittest.TestCase):
         """
         self.assertTrue((self.uniselector.upperBound - self.uniselector.lowerBound) >= 0)
                         
-    def testHomeoUniselectorTriggered(self):
-        """
-        Cannot test that HomeoUniselector is activated when its input exceeds the normal bounds:
-        it is a HomeoUnit's responsibility to do so. HomeoUniselector only returns values when called 
-        """
-        self.assertTrue(True)              
-        
     def testHomeoUniselectorIsAbstractClass(self):
         '''
         The core method of HomeUniselector is advance, which is only defined in its subclasses

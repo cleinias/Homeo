@@ -168,29 +168,37 @@ class HomeoUniselectorContinuous(HomeoUniselector):
                 w_new = self.evolve_weight(w, stress_level)
                 conn.newWeight(w_new)
 
-    def evolve_weights_jit(self, jit_weights, jit_switches, stress_level):
+    def evolve_weights_jit(self, jit_weights, jit_switches, stress_level, evolvable=None):
         '''Evolve weights in-place on the JIT arrays (headless/GA mode).
 
         Parameters:
             jit_weights  -- numpy float64 array of absolute weight values
             jit_switches -- numpy float64 array of signs (+1/-1)
             stress_level -- float in [0, 1]
+            evolvable    -- optional boolean array: which entries the
+                            uniselector controls (state 'uniselector').  The
+                            others, a 'manual' self-connection for instance,
+                            are left alone, as evolve_weights() leaves them.
+                            None evolves every entry.
 
         Modifies jit_weights and jit_switches in place.
         '''
 
-        n = jit_weights.shape[0]
+        if evolvable is None:
+            indices = range(jit_weights.shape[0])
+        else:
+            indices = numpy.flatnonzero(evolvable)
         sig = self.sigma(stress_level)
         dt = self._dt
         drift_coeff = -(self._theta / self._tau_a) * dt
         diffusion_scale = sig * numpy.sqrt(dt)
 
-        # Vectorised: one randn per connection
-        noise = numpy.random.randn(n)
+        # Vectorised: one randn per evolved connection
+        noise = numpy.random.randn(len(indices))
 
-        for i in range(n):
+        for k, i in enumerate(indices):
             w = jit_weights[i] * jit_switches[i]  # signed weight
-            w_new = w + drift_coeff * w + diffusion_scale * noise[i]
+            w_new = w + drift_coeff * w + diffusion_scale * noise[k]
             w_new = numpy.clip(w_new, -1.0, 1.0)
             jit_weights[i] = abs(w_new)
             jit_switches[i] = 1.0 if w_new >= 0 else -1.0

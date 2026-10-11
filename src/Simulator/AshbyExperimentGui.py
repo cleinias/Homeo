@@ -26,6 +26,9 @@ from Simulator.HomeoGeneralGUI import HomeoSimulationControllerGui
 from Simulator.AshbyOriginalExperiments import (
     make_trainer_callback,
     make_constraint_callback,
+    exp1_reversal_event,
+    exp1_displacement_event,
+    EXP6_DISPLACEMENT,
     make_multistable_callback,
     StabilityTracker,
     inject_stimulus,
@@ -44,7 +47,7 @@ _active_gui = None
 EXPERIMENT_INFO = {
     1: ('Exp 1: Basic Ultrastability',
         'initializeAshbyExp1BasicUltrastability',
-        'DftB 8/3--8/4, Fig. 8/4/1'),
+        'DftB 8/4, Fig. 8/4/1'),
     2: ('Exp 2: Self-Reorganization (3-Unit Circle)',
         'initializeAshbyExp2SelfReorganization',
         'DftB 8/5, Fig. 8/5/1'),
@@ -59,7 +62,7 @@ EXPERIMENT_INFO = {
         'DftB 8/11, Fig. 8/11/1'),
     6: ('Exp 6: Habituation',
         'initializeAshbyExp6Habituation',
-        'DftB 14/6, Figs. 14/6/1--2'),
+        'DftB 14/6, Fig. 14/6/1'),
     7: ('Exp 7: Multistable System',
         'initializeAshbyExp7Multistable',
         'DftB 16/8, Fig. 16/8/1'),
@@ -78,146 +81,152 @@ EXPERIMENT_INFO = {
 
 PROTOCOL_TEXT = {
     1: '''<h3>Exp 1: Basic Ultrastability</h3>
-<p><b>Reference:</b> DftB 8/3&ndash;8/4, Fig. 8/4/1</p>
-<p><b>Ashby's protocol:</b> The Homeostat is set up with 4 fully connected
-units, all under uniselector (step-function) control. It is started from
-random initial parameters and allowed to run freely. The system demonstrates
-ultrastability by finding a stable field through its own trial-and-error
-process.</p>
+<p><b>Reference:</b> DftB 8/4, Fig. 8/4/1</p>
+<p><b>Ashby's protocol:</b> Two units interact, 1 &harr; 2, Ashby's analogue
+of the operations of Marina and Sperry, who crossed nerves or muscles in
+animals. 1&rarr;2 is hand-controlled; 2&rarr;1 is under the control of
+unit 1's uniselector. The system starts stable: an upward displacement of 2
+moves 1 up. The experimenter then reverses 1&rarr;2 (R1), making the system
+unstable; unit 1's uniselector changes 2&rarr;1 until stability returns.</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b> and observe the strip charts.</li>
-<li>No user intervention is needed.</li>
+<li>Press <b>Start</b> and let the system settle.</li>
+<li>Press <b>"Displace unit 2 (D)"</b>: 1 follows 2.</li>
+<li>Press <b>"Reverse 1&rarr;2 (R)"</b>. Wait for the runaway, the
+uniselector changes and the return to rest (a few thousand ticks).</li>
+<li>Displace unit 2 again: 1 now moves the opposite way.</li>
+<li>Reverse 1&rarr;2 again and repeat.</li>
 </ol>
-<p><b>What to observe:</b> The units' critical deviations will initially
-fluctuate widely. Uniselector firings (shown in the narrow strip below
-each unit's trace) indicate parameter changes. Eventually, all units
-should settle within their bounds, demonstrating that the system has
-found a stable configuration.</p>
-<p><b>Expected outcome:</b> Stability is achieved after a number of
-uniselector firings. The time to stability depends on the random starting
-configuration.</p>''',
+<p><b>Expected outcome:</b> after each reversal the uniselector of unit 1
+finds a value of 2&rarr;1 of the opposite sign: "This reversal compensated
+for the reversal of 1&rarr;2". Ashby's run needed one uniselector change
+after R1 and three after R2.</p>''',
 
     2: '''<h3>Exp 2: Self-Reorganization (3-Unit Circle)</h3>
 <p><b>Reference:</b> DftB 8/5, Fig. 8/5/1</p>
 <p><b>Ashby's protocol:</b> Three units are connected in a ring:
-Motor &rarr; Sensor &rarr; Env &rarr; Motor. The Env&rarr;Motor connection
-is fixed negative. The Motor&rarr;Sensor connection is under uniselector
-control. The Sensor&rarr;Env connection is hand-controlled. The system
-first stabilizes with the current Sensor&rarr;Env polarity. Then the
+1 &rarr; 2 &rarr; 3 &rarr; 1. The 3&rarr;1 connection
+is fixed negative. The 1&rarr;2 connection is under the control of
+unit 2's uniselector. The 2&rarr;3 connection is hand-controlled. The system
+first stabilizes with the current 2&rarr;3 polarity. Then the
 experimenter reverses this connection, forcing the system to re-adapt.</p>
 <p><b>What to do:</b></p>
 <ol>
 <li>Press <b>Start</b> and let the system stabilize (watch the strip charts
 settle into a steady state).</li>
-<li>When stable, press <b>"Reverse Sensor&rarr;Env polarity"</b>.</li>
+<li>When stable, press <b>"Reverse 2&rarr;3 polarity"</b>.</li>
 <li>Observe the system destabilize and then re-adapt through uniselector
-action on the Motor&rarr;Sensor connection.</li>
+action on the 1&rarr;2 connection.</li>
 </ol>
 <p><b>Expected outcome:</b> After reversal, the system destabilizes briefly,
-then the uniselector on Motor&rarr;Sensor finds a compensating value,
+then unit 2's uniselector finds a compensating value for 1&rarr;2,
 restoring stability. This demonstrates self-reorganization.</p>''',
 
     3: '''<h3>Exp 3: Training by Punishment</h3>
 <p><b>Reference:</b> DftB 8/9, Fig. 8/9/1</p>
-<p><b>Ashby's protocol:</b> Three units form a triangle. An external
-"trainer" watches the direction of movement of units 1 and 2. If they
-move in the same direction (which is "wrong"), the trainer punishes
-by forcing unit 3 to its extreme, destabilizing the system and forcing
-the uniselector to try new values.</p>
+<p><b>Ashby's protocol:</b> Three units in a ring, 1 &rarr; 2 &rarr; 3
+&rarr; 1; 1&rarr;2 is under the control of unit 2's uniselector. The
+operator forces 1 down; a "trainer" acts "on the rule that if the Homeostat
+did not respond to a forced movement of 1 by an <i>opposite</i> movement of
+2, then the trainer would force 3 over to an extreme position". The
+punishment drives 2 past its critical level through 3 &rarr; 1 &rarr; 2,
+and its uniselector changes 1&rarr;2.</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b> and observe.</li>
-<li>The trainer acts automatically. The punishment counter in the action
-panel shows how many times punishment has been delivered.</li>
+<li>Press <b>Start</b> and observe. The operator's test strokes (1 held
+down) and the trainer's punishments (3 held at its extreme) are
+automatic: ten tests, about 1700 ticks apart.</li>
 </ol>
-<p><b>What to observe:</b> Early on, punishments are frequent (units
-often move in the same direction). Over time, the uniselector finds
-parameters where units 1 and 2 reliably move in opposite directions,
-and punishments cease.</p>
-<p><b>Expected outcome:</b> The system learns the "correct" behavior
-(opposite movement) through punishment-driven reorganization.</p>''',
+<p><b>What to observe:</b> at first 2 follows 1 and is punished; after a
+punishment that changes 1&rarr;2 to a negative value, 2 moves up when 1 is
+forced down, and the punishments cease. "The cessation of punishment when
+the right action occurs is no less important in training than its
+administration after the wrong action."</p>
+<p><b>Note:</b> if the uniselector lands on a small positive 1&rarr;2, the
+response is wrong but the punishment can no longer drive 2 critical: the
+trainer keeps punishing to no effect. This trap is a property of the linear
+Homeostat with this wiring; Ashby reports a single, successful run.</p>''',
 
     4: '''<h3>Exp 4: Alternating Environments</h3>
 <p><b>Reference:</b> DftB 8/10, Fig. 8/10/1</p>
-<p><b>Ashby's protocol:</b> Two units are connected. One connection
-(the "commutator H") is periodically reversed by the experimenter,
-simulating two alternating environments. The system must find parameter
-values that are stable for <i>both</i> polarities of H.</p>
+<p><b>Ashby's protocol:</b> The Homeostat is "partly under uniselector-,
+and partly under hand-, control". Two units: 1&rarr;2 is a hand-controlled
+commutator H; 2&rarr;1 is under the control of unit 1's uniselector. From
+time to time the experimenter reverses H, each value "sustained long enough
+so that the change does not interrupt the process of trial and error".</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b> and let the system stabilize.</li>
-<li>Press <b>"Toggle commutator H"</b> to reverse the polarity of the
-Unit_1&rarr;Unit_2 connection.</li>
-<li>Observe the system's response. Let it re-stabilize.</li>
+<li>Press <b>Start</b> and let the system settle (it starts stable).</li>
+<li>Press <b>"Toggle commutator H"</b>.</li>
+<li>Wait until the system has settled again: a runaway, uniselector
+changes and the return to rest can take several thousand ticks.</li>
 <li>Toggle again. Repeat several times.</li>
 </ol>
-<p><b>What to observe:</b> After several alternations, the system
-should find parameter values that keep it stable regardless of H's
-polarity. Successive re-stabilizations should become faster as the
-system converges on a universally stable configuration.</p>''',
+<p><b>What to observe:</b> "a field that is terminal for only one of the
+parameter-values will be lost when the parameter next changes; but the
+first field terminal for both will be retained." Once such a field is
+found, further reversals of H cause no uniselector changes.</p>''',
 
     5: '''<h3>Exp 5: Constraint (Glass Fibre)</h3>
 <p><b>Reference:</b> DftB 8/11, Fig. 8/11/1</p>
-<p><b>Ashby's protocol:</b> Three fully connected units, but units 1
-and 2 are "joined by a glass fibre" &mdash; a rigid constraint forcing
-them to move together. The system stabilizes under this constraint.
-Then the constraint is removed, and the system, adapted to the
-constrained topology, becomes unstable.</p>
+<p><b>Ashby's protocol:</b> Three units are joined and "at first stable".
+At J the experimenter joins the magnets of 1 and 2 with a light glass fibre,
+so that they move together; "in this case" the constraint makes the system
+unstable, and the uniselectors find a new stable field. At R the fibre is
+lifted away, and the system becomes unstable: the new field "took notice of"
+the constraint and used it.</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b>. Notice that units 1 and 2 track each other
-perfectly (same critical deviation).</li>
-<li>Let the system stabilize under the constraint.</li>
-<li>Press <b>"Release constraint"</b>.</li>
-<li>Observe that the system destabilizes and must re-adapt.</li>
+<li>Press <b>Start</b> and let the system settle.</li>
+<li>Press <b>"Join fibre (J)"</b>: units 1 and 2 now move together.</li>
+<li>Wait for the runaway, the uniselector changes and the return to rest
+(several thousand ticks).</li>
+<li>Press <b>"Release fibre (R)"</b>.</li>
 </ol>
-<p><b>Expected outcome:</b> The parameters found under constraint are
-not necessarily stable when units 1 and 2 can move independently.
-This demonstrates that adaptation depends on the system's topology.</p>''',
+<p><b>Expected outcome:</b> the field found with the fibre is stable only
+with it; after R the system runs away again.</p>''',
 
     6: '''<h3>Exp 6: Habituation</h3>
-<p><b>Reference:</b> DftB 14/6, Figs. 14/6/1&ndash;2</p>
-<p><b>Ashby's protocol:</b> Two units are joined. A fixed displacement
-("stimulus D") is repeatedly applied to unit 1. The response of unit 2
-is measured after each stimulus. Over successive stimuli, the response
-amplitude should decrease &mdash; a simple form of habituation.</p>
+<p><b>Reference:</b> DftB 14/6, Fig. 14/6/1</p>
+<p><b>Ashby's protocol:</b> "Two units were joined 1 &rarr; 2. The effect
+of 1 on 2 was determined by 2's uniselector, which changed position if 2
+exceeded its critical states. The operator then repeatedly disturbed 2 by
+moving 1, at D." There is no 2&rarr;1.</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b> and let the system stabilize.</li>
-<li>Press <b>"Deliver stimulus D"</b> and observe unit 2's response
-in the strip chart.</li>
-<li>Wait for the system to settle, then deliver another stimulus.</li>
-<li>Repeat several times.</li>
+<li>Press <b>Start</b> and let the system settle.</li>
+<li>Press <b>"Deliver stimulus D"</b>: unit 1 is displaced by a fixed
+angle, and unit 2 responds.</li>
+<li>Wait until both units are back at rest (a few thousand ticks), then
+deliver another stimulus. Repeat ten times or so.</li>
 </ol>
-<p><b>What to observe:</b> Each successive stimulus should produce
-a smaller deflection in unit 2's strip chart. The stimulus counter
-tracks how many stimuli have been delivered.</p>
-<p><b>Expected outcome:</b> Unit 2's response amplitude decreases
-over trials, demonstrating that the system "habituates" to the
-repeated perturbation.</p>''',
+<p><b>What to observe:</b> while D drives unit 2 past its critical level,
+its uniselector changes 1&rarr;2. The first value for which D no longer
+does is "retained permanently", and from then on 2's response to D stays
+small. Ashby's run needed four changes. If the first value already gives a
+small response, there is nothing to habituate.</p>
+<p>Fig. 14/6/2 (1 &harr; 2, both on uniselectors) can be run headless:
+<tt>run_ashby_original_experiments.py --exp 6 --fig 2</tt>.</p>''',
 
     7: '''<h3>Exp 7: Multistable System</h3>
 <p><b>Reference:</b> DftB 16/8, Fig. 16/8/1</p>
-<p><b>Ashby's protocol:</b> Three units with conditional connectivity.
-When unit 1 is "above the line" (positive deviation), it interacts
-with unit 2; when "below" (negative), with unit 3. Connections 2&harr;3
-are disabled. The system must find parameters stable for <i>both</i>
-subsystem configurations.</p>
+<p><b>Ashby's protocol:</b> Three units, 2 &harr; 1 &harr; 3, with no
+link between 2 and 3. Bars across the potentiometer dishes of 2 and 3 let
+them move only downwards from the centre. 1 acts on 2 negatively and on 3
+positively, by hand; 2&rarr;1 and 3&rarr;1 are under the control of unit 1's
+uniselector. When 1 is above the centre it pushes 2 down, and 1 and 2
+interact while 3 rests at its bar; below the centre, 1 and 3 interact.
+Every step of the uniselector changes both 2&rarr;1 and 3&rarr;1, so a step
+that makes one pair stable can make the other unstable.</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b> and observe.</li>
-<li>Connectivity toggling is automatic (handled per tick).</li>
+<li>Press <b>Start</b> and watch unit 1's uniselector (no action needed).</li>
+<li>When it has stopped changing, test the result by displacing unit 1
+up and down (unit 1's slider).</li>
 </ol>
-<p><b>What to observe:</b> Watch unit 1's trace in the strip chart.
-When it is positive, units 1 and 2 interact; when negative, units 1
-and 3 interact. You can verify in the detail dialog that connections
-toggle on and off. The system must find parameters that work for
-both configurations.</p>
-<p><b>Expected outcome:</b> The system eventually finds a stable
-multistable configuration. This may take longer than single-mode
-stability because the uniselector must satisfy two sets of constraints
-simultaneously.</p>''',
+<p><b>Expected outcome:</b> the uniselector stops only at values that make
+both pairs stable; then "1 can interact repeatedly with both 2 and 3 without
+loss of stability". Ashby's run took four changes.</p>''',
 }
 
 
@@ -399,11 +408,17 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
                                        'Use the controls below to run.'))
 
         elif self._exp_num == 1:
-            expLayout.addWidget(QLabel('No user action needed.\n'
-                                       'The system self-organizes automatically.'))
+            self._displaceBtn = QPushButton('Displace unit 2 (D)')
+            self._displaceBtn.clicked.connect(
+                lambda: exp1_displacement_event(self._simulation.homeostat))
+            self._reverseBtn = QPushButton('Reverse 1->2 (R)')
+            self._reverseBtn.clicked.connect(
+                lambda: exp1_reversal_event(self._simulation.homeostat))
+            expLayout.addWidget(self._displaceBtn)
+            expLayout.addWidget(self._reverseBtn)
 
         elif self._exp_num == 2:
-            self._reverseBtn = QPushButton('Reverse Sensor->Env polarity')
+            self._reverseBtn = QPushButton('Reverse 2->3 polarity')
             self._reverseBtn.clicked.connect(self._reverseExp2Polarity)
             expLayout.addWidget(self._reverseBtn)
 
@@ -423,15 +438,18 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
             expLayout.addWidget(self._polarityLabel)
 
         elif self._exp_num == 5:
-            self._releaseBtn = QPushButton('Release constraint')
+            self._joinBtn = QPushButton('Join fibre (J)')
+            self._joinBtn.clicked.connect(self._joinExp5Constraint)
+            expLayout.addWidget(self._joinBtn)
+            self._releaseBtn = QPushButton('Release fibre (R)')
             self._releaseBtn.clicked.connect(self._releaseExp5Constraint)
+            self._releaseBtn.setEnabled(False)
             expLayout.addWidget(self._releaseBtn)
-            self._constraintStatusLabel = QLabel('Constraint: ACTIVE')
-            self._constraintStatusLabel.setStyleSheet('color: blue; font-weight: bold;')
+            self._constraintStatusLabel = QLabel('Fibre: OFF')
+            self._constraintStatusLabel.setStyleSheet('color: gray; font-weight: bold;')
             expLayout.addWidget(self._constraintStatusLabel)
-            # Install constraint callback
-            constraint_cb, self._constraint_flag = make_constraint_callback(
-                leader_idx=0, follower_idx=1, active=True)
+            # Install the fibre callback, not yet joined
+            constraint_cb, self._constraint_flag = make_constraint_callback()
             self._simulation.tick_callbacks.append(constraint_cb)
 
         elif self._exp_num == 6:
@@ -442,11 +460,10 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
             expLayout.addWidget(self._stimulusLabel)
 
         elif self._exp_num == 7:
-            expLayout.addWidget(QLabel('Connectivity toggling is automatic.\n'
-                                       'Watch connections change in the detail dialog.'))
-            # Install multistable callback
-            ms_cb = make_multistable_callback()
-            self._simulation.tick_callbacks.append(ms_cb)
+            expLayout.addWidget(QLabel('Bars stop units 2 and 3 above the centre.\n'
+                                       'No user action needed.'))
+            # Install the bars
+            self._simulation.tick_callbacks.append(make_multistable_callback())
 
         # Separator before "Change Experiment" button
         sep2 = QFrame()
@@ -516,12 +533,12 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
     # -----------------------------------------------------------
 
     def _reverseExp2Polarity(self):
-        '''Exp 2: Reverse the Sensor->Env connection polarity.'''
+        '''Exp 2: Reverse the 2->3 connection polarity.'''
         hom = self._simulation.homeostat
-        env = hom.homeoUnits[2]   # Env
-        sensor = hom.homeoUnits[1]  # Sensor
-        for conn in env.inputConnections:
-            if conn.incomingUnit is sensor:
+        unit3 = hom.homeoUnits[2]
+        unit2 = hom.homeoUnits[1]
+        for conn in unit3.inputConnections:
+            if conn.incomingUnit is unit2:
                 conn.newWeight(conn.weight * conn.switch * -1)
                 break
         self._reverseBtn.setEnabled(False)
@@ -540,18 +557,25 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
                 self._polarityLabel.setText('H polarity: %s' % new_sign)
                 break
 
+    def _joinExp5Constraint(self):
+        '''Exp 5: Join units 1 and 2 with the fibre (J).'''
+        self._constraint_flag[0] = True
+        self._joinBtn.setEnabled(False)
+        self._releaseBtn.setEnabled(True)
+        self._constraintStatusLabel.setText('Fibre: JOINED')
+        self._constraintStatusLabel.setStyleSheet('color: blue; font-weight: bold;')
+
     def _releaseExp5Constraint(self):
-        '''Exp 5: Release the constraint joining units 1 and 2.'''
-        if self._constraint_flag is not None:
-            self._constraint_flag[0] = False
+        '''Exp 5: Remove the fibre joining units 1 and 2 (R).'''
+        self._constraint_flag[0] = False
         self._releaseBtn.setEnabled(False)
-        self._releaseBtn.setText('Constraint released')
-        self._constraintStatusLabel.setText('Constraint: RELEASED')
+        self._releaseBtn.setText('Fibre released')
+        self._constraintStatusLabel.setText('Fibre: RELEASED')
         self._constraintStatusLabel.setStyleSheet('color: gray; font-weight: bold;')
 
     def _deliverExp6Stimulus(self):
         '''Exp 6: Deliver stimulus D to unit 1.'''
-        inject_stimulus(self._simulation.homeostat, 0, 5.0)
+        inject_stimulus(self._simulation.homeostat, 0, EXP6_DISPLACEMENT)
         self._stimulus_count += 1
         self._stimulusLabel.setText('Stimuli delivered: %d' % self._stimulus_count)
 

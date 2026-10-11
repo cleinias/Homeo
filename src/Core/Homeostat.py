@@ -240,7 +240,8 @@ class Homeostat(object):
                                  unit.criticalDeviation))
             "END TESTING"
 
-            if getattr(self, '_headless', False):
+            headless = getattr(self, '_headless', False)
+            if headless:
                 warmup_jit()
                 for unit in self.homeoUnits:
                     if unit.isActive():
@@ -249,6 +250,10 @@ class Homeostat(object):
             while self.time < ticks:
                 for unit in self.homeoUnits:
                     if self.collectsData:
+                        if headless:
+                            # Record the weights the run is using: in headless
+                            # OU runs they are only in the unit's JIT arrays.
+                            unit.flushJitArrays()
                         self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
                     unit.time =  self.time
                     # sys.stderr.write("the status of %s in the function is %s and in the ivar is %s \n" % (unit.name, unit.isActive(), unit._status))
