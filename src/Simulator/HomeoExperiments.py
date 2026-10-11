@@ -4060,13 +4060,19 @@ def initializeAshbyExp2SelfReorganization(**params):
     uniselector is off).
     2->3: hand-controlled (manual), will be reversed by user.
     4th unit is inactive.
+    Strongly damped units, self-feedback on 1 and 3 only, 1->2 starting
+    positive: see AshbyOriginalExperiments.setup_exp2_self_reorganization.
     '''
+    from Simulator.AshbyOriginalExperiments import EXP2_VISCOSITY, EXP2_SELF_FEEDBACK
     HomeoUnit.clearNames()
     hom = Homeostat()
 
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=False)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _ashby_make_unit('Unit_3', uniselector_active=False)
+    unit1 = _ashby_make_unit('Unit_1', viscosity=EXP2_VISCOSITY, uniselector_active=False,
+                             potentiometer=np.random.uniform(*EXP2_SELF_FEEDBACK))
+    unit2 = _ashby_make_unit('Unit_2', viscosity=EXP2_VISCOSITY,
+                             uniselector_active=True, uniselector_interval=100)
+    unit3 = _ashby_make_unit('Unit_3', viscosity=EXP2_VISCOSITY, uniselector_active=False,
+                             potentiometer=np.random.uniform(*EXP2_SELF_FEEDBACK))
     unit4 = HomeoUnitNewtonian()
     unit4.name = 'UNUSED'
 
@@ -4075,12 +4081,13 @@ def initializeAshbyExp2SelfReorganization(**params):
 
     unit4.disactivate()
     _ashby_disable_all_cross_connections(hom)
-    unit3.disactivateSelfConn()
+    unit2.disactivateSelfConn()
 
     # Wire the ring: 3->1 (fixed negative)
     _ashby_enable_connection(unit3, unit1, weight=-0.5, state='manual')
-    # 1->2 (controlled by unit 2's uniselector)
-    _ashby_enable_connection(unit1, unit2, state='uniselector')
+    # 1->2 (controlled by unit 2's uniselector), starting positive
+    conn = _ashby_enable_connection(unit1, unit2, state='uniselector')
+    conn.newWeight(abs(conn.weight))
     # 2->3 (hand-controlled, positive — user will reverse)
     _ashby_enable_connection(unit2, unit3, weight=0.5, state='manual')
 

@@ -23,6 +23,7 @@ from Core.HomeoUnit import HomeoUnit
 from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
 from Core.HomeoConnection import HomeoConnection
 from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
+from Core.HomeoJIT import seed_jit_rng
 from Helpers.HomeostatConditionLogger import (
     log_homeostat_conditions, log_homeostat_conditions_json)
 
@@ -39,6 +40,7 @@ def _seed_rngs(seed):
         seed = int.from_bytes(os.urandom(4), 'big')
     np.random.seed(seed)
     random.seed(seed)
+    seed_jit_rng(seed)          # numba's own stream, used by headless runs
     HomeoUnit.allNames.clear()
     return seed
 
@@ -350,6 +352,11 @@ def setup_exp1_basic_ultrastability(seed=None):
 #  EXPERIMENT 2: Self-Reorganization in 3-Unit Circle (DftB 8/5)
 # ===============================================================
 
+# Exp 2 parameters (see setup_exp2_self_reorganization)
+EXP2_VISCOSITY = 10
+EXP2_SELF_FEEDBACK = (0.5, 1.0)
+
+
 def setup_exp2_self_reorganization(seed=None):
     '''3 units in a ring: 1->2->3->1.
 
@@ -364,8 +371,20 @@ def setup_exp2_self_reorganization(seed=None):
     motor and environment led this setup astray before.
 
     Unit 1: no uniselector.
-    Unit 2: has the uniselector.
-    Unit 3: no self-connection, no uniselector.
+    Unit 2: has the uniselector; no self-connection.
+    Unit 3: no uniselector.
+
+    The parameters follow Ashby's own analysis of the machine (DfB 19/11):
+    he lets the needle's inertia go to zero against the friction of the vane
+    (m -> 0), so the units are strongly damped (viscosity 10).  Units 1 and 3
+    have negative self-feedback of strength 0.5-1, which makes the starting
+    ring stable for any 1->2 weight; unit 2 has none, so that when R turns
+    the ring into a vicious circle unit 2 is driven to its limit and its
+    uniselector acts (with self-feedback it settles inside its limits while
+    1 and 3 are pinned, and nothing can adapt).  1->2 starts positive: in
+    Ashby's starting state "2 followed 1".  Over 30 seeds this gives Ashby's
+    sequence (stable, destabilised by R, restabilised with 1->2 reversed by
+    the uniselector) in 27.
 
     A uniselector re-draws its own unit's input connections, so the
     uniselector that controls 1->2 is unit 2's ("the action 1 to 2 was
@@ -381,9 +400,12 @@ def setup_exp2_self_reorganization(seed=None):
     hom = Homeostat()
 
     # Create 4 units (one will be inactive)
-    unit1 = _make_unit('Unit_1', uniselector_active=False)
-    unit2 = _make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _make_unit('Unit_3', uniselector_active=False)
+    unit1 = _make_unit('Unit_1', viscosity=EXP2_VISCOSITY, uniselector_active=False,
+                       potentiometer=np.random.uniform(*EXP2_SELF_FEEDBACK))
+    unit2 = _make_unit('Unit_2', viscosity=EXP2_VISCOSITY,
+                       uniselector_active=True, uniselector_interval=100)
+    unit3 = _make_unit('Unit_3', viscosity=EXP2_VISCOSITY, uniselector_active=False,
+                       potentiometer=np.random.uniform(*EXP2_SELF_FEEDBACK))
     unit4 = HomeoUnitNewtonian()
     unit4.name = 'UNUSED'
 
@@ -396,15 +418,17 @@ def setup_exp2_self_reorganization(seed=None):
     # Disable all cross-connections
     _disable_all_cross_connections(hom)
 
-    # Disable unit 3's self-connection
-    unit3.disactivateSelfConn()
+    # Unit 2 has no self-feedback
+    unit2.disactivateSelfConn()
 
     # Wire the ring: 1->2->3->1
     # Unit 1 receives from unit 3 (3->1): fixed negative
     _enable_connection(unit3, unit1, weight=-0.5, state='manual')
 
-    # Unit 2 receives from unit 1 (1->2): controlled by unit 2's uniselector
-    _enable_connection(unit1, unit2, state='uniselector')
+    # Unit 2 receives from unit 1 (1->2): controlled by unit 2's uniselector,
+    # starting positive
+    conn = _enable_connection(unit1, unit2, state='uniselector')
+    conn.newWeight(abs(conn.weight))
 
     # Unit 3 receives from unit 2 (2->3): hand-controlled, positive
     _enable_connection(unit2, unit3, weight=0.5, state='manual')
