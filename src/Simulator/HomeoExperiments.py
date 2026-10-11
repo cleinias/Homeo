@@ -4136,24 +4136,13 @@ def initializeAshbyExp4AlternatingEnvironments(**params):
 def initializeAshbyExp5Constraint(**params):
     '''Exp 5: Constraint / Glass Fibre (DftB 8/11).
 
-    3 fully connected units. Units 1 and 2 constrained to move together
-    (constraint callback installed by GUI). User releases constraint mid-run.
-    4th unit is inactive.
+    3 fully connected units; the user joins units 1 and 2 with the fibre
+    (J) and later removes it (R); the fibre callback is installed by the GUI.
+    Same setup as the headless AshbyOriginalExperiments.setup_exp5_constraint,
+    with unit 4 inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _ashby_make_unit('Unit_3', uniselector_active=True, uniselector_interval=100)
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit4.disactivate()
-
+    from Simulator.AshbyOriginalExperiments import setup_exp5_constraint
+    hom, seed, meta = setup_exp5_constraint(unused_slots=True)
     return hom
 
 

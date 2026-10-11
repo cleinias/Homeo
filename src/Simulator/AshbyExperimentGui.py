@@ -163,22 +163,22 @@ found, further reversals of H cause no uniselector changes.</p>''',
 
     5: '''<h3>Exp 5: Constraint (Glass Fibre)</h3>
 <p><b>Reference:</b> DftB 8/11, Fig. 8/11/1</p>
-<p><b>Ashby's protocol:</b> Three fully connected units, but units 1
-and 2 are "joined by a glass fibre" &mdash; a rigid constraint forcing
-them to move together. The system stabilizes under this constraint.
-Then the constraint is removed, and the system, adapted to the
-constrained topology, becomes unstable.</p>
+<p><b>Ashby's protocol:</b> Three units are joined and "at first stable".
+At J the experimenter joins the magnets of 1 and 2 with a light glass fibre,
+so that they move together; "in this case" the constraint makes the system
+unstable, and the uniselectors find a new stable field. At R the fibre is
+lifted away, and the system becomes unstable: the new field "took notice of"
+the constraint and used it.</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b>. Notice that units 1 and 2 track each other
-perfectly (same critical deviation).</li>
-<li>Let the system stabilize under the constraint.</li>
-<li>Press <b>"Release constraint"</b>.</li>
-<li>Observe that the system destabilizes and must re-adapt.</li>
+<li>Press <b>Start</b> and let the system settle.</li>
+<li>Press <b>"Join fibre (J)"</b>: units 1 and 2 now move together.</li>
+<li>Wait for the runaway, the uniselector changes and the return to rest
+(several thousand ticks).</li>
+<li>Press <b>"Release fibre (R)"</b>.</li>
 </ol>
-<p><b>Expected outcome:</b> The parameters found under constraint are
-not necessarily stable when units 1 and 2 can move independently.
-This demonstrates that adaptation depends on the system's topology.</p>''',
+<p><b>Expected outcome:</b> the field found with the fibre is stable only
+with it; after R the system runs away again.</p>''',
 
     6: '''<h3>Exp 6: Habituation</h3>
 <p><b>Reference:</b> DftB 14/6, Figs. 14/6/1&ndash;2</p>
@@ -433,15 +433,18 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
             expLayout.addWidget(self._polarityLabel)
 
         elif self._exp_num == 5:
-            self._releaseBtn = QPushButton('Release constraint')
+            self._joinBtn = QPushButton('Join fibre (J)')
+            self._joinBtn.clicked.connect(self._joinExp5Constraint)
+            expLayout.addWidget(self._joinBtn)
+            self._releaseBtn = QPushButton('Release fibre (R)')
             self._releaseBtn.clicked.connect(self._releaseExp5Constraint)
+            self._releaseBtn.setEnabled(False)
             expLayout.addWidget(self._releaseBtn)
-            self._constraintStatusLabel = QLabel('Constraint: ACTIVE')
-            self._constraintStatusLabel.setStyleSheet('color: blue; font-weight: bold;')
+            self._constraintStatusLabel = QLabel('Fibre: OFF')
+            self._constraintStatusLabel.setStyleSheet('color: gray; font-weight: bold;')
             expLayout.addWidget(self._constraintStatusLabel)
-            # Install constraint callback
-            constraint_cb, self._constraint_flag = make_constraint_callback(
-                leader_idx=0, follower_idx=1, active=True)
+            # Install the fibre callback, not yet joined
+            constraint_cb, self._constraint_flag = make_constraint_callback()
             self._simulation.tick_callbacks.append(constraint_cb)
 
         elif self._exp_num == 6:
@@ -550,13 +553,20 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
                 self._polarityLabel.setText('H polarity: %s' % new_sign)
                 break
 
+    def _joinExp5Constraint(self):
+        '''Exp 5: Join units 1 and 2 with the fibre (J).'''
+        self._constraint_flag[0] = True
+        self._joinBtn.setEnabled(False)
+        self._releaseBtn.setEnabled(True)
+        self._constraintStatusLabel.setText('Fibre: JOINED')
+        self._constraintStatusLabel.setStyleSheet('color: blue; font-weight: bold;')
+
     def _releaseExp5Constraint(self):
-        '''Exp 5: Release the constraint joining units 1 and 2.'''
-        if self._constraint_flag is not None:
-            self._constraint_flag[0] = False
+        '''Exp 5: Remove the fibre joining units 1 and 2 (R).'''
+        self._constraint_flag[0] = False
         self._releaseBtn.setEnabled(False)
-        self._releaseBtn.setText('Constraint released')
-        self._constraintStatusLabel.setText('Constraint: RELEASED')
+        self._releaseBtn.setText('Fibre released')
+        self._constraintStatusLabel.setText('Fibre: RELEASED')
         self._constraintStatusLabel.setStyleSheet('color: gray; font-weight: bold;')
 
     def _deliverExp6Stimulus(self):

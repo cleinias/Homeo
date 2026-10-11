@@ -32,7 +32,8 @@ from Simulator.AshbyOriginalExperiments import (
     setup_exp3_training, make_trainer_callback,
     setup_exp4_alternating_environments, make_alternation_events,
     exp4_stable_for_both, EXP4_END,
-    setup_exp5_constraint, make_constraint_callback,
+    setup_exp5_constraint, make_constraint_callback, exp5_events,
+    EXP5_J, EXP5_R, EXP5_END,
     setup_exp6_habituation, make_stimulus_events, ResponseMeasurer,
     setup_exp7_multistable, make_multistable_callback,
     run_with_events, StabilityTracker, AshbyStateLogger,
@@ -49,7 +50,7 @@ def _output_path(output_dir, exp_num, seed, ext):
 
 
 # Default run length per experiment: long enough for its protocol
-DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: 5000, 4: EXP4_END, 5: 5000, 6: 5000, 7: 5000}
+DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: 5000, 4: EXP4_END, 5: EXP5_END, 6: 5000, 7: 5000}
 
 
 def _marker(record, name, hom_fn):
@@ -100,12 +101,10 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.'):
         meta['reversal_ticks'] = reversals
     elif exp_num == 5:
         hom, seed, meta = setup_exp5_constraint(seed)
-        release_tick = total_ticks * 2 // 3
-        constrain_cb, flag = make_constraint_callback(
-            leader_idx=0, follower_idx=1, active=True)
-        events = [(release_tick, lambda h: flag.__setitem__(0, False))]
+        constrain_cb, flag = make_constraint_callback()
+        events = exp5_events(flag)
         tick_callback = constrain_cb
-        meta['constraint_release_tick'] = release_tick
+        meta['join_tick'], meta['release_tick'] = EXP5_J, EXP5_R
     elif exp_num == 6:
         hom, seed, meta = setup_exp6_habituation(seed)
         settle = total_ticks // 10
@@ -155,9 +154,13 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.'):
 
     t0 = time.time()
 
+    critical_ticks = []      # ticks at which some active unit is critical
+
     def combined_callback(hom, tick):
         if tick_callback is not None:
             tick_callback(hom, tick)
+        if any(stability_tracker._is_critical(u) for u in hom.homeoUnits if u.isActive()):
+            critical_ticks.append(tick)
         if response_measurer is not None:
             response_measurer.check(tick)
 
@@ -229,6 +232,20 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.'):
         both = exp4_stable_for_both(hom)
         print('  Final field stable for both positions of H: %s' % both)
         summary.update(changes_per_reversal=changes, quiet_reversals=quiet, stable_for_both=both)
+
+    def critical_in(start, end):
+        return any(start <= t < end for t in critical_ticks)
+
+    if exp_num == 5:
+        # Ashby: stable, made unstable by the fibre (J), re-adapted with it,
+        # unstable again when it is removed (R)
+        steps = {'stable before J': not critical_in(EXP5_J - 500, EXP5_J),
+                 'unstable after J': critical_in(EXP5_J, EXP5_R - 500),
+                 'stable before R': not critical_in(EXP5_R - 500, EXP5_R),
+                 'unstable after R': critical_in(EXP5_R, total_ticks + 1)}
+        for name, ok in steps.items():
+            print('  %s: %s' % (name, ok))
+        summary['protocol'] = steps
 
     if exp_num == 3:
         print('  Punishments delivered: %d' % len(punishment_log))

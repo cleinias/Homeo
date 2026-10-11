@@ -12,11 +12,15 @@ from Simulator.AshbyOriginalExperiments import (setup_exp1_basic_ultrastability,
                                                 make_alternation_events, exp4_stable_for_both,
                                                 exp4_reversal_event, EXP4_END,
                                                 ashby_matrix, ashby_stable,
+                                                setup_exp5_constraint, make_constraint_callback,
+                                                exp5_events, exp5_fibre_matrix, EXP5_J, EXP5_R,
+                                                EXP5_END,
                                                 exp2_reversal_event, run_with_events,
                                                 StabilityTracker, inject_stimulus, connection)
 from Simulator.HomeoExperiments import (initializeAshbyExp1BasicUltrastability,
                                         initializeAshbyExp2SelfReorganization,
-                                        initializeAshbyExp4AlternatingEnvironments)
+                                        initializeAshbyExp4AlternatingEnvironments,
+                                        initializeAshbyExp5Constraint)
 
 
 def signedWeight(to_unit, from_unit):
@@ -194,3 +198,72 @@ class AshbyExp4Test(unittest.TestCase):
             self.assertEqual(counts[-1], counts[-4], 'seed %d: changes in the last 3 reversals' % seed)
             self.assertTrue(exp4_stable_for_both(hom), 'seed %d: not stable for both H' % seed)
             self.assertTrue(tracker.currently_stable, 'seed %d: not stable at the end' % seed)
+
+
+class AshbyExp5Test(unittest.TestCase):
+    '''DfB 8/11, Fig. 8/11/1: three units, at first stable; joining the magnets
+    of 1 and 2 with a glass fibre (J) makes them unstable; the uniselectors
+    find a field stable with the fibre, which is unstable without it (R).'''
+
+    def assertAshbyWiring(self, hom):
+        units = hom.homeoUnits[:3]
+        self.assertEqual([u.uniselectorActive for u in units], [True] * 3)
+        self.assertEqual([u.inputConnections[0].isActive() for u in units], [False, False, True])
+        for u in units:
+            for v in units:
+                if u is not v:
+                    self.assertTrue(connection(u, v).isActive())
+                    self.assertEqual(connection(u, v).state, 'uniselector')
+        # Ashby's start: stable while free, unstable with the fibre
+        A = ashby_matrix(units)
+        self.assertTrue(ashby_stable(A))
+        self.assertFalse(ashby_stable(exp5_fibre_matrix(A)))
+
+    def testWiringHeadless(self):
+        hom, seed, meta = setup_exp5_constraint(1)
+        self.assertEqual(len(hom.homeoUnits), 3)
+        self.assertAshbyWiring(hom)
+
+    def testWiringGui(self):
+        self.assertAshbyWiring(initializeAshbyExp5Constraint())
+
+    def testFibreMovesThePairUnderBothTorques(self):
+        "With the fibre the two magnets share position and velocity, the means of their own"
+        hom, seed, meta = setup_exp5_constraint(1)
+        u1, u2 = hom.homeoUnits[:2]
+        u1.criticalDeviation, u1.currentVelocity = 2.0, 0.1
+        u2.criticalDeviation, u2.currentVelocity = -1.0, 0.3
+        fibre, flag = make_constraint_callback()
+        fibre(hom, 0)
+        self.assertEqual(u1.criticalDeviation, 2.0)        # not joined yet
+        flag[0] = True
+        fibre(hom, 0)
+        for u in (u1, u2):
+            self.assertAlmostEqual(u.criticalDeviation, 0.5)
+            self.assertAlmostEqual(u.currentVelocity, 0.2)
+            self.assertAlmostEqual(u.currentOutput, 0.5 / u.maxDeviation)
+
+    def testAshbysSequence(self):
+        "Stable; J destabilises; re-adapted with the fibre; R destabilises"
+        for seed in (1, 2):
+            hom, seed, meta = setup_exp5_constraint(seed)
+            quiet(hom)
+            units = hom.homeoUnits[:3]
+            fibre, flag = make_constraint_callback()
+            critical = []
+
+            def record(h, t):
+                fibre(h, t)
+                if any(abs(u.criticalDeviation) >= u.critThreshold * u.maxDeviation for u in units):
+                    critical.append(t)
+
+            counts = []
+            mark = lambda h: counts.append(sum(u.uniselectorActivationCount for u in units))
+            run_with_events(hom, EXP5_END, events=[(EXP5_J, mark), (EXP5_R, mark)] + exp5_events(flag),
+                            tick_callback=record)
+            within = lambda a, b: any(a <= t < b for t in critical)
+            self.assertFalse(within(EXP5_J - 500, EXP5_J), 'seed %d: not stable before J' % seed)
+            self.assertTrue(within(EXP5_J, EXP5_R - 500), 'seed %d: J did not destabilise' % seed)
+            self.assertGreater(counts[1], counts[0], 'seed %d: no change after J' % seed)
+            self.assertFalse(within(EXP5_R - 500, EXP5_R), 'seed %d: not stable before R' % seed)
+            self.assertTrue(within(EXP5_R, EXP5_END + 1), 'seed %d: R did not destabilise' % seed)

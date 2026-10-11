@@ -753,51 +753,119 @@ def exp4_stable_for_both(hom):
 #  EXPERIMENT 5: Constraint / Glass Fibre (DftB 8/11)
 # ===============================================================
 
-def setup_exp5_constraint(seed=None):
-    '''3 units, with units 1 and 2 constrained to move together
-    (glass fibre) from the start.
+# Exp 5 parameters (see setup_exp5_constraint)
+EXP5_VISCOSITY = 10
+# Negative self-feedback per unit: range of its strength, or None for none
+EXP5_SELF_FEEDBACK = (None, None, (0.5, 1.0))
+# Ashby's start: margin on the real parts of the eigenvalues (m -> 0), so
+# that J's runaway reaches the critical level within the protocol's window
+EXP5_START_MARGIN = 0.01
+# Protocol (ticks): join the fibre at J, remove it at R
+EXP5_J, EXP5_R, EXP5_END = 4000, 12000, 18000
 
-    At a scheduled event, the constraint is removed, demonstrating
-    that the adapted parameters depended on the constraint.
+
+def exp5_fibre_matrix(A):
+    '''Ashby's m -> 0 matrix of units (1, 2, 3) with 1 and 2 joined: the pair,
+    at y = x1 = x2, moves under the mean of the two units' torques.'''
+    return np.array([[(A[0, 0] + A[0, 1] + A[1, 0] + A[1, 1]) / 2, (A[0, 2] + A[1, 2]) / 2],
+                     [A[2, 0] + A[2, 1], A[2, 2]]])
+
+
+def setup_exp5_constraint(seed=None, unused_slots=False):
+    '''3 units, fully joined on uniselectors; at J the magnets of 1 and 2 are
+    joined by a light glass fibre, and at R the fibre is removed.
+
+    "Three units were joined together and were at first stable ... At J,
+    the magnets of 1 and 2 were joined so that they could move only
+    together.  The result of the constraint in this case was to make the
+    system unstable.  But the instability evoked step-mechanism changes, and
+    a new terminal field was found ... when, at R, the operator gently
+    lifted the fibre away the system became unstable" (DfB 8/11).
+
+    Ashby states neither the self-feedback nor which links were on
+    uniselectors.  All six cross-connections are, with all three
+    uniselectors on (the arrangement of DfB 8/3).  Units 1 and 2 have no
+    self-feedback and unit 3 has 0.5-1 (the units whose uniselectors must
+    act carry none, as in Exp 2): with strong self-feedback a field found
+    under the fibre is almost always stable without it, and R shows
+    nothing.  Ashby's start: the cross weights are drawn until the free
+    field is stable and the field with the fibre is not (m -> 0 limit, with
+    a margin so that J's runaway reaches the critical level in time),
+    Ashby's "at first stable" and "in this case ... unstable".  Strongly
+    damped units of equal mass (the fibre averages them).  Over 30 seeds
+    the full sequence (stable, J destabilises, re-adapted with the fibre,
+    R destabilises) appears in 22; in 7 more the field found with the fibre
+    is stable without it as well.
+
+    unused_slots: add an inactive unit 4 (for the GUI).
 
     Returns: (homeostat, seed, metadata)
     '''
     seed = _seed_rngs(seed)
 
     hom = Homeostat()
+    units = []
+    for i, strength in enumerate(EXP5_SELF_FEEDBACK):
+        unit = _make_unit('Unit_%d' % (i + 1), viscosity=EXP5_VISCOSITY,
+                          uniselector_active=True, uniselector_interval=100)
+        hom.addFullyConnectedUnit(unit)
+        if strength is None:
+            unit.disactivateSelfConn()
+        else:
+            unit.potentiometer = np.random.uniform(*strength)
+        units.append(unit)
+    if unused_slots:
+        _add_unused_slots(hom)
 
-    unit1 = _make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _make_unit('Unit_3', uniselector_active=True, uniselector_interval=100)
-
-    for u in [unit1, unit2, unit3]:
-        hom.addFullyConnectedUnit(u)
+    # Ashby's start: stable while free, unstable with the fibre
+    for attempt in range(100000):
+        for u in units:
+            for v in units:
+                if u is not v:
+                    connection(u, v).newWeight(np.random.uniform(-1, 1))
+        A = ashby_matrix(units)
+        free = np.max(np.linalg.eigvals(A).real)
+        joined = np.max(np.linalg.eigvals(exp5_fibre_matrix(A)).real)
+        if free < -EXP5_START_MARGIN and joined > EXP5_START_MARGIN:
+            break
 
     metadata = {
         'experiment': 'Exp 5: Constraint (Glass Fibre)',
         'reference': 'DftB 8/11, Fig. 8/11/1',
-        'topology': '3 fully connected units, 1 and 2 constrained to move together',
-        'description': ('Join units 1-2 with constraint. Let stabilize. '
-                         'Remove constraint at R to show instability.'),
+        'topology': '3 fully connected units; at J units 1 and 2 joined by a fibre, at R freed',
+        'description': ('Join units 1-2 at J; the system re-adapts with the fibre. '
+                        'Remove it at R: unstable without it.'),
     }
     return hom, seed, metadata
 
 
-def make_constraint_callback(leader_idx=0, follower_idx=1, active=True):
-    '''Return a tick_callback that forces the follower to track the leader.
+def make_constraint_callback(a_idx=0, b_idx=1, active=False):
+    '''Return (tick_callback, flag) for Ashby's glass fibre joining two units.
 
-    Call release_constraint_flag[0] = False to deactivate mid-run.
+    The fibre transmits force: the joined magnets move as one body under the
+    sum of both torques.  With equal masses that is exactly averaging their
+    positions and velocities after each tick.  Set flag[0] to True to join
+    (J) and to False to release (R).
     '''
     flag = [active]  # mutable container so events can toggle it
 
     def constrain(hom, tick):
         if flag[0]:
-            leader = hom.homeoUnits[leader_idx]
-            follower = hom.homeoUnits[follower_idx]
-            follower.criticalDeviation = leader.criticalDeviation
-            follower.currentVelocity = leader.currentVelocity
+            a, b = hom.homeoUnits[a_idx], hom.homeoUnits[b_idx]
+            x = (a.criticalDeviation + b.criticalDeviation) / 2
+            v = (a.currentVelocity + b.currentVelocity) / 2
+            for u in (a, b):
+                u.criticalDeviation = x
+                u.currentVelocity = v
+                u.computeOutput()
 
     return constrain, flag
+
+
+def exp5_events(flag):
+    '''Join the fibre at J and remove it at R (flag from make_constraint_callback).'''
+    return [(EXP5_J, lambda hom: flag.__setitem__(0, True)),
+            (EXP5_R, lambda hom: flag.__setitem__(0, False))]
 
 
 # ===============================================================
