@@ -28,6 +28,7 @@ from Simulator.AshbyOriginalExperiments import (
     make_constraint_callback,
     exp1_reversal_event,
     exp1_displacement_event,
+    EXP6_DISPLACEMENT,
     make_multistable_callback,
     StabilityTracker,
     inject_stimulus,
@@ -61,7 +62,7 @@ EXPERIMENT_INFO = {
         'DftB 8/11, Fig. 8/11/1'),
     6: ('Exp 6: Habituation',
         'initializeAshbyExp6Habituation',
-        'DftB 14/6, Figs. 14/6/1--2'),
+        'DftB 14/6, Fig. 14/6/1'),
     7: ('Exp 7: Multistable System',
         'initializeAshbyExp7Multistable',
         'DftB 16/8, Fig. 16/8/1'),
@@ -181,25 +182,26 @@ the constraint and used it.</p>
 with it; after R the system runs away again.</p>''',
 
     6: '''<h3>Exp 6: Habituation</h3>
-<p><b>Reference:</b> DftB 14/6, Figs. 14/6/1&ndash;2</p>
-<p><b>Ashby's protocol:</b> Two units are joined. A fixed displacement
-("stimulus D") is repeatedly applied to unit 1. The response of unit 2
-is measured after each stimulus. Over successive stimuli, the response
-amplitude should decrease &mdash; a simple form of habituation.</p>
+<p><b>Reference:</b> DftB 14/6, Fig. 14/6/1</p>
+<p><b>Ashby's protocol:</b> "Two units were joined 1 &rarr; 2. The effect
+of 1 on 2 was determined by 2's uniselector, which changed position if 2
+exceeded its critical states. The operator then repeatedly disturbed 2 by
+moving 1, at D." There is no 2&rarr;1.</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b> and let the system stabilize.</li>
-<li>Press <b>"Deliver stimulus D"</b> and observe unit 2's response
-in the strip chart.</li>
-<li>Wait for the system to settle, then deliver another stimulus.</li>
-<li>Repeat several times.</li>
+<li>Press <b>Start</b> and let the system settle.</li>
+<li>Press <b>"Deliver stimulus D"</b>: unit 1 is displaced by a fixed
+angle, and unit 2 responds.</li>
+<li>Wait until both units are back at rest (a few thousand ticks), then
+deliver another stimulus. Repeat ten times or so.</li>
 </ol>
-<p><b>What to observe:</b> Each successive stimulus should produce
-a smaller deflection in unit 2's strip chart. The stimulus counter
-tracks how many stimuli have been delivered.</p>
-<p><b>Expected outcome:</b> Unit 2's response amplitude decreases
-over trials, demonstrating that the system "habituates" to the
-repeated perturbation.</p>''',
+<p><b>What to observe:</b> while D drives unit 2 past its critical level,
+its uniselector changes 1&rarr;2. The first value for which D no longer
+does is "retained permanently", and from then on 2's response to D stays
+small. Ashby's run needed four changes. If the first value already gives a
+small response, there is nothing to habituate.</p>
+<p>Fig. 14/6/2 (1 &harr; 2, both on uniselectors) can be run headless:
+<tt>run_ashby_original_experiments.py --exp 6 --fig 2</tt>.</p>''',
 
     7: '''<h3>Exp 7: Multistable System</h3>
 <p><b>Reference:</b> DftB 16/8, Fig. 16/8/1</p>
@@ -571,7 +573,7 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
 
     def _deliverExp6Stimulus(self):
         '''Exp 6: Deliver stimulus D to unit 1.'''
-        inject_stimulus(self._simulation.homeostat, 0, 5.0)
+        inject_stimulus(self._simulation.homeostat, 0, EXP6_DISPLACEMENT)
         self._stimulus_count += 1
         self._stimulusLabel.setText('Stimuli delivered: %d' % self._stimulus_count)
 

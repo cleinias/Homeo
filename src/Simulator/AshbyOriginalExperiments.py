@@ -872,47 +872,129 @@ def exp5_events(flag):
 #  EXPERIMENT 6: Habituation (DftB 14/6)
 # ===============================================================
 
-def setup_exp6_habituation(seed=None):
-    '''2 units joined: 1->2. Connection 1->2 under uniselector control.
+# Exp 6 parameters, Fig. 14/6/1 (see setup_exp6_habituation)
+EXP6_VISCOSITY = 10
+EXP6_SELF_FEEDBACK = (0.08, 0.12)
+EXP6_DISPLACEMENT = 8.0
+EXP6_FIRST, EXP6_INTERVAL, EXP6_STIMULI = 1000, 4000, 10
+EXP6_END = EXP6_FIRST + EXP6_STIMULI * EXP6_INTERVAL
+# Fig. 14/6/2 (see setup_exp6b_habituation_ultrastable)
+EXP6B_SELF_FEEDBACK = (0.05, 0.15)
+EXP6B_DISPLACEMENT = 6.0
+EXP6B_FIRST, EXP6B_INTERVAL = 500, 2000
+EXP6B_END = EXP6B_FIRST + EXP6_STIMULI * EXP6B_INTERVAL
 
-    Repeatedly displace unit 1 by a fixed angle (stimulus D).
-    Observe that unit 2's response amplitude decreases over trials.
+
+def setup_exp6_habituation(seed=None, unused_slots=False):
+    '''Fig. 14/6/1: two units joined 1 -> 2 only, 1->2 on unit 2's uniselector.
+
+    "Two units were joined 1 -> 2.  The effect of 1 on 2 was determined by
+    2's uniselector, which changed position if 2 exceeded its critical
+    states.  The operator then repeatedly disturbed 2 by moving 1, at D"
+    (DfB 14/6).  While a value of 1->2 lets D drive 2 critical, the
+    uniselector changes it; the first value for which D no longer does is
+    "retained permanently", and 2's response to D stays small: habituation.
+
+    There is no 2->1.  Unit 1's uniselector is off: it has nothing to
+    re-draw.  Both units have weak negative self-feedback (0.08-0.12): their
+    traces return to rest after each D, and with it about half the
+    uniselector's values make D drive 2 critical (with stronger
+    self-feedback D almost never does, and there is nothing to habituate).
+    Strongly damped units.  Over 30 seeds, with ten D's of 8 every 4000
+    ticks (long enough "for the system to come to equilibrium before the
+    next application", 14/3), Ashby's result appears in 20; in 8 more the
+    first value of 1->2 already gives a small response.
+
+    For Fig. 14/6/2 (1 <-> 2, both on uniselectors) see
+    setup_exp6b_habituation_ultrastable.
+
+    unused_slots: add inactive units up to four (for the GUI).
 
     Returns: (homeostat, seed, metadata)
     '''
     seed = _seed_rngs(seed)
 
     hom = Homeostat()
-
-    unit1 = _make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-
+    unit1 = _make_unit('Unit_1', viscosity=EXP6_VISCOSITY, uniselector_active=False,
+                       potentiometer=np.random.uniform(*EXP6_SELF_FEEDBACK))
+    unit2 = _make_unit('Unit_2', viscosity=EXP6_VISCOSITY,
+                       uniselector_active=True, uniselector_interval=100,
+                       potentiometer=np.random.uniform(*EXP6_SELF_FEEDBACK))
     for u in [unit1, unit2]:
         hom.addFullyConnectedUnit(u)
+    if unused_slots:
+        _add_unused_slots(hom)
 
-    # Connection 1->2: uniselector-controlled (keep random weight)
-    for conn in unit2.inputConnections:
-        if conn.incomingUnit is unit1:
-            conn.state = 'uniselector'
-
-    # Connection 2->1: manual (fixed negative, feedback)
-    for conn in unit1.inputConnections:
-        if conn.incomingUnit is unit2:
-            conn.newWeight(-0.3)
-            conn.state = 'manual'
+    _disable_all_cross_connections(hom)
+    # 1->2: unit 2's uniselector (keeps its random weight)
+    _enable_connection(unit1, unit2, state='uniselector')
 
     metadata = {
         'experiment': 'Exp 6: Habituation',
-        'reference': 'DftB 14/6, Figs. 14/6/1 and 14/6/2',
-        'topology': '2 units joined: 1<->2',
-        'description': ('Repeatedly displace unit 1 by fixed angle D; '
-                         'observe unit 2 response amplitude diminishing'),
+        'reference': 'DftB 14/6, Fig. 14/6/1',
+        'topology': '2 units joined 1->2, on unit 2\'s uniselector',
+        'description': ('Repeatedly displace unit 1 by a fixed angle D; the first '
+                        '1->2 for which D does not drive 2 critical is retained'),
     }
     return hom, seed, metadata
 
 
-def make_stimulus_events(unit_index=0, delta=5.0, interval=300,
-                         n_stimuli=10, settle_first=500):
+def setup_exp6b_habituation_ultrastable(seed=None):
+    '''Fig. 14/6/2: two units 1 <-> 2, both links on the uniselectors.
+
+    "Both effects go through the uniselectors, so the whole is ultrastable.
+    At each D the operator displaced 1's magnet through a constant distance.
+    On the first 'stimulation', 2's response brought the system to its
+    critical states, so the ultrastability found a new terminal field. The
+    second stimulation again evoked the process. But the new terminal field
+    was such that the displacement D no longer caused 2 to reach its
+    critical states; so this field was retained" (DfB 14/6).
+
+    Ashby's trace, a small D on a resting system sending both units to
+    their limits, is that of an unstable field at rest, as a real magnet
+    held by pivot friction can be.  A noisy simulation cannot rest in an
+    unstable field: its ultrastable search finds a stable one before any
+    D, which a modest D rarely drives critical (6 in 30 seeds show Ashby's
+    result).  So here the units have no noise and start at rest at the
+    centre: then 18 in 30 do, with D = 6 every 2000 ticks.  Weak negative
+    self-feedback on both (0.05-0.15; with none, a 2-unit field is never
+    asymptotically stable).  Strongly damped units.
+
+    Returns: (homeostat, seed, metadata)
+    '''
+    seed = _seed_rngs(seed)
+
+    hom = Homeostat()
+    unit1 = _make_unit('Unit_1', viscosity=EXP6_VISCOSITY, noise=0,
+                       uniselector_active=True, uniselector_interval=100,
+                       potentiometer=np.random.uniform(*EXP6B_SELF_FEEDBACK))
+    unit2 = _make_unit('Unit_2', viscosity=EXP6_VISCOSITY, noise=0,
+                       uniselector_active=True, uniselector_interval=100,
+                       potentiometer=np.random.uniform(*EXP6B_SELF_FEEDBACK))
+    for u in [unit1, unit2]:
+        hom.addFullyConnectedUnit(u)
+
+    _disable_all_cross_connections(hom)
+    _enable_connection(unit1, unit2, state='uniselector', noise=0)
+    _enable_connection(unit2, unit1, state='uniselector', noise=0)
+    for u in [unit1, unit2]:
+        u.inputConnections[0].noise = 0
+        u.criticalDeviation = 0
+        u.currentVelocity = 0
+        u.computeOutput()
+
+    metadata = {
+        'experiment': 'Exp 6b: Habituation of an ultrastable system',
+        'reference': 'DftB 14/6, Fig. 14/6/2',
+        'topology': '2 units 1<->2, both links on the uniselectors; no noise',
+        'description': ('Repeatedly displace unit 1; the first field for which D '
+                        'does not drive the system critical is retained'),
+    }
+    return hom, seed, metadata
+
+
+def make_stimulus_events(unit_index=0, delta=EXP6_DISPLACEMENT, interval=EXP6_INTERVAL,
+                         n_stimuli=EXP6_STIMULI, settle_first=EXP6_FIRST):
     '''Return events that inject repeated stimuli into a unit.
 
     First stimulus at tick settle_first, then every interval ticks.
@@ -929,41 +1011,64 @@ def make_stimulus_events(unit_index=0, delta=5.0, interval=300,
 
 
 class ResponseMeasurer:
-    '''Measure peak response amplitude of a target unit after each stimulus.
+    '''Per stimulus D, until the next one: the peak response of the target
+    unit, whether a unit whose uniselector can act reached a critical state
+    (from 30 ticks after D, so that D itself does not count) and how many
+    uniselector changes followed.  Call check(tick) every tick.
 
-    Call check(tick) every tick.  After each stimulus, tracks the peak
-    deviation of the target unit over a measurement window.
+    Ashby's habituation (DfB 14/5-14/6): the D's that drive the system
+    critical change the step-mechanisms, until a value is found for which D
+    no longer does; that value is kept, and the response stays small.
     '''
 
-    def __init__(self, hom, target_unit_index=1, stimulus_ticks=None,
-                 measure_window=100):
+    def __init__(self, hom, target_unit_index=1, stimulus_ticks=None):
         self.hom = hom
         self.target_idx = target_unit_index
-        self.stimulus_ticks = set(stimulus_ticks or [])
-        self.measure_window = measure_window
-        self.responses = []
-        self._measuring = False
-        self._measure_start = 0
+        self.stimulus_ticks = sorted(stimulus_ticks or [])
+        self.responses = []         # peak |x - x at D| of the target unit
+        self.critical = []          # some active unit critical after D
+        self.changes = []           # uniselector changes after D
         self._baseline = 0.0
-        self._peak = 0.0
+
+    def _adaptive_units(self):
+        return [u for u in self.hom.homeoUnits
+                if u.isActive() and u.uniselectorActive and has_adaptive_input(u)]
+
+    def _changes_so_far(self):
+        return sum(u.uniselectorActivationCount for u in self._adaptive_units())
 
     def check(self, tick):
         unit = self.hom.homeoUnits[self.target_idx]
-        dev = unit.criticalDeviation
-
         if tick in self.stimulus_ticks:
-            self._measuring = True
-            self._measure_start = tick
-            self._baseline = dev
-            self._peak = 0.0
+            self._start = tick
+            self._baseline = unit.criticalDeviation
+            self._count = self._changes_so_far()
+            self.responses.append(0.0)
+            self.critical.append(False)
+            self.changes.append(0)
+        if self.responses:
+            self.responses[-1] = max(self.responses[-1],
+                                     abs(unit.criticalDeviation - self._baseline))
+            if tick - self._start >= 30 and any(
+                    abs(u.criticalDeviation) >= u.critThreshold * u.maxDeviation
+                    for u in self._adaptive_units()):
+                self.critical[-1] = True
+            self.changes[-1] = self._changes_so_far() - self._count
 
-        if self._measuring:
-            amplitude = abs(dev - self._baseline)
-            if amplitude > self._peak:
-                self._peak = amplitude
-            if tick - self._measure_start >= self.measure_window:
-                self.responses.append(self._peak)
-                self._measuring = False
+    def retained_since(self):
+        '''Index of the first D after the last one that caused a change
+        (None if the last D caused one).'''
+        last = max([i for i, n in enumerate(self.changes) if n], default=-1)
+        return last + 1 if last + 1 < len(self.changes) else None
+
+    def habituated(self, last=4):
+        '''Ashby's result: some D caused a change, the last D's caused no
+        critical state and no change, and the response to them is smaller
+        than to the D's that caused changes.'''
+        changed = [r for r, n in zip(self.responses, self.changes) if n]
+        return bool(changed) and not any(self.critical[-last:]) and \
+            not any(self.changes[-last:]) and \
+            np.mean(self.responses[-last:]) < np.mean(changed)
 
 
 # ===============================================================

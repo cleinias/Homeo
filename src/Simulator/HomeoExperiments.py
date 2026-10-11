@@ -4147,41 +4147,15 @@ def initializeAshbyExp5Constraint(**params):
 
 
 def initializeAshbyExp6Habituation(**params):
-    '''Exp 6: Habituation (DftB 14/6).
+    '''Exp 6: Habituation (DftB 14/6, Fig. 14/6/1).
 
-    2 units joined: 1<->2.
-    Connection 1->2: uniselector-controlled.
-    Connection 2->1: manual, fixed negative.
-    User delivers repeated stimuli to unit 1.
-    Units 3 and 4 are inactive.
+    Two units joined 1->2 only, 1->2 on unit 2's uniselector; the user
+    delivers repeated stimuli to unit 1.  Same setup as the headless
+    AshbyOriginalExperiments.setup_exp6_habituation, with units 3 and 4
+    inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = HomeoUnitNewtonian()
-    unit3.name = 'UNUSED_3'
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED_4'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit3.disactivate()
-    unit4.disactivate()
-
-    # 1->2: uniselector-controlled
-    for conn in unit2.inputConnections:
-        if conn.incomingUnit is unit1:
-            conn.state = 'uniselector'
-
-    # 2->1: manual, fixed negative feedback
-    for conn in unit1.inputConnections:
-        if conn.incomingUnit is unit2:
-            conn.newWeight(-0.3)
-            conn.state = 'manual'
-
+    from Simulator.AshbyOriginalExperiments import setup_exp6_habituation
+    hom, seed, meta = setup_exp6_habituation(unused_slots=True)
     return hom
 
 

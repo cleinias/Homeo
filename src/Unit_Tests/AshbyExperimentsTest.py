@@ -15,12 +15,18 @@ from Simulator.AshbyOriginalExperiments import (setup_exp1_basic_ultrastability,
                                                 setup_exp5_constraint, make_constraint_callback,
                                                 exp5_events, exp5_fibre_matrix, EXP5_J, EXP5_R,
                                                 EXP5_END,
+                                                setup_exp6_habituation,
+                                                setup_exp6b_habituation_ultrastable,
+                                                make_stimulus_events, ResponseMeasurer, EXP6_END,
+                                                EXP6B_DISPLACEMENT, EXP6B_INTERVAL, EXP6B_FIRST,
+                                                EXP6B_END,
                                                 exp2_reversal_event, run_with_events,
                                                 StabilityTracker, inject_stimulus, connection)
 from Simulator.HomeoExperiments import (initializeAshbyExp1BasicUltrastability,
                                         initializeAshbyExp2SelfReorganization,
                                         initializeAshbyExp4AlternatingEnvironments,
-                                        initializeAshbyExp5Constraint)
+                                        initializeAshbyExp5Constraint,
+                                        initializeAshbyExp6Habituation)
 
 
 def signedWeight(to_unit, from_unit):
@@ -267,3 +273,50 @@ class AshbyExp5Test(unittest.TestCase):
             self.assertGreater(counts[1], counts[0], 'seed %d: no change after J' % seed)
             self.assertFalse(within(EXP5_R - 500, EXP5_R), 'seed %d: not stable before R' % seed)
             self.assertTrue(within(EXP5_R, EXP5_END + 1), 'seed %d: R did not destabilise' % seed)
+
+
+class AshbyExp6Test(unittest.TestCase):
+    '''DfB 14/6: repeated displacements D of unit 1.  While D drives the system
+    critical the uniselector changes; the first value (Fig. 14/6/1) or field
+    (Fig. 14/6/2) for which it does not is retained, and the response stays
+    small: habituation.'''
+
+    def assertAshbyWiring(self, hom):
+        u1, u2 = hom.homeoUnits[:2]
+        self.assertEqual([u.uniselectorActive for u in (u1, u2)], [False, True])
+        self.assertEqual(connection(u2, u1).state, 'uniselector')
+        self.assertTrue(connection(u2, u1).isActive())
+        self.assertFalse(connection(u1, u2).isActive())            # no 2->1
+        for u in (u1, u2):
+            self.assertLess(signedWeight(u, u), 0)                  # they return to rest
+
+    def testWiringHeadless(self):
+        hom, seed, meta = setup_exp6_habituation(1)
+        self.assertEqual(len(hom.homeoUnits), 2)
+        self.assertAshbyWiring(hom)
+
+    def testWiringGui(self):
+        self.assertAshbyWiring(initializeAshbyExp6Habituation())
+
+    def runStimuli(self, hom, events, end):
+        quiet(hom)
+        measurer = ResponseMeasurer(hom, 1, [t for t, f in events])
+        run_with_events(hom, end, events=events, tick_callback=lambda h, t: measurer.check(t))
+        return measurer
+
+    def testHabituation(self):
+        "Fig. 14/6/1: some D's change 1->2, then one value is kept and the response is small"
+        for seed in (1, 2):
+            hom, seed, meta = setup_exp6_habituation(seed)
+            m = self.runStimuli(hom, make_stimulus_events(), EXP6_END)
+            self.assertTrue(m.habituated(), 'seed %d: %s, %s' % (seed, m.changes, m.critical))
+
+    def testHabituationUltrastable(self):
+        "Fig. 14/6/2: both links on the uniselectors"
+        hom, seed, meta = setup_exp6b_habituation_ultrastable(2)
+        u1, u2 = hom.homeoUnits[:2]
+        self.assertEqual([connection(u2, u1).state, connection(u1, u2).state], ['uniselector'] * 2)
+        events = make_stimulus_events(delta=EXP6B_DISPLACEMENT, interval=EXP6B_INTERVAL,
+                                      settle_first=EXP6B_FIRST)
+        m = self.runStimuli(hom, events, EXP6B_END)
+        self.assertTrue(m.habituated(), '%s, %s' % (m.changes, m.critical))

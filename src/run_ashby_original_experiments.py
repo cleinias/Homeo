@@ -6,7 +6,7 @@ Usage:
     python run_ashby_original_experiments.py                  # run all 7
     python run_ashby_original_experiments.py --exp 1          # run experiment 1 only
     python run_ashby_original_experiments.py --exp 1 --seed 42 --ticks 9600
-    python run_ashby_original_experiments.py --exp 6 --ticks 8000 --output-dir results/
+    python run_ashby_original_experiments.py --exp 6 --fig 2 --output-dir results/
 
 Each experiment produces:
     - A .statelog TSV file with per-tick state data
@@ -35,6 +35,8 @@ from Simulator.AshbyOriginalExperiments import (
     setup_exp5_constraint, make_constraint_callback, exp5_events,
     EXP5_J, EXP5_R, EXP5_END,
     setup_exp6_habituation, make_stimulus_events, ResponseMeasurer,
+    setup_exp6b_habituation_ultrastable, EXP6_END, EXP6B_END,
+    EXP6B_DISPLACEMENT, EXP6B_INTERVAL, EXP6B_FIRST,
     setup_exp7_multistable, make_multistable_callback,
     run_with_events, StabilityTracker, AshbyStateLogger,
 )
@@ -50,7 +52,7 @@ def _output_path(output_dir, exp_num, seed, ext):
 
 
 # Default run length per experiment: long enough for its protocol
-DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: 5000, 4: EXP4_END, 5: EXP5_END, 6: 5000, 7: 5000}
+DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: 5000, 4: EXP4_END, 5: EXP5_END, 6: EXP6_END, 7: 5000}
 
 
 def _marker(record, name, hom_fn):
@@ -59,12 +61,13 @@ def _marker(record, name, hom_fn):
     return lambda hom: record.__setitem__(name, hom_fn(hom))
 
 
-def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.'):
-    '''Run a single experiment and return a summary dict.'''
+def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=1):
+    '''Run a single experiment and return a summary dict.  figure: for Exp 6,
+    Ashby's Fig. 14/6/1 (1) or 14/6/2 (2).'''
 
     os.makedirs(output_dir, exist_ok=True)
     if total_ticks is None:
-        total_ticks = DEFAULT_TICKS[exp_num]
+        total_ticks = EXP6B_END if (exp_num, figure) == (6, 2) else DEFAULT_TICKS[exp_num]
     protocol = {}            # values recorded at the protocol's events
 
     # ---- Setup ----
@@ -106,12 +109,13 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.'):
         tick_callback = constrain_cb
         meta['join_tick'], meta['release_tick'] = EXP5_J, EXP5_R
     elif exp_num == 6:
-        hom, seed, meta = setup_exp6_habituation(seed)
-        settle = total_ticks // 10
-        interval = (total_ticks - settle) // 10
-        stim_events = make_stimulus_events(
-            unit_index=0, delta=5.0,
-            interval=interval, n_stimuli=10, settle_first=settle)
+        if figure == 2:
+            hom, seed, meta = setup_exp6b_habituation_ultrastable(seed)
+            stim_events = make_stimulus_events(delta=EXP6B_DISPLACEMENT, interval=EXP6B_INTERVAL,
+                                               settle_first=EXP6B_FIRST)
+        else:
+            hom, seed, meta = setup_exp6_habituation(seed)
+            stim_events = make_stimulus_events()
         events = stim_events
         stim_ticks = [e[0] for e in stim_events]
         tick_callback = None
@@ -135,8 +139,7 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.'):
     response_measurer = None
     if exp_num == 6:
         response_measurer = ResponseMeasurer(
-            hom, target_unit_index=1,
-            stimulus_ticks=stim_ticks, measure_window=interval // 3)
+            hom, target_unit_index=1, stimulus_ticks=stim_ticks)
 
     # ---- Log initial conditions ----
     log_homeostat_conditions_json(
@@ -253,9 +256,17 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.'):
         summary['punishment_ticks'] = punishment_log
 
     if exp_num == 6 and response_measurer is not None:
-        print('  Response amplitudes: %s' % [
-            '%.3f' % r for r in response_measurer.responses])
-        summary['response_amplitudes'] = response_measurer.responses
+        m = response_measurer
+        print('  Response of unit 2 to each D: %s' % ['%.2f' % r for r in m.responses])
+        print('  Uniselector changes after each D: %s' % m.changes)
+        print("  D's that drove the system critical: %s" %
+              [i + 1 for i, c in enumerate(m.critical) if c])
+        since = m.retained_since()
+        print('  Value retained since D%s' % (since + 1) if since is not None
+              else '  Value not retained (the last D caused a change)')
+        print('  Habituation (Ashby, DfB 14/6): %s' % m.habituated())
+        summary.update(response_amplitudes=m.responses, changes_per_stimulus=m.changes,
+                       habituated=m.habituated())
 
     # Final unit states
     print('\n  Final unit states:')
@@ -277,6 +288,8 @@ def main():
                         help='RNG seed (default: random)')
     parser.add_argument('--ticks', type=int, default=None,
                         help="Number of ticks to simulate (default: the experiment's protocol length)")
+    parser.add_argument('--fig', type=int, default=1, choices=(1, 2),
+                        help="Exp 6 only: Ashby's Fig. 14/6/1 (default) or 14/6/2")
     parser.add_argument('--output-dir', type=str, default=None,
                         help='Output directory (default: SimulationsData/AshbyExperiments/)')
     args = parser.parse_args()
@@ -287,7 +300,7 @@ def main():
 
     if args.exp is not None:
         run_experiment(args.exp, seed=args.seed,
-                       total_ticks=args.ticks, output_dir=args.output_dir)
+                       total_ticks=args.ticks, output_dir=args.output_dir, figure=args.fig)
     else:
         print('Running all 7 Ashby experiments...\n')
         summaries = []
