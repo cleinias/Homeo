@@ -4094,29 +4094,12 @@ def initializeAshbyExp2SelfReorganization(**params):
 def initializeAshbyExp3Training(**params):
     '''Exp 3: Training by Punishment (DftB 8/9).
 
-    3 units in a triangle. Trainer callback (installed by GUI) punishes
-    when units 1 and 2 move in the same direction.
-    4th unit is inactive.
+    3 units in a ring; the operator's tests and the trainer (installed by
+    the GUI) act on units 1 and 3.  Same setup as the headless
+    AshbyOriginalExperiments.setup_exp3_training, with unit 4 inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _ashby_make_unit('Unit_3', uniselector_active=False)
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit4.disactivate()
-    _ashby_disable_all_cross_connections(hom)
-
-    _ashby_enable_connection(unit1, unit2, state='uniselector')
-    _ashby_enable_connection(unit2, unit3, weight=0.5, state='manual')
-    _ashby_enable_connection(unit3, unit1, weight=-0.5, state='manual')
-
+    from Simulator.AshbyOriginalExperiments import setup_exp3_training
+    hom, seed, meta = setup_exp3_training(unused_slots=True)
     return hom
 
 

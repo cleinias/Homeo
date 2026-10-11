@@ -577,79 +577,181 @@ def exp2_reversal_event(hom):
 #  EXPERIMENT 3: Training by Punishment (DftB 8/9)
 # ===============================================================
 
-def setup_exp3_training(seed=None):
-    '''3 units in a triangle with an external "trainer".
+# Exp 3 parameters (see setup_exp3_training)
+EXP3_VISCOSITY = 10
+EXP3_SELF_FEEDBACK_13 = (0.5, 1.0)
+EXP3_SELF_FEEDBACK_2 = (0.2, 0.5)
+EXP3_W23, EXP3_W31 = 0.2, 1.0
+# Protocol (ticks; see Exp3Trainer)
+EXP3_SETTLE, EXP3_BASELINE, EXP3_HOLD, EXP3_PUNISH, EXP3_WAIT = 1000, 100, 200, 400, 1000
+EXP3_TESTS, EXP3_STROKE, EXP3_THRESHOLD = 10, -5.0, 0.5
+EXP3_END = EXP3_SETTLE + EXP3_TESTS * (EXP3_BASELINE + EXP3_HOLD + EXP3_PUNISH + EXP3_WAIT)
 
-    Units: 1 (tested), 2 (tested), 3 (receives punishment).
-    Connection 1->2: under uniselector control.
-    Trainer rule: if 1 and 2 move in the same direction, force 3 to extreme.
 
-    The "trainer" is implemented as a tick_callback.
+def setup_exp3_training(seed=None, unused_slots=False):
+    '''3 units in a ring 1->2->3->1, trained by punishment.
+
+    "Three units were joined: 1 -> 2, 2 -> 3, 3 -> 1" and a trainer "acted
+    on the rule that if the Homeostat did not respond to a forced movement
+    of 1 by an opposite movement of 2, then the trainer would force 3 over
+    to an extreme position" (DfB 8/9).  The trainer is Exp3Trainer.
+
+    With 1 forced, 2's response depends only on 1->2 and 2's self-feedback,
+    so the step-mechanism that training must change is 1->2, on unit 2's
+    uniselector; unit 2 is driven critical through 3 -> 1 -> 2.  The other
+    uniselectors are off (unit 1's would have nothing to re-draw).  Signs as
+    in Fig. 8/9/1: 3 forced down moves 1 down, so 3->1 is positive (+1, so
+    that 3 at its extreme pins 1); 2->3 is positive, and weak (0.2).
+
+    Both the forbidden and the desired configuration are stable fields in
+    the figure, so all three units need negative self-feedback (1 and 3:
+    0.5-1; 2: 0.2-0.5), with p1 p2 p3 > |1->2| w23 w31.  The punishment then
+    makes unit 2 critical only if 1->2 > 0.9 p2: a smaller positive 1->2 is
+    a trap, stable and wrong, which no punishment can change.  1->2 starts
+    in the forbidden band where the start is stable and S1's punishment
+    acts, as in Ashby's run.  Strongly damped units.  Over 30 seeds the
+    trainer produces Ashby's result in 14 (punished, then a change of 1->2,
+    then the desired response without punishment), while the same tests
+    without the trainer end in the desired response in 1.  7 runs end in
+    the trap (each re-draw of 1->2 can land in it): a property of the linear
+    Homeostat with this wiring rather than of the code.
+
+    unused_slots: add an inactive unit 4 (for the GUI).
 
     Returns: (homeostat, seed, metadata)
     '''
     seed = _seed_rngs(seed)
 
     hom = Homeostat()
-
-    unit1 = _make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _make_unit('Unit_3', uniselector_active=False)
-
+    p1 = np.random.uniform(*EXP3_SELF_FEEDBACK_13)
+    p2 = np.random.uniform(*EXP3_SELF_FEEDBACK_2)
+    p3 = np.random.uniform(*EXP3_SELF_FEEDBACK_13)
+    unit1 = _make_unit('Unit_1', viscosity=EXP3_VISCOSITY, potentiometer=p1,
+                       uniselector_active=False)
+    unit2 = _make_unit('Unit_2', viscosity=EXP3_VISCOSITY, potentiometer=p2,
+                       uniselector_active=True, uniselector_interval=100)
+    unit3 = _make_unit('Unit_3', viscosity=EXP3_VISCOSITY, potentiometer=p3,
+                       uniselector_active=False)
     for u in [unit1, unit2, unit3]:
         hom.addFullyConnectedUnit(u)
+    if unused_slots:
+        _add_unused_slots(hom)
 
     _disable_all_cross_connections(hom)
-
-    # Wire: 1->2 (uniselector), 2->3 (manual), 3->1 (manual)
-    _enable_connection(unit1, unit2, state='uniselector')
-    _enable_connection(unit2, unit3, weight=0.5, state='manual')
-    _enable_connection(unit3, unit1, weight=-0.5, state='manual')
+    _enable_connection(unit2, unit3, weight=EXP3_W23, state='manual')
+    _enable_connection(unit3, unit1, weight=EXP3_W31, state='manual')
+    # 1->2: unit 2's uniselector.  Ashby's start: forbidden (positive), the
+    # ring stable, and large enough for the punishment to make 2 critical
+    low = 0.9 * p2 / min(1.0, EXP3_W31 / p1)
+    high = min(1.0, p1 * p2 * p3 / (EXP3_W23 * EXP3_W31))
+    conn = _enable_connection(unit1, unit2, state='uniselector')
+    conn.newWeight(np.random.uniform(low, high))
 
     metadata = {
         'experiment': 'Exp 3: Training by Punishment',
         'reference': 'DftB 8/9, Fig. 8/9/1',
-        'topology': '3 units: 1->2->3->1 with trainer T',
-        'description': ('Trainer punishes when 1 and 2 move in same direction '
-                         'by forcing 3 to extreme'),
+        'topology': '3 units: 1->2 (unit 2\'s uniselector), 2->3 and 3->1 by hand; trainer acts on 3',
+        'description': ('The operator forces 1 down; if 2 does not move the opposite '
+                        'way, the trainer forces 3 to an extreme'),
     }
     return hom, seed, metadata
 
 
-def make_trainer_callback(punishment_log=None):
-    '''Return a tick_callback implementing the trainer rule.
+class Exp3Trainer:
+    '''The operator and the trainer of Fig. 8/9/1, as a tick_callback.
 
-    Rule: if unit 1 and unit 2 moved in the same direction since last check,
-    force unit 3 to maxDeviation (punishment).
+    After EXP3_SETTLE ticks, EXP3_TESTS times: the operator forces 1 down
+    (holds it at EXP3_STROKE for EXP3_HOLD ticks, S in the figure).  2's
+    response is its mean displacement from tick 50 of the hold on, less its
+    drift over the EXP3_BASELINE ticks before (extrapolated).  "If the
+    Homeostat did not respond to a forced movement of 1 by an opposite
+    movement of 2" (response not above EXP3_THRESHOLD), the trainer holds 3
+    at its extreme, -maxDeviation, for EXP3_PUNISH ticks (D).  Then it waits
+    EXP3_WAIT ticks.  With punish=False the tests are run without the
+    trainer (a control).
 
-    The trainer checks every `check_interval` ticks.
+    sequence: per test, 'P' (punished) or 'd' (the desired response; 'f'
+    for a wrong one in a control).  punishments: their ticks.
+    changes_per_punishment: unit 2's uniselector changes from each
+    punishment to the next test (the runaway can outlast the punishment).
     '''
-    state = {'prev_dev_1': None, 'prev_dev_2': None, 'punishment_count': 0}
-    if punishment_log is None:
-        punishment_log = []
 
-    def trainer(hom, tick):
-        u1 = hom.homeoUnits[0]
-        u2 = hom.homeoUnits[1]
-        u3 = hom.homeoUnits[2]
+    def __init__(self, punish=True):
+        self.punish = punish
+        self.sequence = []
+        self.responses = []
+        self.punishments = []
+        self.changes_per_punishment = []
+        self._phase, self._until = 'settle', EXP3_SETTLE
+        self._baseline = []
 
-        d1 = u1.criticalDeviation
-        d2 = u2.criticalDeviation
+    @staticmethod
+    def _hold(unit, x):
+        unit.criticalDeviation = x
+        unit.currentVelocity = 0.0
+        unit.computeOutput()
 
-        if state['prev_dev_1'] is not None:
-            delta1 = d1 - state['prev_dev_1']
-            delta2 = d2 - state['prev_dev_2']
-            # Same direction: both positive or both negative
-            if delta1 * delta2 > 0 and (abs(delta1) > 0.01 and abs(delta2) > 0.01):
-                # Punish: force unit 3 to extreme
-                u3.criticalDeviation = u3.maxDeviation * 0.95
-                state['punishment_count'] += 1
-                punishment_log.append(tick)
+    def __call__(self, hom, tick):
+        unit1, unit2, unit3 = hom.homeoUnits[:3]
+        if self._phase == 'done':
+            return
+        if self._phase == 'baseline':
+            self._baseline.append(unit2.criticalDeviation)
+        elif self._phase == 'test':
+            self._hold(unit1, EXP3_STROKE)
+            t = tick - self._start
+            if t >= 50:
+                self._response.append(unit2.criticalDeviation - self._base - self._slope * (t + 1))
+        elif self._phase == 'punish':
+            self._hold(unit3, -unit3.maxDeviation)
+        if tick + 1 < self._until:
+            return
+        # end of the phase: start the next one
+        if self._phase in ('settle', 'wait'):
+            if self._phase == 'wait' and self.sequence[-1] == 'P':
+                self.changes_per_punishment.append(unit2.uniselectorActivationCount - self._count)
+            if len(self.sequence) == EXP3_TESTS:
+                self._phase = 'done'
+                return
+            self._phase, self._until = 'baseline', tick + 1 + EXP3_BASELINE
+            self._baseline = []
+        elif self._phase == 'baseline':
+            self._slope = np.polyfit(np.arange(len(self._baseline)), self._baseline, 1)[0]
+            self._base = unit2.criticalDeviation
+            self._response = []
+            self._phase, self._start, self._until = 'test', tick + 1, tick + 1 + EXP3_HOLD
+        elif self._phase == 'test':
+            response = float(np.mean(self._response))
+            self.responses.append(response)
+            if response > EXP3_THRESHOLD:
+                self.sequence.append('d')
+            elif self.punish:
+                self.sequence.append('P')
+                self.punishments.append(tick + 1)
+                self._count = unit2.uniselectorActivationCount
+                self._phase, self._until = 'punish', tick + 1 + EXP3_PUNISH
+                return
+            else:
+                self.sequence.append('f')
+            self._phase, self._until = 'wait', tick + 1 + EXP3_WAIT
+        elif self._phase == 'punish':
+            self._phase, self._until = 'wait', tick + 1 + EXP3_WAIT
 
-        state['prev_dev_1'] = d1
-        state['prev_dev_2'] = d2
+    def trained(self, hom):
+        '''Ashby's result: S1 punished, a punishment changed 1->2, the last
+        three tests desired, and 1->2 negative at the end.'''
+        unit1, unit2 = hom.homeoUnits[:2]
+        conn = connection(unit2, unit1)
+        return (self.sequence[:1] == ['P'] and any(self.changes_per_punishment) and
+                self.sequence[-3:] == ['d'] * 3 and conn.weight * conn.switch < 0)
 
-    return trainer, punishment_log
+
+def make_trainer_callback(punishment_log=None, punish=True):
+    '''Return (trainer, punishment ticks) for Exp 3; see Exp3Trainer.'''
+    trainer = Exp3Trainer(punish=punish)
+    if punishment_log is not None:
+        trainer.punishments = punishment_log
+    return trainer, trainer.punishments
 
 
 # ===============================================================

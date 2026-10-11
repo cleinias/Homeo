@@ -6,6 +6,8 @@ Simulator/HomeoExperiments.py (GUI).
 import unittest
 
 from Simulator.AshbyOriginalExperiments import (setup_exp1_basic_ultrastability, exp1_events,
+                                                setup_exp3_training, make_trainer_callback, EXP3_END,
+                                                EXP3_W23, EXP3_W31,
                                                 EXP1_R1, EXP1_R2, EXP1_END,
                                                 setup_exp2_self_reorganization,
                                                 setup_exp4_alternating_environments,
@@ -27,6 +29,7 @@ from Simulator.AshbyOriginalExperiments import (setup_exp1_basic_ultrastability,
                                                 StabilityTracker, inject_stimulus, connection)
 from Simulator.HomeoExperiments import (initializeAshbyExp1BasicUltrastability,
                                         initializeAshbyExp2SelfReorganization,
+                                        initializeAshbyExp3Training,
                                         initializeAshbyExp4AlternatingEnvironments,
                                         initializeAshbyExp5Constraint,
                                         initializeAshbyExp6Habituation,
@@ -373,3 +376,53 @@ class AshbyExp7Test(unittest.TestCase):
             self.assertGreater(count[0], 0, 'seed %d: unit 1 never changed' % seed)
             self.assertEqual(u1.uniselectorActivationCount, count[0], 'seed %d: changes in the tests' % seed)
             self.assertEqual(exp7_pairs_stable(hom), (True, True))
+
+
+class AshbyExp3Test(unittest.TestCase):
+    '''DfB 8/9, Fig. 8/9/1: the operator forces 1 down; while 2 does not move
+    the opposite way the trainer forces 3 to an extreme; the punishment makes
+    unit 2's uniselector change 1->2 until 2 responds as desired, and the
+    punishments cease.'''
+
+    def assertAshbyWiring(self, hom):
+        u1, u2, u3 = hom.homeoUnits[:3]
+        self.assertEqual([u.uniselectorActive for u in (u1, u2, u3)], [False, True, False])
+        for u in (u1, u2, u3):
+            self.assertLess(signedWeight(u, u), 0)
+        self.assertEqual(connection(u2, u1).state, 'uniselector')
+        self.assertGreater(signedWeight(u2, u1), 0)                 # forbidden at the start
+        self.assertAlmostEqual(signedWeight(u3, u2), EXP3_W23)
+        self.assertAlmostEqual(signedWeight(u1, u3), EXP3_W31)
+        self.assertTrue(ashby_stable(ashby_matrix([u1, u2, u3])))
+
+    def testWiringHeadless(self):
+        hom, seed, meta = setup_exp3_training(1)
+        self.assertEqual(len(hom.homeoUnits), 3)
+        self.assertAshbyWiring(hom)
+
+    def testWiringGui(self):
+        self.assertAshbyWiring(initializeAshbyExp3Training())
+
+    def testTraining(self):
+        "Punished, then 1->2 changed by a punishment, then the desired response"
+        for seed in (2, 4):
+            hom, seed, meta = setup_exp3_training(seed)
+            quiet(hom)
+            trainer, punishments = make_trainer_callback()
+            run_with_events(hom, EXP3_END, tick_callback=trainer)
+            self.assertEqual(len(trainer.sequence), 10)
+            self.assertEqual(len(punishments), trainer.sequence.count('P'))
+            self.assertTrue(trainer.trained(hom), 'seed %d: %s, %s' % (
+                seed, ''.join(trainer.sequence), trainer.changes_per_punishment))
+
+    def testNoPunishmentNoTraining(self):
+        "Without the trainer the same tests leave 1->2 alone"
+        hom, seed, meta = setup_exp3_training(2)
+        quiet(hom)
+        u1, u2 = hom.homeoUnits[:2]
+        before = signedWeight(u2, u1)
+        trainer, punishments = make_trainer_callback(punish=False)
+        run_with_events(hom, EXP3_END, tick_callback=trainer)
+        self.assertEqual(punishments, [])
+        self.assertNotIn('d', trainer.sequence)
+        self.assertEqual(signedWeight(u2, u1), before)

@@ -124,23 +124,28 @@ restoring stability. This demonstrates self-reorganization.</p>''',
 
     3: '''<h3>Exp 3: Training by Punishment</h3>
 <p><b>Reference:</b> DftB 8/9, Fig. 8/9/1</p>
-<p><b>Ashby's protocol:</b> Three units form a triangle. An external
-"trainer" watches the direction of movement of units 1 and 2. If they
-move in the same direction (which is "wrong"), the trainer punishes
-by forcing unit 3 to its extreme, destabilizing the system and forcing
-the uniselector to try new values.</p>
+<p><b>Ashby's protocol:</b> Three units in a ring, 1 &rarr; 2 &rarr; 3
+&rarr; 1; 1&rarr;2 is under the control of unit 2's uniselector. The
+operator forces 1 down; a "trainer" acts "on the rule that if the Homeostat
+did not respond to a forced movement of 1 by an <i>opposite</i> movement of
+2, then the trainer would force 3 over to an extreme position". The
+punishment drives 2 past its critical level through 3 &rarr; 1 &rarr; 2,
+and its uniselector changes 1&rarr;2.</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b> and observe.</li>
-<li>The trainer acts automatically. The punishment counter in the action
-panel shows how many times punishment has been delivered.</li>
+<li>Press <b>Start</b> and observe. The operator's test strokes (1 held
+down) and the trainer's punishments (3 held at its extreme) are
+automatic: ten tests, about 1700 ticks apart.</li>
 </ol>
-<p><b>What to observe:</b> Early on, punishments are frequent (units
-often move in the same direction). Over time, the uniselector finds
-parameters where units 1 and 2 reliably move in opposite directions,
-and punishments cease.</p>
-<p><b>Expected outcome:</b> The system learns the "correct" behavior
-(opposite movement) through punishment-driven reorganization.</p>''',
+<p><b>What to observe:</b> at first 2 follows 1 and is punished; after a
+punishment that changes 1&rarr;2 to a negative value, 2 moves up when 1 is
+forced down, and the punishments cease. "The cessation of punishment when
+the right action occurs is no less important in training than its
+administration after the wrong action."</p>
+<p><b>Note:</b> if the uniselector lands on a small positive 1&rarr;2, the
+response is wrong but the punishment can no longer drive 2 critical: the
+trainer keeps punishing to no effect. This trap is a property of the linear
+Homeostat with this wiring; Ashby reports a single, successful run.</p>''',
 
     4: '''<h3>Exp 4: Alternating Environments</h3>
 <p><b>Reference:</b> DftB 8/10, Fig. 8/10/1</p>

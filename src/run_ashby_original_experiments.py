@@ -29,7 +29,7 @@ if src_dir not in sys.path:
 from Simulator.AshbyOriginalExperiments import (
     setup_exp1_basic_ultrastability, exp1_events, EXP1_END, connection,
     setup_exp2_self_reorganization, exp2_reversal_event,
-    setup_exp3_training, make_trainer_callback,
+    setup_exp3_training, make_trainer_callback, EXP3_END,
     setup_exp4_alternating_environments, make_alternation_events,
     exp4_stable_for_both, EXP4_END,
     setup_exp5_constraint, make_constraint_callback, exp5_events,
@@ -53,7 +53,7 @@ def _output_path(output_dir, exp_num, seed, ext):
 
 
 # Default run length per experiment: long enough for its protocol
-DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: 5000, 4: EXP4_END, 5: EXP5_END, 6: EXP6_END, 7: EXP7_END}
+DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: EXP3_END, 4: EXP4_END, 5: EXP5_END, 6: EXP6_END, 7: EXP7_END}
 
 
 def _marker(record, name, hom_fn):
@@ -265,9 +265,18 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
         summary.update(changes=before, pairs_stable=pairs)
 
     if exp_num == 3:
-        print('  Punishments delivered: %d' % len(punishment_log))
-        summary['punishments'] = len(punishment_log)
-        summary['punishment_ticks'] = punishment_log
+        # Ashby: punished at first, then a change of 1->2 by the punishment,
+        # then the desired response (2 moves opposite to 1) without punishment
+        u1, u2 = hom.homeoUnits[:2]
+        c12 = connection(u2, u1)
+        print('  Tests (P punished, d desired response): %s' % ''.join(trainer.sequence))
+        print('  Responses of unit 2: %s' % ['%+.2f' % r for r in trainer.responses])
+        print('  Uniselector changes of unit 2 during each punishment: %s' %
+              trainer.changes_per_punishment)
+        print('  1->2 at the end: %+.3f' % (c12.weight * c12.switch))
+        print('  Trained (Ashby, DfB 8/9): %s' % trainer.trained(hom))
+        summary.update(sequence=''.join(trainer.sequence), punishments=len(punishment_log),
+                       punishment_ticks=punishment_log, trained=trainer.trained(hom))
 
     if exp_num == 6 and response_measurer is not None:
         m = response_measurer
