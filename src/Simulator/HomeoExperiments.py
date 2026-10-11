@@ -4035,18 +4035,15 @@ def _ashby_enable_connection(from_unit, to_unit, weight=None,
 
 
 def initializeAshbyExp1BasicUltrastability(**params):
-    '''Exp 1: Basic Ultrastability (DftB 8/3--8/4).
+    '''Exp 1: Basic Ultrastability (DftB 8/4, Fig. 8/4/1).
 
-    4 fully connected units, all under uniselector control.
-    Start from random parameters; observe that the system finds a stable field.
+    Two units: 1->2 hand-controlled (reversed by the user), 2->1 on unit 1's
+    uniselector.  Same setup as the headless
+    AshbyOriginalExperiments.setup_exp1_basic_ultrastability, with units 3
+    and 4 inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-    for i in range(4):
-        unit = _ashby_make_unit('Unit_%d' % (i + 1),
-                                uniselector_active=True,
-                                uniselector_interval=100)
-        hom.addFullyConnectedUnit(unit)
+    from Simulator.AshbyOriginalExperiments import setup_exp1_basic_ultrastability
+    hom, seed, meta = setup_exp1_basic_ultrastability(unused_slots=True)
     return hom
 
 

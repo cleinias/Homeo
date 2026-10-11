@@ -26,6 +26,8 @@ from Simulator.HomeoGeneralGUI import HomeoSimulationControllerGui
 from Simulator.AshbyOriginalExperiments import (
     make_trainer_callback,
     make_constraint_callback,
+    exp1_reversal_event,
+    exp1_displacement_event,
     make_multistable_callback,
     StabilityTracker,
     inject_stimulus,
@@ -44,7 +46,7 @@ _active_gui = None
 EXPERIMENT_INFO = {
     1: ('Exp 1: Basic Ultrastability',
         'initializeAshbyExp1BasicUltrastability',
-        'DftB 8/3--8/4, Fig. 8/4/1'),
+        'DftB 8/4, Fig. 8/4/1'),
     2: ('Exp 2: Self-Reorganization (3-Unit Circle)',
         'initializeAshbyExp2SelfReorganization',
         'DftB 8/5, Fig. 8/5/1'),
@@ -78,25 +80,26 @@ EXPERIMENT_INFO = {
 
 PROTOCOL_TEXT = {
     1: '''<h3>Exp 1: Basic Ultrastability</h3>
-<p><b>Reference:</b> DftB 8/3&ndash;8/4, Fig. 8/4/1</p>
-<p><b>Ashby's protocol:</b> The Homeostat is set up with 4 fully connected
-units, all under uniselector (step-function) control. It is started from
-random initial parameters and allowed to run freely. The system demonstrates
-ultrastability by finding a stable field through its own trial-and-error
-process.</p>
+<p><b>Reference:</b> DftB 8/4, Fig. 8/4/1</p>
+<p><b>Ashby's protocol:</b> Two units interact, 1 &harr; 2, Ashby's analogue
+of the operations of Marina and Sperry, who crossed nerves or muscles in
+animals. 1&rarr;2 is hand-controlled; 2&rarr;1 is under the control of
+unit 1's uniselector. The system starts stable: an upward displacement of 2
+moves 1 up. The experimenter then reverses 1&rarr;2 (R1), making the system
+unstable; unit 1's uniselector changes 2&rarr;1 until stability returns.</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b> and observe the strip charts.</li>
-<li>No user intervention is needed.</li>
+<li>Press <b>Start</b> and let the system settle.</li>
+<li>Press <b>"Displace unit 2 (D)"</b>: 1 follows 2.</li>
+<li>Press <b>"Reverse 1&rarr;2 (R)"</b>. Wait for the runaway, the
+uniselector changes and the return to rest (a few thousand ticks).</li>
+<li>Displace unit 2 again: 1 now moves the opposite way.</li>
+<li>Reverse 1&rarr;2 again and repeat.</li>
 </ol>
-<p><b>What to observe:</b> The units' critical deviations will initially
-fluctuate widely. Uniselector firings (shown in the narrow strip below
-each unit's trace) indicate parameter changes. Eventually, all units
-should settle within their bounds, demonstrating that the system has
-found a stable configuration.</p>
-<p><b>Expected outcome:</b> Stability is achieved after a number of
-uniselector firings. The time to stability depends on the random starting
-configuration.</p>''',
+<p><b>Expected outcome:</b> after each reversal the uniselector of unit 1
+finds a value of 2&rarr;1 of the opposite sign: "This reversal compensated
+for the reversal of 1&rarr;2". Ashby's run needed one uniselector change
+after R1 and three after R2.</p>''',
 
     2: '''<h3>Exp 2: Self-Reorganization (3-Unit Circle)</h3>
 <p><b>Reference:</b> DftB 8/5, Fig. 8/5/1</p>
@@ -399,8 +402,14 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
                                        'Use the controls below to run.'))
 
         elif self._exp_num == 1:
-            expLayout.addWidget(QLabel('No user action needed.\n'
-                                       'The system self-organizes automatically.'))
+            self._displaceBtn = QPushButton('Displace unit 2 (D)')
+            self._displaceBtn.clicked.connect(
+                lambda: exp1_displacement_event(self._simulation.homeostat))
+            self._reverseBtn = QPushButton('Reverse 1->2 (R)')
+            self._reverseBtn.clicked.connect(
+                lambda: exp1_reversal_event(self._simulation.homeostat))
+            expLayout.addWidget(self._displaceBtn)
+            expLayout.addWidget(self._reverseBtn)
 
         elif self._exp_num == 2:
             self._reverseBtn = QPushButton('Reverse 2->3 polarity')

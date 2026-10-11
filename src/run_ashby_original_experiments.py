@@ -5,7 +5,7 @@ Run Ashby's original Homeostat experiments from Design for a Brain.
 Usage:
     python run_ashby_original_experiments.py                  # run all 7
     python run_ashby_original_experiments.py --exp 1          # run experiment 1 only
-    python run_ashby_original_experiments.py --exp 1 --seed 42 --ticks 5000
+    python run_ashby_original_experiments.py --exp 1 --seed 42 --ticks 9600
     python run_ashby_original_experiments.py --exp 6 --ticks 8000 --output-dir results/
 
 Each experiment produces:
@@ -27,7 +27,7 @@ if src_dir not in sys.path:
     sys.path.insert(0, src_dir)
 
 from Simulator.AshbyOriginalExperiments import (
-    setup_exp1_basic_ultrastability,
+    setup_exp1_basic_ultrastability, exp1_events, EXP1_END, connection,
     setup_exp2_self_reorganization, exp2_reversal_event,
     setup_exp3_training, make_trainer_callback,
     setup_exp4_alternating_environments, make_alternation_events,
@@ -47,15 +47,35 @@ def _output_path(output_dir, exp_num, seed, ext):
     return os.path.join(output_dir, fname)
 
 
-def run_experiment(exp_num, seed=None, total_ticks=5000, output_dir='.'):
+# Default run length per experiment: long enough for its protocol
+DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: 5000, 4: 5000, 5: 5000, 6: 5000, 7: 5000}
+
+
+def _marker(record, name, hom_fn):
+    '''An event that records hom_fn(hom) under name.  Put it before the events
+    of the same tick, which run in list order.'''
+    return lambda hom: record.__setitem__(name, hom_fn(hom))
+
+
+def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.'):
     '''Run a single experiment and return a summary dict.'''
 
     os.makedirs(output_dir, exist_ok=True)
+    if total_ticks is None:
+        total_ticks = DEFAULT_TICKS[exp_num]
+    protocol = {}            # values recorded at the protocol's events
 
     # ---- Setup ----
     if exp_num == 1:
         hom, seed, meta = setup_exp1_basic_ultrastability(seed)
-        events = []
+        u1, u2 = hom.homeoUnits[:2]
+        c21 = connection(u1, u2)
+        state21 = lambda h: (c21.weight * c21.switch, u1.uniselectorActivationCount)
+        events = exp1_events()
+        reversals = [t for t, f in events if f.__name__ == 'exp1_reversal_event']
+        # markers first: events at the same tick run in list order
+        events = [(t, _marker(protocol, 'R%d' % (i + 1), state21))
+                  for i, t in enumerate(reversals)] + events
         tick_callback = None
     elif exp_num == 2:
         hom, seed, meta = setup_exp2_self_reorganization(seed)
@@ -182,6 +202,18 @@ def run_experiment(exp_num, seed=None, total_ticks=5000, output_dir='.'):
     print('  Total uniselector firings: %d' %
           stability_tracker.total_uniselector_firings)
 
+    if exp_num == 1:
+        # Ashby: each reversal of 1->2 is followed by uniselector changes that
+        # leave 2->1 reversed ("This reversal compensated for the reversal")
+        protocol['end'] = state21(hom)
+        marks = [k for k in ('R1', 'R2', 'end') if k in protocol]
+        for a, b in zip(marks, marks[1:]):
+            (wa, fa), (wb, fb) = protocol[a], protocol[b]
+            print('  %s: 2->1 = %+.3f; %d uniselector change(s) of unit 1 by %s, '
+                  '2->1 = %+.3f (%s)' % (a, wa, fb - fa, b, wb,
+                                        'compensated' if wa * wb < 0 else 'NOT compensated'))
+        summary['protocol'] = protocol
+
     if exp_num == 3:
         print('  Punishments delivered: %d' % len(punishment_log))
         summary['punishments'] = len(punishment_log)
@@ -210,8 +242,8 @@ def main():
                         help='Experiment number (1-7). Omit to run all.')
     parser.add_argument('--seed', type=int, default=None,
                         help='RNG seed (default: random)')
-    parser.add_argument('--ticks', type=int, default=5000,
-                        help='Number of ticks to simulate (default: 5000)')
+    parser.add_argument('--ticks', type=int, default=None,
+                        help="Number of ticks to simulate (default: the experiment's protocol length)")
     parser.add_argument('--output-dir', type=str, default=None,
                         help='Output directory (default: SimulationsData/AshbyExperiments/)')
     args = parser.parse_args()

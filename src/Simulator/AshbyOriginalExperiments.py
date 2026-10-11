@@ -54,6 +54,8 @@ class StabilityTracker:
 
     Call check(tick) every tick.  stability_achieved_at will be set to the
     first tick at which window consecutive non-critical ticks were observed.
+    total_uniselector_firings counts only the firings of units that have an
+    input their uniselector can re-draw; the others change nothing.
     '''
 
     def __init__(self, homeostat, window=200, burn_in=None):
@@ -80,7 +82,7 @@ class StabilityTracker:
         any_critical = False
         for u in self.hom.homeoUnits:
             if u.isActive():
-                if u.uniselectorActivated:
+                if u.uniselectorActivated and has_adaptive_input(u):
                     self.total_uniselector_firings += 1
                 if self._is_critical(u):
                     any_critical = True
@@ -242,9 +244,31 @@ def run_with_events(hom, total_ticks, events=None, tick_callback=None,
 # ---------------------------------------------------------------
 
 def inject_stimulus(hom, unit_index, delta):
-    '''Add a fixed displacement to a unit's criticalDeviation.'''
+    '''The operator displaces a unit's needle by delta (within its range).'''
     unit = hom.homeoUnits[unit_index]
-    unit.criticalDeviation = unit.criticalDeviation + delta
+    unit.criticalDeviation = np.clip(unit.criticalDeviation + delta,
+                                     -unit.maxDeviation, unit.maxDeviation)
+    unit.computeOutput()
+
+
+def has_adaptive_input(unit):
+    '''True if the unit's uniselector has an input to re-draw: an active
+    connection in the 'uniselector' state from an active unit.'''
+    return any(conn.isActive() and conn.state == 'uniselector' and conn.incomingUnit.isActive()
+               for conn in unit.inputConnections)
+
+
+def connection(to_unit, from_unit):
+    '''The connection from_unit -> to_unit (stored on to_unit).'''
+    return find_connection(to_unit, from_unit)[1]
+
+
+def reverse_link(hom, from_index, to_index):
+    '''Reverse the polarity of the connection from_index -> to_index (the
+    operator throwing a hand-controlled commutator).'''
+    units = hom.homeoUnits
+    conn = connection(units[to_index], units[from_index])
+    conn.newWeight(conn.weight * conn.switch * -1)
 
 
 def reverse_connection(unit, conn_index):
@@ -288,6 +312,21 @@ def _make_unit(name, mass=100, viscosity=None, noise=None,
     return unit
 
 
+def _add_unused_slots(hom, n_slots=4):
+    '''Fill the homeostat up to n_slots units with inactive ones (Ashby's
+    machine had four units; the GUI shows four).  The unused units and all
+    their connections, in both directions, are switched off.'''
+    for i in range(len(hom.homeoUnits), n_slots):
+        unit = HomeoUnitNewtonian()
+        unit.name = 'UNUSED_%d' % (i + 1)
+        hom.addFullyConnectedUnit(unit)
+        unit.disactivate()
+    for unit in hom.homeoUnits:
+        for conn in unit.inputConnections:
+            if not unit.isActive() or not conn.incomingUnit.isActive():
+                conn.status = False
+
+
 def _disable_all_cross_connections(hom):
     '''Disable all non-self connections in the homeostat.'''
     for unit in hom.homeoUnits:
@@ -316,36 +355,91 @@ def _enable_connection(from_unit, to_unit, weight=None, state='uniselector',
 
 
 # ===============================================================
-#  EXPERIMENT 1: Basic Ultrastability (DftB 8/3--8/4)
+#  EXPERIMENT 1: Basic Ultrastability (DftB 8/4, Fig. 8/4/1)
 # ===============================================================
 
-def setup_exp1_basic_ultrastability(seed=None):
-    '''4 fully connected units, all under uniselector control.
+# Exp 1 parameters (see setup_exp1_basic_ultrastability)
+EXP1_VISCOSITY = 10
+EXP1_SELF_FEEDBACK_2 = (0.5, 1.0)
+EXP1_HAND_12 = -1.0
+# Protocol (ticks): operator displacements D of unit 2 and reversals R of 1->2
+EXP1_DISPLACEMENT = 5.0
+EXP1_D1, EXP1_R1, EXP1_D2, EXP1_R2, EXP1_D3, EXP1_END = 1000, 1500, 5000, 5500, 9000, 9600
 
-    Start from random parameters; observe that the system finds a stable
-    field.  This replicates the basic Homeostat demonstration from
-    Design for a Brain sec. 8/3--8/4, Figure 8/4/1.
+
+def setup_exp1_basic_ultrastability(seed=None, unused_slots=False):
+    '''Two units, 1 <-> 2, as in Fig. 8/4/1 (DfB 8/4, Ashby's analogue of
+    the crossed-muscle operations of Marina and Sperry).
+
+    "The effect 1 -> 2 was hand-controlled, and 2 -> 1 was
+    uniselector-controlled": 1->2 is set by hand (and reversed by the
+    operator at R1 and R2); 2->1 is re-drawn by unit 1's uniselector.
+    Before R1 the operator's upstroke of 2 moves 1 up, so 2->1 starts
+    positive and 1->2 is negative (a stable, negative loop).  Each reversal
+    makes the loop positive; unit 1's uniselector then changes 2->1 until
+    the system is stable again, with 2->1 reversed: "This reversal
+    compensated for the reversal of 1 -> 2".
+
+    Ashby does not state the self-feedback.  Unit 1 (whose uniselector must
+    act) has none and unit 2 has 0.5-1: then the field is stable if and only
+    if the loop is negative, so every restabilising uniselector value is a
+    compensating one.  With self-feedback on both units most reversals are
+    simply absorbed; with it on unit 1 only, unit 1 settles inside its limits
+    while 2 is pinned and nothing adapts.  Strongly damped units (Ashby's
+    m -> 0, DfB 19/11).  Over 30 seeds the protocol of
+    run_ashby_original_experiments.py gives Ashby's full sequence in 29.
+
+    unused_slots: add inactive units up to four (for the GUI).
 
     Returns: (homeostat, seed, metadata)
     '''
     seed = _seed_rngs(seed)
 
     hom = Homeostat()
-    for i in range(4):
-        unit = HomeoUnitNewtonian()
-        unit.setRandomValues()
-        unit.name = 'Unit_%d' % (i + 1)
-        unit.uniselectorActive = True
-        unit.uniselectorTimeInterval = 100
-        hom.addFullyConnectedUnit(unit)
+    unit1 = _make_unit('Unit_1', viscosity=EXP1_VISCOSITY,
+                       uniselector_active=True, uniselector_interval=100)
+    unit2 = _make_unit('Unit_2', viscosity=EXP1_VISCOSITY, uniselector_active=False,
+                       potentiometer=np.random.uniform(*EXP1_SELF_FEEDBACK_2))
+    for u in [unit1, unit2]:
+        hom.addFullyConnectedUnit(u)
+    if unused_slots:
+        _add_unused_slots(hom)
+
+    _disable_all_cross_connections(hom)
+    unit1.disactivateSelfConn()
+
+    # 2->1: re-drawn by unit 1's uniselector, starting positive
+    conn = _enable_connection(unit2, unit1, state='uniselector')
+    conn.newWeight(abs(conn.weight))
+    # 1->2: hand-controlled, negative
+    _enable_connection(unit1, unit2, weight=EXP1_HAND_12, state='manual')
 
     metadata = {
         'experiment': 'Exp 1: Basic Ultrastability',
-        'reference': 'DftB 8/3--8/4, Fig. 8/4/1',
-        'topology': '4 fully connected units',
-        'description': 'Start from random parameters, observe system finding stable field',
+        'reference': 'DftB 8/4, Fig. 8/4/1',
+        'topology': '2 units: 1->2 hand-controlled, 2->1 on unit 1\'s uniselector',
+        'description': ('Reverse 1->2 by hand (R1, R2); unit 1\'s uniselector '
+                        'reverses 2->1 in compensation'),
     }
     return hom, seed, metadata
+
+
+def exp1_reversal_event(hom):
+    '''Reverse the polarity of the hand-controlled 1->2.'''
+    reverse_link(hom, 0, 1)
+
+
+def exp1_displacement_event(hom):
+    '''The operator displaces unit 2 upward (D in Fig. 8/4/1).'''
+    inject_stimulus(hom, 1, EXP1_DISPLACEMENT)
+
+
+def exp1_events():
+    '''Fig. 8/4/1\'s protocol: D1, R1, D2, R2, D3.  Reversals are 4000 ticks
+    apart: a runaway takes some 1000-1600 ticks to reach the critical level.'''
+    return [(EXP1_D1, exp1_displacement_event), (EXP1_R1, exp1_reversal_event),
+            (EXP1_D2, exp1_displacement_event), (EXP1_R2, exp1_reversal_event),
+            (EXP1_D3, exp1_displacement_event)]
 
 
 # ===============================================================

@@ -5,14 +5,101 @@ Simulator/HomeoExperiments.py (GUI).
 '''
 import unittest
 
-from Simulator.AshbyOriginalExperiments import (setup_exp2_self_reorganization,
+from Simulator.AshbyOriginalExperiments import (setup_exp1_basic_ultrastability, exp1_events,
+                                                EXP1_R1, EXP1_R2, EXP1_END,
+                                                setup_exp2_self_reorganization,
                                                 exp2_reversal_event, run_with_events,
-                                                StabilityTracker)
-from Simulator.HomeoExperiments import initializeAshbyExp2SelfReorganization
+                                                StabilityTracker, inject_stimulus, connection)
+from Simulator.HomeoExperiments import (initializeAshbyExp1BasicUltrastability,
+                                        initializeAshbyExp2SelfReorganization)
 
 
-def connection(to_unit, from_unit):
-    return [c for c in to_unit.inputConnections if c.incomingUnit is from_unit][0]
+def signedWeight(to_unit, from_unit):
+    conn = connection(to_unit, from_unit)
+    return conn.weight * conn.switch
+
+
+def quiet(hom):
+    hom._slowingFactor = 0
+    hom.collectsData = False
+
+
+class AshbyHelpersTest(unittest.TestCase):
+
+    def testUnusedSlotsAreCutOff(self):
+        "The GUI's inactive units have no live connection in either direction"
+        hom = initializeAshbyExp1BasicUltrastability()
+        self.assertEqual(len(hom.homeoUnits), 4)
+        for unit in hom.homeoUnits:
+            for conn in unit.inputConnections:
+                if not (unit.isActive() and conn.incomingUnit.isActive()):
+                    self.assertFalse(conn.isActive())
+
+    def testStimulusStaysInRange(self):
+        hom, seed, meta = setup_exp1_basic_ultrastability(1)
+        unit = hom.homeoUnits[1]
+        inject_stimulus(hom, 1, 3 * unit.maxDeviation)
+        self.assertEqual(unit.criticalDeviation, unit.maxDeviation)
+        self.assertEqual(unit.currentOutput, unit.outputRange['high'])
+
+    def testTrackerCountsOnlyFiringsThatCanChangeSomething(self):
+        "A unit with no uniselector-controlled input fires to no effect"
+        hom, seed, meta = setup_exp1_basic_ultrastability(1)
+        quiet(hom)
+        u1, u2 = hom.homeoUnits[:2]
+        u2.uniselectorActive = True               # it has no input to re-draw
+        tracker = StabilityTracker(hom)
+        run_with_events(hom, 3000, events=[(100, lambda h: inject_stimulus(h, 1, 10))],
+                        tick_callback=lambda h, t: setattr(u2, 'criticalDeviation', u2.maxDeviation),
+                        stability_tracker=tracker)
+        self.assertGreater(u2.uniselectorActivationCount, 0)
+        self.assertEqual(tracker.total_uniselector_firings, u1.uniselectorActivationCount)
+
+
+class AshbyExp1Test(unittest.TestCase):
+    '''DfB 8/4, Fig. 8/4/1: two units, 1->2 hand-controlled, 2->1 on unit 1's
+    uniselector.  Each hand reversal of 1->2 makes the system unstable, and
+    unit 1's uniselector restores stability by reversing 2->1.'''
+
+    def assertAshbyWiring(self, hom):
+        u1, u2 = hom.homeoUnits[:2]
+        self.assertEqual([u.uniselectorActive for u in (u1, u2)], [True, False])
+        self.assertEqual([u.inputConnections[0].isActive() for u in (u1, u2)], [False, True])
+        self.assertEqual(connection(u1, u2).state, 'uniselector')
+        self.assertEqual(connection(u2, u1).state, 'manual')
+        self.assertGreater(signedWeight(u1, u2), 0)
+        self.assertLess(signedWeight(u2, u1), 0)
+
+    def testWiringHeadless(self):
+        hom, seed, meta = setup_exp1_basic_ultrastability(1)
+        self.assertEqual(len(hom.homeoUnits), 2)
+        self.assertAshbyWiring(hom)
+
+    def testWiringGui(self):
+        self.assertAshbyWiring(initializeAshbyExp1BasicUltrastability())
+
+    def testAshbysSequence(self):
+        "Stable, then after each reversal of 1->2 restabilised with 2->1 reversed"
+        for seed in (1, 2, 3):
+            hom, seed, meta = setup_exp1_basic_ultrastability(seed)
+            quiet(hom)
+            u1, u2 = hom.homeoUnits[:2]
+            tracker = StabilityTracker(hom, window=200)
+            atR = []
+
+            def mark(h):
+                atR.append((tracker.currently_stable, signedWeight(u1, u2),
+                            u1.uniselectorActivationCount))
+
+            events = [(EXP1_R1, mark), (EXP1_R2, mark)] + exp1_events()
+            run_with_events(hom, EXP1_END, events=events, stability_tracker=tracker)
+            atR.append((tracker.currently_stable, signedWeight(u1, u2),
+                        u1.uniselectorActivationCount))
+            self.assertEqual(atR[0][2], 0, 'seed %d: the uniselector acted before R1' % seed)
+            for before, after in zip(atR, atR[1:]):
+                self.assertTrue(before[0] and after[0], 'seed %d: not stable' % seed)
+                self.assertGreater(after[2], before[2], 'seed %d: no uniselector change' % seed)
+                self.assertLess(before[1] * after[1], 0, 'seed %d: 2->1 not reversed' % seed)
 
 
 class AshbyExp2Test(unittest.TestCase):
@@ -40,8 +127,7 @@ class AshbyExp2Test(unittest.TestCase):
         "Stable before R, then restabilised with 1->2 reversed by the uniselector"
         for seed in (1, 2, 3):
             hom, seed, meta = setup_exp2_self_reorganization(seed)
-            hom._slowingFactor = 0
-            hom.collectsData = False
+            quiet(hom)
             u1, u2 = hom.homeoUnits[:2]
             conn = connection(u2, u1)
             tracker = StabilityTracker(hom, window=200)
