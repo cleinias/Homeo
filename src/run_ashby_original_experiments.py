@@ -38,6 +38,7 @@ from Simulator.AshbyOriginalExperiments import (
     setup_exp6b_habituation_ultrastable, EXP6_END, EXP6B_END,
     EXP6B_DISPLACEMENT, EXP6B_INTERVAL, EXP6B_FIRST,
     setup_exp7_multistable, make_multistable_callback,
+    exp7_test_events, exp7_pairs_stable, EXP7_TEST, EXP7_END,
     run_with_events, StabilityTracker, AshbyStateLogger,
 )
 from Helpers.HomeostatConditionLogger import (
@@ -52,7 +53,7 @@ def _output_path(output_dir, exp_num, seed, ext):
 
 
 # Default run length per experiment: long enough for its protocol
-DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: 5000, 4: EXP4_END, 5: EXP5_END, 6: EXP6_END, 7: 5000}
+DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: 5000, 4: EXP4_END, 5: EXP5_END, 6: EXP6_END, 7: EXP7_END}
 
 
 def _marker(record, name, hom_fn):
@@ -122,7 +123,9 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
         meta['stimulus_ticks'] = stim_ticks
     elif exp_num == 7:
         hom, seed, meta = setup_exp7_multistable(seed)
-        events = []
+        u1 = hom.homeoUnits[0]
+        events = [(EXP7_TEST, _marker(protocol, 'test', lambda h: u1.uniselectorActivationCount))]
+        events += exp7_test_events()
         tick_callback = make_multistable_callback()
     else:
         print('Unknown experiment number: %d' % exp_num)
@@ -249,6 +252,17 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
         for name, ok in steps.items():
             print('  %s: %s' % (name, ok))
         summary['protocol'] = steps
+
+    if exp_num == 7:
+        # Ashby: unit 1's uniselector changes until 2->1 and 3->1 make both
+        # pairs stable; then 1 interacts with 2 and 3 without loss of stability
+        before = protocol.get('test', u1.uniselectorActivationCount)
+        pairs = exp7_pairs_stable(hom)
+        print('  Uniselector changes of unit 1: %d before the tests, %d during them' %
+              (before, u1.uniselectorActivationCount - before))
+        print('  Pair 1-2 stable: %s; pair 1-3 stable: %s' % pairs)
+        print('  Unit critical during the tests: %s' % critical_in(EXP7_TEST, total_ticks + 1))
+        summary.update(changes=before, pairs_stable=pairs)
 
     if exp_num == 3:
         print('  Punishments delivered: %d' % len(punishment_log))

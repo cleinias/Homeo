@@ -1075,90 +1075,111 @@ class ResponseMeasurer:
 #  EXPERIMENT 7: Multistable System (DftB 16/8)
 # ===============================================================
 
-def setup_exp7_multistable(seed=None):
-    '''3 units: 2<->1<->3 with conditional connectivity.
+# Exp 7 parameters (see setup_exp7_multistable)
+EXP7_VISCOSITY = 10
+EXP7_SELF_FEEDBACK_23 = (0.5, 1.0)
+EXP7_HAND = 0.5
+# Protocol (ticks): adapt, then test displacements of unit 1, +D, -D, +D, -D
+EXP7_TEST, EXP7_TEST_GAP, EXP7_DISPLACEMENT = 20000, 750, 4.0
+EXP7_END = EXP7_TEST + 4 * EXP7_TEST_GAP
 
-    Units 2 and 3 are constrained to move only downward (one-directional).
-    Unit 1 can move freely.  When unit 1 is "above the line" it interacts
-    with unit 2; when "below" it interacts with unit 3.  The uniselector
-    must find values that work for both configurations.
 
-    In practice: connections 2->1 and 3->1 are always present, but
-    the effects of 1 on 2 and 1 on 3 alternate depending on unit 1's sign.
+def setup_exp7_multistable(seed=None, unused_slots=False):
+    '''3 units, 2 <-> 1 <-> 3, with bars that stop 2 and 3 from moving up.
+
+    "To separate the effects of 2 and 3 on 1, bars were placed across the
+    potentiometer dishes of 2 and 3 so that they could move only in the
+    direction recorded as downwards ... If 1 was above the central line ...
+    1 and 2 interacted, and 3 was independent; but if 1 was below the
+    central line, then 1 and 3 interacted, and 2 was independent.  1 was set
+    to act on 2 negatively and on 3 positively, while the effects 2 -> 1 and
+    3 -> 1 were uniselector-controlled" (DfB 16/8).
+
+    So 1->2 (-0.5) and 1->3 (+0.5) are set by hand; 2->1 and 3->1 are
+    re-drawn by unit 1's uniselector, every step changing both, so that a
+    step that cures one pair can spoil the other.  The bars are a tick
+    callback (make_multistable_callback); the position-dependent coupling
+    comes out of them, and no connection is switched.  There is no 2-3 link.
+    Unit 1 (whose uniselector must act) has no self-feedback, units 2 and 3
+    have 0.5-1 (they must return to the bar).  Strongly damped units; 2 and
+    3 start at or below the bar.  The search stops only at values stable for
+    both pairs, which in the m -> 0 limit means 2->1 > 0 and 3->1 < 0: a
+    quarter of the uniselector's draws.  Over 30 seeds, with test
+    displacements of unit 1 after 20000 ticks, Ashby's result appears in 22;
+    in 6 more the first draw is already stable for both pairs.
+
+    unused_slots: add an inactive unit 4 (for the GUI).
 
     Returns: (homeostat, seed, metadata)
     '''
     seed = _seed_rngs(seed)
 
     hom = Homeostat()
-
-    unit1 = _make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _make_unit('Unit_3', uniselector_active=True, uniselector_interval=100)
-
+    unit1 = _make_unit('Unit_1', viscosity=EXP7_VISCOSITY,
+                       uniselector_active=True, uniselector_interval=100)
+    unit2 = _make_unit('Unit_2', viscosity=EXP7_VISCOSITY, uniselector_active=False,
+                       potentiometer=np.random.uniform(*EXP7_SELF_FEEDBACK_23))
+    unit3 = _make_unit('Unit_3', viscosity=EXP7_VISCOSITY, uniselector_active=False,
+                       potentiometer=np.random.uniform(*EXP7_SELF_FEEDBACK_23))
     for u in [unit1, unit2, unit3]:
         hom.addFullyConnectedUnit(u)
+    if unused_slots:
+        _add_unused_slots(hom)
 
-    # 2->1: uniselector (keep random weight)
+    _disable_all_cross_connections(hom)
+    unit1.disactivateSelfConn()
+    # 1->2 negative and 1->3 positive, by hand
+    _enable_connection(unit1, unit2, weight=-EXP7_HAND, state='manual')
+    _enable_connection(unit1, unit3, weight=+EXP7_HAND, state='manual')
+    # 2->1 and 3->1: unit 1's uniselector (keep random weights)
     _enable_connection(unit2, unit1, state='uniselector')
-
-    # 3->1: uniselector (keep random weight)
     _enable_connection(unit3, unit1, state='uniselector')
-
-    # 1->2 and 1->3: uniselector-controlled (will be toggled by callback)
-    _enable_connection(unit1, unit2, state='uniselector')
-    _enable_connection(unit1, unit3, state='uniselector')
-
-    # Disable direct 2<->3 connections
-    for conn in unit2.inputConnections:
-        if conn.incomingUnit is unit3:
-            conn.status = False
-    for conn in unit3.inputConnections:
-        if conn.incomingUnit is unit2:
-            conn.status = False
+    # 2 and 3 start at or below their bars
+    for u in [unit2, unit3]:
+        u.criticalDeviation = -abs(u.criticalDeviation)
+        u.computeOutput()
 
     metadata = {
         'experiment': 'Exp 7: Multistable System',
         'reference': 'DftB 16/8, Fig. 16/8/1',
-        'topology': '3 units: 2<->1<->3, conditional connectivity',
-        'description': ('Unit 1 interacts with 2 or 3 depending on its position. '
-                         'System must find parameters stable for both pairs.'),
+        'topology': ('3 units: 2<->1<->3; 1->2 (-) and 1->3 (+) by hand, 2->1 and 3->1 '
+                     'on unit 1\'s uniselector; bars stop 2 and 3 above the centre'),
+        'description': ('Unit 1 interacts with 2 above the centre and with 3 below; '
+                        'the uniselector must find values stable for both pairs.'),
     }
     return hom, seed, metadata
 
 
 def make_multistable_callback():
-    '''Return a tick_callback implementing conditional connectivity for Exp 7.
+    '''Return a tick_callback implementing Ashby's bars for Exp 7.
 
-    When unit 1's deviation > 0 ("above the line"): 1<->2 active, 1<->3 inactive.
-    When unit 1's deviation <= 0 ("below the line"): 1<->3 active, 1<->2 inactive.
-
-    Also toggles the reverse connections (2->1, 3->1) so each subsystem
-    is fully connected only when active.  This forces the uniselector to
-    find parameters stable for both subsystem configurations.
+    Units 2 and 3 (indices 1 and 2) can move only downwards from the centre:
+    a needle pushed up stays at the bar (deviation 0, so no output), and its
+    upward velocity is stopped.  It runs before the units update, so it
+    holds the previous tick's result at the bar.
     '''
 
-    def callback(hom, tick):
-        unit1 = hom.homeoUnits[0]
-        unit2 = hom.homeoUnits[1]
-        unit3 = hom.homeoUnits[2]
+    def bars(hom, tick):
+        for unit in hom.homeoUnits[1:3]:
+            if unit.criticalDeviation > 0:
+                unit.criticalDeviation = 0.0
+                unit.currentVelocity = min(unit.currentVelocity, 0.0)
+                unit.computeOutput()
 
-        above = unit1.criticalDeviation > 0
+    return bars
 
-        # Toggle 1->2 and 2->1 (active when above)
-        for conn in unit2.inputConnections:
-            if conn.incomingUnit is unit1:
-                conn.status = above
-        for conn in unit1.inputConnections:
-            if conn.incomingUnit is unit2:
-                conn.status = above
 
-        # Toggle 1->3 and 3->1 (active when below)
-        for conn in unit3.inputConnections:
-            if conn.incomingUnit is unit1:
-                conn.status = not above
-        for conn in unit1.inputConnections:
-            if conn.incomingUnit is unit3:
-                conn.status = not above
+def exp7_test_events():
+    '''The operator's test displacements of unit 1 after the adaptation:
+    up (1 interacts with 2), down (with 3), up, down.'''
+    return [(EXP7_TEST + k * EXP7_TEST_GAP,
+             lambda hom, d=EXP7_DISPLACEMENT * (-1) ** k: inject_stimulus(hom, 0, d))
+            for k in range(4)]
 
-    return callback
+
+def exp7_pairs_stable(hom):
+    '''Whether the pairs (1, 2) and (1, 3) are each stable, in Ashby's
+    m -> 0 limit.'''
+    unit1, unit2, unit3 = hom.homeoUnits[:3]
+    return (ashby_stable(ashby_matrix([unit1, unit2])),
+            ashby_stable(ashby_matrix([unit1, unit3])))

@@ -20,13 +20,17 @@ from Simulator.AshbyOriginalExperiments import (setup_exp1_basic_ultrastability,
                                                 make_stimulus_events, ResponseMeasurer, EXP6_END,
                                                 EXP6B_DISPLACEMENT, EXP6B_INTERVAL, EXP6B_FIRST,
                                                 EXP6B_END,
+                                                setup_exp7_multistable, make_multistable_callback,
+                                                exp7_test_events, exp7_pairs_stable, EXP7_TEST,
+                                                EXP7_END,
                                                 exp2_reversal_event, run_with_events,
                                                 StabilityTracker, inject_stimulus, connection)
 from Simulator.HomeoExperiments import (initializeAshbyExp1BasicUltrastability,
                                         initializeAshbyExp2SelfReorganization,
                                         initializeAshbyExp4AlternatingEnvironments,
                                         initializeAshbyExp5Constraint,
-                                        initializeAshbyExp6Habituation)
+                                        initializeAshbyExp6Habituation,
+                                        initializeAshbyExp7Multistable)
 
 
 def signedWeight(to_unit, from_unit):
@@ -320,3 +324,52 @@ class AshbyExp6Test(unittest.TestCase):
                                       settle_first=EXP6B_FIRST)
         m = self.runStimuli(hom, events, EXP6B_END)
         self.assertTrue(m.habituated(), '%s, %s' % (m.changes, m.critical))
+
+
+class AshbyExp7Test(unittest.TestCase):
+    '''DfB 16/8, Fig. 16/8/1: 2 <-> 1 <-> 3 with bars that stop 2 and 3 above the
+    centre; unit 1's uniselector changes 2->1 and 3->1 until both pairs are
+    stable, and then keeps them.'''
+
+    def assertAshbyWiring(self, hom):
+        u1, u2, u3 = hom.homeoUnits[:3]
+        self.assertEqual([u.uniselectorActive for u in (u1, u2, u3)], [True, False, False])
+        self.assertEqual([u.inputConnections[0].isActive() for u in (u1, u2, u3)], [False, True, True])
+        self.assertEqual([connection(u1, u2).state, connection(u1, u3).state], ['uniselector'] * 2)
+        self.assertEqual([connection(u2, u1).state, connection(u3, u1).state], ['manual'] * 2)
+        self.assertLess(signedWeight(u2, u1), 0)
+        self.assertGreater(signedWeight(u3, u1), 0)
+        self.assertFalse(connection(u2, u3).isActive() or connection(u3, u2).isActive())
+
+    def testWiringHeadless(self):
+        hom, seed, meta = setup_exp7_multistable(1)
+        self.assertEqual(len(hom.homeoUnits), 3)
+        self.assertAshbyWiring(hom)
+
+    def testWiringGui(self):
+        self.assertAshbyWiring(initializeAshbyExp7Multistable())
+
+    def testBars(self):
+        "Units 2 and 3 cannot move above the centre; unit 1 can"
+        hom, seed, meta = setup_exp7_multistable(1)
+        for u in hom.homeoUnits:
+            u.criticalDeviation, u.currentVelocity = 3.0, 0.5
+        make_multistable_callback()(hom, 0)
+        u1, u2, u3 = hom.homeoUnits[:3]
+        self.assertEqual(u1.criticalDeviation, 3.0)
+        for u in (u2, u3):
+            self.assertEqual((u.criticalDeviation, u.currentVelocity, u.currentOutput), (0, 0, 0))
+
+    def testAshbysSequence(self):
+        "Changes stop at values stable for both pairs, and the tests cause no more"
+        for seed in (1, 3):
+            hom, seed, meta = setup_exp7_multistable(seed)
+            quiet(hom)
+            u1 = hom.homeoUnits[0]
+            count = []
+            events = [(EXP7_TEST, lambda h: count.append(u1.uniselectorActivationCount))]
+            run_with_events(hom, EXP7_END, events=events + exp7_test_events(),
+                            tick_callback=make_multistable_callback())
+            self.assertGreater(count[0], 0, 'seed %d: unit 1 never changed' % seed)
+            self.assertEqual(u1.uniselectorActivationCount, count[0], 'seed %d: changes in the tests' % seed)
+            self.assertEqual(exp7_pairs_stable(hom), (True, True))

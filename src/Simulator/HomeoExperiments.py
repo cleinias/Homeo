@@ -4162,41 +4162,12 @@ def initializeAshbyExp6Habituation(**params):
 def initializeAshbyExp7Multistable(**params):
     '''Exp 7: Multistable System (DftB 16/8).
 
-    3 units: 2<->1<->3, conditional connectivity.
-    Unit 1 interacts with 2 when above zero, with 3 when below.
-    2<->3 connections disabled. Connectivity callback installed by GUI.
-    4th unit is inactive.
+    3 units, 2 <-> 1 <-> 3; 1->2 and 1->3 by hand, 2->1 and 3->1 on unit 1's
+    uniselector; bars stop 2 and 3 above the centre (callback installed by
+    the GUI).  Same setup as the headless
+    AshbyOriginalExperiments.setup_exp7_multistable, with unit 4 inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = _ashby_make_unit('Unit_3', uniselector_active=True, uniselector_interval=100)
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit4.disactivate()
-
-    # 2->1: uniselector
-    _ashby_enable_connection(unit2, unit1, state='uniselector')
-    # 3->1: uniselector
-    _ashby_enable_connection(unit3, unit1, state='uniselector')
-    # 1->2: uniselector (toggled by callback)
-    _ashby_enable_connection(unit1, unit2, state='uniselector')
-    # 1->3: uniselector (toggled by callback)
-    _ashby_enable_connection(unit1, unit3, state='uniselector')
-
-    # Disable direct 2<->3 connections
-    for conn in unit2.inputConnections:
-        if conn.incomingUnit is unit3:
-            conn.status = False
-    for conn in unit3.inputConnections:
-        if conn.incomingUnit is unit2:
-            conn.status = False
-
+    from Simulator.AshbyOriginalExperiments import setup_exp7_multistable
+    hom, seed, meta = setup_exp7_multistable(unused_slots=True)
     return hom
 

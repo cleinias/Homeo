@@ -205,25 +205,23 @@ small response, there is nothing to habituate.</p>
 
     7: '''<h3>Exp 7: Multistable System</h3>
 <p><b>Reference:</b> DftB 16/8, Fig. 16/8/1</p>
-<p><b>Ashby's protocol:</b> Three units with conditional connectivity.
-When unit 1 is "above the line" (positive deviation), it interacts
-with unit 2; when "below" (negative), with unit 3. Connections 2&harr;3
-are disabled. The system must find parameters stable for <i>both</i>
-subsystem configurations.</p>
+<p><b>Ashby's protocol:</b> Three units, 2 &harr; 1 &harr; 3, with no
+link between 2 and 3. Bars across the potentiometer dishes of 2 and 3 let
+them move only downwards from the centre. 1 acts on 2 negatively and on 3
+positively, by hand; 2&rarr;1 and 3&rarr;1 are under the control of unit 1's
+uniselector. When 1 is above the centre it pushes 2 down, and 1 and 2
+interact while 3 rests at its bar; below the centre, 1 and 3 interact.
+Every step of the uniselector changes both 2&rarr;1 and 3&rarr;1, so a step
+that makes one pair stable can make the other unstable.</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b> and observe.</li>
-<li>Connectivity toggling is automatic (handled per tick).</li>
+<li>Press <b>Start</b> and watch unit 1's uniselector (no action needed).</li>
+<li>When it has stopped changing, test the result by displacing unit 1
+up and down (unit 1's slider).</li>
 </ol>
-<p><b>What to observe:</b> Watch unit 1's trace in the strip chart.
-When it is positive, units 1 and 2 interact; when negative, units 1
-and 3 interact. You can verify in the detail dialog that connections
-toggle on and off. The system must find parameters that work for
-both configurations.</p>
-<p><b>Expected outcome:</b> The system eventually finds a stable
-multistable configuration. This may take longer than single-mode
-stability because the uniselector must satisfy two sets of constraints
-simultaneously.</p>''',
+<p><b>Expected outcome:</b> the uniselector stops only at values that make
+both pairs stable; then "1 can interact repeatedly with both 2 and 3 without
+loss of stability". Ashby's run took four changes.</p>''',
 }
 
 
@@ -457,11 +455,10 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
             expLayout.addWidget(self._stimulusLabel)
 
         elif self._exp_num == 7:
-            expLayout.addWidget(QLabel('Connectivity toggling is automatic.\n'
-                                       'Watch connections change in the detail dialog.'))
-            # Install multistable callback
-            ms_cb = make_multistable_callback()
-            self._simulation.tick_callbacks.append(ms_cb)
+            expLayout.addWidget(QLabel('Bars stop units 2 and 3 above the centre.\n'
+                                       'No user action needed.'))
+            # Install the bars
+            self._simulation.tick_callbacks.append(make_multistable_callback())
 
         # Separator before "Change Experiment" button
         sep2 = QFrame()
