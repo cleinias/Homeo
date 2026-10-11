@@ -164,8 +164,10 @@ class HomeoUnit(object):
     
     @classmethod
     def uniselectorTimeIntervalFromWeight(cls,uniselParam):
-        '''Convert a GA parameter in the [0,1) range to a valid uniselectorInterval value'''
-        return uniselParam * HomeoUnit.DefaultParameters['maxUniselectorTimeInterval'] 
+        '''Convert a GA parameter in the [0,1) range to a valid uniselectorInterval
+        value: a whole number of ticks, as setUniselectorTimeInterval stores it
+        (so that GenomeDecoder reports the interval the unit uses)'''
+        return abs(int(uniselParam * HomeoUnit.DefaultParameters['maxUniselectorTimeInterval']))
     
     @classmethod
     def viscosityfromWeight(cls,viscParam):

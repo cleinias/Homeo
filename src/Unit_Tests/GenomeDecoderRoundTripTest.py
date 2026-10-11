@@ -1,9 +1,11 @@
 '''
-GenomeDecoder against the weight-free GA setups it decodes.
+GenomeDecoder against the GA setups it decodes.
 
 Each setup builds a homeostat from a genome; decoding the same genome must
-give the masses, viscosities, OU timescales, maxDeviations and dt_fast that
-the setup gave its evolved units.
+give the body parameters the setup gave its evolved units: masses,
+viscosities, OU timescales, maxDeviations and dt_fast for the weight-free
+layouts; masses, viscosities, uniselector intervals and maxDeviations for
+the classic one.
 '''
 import os
 import shutil
@@ -24,8 +26,13 @@ SETUPS = ['initializeBraiten2_2_Full_GA_continuous_weightfree',
           'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
           'initializeBraiten3c_GA_continuous_weightfree_fixed']
 
+CLASSIC_SETUPS = ['initializeBraiten2_2_Full_GA',
+                  'initializeBraiten2_2_Full_GA_phototaxis',
+                  'initializeBraiten2_2_Full_GA_scototaxis']
+CLASSIC_GENOME_SIZE = 40            # 4 units x 4 body parameters + 4 x 6 weights
 
-class WeightfreeGenomeDecoderTest(unittest.TestCase):
+
+class GenomeDecoderRoundTripTest(unittest.TestCase):
 
     def setUp(self):
         self.dataDir = tempfile.mkdtemp()
@@ -56,3 +63,22 @@ class WeightfreeGenomeDecoderTest(unittest.TestCase):
                 np.testing.assert_allclose(decoded[i * perUnit:(i + 1) * perUnit], actual,
                                            rtol=1e-12, err_msg='%s, unit %s' % (name, unit.name))
             self.assertTrue(all(1 <= unit.mass <= 10 for unit in hom.homeoUnits[:evolved]))
+
+    def testClassicDecoderMatchesTheSetups(self):
+        "The uniselector interval is decoded as the whole number of ticks the unit uses"
+        for name in CLASSIC_SETUPS:
+            setup = getattr(HomeoExperiments, name)
+            genome = np.random.uniform(0, 1, CLASSIC_GENOME_SIZE)
+            backend = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera')
+            transducers = HomeoExperiments.basicBraiten2Tranducers(
+                backend, 'kheperaBraitenberg2_HOMEO_World')
+            hom = setup(genome, backendSimulator=backend, dataDir=self.dataDir,
+                        transducers=transducers)
+            evolved = setup.noEvolvedUnits
+            decoded = genomeDecoder(len(hom.homeoUnits), genome, noEvolvedUnits=evolved,
+                                    layout='classic')
+            for i, unit in enumerate(hom.homeoUnits[:evolved]):
+                actual = [unit.mass, unit.viscosity, unit.uniselectorTimeInterval, unit.maxDeviation]
+                np.testing.assert_allclose(decoded[i * 4:(i + 1) * 4], actual,
+                                           rtol=1e-12, err_msg='%s, unit %s' % (name, unit.name))
+                self.assertIsInstance(decoded[i * 4 + 2], int)
