@@ -2645,7 +2645,7 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     evolved_units = [leftMotor, rightMotor, leftEye, rightEye]
     for i, unit in enumerate(evolved_units):
         base = i * genes_per_unit
-        unit.mass = 1.0 + homeoGenome[base + 0] * 9.0       # [1, 10] — responsive range
+        unit.mass = HomeoUnit.massFromWeightWeightfree(homeoGenome[base + 0])   # [1, 10]
         unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
         # gene 2 = tau_a (applied after uniselector swap below)
         unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])
@@ -2897,7 +2897,7 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
     evolved_units = [leftMotor, rightMotor]
     for i, unit in enumerate(evolved_units):
         base = i * genes_per_unit
-        unit.mass = 1.0 + homeoGenome[base + 0] * 9.0       # [1, 10]
+        unit.mass = HomeoUnit.massFromWeightWeightfree(homeoGenome[base + 0])   # [1, 10]
         unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
         # gene 2 = tau_a (applied after uniselector swap below)
         unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])
@@ -3814,7 +3814,7 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
     evolved_units = [leftMotor, rightMotor]
     for i, unit in enumerate(evolved_units):
         base = i * genes_per_unit
-        unit.mass = 1.0 + homeoGenome[base + 0] * 9.0       # [1, 10]
+        unit.mass = HomeoUnit.massFromWeightWeightfree(homeoGenome[base + 0])   # [1, 10]
         unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
         # gene 2 = tau_a (applied after uniselector swap below)
         unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])

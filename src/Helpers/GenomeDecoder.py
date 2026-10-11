@@ -148,13 +148,14 @@ def _decode_classic(noUnits, genome, noEvolvedUnits):
 def _decode_weightfree(genome, noEvolvedUnits, has_dt_fast=True):
     """Weight-free layout: body params only, no connection weights.
 
-    Per-unit gene order: [mass, viscosity, tau_a, maxDeviation, (dt_fast)].
+    Per-unit gene order: [mass, viscosity, tau_a, maxDeviation, (dt_fast)],
+    decoded as the weight-free setups in Simulator/HomeoExperiments.py do.
     """
     decodedValues = []
     genes_per_unit = 5 if has_dt_fast else 4
     for unit in range(noEvolvedUnits):
         base = unit * genes_per_unit
-        decodedValues.append(HomeoUnit.massFromWeight(genome[base + 0]))
+        decodedValues.append(HomeoUnit.massFromWeightWeightfree(genome[base + 0]))
         decodedValues.append(HomeoUnit.viscosityfromWeight(genome[base + 1]))
         decodedValues.append(HomeoUnit.tauAFromWeight(genome[base + 2]))
         decodedValues.append(HomeoUnit.maxDeviationFromWeight(genome[base + 3]))

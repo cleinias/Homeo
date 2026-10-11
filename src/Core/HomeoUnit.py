@@ -182,6 +182,18 @@ class HomeoUnit(object):
         '''Convert a GA parameter in the [0,1) range to a valid mass value'''
         return ((HomeoUnit.DefaultParameters['maxMass']-HomeoUnit.DefaultParameters['minMass']) * massParam) + HomeoUnit.DefaultParameters['minMass']
 
+    # Mass range of the weight-free GA experiments: the responsive range of
+    # the Newtonian units, not massFromWeight's [minMass, maxMass]
+    weightfreeMassRange = (1.0, 10.0)
+
+    @classmethod
+    def massFromWeightWeightfree(cls, massParam):
+        '''Convert a GA parameter in the [0,1) range to the mass of a unit of
+        the weight-free GA experiments, in weightfreeMassRange.  The setups
+        and GenomeDecoder both use it.'''
+        low, high = cls.weightfreeMassRange
+        return low + massParam * (high - low)
+
     @classmethod
     def tauAFromWeight(cls, param):
         '''Map a GA gene in [0, 1) to tau_a in [100, 10000] logarithmically.
