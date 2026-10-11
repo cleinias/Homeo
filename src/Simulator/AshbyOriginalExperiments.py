@@ -468,6 +468,8 @@ def exp1_events():
 # Exp 2 parameters (see setup_exp2_self_reorganization)
 EXP2_VISCOSITY = 10
 EXP2_SELF_FEEDBACK = (0.5, 1.0)
+# Protocol (ticks): reversal R of 2->3, end of the run
+EXP2_R, EXP2_END = 3000, 12000
 
 
 def setup_exp2_self_reorganization(seed=None):

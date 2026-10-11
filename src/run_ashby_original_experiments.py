@@ -28,7 +28,7 @@ if src_dir not in sys.path:
 
 from Simulator.AshbyOriginalExperiments import (
     setup_exp1_basic_ultrastability, exp1_events, EXP1_END, connection,
-    setup_exp2_self_reorganization, exp2_reversal_event,
+    setup_exp2_self_reorganization, exp2_reversal_event, EXP2_R, EXP2_END,
     setup_exp3_training, make_trainer_callback, EXP3_END,
     setup_exp4_alternating_environments, make_alternation_events,
     exp4_stable_for_both, EXP4_END,
@@ -53,7 +53,7 @@ def _output_path(output_dir, exp_num, seed, ext):
 
 
 # Default run length per experiment: long enough for its protocol
-DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: EXP3_END, 4: EXP4_END, 5: EXP5_END, 6: EXP6_END, 7: EXP7_END}
+DEFAULT_TICKS = {1: EXP1_END, 2: EXP2_END, 3: EXP3_END, 4: EXP4_END, 5: EXP5_END, 6: EXP6_END, 7: EXP7_END}
 
 
 def _marker(record, name, hom_fn):
@@ -85,10 +85,12 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
         tick_callback = None
     elif exp_num == 2:
         hom, seed, meta = setup_exp2_self_reorganization(seed)
-        reversal_tick = total_ticks // 2
-        events = [(reversal_tick, exp2_reversal_event)]
+        u1, u2 = hom.homeoUnits[:2]
+        c12 = connection(u2, u1)
+        state12 = lambda h: (c12.weight * c12.switch, u2.uniselectorActivationCount)
+        events = [(EXP2_R, _marker(protocol, 'R', state12)), (EXP2_R, exp2_reversal_event)]
         tick_callback = None
-        meta['reversal_tick'] = reversal_tick
+        meta['reversal_tick'] = EXP2_R
     elif exp_num == 3:
         hom, seed, meta = setup_exp3_training(seed)
         events = []
@@ -225,6 +227,14 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
             print('  %s: 2->1 = %+.3f; %d uniselector change(s) of unit 1 by %s, '
                   '2->1 = %+.3f (%s)' % (a, wa, fb - fa, b, wb,
                                         'compensated' if wa * wb < 0 else 'NOT compensated'))
+        summary['protocol'] = protocol
+
+    if exp_num == 2 and 'R' in protocol:
+        # Ashby: after R, unit 2's uniselector reverses 1->2 ("the second
+        # reversal is compensatory to the first")
+        (w0, f0), (w1, f1) = protocol['R'], state12(hom)
+        print('  1->2 at R: %+.3f; %d uniselector change(s) of unit 2 after R; at the end '
+              '%+.3f (%s)' % (w0, f1 - f0, w1, 'compensated' if w0 * w1 < 0 else 'NOT compensated'))
         summary['protocol'] = protocol
 
     if exp_num == 4:
