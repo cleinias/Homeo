@@ -8,10 +8,15 @@ import unittest
 from Simulator.AshbyOriginalExperiments import (setup_exp1_basic_ultrastability, exp1_events,
                                                 EXP1_R1, EXP1_R2, EXP1_END,
                                                 setup_exp2_self_reorganization,
+                                                setup_exp4_alternating_environments,
+                                                make_alternation_events, exp4_stable_for_both,
+                                                exp4_reversal_event, EXP4_END,
+                                                ashby_matrix, ashby_stable,
                                                 exp2_reversal_event, run_with_events,
                                                 StabilityTracker, inject_stimulus, connection)
 from Simulator.HomeoExperiments import (initializeAshbyExp1BasicUltrastability,
-                                        initializeAshbyExp2SelfReorganization)
+                                        initializeAshbyExp2SelfReorganization,
+                                        initializeAshbyExp4AlternatingEnvironments)
 
 
 def signedWeight(to_unit, from_unit):
@@ -145,4 +150,47 @@ class AshbyExp2Test(unittest.TestCase):
                                'seed %d: the uniselector never acted after R' % seed)
             self.assertLess(conn.weight * conn.switch * atR['weight'], 0,
                             'seed %d: 1->2 was not reversed' % seed)
+            self.assertTrue(tracker.currently_stable, 'seed %d: not stable at the end' % seed)
+
+
+class AshbyExp4Test(unittest.TestCase):
+    '''DfB 8/10, Fig. 8/10/1: the commutator H (1->2) is reversed from time to
+    time; unit 1's uniselector changes 2->1 until it finds a field stable for
+    both positions of H, which is then kept through later reversals.'''
+
+    def assertAshbyWiring(self, hom):
+        u1, u2 = hom.homeoUnits[:2]
+        self.assertEqual([u.uniselectorActive for u in (u1, u2)], [True, False])
+        self.assertEqual([u.inputConnections[0].isActive() for u in (u1, u2)], [True, True])
+        self.assertEqual(connection(u1, u2).state, 'uniselector')
+        self.assertEqual(connection(u2, u1).state, 'manual')
+        # Ashby's start: stable for this position of H, unstable for the other
+        self.assertTrue(ashby_stable(ashby_matrix([u1, u2])))
+        exp4_reversal_event(hom)
+        self.assertFalse(ashby_stable(ashby_matrix([u1, u2])))
+
+    def testWiringHeadless(self):
+        hom, seed, meta = setup_exp4_alternating_environments(1)
+        self.assertEqual(len(hom.homeoUnits), 2)
+        self.assertAshbyWiring(hom)
+
+    def testWiringGui(self):
+        self.assertAshbyWiring(initializeAshbyExp4AlternatingEnvironments())
+
+    def testAshbysSequence(self):
+        "Changes after the first reversals, then a field stable for both H, kept"
+        for seed in (1, 2):
+            hom, seed, meta = setup_exp4_alternating_environments(seed)
+            quiet(hom)
+            u1 = hom.homeoUnits[0]
+            events = make_alternation_events()
+            counts = []
+            marks = [(t, lambda h: counts.append(u1.uniselectorActivationCount)) for t, f in events]
+            tracker = StabilityTracker(hom, window=200)
+            run_with_events(hom, EXP4_END, events=marks + events, stability_tracker=tracker)
+            counts.append(u1.uniselectorActivationCount)
+            self.assertEqual(counts[0], 0, 'seed %d: changes before the first reversal' % seed)
+            self.assertGreater(counts[1], counts[0], 'seed %d: no change after R1' % seed)
+            self.assertEqual(counts[-1], counts[-4], 'seed %d: changes in the last 3 reversals' % seed)
+            self.assertTrue(exp4_stable_for_both(hom), 'seed %d: not stable for both H' % seed)
             self.assertTrue(tracker.currently_stable, 'seed %d: not stable at the end' % seed)

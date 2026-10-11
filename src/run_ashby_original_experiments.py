@@ -31,6 +31,7 @@ from Simulator.AshbyOriginalExperiments import (
     setup_exp2_self_reorganization, exp2_reversal_event,
     setup_exp3_training, make_trainer_callback,
     setup_exp4_alternating_environments, make_alternation_events,
+    exp4_stable_for_both, EXP4_END,
     setup_exp5_constraint, make_constraint_callback,
     setup_exp6_habituation, make_stimulus_events, ResponseMeasurer,
     setup_exp7_multistable, make_multistable_callback,
@@ -48,7 +49,7 @@ def _output_path(output_dir, exp_num, seed, ext):
 
 
 # Default run length per experiment: long enough for its protocol
-DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: 5000, 4: 5000, 5: 5000, 6: 5000, 7: 5000}
+DEFAULT_TICKS = {1: EXP1_END, 2: 5000, 3: 5000, 4: EXP4_END, 5: 5000, 6: 5000, 7: 5000}
 
 
 def _marker(record, name, hom_fn):
@@ -90,10 +91,13 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.'):
         tick_callback = trainer
     elif exp_num == 4:
         hom, seed, meta = setup_exp4_alternating_environments(seed)
-        interval = max(total_ticks // 10, 200)
-        events = make_alternation_events(interval=interval, n_reversals=8)
+        u1 = hom.homeoUnits[0]
+        events = make_alternation_events()
+        reversals = [t for t, f in events]
+        events = [(t, _marker(protocol, t, lambda h: u1.uniselectorActivationCount))
+                  for t in reversals] + events
         tick_callback = None
-        meta['alternation_interval'] = interval
+        meta['reversal_ticks'] = reversals
     elif exp_num == 5:
         hom, seed, meta = setup_exp5_constraint(seed)
         release_tick = total_ticks * 2 // 3
@@ -213,6 +217,18 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.'):
                   '2->1 = %+.3f (%s)' % (a, wa, fb - fa, b, wb,
                                         'compensated' if wa * wb < 0 else 'NOT compensated'))
         summary['protocol'] = protocol
+
+    if exp_num == 4:
+        # Ashby: changes after the first reversals, then a field stable for
+        # both positions of H, kept through the later reversals
+        counts = [protocol[t] for t in reversals if t in protocol] + [u1.uniselectorActivationCount]
+        changes = [b - a for a, b in zip(counts, counts[1:])]
+        print('  Uniselector changes of unit 1 after each reversal of H: %s' % changes)
+        quiet = len(changes) - max([i + 1 for i, n in enumerate(changes) if n], default=0)
+        print('  Reversals with no change since the last change: %d' % quiet)
+        both = exp4_stable_for_both(hom)
+        print('  Final field stable for both positions of H: %s' % both)
+        summary.update(changes_per_reversal=changes, quiet_reversals=quiet, stable_for_both=both)
 
     if exp_num == 3:
         print('  Punishments delivered: %d' % len(punishment_log))

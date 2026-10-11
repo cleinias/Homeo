@@ -4123,38 +4123,13 @@ def initializeAshbyExp3Training(**params):
 def initializeAshbyExp4AlternatingEnvironments(**params):
     '''Exp 4: Alternating Environments (DftB 8/10).
 
-    2 fully connected units.
-    Unit1->Unit2: hand-controlled (commutator H, toggled by user).
-    Unit2->Unit1: uniselector-controlled.
-    Self-connections: manual.
-    Units 3 and 4 are inactive.
+    Two units: 1->2 is the commutator H (toggled by the user), 2->1 is on
+    unit 1's uniselector.  Same setup as the headless
+    AshbyOriginalExperiments.setup_exp4_alternating_environments, with
+    units 3 and 4 inactive.
     '''
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _ashby_make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-    unit3 = HomeoUnitNewtonian()
-    unit3.name = 'UNUSED_3'
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED_4'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit3.disactivate()
-    unit4.disactivate()
-
-    # Unit 2 receives from Unit 1: hand-controlled (commutator H)
-    for conn in unit2.inputConnections:
-        if conn.incomingUnit is unit1:
-            conn.state = 'manual'
-
-    # Unit 1 receives from Unit 2: uniselector-controlled
-    for conn in unit1.inputConnections:
-        if conn.incomingUnit is unit2:
-            conn.state = 'uniselector'
-
+    from Simulator.AshbyOriginalExperiments import setup_exp4_alternating_environments
+    hom, seed, meta = setup_exp4_alternating_environments(unused_slots=True)
     return hom
 
 

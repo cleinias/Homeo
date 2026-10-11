@@ -143,22 +143,23 @@ and punishments cease.</p>
 
     4: '''<h3>Exp 4: Alternating Environments</h3>
 <p><b>Reference:</b> DftB 8/10, Fig. 8/10/1</p>
-<p><b>Ashby's protocol:</b> Two units are connected. One connection
-(the "commutator H") is periodically reversed by the experimenter,
-simulating two alternating environments. The system must find parameter
-values that are stable for <i>both</i> polarities of H.</p>
+<p><b>Ashby's protocol:</b> The Homeostat is "partly under uniselector-,
+and partly under hand-, control". Two units: 1&rarr;2 is a hand-controlled
+commutator H; 2&rarr;1 is under the control of unit 1's uniselector. From
+time to time the experimenter reverses H, each value "sustained long enough
+so that the change does not interrupt the process of trial and error".</p>
 <p><b>What to do:</b></p>
 <ol>
-<li>Press <b>Start</b> and let the system stabilize.</li>
-<li>Press <b>"Toggle commutator H"</b> to reverse the polarity of the
-Unit_1&rarr;Unit_2 connection.</li>
-<li>Observe the system's response. Let it re-stabilize.</li>
+<li>Press <b>Start</b> and let the system settle (it starts stable).</li>
+<li>Press <b>"Toggle commutator H"</b>.</li>
+<li>Wait until the system has settled again: a runaway, uniselector
+changes and the return to rest can take several thousand ticks.</li>
 <li>Toggle again. Repeat several times.</li>
 </ol>
-<p><b>What to observe:</b> After several alternations, the system
-should find parameter values that keep it stable regardless of H's
-polarity. Successive re-stabilizations should become faster as the
-system converges on a universally stable configuration.</p>''',
+<p><b>What to observe:</b> "a field that is terminal for only one of the
+parameter-values will be lost when the parameter next changes; but the
+first field terminal for both will be retained." Once such a field is
+found, further reversals of H cause no uniselector changes.</p>''',
 
     5: '''<h3>Exp 5: Constraint (Glass Fibre)</h3>
 <p><b>Reference:</b> DftB 8/11, Fig. 8/11/1</p>

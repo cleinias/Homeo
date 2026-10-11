@@ -285,6 +285,25 @@ def find_connection(unit, from_unit):
     return None, None
 
 
+def ashby_matrix(units):
+    '''Ashby's matrix A of the m -> 0 limit (DfB 19/11) for the given units:
+    dx/dt is proportional to A x, A[i, j] the signed weight of j -> i over
+    j's maxDeviation (Homeo's output scaling).  Inactive connections and
+    connections from units outside the list count as 0.'''
+    A = np.zeros((len(units), len(units)))
+    for i, u in enumerate(units):
+        for j, v in enumerate(units):
+            conn = connection(u, v)
+            if conn is not None and conn.isActive():
+                A[i, j] = conn.weight * conn.switch / v.maxDeviation
+    return A
+
+
+def ashby_stable(A):
+    '''Stable in the m -> 0 limit: every eigenvalue of A has negative real part.'''
+    return bool(np.max(np.linalg.eigvals(A).real) < 0)
+
+
 def _make_unit(name, mass=100, viscosity=None, noise=None,
                potentiometer=None, switch=-1,
                uniselector_active=True, uniselector_interval=100,
@@ -637,64 +656,97 @@ def make_trainer_callback(punishment_log=None):
 #  EXPERIMENT 4: Alternating Environments (DftB 8/10)
 # ===============================================================
 
-def setup_exp4_alternating_environments(seed=None):
+# Exp 4 parameters (see setup_exp4_alternating_environments)
+EXP4_VISCOSITY = 10
+EXP4_SELF_FEEDBACK_1 = (0.2, 0.5)
+EXP4_SELF_FEEDBACK_2 = (0.9, 1.0)
+EXP4_H = 1.0
+# Protocol (ticks): settle, then reverse H every interval
+EXP4_SETTLE, EXP4_INTERVAL, EXP4_REVERSALS = 5000, 8000, 6
+EXP4_END = EXP4_SETTLE + EXP4_REVERSALS * EXP4_INTERVAL + 1000
+
+
+def setup_exp4_alternating_environments(seed=None, unused_slots=False):
     '''2 units with a hand-controlled commutator H that alternates polarity.
 
-    One connection is under uniselector control, the other (H) is
-    periodically reversed to simulate two alternating environments.
-    The system must find parameter values stable for both polarities.
+    "Let the Homeostat be arranged so that it is partly under uniselector-,
+    and partly under hand-, control ... Select a commutator switch, and from
+    time to time reverse its polarity" (DfB 8/10).  Ashby records units 1
+    and 2 only; the arrangement follows Fig. 8/4/1: H is the hand-set 1->2
+    (|H| = 1), and 2->1 is re-drawn by unit 1's uniselector.  Unit 2 has no
+    input a uniselector could re-draw, so its uniselector is off.  The first
+    field "terminal for both" values of H is retained.
+
+    In Ashby's m -> 0 limit (DfB 19/11) the field is stable for both signs of
+    H iff p1 p2 > |2->1| |H|, with p1, p2 the units' negative self-feedback:
+    both units need some (unlike Exps 1 and 2).  Unit 2's self-feedback is
+    at least 0.9 |H|: with less, after a reversal unit 2 can be pinned at its
+    limit while unit 1 settles inside its own, and nothing adapts.  Strongly
+    damped units.  Ashby's start: 2->1 is stable for the first position of H
+    and unstable for the second, as in Fig. 8/10/1.  With reversals every
+    8000 ticks (a runaway can take thousands of ticks to reach the critical
+    level, and H must be "sustained long enough so that the change does not
+    interrupt the process of trial and error") Ashby's sequence appears in
+    20 of 30 seeds (stable before the first reversal, changes after it, a
+    field stable for both H kept through at least three reversals).
+
+    unused_slots: add inactive units up to four (for the GUI).
 
     Returns: (homeostat, seed, metadata)
     '''
     seed = _seed_rngs(seed)
 
     hom = Homeostat()
-
-    unit1 = _make_unit('Unit_1', uniselector_active=True, uniselector_interval=100)
-    unit2 = _make_unit('Unit_2', uniselector_active=True, uniselector_interval=100)
-
+    p1 = np.random.uniform(*EXP4_SELF_FEEDBACK_1)
+    p2 = np.random.uniform(*EXP4_SELF_FEEDBACK_2)
+    unit1 = _make_unit('Unit_1', viscosity=EXP4_VISCOSITY, potentiometer=p1,
+                       uniselector_active=True, uniselector_interval=100)
+    unit2 = _make_unit('Unit_2', viscosity=EXP4_VISCOSITY, potentiometer=p2,
+                       uniselector_active=False)
     for u in [unit1, unit2]:
         hom.addFullyConnectedUnit(u)
+    if unused_slots:
+        _add_unused_slots(hom)
 
-    # Unit 1 receives from Unit 2: uniselector-controlled (keep random weight)
-    for conn in unit1.inputConnections:
-        if conn.incomingUnit is unit2:
-            conn.state = 'uniselector'
-
-    # Unit 2 receives from Unit 1: hand-controlled (commutator H)
-    for conn in unit2.inputConnections:
-        if conn.incomingUnit is unit1:
-            conn.state = 'manual'
+    _disable_all_cross_connections(hom)
+    # 1->2: the commutator H, hand-controlled
+    _enable_connection(unit1, unit2, weight=EXP4_H, state='manual')
+    # 2->1: unit 1's uniselector; Ashby's start: stable for this H, not for -H
+    conn = _enable_connection(unit2, unit1, state='uniselector')
+    q = p1 * p2 / EXP4_H
+    conn.newWeight(-np.sign(EXP4_H) * np.random.uniform(min(q, 1), 1))
 
     metadata = {
         'experiment': 'Exp 4: Alternating Environments',
         'reference': 'DftB 8/10, Fig. 8/10/1',
-        'topology': '2 fully connected units, one connection hand-controlled (H)',
-        'description': ('Periodically reverse H polarity; system must find '
-                         'parameters stable for both polarities'),
+        'topology': '2 units: 1->2 the commutator H (by hand), 2->1 on unit 1\'s uniselector',
+        'description': ('Periodically reverse H; the first field stable for '
+                         'both polarities is retained'),
     }
     return hom, seed, metadata
 
 
-def make_alternation_events(interval=500, n_reversals=8):
-    '''Return a list of events that reverse the commutator H periodically.
+def exp4_reversal_event(hom):
+    '''Reverse the commutator H (1->2).'''
+    reverse_link(hom, 0, 1)
 
-    H is the connection from Unit_1 to Unit_2 (index 1 in unit2.inputConnections).
-    '''
-    events = []
-    for i in range(n_reversals):
-        tick = (i + 1) * interval
 
-        def reversal(hom, _i=i):
-            unit2 = hom.homeoUnits[1]
-            unit1 = hom.homeoUnits[0]
-            for conn in unit2.inputConnections:
-                if conn.incomingUnit is unit1:
-                    conn.newWeight(conn.weight * conn.switch * -1)
-                    break
+def make_alternation_events(interval=EXP4_INTERVAL, n_reversals=EXP4_REVERSALS,
+                            start=EXP4_SETTLE):
+    '''Return events that reverse the commutator H, the first at start and
+    then every interval ticks.'''
+    return [(start + i * interval, exp4_reversal_event) for i in range(n_reversals)]
 
-        events.append((tick, reversal))
-    return events
+
+def exp4_stable_for_both(hom):
+    '''Whether the current field is stable for both positions of H, in
+    Ashby's m -> 0 limit.'''
+    units = hom.homeoUnits[:2]
+    stable = []
+    for i in range(2):
+        stable.append(ashby_stable(ashby_matrix(units)))
+        exp4_reversal_event(hom)
+    return all(stable)
 
 
 # ===============================================================
