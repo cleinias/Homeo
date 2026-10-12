@@ -362,7 +362,10 @@ class HomeoSimulationControllerGui(QDialog):
                                                             range(1,(len(self._simulation.homeostat.homeoUnits)*2),2)):
             colorFaded = [self.minusXifPlus(170,x)  for x in color]
             self.pgChartsAndItems[unit] = []
-            plotItemCritDev = plotsWindow.addPlot(row=dataPlotRow, col=0, rowspan=1, colspan=4,  name=(unit.name))
+            # The plots are not named: pyqtgraph connects a named view's
+            # destroyed signal to a Python lambda, which crashed the
+            # interpreter when garbage collection freed a closed window.
+            plotItemCritDev = plotsWindow.addPlot(row=dataPlotRow, col=0, rowspan=1, colspan=4)
             plotItemCritDev.addLine(y=0, pen ={'color' : '#E6E6AF'})  #pale muted yellow color in hex RGB value
             plotItemCritDev.setRange(rect=None, xRange=None, yRange=(unit.minDeviation, unit.maxDeviation),
                                padding=None, update=True, disableAutoRange=True)
@@ -373,7 +376,7 @@ class HomeoSimulationControllerGui(QDialog):
 #            plotItem.setTitle(unit.name)
 #            plotItem.setAutoPan(x=1000)
             "adding uniselectors"
-            plotItemUnisel = plotsWindow.addPlot(row = uniselPlotRow, col=0, rowspan=1, colspan=4, name=(unit.name + "-unisel"))
+            plotItemUnisel = plotsWindow.addPlot(row = uniselPlotRow, col=0, rowspan=1, colspan=4)
             plotItemUnisel.setRange(rect=None, xRange=None, yRange=(0, 1),
                                padding=None, update=True, disableAutoRange=True)
             plotItemUnisel.hideAxis('bottom')
