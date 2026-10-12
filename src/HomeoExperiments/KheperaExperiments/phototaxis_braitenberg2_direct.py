@@ -99,11 +99,12 @@ Baseline spin (any mode)
 
 World stepping (any mode)
 -------------------------
-   --sync-stepping    advance the world once per tick, after every unit has
-                      updated, instead of one step per motor command (the
-                      stepping of all runs so far: the left wheel's command
-                      acting one step before the right one's).  A tick is
-                      2 x 0.032 s either way.  Batch outputs get "_sync".
+   The world advances once per tick, after every unit has updated.
+   --async-stepping   one step per motor command instead, the stepping of all
+                      runs before 13 Oct 2026 (the left wheel's command acting
+                      one step before the right one's), to reproduce them.  A
+                      tick is 2 x 0.032 s either way.  Batch outputs get
+                      "_async".
 
 
 Usage
@@ -152,7 +153,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      stable_integration=True, start_at_rest=False,
                      wiring='crossed', signs='++', spin=0.0, motor='newtonian',
                      eye_saturation=None, eye_threshold=None, eye_response=None,
-                     synchronous_stepping=False):
+                     synchronous_stepping=True):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -187,7 +188,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             'aristotelian' (the true Braitenberg vehicle; see
                             _direct_fixed_weights).
         synchronous_stepping: advance the world once per tick, after all units
-                            have updated, instead of once per motor command
+                            have updated (default), or, if False, once per
+                            motor command, as runs before 13 Oct 2026 did
                             (see KheperaSimulation).
 
     Returns:
@@ -215,8 +217,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         lock = threading.Lock()
         backendSimulator = SimulatorBackendHOMEO(lock=lock, robotName='Khepera',
                                                  synchronousStepping=synchronous_stepping)
-    elif synchronous_stepping:
-        backendSimulator.kheperaSimulation.synchronousStepping = True
+    else:
+        backendSimulator.kheperaSimulation.synchronousStepping = synchronous_stepping
 
     # Set log directory and experiment name before world setup
     from Helpers.General_Helper_Functions import simulations_data_dir
@@ -774,7 +776,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  stable_integration=True, start_at_rest=False,
                  wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
                  spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
-                 eye_response=None, synchronous_stepping=False):
+                 eye_response=None, synchronous_stepping=True):
     '''Run the simplified 2+2 phototaxis experiment headless.
 
     Parameters and return value are the same as in
@@ -960,7 +962,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               state_log=False, state_log_interval=1, heading=None,
               wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
               spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
-              eye_response=None, synchronous_stepping=False):
+              eye_response=None, synchronous_stepping=True):
     '''Run a batch of experiments and print a summary table.
 
     With seed given, run i uses seed+i, so the batch is reproducible and an
@@ -973,8 +975,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     else:
         kind = 'continuous' if uniselector_type == 'continuous' else 'ashby'
     kind += spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response)
-    if synchronous_stepping:
-        kind += '_sync'
+    if not synchronous_stepping:
+        kind += '_async'
     print(f'=== Batch (direct 2+2): {n_runs} runs, {mode}, {total_steps} ticks budget ===')
     print()
 
@@ -1235,7 +1237,7 @@ if __name__ == '__main__':
     start_at_rest = '--start-at-rest' in sys.argv
     random_start = '--random-start' in sys.argv
     random_heading = '--random-heading' in sys.argv
-    synchronous_stepping = '--sync-stepping' in sys.argv
+    synchronous_stepping = '--async-stepping' not in sys.argv
     # --heading DEG: a fixed start heading.  Default (None) leaves the robot as
     # placed, i.e. heading 0.  Draws nothing from the RNG, unlike the random poses.
     heading = None

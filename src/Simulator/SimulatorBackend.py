@@ -130,10 +130,10 @@ class SimulatorBackendAbstract(object, metaclass=ABCMeta):
 class SimulatorBackendHOMEO(SimulatorBackendAbstract):
     "Interface to the internal HOMEO Khepera-like robotic simulator" 
 
-    def __init__(self, lock = None, robotName='', dataDir = None, synchronousStepping = False):
+    def __init__(self, lock = None, robotName='', dataDir = None, synchronousStepping = True):
         '''synchronousStepping: advance the world once per homeostat tick, after
-        all units have updated, instead of once per motor command (see
-        KheperaSimulation).'''
+        all units have updated (default), or, if False, once per motor command,
+        as all runs before 13 Oct 2026 did (see KheperaSimulation).'''
         self._robotName = robotName
         self.lock = lock
         if KheperaSimulation is None:

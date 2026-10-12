@@ -91,6 +91,7 @@ class KheperaDriveTest(unittest.TestCase):
         for i in range(50):
             for motor in motors:
                 motor.act()
+            sim.tickAdvance()
         sim.saveTrajectory()
         speed = (robot.body.position - start).length / (sim.currentStep * sim.timeStep)
         self.assertAlmostEqual(speed, robot.maxSpeed, delta=0.01 * robot.maxSpeed)

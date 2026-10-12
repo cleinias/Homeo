@@ -960,19 +960,20 @@ class KheperaSimulation(object):
     """
     
     def __init__(self, timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False,
-                 robotDrive = 'kinematic', synchronousStepping = False, stepsPerTick = 2):
+                 robotDrive = 'kinematic', synchronousStepping = True, stepsPerTick = 2):
         '''
         Default time step is 1/60 of a second, values for velocity 
         and position iterations are those recommended by pyBox2D docs
         robotDrive: the robots' drive, 'kinematic' or 'legacy' (see KheperaRobot).
-        synchronousStepping: if True, the motors only set their wheel speeds and
-            the world advances by stepsPerTick steps once per homeostat tick,
-            after every unit has updated (tickAdvance, called by
+        synchronousStepping: if True (default), the motors only set their wheel
+            speeds and the world advances by stepsPerTick steps once per
+            homeostat tick, after every unit has updated (tickAdvance, called by
             Homeostat.runFor).  If False (the stepping of every run before
-            13 Oct 2026), each motor's act() advances the world one step: with
-            two motors a tick is two steps, the left wheel's command acting one
-            step before the right one's.  stepsPerTick = 2 keeps a tick at
-            2 x timeStep, as before, and two trajectory rows per tick.
+            13 Oct 2026, kept to reproduce them), each motor's act() advances
+            the world one step: with two motors a tick is two steps, the left
+            wheel's command acting one step before the right one's.
+            stepsPerTick = 2 keeps a tick at 2 x timeStep, as before, and two
+            trajectory rows per tick.
         
         The experimental world to simulate is passed in HomeoWorld as the name of the initializing
         method.'''

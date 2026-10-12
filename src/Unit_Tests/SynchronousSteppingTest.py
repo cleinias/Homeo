@@ -62,6 +62,10 @@ class SynchronousSteppingTest(unittest.TestCase):
                 self.assertLess(drift, 1e-6)
             self.assertNotEqual(robot.body.angle, 0)
 
-    def testAsynchronousStaysTheDefault(self):
+    def testSynchronousIsTheDefault(self):
+        from KheperaSimulator.KheperaSimulator import KheperaSimulation
+        from Simulator.SimulatorBackend import SimulatorBackendHOMEO
+        self.assertTrue(KheperaSimulation().synchronousStepping)
+        self.assertTrue(SimulatorBackendHOMEO(robotName='Khepera').kheperaSimulation.synchronousStepping)
         hom, sim = self.vehicle(False)
         self.assertFalse(sim.synchronousStepping)
