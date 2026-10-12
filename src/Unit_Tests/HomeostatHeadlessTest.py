@@ -20,8 +20,9 @@ from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 from Core.HomeoJIT import seed_jit_rng
 
 
-def ouHomeostat(seed, headless, noise=True):
-    "Two fully connected Newtonian units with OU uniselectors"
+def ouHomeostat(seed, headless, noise=True, units=2, inactive=()):
+    """Fully connected Newtonian units (two by default) with OU uniselectors;
+    the units numbered in inactive are switched off."""
     np.random.seed(seed)
     random.seed(seed)
     seed_jit_rng(seed)
@@ -29,7 +30,7 @@ def ouHomeostat(seed, headless, noise=True):
     hom = Homeostat()
     hom.slowingFactor = 0
     hom.collectsData = False
-    for i in range(2):
+    for i in range(units):
         unit = HomeoUnitNewtonian()
         unit.setRandomValues()
         unit.uniselector = HomeoUniselectorContinuous()
@@ -41,6 +42,8 @@ def ouHomeostat(seed, headless, noise=True):
             for conn in unit.inputConnections:
                 conn.noise = 0
         unit.criticalDeviation = 0.95 * unit.maxDeviation   # stressed: large OU steps
+    for i in inactive:
+        hom.homeoUnits[i].disactivate()
     hom._headless = headless
     for unit in hom.homeoUnits:
         unit._headless = headless
@@ -80,6 +83,28 @@ class HomeostatHeadlessTest(unittest.TestCase):
                                         for c in unit.inputConnections])
             self.assertFalse(np.allclose(recordedWeights, start[unit.name]),
                              'the recorded weights never moved')
+
+    def testInactiveUnitsLinksAreLeftAloneByBothPaths(self):
+        """A uniselector link from a switched-off unit carries nothing, and
+        neither path evolves it, so the two still follow one trajectory"""
+        ticks = 600
+        runs = []
+        for headless in (False, True):
+            hom = ouHomeostat(9, headless=headless, noise=False, units=3, inactive=(2,))
+            link = [c for c in hom.homeoUnits[0].inputConnections
+                    if c.incomingUnit is hom.homeoUnits[2]][0]
+            self.assertEqual(link.state, 'uniselector')
+            self.assertTrue(link.isActive())
+            before = link.weight * link.switch
+            hom.runFor(ticks)
+            for unit in hom.homeoUnits:
+                unit.flushJitArrays()
+            self.assertEqual(link.weight * link.switch, before)
+            runs.append(hom)
+        python, headless = runs
+        for a, b in zip(python.homeoUnits[:2], headless.homeoUnits[:2]):
+            self.assertAlmostEqual(a.criticalDeviation, b.criticalDeviation, delta=1e-9)
+            np.testing.assert_allclose(signedWeights(a), signedWeights(b), atol=1e-9)
 
     def testHeadlessMatchesPythonPath(self):
         "With noise off, headless and Python runs of one seed follow the same trajectory"

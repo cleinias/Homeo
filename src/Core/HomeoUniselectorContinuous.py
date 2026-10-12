@@ -238,7 +238,11 @@ class HomeoUniselectorContinuous(HomeoUniselector):
         '''
 
         for conn in connections:
-            if conn.state == 'uniselector' and conn.isActive():
+            # The connections the unit's dynamics use (active, from an active
+            # unit), as in the headless arrays (HomeoUnit._sync_jit_arrays):
+            # evolving one more here would also shift the noise draws.
+            if (conn.state == 'uniselector' and conn.isActive()
+                    and conn.incomingUnit.isActive()):
                 w = conn.weight * conn.switch   # current signed weight in [-1, 1]
                 w_new = self.evolve_weight(w, stress_level)
                 conn.newWeight(w_new)
