@@ -166,8 +166,6 @@ class KheperaTest(unittest.TestCase):
             self.assertAlmostEqual(speed / (command * robot.wheelRadius), 1.0, delta=0.2,
                                    msg='command %s rad/s' % command)
 
-    @pytest.mark.xfail(strict=True, reason='since 7170286 the eye returns 0 for the '
-                       "darkness source's negative irradiance, so --dark runs are blind")
     def testDarkRunsAreNotBlind(self):
         "Under a darkness source (negative intensity) the eyes must report something"
         from HomeoExperiments.KheperaExperiments import phototaxis_braitenberg2_direct as direct

@@ -324,7 +324,8 @@ class HOMEO_LightSensor(Transducer):
     def read(self):
         """Return the eye's response, in [0, 1], to the sum of all the
            irradiances at the sensor's surface produced by the detectable
-           lights in the world (KheperaRobot.eyeResponse)."""
+           lights in the world (KheperaRobot.eyeResponse); in [-1, 0] for a
+           darkness source (negative intensity)."""
 #         value = 0
         try:
             value =  self._transdFunction(self._eye)

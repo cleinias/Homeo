@@ -690,7 +690,17 @@ class KheperaRobot(object):
             log:     log(I / I0) / log(Isat / I0)   (Weber-Fechner: S = k log(I / I0),
                                                      k set so that S = 1 at Isat)
         The response, not the irradiance, is what an eye reports: the physics
-        stops at irradAtSensor."""
+        stops at irradAtSensor.
+
+        A source of negative intensity (a "darkness source", --dark) gives a
+        negative irradiance, and the response is signed: minus the response to
+        the irradiance's magnitude, in [-1, 0].  So a darkness source is a light
+        whose stimulus has the opposite sign, as it was before the threshold and
+        saturation were introduced (7170286), when negative irradiances reached
+        the sensor units unchanged; without the sign the eye read 0 and --dark
+        runs were blind (review finding RE-01)."""
+        if irradiance < 0:
+            return -self.eyeResponse(sensorName, -irradiance)
         userData = self.sensors[sensorName].userData
         I0 = userData[sensorName + 'Threshold']
         Isat = userData[sensorName + 'Saturation']

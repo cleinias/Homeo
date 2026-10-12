@@ -6,8 +6,9 @@ Created on Oct 3, 2026
 The Khepera robot's eyes.  irradAtSensor is physics -- the irradiance on the
 eye, intensity x cos(angle) / d^2 inside its field of view, unclipped and with
 no distance cut-off -- and eyeResponse is the eye: 0 up to its threshold, 1 from
-its saturation on, linear or logarithmic (Weber-Fechner) in between.  The
-transducer reports that response, so its range is (0, 1).
+its saturation on, linear or logarithmic (Weber-Fechner) in between, and
+mirrored, in [-1, 0], for the negative irradiance of a darkness source.  The
+transducer reports that response, on the scale of its range (0, 1).
 '''
 import os
 import tempfile
@@ -81,6 +82,30 @@ class KheperaEyeTest(unittest.TestCase):
         step = robot.eyeResponse('leftEye', 40) - robot.eyeResponse('leftEye', 20)
         self.assertAlmostEqual(robot.eyeResponse('leftEye', 80) - robot.eyeResponse('leftEye', 40),
                                step, places=12)
+
+    def testDarknessGivesTheMirroredResponse(self):
+        "a negative irradiance (a darkness source) gives minus the response to its magnitude"
+        robot, _ = self._robot()
+        for response, threshold in (('linear', 2), ('log', 1)):
+            robot.setEyeSensitivity('leftEye', threshold=threshold, saturation=50, response=response)
+            for irradiance in (0.5, 3, 20, 49, 200):
+                self.assertEqual(robot.eyeResponse('leftEye', -irradiance),
+                                 -robot.eyeResponse('leftEye', irradiance))
+        self.assertEqual(robot.eyeResponse('leftEye', -1000), -1.0)
+
+    def testDarkSourceReachesTheSensorUnits(self):
+        "--dark: facing the darkness source, the eyes read < 0 and the sensor units deviate below 0"
+        hom, backend, _ = D.setup_phototaxis(fixed_weights=True, seed=1, motor='aristotelian',
+                                             light_intensity=-100)
+        self._backends = getattr(self, '_backends', []) + [backend]
+        robot = backend.kheperaSimulation.allBodies['Khepera']
+        self._face_light(robot, 2)
+        self.assertLess(robot.getSensorRead('leftEye'), 0)
+        self.assertLess(robot.getSensorRead('rightEye'), 0)
+        for unit in hom.homeoUnits:
+            if type(unit).__name__ == 'HomeoUnitInput':
+                unit.selfUpdate()
+                self.assertLess(unit.criticalDeviation, 0)
 
     def testInvalidSensitivityIsRefused(self):
         robot, _ = self._robot()
