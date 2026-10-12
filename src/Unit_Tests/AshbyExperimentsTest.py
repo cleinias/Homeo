@@ -4,6 +4,7 @@ Simulator/AshbyOriginalExperiments.py (headless) and
 Simulator/HomeoExperiments.py (GUI).
 '''
 import unittest
+from unittest import mock
 
 from Simulator.AshbyOriginalExperiments import (setup_exp1_basic_ultrastability, exp1_events,
                                                 setup_exp3_training, make_trainer_callback, EXP3_END,
@@ -76,6 +77,41 @@ class AshbyHelpersTest(unittest.TestCase):
                         stability_tracker=tracker)
         self.assertGreater(u2.uniselectorActivationCount, 0)
         self.assertEqual(tracker.total_uniselector_firings, u1.uniselectorActivationCount)
+
+
+class AshbyGuiIsHeadlessTest(unittest.TestCase):
+    """Each GUI setup is the headless one: given the seed the headless
+    setup would draw, the two homeostats are the same."""
+
+    PAIRS = [
+        (initializeAshbyExp1BasicUltrastability,
+         lambda s: setup_exp1_basic_ultrastability(s, unused_slots=True)),
+        (initializeAshbyExp2SelfReorganization, setup_exp2_self_reorganization),
+        (initializeAshbyExp3Training, lambda s: setup_exp3_training(s, unused_slots=True)),
+        (initializeAshbyExp4AlternatingEnvironments,
+         lambda s: setup_exp4_alternating_environments(s, unused_slots=True)),
+        (initializeAshbyExp5Constraint, lambda s: setup_exp5_constraint(s, unused_slots=True)),
+        (initializeAshbyExp6Habituation, lambda s: setup_exp6_habituation(s, unused_slots=True)),
+        (initializeAshbyExp7Multistable, lambda s: setup_exp7_multistable(s, unused_slots=True)),
+    ]
+
+    @staticmethod
+    def describe(hom):
+        units = [(u.name, u.isActive(), u.mass, u.viscosity, u.noise, u.potentiometer,
+                  u.criticalDeviation, u.uniselectorActive, u.uniselectorTimeInterval)
+                 for u in hom.homeoUnits]
+        conns = [(c.weight * c.switch, c.state, c.status, c.noise)
+                 for u in hom.homeoUnits for c in u.inputConnections]
+        return units, conns
+
+    def testSameSeedSameHomeostat(self):
+        seed = 12345
+        for gui_setup, headless_setup in self.PAIRS:
+            with self.subTest(setup=gui_setup.__name__):
+                with mock.patch('os.urandom', return_value=seed.to_bytes(4, 'big')):
+                    gui = gui_setup()
+                headless, _, _ = headless_setup(seed)
+                self.assertEqual(self.describe(gui), self.describe(headless))
 
 
 class AshbyExp1Test(unittest.TestCase):

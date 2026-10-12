@@ -86,147 +86,6 @@ def initializeAshbyNoNoiseSimulation(**params):
 
 
 
-def initialize_Ashby_2nd_Experiment(params=None):
-    """
-       Return a standard homeostat with 3 active units connected in a circle, as per 
-       Ashby's experiment in Design for a brain, pp. 106-107.
-       In detail: connections are 1-->2-->3-->1
-       connection 1--> 2 is uniselector controlled
-       connection 2--> 3 is hand-controlled
-       connection 3--> 1 is always negative
-       
-       We start with:
-       1 (possibly representing Motor/Agent) with negative, fixed, self-connection
-       2 (possibly representing Environment) with no self-connection
-       3 (possibly representing Sensor/Agent) with negative, fixed self-connection           
-       """
-    hom = Homeostat()
-    'Standard parameters'
-    agent_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
-    env_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
-    agent_mass = 100
-    env_mass = 100
-    agent_self_noise = 0.05
-    env_self_noise = 0.05
-    agent_density = 1
-    env_density = 1
-    agent_uniselector_timing= 100
-    
-    agent_self_connection_active = 'active'
-    agent_self_connection_uniselector = 'manual'
-    agent_self_connection_switch = -1
-    agent_self_connection_potentiomenter = 0.5
-    agent_self_connection_noise = 0.05
-            
-    agent_incoming_conn_weight = 0.5
-    agent_incoming_conn_noise = 0.05
-    agent_incoming_connection_polarity = 1
-    agent_incoming_connection_uniselector = 'uniselector' 
-    
-    env_incoming_connection_weight = 0.5
-    env_incoming_connection_noise = 0.05
-    env_incoming_connection_polarity = 1
-    env_incoming_connection_uniselector = 'manual'
-    
-    'Setup a standard Homeostat if none exists. Then change the parameters'
-     
-    if len(hom.homeoUnits) == 0 :                 # check if the homeostat is set up already"
-        for i in range(4):
-            unit = HomeoUnitNewtonian()
-            unit.setRandomValues()
-            hom.addFullyConnectedUnit(unit)
-
-    'disable all connections except self-connections'
-    for unit in hom.homeoUnits:
-        for i in range(1, len(hom.homeoUnits)):
-            unit.inputConnections[i].status = False
-            
-    homeo1_unit1_minus = hom.homeoUnits[0]
-    homeo1_unit2_minus = hom.homeoUnits[1]
-    homeo1_unit3x = hom.homeoUnits[2]
-    homeo1_inactive_unit = hom.homeoUnits[3]
-
-    'First Agent or sensor'
-    homeo1_unit1_minus.name = 'Agent_Motor'
-    homeo1_unit1_minus.mass = agent_mass
-    homeo1_unit1_minus.viscosity = agent_visc
-    homeo1_unit1_minus.density = agent_density
-    homeo1_unit1_minus.noise  = agent_self_noise
-    homeo1_unit1_minus.uniselectorTimeInterval = agent_uniselector_timing
-    
-    'self-connection'
-    homeo1_unit1_minus.potentiometer = agent_self_connection_potentiomenter
-    homeo1_unit1_minus.switch = agent_self_connection_switch
-    homeo1_unit1_minus.inputConnections[0].noise = agent_self_connection_noise
-    homeo1_unit1_minus.inputConnections[0].state = agent_self_connection_uniselector
-       
-    'Second Agent or sensor'
-    homeo1_unit2_minus.name = 'Agent_Sensor'
-    homeo1_unit2_minus.mass = agent_mass
-    homeo1_unit2_minus.viscosity = agent_visc
-    homeo1_unit2_minus.density = agent_density
-    homeo1_unit2_minus.noise  = agent_self_noise
-    homeo1_unit2_minus.uniselectorTimeInterval = agent_uniselector_timing
-    'disactivate uniselector'
-    homeo1_unit2_minus.uniselectorActive = False
-    
-    'self-connection'
-    homeo1_unit2_minus.potentiometer = agent_self_connection_potentiomenter
-    homeo1_unit2_minus.switch = agent_self_connection_switch
-    homeo1_unit2_minus.inputConnections[0].noise = agent_self_connection_noise
-    homeo1_unit2_minus.inputConnections[0].state = agent_self_connection_uniselector
-
-    'Environment '
-    homeo1_unit3x.name = 'Env'
-    homeo1_unit3x.mass - env_mass
-    homeo1_unit3x.viscosity = env_visc
-    homeo1_unit3x.density = env_density
-    homeo1_unit3x.noise = env_self_noise
-    'self-connection disabled'
-    homeo1_unit3x.disactivateSelfConn()
-    'disactivate uniselector'
-    homeo1_unit3x.uniselectorActive = False
-    
-    'fourth unit is inactive'
-    homeo1_inactive_unit.name= 'UNUSED'
-    homeo1_inactive_unit.disactivate()
-
-    "set up homeostat's connections"
-    "homeo1_unit_1_minus receives input only from sensor, i.e. homeo1_unit_2_minus"
-    "connection is always negative polarity"
-    for connection in homeo1_unit1_minus.inputConnections:
-        if not (connection.incomingUnit.name == 'UNUSED' or 
-                connection.incomingUnit == connection.outgoingUnit or 
-                connection.incomingUnit.name == 'Env'):
-            incomingWeight = -0.5
-            connection.newWeight(incomingWeight)
-            connection.noise = agent_incoming_conn_noise
-            connection.state = agent_incoming_connection_uniselector
-            connection.status = True
-    
-    "homeo1_unit_2_minus receives input only from env"
-    for connection in homeo1_unit2_minus.inputConnections:
-        if not (connection.incomingUnit.name == 'UNUSED' or 
-                connection.incomingUnit == connection.outgoingUnit or
-                connection.incomingUnit.name == 'Agent_Motor'):
-            connection.newWeight(agent_incoming_conn_weight * agent_incoming_connection_polarity)
-            connection.noise = agent_incoming_conn_noise
-            connection.state = agent_incoming_connection_uniselector
-            connection.status = True
-    
-    "Homeo1_unit_3x receive input only from motor, i.e. homeo1_unit_1_minus"
-    for connection in homeo1_unit3x.inputConnections:
-        if not (connection.incomingUnit.name == 'UNUSED'  or 
-                connection.incomingUnit == connection.outgoingUnit or
-                connection.incomingUnit.name == 'Agent_Sensor'):
-            connection.newWeight(env_incoming_connection_weight * env_incoming_connection_polarity)
-            connection.noise = env_incoming_connection_noise
-            connection.state = env_incoming_connection_uniselector
-            connection.status = True
-    
-    'Return the properly configured homeostat'
-    return hom
-            
 def initialize_1minus_2xExperiment(params=None):
     '''
     Initialize a standard Homeostat to have 2 2-units 1-, 2x standard settings for 1- 2x experiment (Agent-Environment)
@@ -3984,55 +3843,11 @@ initializeBraiten3c_GA_continuous_weightfree_open.genomeSize = 10
 # ===============================================================
 #  Ashby's 7 Original Experiments — GUI-friendly setup functions
 #
-#  Each returns a configured Homeostat ready to run.
-#  Per-tick callbacks (trainer, constraint, connectivity toggling)
-#  are NOT installed here — they are handled by the GUI subclass.
-#  Adapted from AshbyOriginalExperiments.py (headless version).
+#  Each returns a configured Homeostat ready to run, built by the
+#  headless setup in AshbyOriginalExperiments.py, so the GUI and headless
+#  experiments are one setup.  Per-tick callbacks (trainer, fibre, bars)
+#  are NOT installed here; the GUI subclass installs them.
 # ===============================================================
-
-def _ashby_make_unit(name, mass=100, viscosity=None, noise=None,
-                     potentiometer=None, switch=-1,
-                     uniselector_active=True, uniselector_interval=100,
-                     maxDeviation=None):
-    '''Create and configure a HomeoUnitNewtonian for Ashby experiments.'''
-    unit = HomeoUnitNewtonian()
-    unit.setRandomValues()
-    unit.name = name
-    unit.mass = mass
-    if viscosity is not None:
-        unit.viscosity = viscosity
-    if noise is not None:
-        unit.noise = noise
-    if potentiometer is not None:
-        unit.potentiometer = potentiometer
-    unit.switch = switch
-    unit.uniselectorActive = uniselector_active
-    unit.uniselectorTimeInterval = uniselector_interval
-    if maxDeviation is not None:
-        unit.maxDeviation = maxDeviation
-    return unit
-
-
-def _ashby_disable_all_cross_connections(hom):
-    '''Disable all non-self connections in the homeostat.'''
-    for unit in hom.homeoUnits:
-        for i in range(1, len(unit.inputConnections)):
-            unit.inputConnections[i].status = False
-
-
-def _ashby_enable_connection(from_unit, to_unit, weight=None,
-                             state='uniselector', noise=0.05):
-    '''Enable and configure the connection from from_unit to to_unit.'''
-    for conn in to_unit.inputConnections:
-        if conn.incomingUnit is from_unit:
-            if weight is not None:
-                conn.newWeight(weight)
-            conn.state = state
-            conn.noise = noise
-            conn.status = True
-            return conn
-    return None
-
 
 def initializeAshbyExp1BasicUltrastability(**params):
     '''Exp 1: Basic Ultrastability (DftB 8/4, Fig. 8/4/1).
@@ -4050,44 +3865,13 @@ def initializeAshbyExp1BasicUltrastability(**params):
 def initializeAshbyExp2SelfReorganization(**params):
     '''Exp 2: Self-Reorganization in 3-Unit Circle (DftB 8/5).
 
-    3 units in a ring: 1->2->3->1, named by Ashby's numbers only.
-    3->1: fixed negative (manual).
-    1->2: uniselector-controlled, by unit 2's uniselector (a uniselector
-    re-draws its own unit's inputs; unit 1's inputs are all fixed, so its
-    uniselector is off).
-    2->3: hand-controlled (manual), will be reversed by user.
-    4th unit is inactive.
-    Strongly damped units, self-feedback on 1 and 3 only, 1->2 starting
-    positive: see AshbyOriginalExperiments.setup_exp2_self_reorganization.
+    3 units in a ring, 1->2->3->1: 3->1 fixed negative, 1->2 on unit 2's
+    uniselector, 2->3 hand-controlled (reversed by the user).  Same setup as
+    the headless AshbyOriginalExperiments.setup_exp2_self_reorganization,
+    with unit 4 inactive.
     '''
-    from Simulator.AshbyOriginalExperiments import EXP2_VISCOSITY, EXP2_SELF_FEEDBACK
-    HomeoUnit.clearNames()
-    hom = Homeostat()
-
-    unit1 = _ashby_make_unit('Unit_1', viscosity=EXP2_VISCOSITY, uniselector_active=False,
-                             potentiometer=np.random.uniform(*EXP2_SELF_FEEDBACK))
-    unit2 = _ashby_make_unit('Unit_2', viscosity=EXP2_VISCOSITY,
-                             uniselector_active=True, uniselector_interval=100)
-    unit3 = _ashby_make_unit('Unit_3', viscosity=EXP2_VISCOSITY, uniselector_active=False,
-                             potentiometer=np.random.uniform(*EXP2_SELF_FEEDBACK))
-    unit4 = HomeoUnitNewtonian()
-    unit4.name = 'UNUSED'
-
-    for u in [unit1, unit2, unit3, unit4]:
-        hom.addFullyConnectedUnit(u)
-
-    unit4.disactivate()
-    _ashby_disable_all_cross_connections(hom)
-    unit2.disactivateSelfConn()
-
-    # Wire the ring: 3->1 (fixed negative)
-    _ashby_enable_connection(unit3, unit1, weight=-0.5, state='manual')
-    # 1->2 (controlled by unit 2's uniselector), starting positive
-    conn = _ashby_enable_connection(unit1, unit2, state='uniselector')
-    conn.newWeight(abs(conn.weight))
-    # 2->3 (hand-controlled, positive — user will reverse)
-    _ashby_enable_connection(unit2, unit3, weight=0.5, state='manual')
-
+    from Simulator.AshbyOriginalExperiments import setup_exp2_self_reorganization
+    hom, seed, meta = setup_exp2_self_reorganization()
     return hom
 
 
