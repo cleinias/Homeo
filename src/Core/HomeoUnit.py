@@ -404,9 +404,9 @@ class HomeoUnit(object):
         emitter(self).massChanged.emit(self.mass)
         emitter(self).massChangedLineEdit.emit(str(int( self.mass)))
 
-        'Switch'
-        emitter(self).switchChanged.emit(self._switch)
-        emitter(self).switchChangedLineEdit.emit(str(int(self._switch)))
+        'Switch (read from the self-connection: _switch exists only after setSwitch)'
+        emitter(self).switchChanged.emit(self.switch)
+        emitter(self).switchChangedLineEdit.emit(str(int(self.switch)))
 
 
         'Potentiometer'
@@ -754,9 +754,9 @@ class HomeoUnit(object):
         except ValueError:
             sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Switch. The value was: %s\n" % (self.name, aNumber))
         finally:
-            emitter(self).switchChanged.emit(self._switch)
-            emitter(self).switchChangedLineEdit.emit(str(int(self._switch)))
-            emitter(self.inputConnections[0]).switchChanged.emit(self._switch) 
+            emitter(self).switchChanged.emit(self.switch)
+            emitter(self).switchChangedLineEdit.emit(str(int(self.switch)))
+            emitter(self.inputConnections[0]).switchChanged.emit(self.switch) 
 #            sys.stderr.write('%s emitted signals switchChanged with value %f the object emitting the signal was %s\n' % (self._name, self._switch, emitter(self.inputConnections[0])))
             
     
