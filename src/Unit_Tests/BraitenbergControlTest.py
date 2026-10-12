@@ -227,7 +227,7 @@ class CommandLineTest(unittest.TestCase):
 class SpinTest(unittest.TestCase):
     """--spin: a constant, opposite wheel-speed offset on the two motors."""
 
-    def _spin_in_the_dark(self, spin, ticks=3000):
+    def _spin_in_the_dark(self, spin, ticks=1000):
         """Heading change (deg) and displacement over `ticks`, starting at the
            default position facing away from the light, so that only the spin
            can move the vehicle."""
@@ -258,7 +258,9 @@ class SpinTest(unittest.TestCase):
         cw, cw_moved = self._spin_in_the_dark(0.05)
         ccw, ccw_moved = self._spin_in_the_dark(-0.05)
         still, still_moved = self._spin_in_the_dark(0.0)
-        self.assertLess(cw, -10)            # ~0.012 deg/tick
+        # differential-drive kinematics: ~0.074 deg/tick (the old wheel physics
+        # gave ~0.012); 1000 ticks keep the light out of the eyes' fields
+        self.assertAlmostEqual(cw, -73.9, delta=1.0)
         self.assertAlmostEqual(cw, -ccw, delta=0.5)
         self.assertEqual(still, 0.0)
         self.assertEqual(still_moved, 0.0)

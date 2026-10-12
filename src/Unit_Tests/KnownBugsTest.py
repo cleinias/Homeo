@@ -149,12 +149,10 @@ class KheperaTest(unittest.TestCase):
             os.environ['HOMEO_DATA_DIR'] = self.oldDataDir
         shutil.rmtree(self.dataDir, ignore_errors=True)
 
-    @pytest.mark.xfail(strict=True, reason='the wheel model moves the robot at ~14% of '
-                       'the commanded speed in the homeostat range, ~83% above a threshold')
     def testWheelSpeedFollowsCommand(self):
         "Driving straight, the robot's speed must be close to the commanded wheel speed"
         from KheperaSimulator.KheperaSimulator import KheperaSimulation
-        for command in (0.5, 5.0):
+        for command in (0.3, 1.5):          # rad/s, both within the top speed
             sim = KheperaSimulation()
             sim.setupWorld('kheperaBraitenberg2_HOMEO_World', self.dataDir)
             robot = sim.allBodies['Khepera']

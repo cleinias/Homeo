@@ -3,7 +3,8 @@ KheperaSimulator is a very simple robotic simulator back-end
 built with the pyBox2D physics engine and the pyglet framework. 
 It is meant to be used for fast 
 simulations of Homeo controllers in GA experimental settings.
-The basic robot is a kinematics-only differential drive Khepera-like vehicle,
+The basic robot is a kinematic differential drive Khepera-like vehicle (see
+KheperaRobot.update),
 equipped with directional "light" sensors that estimate the light irradiance
 at the sensor's surface on the basis on incidence angle, light intensity, 
 and an attenuation matrix.
@@ -223,7 +224,7 @@ def b2PygletBodyDraw(self):
     vlist.colors[:] = list(color) * count
     vlist.draw(vlist._draw_mode)
 
-def b2BodyDefaultUpdate(self):
+def b2BodyDefaultUpdate(self, dt=None):
     "Default update function for Box2D body: do nothing"
     pass
     
@@ -255,12 +256,34 @@ class KheperaRobot(object):
            from the y axis. See addSensor function  for details on their implementation.
            
         Finally, the 'name' of the KheperaRobot is internal ref used by the simulation software to refer to the robot.
-        The 'ID', instead,  is the particular version of a robot, used by the Genetic Algorithm code to record fitnesses"""
+        The 'ID', instead,  is the particular version of a robot, used by the Genetic Algorithm code to record fitnesses
 
-       
-    def __init__(self, world, diameter = 126, wheelRadiusRatio = 0.12380, wheelThicknessRatio = 0.02380, wheelSepRatio = 0.76190, maxWheelSpeed = 100,
+        Motion (drive):
+        - 'kinematic' (default): a differential drive.  With wheel speeds vR, vL
+          (setRightSpeed/setLeftSpeed take rad/s; times the wheel radius, m/s)
+          and wheel separation L, the body moves forward at v = (vR + vL)/2 and
+          turns at omega = (vR - vL)/L (counterclockwise when the right wheel is
+          faster), integrated exactly over each simulation step.  The wheels are
+          bodies that follow the chassis, for rendering only.
+        - 'legacy': the wheels are light dynamic bodies jointed to the chassis,
+          whose velocity is overwritten each step; the joint solver decides what
+          reaches the chassis.  The robot then moved at about 14% of the commanded
+          speed at low speeds and about 82% above a threshold or when the wheels
+          turned in opposite directions (review finding RS-01).  Every run before
+          13 Oct 2026 used it; kept only to reproduce them.
+
+        Speed units: maxWheelSpeed is in rad/s, the unit of setRightSpeed and
+        setLeftSpeed, and getMaxSpeed returns it.  Its default, 1.55988 rad/s
+        (0.0243 m/s), is the top speed every run before 13 Oct 2026 actually had:
+        the motors' range was then reported as 100 rad/s * wheel radius = 1.55988
+        (m/s), which setRightSpeed read as rad/s (review finding RS-03)."""
+
+    DRIVES = ('kinematic', 'legacy')
+
+    def __init__(self, world, diameter = 126, wheelRadiusRatio = 0.12380, wheelThicknessRatio = 0.02380, wheelSepRatio = 0.76190, maxWheelSpeed = 1.55988,
                  rightEyeAngle = 21.9017, leftEyeAngle = -21.9017, centerEyeAngle = 0, density = 0.8, unit = 'mm',
-                 color = (1.,0.,0.,0.5), name = "Khepera", ID = "Unspecified", initialPose = (0,0)):
+                 color = (1.,0.,0.,0.5), name = "Khepera", ID = "Unspecified", initialPose = (0,0),
+                 drive = 'kinematic'):
         
         "create body"        
         if unit == 'mm':
@@ -271,9 +294,14 @@ class KheperaRobot(object):
             factor = 0.1
         else:
             factor = 1
+        if drive not in self.DRIVES:
+            raise ValueError('drive must be one of %s, not %r' % (self.DRIVES, drive))
+        self.drive = drive
         self.diameter = diameter * factor
         self.density = density
         self.wheelRadius = self.diameter* wheelRadiusRatio
+        self.wheelSeparation = self.diameter * wheelSepRatio
+        self.maxWheelSpeed = maxWheelSpeed                               # rad/s
         self.maxSpeed = maxWheelSpeed * self.diameter* wheelRadiusRatio # maxSpeed is in rad/sec. convert to m/s
         
         bodyDef = b2BodyDef()
@@ -296,8 +324,25 @@ class KheperaRobot(object):
         
         'Left wheel'       
         frontLeftWheel = KheperaWheel(world, thickness = self.diameter * wheelThicknessRatio,  diameter = self.diameter* wheelRadiusRatio*2,
-                                        maxForwardSpeed = self.maxSpeed,  name = 'left')
+                                        maxForwardSpeed = self.maxSpeed,  name = 'left',
+                                        follower = (drive == 'kinematic'))
         frontLeftWheel.body.position = self.body.worldCenter + (0, self.diameter * wheelSepRatio/2)
+        if drive == 'kinematic':
+            frontRightWheel = KheperaWheel(world, thickness = self.diameter * wheelThicknessRatio,
+                                           diameter = self.diameter * wheelRadiusRatio*2,
+                                           maxForwardSpeed = self.maxSpeed,  name = 'right', follower = True)
+            self.wheels = {'left': frontLeftWheel, 'right': frontRightWheel}
+            self._placeWheels(self.body.position, self.body.angle)
+        else:
+            self._addJointedWheels(world, frontLeftWheel, wheelThicknessRatio, wheelRadiusRatio, wheelSepRatio)
+
+        self._addSensors()
+
+        "Add a pyglet shape to robot's body for rendering"
+        self.setRenderingParameters(color = color)
+
+    def _addJointedWheels(self, world, frontLeftWheel, wheelThicknessRatio, wheelRadiusRatio, wheelSepRatio):
+        "The 'legacy' drive: dynamic wheels on locked revolute joints"
         jointDef = b2RevoluteJointDef()
         jointDef.bodyA = self.body
         jointDef.enableLimit = True
@@ -326,8 +371,17 @@ class KheperaRobot(object):
         world.CreateJoint(jointDef)
         self.wheels['right']= frontRightWheel
 #         print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontRightWheel), id(self), 'right')
-        
-        
+
+    def _placeWheels(self, position, angle):
+        "Put the wheels of the 'kinematic' drive at their places on a chassis at (position, angle)"
+        for side, offset in (('left', self.wheelSeparation / 2), ('right', -self.wheelSeparation / 2)):
+            wheel = self.wheels[side].body
+            wheel.transform = (b2Vec2(position[0] - offset * sin(angle),
+                                      position[1] + offset * cos(angle)), angle)
+            wheel.linearVelocity = (0, 0)
+            wheel.angularVelocity = 0
+
+    def _addSensors(self):
         "Sensors"
         """Positions of rightEye and leftEye sensors (in meters) relative to the center of Khepera's circular body,
            corresponding to a position on the outer surface of the body, at an angle of approximately +/- 21 degrees
@@ -370,9 +424,6 @@ class KheperaRobot(object):
         
         self.detectableLights = []
         self.detectableSources = {}   # quality -> [body, ...]
-
-        "Add a pyglet shape to robot's body for rendering"
-        self.setRenderingParameters(color = color)
 
     def setModelName(self,ID_String):
         "Resets the ID, or modelName, of the robot"
@@ -552,15 +603,40 @@ class KheperaRobot(object):
         self.body.userData['color'] = color
 
         
-    def update(self):
-        "Update physical state"
-        self.wheels['right'].update(self.rightSpeed)
-        self.wheels['left'].update(self.leftSpeed)
-#         print "rightWheel is at: %s, leftWheel is at: %s" %(self.wheels['right'].body.position, self.wheels['left'].body.position)
-    
+    def update(self, dt=None):
+        '''Update physical state before a simulation step of dt seconds.
+
+        'kinematic' drive: set the chassis' velocities so that the step moves
+        it exactly along the differential-drive arc (the wheel speeds are held
+        over the step): heading theta -> theta + omega dt, and the position
+        along the arc of radius v / omega.'''
+        if self.drive == 'legacy':
+            self.wheels['right'].update(self.rightSpeed)
+            self.wheels['left'].update(self.leftSpeed)
+            return
+        vR = max(-self.maxSpeed, min(self.maxSpeed, self.rightSpeed))
+        vL = max(-self.maxSpeed, min(self.maxSpeed, self.leftSpeed))
+        v = (vR + vL) / 2.0
+        omega = (vR - vL) / self.wheelSeparation
+        theta = self.body.angle
+        if dt:
+            turn = omega * dt
+            if abs(turn) > 1e-9:
+                dx = v / omega * (sin(theta + turn) - sin(theta))
+                dy = -v / omega * (cos(theta + turn) - cos(theta))
+            else:
+                dx = v * dt * cos(theta + turn / 2.0)
+                dy = v * dt * sin(theta + turn / 2.0)
+            self.body.linearVelocity = (dx / dt, dy / dt)
+            self._placeWheels(self.body.position + b2Vec2(dx, dy), theta + turn)
+        else:
+            self.body.linearVelocity = (v * cos(theta), v * sin(theta))
+        self.body.angularVelocity = omega
+
     def setSpeed(self, newRightSpeed, newLeftSpeed):
-        self.rightSpeed = self.setRightSpeed(newRightSpeed)
-        self.leftSpeed = self.setLeftSpeed(newLeftSpeed)
+        "Set both wheel speeds, in rad/s"
+        self.setRightSpeed(newRightSpeed)
+        self.setLeftSpeed(newLeftSpeed)
     
     def setRightSpeed(self, newSpeed):
         """Wheel speed is expressed in rad/sec.
@@ -576,7 +652,8 @@ class KheperaRobot(object):
         return {'right':self.rightSpeed,'left':self.leftSpeed}
     
     def getMaxSpeed(self):
-        return {'right':self.wheels['right'].getMaxSpeed(),'left':self.wheels['left'].getMaxSpeed()}
+        "Maximum wheel speeds, in rad/s (the unit of setRightSpeed and setLeftSpeed)"
+        return {'right': self.maxWheelSpeed, 'left': self.maxWheelSpeed}
     
     def getMaxSensorValue(self,sensorName):
         "Return the max value of the named sensor's response, which is normalised to [0, 1]"
@@ -640,21 +717,28 @@ class KheperaRobot(object):
         return self.eyeResponse(sensorName, self.irradAtSensor(sensorName, sources))
 
     def rotateTo(self, angleRad):
-        """Rotate robot and its jointed bodies to angleRad.
-          Calling function must also call the step function of the containing world
-          to update positions"""
-          
-        self.body.angle = angleRad
-        for wheel in self.wheels.values():
-            wheel.body.angle = angleRad
-            
+        """Rotate robot and its wheels, about the robot's centre, to angleRad."""
+        self._setPose(self.body.position, angleRad)
+
     def moveTo(self, posVec):
-        """Move robot and its jointed bodies to posVec.
-          Calling function must also call the step function of the containing world
-          to update positions"""
-        self.body.position = posVec
+        """Move robot and its wheels to posVec."""
+        self._setPose(b2Vec2(posVec[0], posVec[1]), self.body.angle)
+
+    def _setPose(self, position, angle):
+        "Put the chassis at (position, angle), the wheels with it"
+        if self.drive == 'kinematic':
+            self.body.transform = (position, angle)
+            self._placeWheels(position, angle)
+            return
+        ox, oy = self.body.position[0], self.body.position[1]
+        delta = angle - self.body.angle
+        c, s = cos(delta), sin(delta)
         for wheel in self.wheels.values():
-            wheel.body.position = wheel.body.position + posVec 
+            rx, ry = wheel.body.position[0] - ox, wheel.body.position[1] - oy
+            wheel.body.position = b2Vec2(position[0] + c * rx - s * ry, position[1] + s * rx + c * ry)
+            wheel.body.angle += delta
+        self.body.position = position
+        self.body.angle = angle
               
 class KheperaWheel(object):
     """The Khepera-like robot's wheel-motor class. 
@@ -683,17 +767,19 @@ class KheperaWheel(object):
        
     def __init__(self, world, thickness = 2, diameter = 31.2, 
                  killAngVelParam = 0.1, maxForwardSpeed=1, 
-                tireFriction= -0.18, density = 1, name = None):
+                tireFriction= -0.18, density = 1, name = None, follower = False):
         
         """A wheel for the Khepera robot. Creates a rectangular body 
-           of diameter X thickness size (i.e. its vertical projection)"""
+           of diameter X thickness size (i.e. its vertical projection).
+           follower: a kinematic body that collides with nothing, placed by the
+           robot ('kinematic' drive); otherwise a dynamic body ('legacy')."""
         self.maxForwardSpeed =   maxForwardSpeed
         self.maxBackwardSpeed =  -maxForwardSpeed
         self.killAngVelParam = killAngVelParam
         self.tireFriction = tireFriction
                  
         bodyDef = b2BodyDef()
-        bodyDef.type = b2_dynamicBody
+        bodyDef.type = b2_kinematicBody if follower else b2_dynamicBody
         self.body = world.CreateBody(bodyDef)
         polygonShape = b2PolygonShape()
         polygonShape.SetAsBox(diameter/2, thickness/2)
@@ -701,6 +787,8 @@ class KheperaWheel(object):
         fixtureDef = b2FixtureDef()
         fixtureDef.density = density
         fixtureDef.shape = polygonShape
+        if follower:
+            fixtureDef.maskBits = 0
         self.body.CreateFixture(fixtureDef)
         self.force = 0
         
@@ -871,15 +959,18 @@ class KheperaSimulation(object):
     stopping, resetting, etc.
     """
     
-    def __init__(self, timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False):
+    def __init__(self, timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False,
+                 robotDrive = 'kinematic'):
         '''
         Default time step is 1/60 of a second, values for velocity 
         and position iterations are those recommended by pyBox2D docs
+        robotDrive: the robots' drive, 'kinematic' or 'legacy' (see KheperaRobot).
         
         The experimental world to simulate is passed in HomeoWorld as the name of the initializing
         method.'''
         
         self.running = running
+        self.robotDrive = robotDrive
         self.timeStep = timeStep
         self.vel_iters = vel_iters
         self.pos_iters = pos_iters
@@ -968,7 +1059,7 @@ class KheperaSimulation(object):
 #         self.braiten2b()
 #         "end testing"
         for body in self.allBodies.values():
-            body.update()
+            body.update(self.timeStep)
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)
         self.currentStep += 1
         
@@ -1029,7 +1120,8 @@ class KheperaSimulation(object):
                                                       color = kheperaRobotDefaultColor, 
                                                       name = kheperaRobotDefaultName, 
                                                       ID = kheperaRobotDefaultID,
-                                                      initialPose = kheperaDefaultPosition)
+                                                      initialPose = kheperaDefaultPosition,
+                                                      drive = self.robotDrive)
 
         'Add a light'
         
@@ -1096,7 +1188,8 @@ class KheperaSimulation(object):
             color=kheperaRobotDefaultColor,
             name=kheperaRobotDefaultName,
             ID=kheperaRobotDefaultID,
-            initialPose=kheperaDefaultPosition)
+            initialPose=kheperaDefaultPosition,
+            drive=self.robotDrive)
         robot = self.allBodies[self.robotName]
 
         'Add extra sensor pairs to the robot'
