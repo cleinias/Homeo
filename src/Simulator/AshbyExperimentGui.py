@@ -337,9 +337,10 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
             self._simulation.homeostatFilename = exp_name
             self._simulation._homeostatIsSaved = True
 
-        # 3b. Load a pickled homeostat if requested
+        # 3b. Load a pickled homeostat if requested (before the experiment
+        #     panel exists, so without this class's reset)
         if exp_num == -1:
-            self.loadHomeostat()
+            HomeoSimulationControllerGui.loadHomeostat(self)
 
         # 4. Grey out inactive units in aux window
         for i, unit in enumerate(self._simulation.homeostat.homeoUnits):
@@ -350,20 +351,9 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
                     widget.setStyleSheet(
                         'background-color: #999; color: #666;')
 
-        # State for callbacks
-        self._punishment_log = []
-        self._constraint_flag = None
-        self._stimulus_count = 0
-
-        # Stability tracker
-        self._stability_tracker = StabilityTracker(
-            self._simulation.homeostat, window=200, burn_in=200)
-
-        # Install per-tick callbacks and build action panel
+        # Build the action panel, then the experiment's state and callbacks
         self._setupExperimentActions()
-
-        # Stability tracker updates data only (no GUI) — runs in simulation thread
-        self._simulation.tick_callbacks.append(self._stability_tick_data)
+        self._resetExperiment()
 
         # GUI updates happen on the main thread via the liveDataCritDevChanged signal
         self._simulation.liveDataCritDevChanged.connect(self._updateExperimentDisplay)
@@ -418,22 +408,19 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
             expLayout.addWidget(self._reverseBtn)
 
         elif self._exp_num == 2:
-            self._reverseBtn = QPushButton('Reverse 2->3 polarity')
+            self._reverseBtn = QPushButton()
             self._reverseBtn.clicked.connect(self._reverseExp2Polarity)
             expLayout.addWidget(self._reverseBtn)
 
         elif self._exp_num == 3:
-            self._punishLabel = QLabel('Punishments: 0')
+            self._punishLabel = QLabel()
             expLayout.addWidget(self._punishLabel)
             expLayout.addWidget(QLabel('Trainer acts automatically.'))
-            # Install trainer callback (modifies homeostat state only, no GUI)
-            trainer_cb, self._punishment_log = make_trainer_callback()
-            self._simulation.tick_callbacks.append(trainer_cb)
 
         elif self._exp_num == 4:
             self._toggleBtn = QPushButton('Toggle commutator H')
             self._toggleBtn.clicked.connect(self._toggleExp4Commutator)
-            self._polarityLabel = QLabel('H polarity: +1')
+            self._polarityLabel = QLabel()
             expLayout.addWidget(self._toggleBtn)
             expLayout.addWidget(self._polarityLabel)
 
@@ -441,29 +428,22 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
             self._joinBtn = QPushButton('Join fibre (J)')
             self._joinBtn.clicked.connect(self._joinExp5Constraint)
             expLayout.addWidget(self._joinBtn)
-            self._releaseBtn = QPushButton('Release fibre (R)')
+            self._releaseBtn = QPushButton()
             self._releaseBtn.clicked.connect(self._releaseExp5Constraint)
-            self._releaseBtn.setEnabled(False)
             expLayout.addWidget(self._releaseBtn)
-            self._constraintStatusLabel = QLabel('Fibre: OFF')
-            self._constraintStatusLabel.setStyleSheet('color: gray; font-weight: bold;')
+            self._constraintStatusLabel = QLabel()
             expLayout.addWidget(self._constraintStatusLabel)
-            # Install the fibre callback, not yet joined
-            constraint_cb, self._constraint_flag = make_constraint_callback()
-            self._simulation.tick_callbacks.append(constraint_cb)
 
         elif self._exp_num == 6:
             self._stimulusBtn = QPushButton('Deliver stimulus D')
             self._stimulusBtn.clicked.connect(self._deliverExp6Stimulus)
-            self._stimulusLabel = QLabel('Stimuli delivered: 0')
+            self._stimulusLabel = QLabel()
             expLayout.addWidget(self._stimulusBtn)
             expLayout.addWidget(self._stimulusLabel)
 
         elif self._exp_num == 7:
             expLayout.addWidget(QLabel('Bars stop units 2 and 3 above the centre.\n'
                                        'No user action needed.'))
-            # Install the bars
-            self._simulation.tick_callbacks.append(make_multistable_callback())
 
         # Separator before "Change Experiment" button
         sep2 = QFrame()
@@ -480,6 +460,70 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
         # Insert the experiment panel into the main layout
         mainLayout = self.layout()
         mainLayout.insertWidget(0, self._expGroup)
+
+    # -----------------------------------------------------------
+    #  Experiment state, per-tick callbacks, New and Load
+    # -----------------------------------------------------------
+
+    def _resetExperiment(self):
+        '''Fresh experiment state and per-tick callbacks for the current
+        homeostat, and the action panel to match.  Run at start-up and after
+        New or Load: both replace the homeostat (the stability tracker would
+        watch the old one), and New also empties the simulation's callbacks.'''
+        hom = self._simulation.homeostat
+        self._punishment_log = []
+        self._constraint_flag = None
+        self._stimulus_count = 0
+        self._stability_tracker = StabilityTracker(hom, window=200, burn_in=200)
+
+        # Callbacks modify or read homeostat state only (no GUI): they run
+        # in the simulation thread.  The experiment's own come first.
+        callbacks = []
+        if self._exp_num == 3:
+            trainer_cb, self._punishment_log = make_trainer_callback()
+            callbacks.append(trainer_cb)
+        elif self._exp_num == 5:
+            # The fibre, not yet joined
+            constraint_cb, self._constraint_flag = make_constraint_callback()
+            callbacks.append(constraint_cb)
+        elif self._exp_num == 7:
+            callbacks.append(make_multistable_callback())
+        callbacks.append(self._stability_tick_data)
+        self._simulation.tick_callbacks = callbacks
+
+        self._resetExperimentWidgets()
+
+    def _resetExperimentWidgets(self):
+        '''Put the action panel in the state of a fresh experiment.'''
+        self._stabilityLabel.setText('UNSTABLE')
+        self._stabilityLabel.setStyleSheet(
+            'color: red; font-weight: bold; padding: 2px;')
+        if self._exp_num == 2:
+            self._reverseBtn.setEnabled(True)
+            self._reverseBtn.setText('Reverse 2->3 polarity')
+        elif self._exp_num == 3:
+            self._punishLabel.setText('Punishments: 0')
+        elif self._exp_num == 4:
+            self._showExp4Polarity()
+        elif self._exp_num == 5:
+            self._joinBtn.setEnabled(True)
+            self._releaseBtn.setEnabled(False)
+            self._releaseBtn.setText('Release fibre (R)')
+            self._constraintStatusLabel.setText('Fibre: OFF')
+            self._constraintStatusLabel.setStyleSheet(
+                'color: gray; font-weight: bold;')
+        elif self._exp_num == 6:
+            self._stimulusLabel.setText('Stimuli delivered: 0')
+
+    def newHomeostat(self):
+        super().newHomeostat()
+        self._resetExperiment()
+
+    def loadHomeostat(self):
+        old = self._simulation.homeostat
+        super().loadHomeostat()
+        if self._simulation.homeostat is not old:      # not cancelled
+            self._resetExperiment()
 
     # -----------------------------------------------------------
     #  Per-tick data update (runs in simulation thread — NO GUI calls)
@@ -552,9 +596,16 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
         for conn in unit2.inputConnections:
             if conn.incomingUnit is unit1:
                 conn.newWeight(conn.weight * conn.switch * -1)
-                # Show current polarity
-                new_sign = '+1' if conn.switch >= 0 else '-1'
-                self._polarityLabel.setText('H polarity: %s' % new_sign)
+                break
+        self._showExp4Polarity()
+
+    def _showExp4Polarity(self):
+        '''Exp 4: show the current polarity of the commutator H.'''
+        unit1, unit2 = self._simulation.homeostat.homeoUnits[:2]
+        for conn in unit2.inputConnections:
+            if conn.incomingUnit is unit1:
+                self._polarityLabel.setText(
+                    'H polarity: %s' % ('+1' if conn.switch >= 0 else '-1'))
                 break
 
     def _joinExp5Constraint(self):

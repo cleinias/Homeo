@@ -91,16 +91,36 @@ class AshbyGuiNewAndLoadTest(unittest.TestCase):
         self.assertIs(gui._simulation.homeostat, hom)
         self.assertEqual(set(gui.pgChartsAndItems), set(hom.homeoUnits))
 
+    def assertExperimentRunsOn(self, gui, hom, n_callbacks):
+        '''The experiment's callbacks are installed and watch hom.'''
+        self.assertEqual(len(gui._simulation.tick_callbacks), n_callbacks)
+        self.assertIs(gui._stability_tracker.hom, hom)
+
     def testNew(self):
         for exp_num in range(1, 8):
             with self.subTest(exp=exp_num):
                 gui = makeGui(self, exp_num)
                 old = gui._simulation.homeostat
+                n_callbacks = len(gui._simulation.tick_callbacks)
                 gui.newHomeostat()
                 new = gui._simulation.homeostat
                 self.assertIsNot(new, old)
                 self.assertTrue(any(not u.isActive() for u in new.homeoUnits))
                 self.assertGuiBoundTo(gui, new)
+                self.assertExperimentRunsOn(gui, new, n_callbacks)
+
+    def testNewRestartsTheExperiment(self):
+        '''Exp 5: a fibre joined before New is not joined after it, and the
+        new fibre can be joined.'''
+        gui = makeGui(self, 5)
+        gui._joinExp5Constraint()
+        self.assertTrue(gui._constraint_flag[0])
+        gui.newHomeostat()
+        self.assertFalse(gui._constraint_flag[0])
+        self.assertTrue(gui._joinBtn.isEnabled())
+        self.assertFalse(gui._releaseBtn.isEnabled())
+        gui._joinExp5Constraint()
+        self.assertTrue(gui._constraint_flag[0])
 
     def testLoad(self):
         for exp_num in (1, 3):
@@ -108,6 +128,7 @@ class AshbyGuiNewAndLoadTest(unittest.TestCase):
                 gui = makeGui(self, exp_num)
                 path = os.path.join(_tmpdir, 'exp%d.pickled' % exp_num)
                 gui._simulation.homeostat.saveTo(path)
+                n_callbacks = len(gui._simulation.tick_callbacks)
                 old = gui._simulation.homeostat
                 with mock.patch.object(QFileDialog, 'getOpenFileName',
                                        return_value=(path, '')):
@@ -115,6 +136,7 @@ class AshbyGuiNewAndLoadTest(unittest.TestCase):
                 hom = gui._simulation.homeostat
                 self.assertIsNot(hom, old)
                 self.assertGuiBoundTo(gui, hom)
+                self.assertExperimentRunsOn(gui, hom, n_callbacks)
 
 
 if __name__ == '__main__':
