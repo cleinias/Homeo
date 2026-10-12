@@ -91,11 +91,19 @@ Baseline spin (any mode)
                       motor sigmoid: the vehicle turns slowly in place when
                       nothing drives it, and the offset adds to whatever the
                       light drives.  RATE > 0 turns clockwise, < 0
-                      counter-clockwise.  0.05 is about 0.012 deg/tick, one
-                      revolution per ~30,000 ticks, against the 0.1-0.2
-                      deg/tick of light-driven steering.  Draws nothing from
-                      the RNG, so a seed gives the same start pose with and
-                      without a spin.
+                      counter-clockwise.  0.05 is about 0.074 deg/tick, one
+                      revolution per ~4,900 ticks (0.012 deg/tick with the
+                      wheel physics of runs before 13 Oct 2026).  Draws
+                      nothing from the RNG, so a seed gives the same start
+                      pose with and without a spin.
+
+World stepping (any mode)
+-------------------------
+   --sync-stepping    advance the world once per tick, after every unit has
+                      updated, instead of one step per motor command (the
+                      stepping of all runs so far: the left wheel's command
+                      acting one step before the right one's).  A tick is
+                      2 x 0.032 s either way.  Batch outputs get "_sync".
 
 
 Usage
@@ -143,7 +151,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      seed=None, fixed_weights=False,
                      stable_integration=True, start_at_rest=False,
                      wiring='crossed', signs='++', spin=0.0, motor='newtonian',
-                     eye_saturation=None, eye_threshold=None, eye_response=None):
+                     eye_saturation=None, eye_threshold=None, eye_response=None,
+                     synchronous_stepping=False):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -177,6 +186,9 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         motor:              with fixed_weights, 'newtonian' (default) or
                             'aristotelian' (the true Braitenberg vehicle; see
                             _direct_fixed_weights).
+        synchronous_stepping: advance the world once per tick, after all units
+                            have updated, instead of once per motor command
+                            (see KheperaSimulation).
 
     Returns:
         (hom, backend, seed)
@@ -201,7 +213,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
 
     if backendSimulator is None:
         lock = threading.Lock()
-        backendSimulator = SimulatorBackendHOMEO(lock=lock, robotName='Khepera')
+        backendSimulator = SimulatorBackendHOMEO(lock=lock, robotName='Khepera',
+                                                 synchronousStepping=synchronous_stepping)
+    elif synchronous_stepping:
+        backendSimulator.kheperaSimulation.synchronousStepping = True
 
     # Set log directory and experiment name before world setup
     from Helpers.General_Helper_Functions import simulations_data_dir
@@ -759,7 +774,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  stable_integration=True, start_at_rest=False,
                  wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
                  spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
-                 eye_response=None):
+                 eye_response=None, synchronous_stepping=False):
     '''Run the simplified 2+2 phototaxis experiment headless.
 
     Parameters and return value are the same as in
@@ -793,7 +808,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                                           start_at_rest=start_at_rest,
                                           wiring=wiring, signs=signs, spin=spin,
                                           motor=motor, eye_saturation=eye_saturation,
-                                          eye_threshold=eye_threshold, eye_response=eye_response)
+                                          eye_threshold=eye_threshold, eye_response=eye_response,
+                                          synchronous_stepping=synchronous_stepping)
     robot = backend.kheperaSimulation.allBodies['Khepera']
     target_pos = (7, 7)
     if random_heading or random_start:
@@ -932,7 +948,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 eye_threshold='' if eye_threshold is None else eye_threshold,
                 eye_saturation='' if eye_saturation is None else eye_saturation,
                 final_speed=final_speed, final_bearing=final_bearing,
-                spin=spin)
+                spin=spin, synchronous_stepping=synchronous_stepping)
 
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
@@ -944,7 +960,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               state_log=False, state_log_interval=1, heading=None,
               wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
               spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
-              eye_response=None):
+              eye_response=None, synchronous_stepping=False):
     '''Run a batch of experiments and print a summary table.
 
     With seed given, run i uses seed+i, so the batch is reproducible and an
@@ -957,6 +973,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     else:
         kind = 'continuous' if uniselector_type == 'continuous' else 'ashby'
     kind += spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response)
+    if synchronous_stepping:
+        kind += '_sync'
     print(f'=== Batch (direct 2+2): {n_runs} runs, {mode}, {total_steps} ticks budget ===')
     print()
 
@@ -991,6 +1009,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          wiring=wiring, signs=signs, start_range=start_range,
                          spin=spin, motor=motor, eye_saturation=eye_saturation,
                          eye_threshold=eye_threshold, eye_response=eye_response,
+                         synchronous_stepping=synchronous_stepping,
                          seed=None if seed is None else seed + i)
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
@@ -1038,7 +1057,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                   'start_sees_light', 'acquired', 'first_acq',
                   'final_dist', 'min_dist', 'min_t', 'steps_run',
                   'final_speed', 'final_bearing',
-                  'early_stopped', 'final_x', 'final_y', 'wall_time',
+                  'early_stopped', 'final_x', 'final_y', 'wall_time', 'synchronous_stepping',
                   'log_path', 'json_path', 'state_log_path']
         with open(csv_path, 'w', newline='') as f:
             w = _csv.DictWriter(f, fieldnames=fields)
@@ -1216,6 +1235,7 @@ if __name__ == '__main__':
     start_at_rest = '--start-at-rest' in sys.argv
     random_start = '--random-start' in sys.argv
     random_heading = '--random-heading' in sys.argv
+    synchronous_stepping = '--sync-stepping' in sys.argv
     # --heading DEG: a fixed start heading.  Default (None) leaves the robot as
     # placed, i.e. heading 0.  Draws nothing from the RNG, unlike the random poses.
     heading = None
@@ -1343,7 +1363,8 @@ if __name__ == '__main__':
                   state_log=state_log, state_log_interval=state_log_interval,
                   wiring=wiring, signs=signs, start_range=start_range,
                   spin=spin, motor=motor, eye_saturation=eye_saturation,
-                  eye_threshold=eye_threshold, eye_response=eye_response)
+                  eye_threshold=eye_threshold, eye_response=eye_response,
+                  synchronous_stepping=synchronous_stepping)
     else:
         run_headless(topology=topology, total_steps=total_steps,
                      light_intensity=light_intensity,
@@ -1357,4 +1378,5 @@ if __name__ == '__main__':
                      stable_integration=stable_integration, start_at_rest=start_at_rest,
                      wiring=wiring, signs=signs, start_range=start_range,
                      spin=spin, motor=motor, eye_saturation=eye_saturation,
-                     eye_threshold=eye_threshold, eye_response=eye_response)
+                     eye_threshold=eye_threshold, eye_response=eye_response,
+                     synchronous_stepping=synchronous_stepping)

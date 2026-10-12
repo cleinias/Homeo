@@ -246,6 +246,7 @@ class Homeostat(object):
                 for unit in self.homeoUnits:
                     if unit.isActive():
                         unit._sync_jit_arrays()
+            worlds = self._synchronousWorlds()
 
             while self.time < ticks:
                 for unit in self.homeoUnits:
@@ -260,6 +261,8 @@ class Homeostat(object):
 #                     print "unit: %s of type %s about to update with value: %.3f" % (unit.name, type(unit), unit.criticalDeviation)
                     if unit.isActive():
                         unit.selfUpdate()
+                for world in worlds:
+                    world.tickAdvance()
                 self.time +=  1
                 if self._state_logger is not None:
                     self._state_logger.log_tick(self.time)
@@ -278,6 +281,20 @@ class Homeostat(object):
                              unit.currentOutput,
                              unit.criticalDeviation))
         "END TESTING"
+
+    def _synchronousWorlds(self):
+        '''The robot simulations, reached through the units' transducers, that
+        step synchronously: each advances once per tick, after every unit has
+        updated (see KheperaSimulation.synchronousStepping).  Several
+        homeostats sharing one world would each advance it; a shared world
+        needs a scheduler above the homeostats.'''
+        worlds = []
+        for unit in self.homeoUnits:
+            simulation = getattr(getattr(unit, 'transducer', None), 'simul', None)
+            if (getattr(simulation, 'synchronousStepping', False)
+                    and not any(simulation is w for w in worlds)):
+                worlds.append(simulation)
+        return worlds
 
     def runOnce(self):
         "Advance the simulation by one tick"
