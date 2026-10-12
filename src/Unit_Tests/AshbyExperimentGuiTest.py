@@ -1,5 +1,6 @@
 '''
-Tests of the Ashby experiment GUI: closed windows, New and Load.
+Tests of the GUI: closed windows, the uniselector-type combo box, and the
+Ashby experiments' New and Load.
 
 The GUI writes a pickled homeostat, a SimsData directory and
 ~/.HomeoSimDataDir.txt; all of them go to a temporary directory here.
@@ -14,7 +15,7 @@ import unittest
 from unittest import mock
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
-from PyQt5.QtWidgets import QApplication, QFileDialog
+from PyQt5.QtWidgets import QApplication, QComboBox, QFileDialog
 
 from Core.Homeostat import Homeostat
 from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
@@ -81,6 +82,32 @@ class BareUnitSignalsTest(unittest.TestCase):
         hom.addFullyConnectedUnit(unit)
         unit.allValuesChanged()                     # raised AttributeError
         self.assertEqual(unit.switch, unit.inputConnections[0].switch)
+
+
+class UniselectorComboTest(unittest.TestCase):
+    '''The uniselector-type combo box shows the unit's type and changes it
+    once per selection (it was connected once per uniselector class).'''
+
+    def testOneChangePerSelection(self):
+        from Core.HomeoUnit import HomeoUnit
+        calls = []
+        real = HomeoUnit.changeUniselectorType
+
+        def spy(unit, *args):
+            calls.append(unit)
+            return real(unit, *args)
+
+        with mock.patch.object(HomeoUnit, 'changeUniselectorType', spy):
+            gui = makeGui(self, 1)
+            unit = gui._simulation.homeostat.homeoUnits[0]
+            combo = gui._homeostat_gui.findChild(QComboBox, 'unit1UniselectTypeComboBox')
+            self.assertEqual('HomeoUniselector' + combo.currentText(),
+                             type(unit.uniselector).__name__)
+            del calls[:]
+            combo.setCurrentIndex((combo.currentIndex() + 1) % combo.count())
+        self.assertEqual(calls, [unit])
+        self.assertEqual('HomeoUniselector' + combo.currentText(),
+                         type(unit.uniselector).__name__)
 
 
 class AshbyGuiNewAndLoadTest(unittest.TestCase):

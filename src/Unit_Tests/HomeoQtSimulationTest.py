@@ -271,6 +271,18 @@ class HomeoQtSimulationTest(unittest.TestCase):
         self.assertEqual(len(series), len(self.simulation.liveData[unit]))
         self.simulation.saveEssentialDataOnFile(os.devnull, True)
 
+    def testStepBeforeStart(self):
+        """
+        Step works before Start: the first step sets up the live data, as go()
+        does (it raised KeyError, e.g. in HomeoMinimalGui, where Step is on
+        from the start)
+        """
+        self.simulation.initializeExperSetup()
+        self.simulation.maxRuns = 10
+        self.simulation.step()
+        unit = self.simulation.homeostat.homeoUnits[0]
+        self.assertEqual(len(self.simulation.liveData[unit]), 1)
+
     def tearDown(self):
         pass
 

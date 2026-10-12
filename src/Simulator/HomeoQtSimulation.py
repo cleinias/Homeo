@@ -281,6 +281,8 @@ class HomeoQtSimulation(QObject):
     
     def step(self):
         "Advance the simulation one step"
+        if not self.liveData:                   # Step pressed before Start (as go() does)
+            self.initializeLiveData()
         if self._homeostat.time  < self._maxRuns:
             self._homeostat.runOnce()
             for cb in self.tick_callbacks:

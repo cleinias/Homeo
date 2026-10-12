@@ -516,11 +516,16 @@ class HomeoSimulationControllerGui(QDialog):
             widget.setSizePolicy(fixedSizePolicy)
             widget.setMinimumSize(QSize(unitUniselTypeComboBoxSize[0],unitUniselTypeComboBoxSize[1]))
             widget.setFont(guiFont)
-            attribute = getattr(self._simulation.homeostat.homeoUnits[i], 'uniselector')
+            unit = self._simulation.homeostat.homeoUnits[i]
             for uniselectType in uniselectList:
                 widget.addItem(uniselectType.__name__.split("HomeoUniselector").pop())
-                widget.setEditable(False)
-                widget.currentIndexChanged[str].connect(self._simulation.homeostat.homeoUnits[i].changeUniselectorType)
+            widget.setEditable(False)
+            # Show the unit's own type, then connect once (connecting inside the
+            # loop ran changeUniselectorType once per uniselector class)
+            idx = widget.findText(type(unit.uniselector).__name__.split("HomeoUniselector").pop())
+            if idx >= 0:
+                widget.setCurrentIndex(idx)
+            widget.currentIndexChanged[str].connect(unit.changeUniselectorType)
             
             "add newly created combo box to widget dictionary"
             homeostatGuiUnitWidgets[str(widget.objectName())] = widget          
