@@ -119,7 +119,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             'random' (uniform random), or
                             'continuous' (Ornstein-Uhlenbeck weight drift).
         continuous_params:  dict of HomeoUniselectorContinuous parameters
-                            (tau_a, theta, sigma_base, sigma_crit,
+                            (model, tau_a, theta, sigma_base, sigma_crit,
                             stress_exponent).  Only used when
                             uniselector_type='continuous'.  None = defaults.
         seed:               RNG seed for reproducibility.  If None, a

@@ -200,7 +200,10 @@ class HomeoUnit(object):
     def tauAFromWeight(cls, param):
         '''Map a GA gene in [0, 1) to tau_a in [100, 10000] logarithmically.
         tau_a = 100 * (100 ** param)
-        Maps: 0 -> 100, 0.5 -> 1000, 1 -> 10000.'''
+        Maps: 0 -> 100, 0.5 -> 1000, 1 -> 10000.
+        tau_a is the timescale of the continuous uniselector's search (see
+        HomeoUniselectorContinuous); in its 'legacy' model, which all runs
+        before 12 Oct 2026 used, it had no effect on a stressed unit.'''
         return 100.0 * (100.0 ** param)
 
     @classmethod

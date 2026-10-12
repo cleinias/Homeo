@@ -32,11 +32,18 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
 
     def testDefaultParameters(self):
         '''Check that default parameters are set correctly'''
+        self.assertEqual(self.unis.model, 'diffusion')
         self.assertEqual(self.unis.tau_a, 1000.0)
         self.assertEqual(self.unis.theta, 0.01)
-        self.assertEqual(self.unis.sigma_base, 0.001)
-        self.assertEqual(self.unis.sigma_crit, 0.1)
+        self.assertEqual(self.unis.sigma_base, 0.0)
+        self.assertEqual(self.unis.sigma_crit, 1.0)
         self.assertAlmostEqual(self.unis.stress_exponent, 2.0)
+
+    def testLegacyParameters(self):
+        '''useLegacyParameters restores the pre-12 Oct 2026 process'''
+        self.unis.useLegacyParameters()
+        self.assertEqual((self.unis.model, self.unis.sigma_base, self.unis.sigma_crit),
+                         ('legacy', 0.001, 0.1))
 
     def testSigmaAtZeroStress(self):
         '''At zero stress, sigma should equal sigma_base'''
@@ -69,13 +76,14 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
             self.assertLessEqual(w_new, 1.0)
 
     def testEvolveWeightMeanReverts(self):
-        '''Over many steps at zero stress, weights should drift toward 0
-        (mean reversion due to theta term)'''
+        '''Legacy model: over many steps at zero stress, weights should drift
+        toward 0 (mean reversion due to theta term)'''
         # Use aggressive parameters so decay is visible:
         # drift per step = -(theta/tau_a) * w = -1.0 * w * dt
         # decay factor per step = (1 - 1.0) would be too much; use theta/tau_a = 0.01
         # so after 500 steps: (1-0.01)^500 ≈ exp(-5) ≈ 0.007
         unis = HomeoUniselectorContinuous()
+        unis.model = 'legacy'
         unis.sigma_base = 0.0  # no noise, pure drift
         unis.sigma_crit = 0.0
         unis.theta = 1.0       # strong mean reversion
@@ -151,6 +159,96 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
         self.assertEqual(self.unis.stress_exponent, 3.0)
         self.unis.stress_exponent = 0.0  # should be ignored
         self.assertEqual(self.unis.stress_exponent, 3.0)
+
+
+class HomeoUniselectorContinuousModelsTest(unittest.TestCase):
+    """The statistics of the three models (see HomeoUniselectorContinuous).
+
+    'diffusion' and 'ou' have tau_a as their timescale and reflect at +-1;
+    'legacy' is the clipped process whose statistics under stress do not
+    depend on tau_a.  Many weights are stepped at once through step(); the
+    tolerances are several standard errors wide.
+    """
+
+    WEIGHTS = 20000
+
+    def walk(self, model, tau_a, stress, steps, w0=0.0, sigma_crit=None):
+        unis = HomeoUniselectorContinuous()
+        if model == 'legacy':
+            unis.useLegacyParameters()
+        unis.model = model
+        unis.tau_a = tau_a
+        if sigma_crit is not None:
+            unis.sigma_crit = sigma_crit
+        w = np.full(self.WEIGHTS, float(w0))
+        for i in range(steps):
+            w = unis.step(w, stress, np.random.randn(self.WEIGHTS))
+        return w
+
+    def testDiffusionKeepsWeightsWithoutStress(self):
+        "A stable unit keeps its weights exactly"
+        unis = HomeoUniselectorContinuous()
+        for w in (-0.7, 0.0, 0.42, 1.0):
+            self.assertEqual(unis.evolve_weight(w, 0.0), w)
+
+    def testDiffusionSpreadGrowsAsTimeOverTauA(self):
+        "Short-time variance 2 sigma^2 t / tau_a: tau_a sets the speed of the search"
+        for tau_a in (10000.0, 100000.0):
+            w = self.walk('diffusion', tau_a, 1.0, 100)
+            self.assertAlmostEqual(w.var() / (2 * 100 / tau_a), 1.0, delta=0.05)
+
+    def testDiffusionFillsTheRangeWithoutAtoms(self):
+        "Under stress the weights end uniform on [-1, 1], none stuck at the bounds"
+        w = self.walk('diffusion', 100.0, 1.0, 1000, w0=0.5)
+        self.assertEqual(np.sum(np.abs(w) == 1.0), 0)
+        self.assertAlmostEqual(w.std(), 1 / np.sqrt(3), delta=0.01)
+        self.assertAlmostEqual(w.mean(), 0.0, delta=0.02)
+
+    def testOUDecaysOverTauA(self):
+        "Without noise an 'ou' weight relaxes towards 0 with time constant tau_a"
+        unis = HomeoUniselectorContinuous()
+        unis.model = 'ou'
+        unis.tau_a = 50.0
+        w = 0.8
+        for i in range(100):
+            w = unis.evolve_weight(w, 0.0)
+        self.assertAlmostEqual(w, 0.8 * (1 - 1 / 50.0) ** 100, places=12)
+
+    def testOUStationarySpreadAndCorrelationTime(self):
+        "Stationary sd sigma, autocorrelation e^-1 after tau_a ticks"
+        tau_a, sigma = 50.0, 0.3
+        w0 = self.walk('ou', tau_a, 1.0, 500, sigma_crit=sigma)     # 10 tau_a: stationary
+        self.assertAlmostEqual(w0.std(), sigma, delta=0.01)
+        unis = HomeoUniselectorContinuous()
+        unis.model, unis.tau_a, unis.sigma_crit = 'ou', tau_a, sigma
+        w = w0.copy()
+        for i in range(int(tau_a)):
+            w = unis.step(w, 1.0, np.random.randn(self.WEIGHTS))
+        self.assertAlmostEqual(np.corrcoef(w0, w)[0, 1], np.exp(-1), delta=0.03)
+
+    def testLegacyIgnoresTauAUnderStress(self):
+        "The old process: same spread for tau_a 100 and 10000, mass at exactly +-1"
+        short = self.walk('legacy', 100.0, 1.0, 2000, w0=0.5)
+        long = self.walk('legacy', 10000.0, 1.0, 2000, w0=0.5)
+        self.assertAlmostEqual(short.std(), long.std(), delta=0.02)
+        self.assertGreater(np.mean(np.abs(long) == 1.0), 0.03)
+
+    def testJitPathFollowsThePythonPath(self):
+        "evolve_weights_jit and evolve_weight draw the same noise in the same order"
+        signed = np.array([0.5, -0.3, 0.9, -1.0])
+        for model in HomeoUniselectorContinuous.MODELS:
+            unis = HomeoUniselectorContinuous()
+            unis.model, unis.tau_a = model, 20.0
+            state = np.random.get_state()
+            python = [unis.evolve_weight(w, 0.8) for w in signed]
+            np.random.set_state(state)
+            weights, switches = np.abs(signed), np.sign(signed)
+            unis.evolve_weights_jit(weights, switches, 0.8)
+            np.testing.assert_allclose(weights * switches, python, rtol=0, atol=1e-15)
+
+    def testUnknownModelIsRejected(self):
+        with self.assertRaises(ValueError):
+            HomeoUniselectorContinuous().model = 'brownian'
 
 
 class HomeoUnitStressLevelTest(unittest.TestCase):

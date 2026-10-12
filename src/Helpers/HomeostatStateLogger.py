@@ -144,6 +144,7 @@ class HomeostatStateLogger:
             f.write('%s_dt_fast\t%.6f\n' % (prefix, dt_fast))
             if self._has_ou[i]:
                 unis = unit.uniselector
+                f.write('%s_ou_model\t%s\n' % (prefix, unis._model))
                 f.write('%s_tau_a\t%.6f\n' % (prefix, unis._tau_a))
                 f.write('%s_theta\t%.6f\n' % (prefix, unis._theta))
                 f.write('%s_sigma_base\t%.6f\n' % (prefix, unis._sigma_base))

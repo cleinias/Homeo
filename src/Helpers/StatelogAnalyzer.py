@@ -45,7 +45,7 @@ class StatelogData:
 
 _KNOWN_UNIT_PARAMS = {
     'type', 'mass', 'viscosity', 'maxDeviation', 'dt_fast',
-    'tau_a', 'theta', 'sigma_base', 'sigma_crit', 'stress_exponent', 'ou_dt',
+    'ou_model', 'tau_a', 'theta', 'sigma_base', 'sigma_crit', 'stress_exponent', 'ou_dt',
 }
 
 

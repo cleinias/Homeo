@@ -4,49 +4,102 @@ Created on Feb 26, 2026
 @author: stefano
 
 Continuous stochastic uniselector: replaces Ashby's discrete stepping switch
-with an Ornstein-Uhlenbeck process on the connection weights.
+with a continuous random search on the connection weights.
 
 Instead of periodically checking whether the essential variable is critical
-and then randomly resampling all weights at once, this uniselector evolves
-each weight continuously at every timestep via Euler-Maruyama integration:
+and then randomly resampling all weights at once, this uniselector moves
+each weight a little at every timestep, by an amount that grows with the
+unit's stress (0 at equilibrium, 1 at the limit of its range).  tau_a is the
+search's timescale: the weights move slowly relative to the fast needle
+dynamics when tau_a is large compared with them, the slow-fast separation of
+Research-notes/Addendum_to_the_CTRNN_Ashby_Discussion.md, Section 6
+(tau_a da/dt = f(x)).  Three models (attribute `model`):
 
-    dw = (-theta * w / tau_a) * dt  +  sigma(stress) * sqrt(dt) * N(0,1)
+'diffusion' (default): a stress-gated random walk with no drift,
 
-where sigma(stress) interpolates between a small baseline noise (when the
-unit is near equilibrium) and a large noise (when the essential variable
-is critical).  The timescale separation tau_a >> 1 ensures that weights
-drift slowly relative to the fast needle dynamics.
+    dw = sigma(stress) * sqrt(2 dt / tau_a) * N(0,1)
+
+  Under full stress a weight roams the whole range [-1, 1] in about
+  tau_a / (2 sigma_crit^2) ticks (its stationary distribution is uniform);
+  without stress (sigma_base = 0) it does not move at all, so a unit that
+  has found a stable field keeps its weights, as Ashby's uniselector does.
+
+'ou': an Ornstein-Uhlenbeck process with the whole equation on the slow
+  timescale,
+
+    dw = -(w / tau_a) dt + sigma(stress) * sqrt(2 dt / tau_a) * N(0,1)
+
+  tau_a is the autocorrelation time and sigma the stationary standard
+  deviation (before the bounds).  The weights also relax towards 0, over
+  tau_a ticks, when the unit is stable.
+
+'legacy': the process before 12 Oct 2026, kept to reproduce earlier runs,
+
+    dw = -(theta / tau_a) w dt + sigma(stress) * sqrt(dt) * N(0,1),
+
+  clipped to [-1, 1].  tau_a divides only the drift, so it does not set any
+  timescale of the search: under stress the process is a clipped random
+  walk whose statistics do not depend on tau_a, with probability mass piling
+  up at exactly +-1 (review finding CD-04).  sigma_base and sigma_crit are
+  per-tick step sizes here (old defaults 0.001 and 0.1).
+
+'diffusion' and 'ou' reflect the weights at +-1, so no mass piles up at the
+bounds.
 
 This preserves Ashby's core hypothesis: adaptation operates on the
 parameters (weights), not within the dynamics.  The fast ODE is untouched.
-
-See: Research-notes/Addendum_to_the_CTRNN_Ashby_Discussion.md, Section 6.
 '''
 
 from Core.HomeoUniselector import HomeoUniselector
 import numpy
 
 
+def reflect(w, low=-1.0, high=1.0):
+    '''Fold w back into [low, high], reflecting at the bounds (any number of
+    times).  Works on scalars and arrays.'''
+    w = numpy.asarray(w, dtype=float)
+    span = high - low
+    y = numpy.mod(w - low, 2 * span)
+    folded = low + numpy.where(y > span, 2 * span - y, y)
+    return numpy.where((w >= low) & (w <= high), w, folded)    # exact inside
+
+
 class HomeoUniselectorContinuous(HomeoUniselector):
     '''
     A continuous stochastic uniselector that evolves connection weights
-    via an Ornstein-Uhlenbeck process at every simulation timestep.
+    at every simulation timestep (see the module docstring for the models).
 
     The noise intensity is modulated by a stress level in [0, 1], where
     0 means the essential variable is at equilibrium and 1 means it is
     at the boundary of the acceptable range.
 
     Instance variables (beyond superclass):
-        tau_a        -- weight relaxation timescale (>> 1 for slow drift)
-        theta        -- mean-reversion rate (pulls weights toward 0)
-        sigma_base   -- baseline noise intensity (exploration when stable)
-        sigma_crit   -- noise intensity when essential variable is critical
+        model        -- 'diffusion' (default), 'ou' or 'legacy'
+        tau_a        -- timescale of the search, in ticks (>> the needle's)
+        sigma_base   -- amplitude at zero stress (0: weights kept when stable)
+        sigma_crit   -- amplitude at full stress
+        theta        -- 'legacy' only: mean-reversion rate
         dt           -- integration timestep (matches the fast dynamics)
         stress_exponent -- nonlinear shaping of stress level (1 = linear,
                           2 = quadratic, etc.)
     '''
 
+    MODELS = ('diffusion', 'ou', 'legacy')
+
     DefaultParameters = {
+        'model': 'diffusion',
+        'tau_a': 1000.0,
+        'theta': 0.01,
+        'sigma_base': 0.0,
+        'sigma_crit': 1.0,
+        'dt': 1.0,
+        'stress_exponent': 2.0,
+    }
+
+    # The 'legacy' process's own defaults (use with model='legacy' to
+    # reproduce runs made before 12 Oct 2026)
+    LegacyParameters = {
+        'model': 'legacy',
         'tau_a': 1000.0,
         'theta': 0.01,
         'sigma_base': 0.001,
@@ -59,6 +112,7 @@ class HomeoUniselectorContinuous(HomeoUniselector):
         super(HomeoUniselectorContinuous, self).__init__()
         self._lowerBound = -1
         self._upperBound = 1
+        self._model = self.DefaultParameters['model']
         self._tau_a = self.DefaultParameters['tau_a']
         self._theta = self.DefaultParameters['theta']
         self._sigma_base = self.DefaultParameters['sigma_base']
@@ -66,7 +120,23 @@ class HomeoUniselectorContinuous(HomeoUniselector):
         self._dt = self.DefaultParameters['dt']
         self._stress_exponent = self.DefaultParameters['stress_exponent']
 
+    def useLegacyParameters(self):
+        '''Switch to the pre-12 Oct 2026 process with its own defaults.'''
+        for key, value in self.LegacyParameters.items():
+            setattr(self, '_' + key, value)
+
     # --- Properties ---
+
+    def getModel(self):
+        return self._model
+
+    def setModel(self, value):
+        if value not in self.MODELS:
+            raise ValueError('model must be one of %s, not %r' % (self.MODELS, value))
+        self._model = value
+
+    model = property(fget=lambda self: self.getModel(),
+                     fset=lambda self, value: self.setModel(value))
 
     def getTauA(self):
         return self._tau_a
@@ -132,6 +202,22 @@ class HomeoUniselectorContinuous(HomeoUniselector):
         shaped = s ** self._stress_exponent
         return self._sigma_base + (self._sigma_crit - self._sigma_base) * shaped
 
+    def step(self, w, stress_level, noise):
+        '''One step of the current model for the signed weight(s) w, given
+        standard normal noise of the same shape.  Returns the new weight(s)
+        in [-1, 1].'''
+        sig = self.sigma(stress_level)
+        dt = self._dt
+        if self._model == 'legacy':
+            drift = -(self._theta / self._tau_a) * w * dt
+            return numpy.clip(w + drift + sig * numpy.sqrt(dt) * noise, -1.0, 1.0)
+        diffusion = sig * numpy.sqrt(2.0 * dt / self._tau_a) * noise
+        if self._model == 'ou':
+            w_new = w - (w / self._tau_a) * dt + diffusion
+        else:
+            w_new = w + diffusion
+        return reflect(w_new, self._lowerBound, self._upperBound)
+
     def evolve_weight(self, current_signed_weight, stress_level):
         '''Integrate one Euler-Maruyama step for a single weight.
 
@@ -139,20 +225,9 @@ class HomeoUniselectorContinuous(HomeoUniselector):
             current_signed_weight -- the current effective weight in [-1, 1]
             stress_level          -- float in [0, 1]
 
-        Returns the new signed weight, clipped to [-1, 1].
+        Returns the new signed weight, in [-1, 1].
         '''
-
-        w = current_signed_weight
-        sig = self.sigma(stress_level)
-        dt = self._dt
-
-        # Ornstein-Uhlenbeck step:
-        #   dw = -(theta / tau_a) * w * dt  +  sigma * sqrt(dt) * N(0,1)
-        drift = -(self._theta / self._tau_a) * w * dt
-        diffusion = sig * numpy.sqrt(dt) * numpy.random.randn()
-        w_new = w + drift + diffusion
-
-        return numpy.clip(w_new, -1.0, 1.0)
+        return float(self.step(current_signed_weight, stress_level, numpy.random.randn()))
 
     def evolve_weights(self, connections, stress_level):
         '''Evolve all uniselector-controlled connection weights by one timestep.
@@ -181,27 +256,20 @@ class HomeoUniselectorContinuous(HomeoUniselector):
                             are left alone, as evolve_weights() leaves them.
                             None evolves every entry.
 
-        Modifies jit_weights and jit_switches in place.
+        Modifies jit_weights and jit_switches in place.  Draws its noise in
+        the same order as evolve_weights(), so both paths follow the same
+        trajectory from the same random state.
         '''
 
         if evolvable is None:
-            indices = range(jit_weights.shape[0])
+            indices = numpy.arange(jit_weights.shape[0])
         else:
             indices = numpy.flatnonzero(evolvable)
-        sig = self.sigma(stress_level)
-        dt = self._dt
-        drift_coeff = -(self._theta / self._tau_a) * dt
-        diffusion_scale = sig * numpy.sqrt(dt)
-
-        # Vectorised: one randn per evolved connection
         noise = numpy.random.randn(len(indices))
-
-        for k, i in enumerate(indices):
-            w = jit_weights[i] * jit_switches[i]  # signed weight
-            w_new = w + drift_coeff * w + diffusion_scale * noise[k]
-            w_new = numpy.clip(w_new, -1.0, 1.0)
-            jit_weights[i] = abs(w_new)
-            jit_switches[i] = 1.0 if w_new >= 0 else -1.0
+        w = jit_weights[indices] * jit_switches[indices]  # signed weights
+        w_new = self.step(w, stress_level, noise)
+        jit_weights[indices] = numpy.abs(w_new)
+        jit_switches[indices] = numpy.where(w_new >= 0, 1.0, -1.0)
 
     # --- Superclass interface (unused in continuous mode, but kept for compatibility) ---
 

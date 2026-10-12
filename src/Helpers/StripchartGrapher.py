@@ -20,8 +20,9 @@ every series of a file in one strip instead.  Several files are drawn as
 separate strips (or, with --overlay, one strip per file).
 
 SMOOTHING, AND WHY YOU USUALLY WANT IT.  The log samples every --log-interval
-ticks, which can be far coarser than the process being logged.  A continuous
-(OU) connection weight evolves by sigma*sqrt(dt) per tick: at the stock
+ticks, which can be far coarser than the process being logged.  In the
+'legacy' continuous uniselector (all runs before 12 Oct 2026) a connection
+weight evolves by sigma*sqrt(dt) per tick: at the stock
 sigma_crit = 0.1 and an interval of 200 ticks, a stressed weight moves
 0.1*sqrt(200) = 1.41 between consecutive samples -- more than the whole [-1, 1]
 range it is clipped to.  Samples inside such a burst are therefore independent
@@ -31,7 +32,9 @@ cross zero 123,717 times, while the same data smoothed over the OU's own
 correlation time (tau_a/theta = 100,000 ticks) crosses 292 times, with 34 of the
 40 traces never crossing at all.  --smooth-ticks takes that timescale directly;
 --smooth takes it in samples.  The raw trace stays visible underneath so the
-smoothing never hides what it was computed from.
+smoothing never hides what it was computed from.  In the current models
+('diffusion', 'ou') a stressed weight moves sigma*sqrt(2*dt/tau_a) per tick,
+and tau_a is the timescale to smooth over.
 
 @author: stefano
 '''
