@@ -251,8 +251,26 @@ class HomeoQtSimulationTest(unittest.TestCase):
         
         "clean up after yourself"
         os.remove(self.simulation.homeostatFilename)
-        
-            
+
+    def testUniselectorTypeChangedMidRun(self):
+        """
+        Changing a unit's uniselector type after live data started (the GUI's
+        uniselector combo box during a run) keeps its uniselector series
+        """
+        self.simulation.initializeExperSetup()
+        self.simulation.initializeLiveData()
+        self.simulation.maxRuns = 10
+        for _ in range(3):
+            self.simulation.step()
+        unit = self.simulation.homeostat.homeoUnits[0]
+        unit.changeUniselectorType('Continuous')
+        for _ in range(3):
+            self.simulation.step()
+        series = self.simulation.liveData[self.simulation.uniselectorKey(unit)]
+        self.assertEqual(len(series), 6)
+        self.assertEqual(len(series), len(self.simulation.liveData[unit]))
+        self.simulation.saveEssentialDataOnFile(os.devnull, True)
+
     def tearDown(self):
         pass
 

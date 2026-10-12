@@ -211,13 +211,19 @@ class HomeoQtSimulation(QObject):
         self.panningCharts = True       # default is to use panning charts. Can be changed in the Gui
         self.tick_callbacks = []        # list of callables, each called with (homeostat, tick) after every runOnce()
                 
+    @staticmethod
+    def uniselectorKey(unit):
+        """The key of unit's uniselector series in liveData and liveDataWindow.
+           Not the uniselector itself: changing the uniselector type mid-run replaces it"""
+        return (unit, 'uniselector')
+
     def initializeLiveData(self):
         "set up the liveData dictionary for live graphing"
         for unit in  self._homeostat.homeoUnits:
             self.liveData[unit] = []                                                  # add empty list to hold critDev data for unit
-            self.liveData[unit.uniselector] = []                                      # add empty list to hold uniselector activation data for unit
+            self.liveData[self.uniselectorKey(unit)] = []                                      # add empty list to hold uniselector activation data for unit
             self.liveDataWindow[unit] = deque(maxlen=self.maxDataPoints)              # add empty queue to hold critDev data for unit
-            self.liveDataWindow[unit.uniselector] = deque(maxlen=self.maxDataPoints)  # add empty queue to hold uniselector activation data for unit
+            self.liveDataWindow[self.uniselectorKey(unit)] = deque(maxlen=self.maxDataPoints)  # add empty queue to hold uniselector activation data for unit
             self.unitsSelfWeights[unit] = []
 
     def initializeExperSetup(self, message=None, **params):
@@ -290,9 +296,9 @@ class HomeoQtSimulation(QObject):
 #        pdb.set_trace()
         for unit in self._homeostat.homeoUnits:
             self.liveData[unit].append(unit.criticalDeviation)
-            self.liveData[unit.uniselector].append(unit.uniselectorActivated)
+            self.liveData[self.uniselectorKey(unit)].append(unit.uniselectorActivated)
             self.liveDataWindow[unit].append(unit.criticalDeviation)
-            self.liveDataWindow[unit.uniselector].append(unit.uniselectorActivated)
+            self.liveDataWindow[self.uniselectorKey(unit)].append(unit.uniselectorActivated)
             self.unitsSelfWeights[unit].append(unit.inputConnections[0].weight)
             
 #            if unit.uniselectorActivated != 0:
@@ -405,7 +411,7 @@ class HomeoQtSimulation(QObject):
         for unit in self.homeostat.homeoUnits:
             npDataArray = np.vstack((npDataArray,self.liveData[unit]))
             listOfFormatStrings.append(formatForUnitsAndUnisel)
-            npDataArray = np.vstack((npDataArray,self.liveData[unit.uniselector]))
+            npDataArray = np.vstack((npDataArray,self.liveData[self.uniselectorKey(unit)]))
             listOfFormatStrings.append(formatForUnitsAndUnisel)
             if withWeights == True:
                 npDataArray = np.vstack((npDataArray, self.unitsSelfWeights[unit]))

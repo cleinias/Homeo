@@ -381,7 +381,7 @@ class HomeoSimulationControllerGui(QDialog):
                                padding=None, update=True, disableAutoRange=True)
             plotItemUnisel.hideAxis('bottom')
             plotItemUnisel.hideAxis('left')
-            plotDataItemUnisel = plotItemUnisel.plot(self._plotData[unit.uniselector], pen = colorFaded)
+            plotDataItemUnisel = plotItemUnisel.plot(self._plotData[self._simulation.uniselectorKey(unit)], pen = colorFaded)
             self.pgChartsAndItems[unit].append(plotItemUnisel)
             self.pgChartsAndItems[unit].append(plotDataItemUnisel)
             
@@ -395,7 +395,7 @@ class HomeoSimulationControllerGui(QDialog):
  
     def updateCritDevChart(self, unitRef):
         self.pgChartsAndItems[unitRef][1].setData(self._plotData[unitRef])
-        self.pgChartsAndItems[unitRef][3].setData(self._plotData[unitRef.uniselector])
+        self.pgChartsAndItems[unitRef][3].setData(self._plotData[self._simulation.uniselectorKey(unitRef)])
 #             
 #===============================================================================
 #   Homeostat Gui setup        
@@ -1155,7 +1155,7 @@ class HomeoSimulationControllerGui(QDialog):
 #            dataArray = np.genfromtxt(StringIO(self._simulation.liveData[unit]))
             plt.plot(self._simulation.liveData[unit], label = unit.name)
 #            uniselArray = np.genfromtxt(StringIO(self._simulation.liveData[unit.uniselector]))
-            plt.plot(self._simulation.liveData[unit.uniselector], label = (unit.name + '-un'))
+            plt.plot(self._simulation.liveData[self._simulation.uniselectorKey(unit)], label = (unit.name + '-un'))
         plt.legend(loc=3, fontsize = 8)
         plt.ylabel('Critical Deviation')
         plt.xlabel('Time')
