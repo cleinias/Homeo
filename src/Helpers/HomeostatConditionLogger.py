@@ -164,7 +164,7 @@ def log_homeostat_conditions(homeostat, filepath, label='', experiment_name=''):
 
 
 def log_homeostat_conditions_json(homeostat, filepath, label='', experiment_name='',
-                                  seed=None):
+                                  seed=None, settings=None):
     """Add a snapshot under label key in a JSON file.
 
     If the file already exists, the existing content is preserved
@@ -173,6 +173,8 @@ def log_homeostat_conditions_json(homeostat, filepath, label='', experiment_name
 
     Parameters:
         seed:  RNG seed used for this run (written once on first call).
+        settings: optional dict of run settings that are not unit state
+               (e.g. stable_draws), written once under 'settings'.
     """
 
     snap = _snapshot(homeostat)
@@ -188,6 +190,9 @@ def log_homeostat_conditions_json(homeostat, filepath, label='', experiment_name
 
     if seed is not None and 'seed' not in data:
         data['seed'] = seed
+
+    if settings and 'settings' not in data:
+        data['settings'] = dict(settings)
 
     data[label] = snap
 

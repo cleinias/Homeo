@@ -106,6 +106,16 @@ World stepping (any mode)
                       tick is 2 x 0.032 s either way.  Batch outputs get
                       "_async".
 
+Unit parameters (adaptive modes)
+--------------------------------
+   Each motor's (mass, viscosity) is drawn from setRandomValues() and a mass
+   in [1, 10], the full distribution.
+   --stable-draws     redraw while viscosity x dt / mass >= 1.8, as all runs
+                      before 13 Oct 2026 did by default (a guard for the old
+                      explicit drag step, which diverged above 2), to
+                      reproduce them.  Batch outputs get "_stabledraws";
+                      every run records the setting.
+
 
 Usage
 -----
@@ -150,7 +160,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      switching_rate=0.5, light_intensity=100,
                      uniselector_type='ashby', continuous_params=None,
                      seed=None, fixed_weights=False,
-                     stable_integration=True, start_at_rest=False,
+                     stable_draws=False, start_at_rest=False,
                      wiring='crossed', signs='++', spin=0.0, motor='newtonian',
                      eye_saturation=None, eye_threshold=None, eye_response=None,
                      synchronous_stepping=True):
@@ -187,6 +197,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         motor:              with fixed_weights, 'newtonian' (default) or
                             'aristotelian' (the true Braitenberg vehicle; see
                             _direct_fixed_weights).
+        stable_draws:       redraw each motor's (mass, viscosity) while
+                            viscosity*dt/mass >= STABILITY_MARGIN, as runs
+                            before 13 Oct 2026 did; default False, the full
+                            distribution (see _randomize_unit_stably).
         synchronous_stepping: advance the world once per tick, after all units
                             have updated (default), or, if False, once per
                             motor command, as runs before 13 Oct 2026 did
@@ -304,7 +318,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                   switching_rate=switching_rate,
                   uniselector_type=uniselector_type,
                   continuous_params=continuous_params,
-                  stable_integration=stable_integration,
+                  stable_draws=stable_draws,
                   start_at_rest=start_at_rest)
     if fixed_weights:
         _direct_fixed_weights(hom, max_speed_fraction=max_speed_fraction,
@@ -340,7 +354,7 @@ def _set_uniselector_type(unit, uniselector_type, continuous_params=None):
 def _direct_fixed_topology(hom, mass_range=(1, 10),
                            max_speed_fraction=0.8, switching_rate=0.5,
                            uniselector_type='ashby', continuous_params=None,
-                           stable_integration=True, start_at_rest=False):
+                           stable_draws=False, start_at_rest=False):
     '''Fixed Braitenberg cross-wiring: sensors connect directly to
     contra-lateral motors.  Inter-motor connections are disabled.
 
@@ -354,8 +368,8 @@ def _direct_fixed_topology(hom, mass_range=(1, 10),
         if 'Sensor' in u.name:
             continue
 
-        # Randomize unit parameters (rejecting numerically unstable draws)
-        _randomize_unit_stably(u, mass_range, stable_integration, start_at_rest)
+        # Randomize unit parameters (see _randomize_unit_stably)
+        _randomize_unit_stably(u, mass_range, stable_draws, start_at_rest)
 
         # Motor-specific overrides
         u._maxSpeedFraction = max_speed_fraction
@@ -407,10 +421,12 @@ def _direct_fixed_topology(hom, mass_range=(1, 10),
 # Random (mass, viscosity) draws violated this in 9 of the 20 runs of
 # 2026-09-30; see "Bimodal acquisition in OU chemotaxis".
 # HomeoJIT._jit_needle_position_newtonian now takes the exact step, stable for
-# any ratio, so the guard below is no longer needed for the numerics.  It is
-# kept (on by default) so that the parameter distribution of these runs stays
-# the one of the earlier ones.
-STABILITY_MARGIN = 1.8          # keep viscosity*dt/mass below this
+# any ratio (Homeo 1257d58), so the guard is no longer needed for the
+# numerics, and since 13 Oct 2026 it is off: (mass, viscosity) come from
+# their full distribution, the one the Ashby experiment always used.
+# --stable-draws (stable_draws=True) restores it, to reproduce earlier runs;
+# runs and batch files record which was used.
+STABILITY_MARGIN = 1.8          # with stable_draws, keep viscosity*dt/mass below this
 
 
 def _integration_ratio(unit):
@@ -419,20 +435,21 @@ def _integration_ratio(unit):
     return unit.viscosity * dt / unit.mass if unit.mass else float('inf')
 
 
-def _randomize_unit_stably(u, mass_range, stable_integration=True,
+def _randomize_unit_stably(u, mass_range, stable_draws=False,
                            start_at_rest=False, max_tries=200):
-    """setRandomValues() + random mass, rejecting numerically unstable draws.
+    """setRandomValues() + random mass.
 
-    With stable_integration the (mass, viscosity) pair is resampled until
-    viscosity*dt_fast/mass < STABILITY_MARGIN, so the joint distribution is the
-    original one conditioned on the integrator being stable.  With
+    With stable_draws (the default of runs before 13 Oct 2026) the (mass,
+    viscosity) pair is resampled until viscosity*dt_fast/mass <
+    STABILITY_MARGIN, the bound the old explicit integrator needed: the
+    original joint distribution conditioned on that bound.  With
     start_at_rest the needle starts centred and motionless, so the vehicle
     begins stationary instead of mid-manoeuvre.
     """
     for _ in range(max_tries):
         u.setRandomValues()
         u.mass = np.random.uniform(*mass_range)
-        if not stable_integration or _integration_ratio(u) < STABILITY_MARGIN:
+        if not stable_draws or _integration_ratio(u) < STABILITY_MARGIN:
             break
     else:
         u.viscosity = STABILITY_MARGIN * u.mass / getattr(u, '_dt_fast', 1.0)
@@ -732,7 +749,7 @@ def _random_start_pose(target_pos, random_position, start_range=DEFAULT_START_RA
 def _direct_random_topology(hom, mass_range=(1, 10),
                             max_speed_fraction=0.8, switching_rate=0.5,
                             uniselector_type='ashby', continuous_params=None,
-                            stable_integration=True, start_at_rest=False):
+                            stable_draws=False, start_at_rest=False):
     '''Random topology: all connections between the 2 motors are active
     (including inter-motor and from sensors).  The system must discover
     useful weights.
@@ -743,7 +760,7 @@ def _direct_random_topology(hom, mass_range=(1, 10),
         if 'Sensor' in u.name:
             continue
 
-        _randomize_unit_stably(u, mass_range, stable_integration, start_at_rest)
+        _randomize_unit_stably(u, mass_range, stable_draws, start_at_rest)
 
         u._maxSpeedFraction = max_speed_fraction
         u._switchingRate = switching_rate
@@ -773,7 +790,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  uniselector_type='ashby', continuous_params=None,
                  state_log=False, state_log_interval=1, seed=None, heading=None,
                  fixed_weights=False, random_heading=False, random_start=False,
-                 stable_integration=True, start_at_rest=False,
+                 stable_draws=False, start_at_rest=False,
                  wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
                  spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
                  eye_response=None, synchronous_stepping=True):
@@ -806,7 +823,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                                           continuous_params=continuous_params,
                                           seed=seed,
                                           fixed_weights=fixed_weights,
-                                          stable_integration=stable_integration,
+                                          stable_draws=stable_draws,
                                           start_at_rest=start_at_rest,
                                           wiring=wiring, signs=signs, spin=spin,
                                           motor=motor, eye_saturation=eye_saturation,
@@ -840,7 +857,9 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     json_path = os.path.join(log_dir, exp_name + '-' + timestamp + run_tag() + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
     log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name,
-                                  seed=seed)
+                                  seed=seed,
+                                  settings=dict(stable_draws=stable_draws,
+                                                synchronous_stepping=synchronous_stepping))
 
     # Optional per-tick state logger
     state_log_path = None
@@ -950,7 +969,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 eye_threshold='' if eye_threshold is None else eye_threshold,
                 eye_saturation='' if eye_saturation is None else eye_saturation,
                 final_speed=final_speed, final_bearing=final_bearing,
-                spin=spin, synchronous_stepping=synchronous_stepping)
+                spin=spin, synchronous_stepping=synchronous_stepping,
+                stable_draws=stable_draws)
 
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
@@ -958,7 +978,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               early_stop_distance=None,
               uniselector_type='ashby', continuous_params=None,
               fixed_weights=False, random_heading=False, random_start=False,
-              stable_integration=True, start_at_rest=False, seed=None,
+              stable_draws=False, start_at_rest=False, seed=None,
               state_log=False, state_log_interval=1, heading=None,
               wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
               spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
@@ -977,6 +997,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     kind += spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response)
     if not synchronous_stepping:
         kind += '_async'
+    if stable_draws and not fixed_weights:
+        kind += '_stabledraws'
     print(f'=== Batch (direct 2+2): {n_runs} runs, {mode}, {total_steps} ticks budget ===')
     print()
 
@@ -1003,7 +1025,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                          fixed_weights=fixed_weights,
                          random_heading=random_heading,
                          random_start=random_start,
-                         stable_integration=stable_integration,
+                         stable_draws=stable_draws,
                          start_at_rest=start_at_rest,
                          state_log=state_log,
                          state_log_interval=state_log_interval,
@@ -1060,6 +1082,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                   'final_dist', 'min_dist', 'min_t', 'steps_run',
                   'final_speed', 'final_bearing',
                   'early_stopped', 'final_x', 'final_y', 'wall_time', 'synchronous_stepping',
+                  'stable_draws',
                   'log_path', 'json_path', 'state_log_path']
         with open(csv_path, 'w', newline='') as f:
             w = _csv.DictWriter(f, fieldnames=fields)
@@ -1233,7 +1256,7 @@ if __name__ == '__main__':
             seed = int(sys.argv[idx + 1])
 
     fixed_weights = '--fixed-weights' in sys.argv
-    stable_integration = '--allow-unstable' not in sys.argv   # guard on by default
+    stable_draws = '--stable-draws' in sys.argv   # off by default since 13 Oct 2026
     start_at_rest = '--start-at-rest' in sys.argv
     random_start = '--random-start' in sys.argv
     random_heading = '--random-heading' in sys.argv
@@ -1360,7 +1383,7 @@ if __name__ == '__main__':
                   uniselector_type=uniselector_type,
                   fixed_weights=fixed_weights,
                   random_heading=random_heading, random_start=random_start,
-                  stable_integration=stable_integration, start_at_rest=start_at_rest,
+                  stable_draws=stable_draws, start_at_rest=start_at_rest,
                   seed=seed, heading=heading,
                   state_log=state_log, state_log_interval=state_log_interval,
                   wiring=wiring, signs=signs, start_range=start_range,
@@ -1377,7 +1400,7 @@ if __name__ == '__main__':
                      heading=heading,
                      seed=seed, fixed_weights=fixed_weights,
                      random_heading=random_heading, random_start=random_start,
-                     stable_integration=stable_integration, start_at_rest=start_at_rest,
+                     stable_draws=stable_draws, start_at_rest=start_at_rest,
                      wiring=wiring, signs=signs, start_range=start_range,
                      spin=spin, motor=motor, eye_saturation=eye_saturation,
                      eye_threshold=eye_threshold, eye_response=eye_response,
