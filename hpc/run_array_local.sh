@@ -31,7 +31,9 @@
 # (--continuous --batch 1 --start-at-rest --traj-interval 200 --run-tag <NN>),
 # same shared HOMEO_DATA_DIR and per-task NUMBA_CACHE_DIR -- so the output is
 # directly comparable with a Grace array and `aggregate_array.py` reads it
-# unchanged.
+# unchanged -- run for run only if both have numba, or both lack it: numba draws
+# its noise from its own generator, so the same seed gives a different run with
+# and without it.  PROVENANCE.txt records the numba version (or "absent").
 #
 # LAYOUT.  All tasks write into ONE directory, <rundir>/SimsData-<date>/, and
 # every filename ends with the task serial before its extension:
@@ -62,8 +64,9 @@
 # with -o pointing at the existing run directory.
 #
 # SPLITTING ACROSS TWO MACHINES.  The tasks are independent and seeded purely by
-# index, so a split is exact: the union of two partial runs is the same 20 runs
-# one machine would have produced.  Give each machine a disjoint range, then
+# index, so a split is exact -- provided both machines have numba, or both lack
+# it (see above; compare the numba lines of their PROVENANCE.txt): the union of
+# two partial runs is the same 20 runs one machine would have produced.  Give each machine a disjoint range, then
 # copy one machine's data files in beside the other's -- the serials keep them
 # from colliding -- and aggregate as usual.  Divide the ranges in
 # proportion to measured throughput, and remember a machine finishes in whole
@@ -305,6 +308,7 @@ echo
     [ -n "$SEEDS" ] && echo "seeds $SEEDS" 
     echo "code $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned')"
     echo "cpu  $(lscpu 2>/dev/null | sed -n 's/^Model name: *//p' | head -1)"
+    echo "python $("$PYTHON" -c 'import platform; print(platform.python_version())' 2>/dev/null), numba $("$PYTHON" -c 'import numba; print(numba.__version__)' 2>/dev/null || echo absent)"
 } >> "$RUNDIR/PROVENANCE.txt"
 
 task_done() {   # a task counts as finished once its own batch CSV exists

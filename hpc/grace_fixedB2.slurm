@@ -116,6 +116,9 @@ export NUMBA_CACHE_DIR="${TMPDIR:-/tmp}/numba-$SLURM_ARRAY_TASK_ID"
 mkdir -p "$NUMBA_CACHE_DIR"
 
 CODE="$(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned checkout')"
+# numba draws its noise from its own generator: a seed gives a different run
+# with and without it, so record which (compare before pairing with other machines)
+PYENV="python $(python -c 'import platform; print(platform.python_version())' 2>/dev/null), numba $(python -c 'import numba; print(numba.__version__)' 2>/dev/null || echo absent)"
 # The first task to get here writes the directory's provenance.
 if [ ! -e "$HOMEO_DATA_DIR/PROVENANCE.txt" ]; then
     {
@@ -127,12 +130,14 @@ if [ ! -e "$HOMEO_DATA_DIR/PROVENANCE.txt" ]; then
         echo "eyes ${EYE_ARGS[*]:-default (linear, threshold 0, saturation 100)}"
         echo "code $CODE"
         echo "cpu  $(lscpu 2>/dev/null | sed -n 's/^Model name: *//p' | head -1)"
+        echo "$PYENV"
     } > "$HOMEO_DATA_DIR/PROVENANCE.txt"
 fi
 
 echo "task $SLURM_ARRAY_TASK_ID: $MOTOR $WIRING $SIGNS  seed $SEED  start $START_MIN-$START_MAX  spin $SPIN"
 echo "out  $HOMEO_DATA_DIR"
 echo "code $CODE"
+echo "$PYENV"
 
 cd "$HOMEO_SRC/src"
 srun python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct \

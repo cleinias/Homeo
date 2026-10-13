@@ -59,6 +59,9 @@ SERIAL=$(printf '%02d' "$SLURM_ARRAY_TASK_ID")
 echo "task $SLURM_ARRAY_TASK_ID  seed $SEED  out $HOMEO_DATA_DIR"
 # Provenance: which commit produced these results.
 echo "code $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned checkout')"
+# numba draws its noise from its own generator: a seed gives a different run
+# with and without it, so record which.
+echo "python $(python -c 'import platform; print(platform.python_version())' 2>/dev/null), numba $(python -c 'import numba; print(numba.__version__)' 2>/dev/null || echo absent)"
 # --batch 1 (rather than a bare run) so each task writes a one-row summary CSV
 # carrying seed, start pose, acquired, first_acq and final distance -- the whole
 # array can then be aggregated by concatenating them.
