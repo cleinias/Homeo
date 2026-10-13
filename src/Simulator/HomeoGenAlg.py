@@ -28,7 +28,6 @@ import datetime
 from operator import attrgetter
 import multiprocessing
 import os
-import math
 from time import time, strftime, localtime
 from tabulate import tabulate
 from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDebug
@@ -147,9 +146,11 @@ def _evaluate_genome_worker(genome):
 def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, dataDir,
                               modelName=None, adjustHomeostat=None):
     """Build the simulation for evaluating `genome` exactly as a GA evaluation
-       does, ready to run: returns (sim, backend, actual_ticks, min_dt_fast),
-       where sim.step() advances it one tick, actual_ticks is the evaluation's
-       length and min_dt_fast the smallest unit time step it was computed from.  Shared by the pool workers and replay_best_with_statelog.py,
+       does, ready to run: returns (sim, backend), where sim.step() advances
+       it one tick and stops at stepsSize ticks.  stepsSize counts homeostat
+       ticks, whatever the units' dt_fast: the world advances by the same
+       amount every tick, so every individual gets the same time in the
+       world (SG-02).  Shared by the pool workers and replay_best_with_statelog.py,
        so that a replay seeded with a logged evalSeed repeats the evaluation.
 
        genome          a list of genes with an ID attribute
@@ -194,18 +195,7 @@ def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, d
     hom._slowingFactor = 0
     for u in hom.homeoUnits:
         u._headless = True
-
-    # Compute actual tick count.  stepsSize means "simulated seconds".
-    # When units have dt_fast < 1, more ticks are needed to cover the
-    # same simulated time.  Use the smallest dt_fast across all evolved
-    # units (those with the attribute) to determine the conversion.
-    min_dt_fast = 1.0
-    for u in hom.homeoUnits:
-        dt = getattr(u, '_dt_fast', 1.0)
-        if dt < min_dt_fast:
-            min_dt_fast = dt
-    actual_ticks = int(math.ceil(stepsSize / min_dt_fast))
-    return sim, backend, actual_ticks, min_dt_fast
+    return sim, backend
 
 
 def _run_genome_evaluation(genome):
@@ -216,18 +206,18 @@ def _run_genome_evaluation(genome):
     module-level _worker_config dict (set by _init_worker at pool start).
     """
     cfg = _worker_config
-    sim, backend, actual_ticks, min_dt_fast = prepare_genome_evaluation(
+    sim, backend = prepare_genome_evaluation(
         genome, cfg['experiment'], cfg['experimentParams'], cfg['stepsSize'], cfg['dataDir'])
 
     timeNow = time()
-    for i in range(actual_ticks):
+    for i in range(cfg['stepsSize']):
         sim.step()
     backend.kheperaSimulation.saveTrajectory()   # close (and flush) the .traj file
 
     finalDis = backend.finalDisFromTarget()
     fitness = cfg.get('fitnessSign', 1) * finalDis
-    print(" Evaluation for model %s (%d ticks, min_dt=%.2f) took time: %s with fitness %.5f" % (
-        genome.ID, actual_ticks, min_dt_fast,
+    print(" Evaluation for model %s (%d ticks) took time: %s with fitness %.5f" % (
+        genome.ID, cfg['stepsSize'],
         str(datetime.timedelta(seconds=time() - timeNow)), fitness))
     return fitness,
 
@@ -940,20 +930,12 @@ class HomeoGASimulation(object):
         for u in hom.homeoUnits:
             u._headless = True
 
-        # Compute actual tick count (stepsSize = simulated seconds).
-        min_dt_fast = 1.0
-        for u in hom.homeoUnits:
-            dt = getattr(u, '_dt_fast', 1.0)
-            if dt < min_dt_fast:
-                min_dt_fast = dt
-        actual_ticks = int(math.ceil(self.stepsSize / min_dt_fast))
-
         #self._simulThread.start()
         timeNow = time()
         hDebug('eval' , "Simulation started at time: " +  str(timeNow))
-        hDebug('eval', ("Now computing %d ticks (%d sim-seconds, min_dt=%.2f)..." % (actual_ticks, self.stepsSize, min_dt_fast)))
+        hDebug('eval', ("Now computing %d ticks..." % self.stepsSize))
         self.worldBeingResetLock.acquire()
-        for i in range(actual_ticks):
+        for i in range(self.stepsSize):
             hDebug('eval', ("Step: "+ str(i+1)+"\n"))
             self._simulation.step()
         self.worldBeingResetLock.release()
@@ -963,8 +945,8 @@ class HomeoGASimulation(object):
         finalDis =self.simulatorBackend.finalDisFromTarget()
         fitness = self.fitnessSign * finalDis
         hDebug('eval', ("Final distance from target was: " + str(finalDis)))
-        print(" Evaluation for model %s (%d ticks, min_dt=%.2f) took time: %s with fitness %.5f" %(
-            genome.ID, actual_ticks, min_dt_fast, str(datetime.timedelta(seconds=time()- timeNow)), fitness))
+        print(" Evaluation for model %s (%d ticks) took time: %s with fitness %.5f" %(
+            genome.ID, self.stepsSize, str(datetime.timedelta(seconds=time()- timeNow)), fitness))
         return fitness,                                       # Return a tuple, as required by DEAP
         
     def cleanUpTrajFiles(self):

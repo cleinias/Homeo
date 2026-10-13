@@ -29,7 +29,6 @@ visualizer always uses the older path (it runs non-headless, unlike the GA).
 
 import os
 import sys
-import math
 import pickle
 import time
 import threading
@@ -218,14 +217,6 @@ def replay(genome, steps, experiment_func, seed, output_path, log_interval=1,
     # Connect units
     hom.connectUnitsToNetwork()
 
-    # Compute tick count based on dt_fast
-    min_dt_fast = 1.0
-    for u in hom.homeoUnits:
-        dt = getattr(u, '_dt_fast', 1.0)
-        if dt < min_dt_fast:
-            min_dt_fast = dt
-    actual_ticks = int(math.ceil(steps / min_dt_fast))
-
     # Run one tick so JIT arrays get created (headless mode initialises them
     # lazily on the first selfUpdate).  The logger constructor inspects
     # _jit_incoming_units to decide whether to read weights from JIT arrays
@@ -239,20 +230,20 @@ def replay(genome, steps, experiment_func, seed, output_path, log_interval=1,
         target_pos=(7, 7),
         seed=seed)
 
-    print("Running %d ticks (%d sim-seconds, min_dt=%.2f) ..." % (
-        actual_ticks, steps, min_dt_fast))
+    # steps counts ticks, as the GA's evaluation does (SG-02)
+    print("Running %d ticks ..." % steps)
     t0 = time.time()
 
     # Log tick 1 (which we already ran above)
     logger.log_tick(1)
 
-    for tick in range(2, actual_ticks + 1):
+    for tick in range(2, steps + 1):
         hom.runOnce()
         logger.log_tick(tick)
         if tick % 10000 == 0:
             elapsed = time.time() - t0
             logger.flush()
-            print("  tick %d/%d  (%.1fs elapsed)" % (tick, actual_ticks, elapsed))
+            print("  tick %d/%d  (%.1fs elapsed)" % (tick, steps, elapsed))
 
     logger.close()
     backend.kheperaSimulation.saveTrajectory()
@@ -294,7 +285,7 @@ def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, outp
               'noNoise': meta.get('noNoise', False),
               'noUnisel': meta.get('noUnisel', False)}
     with seeded_evaluation(eval_seed):
-        sim, backend, actual_ticks, min_dt_fast = prepare_genome_evaluation(
+        sim, backend = prepare_genome_evaluation(
             _Genome(genome, indiv_id), exp_name, params, steps, data_dir,
             modelName=model_name,
             adjustHomeostat=_swap_to_ashby if use_ashby else None)
@@ -310,23 +301,15 @@ def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, outp
             target_pos=(7, 7),
             seed=eval_seed)
 
-        print("Running %d ticks (%d sim-seconds, min_dt=%.2f) ..." % (
-            actual_ticks, steps, min_dt_fast))
+        print("Running %d ticks ..." % steps)
         t0 = time.time()
         logger.log_tick(1)
-        for tick in range(2, actual_ticks + 1):
-            before = hom.time
+        for tick in range(2, steps + 1):
             sim.step()
-            if hom.time == before:
-                # sim.step() stops at sim.maxRuns, as in the GA's evaluation
-                print("  Stopped at tick %d of %d, as the GA's evaluation does: "
-                      "HomeoQtSimulation.step() stops at maxRuns = %d"
-                      % (hom.time, actual_ticks, sim.maxRuns))
-                break
             logger.log_tick(tick)
             if tick % 10000 == 0:
                 logger.flush()
-                print("  tick %d/%d  (%.1fs elapsed)" % (tick, actual_ticks, time.time() - t0))
+                print("  tick %d/%d  (%.1fs elapsed)" % (tick, steps, time.time() - t0))
 
         logger.close()
         backend.kheperaSimulation.saveTrajectory()
@@ -452,7 +435,7 @@ def main():
     parser.add_argument('--indiv', default=None,
                         help='Individual ID to replay (default: best)')
     parser.add_argument('--steps', type=int, default=None,
-                        help='Simulation steps (sim-seconds).  Default: the GA run length '
+                        help='Run length in homeostat ticks.  Default: the GA run length '
                              'recorded in the logbook for logbooks with evalSeeds, '
                              'else %d' % DEFAULT_STEPS)
     parser.add_argument('--seed', type=int, default=None,

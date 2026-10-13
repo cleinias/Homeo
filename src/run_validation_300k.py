@@ -235,14 +235,6 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
     for u in hom.homeoUnits:
         u._headless = True
 
-    # Compute actual tick count (accounting for dt_fast)
-    min_dt_fast = 1.0
-    for u in hom.homeoUnits:
-        dt = getattr(u, '_dt_fast', 1.0)
-        if dt < min_dt_fast:
-            min_dt_fast = dt
-    actual_ticks = int(math.ceil(total_steps / min_dt_fast))
-
     # Get robot and target for distance tracking
     khep_sim = backend.kheperaSimulation
     robot = khep_sim.allBodies['Khepera']
@@ -268,23 +260,17 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
 
     min_dist = dist_to_target()
     min_t = 0
-    next_report = REPORT_INTERVAL
 
-    # Ticks per simulated step depends on dt_fast
-    ticks_per_step = 1.0 / min_dt_fast
-
-    for tick in range(actual_ticks):
-        sim.step()
-        simulated_time = int((tick + 1) * min_dt_fast)
-
-        if simulated_time >= next_report:
-            d = dist_to_target()
-            if d < min_dist:
-                min_dist = d
-                min_t = simulated_time
-            print("PROGRESS: Exp %d t=%d/%d dist=%.3f min_dist=%.3f (t=%d)" % (
-                exp_num, simulated_time, total_steps, d, min_dist, min_t), flush=True)
-            next_report += REPORT_INTERVAL
+    # total_steps counts ticks, as the GA's evaluation does (SG-02)
+    for target_tick in report_ticks(REPORT_INTERVAL, total_steps):
+        while hom.time < target_tick:
+            sim.step()
+        d = dist_to_target()
+        if d < min_dist:
+            min_dist = d
+            min_t = target_tick
+        print("PROGRESS: Exp %d t=%d/%d dist=%.3f min_dist=%.3f (t=%d)" % (
+            exp_num, target_tick, total_steps, d, min_dist, min_t), flush=True)
 
     final_dist = dist_to_target()
     if final_dist < min_dist:
