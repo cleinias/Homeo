@@ -74,6 +74,8 @@ Usage
 @author: stefano
 '''
 
+from Helpers.General_Helper_Functions import unique_stem, run_tag, RUN_LOG_EXTENSIONS
+from Helpers.General_Helper_Functions import unique_stem, run_tag, RUN_LOG_EXTENSIONS
 import os
 import time
 import threading
@@ -184,8 +186,10 @@ def run_headless(total_steps=10000, report_interval=500):
     # Log initial conditions
     timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
     log_dir = sim.dataDir
-    log_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.log')
-    json_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.json')
+    stem = unique_stem(log_dir, 'phototaxis_braitenberg2-' + timestamp + run_tag(),
+                       RUN_LOG_EXTENSIONS)
+    log_path = os.path.join(log_dir, stem + '.log')
+    json_path = os.path.join(log_dir, stem + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', 'phototaxis_braitenberg2')
     log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', 'phototaxis_braitenberg2')
 
@@ -272,8 +276,10 @@ def run_visualized():
     # Log initial conditions
     timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
     log_dir = sim.dataDir
-    log_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.log')
-    json_path = os.path.join(log_dir, 'phototaxis_braitenberg2-' + timestamp + '.json')
+    stem = unique_stem(log_dir, 'phototaxis_braitenberg2-' + timestamp + run_tag(),
+                       RUN_LOG_EXTENSIONS)
+    log_path = os.path.join(log_dir, stem + '.log')
+    json_path = os.path.join(log_dir, stem + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', 'phototaxis_braitenberg2')
     log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', 'phototaxis_braitenberg2')
 

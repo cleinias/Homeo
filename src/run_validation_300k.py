@@ -16,6 +16,7 @@ Usage:
                                                    # random seed, printed and logged)
 """
 
+from Helpers.General_Helper_Functions import unique_stem, run_tag, RUN_LOG_EXTENSIONS
 import sys
 import os
 import subprocess
@@ -115,8 +116,10 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps,
     timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
     log_dir = sim.dataDir
     exp_name = sim.experimentName + '-validation-300k'
-    log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.log')
-    json_log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.json')
+    stem = unique_stem(log_dir, exp_name + '-' + timestamp + run_tag(),
+                       RUN_LOG_EXTENSIONS)
+    log_path = os.path.join(log_dir, stem + '.log')
+    json_log_path = os.path.join(log_dir, stem + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS (restored)', exp_name)
     log_homeostat_conditions_json(hom, json_log_path, 'INITIAL CONDITIONS (restored)', exp_name,
                                   seed=seed)
@@ -124,7 +127,7 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps,
     # Optional per-tick state logger
     if state_log:
         from Helpers.HomeostatStateLogger import HomeostatStateLogger
-        state_log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.statelog')
+        state_log_path = os.path.join(log_dir, stem + '.statelog')
         state_logger = HomeostatStateLogger(
             hom, sim, state_log_path, log_interval=state_log_interval, seed=seed)
         state_logger.log_tick(0)  # capture initial state before any dynamics
@@ -250,8 +253,9 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
         from Helpers.HomeostatStateLogger import HomeostatStateLogger
         timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
         exp_label = experiment_name.replace('initializeBraiten2_2_Full_', '')
-        state_log_path = os.path.join(log_dir, exp_label + '-' + genome_id +
-                                      '-' + timestamp + '.statelog')
+        state_log_path = os.path.join(log_dir, unique_stem(
+            log_dir, exp_label + '-' + genome_id + '-' + timestamp + run_tag(),
+            ('.statelog',)) + '.statelog')
         state_logger = HomeostatStateLogger(
             hom, khep_sim, state_log_path, log_interval=state_log_interval,
             seed=seed)

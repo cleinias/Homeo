@@ -85,6 +85,7 @@ Usage
 @author: stefano
 '''
 
+from Helpers.General_Helper_Functions import unique_stem, run_tag, RUN_LOG_EXTENSIONS
 import os
 import random
 import time
@@ -384,8 +385,10 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     # Log initial conditions
     timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
     log_dir = sim.dataDir
-    log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.log')
-    json_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.json')
+    stem = unique_stem(log_dir, exp_name + '-' + timestamp + run_tag(),
+                       RUN_LOG_EXTENSIONS)
+    log_path = os.path.join(log_dir, stem + '.log')
+    json_path = os.path.join(log_dir, stem + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
     log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name,
                                   seed=seed)
@@ -394,7 +397,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     state_log_path = None
     if state_log:
         from Helpers.HomeostatStateLogger import HomeostatStateLogger
-        state_log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.statelog')
+        state_log_path = os.path.join(log_dir, stem + '.statelog')
         state_logger = HomeostatStateLogger(
             hom, sim, state_log_path, log_interval=state_log_interval, seed=seed)
         state_logger.log_tick(0)  # capture initial state before any dynamics
@@ -535,7 +538,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     # Save summary CSV next to the individual log files
     if results:
         log_dir = os.path.dirname(results[0]['log_path'])
-        csv_name = f'batch_{mode}_{time.strftime("%Y-%m-%d-%H-%M-%S")}.csv'
+        csv_name = unique_stem(log_dir, f'batch_{mode}_{time.strftime("%Y-%m-%d-%H-%M-%S")}'
+                               + run_tag(), ('.csv',)) + '.csv'
         csv_path = os.path.join(log_dir, csv_name)
         fields = ['run', 'seed', 'final_dist', 'min_dist', 'min_t', 'steps_run',
                   'early_stopped', 'final_x', 'final_y', 'wall_time',
@@ -584,8 +588,10 @@ def run_visualized(topology='fixed'):
     # Log initial conditions
     timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
     log_dir = sim.dataDir
-    log_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.log')
-    json_path = os.path.join(log_dir, exp_name + '-' + timestamp + '.json')
+    stem = unique_stem(log_dir, exp_name + '-' + timestamp + run_tag(),
+                       RUN_LOG_EXTENSIONS)
+    log_path = os.path.join(log_dir, stem + '.log')
+    json_path = os.path.join(log_dir, stem + '.json')
     log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
     log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name)
 

@@ -12,7 +12,7 @@ import time
 import os
 from math import degrees, sqrt
 from os.path import exists
-from Helpers.General_Helper_Functions import run_tag, dated_data_dir
+from Helpers.General_Helper_Functions import run_tag, dated_data_dir, unique_stem
 
 
 class EnumerateClass(object):
@@ -252,10 +252,12 @@ class RobotTrajectoryWriter(object):
         dataDir = self.dataDir
         curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")
         if self.experimentName:
-            trajFilename = self.experimentName + '-' + curDateTime + run_tag() + '.traj'
+            stem = self.experimentName + '-' + curDateTime + run_tag()
         else:
-            trajFilename = 'trajData-ID-'+modelName+'-'+curDateTime+run_tag()+'.traj'
-        return  os.path.join(dataDir, trajFilename)
+            stem = 'trajData-ID-' + modelName + '-' + curDateTime + run_tag()
+        # Not an existing file's name: a world set up again within the same
+        # second used to reopen, and empty, the last one's file (HV-09)
+        return os.path.join(dataDir, unique_stem(dataDir, stem, ('.traj',)) + '.traj')
     
     def setDataDir(self, dataDir):
         """Set the directory to save the trajectory files to; None means

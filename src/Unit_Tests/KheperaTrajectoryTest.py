@@ -50,11 +50,11 @@ class TrajectoryFilesClosedTest(unittest.TestCase):
         first = self.sim.trajectoryWriter
         for _ in range(5):
             self.sim.advanceSim()
-        # Elsewhere: 'Unspecified' files are named to the second, so a second
-        # setup within the same second would reopen -- and empty -- this one.
-        with tempfile.TemporaryDirectory() as elsewhere:
-            self.sim.setupWorld(dataDir=elsewhere)
-            self.sim.saveTrajectory()
+        # In the same directory, within the same second: the new file must not
+        # reopen -- and empty -- this one (HV-09)
+        self.sim.setupWorld()
+        self.assertNotEqual(self.sim.trajectoryWriter.posFile.name, first.posFile.name)
+        self.sim.saveTrajectory()
         with open(first.posFile.name) as f:
             lines = f.read().splitlines()
         self.assertTrue(lines[0].startswith('# Position data'))

@@ -71,6 +71,26 @@ def dated_data_dir():
     return path
 
 
+def unique_stem(directory, stem, extensions):
+    """stem, or stem-2, stem-3, ...: the first for which no file
+    directory/<stem><ext> exists for any of extensions.
+
+    Output names carry a whole-second timestamp (plus run_tag()), so two runs
+    started in the same second in one process got the same name and the
+    second overwrote, or appended to, the first's files (review finding
+    HV-09).  Files written together (a run's .log, .json and .statelog; a
+    .traj) take one stem from one call, so they stay paired."""
+    candidate, n = stem, 1
+    while any(os.path.exists(os.path.join(directory, candidate + ext)) for ext in extensions):
+        n += 1
+        candidate = '%s-%d' % (stem, n)
+    return candidate
+
+
+# The files a run's conditions are logged to (see unique_stem)
+RUN_LOG_EXTENSIONS = ('.log', '.json', '.statelog')
+
+
 def run_tag():
     """Return the current run's serial as a filename suffix, or '' if unset.
 
