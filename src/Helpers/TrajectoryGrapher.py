@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 #from matplotlib.axes.Axes import text
 from matplotlib.patches import Circle
 import os
+import re
 import numpy as np
 import pandas as pd
 import sys
@@ -65,7 +66,9 @@ def main(argv=None):
                         help='Save figure to file (PDF, PNG, etc.) instead of displaying')
     parser.add_argument('--dark', action='store_true',
                         help='Treat the light source as a darkness source '
-                             '(reverses the irradiance gradient)')
+                             '(reverses the irradiance gradient).  Since 13 Oct 2026 '
+                             'a file says so itself (negative intensity in its '
+                             'header); needed only for older --dark runs')
     parser.add_argument('--sensor-range', type=float, default=SENSOR_MAX_RANGE,
                         help='Radius of the no-input ring drawn around the target, '
                              'the distance beyond which a source gives zero sensor '
@@ -98,8 +101,10 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MA
     """
 
     'Read header and (thinned) trajectory data'
-    dataFileHeader, trajData, ticks = loadTrajectory(trajDataFilename, maxPoints)
+    dataFileHeader, trajData, nRows = loadTrajectory(trajDataFilename, maxPoints)
+    ticks = ticksFromRows(dataFileHeader, nRows)
     lightsOnDic = readLightsFromHeader(dataFileHeader)
+    dark = dark or _hasDarknessSource(lightsOnDic)
 
     'Compute initial and final distance'
     target = _mainTarget(lightsOnDic)
@@ -155,7 +160,8 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     lightsOnDic = {}
     for filename, label in zip(trajDataFilenames, labels):
         print("Reading %s ..." % os.path.basename(filename), file=sys.stderr, flush=True)
-        header, trajData, ticks = loadTrajectory(filename, maxPoints)
+        header, trajData, nRows = loadTrajectory(filename, maxPoints)
+        ticks = ticksFromRows(header, nRows)
         for name, light in readLightsFromHeader(header).items():
             lightsOnDic.setdefault(name, light)
         runs.append((label, trajData, ticks))
@@ -174,6 +180,7 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     plotHeight = width * min(max((ymax - ymin) / (xmax - xmin), 0.35), 1.5)
     fig, ax = plt.subplots(figsize=(width, plotHeight + 1.0 + 0.25 * legendRows),
                            layout='constrained')
+    dark = dark or _hasDarknessSource(lightsOnDic)
     _drawIrradianceBackground(ax, lightsOnDic, (xmin, xmax, ymin, ymax), dark)
     _drawNoInputBoundary(ax, lightsOnDic, sensorRange)
 
@@ -548,6 +555,33 @@ def readLightsFromHeader(dataFileHeader):
             except (ValueError, IndexError):
                 continue
     return lightsOnDic
+
+def ticksFromRows(dataFileHeader, nRows):
+    '''Homeostat ticks covered by nRows data rows of a .traj file.
+
+    A row is one simulator step, or one every N steps when the file was
+    decimated, and a tick is two steps (stepsPerTick).  Files since 13 Oct
+    2026 say both: "# Sampled every N simulator steps, M steps per homeostat
+    tick".  Older ones said "# Sampled every N ticks" when decimated, meaning
+    steps, and nothing otherwise; every run then had 2 steps per tick.'''
+    every, perTick = 1, 2
+    for line in dataFileHeader:
+        m = re.match(r'#\s*Sampled every (\d+) simulator steps, (\d+) steps per homeostat tick',
+                     line)
+        if m:
+            every, perTick = int(m.group(1)), int(m.group(2))
+            break
+        m = re.match(r'#\s*Sampled every (\d+) ticks', line)
+        if m:
+            every = int(m.group(1))
+            break
+    return int(round(nRows * every / perTick))
+
+
+def _hasDarknessSource(lightsOnDic):
+    "A source of negative intensity (--dark runs) is a darkness source."
+    return any(light[2] < 0 for light in lightsOnDic.values())
+
 
 def readInitPosFromHeader(dataFileHeader):
     for lineNo in range(len(dataFileHeader)):

@@ -1079,6 +1079,10 @@ class KheperaSimulation(object):
 #         "For testing"
 #         self.braiten2b()
 #         "end testing"
+        if self.currentStep == 0:
+            # The trajectory header records the world as the experiment set it up
+            self.trajectoryWriter.stepsPerTick = self.stepsPerTick
+            self.trajectoryWriter.writeHeaderNow(self.allBodies[self.robotName].body)
         for body in self.allBodies.values():
             body.update(self.timeStep)
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)

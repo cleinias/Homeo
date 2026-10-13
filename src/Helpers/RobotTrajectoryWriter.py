@@ -66,9 +66,20 @@ class RobotTrajectoryWriter(object):
         self._enabled = self.defaultEnabled if enabled is None else bool(enabled)
         self._rowCount = 0
         self._pendingRow = None          # last skipped row, written on close
+        # Simulator steps per homeostat tick, for the header (2: the
+        # KheperaSimulation default, one per wheel before synchronous stepping)
+        self.stepsPerTick = 2
         self.posFile = open(self.buildTrajFilename(modelName), 'w') if self._enabled else None
-        self.writeTrajFileHeader(initialPos, lights)
+        self._openHeader(initialPos)
 
+    def _openHeader(self, initialPos):
+        '''Hold the header back until the first step (writeHeaderNow), so that
+           it records the world as the experiment left it -- light intensity
+           changed for --dark, robot moved to a random start -- not the
+           defaults the world was built with.  initialPos is the fallback for
+           a file closed before any step.'''
+        self._headerWritten = False
+        self._fallbackPos = (initialPos[0], initialPos[2])
     def runOnce(self,position=None, transitionMessage=None, modelName = None, lights = None):     
             "update state if necessary"
             if transitionMessage is not None:
@@ -87,6 +98,7 @@ class RobotTrajectoryWriter(object):
                 self.writePosition(position)
             elif self._state == self.State.CLOSEFILE:
 #                print "I am in state CLOSE"
+                self.writeHeaderNow()
                 self._flushPendingRow()
                 if self.posFile is not None:
                     self.posFile.close()
@@ -94,6 +106,7 @@ class RobotTrajectoryWriter(object):
 #                print "I am in state DONOTHING"
             elif self._state == self.State.NEWFILE:
 #                print "I am in state NEWFILE"
+                self.writeHeaderNow()
                 self._flushPendingRow()
                 try:
                     if self.posFile is not None:
@@ -101,9 +114,11 @@ class RobotTrajectoryWriter(object):
                 except IOError:
                     print("Trajectory file already close")
                 self._rowCount = 0
+                if lights is not None:
+                    self.lights = lights        # rows and header list the same sources
                 self.posFile = (open(self.buildTrajFilename(modelName = modelName), 'w')
                                 if self._enabled else None)
-                self.writeTrajFileHeader(position,lights)
+                self._openHeader(position)
                 self._state = self.State.SAVE
 #                print "I am in state SAVE"
             elif self._state == self.State.DONOTHING:
@@ -119,6 +134,7 @@ class RobotTrajectoryWriter(object):
 
         if self.posFile is None:
             return
+        self.writeHeaderNow(robotBody)
 
         rx = robotBody.position[0]
         ry = robotBody.position[1]
@@ -146,30 +162,51 @@ class RobotTrajectoryWriter(object):
             self._pendingRow = None
 
 
-    def writeTrajFileHeader(self, initialPos, lights):
+    def writeHeaderNow(self, robotBody=None):
+        '''Write the file's header, once: the light sources as they are now
+           (position, intensity -- negative for a darkness source -- and
+           whether on) and the robot's pose now (robotBody's, else the
+           position the writer was opened with).  KheperaSimulation calls it
+           before its first step, so the pose is the start pose.'''
+        if self._headerWritten or self.posFile is None:
+            return
+        self._headerWritten = True
+        if robotBody is not None:
+            pos = (robotBody.position[0], robotBody.position[1])
+            heading = '\t%.1f' % (degrees(robotBody.angle) % 360)
+        else:
+            pos, heading = self._fallbackPos, ''
+        self.writeTrajFileHeader((pos[0], 0, pos[1]), self.lights, heading)
+
+    def writeTrajFileHeader(self, initialPos, lights, heading=''):
         '''Write data file header with General info, followed
            by position of light sources and initial position of vehicle'''
 
         if self.posFile is None:
             return
 
-        "Get position of the light sources"
         self.posFile.write("# Position data for Homeo simulation run\n#\n#\n")
-        if self._interval > 1:
-            '''Record the decimation, or a reader cannot tell a short run from a
-               sampled long one.  A comment line, so old readers skip it.'''
-            self.posFile.write("# Sampled every %d ticks\n" % self._interval)
+        '''One row per simulator step, stepsPerTick steps per homeostat tick;
+           with decimation, one row per interval steps.  A comment line, so old
+           readers skip it.  (Until 13 Oct 2026 the line was written only when
+           decimating, and said "ticks" for steps.)'''
+        self.posFile.write("# Sampled every %d simulator steps, %d steps per homeostat tick\n"
+                           % (self._interval, self.stepsPerTick))
         self.posFile.write("# Light sources positioned at:\n")
-        
         for light in lights:
-                self.posFile.write(light.userData['name'] +'\t%f\t%f\t%f\t%s\n' % (light.userData['lightPos'][0],
-                                                                  light.userData['lightPos'][2],
-                                                                  light.userData['lightIntensity'],
-                                                                  light.userData['lightIsOn']))
-                self.posFile.flush()
+            intensity = light.userData.get('intensity', light.userData['lightIntensity'])
+            self.posFile.write(light.userData['name'] + '\t%f\t%f\t%f\t%s\n' % (
+                light.userData['lightPos'][0], light.userData['lightPos'][2], intensity,
+                light.userData['lightIsOn']))
         self.posFile.write("# Vehicle's initial position at:\n")
-        self.posFile.write('%f\t %f\n\n' % (initialPos[0], initialPos[2]))
-        self.posFile.write("# robot_x\trobot_y\theading\tlight_x\tlight_y\tdistance\n")
+        self.posFile.write('%f\t %f%s\n\n' % (initialPos[0], initialPos[2], heading))
+        '''One light_x, light_y, distance triplet per source, in the order of
+           the rows' columns; the first named as before.'''
+        columns = ['robot_x', 'robot_y', 'heading', 'light_x', 'light_y', 'distance']
+        for light in lights[1:]:
+            name = light.userData['name']
+            columns += [name + '_x', name + '_y', name + '_distance']
+        self.posFile.write("# " + "\t".join(columns) + "\n")
         self.posFile.flush()
 
         
