@@ -460,9 +460,11 @@ def _randomize_unit_stably(u, mass_range, stable_draws=False,
         u._lastAcceleration = 0.0
 
 
-# Fixed-weight baseline (Braitenberg 2b) parameters
+# Fixed-weight vehicle parameters (the Newtonian motor; see _direct_fixed_weights)
 CONTROL_CROSS_WEIGHT = 1.0    # sensor -> motor, magnitude (sign set by `signs`)
-CONTROL_SELF_WEIGHT = -0.9    # motor self-connection (damping)
+# Motor self-connection: with no viscosity a spring, not a damper -- the motor
+# oscillates about its balance point at constant amplitude (exact step, 2478b82)
+CONTROL_SELF_WEIGHT = -0.9
 CONTROL_MASS = 1.0
 CONTROL_VISCOSITY = 0.0
 
