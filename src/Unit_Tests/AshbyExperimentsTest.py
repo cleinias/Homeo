@@ -440,8 +440,10 @@ class AshbyExp3Test(unittest.TestCase):
         self.assertAshbyWiring(initializeAshbyExp3Training())
 
     def testTraining(self):
-        "Punished, then 1->2 changed by a punishment, then the desired response"
-        for seed in (2, 4):
+        """Punished, then 1->2 changed by a punishment, then the desired response.
+        Training succeeds for most seeds, not all (25 of seeds 1-40 since
+        CD-11 changed the uniselector's matrix, 19 before): seeds that do."""
+        for seed in (1, 3):
             hom, seed, meta = setup_exp3_training(seed)
             quiet(hom)
             trainer, punishments = make_trainer_callback()

@@ -143,14 +143,13 @@ class HomeoUniselectorAshby(HomeoUniselector):
     
     def produceEquallySpacedValues(self):
         ''' Produce a m x n Matrix, where m = number of equally spaced values
-         (default = 25), n = maximum number of units controlled by the Uniselector'''        
-        
-        tempSeq = np.linspace(-1,1,(self._steps * 2) + 1)
-        for i in range(self._unitsControlled - 1):
-            tempSeqq = np.linspace(-1,1,(self._steps * 2) + 1)
-            np.random.shuffle(tempSeqq) 
-            tempSeq = np.column_stack((tempSeq,tempSeqq))
-        return tempSeq
+         (default = 25), n = maximum number of units controlled by the Uniselector.
+         Every column is a shuffle of the same equally spaced values (review
+         finding CD-11: the first column used to be the unshuffled ramp).'''
+
+        base = np.linspace(-1,1,(self._steps * 2) + 1)
+        return np.column_stack([np.random.permutation(base)
+                                for i in range(self._unitsControlled)])
 
     def produceIndependentlyRandomizedValues(self):
         ''' Produce a m x n Matrix, where m = number of  uniformly distributed random values  (default = 25),
@@ -174,15 +173,13 @@ class HomeoUniselectorAshby(HomeoUniselector):
         where random values were implemented in hardware and could not be changed. 
         Initializing the uniselector with produceIndependentRandomized Sequence, 
         on the other hand, produces a matrix in which all rows have (a highly likelihood of being)
-        completely different values'''
+        completely different values.
+        One column per unit controlled, each a shuffle of the values (review
+        finding CD-11: an extra, unshuffled first column used to come first).'''
 
-        tempSeq = np.random.uniform(- self._upperBound, self._upperBound,(self._steps * 2) +1)
-        tempSeqq = tempSeq.copy()
-        for i in range(self._unitsControlled):
-            tempSeqqq = tempSeqq.copy()
-            np.random.shuffle(tempSeqqq) 
-            tempSeq = np.column_stack((tempSeq,tempSeqqq))
-        return tempSeq
+        base = np.random.uniform(- self._upperBound, self._upperBound,(self._steps * 2) +1)
+        return np.column_stack([np.random.permutation(base)
+                                for i in range(self._unitsControlled)])
     
     def produceSequence(self):
         ''' Produces the matrix containing the values for the uniselector switch
