@@ -1594,7 +1594,10 @@ class HomeoUnit(object):
            Computation of noise uses the utility HomeoNoise class'''
 
         if self._headless:
-            self._criticalDeviation += _jit_unit_noise(self._noise)
+            # Clipped at the stops, as the Python path's setter does (review
+            # finding CU-09).
+            self._criticalDeviation = min(max(self._criticalDeviation + _jit_unit_noise(self._noise),
+                                              -self._maxDeviation), self._maxDeviation)
             return
 
         addedNoise = HomeoNoise.unitNoise(self.noise)
