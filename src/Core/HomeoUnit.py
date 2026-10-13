@@ -1297,20 +1297,8 @@ class HomeoUnit(object):
                     self.uniselector.evolve_weights(self.inputConnections, stress)
                     self._jit_dirty = True
             else:
-                "Discrete mode: original periodic uniselector logic"
-                self.updateUniselectorTime()
-                if self.uniselectorTime >= self.uniselectorTimeInterval:
-                    if self.essentialVariableIsCritical():
-                        if self.debugMode == True:
-                            sys.stderr.write(('############################################Operating uniselector for unit %s' % self.name))
-                        self.operateUniselector()
-                        self.uniselectorActivated = 1
-                        self.uniselectorActivationCount += 1
-                    else:
-                        self.uniselectorActivated = 0
-                    self.uniselectorTime = 0
-                else:
-                    self.uniselectorActivated = 0
+                "Discrete mode: steps while critical, at most once per interval"
+                self.operateUniselectorIfCritical()
         else:
             self.uniselectorActivated = 0
 
@@ -1612,6 +1600,27 @@ class HomeoUnit(object):
            the homeounit are basically computing machine with no knowledge of time'''
 
         pass
+
+    def operateUniselectorIfCritical(self):
+        '''A discrete uniselector (Ashby's, or uniform random) steps like the
+        relay of Ashby's homeostat: as soon as the essential variable is
+        critical, then at most once every uniselectorTimeInterval ticks while
+        it stays critical.  uniselectorTime counts the ticks since the last
+        firing; a uniselector that has never fired is ready at once.  (Review
+        finding CU-10: the unit used to look once per interval, at one tick,
+        so a needle critical at every tick but that one never fired.)'''
+        self.updateUniselectorTime()
+        if (self.essentialVariableIsCritical() and
+                (self.uniselectorActivationCount == 0 or
+                 self.uniselectorTime >= self.uniselectorTimeInterval)):
+            if self.debugMode == True:
+                sys.stderr.write(('############################################ Operating uniselector for unit %s' % self.name))
+            self.operateUniselector()
+            self.uniselectorActivated = 1
+            self.uniselectorActivationCount += 1
+            self.uniselectorTime = 0
+        else:
+            self.uniselectorActivated = 0
 
     def updateUniselectorTime(self):
         '''Updates the tick counter for the uniselector'''

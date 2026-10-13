@@ -35,7 +35,7 @@ The entire homeostat can be serialised to disk with `saveTo(filename)` (pickle) 
 2. Computes the *next deviation* from the torque, the current deviation, optional viscosity damping, and internal noise (`computeNextDeviation()`).
 3. Clips the deviation to the interval [-`maxDeviation`, +`maxDeviation`].
 4. Maps the deviation to an output current in `outputRange` (default [-1, 1]) via `computeOutput()`.
-5. If the uniselector is active and the deviation has remained above the critical threshold (`critThreshold`, default 0.9 of `maxDeviation`) for longer than `uniselectorTimeInterval` ticks, the uniselector fires and resets the weights of the unit's incoming connections.
+5. If the uniselector is active and the deviation is beyond the critical threshold (`critThreshold`, default 0.9 of `maxDeviation`), the uniselector fires and resets the weights of the unit's incoming connections, like the relay of Ashby's homeostat: as soon as the deviation is critical, then at most once every `uniselectorTimeInterval` ticks while it stays critical (`operateUniselectorIfCritical`). Before 13 Oct 2026 the unit looked once per interval, at one tick, and fired only if the deviation was critical at that tick.
 
 The method that drives this cycle is `selfUpdate()`.
 

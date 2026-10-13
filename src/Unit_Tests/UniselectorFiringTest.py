@@ -1,0 +1,75 @@
+'''
+Created on Oct 13, 2026
+
+@author: stefano
+
+When a discrete uniselector fires (review finding CU-10).  Like the relay
+of Ashby's homeostat it fires as soon as the essential variable is
+critical, then at most once every uniselectorTimeInterval ticks while it
+stays critical.  It used to look once per interval, at one tick: a needle
+critical on every tick but that one never fired, and one critical only on
+that tick did.
+'''
+from Core.HomeoUnit import HomeoUnit
+from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
+
+import unittest
+from unittest import mock
+
+INTERVAL = 10
+UNIT_CLASSES = (HomeoUnit, HomeoUnitNewtonian)
+
+
+def _firings(unitClass, critical):
+    '''The ticks at which a unit's uniselector fires, when its essential
+    variable is critical at the ticks for which critical(t) is true.'''
+    HomeoUnit.clearNames()
+    unit = unitClass()
+    unit.uniselectorActive = True
+    unit.uniselectorTimeInterval = INTERVAL
+    t = [0]
+
+    def isCritical():
+        return critical(t[0])
+
+    fired = []
+    with mock.patch.object(unit, 'essentialVariableIsCritical', isCritical), \
+            mock.patch.object(unit, 'operateUniselector', lambda: fired.append(t[0])):
+        for t[0] in range(5 * INTERVAL):
+            unit.selfUpdate()
+    return fired
+
+
+class UniselectorFiringTest(unittest.TestCase):
+
+    def testFiresAsSoonAsCritical(self):
+        for unitClass in UNIT_CLASSES:
+            with self.subTest(unitClass.__name__):
+                self.assertEqual(_firings(unitClass, lambda t: t >= 3)[:1], [3])
+
+    def testWhileCriticalFiresOncePerInterval(self):
+        for unitClass in UNIT_CLASSES:
+            with self.subTest(unitClass.__name__):
+                self.assertEqual(_firings(unitClass, lambda t: True),
+                                 [0, INTERVAL, 2 * INTERVAL, 3 * INTERVAL, 4 * INTERVAL])
+
+    def testCriticalExceptAtTheOldSamplingTicksFires(self):
+        for unitClass in UNIT_CLASSES:
+            with self.subTest(unitClass.__name__):
+                fired = _firings(unitClass, lambda t: (t + 1) % INTERVAL != 0)
+                self.assertGreaterEqual(len(fired), 4)
+
+    def testNotCriticalNeverFires(self):
+        for unitClass in UNIT_CLASSES:
+            with self.subTest(unitClass.__name__):
+                self.assertEqual(_firings(unitClass, lambda t: False), [])
+
+    def testAfterACalmSpellFiresAtOnce(self):
+        for unitClass in UNIT_CLASSES:
+            with self.subTest(unitClass.__name__):
+                fired = _firings(unitClass, lambda t: t == 2 or t == 25 or t == 26)
+                self.assertEqual(fired, [2, 25])
+
+
+if __name__ == '__main__':
+    unittest.main()

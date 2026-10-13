@@ -1347,13 +1347,16 @@ class HomeoUnitTest(unittest.TestCase):
         """
         Test that a HomeoUnit's Uniselector's simulation time advances by 1 after a self update
         """
+        self.unit.criticalDeviation = 0         # not critical: the uniselector does not fire and reset its time
+        self.unit.computeOutput()
         oldUniselectorTime= self.unit.uniselectorTime
         self.unit.selfUpdate()
         self.assertTrue(self.unit.uniselectorTime == oldUniselectorTime + 1)
         
     def testUniselectorIsTriggered(self):
         """
-        Test that a unit's uniselector is triggered when a unit's essential variable is critical and uniselectorTime is equal or exceeded
+        Test that a unit's uniselector is triggered when a unit's essential variable becomes critical,
+        and does not fire again on the next tick (at most once per uniselectorTimeInterval, CU-10)
         """
         
         "Check a standard unit. Other kinds of unit have their test in their corresponding test class."
@@ -1369,6 +1372,8 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.inputConnections[0].noise = 0
         for i in range(2 * self.unit.uniselectorTimeInterval):
             self.unit.selfUpdate()
+            if self.unit.uniselectorActivated == 1:
+                break
         self.assertTrue(self.unit.uniselectorActivated == 1)
         
         "Run just one more step. UniselectorActivated should be back to 0 and uniselectorTime should be back to 1"
