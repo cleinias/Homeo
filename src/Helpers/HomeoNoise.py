@@ -354,10 +354,12 @@ class HomeoNoise(object, metaclass=Singleton):
     def connNoise(current, noise):
         '''Inlined distorting-normal-proportional noise for connections.
            Equivalent to getNoiseDistortingNormalProportional but avoids
-           singleton re-init, string dispatch, and numpy scalar overhead.'''
-        if noise == 0:
+           singleton re-init, string dispatch, and numpy scalar overhead.
+           None on a connection carrying no current (review finding CU-13:
+           it used to be the full noise at exactly 0).'''
+        if noise == 0 or current == 0:
             return 0.0
-        bound = noise * abs(current) if current != 0 else noise
+        bound = noise * abs(current)
         val = random.gauss(0, bound / 3.0)
         if val < -bound:
             return -bound

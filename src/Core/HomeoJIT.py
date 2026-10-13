@@ -64,13 +64,12 @@ def _jit_unit_noise(noise):
 @njit(cache=True)
 def _jit_conn_noise(current, noise):
     """Replacement for HomeoNoise.connNoise().
-    Distorting-normal-proportional noise for connections."""
-    if noise == 0.0:
+    Distorting-normal-proportional noise for connections: none on a
+    connection carrying no current (review finding CU-13: it used to be the
+    full noise at exactly 0)."""
+    if noise == 0.0 or current == 0.0:
         return 0.0
-    if current != 0.0:
-        bound = noise * abs(current)
-    else:
-        bound = noise
+    bound = noise * abs(current)
     val = np.random.normal(0.0, bound / 3.0)
     if val < -bound:
         return -bound
