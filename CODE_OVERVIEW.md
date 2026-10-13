@@ -64,7 +64,7 @@ The signed output of a connection is computed by `output()`, which returns weigh
 - `randomized()` -- 25 random values, shared across all controlled connections but shuffled independently for each.
 - `independentlyRandomized()` -- each connection gets its own 25 independently drawn random values.
 
-At each step, `produceNewValue()` returns the next weight from the matrix. The default number of steps is 12 (yielding 25 positions: 12 negative, zero, 12 positive), matching Ashby's original design.
+At each step, `produceNewValue()` returns the next weight from the matrix. The default number of steps is 12 (yielding 25 positions: 12 negative, zero, 12 positive), matching Ashby's original design. The matrix has one row per position and one column per connection the uniselector controls, each column a shuffle of the values; it starts with 10 columns and grows in steps of 10 as units are added. A firing gives each controlled connection its weight from the current row, then steps to the next row; a fresh uniselector's first firing reads row 0, and after the last row the switch returns to the first. (Before 13 Oct 2026 the switch had 26 positions over the 25 rows, so every 26th firing repeated the previous weights, and the first firing read the last row.)
 
 ### Data collection
 
