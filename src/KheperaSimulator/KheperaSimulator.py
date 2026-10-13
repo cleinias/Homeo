@@ -250,10 +250,21 @@ class KheperaRobot(object):
        - wheel separation = 0.096 meters (= 96mm) = 0.7619 of diameter
        - right eye position in degrees from y-axis  =  21.9017 
        - left eye position in degrees from y-axis   = -21.9017
-       - center eye position in degrees from y-axis = 0 
+       - center eye position in degrees from y-axis = 0
            Notice that the positions of rightEye and leftEye sensors are relative to the forward facing direction
-           and correspond to a position on the outer surface of the body, at the indicated angle (drawn from K-Team specs)
-           from the y axis. See addSensor function  for details on their implementation.
+           and lie on the radius at the indicated angle (drawn from K-Team specs) from the y axis.
+           See addSensor function  for details on their implementation.
+       - eyeRadiusRatio = 0.5: how far out along that radius the eyes sit, as a
+           fraction of the body's radius.  Each eye faces outward along its
+           radius and sees 45 degrees either side of it, so its field ends 23.1
+           degrees inside the heading.  On the rim (1.0, every run before 13 Oct
+           2026) the two inner edges crossed on the midline 0.1135 ahead of the
+           centre, 0.05 beyond the rim: a light in that wedge was seen by
+           neither eye.  The wedge's tip lies 1.80 r ahead of the centre for
+           eyes at radius r, so half way in (r = 0.0315) puts it inside the
+           body, and everything outside the body within 45 degrees of the
+           heading is in view.  The angles and the fields are those of the rim
+           eyes; the eyes are closer together (0.0235 apart, not 0.047).
            
         Finally, the 'name' of the KheperaRobot is internal ref used by the simulation software to refer to the robot.
         The 'ID', instead,  is the particular version of a robot, used by the Genetic Algorithm code to record fitnesses
@@ -283,7 +294,7 @@ class KheperaRobot(object):
     def __init__(self, world, diameter = 126, wheelRadiusRatio = 0.12380, wheelThicknessRatio = 0.02380, wheelSepRatio = 0.76190, maxWheelSpeed = 1.55988,
                  rightEyeAngle = 21.9017, leftEyeAngle = -21.9017, centerEyeAngle = 0, density = 0.8, unit = 'mm',
                  color = (1.,0.,0.,0.5), name = "Khepera", ID = "Unspecified", initialPose = (0,0),
-                 drive = 'kinematic'):
+                 drive = 'kinematic', eyeRadiusRatio = 0.5):
         
         "create body"        
         if unit == 'mm':
@@ -297,6 +308,9 @@ class KheperaRobot(object):
         if drive not in self.DRIVES:
             raise ValueError('drive must be one of %s, not %r' % (self.DRIVES, drive))
         self.drive = drive
+        if not 0 < eyeRadiusRatio <= 1:
+            raise ValueError('eyeRadiusRatio must be in (0, 1], not %r' % eyeRadiusRatio)
+        self.eyeRadiusRatio = eyeRadiusRatio
         self.diameter = diameter * factor
         self.density = density
         self.wheelRadius = self.diameter* wheelRadiusRatio
@@ -397,6 +411,9 @@ class KheperaRobot(object):
                                     
         khepheraRightEyeDefaultPose = (0.0235,  0.0585)   # =  21.8858 degrees from the forward direction (to the *right* of y axis)
         khepheraLeftEyeDefaultPose  = (-0.0235, 0.0585)   # = -21.8858 degrees from the forward direction (to the *left* of y axis)
+        # Moved in along their radii, same angles: see eyeRadiusRatio in the class docstring
+        khepheraRightEyeDefaultPose = tuple(c * self.eyeRadiusRatio for c in khepheraRightEyeDefaultPose)
+        khepheraLeftEyeDefaultPose  = tuple(c * self.eyeRadiusRatio for c in khepheraLeftEyeDefaultPose)
         kheperaCenterEyeDefaultPose = (0,0.063)           # Straight center
         kheperaEyeDefaultMaxValue   = 100                 # Default saturation irradiance of eye sensors, same as in V_REP
         kheperaEyeDefaultMaxRange   =  10                 # Radius of the eyes' field-of-view arc in the visualizer (rendering only)
@@ -970,11 +987,15 @@ class KheperaSimulation(object):
     """
     
     def __init__(self, timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False,
-                 robotDrive = 'kinematic', synchronousStepping = True, stepsPerTick = 2):
+                 robotDrive = 'kinematic', synchronousStepping = True, stepsPerTick = 2,
+                 robotEyeRadiusRatio = 0.5):
         '''
         Default time step is 1/60 of a second, values for velocity 
         and position iterations are those recommended by pyBox2D docs
         robotDrive: the robots' drive, 'kinematic' or 'legacy' (see KheperaRobot).
+        robotEyeRadiusRatio: where the robots' eyes sit along their radii, 0.5
+            (half way in, no blind wedge between them) or 1.0 (on the rim, as in
+            every run before 13 Oct 2026); see KheperaRobot.
         synchronousStepping: if True (default), the motors only set their wheel
             speeds and the world advances by stepsPerTick steps once per
             homeostat tick, after every unit has updated (tickAdvance, called by
@@ -990,6 +1011,7 @@ class KheperaSimulation(object):
         
         self.running = running
         self.robotDrive = robotDrive
+        self.robotEyeRadiusRatio = robotEyeRadiusRatio
         self.synchronousStepping = synchronousStepping
         self.stepsPerTick = stepsPerTick
         self.timeStep = timeStep
@@ -1154,7 +1176,8 @@ class KheperaSimulation(object):
                                                       name = kheperaRobotDefaultName, 
                                                       ID = kheperaRobotDefaultID,
                                                       initialPose = kheperaDefaultPosition,
-                                                      drive = self.robotDrive)
+                                                      drive = self.robotDrive,
+                                                      eyeRadiusRatio = self.robotEyeRadiusRatio)
 
         'Add a light'
         
@@ -1222,7 +1245,8 @@ class KheperaSimulation(object):
             name=kheperaRobotDefaultName,
             ID=kheperaRobotDefaultID,
             initialPose=kheperaDefaultPosition,
-            drive=self.robotDrive)
+            drive=self.robotDrive,
+            eyeRadiusRatio=self.robotEyeRadiusRatio)
         robot = self.allBodies[self.robotName]
 
         'Add extra sensor pairs to the robot'
