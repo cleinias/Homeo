@@ -307,7 +307,9 @@ def restore_homeostat_conditions(homeostat, snapshot):
                 if key in unis:
                     setattr(u.uniselector, '_' + key, unis[key])
             if 'index' in unis:
-                u.uniselector._index = unis['index']
+                # Snapshots made before CD-02 (13 Oct 2026) can hold 25, one
+                # past the last row: the old switch had 26 positions.
+                u.uniselector._index = unis['index'] % u.uniselector.matrix().shape[0]
         if 'switchingRate' in row:
             u._switchingRate = row['switchingRate']
         if 'maxSpeedFraction' in row:

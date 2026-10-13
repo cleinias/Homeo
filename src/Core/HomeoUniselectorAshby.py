@@ -197,23 +197,24 @@ class HomeoUniselectorAshby(HomeoUniselector):
         self._matrix = getattr(self,'produce'+ self.ashbyKind)()
         
     def produceNewValue(self):
-        '''Return the weight for the next connection and advances the unitIndex'''
+        '''Return the weight, at the switch's current position, for the next
+        connection and advance the unitIndex.  The position is the matrix's
+        row _index, counted from 0 (review finding CD-02: the Smalltalk
+        original counts from 1, and the port read row _index - 1).'''
         if not self._unitIndex  > self._unitsControlled:
             if self._beeps:
                 # FIXME will need to put a beep here
                 pass
             self._unitIndex = self._unitIndex + 1
-            return self._matrix[self._index - 1, self._unitIndex -1]
+            return self._matrix[self._index, self._unitIndex -1]
         else:
             raise Exception('Too many units for the uniselector to control')
 
     def advance(self):
-        '''Advance the uniselector to the next position'''
-        if self._index == self._matrix.shape[0]:
-            self._index = 0
-        else:
-            self._index = self._index + 1
-            
+        '''Advance the uniselector to the next position, from the last
+        back to the first: a fresh uniselector's first firing reads row 0,
+        and each of the matrix's rows comes once per cycle.'''
+        self._index = (self._index + 1) % self._matrix.shape[0]
         self._unitIndex = 0
     
     def sameAs(self,aUniselector):
