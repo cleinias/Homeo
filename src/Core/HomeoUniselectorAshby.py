@@ -12,9 +12,10 @@ class HomeoUniselectorAshby(HomeoUniselector):
     HomeoUniselectorAshby is a different implementation of Ashby's (sparsely described!) algorithm.
     It simulates a stepping switch (or Uniselector) that advances one step every time it is activated.
     At every step the uniselector produces weight values for the HomeoUnits connections. 
-    The simulation is implemented  with a m x n matrix (the ivar matrix) where m 
-    are the steps of the uniselector, and n are the number of connected units. 
-    In Ashby's classical homeostat m= 25, n = 3.  The values in the matrix are produced according 
+    The simulation is implemented  with a m x n matrix (the ivar matrix) where m = 2 * steps + 1
+    are the positions of the uniselector (its rows), and n is the number of connections
+    it controls (its columns).
+    In Ashby's classical homeostat m= 25, n = 3.  The values in the matrix are produced according
     to three different algorithms, each a different intepretation of Ashby's original idea. 
     The parameter deciding which production method to use is held in ashbyKind.
 
@@ -26,7 +27,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
     interval
     steps        <anInteger>       The number of possible steps in the Uniselector (default is 12, as per Ashby's implementation)
     index        <anInteger>       The index keeping track of which row of weight we should output next
-    matrix        <aMatrix>       A matrix of size (unitsControlled x steps) holding all the possible weights
+    matrix        <aMatrix>       A matrix of size ((2 * steps + 1) x unitsControlled) holding all the possible weights
     '''
 
 
@@ -65,11 +66,15 @@ class HomeoUniselectorAshby(HomeoUniselector):
     
     def setSteps(self, aValue):
         '''
-        steps is always a positive integer > 0'''
+        steps is always a positive integer > 0.  The matrix is rebuilt with
+        2 * steps + 1 rows, and the switch's position wraps into it (review
+        finding CD-16: the matrix kept its 25 rows).'''
         if int(abs(aValue)) == 0:
             self._steps = 1
         else:
             self._steps = int(abs(aValue))
+        self.produceSequence()
+        self._index = self._index % self._matrix.shape[0]
         
     def getSteps(self):
         return self._steps
@@ -77,11 +82,18 @@ class HomeoUniselectorAshby(HomeoUniselector):
     steps = property(fget = lambda self: self.getSteps(),
                           fset = lambda self, value: self.setSteps(value))
     
+    KINDS = {'EquallySpacedValues': 'equallySpaced',
+             'IndependentlyRandomizedValues': 'independentlyRandomized',
+             'RandomizedValues': 'randomized'}
+
     def setAshbyKind(self,aString):
         '''
-        Do nothing. The value of AshbyKind is managed by 
-        other methods'''
-        pass
+        Set the kind of matrix by its name, through the method that
+        sets it (review finding CD-16: assignments were ignored).'''
+        if aString not in self.KINDS:
+            raise HomeoUniselectorError('ashbyKind must be one of %s, not %r'
+                                        % (sorted(self.KINDS), aString))
+        getattr(self, self.KINDS[aString])()
         
 
     
@@ -157,8 +169,8 @@ class HomeoUniselectorAshby(HomeoUniselector):
         Notice that in this implementation, all connections have ***different***  random values.
         This DOES NOT seem to capture the original homeostat, 
         where random values were implemented in hardware and could not be changed. 
-        Initializing the uniselector with produceRandomized Sequence, 
-        on the other hand, produces a matrix in which all rows (connections) 
+        Initializing the uniselector with produceRandomized Sequence,
+        on the other hand, produces a matrix in which all columns (connections)
         share the same  random values'''
 
         return np.random.uniform(- self._upperBound, self._upperBound, ((self._steps * 2) + 1 ,self._unitsControlled))
@@ -172,7 +184,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
         This seems to capture (one of the interpretations) of the original homeostat, 
         where random values were implemented in hardware and could not be changed. 
         Initializing the uniselector with produceIndependentRandomized Sequence, 
-        on the other hand, produces a matrix in which all rows have (a highly likelihood of being)
+        on the other hand, produces a matrix in which all columns have (a highly likelihood of being)
         completely different values.
         One column per unit controlled, each a shuffle of the values (review
         finding CD-11: an extra, unshuffled first column used to come first).'''

@@ -70,27 +70,20 @@ class HomeoUniselector(object):
     
     def getBeeps(self):
         return self._beeps
-    
+
+    def setBeeps(self, aBoolean):
+        '''Whether the uniselector beeps when it fires.  Emits
+           uniselSoundChanged, the signal the GUI's checkbox listens to
+           (review finding CD-16: the setter raised, and toggling emitted
+           another signal).'''
+        self._beeps = bool(aBoolean)
+        emitter(self).uniselSoundChanged.emit(self._beeps)
+
     def toggleBeeping(self):
-        self._beeps = not self._beeps 
-        emitter(self).unitUniselSoundChanged.emit(self._beeps)
-    
+        self.setBeeps(not self._beeps)
+
     beeps = property(fget= lambda self: self.getBeeps(),
-                     fset = lambda self: self.toggleBeeping)
-    
-    def ashbyRandom(self):
-        '''
-        Produce a random value for the weight equal to 1/25
-        of the interval defined by lowerBound and upperBound,
-        with a random sign (+1 or -1).
-
-        This is a very simplistic implementation of Ashby's algorithm that is improved
-        in the proper HomeoUniselector subclass
-        '''
-        intervalSegment = (self._upperBound - self._lowerBound) / 25
-        sign = numpy.random.choice([-1, 1])
-
-        return intervalSegment * sign
+                     fset = lambda self, aBoolean: self.setBeeps(aBoolean))
         
     def advance(self):
         '''control how to advance to the next position of the uniselector. 

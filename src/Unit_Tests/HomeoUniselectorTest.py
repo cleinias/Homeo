@@ -46,15 +46,5 @@ class HomeoUniselectorTest(unittest.TestCase):
         '''
         self.assertRaises(SubclassResponsibility, self.uniselector.advance)
         
-    def testBasicAshbyRandom(self):
-        '''
-        Test the basic Ashbian mechanism of returning a random value equal to 1/25
-        of the interval between upperBound and lowerBound
-        '''
-        interval = self.uniselector.upperBound - self.uniselector.lowerBound
-        for i in range(1000):
-            value = self.uniselector.ashbyRandom()
-            self.assertAlmostEqual(abs(value),interval/25,delta = 0.0001)
-        
 if __name__ == "__main__":
     unittest.main()

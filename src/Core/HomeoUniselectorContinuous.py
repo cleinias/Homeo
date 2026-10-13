@@ -50,7 +50,7 @@ This preserves Ashby's core hypothesis: adaptation operates on the
 parameters (weights), not within the dynamics.  The fast ODE is untouched.
 '''
 
-from Core.HomeoUniselector import HomeoUniselector
+from Core.HomeoUniselector import HomeoUniselector, HomeoUniselectorError
 import numpy
 
 
@@ -126,6 +126,34 @@ class HomeoUniselectorContinuous(HomeoUniselector):
             setattr(self, '_' + key, value)
 
     # --- Properties ---
+
+    def setLowerBound(self, value):
+        '''The weights' range is symmetric about 0: a negative lower bound
+           sets the upper one to its opposite (review finding CD-16: any
+           bound was taken, upperBound = 5 gave (-1, 5)).'''
+        if not value < 0:
+            raise HomeoUniselectorError('lowerBound must be negative, not %r' % value)
+        self._lowerBound = value
+        self._upperBound = -value
+
+    def setUpperBound(self, value):
+        "See setLowerBound."
+        if not value > 0:
+            raise HomeoUniselectorError('upperBound must be positive, not %r' % value)
+        self._upperBound = value
+        self._lowerBound = -value
+
+    def getDt(self):
+        return self._dt
+
+    def setDt(self, value):
+        "The OU process's time step, in ticks."
+        if not value > 0:
+            raise HomeoUniselectorError('dt must be positive, not %r' % value)
+        self._dt = float(value)
+
+    dt = property(fget=lambda self: self.getDt(),
+                  fset=lambda self, value: self.setDt(value))
 
     def getModel(self):
         return self._model
