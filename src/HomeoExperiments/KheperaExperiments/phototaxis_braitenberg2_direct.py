@@ -141,7 +141,8 @@ Usage
 @author: stefano
 '''
 
-from Helpers.General_Helper_Functions import unique_stem, run_tag, RUN_LOG_EXTENSIONS
+from Helpers.General_Helper_Functions import (unique_stem, run_tag, RUN_LOG_EXTENSIONS,
+                                              report_ticks)
 import os
 import random
 import time
@@ -905,9 +906,12 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
        analysis had to do.  None if it never acquires.'''
     first_acq = None
     rx, ry = robot.body.position[0], robot.body.position[1]
+    prev_x, prev_y, prev_tick = rx, ry, 0
 
-    for target_tick in range(report_interval, total_steps + 1, report_interval):
+    target_tick = 0
+    for target_tick in report_ticks(report_interval, total_steps):
         prev_x, prev_y = rx, ry
+        prev_tick = hom.time
         hom.runFor(target_tick)
         rx, ry = robot.body.position[0], robot.body.position[1]
         d = dist_to_target()
@@ -936,10 +940,12 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     '''How the run ends, which "acquired" alone cannot tell: Braitenberg's
        Aggressor hits the source at speed, his Love vehicle comes to rest near
        it facing it, his Explorer comes to rest facing away.
-       final_speed: distance covered over the last report interval, per tick.
+       final_speed: distance covered over the last report interval (the
+       last stretch, if shorter), per tick.
        final_bearing: where the light is relative to the heading, in degrees,
        0 = straight ahead, +-180 = straight behind, > 0 to the left.'''
-    final_speed = sqrt((final_x - prev_x)**2 + (final_y - prev_y)**2) / report_interval
+    final_speed = (sqrt((final_x - prev_x)**2 + (final_y - prev_y)**2)
+                   / max(1, target_tick - prev_tick))
     final_bearing = (degrees(atan2(target_pos[1] - final_y, target_pos[0] - final_x)
                              - robot.body.angle) + 180) % 360 - 180
 

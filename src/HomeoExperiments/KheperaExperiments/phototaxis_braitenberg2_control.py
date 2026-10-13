@@ -74,7 +74,8 @@ Usage
 @author: stefano
 '''
 
-from Helpers.General_Helper_Functions import unique_stem, run_tag, RUN_LOG_EXTENSIONS
+from Helpers.General_Helper_Functions import (unique_stem, run_tag, RUN_LOG_EXTENSIONS,
+                                              report_ticks)
 from Helpers.General_Helper_Functions import unique_stem, run_tag, RUN_LOG_EXTENSIONS
 import os
 import time
@@ -208,7 +209,8 @@ def run_headless(total_steps=10000, report_interval=500):
     min_dist = dist_to_target()
     min_t = 0
 
-    for target_tick in range(report_interval, total_steps + 1, report_interval):
+    target_tick = 0
+    for target_tick in report_ticks(report_interval, total_steps):
         hom.runFor(target_tick)
         rx, ry = robot.body.position[0], robot.body.position[1]
         d = dist_to_target()

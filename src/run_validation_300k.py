@@ -16,7 +16,7 @@ Usage:
                                                    # random seed, printed and logged)
 """
 
-from Helpers.General_Helper_Functions import unique_stem, run_tag, RUN_LOG_EXTENSIONS
+from Helpers.General_Helper_Functions import unique_stem, run_tag, RUN_LOG_EXTENSIONS, report_ticks
 import sys
 import os
 import subprocess
@@ -140,7 +140,7 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps,
     min_dist = dist_to_target()
     min_t = 0
 
-    for target_tick in range(REPORT_INTERVAL, total_steps + 1, REPORT_INTERVAL):
+    for target_tick in report_ticks(REPORT_INTERVAL, total_steps):
         hom.runFor(target_tick)
         d = dist_to_target()
         if d < min_dist:

@@ -87,6 +87,18 @@ def unique_stem(directory, stem, extensions):
     return candidate
 
 
+def report_ticks(report_interval, total_steps):
+    """The ticks at which a run reports: every report_interval ticks, and at
+    total_steps whatever its remainder.  The loops used
+    range(report_interval, total_steps + 1, report_interval), which silently
+    dropped the remainder (--steps 1250 ran 1000) and never ran at all when
+    total_steps < report_interval (review finding RE-10)."""
+    ticks = list(range(report_interval, total_steps, report_interval))
+    if total_steps > 0:
+        ticks.append(total_steps)
+    return ticks
+
+
 # The files a run's conditions are logged to (see unique_stem)
 RUN_LOG_EXTENSIONS = ('.log', '.json', '.statelog')
 
