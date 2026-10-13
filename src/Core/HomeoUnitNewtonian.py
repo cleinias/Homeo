@@ -51,11 +51,9 @@ class HomeoUnitNewtonian(HomeoUnit):
                        fset=lambda self, value: self.setDtFast(value))
 
     def clearFutureValues(self):
-        "sets to 0 the internal values used for computing future states. "
+        "As HomeoUnit's, and the needle stops."
 
-        self.nextDeviation =  0
-        self.inputTorque =  0
-        self.currentOutput = 0
+        super(HomeoUnitNewtonian, self).clearFutureValues()
         self.currentVelocity = 0
         self._lastAcceleration = 0.0
         

@@ -349,9 +349,11 @@ class Homeostat(object):
         self.isRunning = False
 
     def timeReset(self):
-        '''Reset time to 0. Does not change the external values of the units 
-           or their connections, but do change their internal computational values: 
-           input, nextDeviation, etcetera'''
+        '''Reset time to 0. Does not change the external values of the units
+           or their connections, but do change their internal computational values:
+           input, nextDeviation, etcetera; the outputs are set from the
+           deviations and the uniselectors start afresh (see
+           HomeoUnit.clearFutureValues)'''
 
         self.time = 0
         for unit in self.homeoUnits:

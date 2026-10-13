@@ -236,7 +236,8 @@ class HomeoUnit(object):
         (an instance of HomeoSimulation or by the graphic interface)
         '''
         self._showUniselectorAction = False
-        self._headless = False
+        # A reset keeps the unit's mode (review finding CU-06)
+        self._headless = getattr(self, '_headless', False)
         self._jit_dirty = True
         self._viscosity = HomeoUnit.DefaultParameters['viscosity']
         self._maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
@@ -275,12 +276,16 @@ class HomeoUnit(object):
                                       lengthEquivalence = 0.01,       # 1 unit of displacement corresponds to 1 cm (expressed in meters)"
                                       massEquivalence = 0.001)        # 1 unit of mass equals one gram, or 0.001 kg"
     
-        "give the unit  a default name"
-        try:
-            HomeoUnit._releaseName(self.name, self)
-        except AttributeError:
+        '''A reset keeps the self-connection's weight in step with the
+           default potentiometer (a new unit has no connections yet)'''
+        if getattr(self, '_inputConnections', None):
+            self.potentiometer = HomeoUnit.DefaultParameters['potentiometer']
+
+        '''give a new unit a default name; a reset keeps the unit's name
+           (review finding CU-06: it renamed every unit)'''
+        if getattr(self, '_name', None) is None:
             self._name = None
-        self.setDefaultName()
+            self.setDefaultName()
 
         'Set the mass of the needle unit. Its value must be rather high (~= 1000) to avoid instability)'
         self._needleUnit = HomeoNeedleUnit()
@@ -963,15 +968,15 @@ class HomeoUnit(object):
         self.criticalDeviation = 0
 
     def randomizeAllConnectionValues(self):
-        '''Reset the weight, switch, and noise of all connections to random values 
-           (see HomeoConnection for details),
-           including the self connection of the unit to itself.  
-           Do not change the uniselector operation.
+        '''Reset the weight, switch, and noise of the connections from other
+           units to random values (see HomeoConnection for details).
+           The self connection, at position 0, is left alone: it stays manual,
+           with the weight the potentiometer and switch give it (review finding
+           CU-06: randomizing it put it under the uniselector).
            Reset Input Torque to 0'''
 
-        for conn in self._inputConnections:  
-#                if not conn.incomingUnit == self:
-                conn.randomizeConnectionValues()
+        for conn in self._inputConnections[1:]:
+            conn.randomizeConnectionValues()
         self.inputTorque = 0
         
         
@@ -1236,11 +1241,18 @@ class HomeoUnit(object):
     #===========================================================================
     
     def clearFutureValues(self):
-        '''Set to 0 the internal values used for computing future states'''
+        '''Set to 0 the internal values used for computing future states,
+           set the output from the present deviation, and start the
+           uniselector afresh (review finding CU-06: the output was zeroed,
+           against the deviation, and the uniselector's timer and count
+           carried over)'''
 
         self.nextDeviation = 0
         self.inputTorque = 0
-        self.currentOutput =  0
+        self.computeOutput()
+        self.uniselectorTime = 0
+        self.uniselectorActivated = 0
+        self.uniselectorActivationCount = 0
 
     def clipDeviation(self, aValue): 
         '''Clip the unit's criticalDeviation value if it exceeds its maximum or minimum. 
