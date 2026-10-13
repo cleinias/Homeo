@@ -135,9 +135,11 @@ class HomeoUnitNewtonian(HomeoUnit):
            including the potential through the trough, the friction at the vane, etc.
            These factors are ignored here'''
 
+        torque, stiffness = self.selfSpring(aTorqueValue)
         new_pos, acceleration = _jit_needle_position_newtonian(
-            aTorqueValue, self._viscosity, self._currentVelocity,
-            self._needleUnit._mass, self._criticalDeviation, self._dt_fast)
+            torque, self._viscosity, self._currentVelocity,
+            self._needleUnit._mass, self._criticalDeviation, self._dt_fast,
+            stiffness)
         self._lastAcceleration = acceleration
         if self._headless:
             return new_pos
@@ -191,6 +193,43 @@ class HomeoUnitNewtonian(HomeoUnit):
                 sys.stderr.write(outputString)
         
         return self.criticalDeviation + displacement
+
+    def selfSpring(self, aTorqueValue):
+        '''The self-connection as a spring: (torque, stiffness) for the step.
+
+        aTorqueValue includes the self-connection's term W * output, W its
+        signed weight, the output read before the step.  Between the stops the
+        output is linear in the deviation, output = s x + o, so the self-term
+        is a force W (s x + o) that changes with the needle's position during
+        the step: a spring of stiffness k = -W s (negative feedback, k > 0)
+        or a negative spring (positive feedback).  Returned: the torque at the
+        needle's current position, with the self-term at that position, and
+        k, for the exact step (_jit_needle_position_newtonian).  The
+        self-connection's noise stays in the torque, held over the step.
+        Without an active self-connection: (aTorqueValue, 0.0).'''
+        if self._headless:
+            i = getattr(self, '_jit_self', None)
+            if i is None:                       # arrays built before this attribute
+                self._sync_jit_arrays()
+                i = self._jit_self
+            if i < 0:
+                return aTorqueValue, 0.0
+            w = self._jit_weights[i] * self._jit_switches[i]
+            out = self._jit_outputs[i]
+        else:
+            conn = next((c for c in self.inputConnections
+                         if c._incomingUnit is self), None)
+            if conn is None or not (conn.isActive() and self.isActive()):
+                return aTorqueValue, 0.0
+            w = conn.weight * conn.switch
+            out = self._currentOutput
+        if w == 0.0:
+            return aTorqueValue, 0.0
+        low_dev = self.minDeviation
+        slope = ((self._outputRange['high'] - self._outputRange['low'])
+                 / (self._maxDeviation - low_dev))
+        out_here = (self._criticalDeviation - low_dev) * slope + self._outputRange['low']
+        return aTorqueValue + w * (out_here - out), -w * slope
 
     def newNeedlePosition(self, aTorqueValue):
         '''Compute the new needle position on the basis of aTorqueValue, 

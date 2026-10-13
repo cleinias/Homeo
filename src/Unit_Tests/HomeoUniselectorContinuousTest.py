@@ -307,7 +307,9 @@ class HomeoUnitDtFastTest(unittest.TestCase):
         Verlet-derived result, displacement = v + 0.5*a (implicit dt=1).
         With viscosity the step is the exact solution of
         m dv/dt = torque - viscosity * v (the old explicit step was unstable
-        for viscosity * dt_fast / mass > 2).'''
+        for viscosity * dt_fast / mass > 2).  A free needle: the self-connection,
+        a spring, is off (see HomeoUnitNewtonianSpringTest).'''
+        self.unit.disactivateSelfConn()
         self.unit.dt_fast = 1.0
         self.unit._criticalDeviation = 0.0
         self.unit._currentVelocity = 0.3

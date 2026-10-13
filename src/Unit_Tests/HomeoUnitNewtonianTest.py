@@ -24,8 +24,11 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
     def testComputeNextDeviationLinear(self):
         """
         Test that the displacement of the needle of  Newtonian unit is computed
-        according to Newtonian dynamics: s + v + 1/2ma 
+        according to Newtonian dynamics: s + v + 1/2ma (a free needle: without
+        its self-connection, which acts as a spring; see
+        HomeoUnitNewtonianSpringTest)
         """
+        self.unit.disactivateSelfConn()
         self.unit.criticalDeviation = 0
         for i in range(1000): 
             torque = numpy.random.uniform(-1,1) 
@@ -39,9 +42,11 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
     def testComputeNextVelocityWithoutConnections(self):
         """
         Test computation of velocity according to Newtonian laws , NO connections
+        (not even the self-connection, a spring: see HomeoUnitNewtonianSpringTest)
         """
         errorTolerance = 10**-13 
         testRuns = 1000
+        self.unit.disactivateSelfConn()
         self.unit.criticalDeviation = 0
         self.unit.noise = 0
         self.unit.currentOutput = 0.1
@@ -53,7 +58,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
             
             "compute the torque as sum of the output coming from connected units"
             unitActiveInputs = [activeConn.output() for activeConn in self.unit.inputConnections if activeConn.isActive() and activeConn.incomingUnit.isActive()]
-            torque = reduce(lambda x,y: x+y, unitActiveInputs) 
+            torque = reduce(lambda x,y: x+y, unitActiveInputs, 0.0)
             
             "consider the drag affecting the force"
             torque = torque + self.unit.drag()
@@ -205,6 +210,95 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
     def tearDown(self):
         pass
 
+
+class HomeoUnitNewtonianSpringTest(unittest.TestCase):
+    """The self-connection as a spring, against the exact solution.
+
+    A self-connection of signed weight W adds W x output to the torque, and
+    between the stops the output is x / maxDeviation, so the needle obeys
+
+        m x'' = F - k x - c x',   k = -W / maxDeviation
+
+    a damped oscillator (k > 0, negative feedback) or an unstable one (k < 0).
+    The step solves it exactly, so the unit must follow the solution at
+    t = dt_fast, 2 dt_fast, ... whatever the damping: an undamped spring keeps
+    its amplitude (the explicit step made it grow), an overdamped one relaxes
+    without overshoot, positive feedback grows at its true rate.  Both paths.
+    """
+
+    def makeUnit(self, mass, viscosity, dtFast, selfWeight, torque, x0, headless):
+        unit = HomeoUnitNewtonian()
+        unit.noise = 0
+        unit.uniselectorActive = False
+        unit.needleUnit.mass = mass
+        unit.viscosity = viscosity
+        unit.dt_fast = dtFast
+        unit.criticalDeviation = x0
+        unit.computeOutput()
+        unit.currentVelocity = 0
+        selfConn = unit.inputConnections[0]
+        selfConn.newWeight(selfWeight)
+        selfConn.noise = 0
+        selfConn.state = 'manual'
+        driver = HomeoUnit()
+        driver.currentOutput = 1.0
+        unit.addConnectionWithRandomValues(driver)
+        drive = unit.inputConnections[-1]
+        drive.newWeight(torque)
+        drive.noise = 0
+        drive.state = 'manual'
+        unit._headless = headless
+        unit._jit_dirty = True
+        self.driver = driver                    # keep the driving unit alive
+        return unit
+
+    @staticmethod
+    def exact(mass, viscosity, stiffness, torque, x0, t):
+        "x(t), v(t) of m x'' = F - k x - c x', x(0) = x0, v(0) = 0"
+        from scipy.linalg import expm
+        a = numpy.array([[0.0, 1.0, 0.0],
+                         [-stiffness / mass, -viscosity / mass, torque / mass],
+                         [0.0, 0.0, 0.0]])
+        x, v, _ = expm(a * t) @ numpy.array([x0, 0.0, 1.0])
+        return x, v
+
+    def checkTrajectory(self, headless):
+        steps = 60
+        for dtFast in (0.5, 1.0, 2.0):
+            for mass, viscosity, selfWeight, torque, x0 in (
+                    (1.0, 0.0, -0.9, 0.053, 0.0),       # undamped spring
+                    (2.0, 0.3, -0.5, 0.02, 0.5),        # underdamped
+                    (0.001, 0.1, -1.0, 0.05, 0.0),      # Ashby's regime, c dt / m >= 50
+                    (5.0, 2.0, -0.2, -0.03, -0.4),      # overdamped
+                    (1.0, 0.0, 0.02, 0.0, 0.01)):       # positive feedback
+                unit = self.makeUnit(mass, viscosity, dtFast, selfWeight, torque, x0, headless)
+                stiffness = -selfWeight / unit.maxDeviation
+                for step in range(1, steps + 1):
+                    unit.selfUpdate()
+                    x, v = self.exact(mass, viscosity, stiffness, torque, x0, step * dtFast)
+                    msg = "step %d, dt %s, m %s, visc %s, W %s" % (step, dtFast, mass,
+                                                                   viscosity, selfWeight)
+                    self.assertLess(abs(unit.criticalDeviation), unit.maxDeviation, msg)
+                    self.assertAlmostEqual(unit.criticalDeviation, x, delta=1e-9, msg=msg)
+                    self.assertAlmostEqual(unit.currentVelocity, v, delta=1e-9, msg=msg)
+
+    def testTrajectoryPythonPath(self):
+        self.checkTrajectory(headless=False)
+
+    def testTrajectoryHeadlessPath(self):
+        self.checkTrajectory(headless=True)
+
+    def testUndampedSpringKeepsItsAmplitude(self):
+        """An undamped needle on its self-connection, under a constant input,
+        swings between its start and twice its equilibrium for good"""
+        unit = self.makeUnit(1.0, 0.0, 1.0, -0.9, 0.053, 0.0, headless=True)
+        equilibrium = 0.053 / (0.9 / unit.maxDeviation)
+        positions = []
+        for step in range(5000):
+            unit.selfUpdate()
+            positions.append(unit.criticalDeviation)
+        self.assertLess(max(positions), 2 * equilibrium + 1e-9)
+        self.assertGreater(max(positions[-200:]), 2 * equilibrium - 1e-3)
 
 
 if __name__ == "__main__":

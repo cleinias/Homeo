@@ -374,6 +374,10 @@ class HomeoUnit(object):
         # as in the Python path (HomeoUniselectorContinuous.evolve_weights).
         self._jit_evolvable = np.array([c._state == 'uniselector' for c in active], dtype=bool)
         self._jit_outputs = np.empty(len(active), dtype=np.float64)
+        # Where the self-connection is in the arrays (-1: not active), for
+        # needle steps that treat it as a spring (HomeoUnitNewtonian)
+        self._jit_self = next((i for i, c in enumerate(active)
+                               if c._incomingUnit is self), -1)
         for conn in active:
             conn._jitStale = False
         self._jit_dirty = False
