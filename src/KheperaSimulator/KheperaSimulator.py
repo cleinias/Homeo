@@ -414,6 +414,7 @@ class KheperaRobot(object):
         # Moved in along their radii, same angles: see eyeRadiusRatio in the class docstring
         khepheraRightEyeDefaultPose = tuple(c * self.eyeRadiusRatio for c in khepheraRightEyeDefaultPose)
         khepheraLeftEyeDefaultPose  = tuple(c * self.eyeRadiusRatio for c in khepheraLeftEyeDefaultPose)
+        self.eyePoses = {'leftEye': khepheraLeftEyeDefaultPose, 'rightEye': khepheraRightEyeDefaultPose}
         kheperaCenterEyeDefaultPose = (0,0.063)           # Straight center
         kheperaEyeDefaultMaxValue   = 100                 # Default saturation irradiance of eye sensors, same as in V_REP
         kheperaEyeDefaultMaxRange   =  10                 # Radius of the eyes' field-of-view arc in the visualizer (rendering only)
@@ -1250,59 +1251,27 @@ class KheperaSimulation(object):
         robot = self.allBodies[self.robotName]
 
         'Add extra sensor pairs to the robot'
-        # Sensor geometry defaults (same as the built-in leftEye/rightEye)
+        """Each extra pair sits where the light eyes sit, with their field (see
+        KheperaRobot's eyeRadiusRatio): the four modalities share one geometry,
+        so they differ only in how they are wired, and none has a blind wedge
+        ahead.  Before 13 Oct 2026 the pairs sat on the rim at +/-45 (temperature),
+        +/-10 (oxygen) and +/-35 degrees (organic), with wedges reaching 0.078 and
+        0.257 from the centre and, for temperature, a strip straight ahead never
+        seen.  Other layouts (direction-free sensing of heat and chemicals, more
+        sensors per modality): research note "Khepera sensor placement for
+        Vehicle 3c"."""
         kheperaEyeDefaultMaxValue  = 100
         kheperaEyeDefaultMaxRange  = 10
         kheperaEyeDefaultAngleRange = 90
         kheperaEyeDefaultDiameterRatio = 0.1
 
-        # Temperature sensors at +/- 45 degrees
-        tempRightPose = (robot.diameter/2 * sin(radians(45)),
-                         robot.diameter/2 * cos(radians(45)))
-        tempLeftPose  = (-robot.diameter/2 * sin(radians(45)),
-                          robot.diameter/2 * cos(radians(45)))
-        robot.addSensor(tempLeftPose, 'leftTempEye',
-                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
-                        maxRange=kheperaEyeDefaultMaxRange,
-                        angleRange=kheperaEyeDefaultAngleRange,
-                        maxValue=kheperaEyeDefaultMaxValue)
-        robot.addSensor(tempRightPose, 'rightTempEye',
-                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
-                        maxRange=kheperaEyeDefaultMaxRange,
-                        angleRange=kheperaEyeDefaultAngleRange,
-                        maxValue=kheperaEyeDefaultMaxValue)
-
-        # Oxygen sensors at +/- 10 degrees
-        oxyRightPose = (robot.diameter/2 * sin(radians(10)),
-                        robot.diameter/2 * cos(radians(10)))
-        oxyLeftPose  = (-robot.diameter/2 * sin(radians(10)),
-                         robot.diameter/2 * cos(radians(10)))
-        robot.addSensor(oxyLeftPose, 'leftOxyEye',
-                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
-                        maxRange=kheperaEyeDefaultMaxRange,
-                        angleRange=kheperaEyeDefaultAngleRange,
-                        maxValue=kheperaEyeDefaultMaxValue)
-        robot.addSensor(oxyRightPose, 'rightOxyEye',
-                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
-                        maxRange=kheperaEyeDefaultMaxRange,
-                        angleRange=kheperaEyeDefaultAngleRange,
-                        maxValue=kheperaEyeDefaultMaxValue)
-
-        # Organic matter sensors at +/- 35 degrees
-        orgRightPose = (robot.diameter/2 * sin(radians(35)),
-                        robot.diameter/2 * cos(radians(35)))
-        orgLeftPose  = (-robot.diameter/2 * sin(radians(35)),
-                         robot.diameter/2 * cos(radians(35)))
-        robot.addSensor(orgLeftPose, 'leftOrgEye',
-                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
-                        maxRange=kheperaEyeDefaultMaxRange,
-                        angleRange=kheperaEyeDefaultAngleRange,
-                        maxValue=kheperaEyeDefaultMaxValue)
-        robot.addSensor(orgRightPose, 'rightOrgEye',
-                        diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
-                        maxRange=kheperaEyeDefaultMaxRange,
-                        angleRange=kheperaEyeDefaultAngleRange,
-                        maxValue=kheperaEyeDefaultMaxValue)
+        for modality in ('Temp', 'Oxy', 'Org'):
+            for side in ('left', 'right'):
+                robot.addSensor(robot.eyePoses[side + 'Eye'], side + modality + 'Eye',
+                                diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
+                                maxRange=kheperaEyeDefaultMaxRange,
+                                angleRange=kheperaEyeDefaultAngleRange,
+                                maxValue=kheperaEyeDefaultMaxValue)
 
         'Define source specifications: (name, quality, position, color, intensity)'
         source_specs = [

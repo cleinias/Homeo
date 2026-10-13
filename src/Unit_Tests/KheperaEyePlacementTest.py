@@ -16,6 +16,7 @@ before 13 Oct 2026.
 '''
 from math import radians, sin, cos
 
+import tempfile
 import unittest
 
 try:
@@ -92,6 +93,52 @@ class KheperaEyePlacementTest(unittest.TestCase):
         for ratio in (0.5, 1.0):
             simulation = KheperaSimulation(robotEyeRadiusRatio=ratio)
             self.assertEqual(simulation.robotEyeRadiusRatio, ratio)
+
+
+@unittest.skipUnless(HAS_BOX2D, "Box2D not installed")
+class Vehicle3cSensorPlacementTest(unittest.TestCase):
+    '''The Vehicle 3c world's extra pairs (temperature, oxygen, organic) sit
+    where the light eyes sit, with their field: one geometry for the four
+    modalities, no blind wedge for any (research note "Khepera sensor
+    placement for Vehicle 3c").  They sat on the rim at +/-45, +/-10 and
+    +/-35 degrees, with wedges, and for temperature a blind strip.'''
+
+    PAIRS = ('Eye', 'TempEye', 'OxyEye', 'OrgEye')
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.simulation = KheperaSimulation()
+        self.simulation.setupWorld('kheperaBraitenberg3c_HOMEO_World', dataDir=self.tmp.name)
+        self.addCleanup(self.simulation.trajectoryWriter.runOnce, transitionMessage='CLOSEFILE')
+        self.robot = self.simulation.allBodies['Khepera']
+
+    def testEveryPairSitsWhereTheEyesSit(self):
+        for side in ('left', 'right'):
+            eye = self.robot.sensors[side + 'Eye']
+            for pair in self.PAIRS[1:]:
+                sensor = self.robot.sensors[side + pair]
+                with self.subTest(sensor=side + pair):
+                    self.assertAlmostEqual(sensor.shape.pos[0], eye.shape.pos[0])
+                    self.assertAlmostEqual(sensor.shape.pos[1], eye.shape.pos[1])
+                    self.assertAlmostEqual(sensor.userData[side + pair + 'Angle'],
+                                           eye.userData[side + 'EyeAngle'])
+                    self.assertEqual(sensor.userData[side + pair + 'AngleRange'], 90)
+
+    def testNoPairHasABlindWedgeAhead(self):
+        body = self.robot.body
+        rim = self.robot.diameter / 2
+        for pair in self.PAIRS:
+            for bearing in range(-45, 46, 5):
+                for k in range(1, 60):
+                    distance = rim + 0.005 * k
+                    b = body.angle + radians(bearing)
+                    light = [Light(body.position[0] + distance * cos(b),
+                                   body.position[1] + distance * sin(b))]
+                    seen = max(self.robot.irradAtSensor(side + pair, light)
+                               for side in ('left', 'right'))
+                    with self.subTest(pair=pair, bearing=bearing, distance=distance):
+                        self.assertGreater(seen, 0)
 
 
 if __name__ == '__main__':
