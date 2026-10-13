@@ -2126,10 +2126,13 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     rightEyeSensorOnly = HomeoUnitInput(transducer=rightEyeSensorTransd)
     
     '3.3 initialize units essential parameters according to slices of input list'
-    leftMotor.initialize_GA(homeoGenome[0:4])
-    rightMotor.initialize_GA(homeoGenome[4:8])
-    leftEye.initialize_GA(homeoGenome[8:12])
-    rightEye.initialize_GA(homeoGenome[12:16])
+    # Sliced by noHomeoParameters, as the connection genes' offset is below:
+    # initialize_GA raises unless it is the units' number of parameters (SE-09)
+    n = noHomeoParameters
+    leftMotor.initialize_GA(homeoGenome[0:n])
+    rightMotor.initialize_GA(homeoGenome[n:2 * n])
+    leftEye.initialize_GA(homeoGenome[2 * n:3 * n])
+    rightEye.initialize_GA(homeoGenome[3 * n:4 * n])
                                
         
     '3.4. Setup *non-essential* homeo parameters'
