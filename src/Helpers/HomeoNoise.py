@@ -206,15 +206,12 @@ class HomeoNoise(object, metaclass=Singleton):
 
     def getNoiseDegradingConstantProportional(self):
         '''Return a degrading noise (with sign always opposite to affected current), 
-            and constant value equal to the ratio between the noise parameter and the affected current'''
+            and constant value equal to the ratio between the noise parameter and the affected current.
+            None for no current (review finding HN-09: it was -noise at exactly 0).'''
 
-        if self.noise == 0:
+        if self.noise == 0 or self.current == 0:
             return 0
-        else:
-            if self.current == 0:
-                return - self.noise
-            else:
-                return (self._noise * abs(self._current)) * np.sign(self._current) * -1
+        return (self._noise * abs(self._current)) * np.sign(self._current) * -1
 
     def getNoiseDegradingNormalLinear(self):
         '''Return a degrading noise (sign always opposite to current),
@@ -231,36 +228,19 @@ class HomeoNoise(object, metaclass=Singleton):
 
     def getNoiseDegradingNormalProportional(self):
         '''Return a degrading noise (with sign always opposite to affected current), 
-            and normally distributed value in the interval [0, 2 * noise * abs(current)]
-            If the affected current is = 0, still returns a value in the interval 
-            (0 , 2 * noise)'''
+            and normally distributed value in the interval [0, 2 * noise * abs(current)].
+            None for no current (review finding HN-09: it was a value in
+            (0, noise) at exactly 0).'''
 
-        if self.noise == 0:
+        if self.noise == 0 or self._current == 0:
             return 0
-        else:
-            if self._current != 0:
-                minNoise = - self._noise * abs(self._current)
-                maxNoise = self._noise * abs(self._current)
-            else:
-                minNoise = - self._noise
-                maxNoise = self._noise
+        noiseSign = np.sign(self._current) * -1
+        minAbsNoise = 0
+        maxAbsNoise = self._noise * abs(self._current) * 2
+        noiseAbsValue = np.random.normal(maxAbsNoise / 2, maxAbsNoise / 6.)
 
-        if self.noise == 0:
-            return 0
-        else:
-            if self._current != 0:
-                noiseSign = np.sign(self._current) * -1 
-                minAbsNoise = 0
-                maxAbsNoise = self._noise * abs(self._current) * 2
-            else:
-                noiseSign = -1
-                minAbsNoise = 0
-                maxAbsNoise = self._noise
-
-            noiseAbsValue = np.random.normal(maxAbsNoise / 2, maxAbsNoise / 6.)
-        
-            "trim noise within the interval {0, 2 *noise *current abs}"
-            return np.clip(noiseAbsValue, minAbsNoise, maxAbsNoise) * noiseSign
+        "trim noise within the interval {0, 2 *noise *current abs}"
+        return np.clip(noiseAbsValue, minAbsNoise, maxAbsNoise) * noiseSign
 
     def getNoiseDegradingUniformLinear(self):
         '''Return a degrading noise (sign always opposite to current) uniformly distributed
@@ -313,18 +293,14 @@ class HomeoNoise(object, metaclass=Singleton):
         '''Returns a distorting noise (centered around 0), normally distributed
          and proportional to the absolute magnitude of the affected current
          
-         Standard deviation of the normal distribution is 1/3 of noise's value'''
+         Standard deviation of the normal distribution is 1/3 of noise's value.
+         None for no current (review finding HN-09: the bound was the full
+         noise at exactly 0).'''
 
-
-        if self.noise == 0:
+        if self.noise == 0 or self._current == 0:
             return 0
-        else:
-            if self._current != 0:
-                minNoise = - self._noise * abs(self._current)
-                maxNoise = self._noise * abs(self._current)
-            else:
-                minNoise = - self._noise
-                maxNoise = self._noise
+        minNoise = - self._noise * abs(self._current)
+        maxNoise = self._noise * abs(self._current)
 
         noiseValue = np.random.normal(0, maxNoise / 3.)
     

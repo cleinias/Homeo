@@ -60,6 +60,20 @@ class HomeoNoiseTest(unittest.TestCase):
             except:
                 self.assertTrue(False, ('Exception raised while running method: ' + noiseAlg))
         
+    def testProportionalAlgorithmsAreContinuousAtZeroCurrent(self):
+        '''Proportional noise: none for no current, as next to it (review
+           finding HN-09: three of them gave noise of the order of the noise
+           parameter at exactly 0).'''
+        self.noise = HomeoNoise()
+        for noiseAlg in self.noiseAlgs:
+            if not noiseAlg.endswith('Proportional'):
+                continue
+            for i in range(200):
+                self.noise.withCurrentAndNoise(0, 0.5)
+                self.assertEqual(getattr(self.noise, noiseAlg)(), 0, noiseAlg)
+                self.noise.withCurrentAndNoise(1e-9, 0.5)
+                self.assertLessEqual(abs(getattr(self.noise, noiseAlg)()), 2 * 0.5 * 1e-9, noiseAlg)
+
     def testAllAlgorithmsWithZeroNoiseAndZeroCurrent(self):
         '''Check that the basic method of HomeoNoise---getNoise()---can still 
            produce values when *both* a unit's current and a unit's noise = 0'''
@@ -174,7 +188,7 @@ class HomeoNoiseTest(unittest.TestCase):
         self.unit._criticalDeviation = 0
         self.noise.withCurrentAndNoise(self.unit.criticalDeviation, self.unit.noise)
         producedNoise = self.noise.getNoise()
-        self.assertTrue(producedNoise == -0.5)
+        self.assertTrue(producedNoise == 0)          # proportional: no current, no noise (HN-09)
         
         self.unit.noise = 0
         self.unit._criticalDeviation = 0
