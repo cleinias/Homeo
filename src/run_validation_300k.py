@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """run_validation_300k.py — Run best individuals from all 4 experiments for 300k steps.
 
-Exp 1 & 2: Restore homeostat from saved final JSON state (weights + params).
+Exp 1 & 2: Restore homeostat from saved final JSON state (every logged unit and
+           connection parameter; not velocities, the uniselector's own
+           parameters or the robot's pose, which the JSON does not log).
 Exp 3 & 4: Replay best GA genome with fresh OU weight discovery.
 
 Usage:
@@ -54,41 +56,25 @@ REPORT_INTERVAL = 10000
 # ---------------------------------------------------------------------------
 
 def restore_from_json(homeostat, json_path):
-    """Restore connection weights and unit parameters from a saved JSON file.
+    """Restore a homeostat to the FINAL CONDITIONS of a saved run.
 
-    Reads the FINAL CONDITIONS snapshot and applies it to the homeostat,
-    matching units by name and connections by (unit, from) pair.
+    Every field the JSON logs is set back (HomeostatConditionLogger.
+    restore_homeostat_conditions): the units' mass, viscosity, noise,
+    deviation, uniselector interval and the rest, the actuators' parameters,
+    and every connection's weight, noise, state and status.  Until 13 Oct
+    2026 only the deviations, outputs, potentiometers, switches and weights
+    were restored, onto units with freshly drawn mass, viscosity and noise
+    (review finding SH-02).
+
+    Returns the saved run's seed, or None if its JSON has none.
     """
+    from Helpers.HomeostatConditionLogger import restore_homeostat_conditions
     with open(json_path, 'r') as f:
         data = json.load(f)
-
-    final = data['FINAL CONDITIONS']
-
-    # Build lookup for units by name
-    unit_data = {u['name']: u for u in final['units']}
-
-    for unit in homeostat.homeoUnits:
-        if unit.name not in unit_data:
-            continue
-        saved = unit_data[unit.name]
-        unit.criticalDeviation = saved['criticalDeviation']
-        unit.currentOutput = saved['currentOutput']
-        unit.potentiometer = saved['potentiometer']
-        unit.switch = saved['switch']
-
-    # Build lookup for connections by (unit, from)
-    conn_data = {}
-    for c in final['connections']:
-        conn_data[(c['unit'], c['from'])] = c
-
-    for unit in homeostat.homeoUnits:
-        for conn in unit.inputConnections:
-            key = (unit.name, conn.incomingUnit.name)
-            if key in conn_data:
-                saved = conn_data[key]
-                # newWeight() takes a signed value in [-1, 1]
-                signed_weight = saved['weight'] * saved['switch']
-                conn.newWeight(signed_weight)
+    missing = restore_homeostat_conditions(homeostat, data['FINAL CONDITIONS'])
+    if missing:
+        raise ValueError('%s: units %s not in the homeostat' % (json_path, missing))
+    return data.get('seed')
 
 
 # ---------------------------------------------------------------------------

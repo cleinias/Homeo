@@ -198,3 +198,64 @@ def log_homeostat_conditions_json(homeostat, filepath, label='', experiment_name
 
     with open(filepath, 'w') as f:
         json.dump(data, f, indent=2, cls=_NumpyEncoder)
+
+
+def restore_homeostat_conditions(homeostat, snapshot):
+    """Put a homeostat in the state a snapshot (see _snapshot) records.
+
+    The inverse of the snapshot: every field it logs is set back, matching
+    units by name and connections by (unit, from) pair: each unit's mass,
+    viscosity, maxDeviation, deviation, noise, potentiometer, uniselector
+    activity and interval, critThreshold, needle method, status and output,
+    an actuator's switchingRate, maxSpeedFraction and speedBias, an input
+    unit's alwaysPos, and each connection's weight, switch, noise, state and
+    status.  Connections come last, so the self-connection ends with its
+    logged weight whatever the potentiometer did to it.  The unit's switch is
+    the sign of its self-connection, so it is restored with the connection.
+
+    What a snapshot does not log is not restored: velocities, the
+    uniselector's own parameters (a continuous uniselector's tau_a, sigma and
+    model) and timers, and the robot's pose.
+
+    Returns the names of the snapshot's units missing from the homeostat
+    (an empty list when everything was restored).
+    """
+    units = {u.name: u for u in homeostat.homeoUnits}
+    missing = [row['name'] for row in snapshot['units'] if row['name'] not in units]
+    for row in snapshot['units']:
+        u = units.get(row['name'])
+        if u is None:
+            continue
+        u.maxDeviation = row['maxDeviation']
+        u.mass = row['mass']
+        u.viscosity = row['viscosity']
+        u.noise = row['noise']
+        u.potentiometer = row['potentiometer']
+        u.uniselectorActive = row['uniselectorActive']
+        u.uniselectorTimeInterval = row['uniselectorTimeInterval']
+        u.critThreshold = row['critThreshold']
+        u.needleCompMethod = row['needleCompMethod']
+        u.status = row['status']
+        u.criticalDeviation = row['criticalDeviation']
+        u.currentOutput = row['currentOutput']
+        if 'switchingRate' in row:
+            u._switchingRate = row['switchingRate']
+        if 'maxSpeedFraction' in row:
+            u._maxSpeedFraction = row['maxSpeedFraction']
+            u._maxSpeed = None              # recomputed from the fraction
+        if hasattr(u, '_speedBias'):
+            u._speedBias = row.get('speedBias', 0.0)
+        if 'alwaysPos' in row:
+            u.always_pos = row['alwaysPos']
+    saved = {(c['unit'], c['from']): c for c in snapshot['connections']}
+    for u in homeostat.homeoUnits:
+        for conn in u.inputConnections:
+            c = saved.get((u.name, conn.incomingUnit.name))
+            if c is None:
+                continue
+            conn.newWeight(c['weight'] * c['switch'])
+            conn.noise = c['noise']
+            conn.state = c['state']
+            conn.status = c['active']
+        u._jit_dirty = True
+    return missing
