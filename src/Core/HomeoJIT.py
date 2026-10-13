@@ -117,13 +117,49 @@ def _jit_needle_position_base(torque, viscosity, max_viscosity, mass, crit_dev):
 def _jit_spring_step(p, q, f, v0, t):
     """Exact step of u'' + p u' + q u = f from u = 0, u' = v0, over time t.
 
-    Returns (u, u').  It is the exponential of the augmented system
-    [[A, g], [0, 0]] t, A = [[0, 1], [-q, -p]], g = [0, f], computed on
-    scalars by scaling and squaring a Taylor series: the 2x2 block E = e^(At)
-    and the vector h = (integral of e^(As) ds) g, which square as
-    (E, h) -> (E E, E h + h).  The scaled matrix has norm <= 0.5, where 14
-    terms give double precision; the number of squarings grows only with the
-    log of p t and q t, so stiff (Ashby-like) units cost little more."""
+    Returns (u(t), u'(t)).  For the needle, u = x - x0, p = c/m, q = k/m and
+    f = F/m (see _jit_needle_position_newtonian).
+
+    Why not the textbook formula.  The textbook solution of the driven,
+    damped oscillator comes in cases: underdamped (cos and sin, divided by
+    the damped frequency), critically damped, overdamped (two exponentials),
+    q < 0 (cosh and sinh), and q = 0 (no equilibrium f/q; the drag-only
+    formula).  The units cross those boundaries all the time -- a uniselector
+    or OU weight passes through 0, so q -> 0 and f/q blows up; near critical
+    damping the damped frequency -> 0; in Ashby's stiff regime one root is
+    the difference of two nearly equal numbers -- and each boundary needs its
+    own special handling.  The matrix exponential below is the same solution
+    in a single formula, with no cases.
+
+    The formula.  With the state y = (u, u', 1) the equation is linear,
+
+        y' = M y,   M = [[ 0,  1, 0],
+                         [-q, -p, f],
+                         [ 0,  0, 0]],
+
+    so y(t) = e^(M t) y(0), y(0) = (0, v0, 1).  The entries of e^(M t) are the
+    textbook solution, whatever the case.  In block form M = [[A, g], [0, 0]],
+    A = [[0, 1], [-q, -p]], g = (0, f), and
+
+        e^(M t) = [[E, h], [0, 1]],   E = e^(A t),   h = (integral_0^t e^(A s) ds) g,
+
+    so u(t) = E[0,1] v0 + h[0] and u'(t) = E[1,1] v0 + h[1].
+
+    The computation (scaling and squaring).  Halve t s times until the
+    scaled matrix N = A t / 2^s has norm <= 1/2.  There the Taylor series
+
+        E = sum_n N^n / n!,   h = sum_n N^(n-1) g' / n!   (n >= 1; g' = g t / 2^s)
+
+    reaches double precision in 14 terms.  Then square s times, using
+    e^(2 M t) = e^(M t) e^(M t), which in block form is
+
+        (E, h) -> (E E, E h + h).
+
+    The number of squarings grows only with the log of p t and q t, so stiff
+    units cost little more.  In the code, e00..e11 hold E, t00..t11 the
+    current term N^n / n!, (x0, x1) the vector N^(n-1) g' / (n-1)!, and
+    (h0, h1) the sum for h.  Checked against scipy.linalg.expm and the
+    textbook formula (Unit_Tests/HomeoUnitNewtonianTest.py)."""
     norm = abs(t) * max(1.0, abs(q) + abs(p))
     squarings = 0
     while norm > 0.5:

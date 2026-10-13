@@ -288,6 +288,52 @@ class HomeoUnitNewtonianSpringTest(unittest.TestCase):
     def testTrajectoryHeadlessPath(self):
         self.checkTrajectory(headless=True)
 
+    @staticmethod
+    def textbook(p, q, f, v0, t):
+        """The textbook solution of u'' + p u' + q u = f, u(0) = 0, u'(0) = v0,
+        case by case"""
+        if q == 0:                                  # no spring: drag only
+            if p == 0:
+                return v0 * t + f * t * t / 2, v0 + f * t
+            e = math.exp(-p * t)
+            return (f / p * t + (v0 - f / p) * (1 - e) / p,
+                    f / p + (v0 - f / p) * e)
+        ueq = f / q
+        a = -ueq                                    # u(0) - u_eq
+        g = p / 2
+        disc = g * g - q
+        if abs(disc) < 1e-14:                       # critically damped
+            b = v0 + g * a
+            e = math.exp(-g * t)
+            return ueq + e * (a + b * t), e * (b - g * (a + b * t))
+        if disc < 0:                                # underdamped
+            w = math.sqrt(-disc)
+            b = (v0 + g * a) / w
+            e = math.exp(-g * t)
+            c, s = math.cos(w * t), math.sin(w * t)
+            return (ueq + e * (a * c + b * s),
+                    e * ((b * w - g * a) * c - (a * w + g * b) * s))
+        r1, r2 = -g + math.sqrt(disc), -g - math.sqrt(disc)   # overdamped, or q < 0
+        c2 = (v0 - r1 * a) / (r2 - r1)
+        c1 = a - c2
+        return (ueq + c1 * math.exp(r1 * t) + c2 * math.exp(r2 * t),
+                c1 * r1 * math.exp(r1 * t) + c2 * r2 * math.exp(r2 * t))
+
+    def testStepIsTheTextbookSolution(self):
+        """_jit_spring_step, one formula, against the textbook's cases"""
+        from Core.HomeoJIT import _jit_spring_step
+        cases = {'underdamped': (0.2, 0.5), 'critically damped': (1.0, 0.25),
+                 'overdamped': (3.0, 0.5), 'positive feedback': (0.1, -0.02),
+                 'undamped': (0.0, 0.09), 'drag only': (0.4, 0.0),
+                 'free': (0.0, 0.0), 'stiff (Ashby)': (100.0, 100.0)}
+        for name, (p, q) in cases.items():
+            for t in (0.5, 1.0, 7.0):
+                with self.subTest(case=name, t=t):
+                    u, v = _jit_spring_step(p, q, 0.05, 0.3, t)
+                    ue, ve = self.textbook(p, q, 0.05, 0.3, t)
+                    self.assertAlmostEqual(u, ue, delta=1e-10 * max(1.0, abs(ue)))
+                    self.assertAlmostEqual(v, ve, delta=1e-10 * max(1.0, abs(ve)))
+
     def testUndampedSpringKeepsItsAmplitude(self):
         """An undamped needle on its self-connection, under a constant input,
         swings between its start and twice its equilibrium for good"""
