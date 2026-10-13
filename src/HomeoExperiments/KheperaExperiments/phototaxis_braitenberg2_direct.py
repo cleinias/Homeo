@@ -264,7 +264,16 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     # --- Build the 4-unit homeostat ---
     world = 'kheperaBraitenberg2_HOMEO_World'
     transducers = basicBraiten2Tranducers(backendSimulator, world)
-    configure_eyes(backendSimulator, eye_saturation, eye_threshold, eye_response)
+    # The light's intensity first: the eyes' saturation is computed from it
+    # (it was set after them, so a saturation distance was computed against
+    # intensity 100 whatever the light's, RE-11)
+    if light_intensity != 100:
+        target_body = backendSimulator.kheperaSimulation.allBodies['TARGET']
+        target_body.userData['intensity'] = light_intensity
+        target_body.userData['lightIntensity'] = light_intensity
+    # The eyes as configured, (I0, Isat, response), for the run's records
+    backendSimulator.kheperaSimulation.eyeConfig = configure_eyes(
+        backendSimulator, eye_saturation, eye_threshold, eye_response)
 
     hom = Homeostat()
     hom._host = backendSimulator.host
@@ -306,13 +315,6 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         conn.status = False
     for conn in rightSensor.inputConnections:
         conn.status = False
-
-    # Override light intensity
-    if light_intensity != 100:
-        sim = backendSimulator.kheperaSimulation
-        target_body = sim.allBodies['TARGET']
-        target_body.userData['intensity'] = light_intensity
-        target_body.userData['lightIntensity'] = light_intensity
 
     # Apply topology-specific wiring
     kwargs = dict(mass_range=mass_range,
@@ -853,6 +855,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
 
     sim = backend.kheperaSimulation
     exp_name = sim.experimentName
+    eye_config = sim.eyeConfig
 
     # Log initial conditions
     timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
@@ -865,7 +868,11 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
     log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name,
                                   seed=seed,
                                   settings=dict(stable_draws=stable_draws,
-                                                synchronous_stepping=synchronous_stepping))
+                                                synchronous_stepping=synchronous_stepping,
+                                                light_intensity=light_intensity,
+                                                eye_threshold=eye_config[0],
+                                                eye_saturation_irradiance=eye_config[1],
+                                                eye_response=eye_config[2]))
 
     # Optional per-tick state logger
     state_log_path = None
@@ -976,9 +983,12 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                 wiring=wiring if fixed_weights else '',
                 signs=signs if fixed_weights else '',
                 motor=motor if fixed_weights else '',
-                eye_response=eye_response or 'linear',
-                eye_threshold='' if eye_threshold is None else eye_threshold,
+                # The eyes as configured, not as asked: a log eye's default
+                # threshold is 1, not 0 (RE-11)
+                eye_response=eye_config[2],
+                eye_threshold=eye_config[0],
                 eye_saturation='' if eye_saturation is None else eye_saturation,
+                eye_saturation_irradiance=eye_config[1],
                 final_speed=final_speed, final_bearing=final_bearing,
                 spin=spin, synchronous_stepping=synchronous_stepping,
                 stable_draws=stable_draws)
@@ -1088,7 +1098,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                                f'{time.strftime("%Y-%m-%d-%H-%M-%S")}{run_tag()}',
                                ('.csv',)) + '.csv'
         csv_path = os.path.join(log_dir, csv_name)
-        fields = ['run', 'seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response', 'eye_threshold', 'eye_saturation',
+        fields = ['run', 'seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response', 'eye_threshold', 'eye_saturation', 'eye_saturation_irradiance',
                   'start_x', 'start_y', 'start_heading', 'start_dist',
                   'start_sees_light', 'acquired', 'first_acq',
                   'final_dist', 'min_dist', 'min_t', 'steps_run',
