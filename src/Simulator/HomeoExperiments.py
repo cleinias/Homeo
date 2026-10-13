@@ -2439,7 +2439,7 @@ initializeBraiten2_2_Full_GA_phototaxis_continuous.fitnessSign = 1  # minimise d
 
 
 def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
-                                           dataDir=None, noNoise=False,
+                                           dataDir=None, noNoise=False, noUnisel=False,
                                            topology='random',
                                            evolve_dt_fast=True):
     '''Shared helper for weight-free continuous (OU) GA experiments.
@@ -2466,6 +2466,9 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
         Data output directory.
     noNoise : bool
         If True, set all noise to 0.
+    noUnisel : bool
+        If True, the evolved units' uniselectors are inactive: no OU process,
+        the weights stay at their initial values.
     topology : str
         'random' — all connections between evolved units are active.
         'fixed'  — only Braitenberg cross-wired connections are active
@@ -2602,7 +2605,9 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
 
     "7. Swap uniselectors to continuous (OU) and set tau_a from genome"
     for i, unit in enumerate(evolved_units):
-        unit.uniselectorActive = True
+        # noUnisel: the OU process stays installed (it records tau_a) but
+        # never runs, so the weights keep their initial values (SE-05)
+        unit.uniselectorActive = not noUnisel
         unis = HomeoUniselectorContinuous()
         unis.tau_a = HomeoUnit.tauAFromWeight(homeoGenome[i * genes_per_unit + 2])
         unit.uniselector = unis
@@ -2634,7 +2639,7 @@ def initializeBraiten2_2_Full_GA_continuous_weightfree(homeoGenome, noHomeoParam
     '''
     return _setup_continuous_weightfree_homeostat(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, topology='random')
+        noNoise=noNoise, noUnisel=noUnisel, topology='random')
 
 initializeBraiten2_2_Full_GA_continuous_weightfree.noEvolvedUnits = 4
 initializeBraiten2_2_Full_GA_continuous_weightfree.fitnessSign = 1
@@ -2654,7 +2659,7 @@ def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed(homeoGenome, noHome
     '''
     return _setup_continuous_weightfree_homeostat(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, topology='fixed')
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed')
 
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.noEvolvedUnits = 4
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.fitnessSign = 1
@@ -2675,7 +2680,7 @@ def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt(homeoGenome, noH
     '''
     return _setup_continuous_weightfree_homeostat(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, topology='fixed', evolve_dt_fast=False)
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', evolve_dt_fast=False)
 
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.noEvolvedUnits = 4
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.fitnessSign = 1
@@ -2691,7 +2696,7 @@ initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.genomeSize = 16
 # ===============================================================
 
 def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
-                                                  dataDir=None, noNoise=False,
+                                                  dataDir=None, noNoise=False, noUnisel=False,
                                                   topology='fixed',
                                                   evolve_dt_fast=True):
     '''Shared helper for weight-free continuous (OU) GA experiments using the
@@ -2720,6 +2725,9 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
         Data output directory.
     noNoise : bool
         If True, set all noise to 0.
+    noUnisel : bool
+        If True, the evolved units' uniselectors are inactive: no OU process,
+        the weights stay at their initial values.
     topology : str
         'fixed'  — only Braitenberg cross-wired connections are active
                     (Left Sensor -> Right Motor, Right Sensor -> Left Motor).
@@ -2846,7 +2854,9 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
 
     "7. Swap uniselectors to continuous (OU) and set tau_a from genome"
     for i, unit in enumerate(evolved_units):
-        unit.uniselectorActive = True
+        # noUnisel: the OU process stays installed (it records tau_a) but
+        # never runs, so the weights keep their initial values (SE-05)
+        unit.uniselectorActive = not noUnisel
         unis = HomeoUniselectorContinuous()
         unis.tau_a = HomeoUnit.tauAFromWeight(homeoGenome[i * genes_per_unit + 2])
         unit.uniselector = unis
@@ -2876,7 +2886,7 @@ def initializeBraiten2_direct_GA_continuous_weightfree(homeoGenome, noHomeoParam
     '''
     return _setup_continuous_weightfree_homeostat_direct(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, topology='random')
+        noNoise=noNoise, noUnisel=noUnisel, topology='random')
 
 initializeBraiten2_direct_GA_continuous_weightfree.noEvolvedUnits = 2
 initializeBraiten2_direct_GA_continuous_weightfree.fitnessSign = 1
@@ -2893,7 +2903,7 @@ def initializeBraiten2_direct_GA_continuous_weightfree_fixed(homeoGenome, noHome
     '''
     return _setup_continuous_weightfree_homeostat_direct(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, topology='fixed')
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed')
 
 initializeBraiten2_direct_GA_continuous_weightfree_fixed.noEvolvedUnits = 2
 initializeBraiten2_direct_GA_continuous_weightfree_fixed.fitnessSign = 1
@@ -2910,7 +2920,7 @@ def initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt(homeoGenome, noH
     '''
     return _setup_continuous_weightfree_homeostat_direct(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, topology='fixed', evolve_dt_fast=False)
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', evolve_dt_fast=False)
 
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.noEvolvedUnits = 2
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.fitnessSign = 1
@@ -3616,7 +3626,7 @@ def braiten3cTransducers(backendSimulator, world):
 
 
 def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
-                                    dataDir=None, noNoise=False,
+                                    dataDir=None, noNoise=False, noUnisel=False,
                                     topology='fixed',
                                     evolve_dt_fast=True):
     '''Setup a 10-unit homeostat for Braitenberg Vehicle 3c (multi-quality).
@@ -3796,7 +3806,9 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
 
     "7. Swap uniselectors to continuous (OU) and set tau_a from genome"
     for i, unit in enumerate(evolved_units):
-        unit.uniselectorActive = True
+        # noUnisel: the OU process stays installed (it records tau_a) but
+        # never runs, so the weights keep their initial values (SE-05)
+        unit.uniselectorActive = not noUnisel
         unis = HomeoUniselectorContinuous()
         unis.tau_a = HomeoUnit.tauAFromWeight(homeoGenome[i * genes_per_unit + 2])
         unit.uniselector = unis
@@ -3825,7 +3837,7 @@ def initializeBraiten3c_GA_continuous_weightfree_fixed(homeoGenome, noHomeoParam
     '''
     return _setup_braitenberg_3c_homeostat(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, topology='fixed', evolve_dt_fast=True)
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', evolve_dt_fast=True)
 
 initializeBraiten3c_GA_continuous_weightfree_fixed.noEvolvedUnits = 2
 initializeBraiten3c_GA_continuous_weightfree_fixed.fitnessSign = 1
@@ -3841,7 +3853,7 @@ def initializeBraiten3c_GA_continuous_weightfree_open(homeoGenome, noHomeoParame
     '''
     return _setup_braitenberg_3c_homeostat(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, topology='open', evolve_dt_fast=True)
+        noNoise=noNoise, noUnisel=noUnisel, topology='open', evolve_dt_fast=True)
 
 initializeBraiten3c_GA_continuous_weightfree_open.noEvolvedUnits = 2
 initializeBraiten3c_GA_continuous_weightfree_open.fitnessSign = 1
