@@ -376,11 +376,17 @@ class Homeostat(object):
            to add connections twice: from the new unit to the existing ones 
            and from the exiting one to the new unit.'''
 
+        # Each unit can have one input connection from every unit, itself
+        # included.  The old units' uniselectors are told only when they must
+        # grow (review finding CD-05), which leaves their weights, and the
+        # random draws, as they were in homeostats of up to 10 units.
+        connections = len(self.homeoUnits) + 1
         for unit in self.homeoUnits: 
             unit.addConnectionWithRandomValues(aHomeoUnit)
             aHomeoUnit.addConnectionWithRandomValues(unit)
-            unit.maxConnectedUnits = len(self.homeoUnits) + 1           # let the old units know that there may be a new connected unit."        
-        aHomeoUnit.maxConnectedUnits(len(self.homeoUnits))             # let the new unit know how many other units there may be."
+            if connections > getattr(unit.uniselector, 'unitsControlled', connections):
+                unit.maxConnectedUnits(connections)
+        aHomeoUnit.maxConnectedUnits(connections)             # let the new unit know how many units there may be
         self.addUnit(aHomeoUnit)
 
     def addUnit(self, aHomeoUnit):
