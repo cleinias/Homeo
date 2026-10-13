@@ -2258,6 +2258,12 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
         connection.state = motor_incoming_connection_uniselector
         connection.status = True    
         offset += 1
+
+    '''Self-connections stay manual: the genome sets them, the uniselector
+       leaves them alone, as in the weight-free setups.  The loops above used
+       to put them under the uniselector too (SE-08).'''
+    for unit in (leftMotor, rightMotor, leftEye, rightEye):
+        unit.inputConnections[0].state = motor_self_connection_uniselector
             
     'Sensors are not connected (do not receive input from) any other unit'
     for connection in leftEyeSensorOnly.inputConnections:

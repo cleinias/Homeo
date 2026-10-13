@@ -4,7 +4,8 @@ Created on Oct 13, 2026
 @author: stefano
 
 The classic GA setup, initializeBraiten2_2_Full_GA, builds the homeostat its
-genome describes (review finding SE-09).
+genome describes (review findings SE-08, SE-09).  The self-connections are
+manual: the genome sets them and the uniselector leaves them alone.
 '''
 from Core.HomeoUnit import HomeoUnitError
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO
@@ -39,6 +40,23 @@ class ClassicGASetupTest(unittest.TestCase):
         hom = initializeBraiten2_2_Full_GA(genome, backendSimulator=self.backend)
         for i, unit in enumerate(hom.homeoUnits[:4]):
             self.assertEqual(unit.mass, unit.massFromWeight(genome[4 * i]))
+
+    def testSelfConnectionsAreManual(self):
+        genome = np.random.random(4 * 4 + 4 * 6)
+        hom = initializeBraiten2_2_Full_GA(genome, backendSimulator=self.backend)
+        for unit in hom.homeoUnits[:4]:
+            self.assertEqual(unit.inputConnections[0].state, 'manual', unit.name)
+            for conn in unit.inputConnections[1:]:
+                self.assertEqual(conn.state, 'uniselector', unit.name)
+
+    def testTheUniselectorLeavesSelfConnectionsAlone(self):
+        genome = np.random.random(4 * 4 + 4 * 6)
+        hom = initializeBraiten2_2_Full_GA(genome, backendSimulator=self.backend)
+        selfWeights = [u.inputConnections[0].weight for u in hom.homeoUnits[:4]]
+        for unit in hom.homeoUnits[:4]:
+            unit.operateUniselector()
+        self.assertEqual([u.inputConnections[0].weight for u in hom.homeoUnits[:4]],
+                         selfWeights)
 
 
 if __name__ == '__main__':
