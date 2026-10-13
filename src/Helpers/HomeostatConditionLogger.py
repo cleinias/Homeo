@@ -2,8 +2,13 @@
 Log the initial and final conditions of a Homeostat to human-readable
 (.log) and machine-readable (.json) files.
 
-Each snapshot records all unit parameters and connection parameters
-so that experiments are fully reproducible.
+Each snapshot records the unit and connection parameters and the units'
+dynamic state (deviation, velocity, uniselector timer and position, the
+continuous uniselector's parameters), and the JSON file the environment
+(Python, numpy, numba, Homeo commit); restore_homeostat_conditions puts a
+homeostat back in a snapshot's state.  Not recorded: the random generators'
+states, the Ashby uniselector's random matrix, and the robot's pose, so a
+restored run continues the logged one only up to its noise.
 
 @author: stefano
 '''
@@ -34,6 +39,42 @@ except ImportError:
     _has_transducer_classes = False
 
 
+_CONTINUOUS_FIELDS = ('model', 'tau_a', 'theta', 'sigma_base', 'sigma_crit', 'dt',
+                      'stress_exponent')
+
+
+def _uniselector_state(unis):
+    "The uniselector's kind and the state a restore needs (see _snapshot)."
+    state = {'type': type(unis).__name__}
+    if type(unis).__name__ == 'HomeoUniselectorContinuous':
+        for key in _CONTINUOUS_FIELDS:
+            state[key] = getattr(unis, '_' + key)
+    if hasattr(unis, '_index'):                 # Ashby: its position in the matrix
+        state['index'] = unis._index
+    return state
+
+
+def _environment():
+    "What a run's numbers depend on besides the code's parameters."
+    import platform
+    import subprocess
+    env = {'python': platform.python_version(), 'numpy': np.__version__,
+           'host': platform.node()}
+    try:
+        import numba
+        env['numba'] = numba.__version__
+    except ImportError:
+        env['numba'] = 'absent'             # the JIT functions run as plain Python
+    try:
+        here = os.path.dirname(os.path.abspath(__file__))
+        env['homeo'] = subprocess.run(['git', '-C', here, 'describe', '--always', '--dirty'],
+                                      capture_output=True, text=True,
+                                      timeout=5).stdout.strip() or 'unknown'
+    except (OSError, subprocess.SubprocessError):
+        env['homeo'] = 'unknown'
+    return env
+
+
 def _snapshot(homeostat):
     """Return a dict with 'units' and 'connections' lists."""
 
@@ -62,7 +103,13 @@ def _snapshot(homeostat):
             'needleCompMethod': u.needleCompMethod,
             'status': u.status,
             'currentOutput': u.currentOutput,
+            'uniselectorTime': u.uniselectorTime,
+            'uniselector': _uniselector_state(u.uniselector),
         }
+        if hasattr(u, '_dt_fast'):
+            row['dt_fast'] = u._dt_fast
+        if hasattr(u, '_currentVelocity'):
+            row['currentVelocity'] = u._currentVelocity
         if _has_transducer_classes and isinstance(u, HomeoUnitNewtonianActuator):
             row['switchingRate'] = u._switchingRate
             row['maxSpeedFraction'] = u._maxSpeedFraction
@@ -194,6 +241,9 @@ def log_homeostat_conditions_json(homeostat, filepath, label='', experiment_name
     if settings and 'settings' not in data:
         data['settings'] = dict(settings)
 
+    if 'environment' not in data:
+        data['environment'] = _environment()
+
     data[label] = snap
 
     with open(filepath, 'w') as f:
@@ -213,9 +263,12 @@ def restore_homeostat_conditions(homeostat, snapshot):
     logged weight whatever the potentiometer did to it.  The unit's switch is
     the sign of its self-connection, so it is restored with the connection.
 
-    What a snapshot does not log is not restored: velocities, the
-    uniselector's own parameters (a continuous uniselector's tau_a, sigma and
-    model) and timers, and the robot's pose.
+    Also the dynamic state the snapshot logs (since 13 Oct 2026; older
+    snapshots lack it): dt_fast, the needle's velocity, the uniselector's
+    timer and, if it is of the logged kind (else ValueError), the continuous
+    uniselector's parameters or the Ashby uniselector's position.  Not
+    logged, so not restored: the random generators' states, the Ashby
+    uniselector's matrix, and the robot's pose.
 
     Returns the names of the snapshot's units missing from the homeostat
     (an empty list when everything was restored).
@@ -238,6 +291,23 @@ def restore_homeostat_conditions(homeostat, snapshot):
         u.status = row['status']
         u.criticalDeviation = row['criticalDeviation']
         u.currentOutput = row['currentOutput']
+        # Logged since 13 Oct 2026; older snapshots lack them
+        if 'dt_fast' in row and hasattr(u, '_dt_fast'):
+            u.dt_fast = row['dt_fast']
+        if 'currentVelocity' in row and hasattr(u, '_currentVelocity'):
+            u._currentVelocity = row['currentVelocity']
+        if 'uniselectorTime' in row:
+            u.uniselectorTime = row['uniselectorTime']
+        unis = row.get('uniselector')
+        if unis is not None:
+            if unis['type'] != type(u.uniselector).__name__:
+                raise ValueError('unit %s has a %s, the snapshot a %s' % (
+                    u.name, type(u.uniselector).__name__, unis['type']))
+            for key in _CONTINUOUS_FIELDS:
+                if key in unis:
+                    setattr(u.uniselector, '_' + key, unis[key])
+            if 'index' in unis:
+                u.uniselector._index = unis['index']
         if 'switchingRate' in row:
             u._switchingRate = row['switchingRate']
         if 'maxSpeedFraction' in row:

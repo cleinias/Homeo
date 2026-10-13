@@ -40,6 +40,32 @@ class ConditionRestoreTest(unittest.TestCase):
                 self.assertEqual(restore_homeostat_conditions(other, original), [])
                 self.assertEqual(_snapshot(other), original)
 
+    def testDynamicStateRoundTrip(self):
+        "After a run: velocities, uniselector timers and positions come back too"
+        for kind in ('ashby', 'continuous'):
+            with self.subTest(uniselector=kind):
+                ran = self.build(1, kind)
+                ran.slowingFactor = 0
+                ran.collectsData = False
+                ran.runFor(400)
+                original = _snapshot(ran)
+                self.assertTrue(any(row.get('currentVelocity') for row in original['units']))
+                other = self.build(2, kind)
+                restore_homeostat_conditions(other, original)
+                self.assertEqual(_snapshot(other), original)
+
+    def testJsonRecordsTheEnvironment(self):
+        path = os.path.join(self.tmp.name, 'env.json')
+        log_homeostat_conditions_json(self.build(1), path, 'INITIAL CONDITIONS', 'run')
+        with open(path) as f:
+            env = json.load(f)['environment']
+        self.assertEqual(set(env), {'python', 'numpy', 'numba', 'host', 'homeo'})
+        try:
+            import numba
+            self.assertEqual(env['numba'], numba.__version__)
+        except ImportError:
+            self.assertEqual(env['numba'], 'absent')
+
     def testValidationRestoresTheSavedRun(self):
         import run_validation_300k as rv
         saved = self.build(1)
