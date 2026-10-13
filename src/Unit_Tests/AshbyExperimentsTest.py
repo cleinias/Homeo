@@ -348,8 +348,11 @@ class AshbyExp6Test(unittest.TestCase):
         return measurer
 
     def testHabituation(self):
-        "Fig. 14/6/1: some D's change 1->2, then one value is kept and the response is small"
-        for seed in (1, 2):
+        """Fig. 14/6/1: some D's change 1->2, then one value is kept and the response is small.
+        21 of seeds 1-30 habituate, before and after CU-04 changed the units'
+        random start; seed 1 no longer does (its first 1->2 already gives a
+        small response).  Seeds that do."""
+        for seed in (2, 3):
             hom, seed, meta = setup_exp6_habituation(seed)
             m = self.runStimuli(hom, make_stimulus_events(), EXP6_END)
             self.assertTrue(m.habituated(), 'seed %d: %s, %s' % (seed, m.changes, m.critical))

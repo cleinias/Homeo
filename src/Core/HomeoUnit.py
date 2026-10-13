@@ -1166,10 +1166,12 @@ class HomeoUnit(object):
             switchSign = 1
         self.switch = switchSign 
 
-        "generates a random output  over the whole range"
-        self.currentOutput =  np.random.uniform(0, 1)    
-        "set the critical deviation to a random value over the whole range"                                                         
-        self._criticalDeviation = np.random.uniform(self.outputRange['low'], self.outputRange['high']) 
+        '''The needle at a random deviation over its whole range, and the
+           output that deviation gives (review finding CU-04: the deviation
+           came from the output range, (-1, 1), and the output was a separate
+           draw from (0, 1)).'''
+        self._criticalDeviation = np.random.uniform(self.minDeviation, self.maxDeviation)
+        self.computeOutput()
    
 #    def activate(self):
 #        self.active = True
