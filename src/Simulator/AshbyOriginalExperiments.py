@@ -220,13 +220,8 @@ def run_with_events(hom, total_ticks, events=None, tick_callback=None,
         if tick_callback is not None:
             tick_callback(hom, hom.time)
 
-        # Update all active units
-        for unit in hom.homeoUnits:
-            if hom.collectsData:
-                hom.dataCollector.atTimeIndexAddDataUnitForAUnit(hom.time, unit)
-            unit.time = hom.time
-            if unit.isActive():
-                unit.selfUpdate()
+        # Update all active units, together
+        hom.updateUnits()
 
         hom.time += 1
 

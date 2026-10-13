@@ -682,6 +682,23 @@ class HomeoUnit(object):
 
     currentOutput = property(fget = lambda self: self.getCurrentOutput(),
                              fset = lambda self, aBoolean: self.setCurrentOutput(aBoolean))
+
+    '''The output the other units read.  During a tick it is the output the
+       unit had when the tick began (latchOutput, called by the Homeostat on
+       every unit before any updates), so all the units advance together and
+       the order of homeoUnits does not matter (review finding CU-03).
+       Outside a tick (_latchedOutput None) it is the current output.'''
+    _latchedOutput = None
+
+    def latchOutput(self):
+        self._latchedOutput = self._currentOutput
+
+    def releaseOutput(self):
+        self._latchedOutput = None
+
+    def outputSeenByOthers(self):
+        out = self._latchedOutput
+        return self._currentOutput if out is None else out
   
     def getHighRange(self):
         return self.outputRange['high']
@@ -1353,7 +1370,7 @@ class HomeoUnit(object):
             if self._jit_dirty:
                 self._sync_jit_arrays()
             for i, u in enumerate(self._jit_incoming_units):
-                self._jit_outputs[i] = u._currentOutput
+                self._jit_outputs[i] = u.outputSeenByOthers()
             self._inputTorque = _jit_compute_torque(
                 self._jit_outputs, self._jit_switches,
                 self._jit_weights, self._jit_noises)

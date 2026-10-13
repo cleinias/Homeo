@@ -249,18 +249,7 @@ class Homeostat(object):
             worlds = self._synchronousWorlds()
 
             while self.time < ticks:
-                for unit in self.homeoUnits:
-                    if self.collectsData:
-                        if headless:
-                            # Record the weights the run is using: in headless
-                            # OU runs they are only in the unit's JIT arrays.
-                            unit.flushJitArrays()
-                        self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
-                    unit.time =  self.time
-                    # sys.stderr.write("the status of %s in the function is %s and in the ivar is %s \n" % (unit.name, unit.isActive(), unit._status))
-#                     print "unit: %s of type %s about to update with value: %.3f" % (unit.name, type(unit), unit.criticalDeviation)
-                    if unit.isActive():
-                        unit.selfUpdate()
+                self.updateUnits()
                 for world in worlds:
                     world.tickAdvance()
                 self.time +=  1
@@ -281,6 +270,30 @@ class Homeostat(object):
                              unit.currentOutput,
                              unit.criticalDeviation))
         "END TESTING"
+
+    def updateUnits(self):
+        '''Advance every active unit by one tick, all together: each unit
+        reads the outputs the others had at the start of the tick, so the
+        order of homeoUnits does not matter (review finding CU-03).  The
+        sensors' outputs, too, are the readings taken at the previous tick.
+        Each unit's data are recorded before it updates.'''
+        headless = getattr(self, '_headless', False)
+        for unit in self.homeoUnits:
+            unit.latchOutput()
+        try:
+            for unit in self.homeoUnits:
+                if self.collectsData:
+                    if headless:
+                        # Record the weights the run is using: in headless
+                        # OU runs they are only in the unit's JIT arrays.
+                        unit.flushJitArrays()
+                    self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
+                unit.time = self.time
+                if unit.isActive():
+                    unit.selfUpdate()
+        finally:
+            for unit in self.homeoUnits:
+                unit.releaseOutput()
 
     def _synchronousWorlds(self):
         '''The robot simulations, reached through the units' transducers, that

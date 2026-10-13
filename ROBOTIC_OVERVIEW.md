@@ -14,7 +14,7 @@ The robotic integration is organised in three layers:
 
 3. **Transducer-equipped HomeoUnits** (`RobotSimulator/HomeoUnitNewtonianTransduc.py`) extend the standard `HomeoUnit` hierarchy with units that read from a sensor or write to an actuator each time they update. These are plugged into the homeostat alongside regular units, forming a mixed network where some units face inward (connected only to other units) and some face outward (coupled to the robot).
 
-Data flows in a closed loop. On every tick the sensor-input units read from their transducers, propagate their output through the homeostat network, and the actuator units translate their critical deviation into motor commands that they send back through their transducers to the robot. The robot moves, the sensors see a new scene, and the cycle repeats.
+Data flows in a closed loop. On every tick the sensor-input units read from their transducers, propagate their output through the homeostat network, and the actuator units translate their critical deviation into motor commands that they send back through their transducers to the robot. The robot moves, the sensors see a new scene, and the cycle repeats. Within a tick the units advance together, each reading the outputs the others had at the start of the tick, so a sensor's reading reaches the units it feeds one tick after it is taken.
 
 ## Transducers
 

@@ -305,9 +305,10 @@ class HomeoConnection(object):
             The noise  is computed with the help of the HomeoNoise utility class. 
             Several different algorithms are available, see the instance methods of HomeoNoise for details'''
         
-        connNoise = HomeoNoise.connNoise(self._incomingUnit.currentOutput, self._noise)
+        incoming = self._incomingUnit.outputSeenByOthers()
+        connNoise = HomeoNoise.connNoise(incoming, self._noise)
         hDebug('conn', ("The noise on the connection is %f" % connNoise))
-        return (self._incomingUnit.currentOutput * self.switch * self.weight) + connNoise
+        return (incoming * self.switch * self.weight) + connNoise
     
     def isActive(self):
         '''Return the status of the connection to active'''
