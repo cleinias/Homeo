@@ -1022,7 +1022,8 @@ def initializeBraiten2_2(raw=False,params=None, simulator = None, backendSimulat
     If the 'raw' variable is set to True, the sensory transducer reads webots raw values,
     which are minimum for maximum stimulus and maximal for minimun stimulus.
     This is the **reverse** of the classical Braitenberg case: a high intensity in the world
-    will translate into a low sensor value.
+    will translate into a low sensor value.  Only the legacy WEBOTS path
+    supports it: with a backendSimulator, raw=True raises a ValueError.
 
     The backendSimulator parameter accepts a SimulatorBackend instance (e.g. SimulatorBackendHOMEO).
     When provided, it is used instead of the simulator string parameter.
@@ -1041,6 +1042,11 @@ def initializeBraiten2_2(raw=False,params=None, simulator = None, backendSimulat
     """Get the simulator-specific transducer units
     Either function returns a dictionary with 4 transducers:
     rightWheelTransd, leftWheelTransd, rightEyeTransd, leftEyeTransd"""
+    if raw and backendSimulator is not None:
+        # The backends' sensors have no raw (inverted) reading: raw=True used
+        # to build the same vehicle as raw=False (SE-04)
+        raise ValueError("initializeBraiten2_2: raw=True is not supported with a "
+                         "backendSimulator; its sensors have only the standard polarity")
     try:
         if backendSimulator is not None:
             world = {
@@ -2018,13 +2024,6 @@ def initializeBraiten2_2Pos(params=None, simulator = 'WEBOTS', backendSimulator 
     4 real units and 2 positive connections between actual stimulus and sensory
     input (the higher the world's value, the higher the stimulus'''
     return initializeBraiten2_2(False, simulator = simulator, backendSimulator = backendSimulator, dataDir = dataDir)
-
-def initializeBraiten2_2Neg(params=None, simulator = 'WEBOTS', backendSimulator = None, dataDir = None):
-    '''Utility function to choose a  Braitenberg type-2 vehicle with
-    4 real units and 2 negative connections between actual stimulus and sensory
-    input (the higher the world's value, the lower the stimulus'''
-
-    return initializeBraiten2_2(True, simulator = simulator, backendSimulator = backendSimulator, dataDir = dataDir)
 
 #===============================================================================
 # Genetic Algorithms experiments

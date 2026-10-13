@@ -15,8 +15,7 @@ import shutil
 try:
     from Simulator.SimulatorBackend import SimulatorBackendHOMEO
     from Simulator.HomeoExperiments import (initializeBraiten2_2,
-                                             initializeBraiten2_2Pos,
-                                             initializeBraiten2_2Neg)
+                                             initializeBraiten2_2Pos)
     from RobotSimulator.HomeoUnitNewtonianTransduc import HomeoUnitNewtonianActuator, HomeoUnitInput
     _deps_available = True
 except ImportError:
@@ -82,12 +81,10 @@ class Braiten2_2_HOMEO_Test(unittest.TestCase):
         hom.runFor(10)
         self.assertEqual(hom.time, 10)
 
-    def test_neg_convenience_wrapper(self):
-        """initializeBraiten2_2Neg works with the HOMEO backend."""
-        hom = initializeBraiten2_2Neg(backendSimulator=self.backend)
-        self.assertTrue(hom.isReadyToGo())
-        hom.runFor(10)
-        self.assertEqual(hom.time, 10)
+    def test_raw_is_rejected_with_a_backend(self):
+        """raw=True (inverted sensors) is refused, not silently ignored (SE-04)."""
+        with self.assertRaises(ValueError):
+            initializeBraiten2_2(raw=True, backendSimulator=self.backend)
 
     def test_robot_position_accessible(self):
         """After running, the robot's body position can be read from the simulation."""
