@@ -156,8 +156,10 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
 
     Returns the configured Homeostat instance.
     """
-    # Build homeostat (first pass — pre-reset)
-    np.random.seed(seed)
+    # Build homeostat (first pass — pre-reset).  Every stream, numba's
+    # included, as a GA evaluation seeds them (SH-03).
+    from Simulator.HomeoGenAlg import seed_evaluation
+    seed_evaluation(seed)
     hom = experiment_func(
         homeoGenome=genome,
         backendSimulator=backend,
@@ -167,7 +169,7 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
     backend.reset()
 
     # Rebuild homeostat (post-reset, as the GA does)
-    np.random.seed(seed)
+    seed_evaluation(seed)
     hom = experiment_func(
         homeoGenome=genome,
         backendSimulator=backend,

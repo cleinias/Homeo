@@ -12,6 +12,8 @@ Usage:
     python run_validation_300k.py --steps 400000   # override step count
     python run_validation_300k.py --state-log      # enable per-tick state logging
     python run_validation_300k.py --log-interval 100  # state log every N ticks
+    python run_validation_300k.py --seed 42        # seed every experiment (else a
+                                                   # random seed, printed and logged)
 """
 
 import sys
@@ -89,12 +91,11 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps,
         log_homeostat_conditions, log_homeostat_conditions_json)
 
     label = 'Ashby' if uniselector_type == 'ashby' else 'OU'
-    print("PROGRESS: Exp %d started — Standalone %s (restored weights), %dk steps" % (
-        exp_num, label, total_steps // 1000), flush=True)
-
     hom, backend, seed = setup_phototaxis(
         topology='fixed', light_intensity=-100,
         uniselector_type=uniselector_type, seed=seed)
+    print("PROGRESS: Exp %d started — Standalone %s (restored run), %dk steps, seed %d" % (
+        exp_num, label, total_steps // 1000, seed), flush=True)
 
     # Restore final weights from original 60k run
     restore_from_json(hom, json_path)
@@ -168,20 +169,20 @@ def run_standalone(exp_num, uniselector_type, json_path, total_steps,
 def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
                   state_log=False, state_log_interval=100, seed=None):
     """Replay a GA genome for an extended run."""
-    import random as _random
     from deap import base, creator
     from Simulator.SimulatorBackend import SimulatorBackendHOMEO
     from Simulator.HomeoQtSimulation import HomeoQtSimulation
 
-    # Seed both RNGs before any stochastic initialization
+    # Seed every stream (numpy, Python's random, numba's) before any
+    # stochastic initialization, as a GA evaluation does
+    from Simulator.HomeoGenAlg import seed_evaluation
     if seed is None:
         seed = int.from_bytes(os.urandom(4), 'big')
-    np.random.seed(seed)
-    _random.seed(seed)
+    seed_evaluation(seed)
 
     label = '16-gene fixed-dt' if len(genome_raw) == 16 else '20-gene variable-dt'
-    print("PROGRESS: Exp %d started — GA replay %s (ID %s), %dk steps" % (
-        exp_num, label, genome_id, total_steps // 1000), flush=True)
+    print("PROGRESS: Exp %d started — GA replay %s (ID %s), %dk steps, seed %d" % (
+        exp_num, label, genome_id, total_steps // 1000, seed), flush=True)
 
     # Create DEAP Individual
     if not hasattr(creator, 'FitnessMin'):
@@ -301,32 +302,32 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
 # Individual experiment entry points
 # ---------------------------------------------------------------------------
 
-def run_exp1(total_steps, state_log=False, state_log_interval=100):
+def run_exp1(total_steps, state_log=False, state_log_interval=100, seed=None):
     run_standalone(1, 'ashby', EXP1_JSON, total_steps,
-                   state_log=state_log, state_log_interval=state_log_interval)
+                   state_log=state_log, state_log_interval=state_log_interval, seed=seed)
 
-def run_exp2(total_steps, state_log=False, state_log_interval=100):
+def run_exp2(total_steps, state_log=False, state_log_interval=100, seed=None):
     run_standalone(2, 'continuous', EXP2_JSON, total_steps,
-                   state_log=state_log, state_log_interval=state_log_interval)
+                   state_log=state_log, state_log_interval=state_log_interval, seed=seed)
 
-def run_exp3(total_steps, state_log=False, state_log_interval=100):
+def run_exp3(total_steps, state_log=False, state_log_interval=100, seed=None):
     run_ga_replay(3,
         'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt',
         EXP3_GENOME, EXP3_ID, total_steps,
-        state_log=state_log, state_log_interval=state_log_interval)
+        state_log=state_log, state_log_interval=state_log_interval, seed=seed)
 
-def run_exp4(total_steps, state_log=False, state_log_interval=100):
+def run_exp4(total_steps, state_log=False, state_log_interval=100, seed=None):
     run_ga_replay(4,
         'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed',
         EXP4_GENOME, EXP4_ID, total_steps,
-        state_log=state_log, state_log_interval=state_log_interval)
+        state_log=state_log, state_log_interval=state_log_interval, seed=seed)
 
 
 # ---------------------------------------------------------------------------
 # Subprocess entry point (--exp N)
 # ---------------------------------------------------------------------------
 
-def run_single(exp_num, total_steps, state_log=False, state_log_interval=100):
+def run_single(exp_num, total_steps, state_log=False, state_log_interval=100, seed=None):
     os.chdir(SRC_DIR)
     if SRC_DIR not in sys.path:
         sys.path.insert(0, SRC_DIR)
@@ -338,14 +339,14 @@ def run_single(exp_num, total_steps, state_log=False, state_log_interval=100):
         4: run_exp4,
     }
     runners[exp_num](total_steps, state_log=state_log,
-                     state_log_interval=state_log_interval)
+                     state_log_interval=state_log_interval, seed=seed)
 
 
 # ---------------------------------------------------------------------------
 # Orchestrator (default mode)
 # ---------------------------------------------------------------------------
 
-def orchestrate(total_steps, state_log=False, state_log_interval=100):
+def orchestrate(total_steps, state_log=False, state_log_interval=100, seed=None):
     timestamp = time.strftime('%Y-%m-%d-%H-%M-%S')
     log_dir = os.path.join(SIMS_DATA,
                            'validation-%dk-%s' % (total_steps // 1000, timestamp))
@@ -374,6 +375,8 @@ def orchestrate(total_steps, state_log=False, state_log_interval=100):
                '--exp', str(exp_num), '--steps', str(total_steps)]
         if state_log:
             cmd += ['--state-log', '--log-interval', str(state_log_interval)]
+        if seed is not None:
+            cmd += ['--seed', str(seed)]
         log_path = os.path.join(log_dir, 'exp%d.log' % exp_num)
         log_file = open(log_path, 'w', buffering=1)
         proc = subprocess.Popen(
@@ -429,10 +432,14 @@ if __name__ == '__main__':
     if '--log-interval' in sys.argv:
         state_log_interval = int(sys.argv[sys.argv.index('--log-interval') + 1])
 
+    seed = None
+    if '--seed' in sys.argv:
+        seed = int(sys.argv[sys.argv.index('--seed') + 1])
+
     if '--exp' in sys.argv:
         exp_num = int(sys.argv[sys.argv.index('--exp') + 1])
         run_single(exp_num, total_steps, state_log=state_log,
-                   state_log_interval=state_log_interval)
+                   state_log_interval=state_log_interval, seed=seed)
     else:
         orchestrate(total_steps, state_log=state_log,
-                    state_log_interval=state_log_interval)
+                    state_log_interval=state_log_interval, seed=seed)

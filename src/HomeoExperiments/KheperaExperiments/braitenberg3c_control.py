@@ -87,6 +87,12 @@ def setup_braiten3c_control(seed=None, weights=None):
     if seed is None:
         seed = int.from_bytes(os.urandom(4), 'big')
     np.random.seed(seed)
+    import random
+    random.seed(seed)
+    # Numba keeps a separate random state that np.random.seed() does not reach;
+    # without this the trajectory is not reproducible from the seed (SH-03, RE-05).
+    from Core.HomeoJIT import seed_jit_rng
+    seed_jit_rng(seed)
 
     w = dict(DEFAULT_WEIGHTS)
     if weights:
