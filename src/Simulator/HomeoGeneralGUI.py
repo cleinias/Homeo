@@ -17,13 +17,9 @@ from Helpers.SimulationThread import SimulationThread
 from Helpers.SFLineEdit import SFLineEdit
 from Helpers.CustomWidgets import SFDoubleSpinBox,SFSpinBox
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
 import pyqtgraph as pg
-from io import StringIO
-from Simulator.Four_units_Homeostat_Standard_UI import Ui_ClassicHomeostat
 from math import floor
 from itertools import cycle
-from Helpers.TrajectoryGrapher import graphTrajectory
 from time import strftime, localtime, time
 
 class HomeoSimulationControllerGui(QDialog):    
@@ -1192,9 +1188,6 @@ class HomeoSimulationControllerGui(QDialog):
 
 
 
-    def changeUniselectorTypeForUnit(self, aUnitNumber, aUniselectorType):
-        pass
-    
     def clearLiveCharts(self):
         oldKeys = list(self.pgChartsAndItems.keys())
         for unitRef in oldKeys:
