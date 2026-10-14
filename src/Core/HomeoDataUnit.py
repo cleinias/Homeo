@@ -151,13 +151,6 @@ class HomeoDataUnit(object):
 # Printing methods
 #===============================================================================
 
-    def printCriticalDeviationOn(self,aString):
-        '''Appends the DataUnit's criticalDeviation values to aString. 
-           Useful for graphing and compact representations.'''
-    
-        aString =+ "%.5f" % self.criticalDeviation
-        return aString
-
     def printDataOn(self,aString):
         '''Append to aString a complete representation of its data'''
 
@@ -177,9 +170,4 @@ class HomeoDataUnit(object):
         aString += "%.5f\n" % self.criticalDeviation # or Output?
         return aString
     
-    def printUniselectorActivatedOn(self, aString):
-        '''Prints only the data about the DataUnit's uniselector's activation'''
-        
-        aString += "%s\n" % self.uniselectorActive
-   
         

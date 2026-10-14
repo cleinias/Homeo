@@ -10,6 +10,7 @@ from   Core.Homeostat import *
 from   Helpers.General_Helper_Functions import *
 
 import unittest,  pickle, os
+import numpy as np
 
 
 
@@ -203,6 +204,72 @@ class HomeoDataCollectorTest(unittest.TestCase):
             
     def tearDown(self):
         pass
+
+class ExportersTest(unittest.TestCase):
+    """Each exporter the collector keeps writes data that read back as the
+    collected values (review finding CD-13).  The others -- the Ggobi,
+    separator and per-unit exporters -- crashed on any data and had no
+    callers: they were deleted on 14 Oct 2026."""
+
+    def setUp(self):
+        np.random.seed(2)
+        self.homeostat = Homeostat()
+        for _ in range(3):
+            unit = HomeoUnit()
+            unit.setRandomValues()
+            self.homeostat.addFullyConnectedUnit(unit)
+        self.homeostat.runFor(5)
+        self.collector = self.homeostat.dataCollector
+        self.names = [u.name for u in self.homeostat.homeoUnits]
+
+    def deviation(self, tick, name):
+        return self.collector.states[tick][name].criticalDeviation
+
+    def testRExporter(self):
+        lines = self.collector.printPlottingDataForROnAString('').splitlines()
+        lines = [line for line in lines if not line.startswith('#')]
+        header = lines[0].split(',')
+        self.assertEqual(header, [h for n in self.names for h in (n, n + '_un.')])
+        rows = [[float(v) for v in line.split(',')] for line in lines[1:]]
+        self.assertEqual(len(rows), len(self.collector.states))
+        for row, tick in zip(rows, sorted(self.collector.states)):
+            self.assertEqual(row[0::2], [self.deviation(tick, n) for n in self.names])
+            self.assertTrue(set(row[1::2]) <= {0.0, 1.0})
+
+    def testCompleteAndEssentialExporters(self):
+        complete = self.collector.printCompleteDataOnAString('').splitlines()
+        essential = self.collector.printEssentialDataOnAString('').splitlines()
+        expected = [(tick, n) for tick in sorted(self.collector.states) for n in self.names]
+        self.assertEqual(len(complete), len(expected))
+        self.assertEqual(len(essential), len(expected))
+        for line, (tick, name) in zip(complete, expected):
+            words = line.split()
+            self.assertEqual(int(words[1]), tick)
+            self.assertAlmostEqual(float(words[words.index('critDev:') + 1]),
+                                   self.deviation(tick, name), places=5)
+        for line, (tick, name) in zip(essential, expected):
+            label, value = line.split(':    ')[1:3]
+            self.assertTrue(label.endswith(name))
+            self.assertAlmostEqual(float(value), self.deviation(tick, name), places=5)
+
+    def testThePickleRoundTrips(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, 'collector.pickled')
+            self.collector.saveOn(path)
+            back = HomeoDataCollector.readFrom(path)
+        self.assertEqual(sorted(back.states), sorted(self.collector.states))
+        for tick in back.states:
+            for name in self.names:
+                self.assertTrue(back.states[tick][name].sameValuesAs(self.collector.states[tick][name]))
+
+    def testTheBrokenExportersAreGone(self):
+        for name in ('saveDeviationOnForUnit', 'saveEssentialsOnAStringWithSeparator',
+                     'printPlottingDataForGgobiOnAString', 'printPlottingDataOnAString',
+                     'printPlottingDataOnAStringWithSeparator',
+                     'uniselectorActivatedAsCollectionOfArraysForAllUnits'):
+            self.assertFalse(hasattr(HomeoDataCollector, name), name)
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

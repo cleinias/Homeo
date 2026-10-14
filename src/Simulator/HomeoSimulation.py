@@ -228,16 +228,6 @@ class HomeoSimulation(object):
         fileOut.write(fileContent)
         fileOut.close()
 
-    def saveEssentialDataOnFileWithSeparator(self, aCharacter):
-        '''Ask the datacollector of the homeostat 
-           to save only the essential data on dataFilename,
-           using aCharacter as a column separator'''
-
-        fileContent = self.homeostat.dataCollector.saveEssentialsOnAStringWithSeparator('', aCharacter)
-        fileOut  = open(self.dataFilename, 'w')
-        fileOut.write(fileContent)
-        fileOut.close()
-        
         
     def save(self):
         '''Save the homeostat the simulation manages to a pickled file

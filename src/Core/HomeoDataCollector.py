@@ -74,16 +74,6 @@ class HomeoDataCollector(object):
         pickler.dump(self)
         fileOut.close()
 
-    def saveDeviationOnForUnit(self, aString, aUnit):
-        '''Append the output of the simulation to a string (typically associated 
-           to a file by the calling app) as a series of lines, one per time tick, 
-           each comprising the critical deviation  value for aUnit'''
-
-        for timeItem in self.states:
-            for dataUnit in timeItem:
-                if dataUnit == aUnit:
-                    aString += "%.5f\n" % dataUnit.output
-        return aString
          
     def saveCompleteDataOnFile(self,aFilename):
         '''Save all data on a file in text format.
@@ -94,16 +84,6 @@ class HomeoDataCollector(object):
         fileOut.write(dataToSave)
         fileOut.close()
                    
-    def saveEssentialsOnAStringWithSeparator(self, aString, aCharacter):
-        '''Save the output of the simulation on aString (typically associated 
-           to a file by the calling app) as a series of lines, one per time tick, 
-           each comprising a row of output values separated by aCharacter.'''
-
-        for timeItem in self.states:
-            for dataUnit in timeItem:
-                    aString += "%.5f" % dataUnit.output
-                    aString += aCharacter + "\n"
-        return aString
 
     def saveEssentialDataOnFile(self,aFilename):
         '''Save essential data on a file in text format.
@@ -134,18 +114,6 @@ class HomeoDataCollector(object):
 # Printing methods
 #===============================================================================
 
-    def printCompleteDataForUnitOn(self, aHomeoUnit, aString):
-        '''Append to aString a brief representation of aHomeoUnit data'''
-        
-        timeIndex = 0
-        for state in self.states:
-            if state is not None:
-                for key,value in state.items():
-                    if key == aHomeoUnit.name:
-                        aString += "time: %u    " % timeIndex
-                        aString += value.printDataOn('')
-            timeIndex += 1
-
     def printCompleteDataOnAString(self, aString):
         '''Append to aString a complete representation of its data'''
         
@@ -156,27 +124,6 @@ class HomeoDataCollector(object):
                     aString += self.states[state][value].printDataOn('')
         return aString
 
-    def printCriticalDevForUnitOnAString(self, aHomeoUnit, aString):
-        '''Append to aString the values for Critical Deviation of aHomeoUnit'''
-        
-        for state in self.states:
-            if state is not None:
-                for key,value in state.items():
-                    if key == aHomeoUnit.name:
-                        aString += value.printCriticalDeviationOn('')
-
-    def printEssentialDataForUnitOnAString(self, aHomeoUnit, aString):
-        '''Append to aString a brief representation of aHomeoUnit data'''
-        
-        timeIndex = 0
-        for state in self.states:
-            if state is not None:
-                for key, value in state.items():
-                    if key == aHomeoUnit.name:
-                        aString += 'time: %u    ' % timeIndex
-                        aString += value.name
-                        aString += value.printEssentialVariableOn('')
-                timeIndex += 1
 
     def printEssentialDataOnAString(self, aString):
         '''Append to aString a brief representation of its data, with column headers'''
@@ -192,52 +139,6 @@ class HomeoDataCollector(object):
             timeIndex += 1
         return aString
 
-    def printPlottingDataForGgobiOnAString(self, aString):
-        '''Append to aString a multi-column representation of its data, 
-           suitable for plotting. aCharacter is the character separatng the column.
-            The format includes:
-            - first a couple of lines of commented data detailing the particular simulation the data describe,
-            then a commented line with the data headers
-            then a sequence of lines with each  column containing the critical deviation value for a unit 
-            
-            We convert datapoints  to a fixed number of decimal '''
-
-        "FIXIT This use of decimals is not correct in Python" 
-        decimals = 8    #The number of fixed decimals we keep. 
-                            # Data points are double and may have up to 15 digits, 
-                            # sometimes expressed in exponential notation"
-
-        aCharacter = ','
-
-        unitNames = []
-        if len(self.states) ==0:
-            sys.stderr.write("DataCollector: There are no data to save")
-            return
-        for dataUnit in self.states[0]:
-            unitNames.append(dataUnit.name)
-                
-        criticDevData = self.criticalDevAsCollectionOfArraysForAllUnits()
-
-
-        "Print  the column headers"
-        aString += 'Time,'
-        for name in unitNames:
-            aString += str(name)
-            aString += aCharacter
-            aString +=  name
-            aString += '-unisel'
-            aString += aCharacter
-            aString += "\n"
-
-        "print the data"
-        for timeSlice, index in enumerate(criticDevData):
-            aString += "%u" % index
-            for dataPoint in timeSlice:
-                aString += aCharacter
-                aString +=  "%.8f" % dataPoint
-            aString += "\n"
-        
-        return aString
 
     def printPlottingDataForROnAString(self, aString):
         '''Append to aString a multi-column representation of its data, suitable for plotting. 
@@ -287,86 +188,7 @@ class HomeoDataCollector(object):
 
         return aString
 
-    def printPlottingDataOnAString(self, aString):
-        '''Append to aString a multi-column representation of its data, suitable for plotting. 
-            The format includes:
-            - first a couple of lines of commented data detailing the particular simulation the data describe,
-            - then a commented line with the data headers
-            - then a sequence of lines with each  column containing the critical deviation value for a unit'''
 
-        unitNames = []
-        if len(self.states) == 0:
-            sys.stderr.write("DataCollector: There are no data to save")
-        for dataUnit in self.states[0]:
-            unitNames.append(dataUnit.name)
-        criticDevData = self.criticalDevAsCollectionOfArraysForAllUnits()
-
-        "Print a header with general information at the top of the file"
-        aString += '# Simulation data produced by HOMEO---the homeostat simulation program'
-        aString += "\n"
-        aString += '# Data printed on: '
-        aString += str(datetime.datetime.now())
-        aString += "\n"
-        aString +=  '# There were exactly %u ' % len(unitNames)
-        aString += 'units in this simulation'
-        aString += "\n"
-        aString +=  '# \n'
-        for name in unitNames:
-            aString += name
-            aString += "\t\t\t"
-            aString += name
-            aString += '-unisel'
-            aString += "\t\t\t"
-        aString +=  "\n"
-
-        "print the data"
-        for timeSlice in criticDevData:
-            for dataPoint in timeSlice:
-                aString += "%8.f" % dataPoint
-                aString += "\t\t\t"
-            aString += "\n"
-        
-        return aString
-
-    def printPlottingDataOnAStringWithSeparator(self, aString, aCharacter):
-        '''Append to aString a multi-column  representation of its data, suitable for plotting. 
-           aCharacter is the character separating the column.
-           The format includes:
-           - first a couple of lines of commented data detailing the particular simulation the data describe,
-           - then a commented line with the data headers
-           - then a sequence of lines with each  column containing the critical deviation value for a unit '''
-
-        unitNames = []
-        if len(self.states)  == 0:
-            sys.stderr.write("DataCollector: There are no data to save")
-        for dataUnit in self.states[0]:
-            unitNames.append(dataUnit.name)
-        criticDevData = self.criticalDevAsCollectionOfArraysForAllUnits()
-
-        "Print a header with general information at the top of the file"
-        aString += '# Simulation data produced by HOMEO---the homeostat simulation program'
-        aString += '\n'
-        aString += '# Data printed on: '
-        aString += str(datetime.datetime.now())
-        aString += '\n'
-        aString += '# There were exactly %u units in this simulation' % len(unitNames)
-        aString += "\n\n\n"
-        aString += '# \n'
-        for name in unitNames:
-            aString += name
-            aString += aCharacter
-            aString += name
-            aString += '-unisel'
-            aString += aCharacter
-        aString += "\n"
-
-        "print the data"
-        for timeSlice in criticDevData:
-            for dataPoint in timeSlice:
-                aString += "%.8f" % dataPoint
-                aString +=  aCharacter
-            aString += "\n"
-        return aString
     
 #===============================================================================
 # Converting methods
@@ -404,20 +226,6 @@ class HomeoDataCollector(object):
 
         return aCollection
 
-    def uniselectorActivatedAsCollectionOfArraysForAllUnits(self):
-        '''Extract the data about the activation of the uniselector for all units 
-           and returns them as a list of lists. 
-           Each list  has all the values for a point in time'''
-
-        aCollection = []
-        for state in self.states:
-            if state is not None:
-                dataPoint = []
-                for value in state:
-                    dataPoint.append(value.uniselectorActivated)
-            aCollection.append(dataPoint)
-
-        return aCollection
 
     def criticalDevAsNPArrayForAllUnits(self):
         '''Convert the representation of critical deviation homeoDataunits for all units 
