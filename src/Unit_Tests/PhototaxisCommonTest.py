@@ -78,6 +78,27 @@ class PhototaxisCommonTest(unittest.TestCase):
                 self.assertIn('"synchronous_stepping": false', text)
                 self.assertIn('"eye_response": "log"', text)
 
+    def testRimEyes(self):
+        '''--rim-eyes puts the eyes back on the rim (eyeRadiusRatio 1), as in
+        the runs before 13 Oct 2026; the runs record where the eyes sat.'''
+        import json
+        self.assertEqual(D.common.parse_common_args(['x'])['eye_radius_ratio'], 0.5)
+        self.assertEqual(D.common.parse_common_args(['x', '--rim-eyes'])['eye_radius_ratio'], 1.0)
+        for name, M in EXPERIMENTS.items():
+            for ratio, tag in ((0.5, ''), (1.0, '_rimeyes')):
+                with self.subTest(name, ratio=ratio):
+                    r = self.quietly(M.run_headless, total_steps=20, seed=3, quiet=True,
+                                     eye_radius_ratio=ratio)
+                    robot = r['backend'].kheperaSimulation.allBodies['Khepera']
+                    self.assertEqual(robot.eyeRadiusRatio, ratio)
+                    self.assertEqual(r['eye_radius_ratio'], ratio)
+                    self.assertEqual('_rimeyes' in os.path.basename(r['log_path']), bool(tag))
+                    text = json.dumps(json.load(open(r['json_path'])))
+                    self.assertIn('"eye_radius_ratio": %s' % ratio, text)
+        with mock.patch.object(D, 'run_headless') as run:
+            self.quietly(D.main, ['x', '--rim-eyes'])
+        self.assertEqual(run.call_args.kwargs['eye_radius_ratio'], 1.0)
+
     def testVisualizeTakesEveryOption(self):
         argv = ['x', '--visualize', '--dark', '--seed', '3', '--heading', '45',
                 '--eye-response', 'log', '--spin', '0.05', '--async-stepping',

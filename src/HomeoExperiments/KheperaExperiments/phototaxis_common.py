@@ -38,6 +38,12 @@ DEFAULT_START_RANGE = (2.0, 6.0)
 
 UNISELECTOR_TYPES = ('ashby', 'random', 'continuous')
 
+# Where the eyes sit along their radii (KheperaRobot.eyeRadiusRatio): half way
+# in since 13 Oct 2026 (Homeo cda7a08), so no blind wedge between them;
+# --rim-eyes puts them back on the rim, as in every run before that.
+EYE_RADIUS_RATIO = 0.5
+RIM_EYE_RADIUS_RATIO = 1.0
+
 
 # --- Seeding and the world ----------------------------------------------------
 
@@ -55,20 +61,25 @@ def seed_run(seed=None):
     return seed
 
 
-def prepare_backend(backendSimulator, experiment_name, synchronous_stepping=True):
+def prepare_backend(backendSimulator, experiment_name, synchronous_stepping=True,
+                    eye_radius_ratio=EYE_RADIUS_RATIO):
     '''The run's backend (a new SimulatorBackendHOMEO if None), stepping as
     asked, writing to today's SimsData directory under experiment_name.
     synchronous_stepping: advance the world once per tick, after all units
     have updated (default), or, if False, once per motor command, as runs
-    before 13 Oct 2026 did (see KheperaSimulation).'''
+    before 13 Oct 2026 did (see KheperaSimulation).
+    eye_radius_ratio: where the robot's eyes sit along their radii (see
+    EYE_RADIUS_RATIO); it takes effect when the setup builds the world.'''
     from Simulator.SimulatorBackend import SimulatorBackendHOMEO
     from Helpers.General_Helper_Functions import simulations_data_dir
 
     if backendSimulator is None:
         backendSimulator = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera',
-                                                 synchronousStepping=synchronous_stepping)
+                                                 synchronousStepping=synchronous_stepping,
+                                                 eyeRadiusRatio=eye_radius_ratio)
     else:
         backendSimulator.kheperaSimulation.synchronousStepping = synchronous_stepping
+        backendSimulator.kheperaSimulation.robotEyeRadiusRatio = eye_radius_ratio
 
     log_dir = os.path.join(simulations_data_dir(), 'SimsData-' + time.strftime("%Y-%m-%d"))
     os.makedirs(log_dir, exist_ok=True)
@@ -78,12 +89,14 @@ def prepare_backend(backendSimulator, experiment_name, synchronous_stepping=True
 
 
 def experiment_suffix(light_intensity=100, uniselector_type='ashby', adaptive=True,
-                      spin=0.0, eye_saturation=None, eye_threshold=None, eye_response=None):
+                      spin=0.0, eye_saturation=None, eye_threshold=None, eye_response=None,
+                      eye_radius_ratio=EYE_RADIUS_RATIO):
     "The experiment name's tags: '_dark', the uniselector if not Ashby's, spin, eyes."
     suffix = '_dark' if light_intensity < 0 else ''
     if adaptive and uniselector_type != 'ashby':
         suffix += '_' + uniselector_tag(uniselector_type)
-    return suffix + spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response)
+    return suffix + spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response,
+                                             eye_radius_ratio)
 
 
 def set_light(backend, light_intensity, eye_saturation=None, eye_threshold=None,
@@ -102,9 +115,11 @@ def set_light(backend, light_intensity, eye_saturation=None, eye_threshold=None,
 
 # --- The eyes -------------------------------------------------------------------
 
-def eye_tag(saturation=None, threshold=None, response=None):
-    "Filename tag for non-default eyes, e.g. '_log_sat0.5'; '' for the default eyes."
-    tag = '_log' if response == 'log' else ''
+def eye_tag(saturation=None, threshold=None, response=None, radius_ratio=EYE_RADIUS_RATIO):
+    "Filename tag for non-default eyes, e.g. '_rimeyes_log_sat0.5'; '' for the default eyes."
+    tag = '' if radius_ratio == EYE_RADIUS_RATIO else (
+        '_rimeyes' if radius_ratio == RIM_EYE_RADIUS_RATIO else '_eyes%g' % radius_ratio)
+    tag += '_log' if response == 'log' else ''
     if saturation is not None:
         tag += '_sat%g' % saturation
     if threshold is not None:
@@ -361,6 +376,7 @@ def run_settings(backend, light_intensity, stable_draws):
     return dict(stable_draws=stable_draws,
                 synchronous_stepping=backend.kheperaSimulation.synchronousStepping,
                 light_intensity=light_intensity,
+                eye_radius_ratio=backend.kheperaSimulation.allBodies['Khepera'].eyeRadiusRatio,
                 eye_threshold=eye_config[0],
                 eye_saturation_irradiance=eye_config[1],
                 eye_response=eye_config[2])
@@ -522,6 +538,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                   eye_threshold=eye_config[0],
                   eye_saturation='' if eye_saturation is None else eye_saturation,
                   eye_saturation_irradiance=eye_config[1],
+                  eye_radius_ratio=robot.eyeRadiusRatio,
                   final_speed=final_speed, final_bearing=final_bearing,
                   spin=spin, synchronous_stepping=sim.synchronousStepping,
                   stable_draws=stable_draws)
@@ -531,6 +548,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
 
 BATCH_FIELDS = ['run', 'seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response',
                 'eye_threshold', 'eye_saturation', 'eye_saturation_irradiance',
+                'eye_radius_ratio',
                 'start_x', 'start_y', 'start_heading', 'start_dist',
                 'start_sees_light', 'acquired', 'first_acq',
                 'final_dist', 'min_dist', 'min_t', 'steps_run',
@@ -541,10 +559,12 @@ BATCH_FIELDS = ['run', 'seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response
 
 
 def batch_kind(variant, spin=0.0, eye_saturation=None, eye_threshold=None,
-               eye_response=None, synchronous_stepping=True, stable_draws=False):
+               eye_response=None, synchronous_stepping=True, stable_draws=False,
+               eye_radius_ratio=EYE_RADIUS_RATIO):
     '''The batch file's tag: the variant (the uniselector, or the fixed-weight
     vehicle), then spin, eyes, '_async' and '_stabledraws'.'''
-    kind = variant + spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response)
+    kind = variant + spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response,
+                                              eye_radius_ratio)
     if not synchronous_stepping:
         kind += '_async'
     if stable_draws:
@@ -776,6 +796,9 @@ Options both experiments take
    --eye-saturation D   saturate at distance D: Isat = intensity / D^2
    --eye-threshold I0   the threshold, an irradiance (1 for a log eye)
    --eye-response log   logarithmic response (default linear)
+   --rim-eyes           the eyes on the rim, as in every run before 13 Oct 2026
+                        (default: half way in along their radii, no blind
+                        wedge between them); files get "_rimeyes"
 
    --traj-interval N    record every N-th trajectory point (the final pose is
                         always kept); --no-traj records none
@@ -863,6 +886,7 @@ def parse_common_args(argv):
         if o['eye_threshold'] < 0 or (o['eye_response'] == 'log' and o['eye_threshold'] == 0):
             raise SystemExit('--eye-threshold must be >= 0 (> 0 for a log eye), got %g'
                              % o['eye_threshold'])
+    o['eye_radius_ratio'] = RIM_EYE_RADIUS_RATIO if '--rim-eyes' in argv else EYE_RADIUS_RATIO
     o['eye_saturation'] = None
     if '--eye-saturation' in argv:
         o['eye_saturation'] = _value(argv, '--eye-saturation', float,
@@ -894,7 +918,7 @@ def parse_common_args(argv):
 # the runners
 SETUP_OPTIONS = ('topology', 'light_intensity', 'uniselector_type', 'seed', 'stable_draws',
                  'start_at_rest', 'spin', 'eye_saturation', 'eye_threshold', 'eye_response',
-                 'synchronous_stepping')
+                 'eye_radius_ratio', 'synchronous_stepping')
 RUN_OPTIONS = ('total_steps', 'light_intensity', 'early_stop_distance', 'state_log',
                'state_log_interval', 'heading', 'random_heading', 'random_start',
                'start_range', 'stable_draws', 'eye_saturation', 'spin')

@@ -101,7 +101,7 @@ Usage
 from HomeoExperiments.KheperaExperiments import phototaxis_common as common
 # Some of these only for the callers that used to find them here
 from HomeoExperiments.KheperaExperiments.phototaxis_common import (
-    ACQUISITION_RADIUS, DEFAULT_START_RANGE, STABILITY_MARGIN, TARGET_POS,
+    ACQUISITION_RADIUS, DEFAULT_START_RANGE, EYE_RADIUS_RATIO, STABILITY_MARGIN, TARGET_POS,
     seed_run, prepare_backend, experiment_suffix, set_light, configure_eyes,
     eye_tag, spin_tag, apply_spin, set_constant_input, set_start_pose,
     set_uniselector_type, uniselector_tag, randomize_unit, set_motor_response)
@@ -118,6 +118,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      stable_draws=False, start_at_rest=False,
                      wiring='crossed', signs='++', spin=0.0, motor='newtonian',
                      eye_saturation=None, eye_threshold=None, eye_response=None,
+                     eye_radius_ratio=EYE_RADIUS_RATIO,
                      synchronous_stepping=True):
     '''Set up a simplified 2+2 phototaxis experiment.
 
@@ -149,6 +150,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             speed; > 0 clockwise (see apply_spin).
         eye_saturation, eye_threshold, eye_response: the eyes' sensitivity
                             (see configure_eyes); None keeps the default.
+        eye_radius_ratio:   where the eyes sit along their radii (see
+                            phototaxis_common.EYE_RADIUS_RATIO).
         motor:              with fixed_weights, 'newtonian' (default) or
                             'aristotelian' (the true Braitenberg vehicle; see
                             _direct_fixed_weights).
@@ -186,8 +189,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     else:
         exp_name = 'phototaxis_braitenberg2_direct_fixed'
     exp_name += experiment_suffix(light_intensity, uniselector_type, not fixed_weights,
-                                  spin, eye_saturation, eye_threshold, eye_response)
-    backendSimulator = prepare_backend(backendSimulator, exp_name, synchronous_stepping)
+                                  spin, eye_saturation, eye_threshold, eye_response,
+                                  eye_radius_ratio)
+    backendSimulator = prepare_backend(backendSimulator, exp_name, synchronous_stepping,
+                                       eye_radius_ratio)
 
     # --- Build the 4-unit homeostat ---
     world = 'kheperaBraitenberg2_HOMEO_World'
@@ -538,7 +543,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  stable_draws=False, start_at_rest=False,
                  wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
                  spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
-                 eye_response=None, synchronous_stepping=True):
+                 eye_response=None, eye_radius_ratio=EYE_RADIUS_RATIO, synchronous_stepping=True):
     '''Run the simplified 2+2 phototaxis experiment headless
     (phototaxis_common.run_headless, which describes the result).
 
@@ -563,7 +568,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         seed=seed, fixed_weights=fixed_weights, stable_draws=stable_draws,
         start_at_rest=start_at_rest, wiring=wiring, signs=signs, spin=spin,
         motor=motor, eye_saturation=eye_saturation, eye_threshold=eye_threshold,
-        eye_response=eye_response, synchronous_stepping=synchronous_stepping)
+        eye_response=eye_response, eye_radius_ratio=eye_radius_ratio,
+        synchronous_stepping=synchronous_stepping)
     return common.run_headless(
         setup, title, total_steps=total_steps, report_interval=report_interval,
         light_intensity=light_intensity, early_stop_distance=early_stop_distance,
@@ -582,7 +588,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               state_log=False, state_log_interval=1, heading=None,
               wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
               spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
-              eye_response=None, synchronous_stepping=True):
+              eye_response=None, eye_radius_ratio=EYE_RADIUS_RATIO, synchronous_stepping=True):
     '''Run a batch of experiments and print a summary table
     (phototaxis_common.run_batch).
 
@@ -593,7 +599,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     else:
         variant = uniselector_tag(uniselector_type)
     kind = common.batch_kind(variant, spin, eye_saturation, eye_threshold, eye_response,
-                             synchronous_stepping, stable_draws and not fixed_weights)
+                             synchronous_stepping, stable_draws and not fixed_weights,
+                             eye_radius_ratio)
 
     def run_one(run_seed):
         return run_headless(topology=topology, total_steps=total_steps,
@@ -614,6 +621,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                             wiring=wiring, signs=signs, start_range=start_range,
                             spin=spin, motor=motor, eye_saturation=eye_saturation,
                             eye_threshold=eye_threshold, eye_response=eye_response,
+                            eye_radius_ratio=eye_radius_ratio,
                             synchronous_stepping=synchronous_stepping,
                             seed=run_seed)
     return common.run_batch(run_one, n_runs, 'direct', kind,
@@ -627,6 +635,7 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
                    start_range=DEFAULT_START_RANGE, stable_draws=False,
                    start_at_rest=False, wiring='crossed', signs='++',
                    eye_saturation=None, eye_threshold=None, eye_response=None,
+                   eye_radius_ratio=EYE_RADIUS_RATIO,
                    synchronous_stepping=True, continuous_params=None):
     '''Run the simplified 2+2 phototaxis experiment with the pyglet
     visualizer, with the same options as run_headless.'''
@@ -636,7 +645,8 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
         seed=seed, fixed_weights=fixed_weights, stable_draws=stable_draws,
         start_at_rest=start_at_rest, wiring=wiring, signs=signs, spin=spin,
         motor=motor, eye_saturation=eye_saturation, eye_threshold=eye_threshold,
-        eye_response=eye_response, synchronous_stepping=synchronous_stepping)
+        eye_response=eye_response, eye_radius_ratio=eye_radius_ratio,
+        synchronous_stepping=synchronous_stepping)
     common.run_visualized(setup, 'Phototaxis ' + title, light_intensity=light_intensity,
                           stable_draws=stable_draws, random_heading=random_heading,
                           random_start=random_start, heading=heading,

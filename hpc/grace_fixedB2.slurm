@@ -25,6 +25,7 @@
 #              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian
 #              sbatch grace_fixedB2.slurm 4 8 0.05 aristotelian
 # EYE OPTIONS: --eye-response linear|log, --eye-saturation D, --eye-threshold I0,
+#          --rim-eyes (the eyes on the rim, as before 13 Oct 2026),
 #          passed to the experiment and named in the run directory, e.g.
 #              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian --eye-response log --eye-saturation 0.5
 #          writes to fixedB2-arist-r2to6-cw0.05-log-sat0.5-traj1-<jobid>.
@@ -66,6 +67,7 @@ shift $(( $# < 4 ? $# : 4 ))
 EYE_ARGS=(); eye_tag=""
 while [ $# -gt 0 ]; do
     case "$1" in
+        --rim-eyes)       eye_tag+="-rimeyes"; EYE_ARGS+=("$1"); shift; continue;;
         --eye-response)   [ "$2" = log ] && eye_tag+="-log";;
         --eye-saturation) eye_tag+="-sat$2";;
         --eye-threshold)  eye_tag+="-thr$2";;

@@ -92,7 +92,7 @@ Usage
 
 from HomeoExperiments.KheperaExperiments import phototaxis_common as common
 from HomeoExperiments.KheperaExperiments.phototaxis_common import (
-    DEFAULT_START_RANGE, seed_run, prepare_backend, experiment_suffix, set_light,
+    DEFAULT_START_RANGE, EYE_RADIUS_RATIO, seed_run, prepare_backend, experiment_suffix, set_light,
     apply_spin, set_uniselector_type, uniselector_tag, randomize_unit,
     set_motor_response)
 
@@ -105,7 +105,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      uniselector_type='ashby', continuous_params=None,
                      seed=None, stable_draws=False, start_at_rest=False,
                      spin=0.0, eye_saturation=None, eye_threshold=None,
-                     eye_response=None, synchronous_stepping=True):
+                     eye_response=None, eye_radius_ratio=EYE_RADIUS_RATIO,
+                     synchronous_stepping=True):
     '''Set up an Ashby-style phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -136,6 +137,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             > 0 clockwise (see phototaxis_common.apply_spin).
         eye_saturation, eye_threshold, eye_response: the eyes' sensitivity
                             (see phototaxis_common.configure_eyes).
+        eye_radius_ratio:   where the eyes sit along their radii (see
+                            phototaxis_common.EYE_RADIUS_RATIO).
         synchronous_stepping: see phototaxis_common.prepare_backend.
 
     Returns:
@@ -150,8 +153,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     exp_name = ('phototaxis_braitenberg2_Ashby_random' if topology == 'random'
                 else 'phototaxis_braitenberg2_Ashby_fixed')
     exp_name += experiment_suffix(light_intensity, uniselector_type, True, spin,
-                                  eye_saturation, eye_threshold, eye_response)
-    backendSimulator = prepare_backend(backendSimulator, exp_name, synchronous_stepping)
+                                  eye_saturation, eye_threshold, eye_response,
+                                  eye_radius_ratio)
+    backendSimulator = prepare_backend(backendSimulator, exp_name, synchronous_stepping,
+                                       eye_radius_ratio)
 
     hom = initializeBraiten2_2Pos(backendSimulator=backendSimulator)
     set_light(backendSimulator, light_intensity, eye_saturation, eye_threshold, eye_response)
@@ -305,6 +310,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
                  stable_draws=False, start_at_rest=False, spin=0.0,
                  eye_saturation=None, eye_threshold=None, eye_response=None,
+                 eye_radius_ratio=EYE_RADIUS_RATIO,
                  synchronous_stepping=True):
     '''Run the Ashby phototaxis experiment headless
     (phototaxis_common.run_headless, which describes the options and the
@@ -315,6 +321,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                           stable_draws=stable_draws, start_at_rest=start_at_rest,
                           spin=spin, eye_saturation=eye_saturation,
                           eye_threshold=eye_threshold, eye_response=eye_response,
+                          eye_radius_ratio=eye_radius_ratio,
                           synchronous_stepping=synchronous_stepping)
     return common.run_headless(
         setup, title, total_steps=total_steps, report_interval=report_interval,
@@ -333,12 +340,13 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
               stable_draws=False, start_at_rest=False, spin=0.0,
               eye_saturation=None, eye_threshold=None, eye_response=None,
+              eye_radius_ratio=EYE_RADIUS_RATIO,
               synchronous_stepping=True):
     '''Run a batch of experiments and print a summary table
     (phototaxis_common.run_batch).  With seed given, run i uses seed+i.'''
     kind = common.batch_kind(uniselector_tag(uniselector_type), spin, eye_saturation,
                              eye_threshold, eye_response, synchronous_stepping,
-                             stable_draws)
+                             stable_draws, eye_radius_ratio)
 
     def run_one(run_seed):
         return run_headless(topology=topology, total_steps=total_steps,
@@ -353,6 +361,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                             stable_draws=stable_draws, start_at_rest=start_at_rest,
                             spin=spin, eye_saturation=eye_saturation,
                             eye_threshold=eye_threshold, eye_response=eye_response,
+                            eye_radius_ratio=eye_radius_ratio,
                             synchronous_stepping=synchronous_stepping)
     return common.run_batch(run_one, n_runs, 'ashby', kind,
                             light_intensity=light_intensity, total_steps=total_steps,
@@ -364,6 +373,7 @@ def run_visualized(topology='fixed', light_intensity=100, uniselector_type='ashb
                    random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
                    stable_draws=False, start_at_rest=False, spin=0.0,
                    eye_saturation=None, eye_threshold=None, eye_response=None,
+                   eye_radius_ratio=EYE_RADIUS_RATIO,
                    synchronous_stepping=True):
     '''Run the Ashby phototaxis experiment with the pyglet visualizer, with
     the same options as run_headless.
@@ -377,6 +387,7 @@ def run_visualized(topology='fixed', light_intensity=100, uniselector_type='ashb
                           stable_draws=stable_draws, start_at_rest=start_at_rest,
                           spin=spin, eye_saturation=eye_saturation,
                           eye_threshold=eye_threshold, eye_response=eye_response,
+                          eye_radius_ratio=eye_radius_ratio,
                           synchronous_stepping=synchronous_stepping)
     common.run_visualized(setup, 'Phototaxis ' + title, light_intensity=light_intensity,
                           stable_draws=stable_draws, random_heading=random_heading,
