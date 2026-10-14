@@ -261,5 +261,37 @@ class DelayPerTickTest(unittest.TestCase):
         self.assertEqual(gui._simulation.homeostat.slowingFactor, 0)
 
 
+
+class ResumeThreadTest(unittest.TestCase):
+    """Resume runs the simulation in its own thread, as Start does (SR-10):
+    until 14 Oct 2026 it ran on the GUI thread."""
+
+    def runUntil(self, sim, ticks, timeout=20.0):
+        import time
+        start = time.time()
+        while sim.homeostat.time < ticks and time.time() - start < timeout:
+            app.processEvents()
+            time.sleep(0.01)
+        self.assertGreaterEqual(sim.homeostat.time, ticks)
+
+    def testResumeRunsInTheSimulationThread(self):
+        from PyQt5.QtCore import QThread
+        gui = makeGui(self, 1)
+        sim = gui._simulation
+        self.addCleanup(lambda: (gui._simulThread.quit(), gui._simulThread.wait(5000)))
+        sim.setSimulDelay(0)
+        threads = []
+        sim.tick_observers.append(lambda hom, t: threads.append(QThread.currentThread()))
+        sim.maxRuns = 20
+        gui.resume()                        # the first run, as after New or Load
+        self.runUntil(sim, 20)
+        gui.pause()
+        sim.maxRuns = 40
+        gui.resume()                        # a run after a pause
+        self.runUntil(sim, 40)
+        self.assertEqual(len(threads), 40)
+        self.assertTrue(all(t is not app.thread() for t in threads))
+
+
 if __name__ == '__main__':
     unittest.main()

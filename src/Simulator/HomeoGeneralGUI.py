@@ -22,7 +22,10 @@ from math import floor
 from itertools import cycle
 from time import strftime, localtime, time
 
-class HomeoSimulationControllerGui(QDialog):    
+class HomeoSimulationControllerGui(QDialog):
+    # Resume, delivered to the simulation in its own thread (a queued
+    # connection: the simulation lives in _simulThread)
+    resumeRequested = pyqtSignal()
     '''
     Part of a complete GUI for  a HomeoQtSimulation. 
     It provides access to starting and stopping the simulation and to saving and graphing data.
@@ -95,6 +98,7 @@ class HomeoSimulationControllerGui(QDialog):
         self._simulThread = SimulationThread()
         self._simulation.moveToThread(self._simulThread)
         self._simulThread.started.connect(self._simulation.go)
+        self.resumeRequested.connect(self._simulation.resume)
         
         "set windows titles"
         self.changeWindowsTitles(self._simulation.homeostatFilename)
@@ -886,7 +890,14 @@ class HomeoSimulationControllerGui(QDialog):
         self.pauseButton.setEnabled(True)
         self.resumeButton.setEnabled(False)
         self.stepButton.setEnabled(False)
-        self._simulation.resume()
+        # In the simulation's thread, as Start runs it: until 14 Oct 2026
+        # Resume called it directly, so every run after the first (and every
+        # run after New or Load, where Resume is the only way) ran on the GUI
+        # thread, nested in the button's handler (SR-10)
+        if self._simulThread.isRunning():
+            self.resumeRequested.emit()
+        else:
+            self._simulThread.start()
         
     def step(self):
         'Step simulation'
