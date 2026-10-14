@@ -421,21 +421,23 @@ class HomeoQtSimulation(QObject):
         headerText += ("\n")
         headerText += ('# There were exactly %u units in this simulation' % len(self.homeostat.homeoUnits))
         headerText += ("\n")
-        "Create an array with the time indexes and update header text and format string" 
+        # The column names, one per column, time first: until 14 Oct 2026 the
+        # time column had none, and the names ran together with weights
+        # ("Unit-1_weightUnit-2") or ended in a stray comma, so a reader
+        # mapping names to columns mislabelled every one (SR-07)
+        columns = ['time']
         npDataArray = np.arange(len(self.liveData[self.homeostat.homeoUnits[0]]))
         listOfFormatStrings = ['%u']                    # First column: unsigned integers for the time indexes
         formatForUnitsAndUnisel = '%10.8f'              # Float values for all successive columns
         for unit in self.homeostat.homeoUnits:
             npDataArray = np.vstack((npDataArray,self.liveData[unit]))
-            listOfFormatStrings.append(formatForUnitsAndUnisel)
             npDataArray = np.vstack((npDataArray,self.liveData[self.uniselectorKey(unit)]))
-            listOfFormatStrings.append(formatForUnitsAndUnisel)
+            columns += [unit.name, unit.name + '_unisel']
             if withWeights == True:
                 npDataArray = np.vstack((npDataArray, self.unitsSelfWeights[unit]))
-                headerText += (unit.name + ','+unit.name + '_unisel'+','+unit.name +'_weight')
-                listOfFormatStrings.append(formatForUnitsAndUnisel)
-            else:
-                headerText += (unit.name + ','+unit.name + '_unisel'+',')
+                columns.append(unit.name + '_weight')
+        listOfFormatStrings += [formatForUnitsAndUnisel] * (len(columns) - 1)
+        headerText += ','.join(columns)
         npDataArray = np.transpose(npDataArray)
         np.savetxt(str(aFilename), npDataArray, fmt = listOfFormatStrings, delimiter = ',', comments = '',header = headerText)
   

@@ -271,6 +271,32 @@ class HomeoQtSimulationTest(unittest.TestCase):
         self.assertEqual(len(series), len(self.simulation.liveData[unit]))
         self.simulation.saveEssentialDataOnFile(os.devnull, True)
 
+    def testPlotDataReadsBackByName(self):
+        """
+        The saved plot data have one name per column, time first, so a reader
+        that maps names to columns reads every column right (SR-07)
+        """
+        import tempfile
+        import numpy as np
+        self.simulation.initializeExperSetup()
+        self.simulation.maxRuns = 4
+        for _ in range(4):
+            self.simulation.step()
+        units = self.simulation.homeostat.homeoUnits
+        with tempfile.TemporaryDirectory() as tmp:
+            for withWeights in (False, True):
+                path = os.path.join(tmp, 'plot.csv')
+                self.simulation.saveEssentialDataOnFile(path, withWeights)
+                data = np.genfromtxt(path, delimiter=',', names=True, deletechars='',
+                                     skip_header=3)      # the three comment lines
+                names = ['time'] + [n for u in units for n in
+                                    ([u.name, u.name + '_unisel', u.name + '_weight'] if withWeights
+                                     else [u.name, u.name + '_unisel'])]
+                self.assertEqual(list(data.dtype.names), names)
+                self.assertEqual(list(data['time']), [0, 1, 2, 3])
+                for u in units:
+                    self.assertTrue(np.allclose(data[u.name], self.simulation.liveData[u]))
+
     def testStepBeforeStart(self):
         """
         Step works before Start: the first step sets up the live data, as go()
