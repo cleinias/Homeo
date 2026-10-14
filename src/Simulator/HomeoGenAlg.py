@@ -633,15 +633,27 @@ class HomeoGASimulation(object):
                 'Re-evaluate'
                 self.assignEvalSeeds(invalid_ind, g+1)
                 fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
+                stopped = False
                 for ind, fit in zip(invalid_ind, fitnesses):
-                    if self._stopRequested:
-                        break
                     ind.fitness.values = fit
 
                     "record the data about the newly evaluated individual's genome in the logbook"
                     self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind),
                                         evalSeed = ind.evalSeed)
                     #print "direct ind's name is %s and fitness is: %.2f" %(ind.ID, ind.fitness.values[0])
+                    # Stop asked during the generation (serial evaluation is
+                    # lazy, so the GUI's Stop lands here): keep what was
+                    # evaluated in the logbook and the previous generation as
+                    # the population, and end the run as at its end.  Until
+                    # 14 Oct 2026 this broke out leaving offspring with no
+                    # fitness, crashed in the elitism below, and, in
+                    # generation 1, saved nothing (SG-01).
+                    if self._stopRequested:
+                        stopped = True
+                        break
+                if stopped:
+                    print("-- Stopped during generation %d: its offspring are discarded --" % (g+1))
+                    break
 
                 hDebug('eval', str(len(invalid_ind)) + " individuals evaluated")
 
