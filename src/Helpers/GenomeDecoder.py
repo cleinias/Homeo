@@ -41,9 +41,7 @@ def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2, noEvolvedUnit
         headers.append('U'+str(unit+1)+'-unis-time')
         headers.append('U'+str(unit+1)+'-maxDev')
 
-    for connIn in range(noEvolvedUnits):
-        for connOut in range(noUnits):
-            headers.append('Conn-W-'+str(connIn+1)+'-to-'+str(connOut+1))
+    headers += classicConnectionLabels(noUnits, noEvolvedUnits)
 
     fileIn= open(statFileIn,"r")
     if statFileOut is not None:
@@ -74,6 +72,29 @@ def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2, noEvolvedUnit
         fileOut.write("\n")        
     fileOut.close()
     
+def classicConnectionSources(noUnits, noEvolvedUnits):
+    """The (unit, source) pair of each connection gene of the classic layout,
+    in gene order, units numbered from 1 in the order they were added.
+
+    The classic GA setup (initializeBraiten2_2_Full_GA) writes each evolved
+    unit's genes over its inputConnections, which addFullyConnectedUnit orders
+    as the self-connection first, then the other units in the order they were
+    added: unit k's genes are its inputs from k, 1, ..., k-1, k+1, ..., N.
+    Until 14 Oct 2026 the labels read gene k*N+j as the connection from unit
+    k to unit j+1 (review finding HN-03): reversed, and, for every unit but
+    the first, rotated -- the self-connection was labelled k-to-1."""
+    pairs = []
+    for unit in range(1, noEvolvedUnits + 1):
+        pairs.append((unit, unit))
+        pairs += [(unit, source) for source in range(1, noUnits + 1) if source != unit]
+    return pairs
+
+
+def classicConnectionLabels(noUnits, noEvolvedUnits):
+    "Column labels of the classic connection genes: 'W-<unit>-from-<source>'."
+    return ['W-%d-from-%d' % pair for pair in classicConnectionSources(noUnits, noEvolvedUnits)]
+
+
 def genomeDecoder(noUnits, genome, noEvolvedUnits=None, layout=None):
     """Convert the values in the genome to the actual value used by the units.
 
@@ -187,13 +208,11 @@ def genomePrettyPrinter(noUnits, decodedGenome, noEvolvedUnits=None, layout=None
         outString += str(round(decodedGenome[(unit*essVar)+3],3))            # maxDeviation (integer)
         outString += '\n'
 
-    for connIn in range(noEvolvedUnits):
-        #outString += '\t'
-        for connOut in range(noUnits):
-            outString += (str(connIn+1) + ' to ' +  str(connOut+1) + ': ')
-            outString += str(round(decodedGenome[(noEvolvedUnits*essVar)+(noUnits*connIn) + connOut],3))
-            outString += '\t'
-        outString += '\n'
+    offset = noEvolvedUnits * essVar
+    for gene, (unit, source) in enumerate(classicConnectionSources(noUnits, noEvolvedUnits)):
+        outString += '%d from %d: %s\t' % (unit, source, round(decodedGenome[offset + gene], 3))
+        if (gene + 1) % noUnits == 0:
+            outString += '\n'
     return outString
 
 

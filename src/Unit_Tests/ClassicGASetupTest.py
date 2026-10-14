@@ -59,5 +59,35 @@ class ClassicGASetupTest(unittest.TestCase):
                          selfWeights)
 
 
+class ClassicGenomeLabelsTest(unittest.TestCase):
+    '''The labels of the classic connection genes name the connection each
+    gene sets (review finding HN-03): until 14 Oct 2026 they read gene k*N+j
+    as unit k -> unit j+1, rotated and reversed.'''
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.backend = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera')
+        self.backend.kheperaSimulation.dataDir = self.tmp.name
+        self.addCleanup(self.tmp.cleanup)
+        self.addCleanup(self.backend.quit)
+
+    def testLabelsNameTheConnectionsTheGenesSet(self):
+        from Helpers.GenomeDecoder import classicConnectionSources, genomePrettyPrinter, genomeDecoder
+        from Helpers.StatsAnalyzer import _genome_headers
+        genome = np.random.random(4 * 4 + 4 * 6)
+        hom = initializeBraiten2_2_Full_GA(genome, backendSimulator=self.backend)
+        units = hom.homeoUnits
+        noUnits, noEvolved = len(units), initializeBraiten2_2_Full_GA.noEvolvedUnits
+        actual = [(units.index(unit) + 1, units.index(conn.incomingUnit) + 1)
+                  for unit in units[:noEvolved] for conn in unit.inputConnections]
+        self.assertEqual(classicConnectionSources(noUnits, noEvolved), actual)
+        headers = _genome_headers(noUnits, noEvolved)
+        self.assertEqual(headers[2 + 4 * noEvolved:], ['W-%d-from-%d' % p for p in actual])
+        self.assertIn('W-2-from-2', headers)
+        text = genomePrettyPrinter(noUnits, genomeDecoder(noUnits, genome, noEvolved), noEvolved)
+        self.assertIn('2 from 2: ', text)
+        self.assertNotIn(' to ', text)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -35,7 +35,7 @@ except ImportError:
     pass
 import matplotlib.pyplot as plt
 from Helpers.ExceptionAndDebugClasses import hDebug
-from Helpers.GenomeDecoder import genomeDecoder
+from Helpers.GenomeDecoder import genomeDecoder, classicConnectionLabels
 from operator import itemgetter
 from tabulate import tabulate
 import csv
@@ -225,9 +225,7 @@ def _genome_headers(noUnits, noEvolvedUnits, layout=None):
         for unit in range(noEvolvedUnits):
             u = 'U' + str(unit + 1)
             headers += [u + '-mass', u + '-visc', u + '-unis-time', u + '-maxDev']
-        for connIn in range(noEvolvedUnits):
-            for connOut in range(noUnits):
-                headers.append('Conn-W-' + str(connIn + 1) + '-to-' + str(connOut + 1))
+        headers += classicConnectionLabels(noUnits, noEvolvedUnits)
     return headers
 
 
