@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-170 -160 340 260" font-family="Helvetica, Arial, sans-serif">
+  <!-- Grid -->
+  <g stroke="#e0e0e0" stroke-width="0.5">
+    <line x1="-170" y1="0" x2="170" y2="0"/>
+    <line x1="0" y1="-160" x2="0" y2="100"/>
+  </g>
+
+  <!-- Combined left-side FOV (IR6 + IR7 union) -->
+  <path d="M -64.57 16.40 L -26.29 -23.10 L -18.81 -30.82 L -11.05 -33.21 L 41.52 -49.38 A 55 55 0 0 0 -48.65 -73.35 A 55 55 0 0 0 -64.57 16.40 Z"
+        fill="#4da6ff" fill-opacity="0.30" stroke="#1f7ae0" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <!-- Combined right-side FOV (IR0 + IR1 union) -->
+  <path d="M 64.57 16.40 L 26.29 -23.10 L 18.81 -30.82 L 11.05 -33.21 L -41.52 -49.38 A 55 55 0 0 1 48.65 -73.35 A 55 55 0 0 1 64.57 16.40 Z"
+        fill="#ff6b6b" fill-opacity="0.30" stroke="#e03131" stroke-width="1.2" stroke-dasharray="3 2"/>
+
+  <!-- Robot body: circle, 70 mm diameter (r = 35 mm) -->
+  <circle cx="0" cy="0" r="35" fill="#f5f5f5" stroke="#333" stroke-width="2"/>
+  <circle cx="0" cy="0" r="2" fill="#333"/>
+
+  <!-- Heading reference (0 deg) -->
+  <line x1="0" y1="-35" x2="0" y2="-95" stroke="#333" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <text x="4" y="-100" font-size="9" fill="#333">0&#176; heading</text>
+
+  <!-- Position angle rays (from center to sensor mount points) -->
+  <line x1="0" y1="0" x2="-26.29" y2="-23.10" stroke="#1f7ae0" stroke-width="0.8" stroke-dasharray="2 2"/>
+  <line x1="0" y1="0" x2="-11.05" y2="-33.21" stroke="#1f7ae0" stroke-width="0.8" stroke-dasharray="2 2"/>
+
+  <!-- Right side: position rays, facing arrows, mount points -->
+  <line x1="0" y1="0" x2="26.29" y2="-23.10" stroke="#e03131" stroke-width="0.8" stroke-dasharray="2 2"/>
+  <line x1="0" y1="0" x2="11.05" y2="-33.21" stroke="#e03131" stroke-width="0.8" stroke-dasharray="2 2"/>
+  <line x1="26.29" y1="-23.10" x2="38.84" y2="-35.25" stroke="#e03131" stroke-width="1.4" marker-end="url(#arrowR)"/>
+  <line x1="11.05" y1="-33.21" x2="16.88" y2="-52.14" stroke="#e03131" stroke-width="1.4" marker-end="url(#arrowR)"/>
+  <circle cx="26.29" cy="-23.10" r="3" fill="#e03131"/>
+  <circle cx="11.05" cy="-33.21" r="3" fill="#e03131"/>
+
+  <!-- Facing direction arrows -->
+  <line x1="-26.29" y1="-23.10" x2="-38.84" y2="-35.25" stroke="#1f7ae0" stroke-width="1.4" marker-end="url(#arrowB)"/>
+  <line x1="-11.05" y1="-33.21" x2="-16.88" y2="-52.14" stroke="#1f7ae0" stroke-width="1.4" marker-end="url(#arrowB)"/>
+
+  <!-- Sensor mount points -->
+  <circle cx="-26.29" cy="-23.10" r="3" fill="#1f7ae0"/>
+  <circle cx="-11.05" cy="-33.21" r="3" fill="#1f7ae0"/>
+
+  <!-- Labels -->
+  <text x="-100" y="-40" font-size="10" fill="#1f7ae0" font-weight="bold">IR6</text>
+  <text x="-100" y="-29" font-size="7.5" fill="#1f7ae0">pos &#8722;48.7&#176;</text>
+  <text x="-100" y="-20" font-size="7.5" fill="#1f7ae0">faces &#8722;45.9&#176;</text>
+
+  <text x="-100" y="0" font-size="10" fill="#1f7ae0" font-weight="bold">IR7</text>
+  <text x="-100" y="11" font-size="7.5" fill="#1f7ae0">pos &#8722;18.4&#176;</text>
+  <text x="-100" y="20" font-size="7.5" fill="#1f7ae0">faces &#8722;17.1&#176;</text>
+
+  <text x="-100" y="40" font-size="8" fill="#555">FOV = 180&#176; each</text>
+  <text x="-100" y="52" font-size="8" fill="#555">Body &#8709; 70 mm (r = 35)</text>
+  <text x="-100" y="66" font-size="9" fill="#333" font-weight="bold">Left side:</text>
+  <text x="-100" y="77" font-size="8" fill="#333">IR6 + IR7 combined</text>
+
+  <text x="60" y="-40" font-size="10" fill="#e03131" font-weight="bold">IR0</text>
+  <text x="60" y="-29" font-size="7.5" fill="#e03131">pos +48.7&#176;</text>
+  <text x="60" y="-20" font-size="7.5" fill="#e03131">faces +45.9&#176;</text>
+
+  <text x="60" y="0" font-size="10" fill="#e03131" font-weight="bold">IR1</text>
+  <text x="60" y="11" font-size="7.5" fill="#e03131">pos +18.4&#176;</text>
+  <text x="60" y="20" font-size="7.5" fill="#e03131">faces +17.1&#176;</text>
+
+  <text x="60" y="40" font-size="8" fill="#555">FOV = 180&#176; each</text>
+  <text x="60" y="66" font-size="9" fill="#333" font-weight="bold">Right side:</text>
+  <text x="60" y="77" font-size="8" fill="#333">IR0 + IR1 combined</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#333"/>
+    </marker>
+    <marker id="arrowB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#1f7ae0"/>
+    </marker>
+    <marker id="arrowG" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#2a9e3d"/>
+    </marker>
+    <marker id="arrowR" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#e03131"/>
+    </marker>
+  </defs>
+</svg>
