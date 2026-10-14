@@ -407,6 +407,29 @@ class StatFileDecoderTest(unittest.TestCase):
             if os.path.exists(outFile):
                 os.unlink(outFile)
 
+    def testWeightFreeLinesGetTheirOwnHeaders(self):
+        """A weight-free genome is decoded under weight-free headers, one per
+        value; until 14 Oct 2026 the headers were always classic (HN-11)"""
+        with tempfile.TemporaryDirectory() as tmp:
+            inFile, outFile = os.path.join(tmp, 'in.txt'), os.path.join(tmp, 'out.txt')
+            with open(inFile, 'w') as f:
+                f.write('\t'.join(str(v) for v in [1, 2.5, 10.3] + [0.5] * 20) + '\n')
+            statFileDecoder(inFile, outFile, noUnits=6, noEvolvedUnits=4)
+            with open(outFile) as f:
+                headers, values = [line.split('\t')[:-1] for line in f.readlines()]
+        self.assertEqual(len(headers), len(values))
+        self.assertEqual(headers[3:8], ['U1-mass', 'U1-visc', 'U1-tau_a', 'U1-maxDev',
+                                        'U1-dt_fast'])
+
+    def testAGenomeOfNoLayoutIsAnError(self):
+        """A genome size that matches no layout raises instead of being read
+        as classic and silently truncated (HN-11)"""
+        with self.assertRaises(ValueError):
+            genomeDecoder(6, [0.5] * 61)
+        with self.assertRaises(ValueError):
+            genomeDecoder(6, [0.5] * 61, layout='classic')
+        self.assertEqual(len(genomeDecoder(6, [0.5] * 60)), 60)
+
 
 class ExperimentAttributesTest(unittest.TestCase):
     """Tests for experiment function attributes (fitnessSign, noEvolvedUnits)"""

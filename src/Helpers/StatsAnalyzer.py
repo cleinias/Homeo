@@ -35,7 +35,7 @@ except ImportError:
     pass
 import matplotlib.pyplot as plt
 from Helpers.ExceptionAndDebugClasses import hDebug
-from Helpers.GenomeDecoder import genomeDecoder, classicConnectionLabels
+from Helpers.GenomeDecoder import genomeDecoder, genomeHeaders
 from operator import itemgetter
 from tabulate import tabulate
 import csv
@@ -214,19 +214,7 @@ def hallOfFame(logbook, num=10, max=False):
 
 def _genome_headers(noUnits, noEvolvedUnits, layout=None):
     """Build column headers matching the genome layout."""
-    headers = ['Fitness', 'IndivID']
-    if layout in ('weightfree', 'weightfree_dt'):
-        for unit in range(noEvolvedUnits):
-            u = 'U' + str(unit + 1)
-            headers += [u + '-mass', u + '-visc', u + '-tau_a', u + '-maxDev']
-            if layout == 'weightfree_dt':
-                headers.append(u + '-dt_fast')
-    else:
-        for unit in range(noEvolvedUnits):
-            u = 'U' + str(unit + 1)
-            headers += [u + '-mass', u + '-visc', u + '-unis-time', u + '-maxDev']
-        headers += classicConnectionLabels(noUnits, noEvolvedUnits)
-    return headers
+    return ['Fitness', 'IndivID'] + genomeHeaders(noUnits, noEvolvedUnits, layout)
 
 
 def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6, noEvolvedUnits=None,

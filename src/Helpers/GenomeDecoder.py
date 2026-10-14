@@ -18,7 +18,8 @@ def main(argv):
     except:
         raise            
             
-def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2, noEvolvedUnits=None):
+def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2, noEvolvedUnits=None,
+                    layout=None):
     """Read a GA stat file and convert the values in the genome
        (all in (0,1) range) to the actual value used by the units.
 
@@ -31,17 +32,13 @@ def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2, noEvolvedUnit
 
        noEvolvedUnits defaults to noUnits for backward compatibility
        with old 60-gene logbooks.
+       layout: see genomeDecoder; None detects it from the first line's
+       genome, and every line must have the same.  The headers are the
+       layout's: until 14 Oct 2026 they were always the classic ones, so a
+       weight-free genome was written under them (HN-11).
        """
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
-    headers = ['Run', 'Dist.', 'Time']
-    for unit in range(noEvolvedUnits):
-        headers.append('U'+str(unit+1)+'-mass')
-        headers.append('U'+str(unit+1)+'-visc')
-        headers.append('U'+str(unit+1)+'-unis-time')
-        headers.append('U'+str(unit+1)+'-maxDev')
-
-    headers += classicConnectionLabels(noUnits, noEvolvedUnits)
 
     fileIn= open(statFileIn,"r")
     if statFileOut is not None:
@@ -50,9 +47,12 @@ def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2, noEvolvedUnit
         print("Usage: statFileGenomeDecoder fileIn fileOut")
         print("Please enter a filename to write the decoded genome information to")
         return
-    lines = fileIn.readlines()
+    lines = [line for line in fileIn.readlines() if line.strip()]
     fileIn.close()
-    
+    if layout is None and lines:
+        layout = genomeLayout(noUnits, len(lines[0].split()) - 3, noEvolvedUnits)
+    headers = ['Run', 'Dist.', 'Time'] + genomeHeaders(noUnits, noEvolvedUnits, layout)
+
     "adding headers"
     for heading in headers:
         fileOut.write(heading+"\t")
@@ -66,7 +66,8 @@ def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2, noEvolvedUnit
         fileOut.write(line[2]+"\t")              # Run Time
         "Converting genome and printing to file"
         lineAsFloats = [float(x) for x in line]
-        convertedGenome = genomeDecoder(noUnits, lineAsFloats[3:], noEvolvedUnits=noEvolvedUnits)
+        convertedGenome = genomeDecoder(noUnits, lineAsFloats[3:], noEvolvedUnits=noEvolvedUnits,
+                                        layout=layout)
         for value in convertedGenome:
             fileOut.write(str(round(value, rounding))+"\t")
         fileOut.write("\n")        
@@ -95,6 +96,46 @@ def classicConnectionLabels(noUnits, noEvolvedUnits):
     return ['W-%d-from-%d' % pair for pair in classicConnectionSources(noUnits, noEvolvedUnits)]
 
 
+GENOME_LAYOUTS = ('classic', 'weightfree', 'weightfree_dt')
+
+
+def genomeSize(noUnits, noEvolvedUnits, layout):
+    "The number of genes of a layout (see genomeDecoder)."
+    return {'classic': noEvolvedUnits * 4 + noEvolvedUnits * noUnits,
+            'weightfree': noEvolvedUnits * 4,
+            'weightfree_dt': noEvolvedUnits * 5}[layout]
+
+
+def genomeLayout(noUnits, length, noEvolvedUnits=None):
+    """The layout of a genome of this length.  A length that matches no
+    layout is an error: until 14 Oct 2026 it was read as classic, silently
+    dropping extra genes (HN-11)."""
+    if noEvolvedUnits is None:
+        noEvolvedUnits = noUnits
+    for layout in GENOME_LAYOUTS:
+        if length == genomeSize(noUnits, noEvolvedUnits, layout):
+            return layout
+    raise ValueError('a genome of %d genes matches no layout for %d units, %d evolved'
+                     % (length, noUnits, noEvolvedUnits))
+
+
+def genomeHeaders(noUnits, noEvolvedUnits, layout=None):
+    "Column labels of a decoded genome in this layout (None: classic)."
+    headers = []
+    if layout in ('weightfree', 'weightfree_dt'):
+        for unit in range(noEvolvedUnits):
+            u = 'U' + str(unit + 1)
+            headers += [u + '-mass', u + '-visc', u + '-tau_a', u + '-maxDev']
+            if layout == 'weightfree_dt':
+                headers.append(u + '-dt_fast')
+    else:
+        for unit in range(noEvolvedUnits):
+            u = 'U' + str(unit + 1)
+            headers += [u + '-mass', u + '-visc', u + '-unis-time', u + '-maxDev']
+        headers += classicConnectionLabels(noUnits, noEvolvedUnits)
+    return headers
+
+
 def genomeDecoder(noUnits, genome, noEvolvedUnits=None, layout=None):
     """Convert the values in the genome to the actual value used by the units.
 
@@ -115,38 +156,27 @@ def genomeDecoder(noUnits, genome, noEvolvedUnits=None, layout=None):
         - 'weightfree'       : 4 body params per unit, no connection weights
         - 'weightfree_dt'    : 5 body params per unit (incl. dt_fast), no weights
 
-        When layout is None, the function auto-detects based on genome size:
-        if len(genome) == noEvolvedUnits * noUnits + noEvolvedUnits * 4,
-        it's 'classic'; otherwise it tries the weight-free layouts.
+        When layout is None, the function detects it from the genome's size
+        (genomeLayout); a size that matches no layout, or a genome of the
+        wrong size for the given layout, raises ValueError.
 
     Returns a list of decoded actual values.
     """
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
 
-    # Auto-detect layout from genome size
     if layout is None:
-        classic_size = noEvolvedUnits * 4 + noEvolvedUnits * noUnits
-        wf4_size = noEvolvedUnits * 4
-        wf5_size = noEvolvedUnits * 5
-        gl = len(genome)
-        if gl == classic_size:
-            layout = 'classic'
-        elif gl == wf5_size:
-            layout = 'weightfree_dt'
-        elif gl == wf4_size:
-            layout = 'weightfree'
-        else:
-            layout = 'classic'   # fallback
+        layout = genomeLayout(noUnits, len(genome), noEvolvedUnits)
+    if layout not in GENOME_LAYOUTS:
+        raise ValueError('layout must be one of %s, got %r' % (GENOME_LAYOUTS, layout))
+    if len(genome) != genomeSize(noUnits, noEvolvedUnits, layout):
+        raise ValueError('a %s genome for %d units, %d evolved, has %d genes, not %d'
+                         % (layout, noUnits, noEvolvedUnits,
+                            genomeSize(noUnits, noEvolvedUnits, layout), len(genome)))
 
     if layout == 'classic':
         return _decode_classic(noUnits, genome, noEvolvedUnits)
-    elif layout == 'weightfree':
-        return _decode_weightfree(genome, noEvolvedUnits, has_dt_fast=False)
-    elif layout == 'weightfree_dt':
-        return _decode_weightfree(genome, noEvolvedUnits, has_dt_fast=True)
-    else:
-        return _decode_classic(noUnits, genome, noEvolvedUnits)
+    return _decode_weightfree(genome, noEvolvedUnits, has_dt_fast=(layout == 'weightfree_dt'))
 
 
 def _decode_classic(noUnits, genome, noEvolvedUnits):
