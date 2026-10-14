@@ -42,7 +42,7 @@ class HomeoSimulationControllerGui(QDialog):
     from Helpers.General_Helper_Functions import simulations_data_dir as _sdd
     dataDirRoot = _sdd()
 
-    def __init__(self, parent = None, simulatorBackend = 'VREP', experiment=None, experimentParams=None):
+    def __init__(self, parent = None, simulatorBackend = 'HOMEO', experiment=None, experimentParams=None):
         '''
         Build all the widgets and layouts and set them up with proper connections
         Initialize the iVars to hold on to the simulation being run
@@ -59,15 +59,12 @@ class HomeoSimulationControllerGui(QDialog):
             os.makedirs(self.dataDir)
         except OSError:
             print("Saving to existing directory", self.dataDir)
-        'save dataDir path to a file, so Webots trajectory supervisor can read it'
-        'FIXME: Should really communicate it to webots simulation supervisor to pass it to trajectory supervisor '
         dataDirFile = open(os.path.join(os.getenv("HOME"),'.HomeoSimDataDir.txt'),'w+')
         dataDirFile.write(self.dataDir)
         dataDirFile.close()
         
         '''Create the homeostat according to desired experiment (with proper number of units
            connections, etcetera), and set data directory and robotic simulator back-end'''
-#         params = {'dataDir' : self.dataDir, 'simulator':"VREP"}
         params = dict({'simulator':simulatorBackend}, **(experimentParams or {}))
         self._simulation.initializeExperSetup(**params)
         self._paceHomeostat()
@@ -944,23 +941,17 @@ class HomeoSimulationControllerGui(QDialog):
 
     
     def saveHomeostat(self):
-        '''Can only save a "pure" homeostat. Homeostat using tcp/socket connections to webots 
-           cannot be saved (because socket cannot be pickled '''
-        if self._simulation.usesSocket():
-            "pop up a warning: homeostat cannot be saved"
-            messageBox =  QMessageBox.warning(self, 'The Homeostat cannot be saved', 'Homeostats using sockets cannot be saved', QMessageBox.Cancel)
-        else:
-            # PyQt5's dialog returns (filename, filter), and '' on Cancel.
-            # Until 14 Oct 2026 every save slot took the tuple for the
-            # filename, so none of them could save, and Cancel saved (SR-02).
-            filename, _ = QFileDialog.getSaveFileName(parent = self,
-                                                      caption = 'Choose the file to save the Homeostat to',
-                                                      directory = self._simulation.homeostatFilename)
-            if not filename:
-                return
-            self._simulation.homeostatFilename = filename
-            self._simulation.save()
-            self._simulation.homeostatIsSaved = True
+        # PyQt5's dialog returns (filename, filter), and '' on Cancel.
+        # Until 14 Oct 2026 every save slot took the tuple for the
+        # filename, so none of them could save, and Cancel saved (SR-02).
+        filename, _ = QFileDialog.getSaveFileName(parent = self,
+                                                  caption = 'Choose the file to save the Homeostat to',
+                                                  directory = self._simulation.homeostatFilename)
+        if not filename:
+            return
+        self._simulation.homeostatFilename = filename
+        self._simulation.save()
+        self._simulation.homeostatIsSaved = True
 
     def newHomeostat(self):
         self._simulation.fullReset()
@@ -1278,7 +1269,7 @@ class OutLog(object):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    simul = HomeoSimulationControllerGui(simulatorBackend='VREP')
+    simul = HomeoSimulationControllerGui()
     simul.show()
     app.exec_()
                

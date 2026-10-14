@@ -30,8 +30,8 @@ import multiprocessing
 import os
 from time import time, strftime, localtime
 from tabulate import tabulate
-from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDebug
-from Simulator.SimulatorBackend import SimulatorBackendHOMEO,SimulatorBackendVREP,SimulatorBackendWEBOTS
+from Helpers.ExceptionAndDebugClasses import HomeoDebug, hDebug
+from Simulator.SimulatorBackend import SimulatorBackendHOMEO
 from threading import Lock
 from glob import glob
 
@@ -184,7 +184,6 @@ def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, d
     backend.connect()
 
     backend.setRobotModel(genome.ID if modelName is None else modelName)
-    sim.homeostat.connectUnitsToNetwork()
     sim.maxRuns = stepsSize
     sim.initializeLiveData()
 
@@ -249,8 +248,7 @@ class HomeoGASimulation(object):
                                    ID_padding = 3,
                                    clonableGenome = None,
                                    debugging = None,
-                                   simulatorBackend = "VREP",
-                                   vrepPort = None,
+                                   simulatorBackend = "HOMEO",
                                    nWorkers = 1,
                                    noiseScheme = 'individual'):
         
@@ -263,15 +261,9 @@ class HomeoGASimulation(object):
         timeElapsed = None
         self._robotName = "Khepera"
         
-        if simulatorBackend == "VREP":
-            self.simulatorBackend = SimulatorBackendVREP('127.0.0.1', vrepPort, robotName = self._robotName)
-        elif simulatorBackend == "WEBOTS":
-            self.simulatorBackend = SimulatorBackendWEBOTS('127.0.0.1',
-                                                           10021,              # supervisor port
-                                                           '127.0.0.1',
-                                                           10020,              # robot port
-                                                           robotName = self._robotName)
-        elif simulatorBackend == "HOMEO":
+        # "HOMEO" (Box2D), or anything else for none (the dummy evaluators).
+        # The V-REP and old Webots backends were deleted on 14 Oct 2026.
+        if simulatorBackend == "HOMEO":
             self.simulatorBackend =  SimulatorBackendHOMEO(robotName = self._robotName, lock = self.worldBeingResetLock)
         else:
             self.simulatorBackend = None
@@ -719,27 +711,6 @@ class HomeoGASimulation(object):
             #best_ind = tools.selBest(pop, 1)[0]
             #print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
 
-        except TCPConnectionError as e:
-            hDebug("network major",("TCP connection error: \n" + e.value + "Cleaning up and quitting..."))
-            hDebug("network",("Trying to quit simulation environment %s" % self.simulatorBackend))
-            # Saved, and raised: until 14 Oct 2026 the run returned as if
-            # finished, with nothing saved (SG-04)
-            self.saveLogbook(pop, time() - timeStarted, timeStarted)
-            self.saveHistory(timeStarted)
-            if self.simulatorBackend is not None:
-                self.simulatorBackend.quit()
-            raise
-        #=======================================================================
-        # except VREP_Error as e:
-        #     "Try to close connection to V-REP"
-        #
-        #     "FIXME : TO DO"
-        # finally: 
-        #     "release V-rep and/or Webots connections if we crashed"
-        #     
-        #     "FIXME: TO DO"
-        #=======================================================================
-
         except Exception:
             "Something bad happened: save the logbook and history of the work done so far and re-raise."
             self.saveLogbook(pop, time() - timeStarted, timeStarted)
@@ -864,7 +835,7 @@ class HomeoGASimulation(object):
         
     def evaluateGenomeFitnessDUMMY(self,genome=None):
         """For GA testing purposes: initialize experiments and homeostats,
-           but do not run simulation on Webots, return a normally distributed 
+           but do not run a simulation, return a normally distributed 
            random fitness instead"""         
                      
         if genome is None:
@@ -875,7 +846,6 @@ class HomeoGASimulation(object):
         self.simulatorBackend.reset()
         self.simulatorBackend.close()
         self.simulatorBackend.connect()
-        self._simulation.homeostat.connectUnitsToNetwork()
         self._simulation.maxRuns = self.stepsSize
         "Initialize live data recording and display "
         self._simulation.initializeLiveData()
@@ -885,7 +855,7 @@ class HomeoGASimulation(object):
 
     def evaluateGenomeFitnessSUPER_DUMMY(self,genome=None):
         """For GA testing purposes: do not initialize experiments and homeostats,
-           and do NOT run simulation on Webots: 
+           and do NOT run a simulation: 
            just return a normally distributed random fitness instead"""         
                      
         #=======================================================================
@@ -896,7 +866,6 @@ class HomeoGASimulation(object):
         # self.simulationEnvironReset()
         # self._supervisor.close()
         # self._supervisor.clientConnect()
-        # self._simulation.homeostat.connectUnitsToNetwork()
         # self._simulation.maxRuns = self.stepsSize
         # "Initialize live data recording and display "
         # self._simulation.initializeLiveData()
@@ -923,8 +892,6 @@ class HomeoGASimulation(object):
         if genome is None:
             genome=self.createRandomHomeostatGenome(self.genomeSize)
 
-        if self.simulatorBackend.name == "VREP":
-            self.simulatorBackend.connect()
         self.experimentParams['homeoGenome']= genome
         self._simulation.initializeExperSetup(
             message="Building Homeostat from genome %s" % genome.ID,
@@ -954,7 +921,6 @@ class HomeoGASimulation(object):
 #         sleep(1)
         "end testing"
         
-        self._simulation.homeostat.connectUnitsToNetwork()
         self._simulation.maxRuns = self.stepsSize
         "Initialize live data recording and display "
         self._simulation.initializeLiveData()

@@ -3,45 +3,22 @@ Created on Sep 4, 2013
 
 @author: stefano
 '''
-try:
-    import vrep
-except ImportError:
-    vrep = None
 from Core.Homeostat import *
 from Core.HomeoUnitNewtonian import *
 from Core.HomeoConnection import * 
 from RobotSimulator.HomeoUnitNewtonianTransduc import *
-from RobotSimulator.WebotsTCPClient import *
-from subprocess import check_output
-from subprocess import call as subCall
 from RobotSimulator.Transducer import  *
-from os import system
-from time import sleep 
 from Helpers.ExceptionAndDebugClasses import hDebug
 from Helpers.GenomeDecoder import genomePrettyPrinter, genomeDecoder
 from Helpers.General_Helper_Functions import dated_data_dir
-# from Helpers.VREP_Helper_Functions import connectToVREP
 from KheperaSimulator.KheperaSimulator import KheperaSimulation
 import os
-
-# Base directory for the 'src' tree, computed from this file's location.
-# Used to build world-file paths without hardcoding the user's home directory.
-_SRC_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
-
-def _webots_world(filename):
-    "Return absolute path to a Webots world file in the standard location."
-    return os.path.join(_SRC_DIR, 'Webots', 'Homeo-experiments', 'worlds', filename)
-
-def _vrep_scene(filename):
-    "Return absolute path to a V-REP scene file in the standard location."
-    return os.path.join(_SRC_DIR, 'VREP', 'Homeo-Scenes', filename)
-
 
 '''
 Module HomeoExperiments provides initializations data for various experiments to be conducted with the homeo package.
 The module's methods return a properly configured homeostat to be used in the simulations.
-The functions setting up robotics experiments also launch Webots and set up communication
-parameters between Webots and Homeo. 
+The functions setting up robotics experiments build their vehicle on a robotic simulator
+backend (Simulator/SimulatorBackend.py).
 '''
 
 def initialize10UnitHomeostat(params=None):
@@ -351,72 +328,36 @@ def initialize_1minus_2_minus_3xExperiment(params=None):
     'Return the properly configured homeostat'
     return hom        
 
-def initializeBraiten2_2(raw=False,params=None, simulator = None, backendSimulator = None, dataDir = None):
+def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir = None):
     '''
     Initialize a Homeostat to replicate a Braitenberg type-2 vehicle with
     4 real units: two for either Motor and two for the sensors, plus 2  HomeoInput Units
-    to interface to the outside world
+    to interface to the outside world, on the robot of backendSimulator (a
+    SimulatorBackend instance, e.g. SimulatorBackendHOMEO).
 
-    The initialization variable 'raw' controls the type of sensory tranducer.
-    If it is set to 'False" (default) the raw sensory input from webot is reversed: high sensory values correspond
-    to high actual stimuli, and viceversa.
-    This setting is equivalent to a classic Braitenberg vehicle: a high (e.g.)
-    light intensity in the world will translate into a high sensor reading.
-
-    If the 'raw' variable is set to True, the sensory transducer reads webots raw values,
-    which are minimum for maximum stimulus and maximal for minimun stimulus.
-    This is the **reverse** of the classical Braitenberg case: a high intensity in the world
-    will translate into a low sensor value.  Only the legacy WEBOTS path
-    supports it: with a backendSimulator, raw=True raises a ValueError.
-
-    The backendSimulator parameter accepts a SimulatorBackend instance (e.g. SimulatorBackendHOMEO).
-    When provided, it is used instead of the simulator string parameter.
-    The simulator string parameter is kept for backward compatibility with VREP and WEBOTS.
-
+    raw=True asked the old Webots bridge for its inverted readings (high for
+    a weak stimulus); the backends have only the standard polarity, so it
+    raises a ValueError (SE-04).  The V-REP and old Webots paths, chosen by a
+    `simulator` string, were deleted on 14 Oct 2026.
 '''
-    "TCP/IP parameters and simulation worlds to be used"
-    #kheperaPort = 50000 # test server on port 50000 that just echoes commands back
-    host = '127.0.0.1'
-    WebotsKheperaPort = 10020
-    VREPKheperaPort = 19997
-    WEBOTS_World = _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt')
-    VREP_World = _vrep_scene('khepera-braitenberg-2-HOMEO.ttt')
-    HOMEO_World = 'kheperaBraitenberg2_HOMEO_World'
-
-    """Get the simulator-specific transducer units
-    Either function returns a dictionary with 4 transducers:
-    rightWheelTransd, leftWheelTransd, rightEyeTransd, leftEyeTransd"""
-    if raw and backendSimulator is not None:
+    if backendSimulator is None:
+        raise ValueError("initializeBraiten2_2 needs a backendSimulator")
+    if raw:
         # The backends' sensors have no raw (inverted) reading: raw=True used
         # to build the same vehicle as raw=False (SE-04)
         raise ValueError("initializeBraiten2_2: raw=True is not supported with a "
                          "backendSimulator; its sensors have only the standard polarity")
+    worlds = {'HOMEO': 'kheperaBraitenberg2_HOMEO_World'}
     try:
-        if backendSimulator is not None:
-            world = {
-                'HOMEO': HOMEO_World,
-                'VREP': VREP_World,
-                'WEBOTS': WEBOTS_World,
-            }[backendSimulator.name]
-            transducers = basicBraiten2Tranducers(backendSimulator, world)
-            host = backendSimulator.host
-            port = backendSimulator.port
-        elif simulator == "VREP":
-            port = VREPKheperaPort
-            transducers = basicBraiten2VREPTransducers(host, port, VREP_World)
-        elif simulator == "WEBOTS":
-            port = WebotsKheperaPort
-            transducers = basicBraiten2WEBOTSTransducers(host, WEBOTS_World,raw)
-        else:
-            raise Exception("I cannot use backend simulator %s yet" % simulator)
-    except Exception as e:
-      print("Could not set up transducers for robotic simulator backend")
-      print(e)
+        world = worlds[backendSimulator.name]
+    except KeyError:
+        raise Exception("I cannot use backend simulator %s yet" % backendSimulator.name)
+    """The backend's transducers: a dictionary with rightWheelTransd,
+    leftWheelTransd, rightEyeTransd, leftEyeTransd"""
+    transducers = basicBraiten2Tranducers(backendSimulator, world)
 
     "2. set up homeostat"
     hom = Homeostat()
-    hom._host = host
-    hom._port = port
 
     '''Clear the class-based set containing the names of all units
         FIXME: this is a hack that will not work in case of repeated calls to the
@@ -604,22 +545,15 @@ def initializeBraiten2_2(raw=False,params=None, simulator = None, backendSimulat
     for connection in rightEyeSensorOnly.inputConnections:
         connection.status = False
 
-    simulatorName = backendSimulator.name if backendSimulator is not None else simulator
-    if simulatorName == "WEBOTS":
-        """Only Webots (so far) uses explicit sockets and needs to connect
-           the units to the server. VREP and HOMEO use other mechanisms."""
-        hom._usesSocket = True
-        hom.connectUnitsToNetwork()
-
     'Return the properly configured homeostat'
     hDebug('unit', "Homeostat initialized")
     return hom
 
-def initializeBraiten2_2Pos(params=None, simulator = 'WEBOTS', backendSimulator = None, dataDir = None):
+def initializeBraiten2_2Pos(params=None, backendSimulator = None, dataDir = None):
     '''Utility function to choose a  Braitenberg type-2 vehicle with
     4 real units and 2 positive connections between actual stimulus and sensory
     input (the higher the world's value, the higher the stimulus'''
-    return initializeBraiten2_2(False, simulator = simulator, backendSimulator = backendSimulator, dataDir = dataDir)
+    return initializeBraiten2_2(False, backendSimulator = backendSimulator, dataDir = dataDir)
 
 #===============================================================================
 # Genetic Algorithms experiments
@@ -655,24 +589,11 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     
     Initialize the homeostat to be **fully connected** (real units only)
     
-    The initialization variable 'raw' controls the type of sensory tranducer. 
-    If it is set to 'False" (default) the raw sensory input from webot is reversed: high sensory values correspond 
-    to high actual stimuli, and viceversa.
-    This setting is equivalent to a classic Braitenberg vehicle: a high (e.g.)
-    light intensity in the world will translate into a high sensor reading.
-     
-    If the 'raw' variable is set to True, the sensory transducer reads webots raw values, 
-    which are minimum for maximum stimulus and maximal for minimun stimulus.
-    This is the **reverse** of the classical Braitenberg case: a high intensity in the world
-    will translate into a low sensor value.  
-    
     The backendSimulator variable determines how to initialize the transducer units, depending 
     on the robotic simulator backend. 
                       
 ''' 
     worlds = {
-              'WEBOTS_World' : _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt'),
-              'VREP_World' : _vrep_scene('khepera-braitenberg-2-HOMEO.ttt'),
               'HOMEO_World' : 'kheperaBraitenberg2_HOMEO_World'
               }
     
@@ -693,8 +614,6 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     
     "2. set up homeostat"
     hom = Homeostat()
-    hom._host = backendSimulator.host
-    hom._port = backendSimulator.port
 
     '''Clear the class-based set containing the names of all units
         FIXME: this is a hack that will not work in case of repeated calls to the
@@ -936,12 +855,6 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
 #     #===========================================================================
 #===============================================================================
     
-    if backendSimulator.name == "WEBOTS":
-        """Only Webots (so far) uses explicit sockets and needs to connect 
-           the units to the server. VREP uses a global connection and passes only a
-           clientID"""
-        hom._usesSocket = True
-        hom.connectUnitsToNetwork()
 
     if noUnisel == True:
         for unit in hom.homeoUnits:
@@ -1057,7 +970,7 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     homeoGenome : array-like
         20-element (evolve_dt_fast=True) or 16-element (False) array, values in [0, 1).
     backendSimulator : simulator backend
-        The robotic simulator backend (HOMEO, VREP, WEBOTS).
+        The robotic simulator backend (SimulatorBackendHOMEO).
     dataDir : str, optional
         Data output directory.
     noNoise : bool
@@ -1074,8 +987,6 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
     worlds = {
-        'WEBOTS_World': _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt'),
-        'VREP_World': _vrep_scene('khepera-braitenberg-2-HOMEO.ttt'),
         'HOMEO_World': 'kheperaBraitenberg2_HOMEO_World'
     }
 
@@ -1090,8 +1001,6 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
 
     "1. Create homeostat and units"
     hom = Homeostat()
-    hom._host = backendSimulator.host
-    hom._port = backendSimulator.port
     HomeoUnit.clearNames()
 
     rightWheel = transducers["rightWheelTransd"]
@@ -1214,10 +1123,6 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
         target.userData['intensity'] = -100
         target.userData['lightIntensity'] = -100
 
-    "9. Socket setup for WEBOTS"
-    if backendSimulator.name == "WEBOTS":
-        hom._usesSocket = True
-        hom.connectUnitsToNetwork()
 
     hDebug('unit', "Homeostat initialized (weight-free continuous, topology=%s)" % topology)
     return hom
@@ -1316,7 +1221,7 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
     homeoGenome : array-like
         10-element (evolve_dt_fast=True) or 8-element (False) array, values in [0, 1).
     backendSimulator : simulator backend
-        The robotic simulator backend (HOMEO, VREP, WEBOTS).
+        The robotic simulator backend (SimulatorBackendHOMEO).
     dataDir : str, optional
         Data output directory.
     noNoise : bool
@@ -1332,8 +1237,6 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
     worlds = {
-        'WEBOTS_World': _webots_world('khepera-braitenberg-2-HOMEO-R2025a.wbt'),
-        'VREP_World': _vrep_scene('khepera-braitenberg-2-HOMEO.ttt'),
         'HOMEO_World': 'kheperaBraitenberg2_HOMEO_World'
     }
 
@@ -1348,8 +1251,6 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
 
     "1. Create homeostat and units"
     hom = Homeostat()
-    hom._host = backendSimulator.host
-    hom._port = backendSimulator.port
     HomeoUnit.clearNames()
 
     rightWheel = transducers["rightWheelTransd"]
@@ -1463,10 +1364,6 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
         target.userData['intensity'] = -100
         target.userData['lightIntensity'] = -100
 
-    "9. Socket setup for WEBOTS"
-    if backendSimulator.name == "WEBOTS":
-        hom._usesSocket = True
-        hom.connectUnitsToNetwork()
 
     hDebug('unit', "Homeostat initialized (direct 2+2, weight-free continuous, topology=%s)" % topology)
     return hom
@@ -1627,8 +1524,6 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
 
     "1. Create homeostat and units"
     hom = Homeostat()
-    hom._host = backendSimulator.host
-    hom._port = backendSimulator.port
     HomeoUnit.clearNames()
 
     # Motors
@@ -1778,10 +1673,6 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
         target.userData['intensity'] = -100
         target.userData['lightIntensity'] = -100
 
-    "9. Socket setup for WEBOTS"
-    if backendSimulator.name == "WEBOTS":
-        hom._usesSocket = True
-        hom.connectUnitsToNetwork()
 
     hDebug('unit', "Homeostat initialized (Braiten3c, topology=%s)" % topology)
     return hom

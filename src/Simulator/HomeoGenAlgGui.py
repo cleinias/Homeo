@@ -39,17 +39,14 @@ try:
 except ImportError:
     pd_map = None  # playdoh is Python 2 only; its usage is commented out
 
-#import RobotSimulator.WebotsTCPClient
-from RobotSimulator.WebotsTCPClient import WebotsTCPClient
-# from socket import error as SocketError
 import os
 from math import sqrt, ceil as math_ceil
 import math
 from time import time, strftime, localtime, sleep
 from tabulate import tabulate
-from Helpers.ExceptionAndDebugClasses import TCPConnectionError, HomeoDebug, hDebug
+from Helpers.ExceptionAndDebugClasses import HomeoDebug, hDebug
 from Helpers.StatsAnalyzer import extractGenomeOfIndID
-from Simulator.SimulatorBackend import SimulatorBackendHOMEO,SimulatorBackendVREP,SimulatorBackendWEBOTS
+from Simulator.SimulatorBackend import SimulatorBackendHOMEO
 from threading import Lock
 from glob import glob
 

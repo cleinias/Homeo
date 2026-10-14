@@ -6,13 +6,6 @@ Exception and debug classes shared by all modules
 
 from sys import stderr 
 
-class TCPConnectionError(Exception):
-    def __init__(self, value):
-            self.value = value
-    def __str__(self):
-        return repr(self.value)
-
-
 class HomeoDebug(object):
     """Utility class that allows conditional printing of 
     debugging information depending on how the debugging

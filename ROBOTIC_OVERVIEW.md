@@ -2,7 +2,7 @@
 
 Ashby conceived the Homeostat as a model of adaptive behaviour: a system that, without being told what to do, finds and maintains stable configurations in the face of disturbance. The robotic component of Homeo applies this idea to mobile robot control. Instead of hand-coding a controller that maps sensor readings to motor commands, a homeostat network is placed between the robot's sensors and its wheels. The units treat sensor input as a perturbation to be absorbed and motor output as the means to do so. Because the uniselector mechanism randomly reassigns connection weights whenever a unit's essential variable leaves its viable range, the network explores the space of possible sensorimotor couplings until it discovers one that keeps every unit within bounds -- which, given the right wiring, corresponds to a robot that tracks a light source or avoids obstacles without any explicit goal representation.
 
-The system supports three simulator backends -- Webots, V-REP, and a custom lightweight simulator called KheperaSimulator -- behind a uniform interface, so the same homeostat configuration can drive a robot in any of them.
+The simulators sit behind a uniform backend interface, so the same homeostat configuration can drive a robot in any of them.  Today there is one: KheperaSimulator, a lightweight Box2D simulator in the same process.  A new Webots backend (Homeo as the robot's extern controller) is being built; the V-REP backend and the old Webots TCP bridge were deleted on 14 Oct 2026.
 
 ## Architecture
 
@@ -24,7 +24,7 @@ A transducer wraps a single sensor or actuator and exposes three methods:
 - `act()` sends the current command (stored in the `funcParameters` property) to the actuator.
 - `range()` returns a `(min, max)` tuple describing the transducer's value range, used for scaling.
 
-Every supported backend provides its own concrete transducer classes. For Webots, `WebotsLightSensorTCP` sends the ASCII command `O` over a TCP socket and parses the comma-separated response to extract a specific sensor channel; `WebotsDiffMotorTCP` sends a command like `R,10.5` to set a wheel speed. For V-REP, the transducers use the V-REP remote API to get and set signal values. For the internal KheperaSimulator, `HOMEO_LightSensor` calls `robot.getSensorRead(eye)` directly in Python, with no network overhead.
+Every backend provides its own concrete transducer classes. For the internal KheperaSimulator, `HOMEO_LightSensor` calls `robot.getSensorRead(eye)` directly in Python.
 
 Because all transducers share the same three-method interface, the homeostat has no knowledge of which backend it is talking to.
 
@@ -55,41 +55,11 @@ A simpler variant, `HomeoUnitAristotelianActuator`, uses linear scaling instead 
 - `setRobotModel(name)` -- label the robot with an identifier (used for trajectory logging).
 - `setDataDir(path)` -- set the directory for trajectory files.
 
-Three concrete backends implement this interface:
-
-**`SimulatorBackendWEBOTS`** communicates with Webots over two TCP connections. One connects to the robot controller (default port 10020) for motor commands and sensor queries. The other connects to a supervisor controller (default port 10021) that can reset the simulation, reset physics, set the robot's model name, query the distance to the target, or quit Webots. Connection management is handled by `WebotsTCPClient` (in `RobotSimulator/WebotsTCPClient.py`), which wraps a socket with automatic retry logic.
-
-**`SimulatorBackendVREP`** uses the V-REP Python remote API. It communicates through named signals (`HOMEO_SIGNAL_rightWheel_MAX_SPEED`, `HOMEO_SIGNAL_leftEye_LIGHT_READING`, etc.) in synchronous operation mode.
+The concrete backend:
 
 **`SimulatorBackendHOMEO`** wraps the internal `KheperaSimulation` class. Since the simulator runs in the same process, transducers call Python methods directly -- `HOMEO_DiffMotor.act()` calls `robot.setRightSpeed(speed)` and `HOMEO_LightSensor.read()` calls `robot.getSensorRead(eye)` -- making it the fastest backend and the natural choice for batch experiments and genetic-algorithm optimisation.
 
-Swapping backends is transparent. The experiment-setup functions in `HomeoExperiments.py` accept a `simulator` parameter; depending on its value, they instantiate the appropriate backend, call `basicBraiten2Transducers(backend, worldFile)` to obtain a dictionary of four transducers (two wheels, two eyes), and wire them into the same homeostat structure regardless of which backend produced them.
-
-## Webots integration
-
-The Webots side of the integration consists of two controller scripts that run inside the Webots process, each listening on a TCP socket.
-
-The **robot controller** (a C program, compiled and loaded by Webots as the robot's controller) opens a TCP server on port 10020 and accepts single-character commands followed by optional parameters:
-
-| Command | Description | Response |
-|---------|-------------|----------|
-| `O` | Read all light sensors | `o,v0,v1,...,v7` (eight sensor values) |
-| `R,speed` | Set right wheel speed (rad/s) | `r` |
-| `L,speed` | Set left wheel speed (rad/s) | `l` |
-| `D,rSpeed,lSpeed` | Set both wheels at once | `d` |
-| `M` | Query max wheel speed | `m,maxSpeed` |
-
-The **supervisor controller** (`tcpip-supervisor-python.py`) opens a TCP server on port 10021 and handles simulation-level commands:
-
-| Command | Description | Response |
-|---------|-------------|----------|
-| `R` | Revert simulation | `r` |
-| `P` | Reset physics | `p` |
-| `Q` | Quit Webots | `q` |
-| `D` | Distance robot-to-target | distance as float string |
-| `M,name` | Set robot model name | `m` |
-
-The Webots world files used by Homeo are stored in `Webots/Homeo-experiments/` and define a flat arena with a Khepera-like robot and one or more light sources. Orthodox Braitenberg controller scripts (`Type-2a`, `Type-2b`, `Type-3a`, `Type-3b`) are also included for comparison with the homeostatic controller.
+Swapping backends is transparent. The experiment-setup functions in `HomeoExperiments.py` take a backend instance (`backendSimulator`), call `basicBraiten2Tranducers(backend, world)` to obtain a dictionary of four transducers (two wheels, two eyes), and wire them into the same homeostat structure regardless of which backend produced them.
 
 ## KheperaSimulator
 
@@ -99,7 +69,7 @@ KheperaSimulator (in `KheperaSimulator/KheperaSimulator.py`) is a lightweight 2D
 
     irrad = (intensity * (1 - ambientRatio) * cos(angle) + intensity * ambientRatio) / (a + b * distance + c * distance^2)
 
-where the attenuation vector (a, b, c) defaults to (0, 0, 1) for pure inverse-square decay. The sensor ignores lights outside its angular range (default 90 degrees); it has no maximum distance. Its reading is the eye's response to that irradiance: 0 up to a threshold, 1 from a saturation value, linear or logarithmic in between (`eyeResponse`). This model matches the one used by Webots and V-REP, so that results are comparable across backends.
+where the attenuation vector (a, b, c) defaults to (0, 0, 1) for pure inverse-square decay. The sensor ignores lights outside its angular range (default 90 degrees); it has no maximum distance. Its reading is the eye's response to that irradiance: 0 up to a threshold, 1 from a saturation value, linear or logarithmic in between (`eyeResponse`). This is Webots' model of a light, so that results are comparable with the Webots backend.
 
 **`KheperaSimulation`** manages the Box2D world, the bodies in it, and a `RobotTrajectoryWriter` that logs the robot's position at every step. The method `setupWorld(HomeoWorld)` calls a named setup function (e.g. `kheperaBraitenberg2_HOMEO_World`) that creates the world, places the robot and one or more lights, and initialises the trajectory writer. The simulation is advanced one step at a time by `advanceSim()`, which updates all bodies and steps the physics engine. The motors only set their wheel speeds; once every unit has updated, `Homeostat.runFor` calls `tickAdvance()`, which advances the world by two steps (a tick is 2 x 0.032 s). Runs before 13 Oct 2026 advanced the world one step per motor command instead (`synchronousStepping=False`, `--async-stepping` in the direct phototaxis experiment), so the left wheel's command acted one step before the right one's. `resetWorld()` tears down and rebuilds the world, opening a new trajectory file.
 
@@ -119,11 +89,10 @@ All six units are interconnected, forming a network whose internal feedback conn
 
 Several experiment functions are provided:
 
-- `initializeBraiten1_1Arist()` -- minimal reactive vehicle: one sensor, one Aristotelian motor, linear proportional control.
 - `initializeBraiten2_2()` -- full adaptive vehicle with the six-unit architecture described above.
 - `initializeBraiten2_2_Full_GA()` -- same structure, but initialised from a 60-element genome encoding unit parameters and connection weights, for use with the DEAP genetic-algorithm framework.
 
-Each function accepts a `simulator` parameter (`'WEBOTS'`, `'VREP'`, or `'HOMEO'`) to select the backend, plus optional flags like `noNoise` and `noUnisel` for ablation studies.
+Each function takes the backend instance (`backendSimulator`), plus optional flags like `noNoise` and `noUnisel` for ablation studies.
 
 ## Trajectory logging
 

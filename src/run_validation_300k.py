@@ -223,7 +223,6 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
     backend.connect()
 
     backend.setRobotModel(genome.ID)
-    sim.homeostat.connectUnitsToNetwork()
     sim.maxRuns = total_steps
     sim.initializeLiveData()
 

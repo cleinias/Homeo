@@ -12,8 +12,8 @@ A software simulation of W. Ross Ashby's Homeostat, as described in
 - Extensible to an arbitrary number of homeostatic units
 - Generalized and supplemented model of a homeostatic unit, including
   Newtonian physics and continuous (Ornstein-Uhlenbeck) uniselectors
-- Robotic component: use a homeostat as the controller of virtual robots
-  in simulation environments (Webots, V-REP/CoppeliaSim)
+- Robotic component: use a homeostat as the controller of virtual robots,
+  in a built-in Box2D simulator (a Webots backend is being built)
 
 ## Getting started
 
@@ -79,7 +79,6 @@ src/
   HomeoExperiments/  # Predefined experiment configurations
   KheperaSimulator/  # Khepera robot integration
   RobotSimulator/    # Generic robot simulator
-  Webots/            # Webots robot controller
 resources/        # GUI resources (icons, images)
 ```
 

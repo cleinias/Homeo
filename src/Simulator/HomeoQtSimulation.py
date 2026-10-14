@@ -9,7 +9,7 @@ from Core.HomeoUnitNewtonian  import *
 try:
     import Simulator.HomeoExperiments
 except ImportError:
-    Simulator_HomeoExperiments = None  # vrep / robot simulator not available
+    Simulator_HomeoExperiments = None  # robot simulator (Box2D) not available
 from datetime import datetime
 import os, pickle
 # PyQt5 is optional.  The GUIs need it, but a headless run -- the GA's fitness
@@ -529,8 +529,6 @@ class HomeoQtSimulation(QObject):
 # Utility functions
 #===============================================================================
         
-    def usesSocket(self):
-        return getattr(self.homeostat, '_usesSocket', False)
       
       
 #===============================================================================

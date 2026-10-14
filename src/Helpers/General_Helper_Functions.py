@@ -1,5 +1,4 @@
 from math import sqrt
-from ctypes import c_ubyte
 import os
 import re
 
@@ -163,9 +162,6 @@ def scaleTo(fromRange,toRange, value):
 def distance(pointA3D, pointB3D):
     "Return Euclidean distance between two 3D points"    
     return sqrt((pointA3D[0]-pointB3D[0])**2 + (pointA3D[1]-pointB3D[1])**2 + (pointA3D[2]-pointB3D[2])**2)
-
-def asByteArray(m_string):
-    return (c_ubyte * len(m_string)).from_buffer_copy(m_string)
 
 def fmtTimefromSecs(deltaInSeconds):
     """Python does not have built-in functions to format a timedelta in

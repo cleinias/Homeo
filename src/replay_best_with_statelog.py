@@ -215,7 +215,6 @@ def replay(genome, steps, experiment_func, seed, output_path, log_interval=1,
         u._headless = True
 
     # Connect units
-    hom.connectUnitsToNetwork()
 
     # Run one tick so JIT arrays get created (headless mode initialises them
     # lazily on the first selfUpdate).  The logger constructor inspects
@@ -359,7 +358,6 @@ def replay_visualized(genome, experiment_func, seed, data_dir,
     hom._collectsData = False
     hom._slowingFactor = 0
 
-    hom.connectUnitsToNetwork()
 
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']

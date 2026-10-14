@@ -2,7 +2,7 @@
 Created on Feb 21, 2026
 
 Test the Braitenberg 2_2 simulation using the internal HOMEO Khepera backend.
-Requires Box2D, pyglet, and vrep packages to be installed.
+Requires Box2D and pyglet.
 
 @author: stefano
 '''
@@ -22,7 +22,7 @@ except ImportError:
     _deps_available = False
 
 
-@unittest.skipUnless(_deps_available, "Requires vrep, Box2D, and pyglet packages")
+@unittest.skipUnless(_deps_available, "Requires Box2D and pyglet")
 class Braiten2_2_HOMEO_Test(unittest.TestCase):
     """Tests for the Braitenberg 2_2 vehicle using the internal HOMEO backend."""
 
@@ -61,11 +61,6 @@ class Braiten2_2_HOMEO_Test(unittest.TestCase):
         expected = {'Right Motor', 'Left Motor', 'Left Eye', 'Right Eye',
                     'Left Sensor', 'Right Sensor'}
         self.assertEqual(names, expected)
-
-    def test_does_not_use_socket(self):
-        """The HOMEO backend does not use sockets."""
-        hom = initializeBraiten2_2(backendSimulator=self.backend)
-        self.assertFalse(hom._usesSocket)
 
     def test_runs_without_error(self):
         """The homeostat runs for a number of steps without raising exceptions."""

@@ -8,7 +8,6 @@ from Core.HomeoJIT import warmup_jit
 from Helpers.General_Helper_Functions import withAllSubclasses
 import time, sys, pickle
 from Helpers.QObjectProxyEmitter import emitter
-from RobotSimulator.WebotsTCPClient import *
 from Helpers.ExceptionAndDebugClasses import hDebug
 
 
@@ -35,10 +34,6 @@ class Homeostat(object):
         collectsData         <aBoolean>       whether or not the homeostat collects data about its run
         slowingFactor:       <milliseconds>   it slows down the simulation by inserting a slowingFactor wait after each cycle.
         isRunning            <aBoolean>       whether the homeostat is running
-        usesSocket           <aBoolean>       whether the homeostat uses Socket and therefore cannot be pickled
-        host                 <aString>        a string with the IP address of the host running the simulation, or 'localhost' 
-        port                 <anInteger>      port number accepting robotic commands
-        client               <a WebTCPClient> the cllient holding the network connection, including the socket
     '''
 
 #===============================================================================
@@ -64,7 +59,7 @@ class Homeostat(object):
 # Initialization methods, getters and setters
 #===============================================================================
 
-    def __init__(self, ip = None, port = None):
+    def __init__(self):
         '''Set slowingFactor to 0, and microTime to 0 as well, reflecting the default 
            conditions of a Homeostat. Sets also some physical equivalence parameters'''
 
@@ -79,11 +74,6 @@ class Homeostat(object):
         self._isRunning = False                         # a new homeostat is not running
         self._headless = False                          # when True, skip signal emissions for GUI
         self._state_logger = None                       # optional HomeostatStateLogger
-        self._usesSocket = False
-        if ip != None:
-            self._ip = ip
-        if port != None:
-            self. _port = port
 
     def getTime(self):
         return self._time
@@ -446,37 +436,6 @@ class Homeostat(object):
 
         self.dataCollector = HomeoDataCollector()
         
-#===============================================================================
-# Network-related
-#===============================================================================
-    def connectUnitsToNetwork(self):
-        "Connect all transducer-connected units to network"
-        if self._usesSocket == False:
-            hDebug('network', "Trying to reconnect a homeostat that uses no sockets to network...Ignoring")
-            return
-        else:
-            try:
-                self._client.close()
-                self._client = WebotsTCPClient(ip = self._host, port = self._port)
-            except:
-                self._client = WebotsTCPClient(ip = self._host, port = self._port)
-                                                     
-            for unit in self.homeoUnits:
-                try:
-                    unit.transducer.robotSocket = self._client.getClientSocket()
-                    #print "now assigning new socket to transducers for unit %s" % unit.name
-                except:
-                    hDebug('network', ("Did not connect: The unit %s of type %s has no transducer" % (unit.name,
-                                                                                         type(unit).__name__)))
-
-    
-    def reconnectUnitsToNetworkViaSocket(self,socket):
-        """Reconnect all transducer-connected units
-           by passing a new socket
-        """
-        self._socket = socket
-        self.connectUnitsToNetwork()
-                    
 #===============================================================================
 # Private-saving methods
 #===============================================================================

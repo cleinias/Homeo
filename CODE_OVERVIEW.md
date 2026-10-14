@@ -13,7 +13,7 @@ All source code lives under `src/`. The four main directories are:
 - **`Helpers/`** -- Noise generation (`HomeoNoise`), PyQt signal proxying (`QObjectProxyEmitter`, with a null fallback when PyQt5 is absent), trajectory and statistics utilities.
 - **`Unit_Tests/`** -- Pytest test suite covering every core class.
 
-Additional directories (`RobotSimulator/`, `VREP/`, `Webots/`, `KheperaSimulator/`) contain integration code for controlling virtual robots with a homeostat; they are not required for the basic simulation.
+Additional directories (`RobotSimulator/`, `KheperaSimulator/`) contain integration code for controlling virtual robots with a homeostat; they are not required for the basic simulation.
 
 ## Core concepts
 
