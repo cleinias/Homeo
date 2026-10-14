@@ -488,8 +488,10 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
             callbacks.append(constraint_cb)
         elif self._exp_num == 7:
             callbacks.append(make_multistable_callback())
-        callbacks.append(self._stability_tick_data)
         self._simulation.tick_callbacks = callbacks
+        # The stability tracker checks the state after each update, as in
+        # the headless runs (HomeoQtSimulation.tick_observers)
+        self._simulation.tick_observers = [self._stability_tick_data]
 
         self._resetExperimentWidgets()
 

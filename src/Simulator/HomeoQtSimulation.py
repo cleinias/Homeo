@@ -208,7 +208,18 @@ class HomeoQtSimulation(QObject):
         self.maxDataPoints = 50
         self.liveDataWindow = {}
         self.panningCharts = True       # default is to use panning charts. Can be changed in the Gui
-        self.tick_callbacks = []        # list of callables, each called with (homeostat, tick) after every runOnce()
+        # Per-tick hooks, the contract of the headless runner
+        # (AshbyOriginalExperiments.run_with_events), so that an experiment
+        # runs the same in the GUI and headless (SR-06):
+        #   tick_callbacks: called with (homeostat, tick) BEFORE each tick's
+        #       update, tick being the time about to run -- the experiment's
+        #       operator (trainer, constraint, bars) acting on what it sees;
+        #   tick_observers: called with (homeostat, time) AFTER it, time the
+        #       new time -- record keepers (the stability tracker).
+        # Until 14 Oct 2026 the GUI called its callbacks after the update with
+        # the new time, one tick later than the headless runs.
+        self.tick_callbacks = []
+        self.tick_observers = []
                 
     @staticmethod
     def uniselectorKey(unit):
@@ -258,11 +269,7 @@ class HomeoQtSimulation(QObject):
             self.initializeLiveData()
 
         while self._homeostat.time  < self._maxRuns  and self._isRunning == True:
-            self._homeostat.runOnce()
-            for cb in self.tick_callbacks:
-                cb(self._homeostat, self._homeostat.time)
-#            if self.liveDataOn:
-            self.updateLiveData()
+            self._tick()
             time.sleep(self._simulDelay / 1000)
             if QApplication is not None and QApplication.instance() is not None:
                 QApplication.processEvents()
@@ -283,15 +290,24 @@ class HomeoQtSimulation(QObject):
         if not self.liveData:                   # Step pressed before Start (as go() does)
             self.initializeLiveData()
         if self._homeostat.time  < self._maxRuns:
-            self._homeostat.runOnce()
-            for cb in self.tick_callbacks:
-                cb(self._homeostat, self._homeostat.time)
-            self.updateLiveData()
+            self._tick()
 #            time.sleep(self._simulDelay / 1000)
             if QApplication is not None and QApplication.instance() is not None:
                 QApplication.processEvents() 
 
     
+    def _tick(self):
+        "One tick: the callbacks, the update, the observers (see tick_callbacks), the live data"
+        hom = self._homeostat
+        if hom.time is None:
+            hom.time = 0
+        for cb in self.tick_callbacks:
+            cb(hom, hom.time)
+        hom.runOnce()
+        for cb in self.tick_observers:
+            cb(hom, hom.time)
+        self.updateLiveData()
+
     def updateLiveData(self):
 #        import pdb;
 #        pdb.set_trace()
@@ -489,6 +505,7 @@ class HomeoQtSimulation(QObject):
         self._homeostat.flushData()
         self._dataAreSaved = True
         self.tick_callbacks = []
+        self.tick_observers = []
         self.initializeLiveData()
         self.allUnitValuesChanged()
     
