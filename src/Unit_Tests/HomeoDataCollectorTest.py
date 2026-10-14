@@ -272,6 +272,25 @@ class ExportersTest(unittest.TestCase):
         for j, unit in enumerate(self.homeostat.homeoUnits):
             self.assertEqual(list(data[:, j]), self.collector.criticalDevAsCollectionForUnit(unit))
 
+    def testCollectionNeedNotStartAtZero(self):
+        """After flushData the first recorded tick is not 0: the exporters
+        label rows with their ticks and the R exporter works; an empty
+        collector exports nothing.  Until 14 Oct 2026 the R exporter raised
+        KeyError and the essential one counted from 0 (CD-15)."""
+        self.homeostat.flushData()
+        self.homeostat.runFor(8)
+        self.collector = self.homeostat.dataCollector
+        ticks = sorted(self.collector.states)
+        self.assertEqual(ticks[0], 5)
+        rows = [line for line in self.collector.printPlottingDataForROnAString('').splitlines()
+                if not line.startswith('#')][1:]
+        self.assertEqual(len(rows), len(ticks))
+        essential = self.collector.printEssentialDataOnAString('').splitlines()
+        self.assertEqual([int(line.split()[1]) for line in essential[::len(self.names)]], ticks)
+        import contextlib, io
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(HomeoDataCollector().printPlottingDataForROnAString(''), '')
+
     def testTheBrokenExportersAreGone(self):
         for name in ('saveDeviationOnForUnit', 'saveEssentialsOnAStringWithSeparator',
                      'printPlottingDataForGgobiOnAString', 'printPlottingDataOnAString',

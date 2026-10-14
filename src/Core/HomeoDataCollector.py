@@ -126,17 +126,16 @@ class HomeoDataCollector(object):
 
 
     def printEssentialDataOnAString(self, aString):
-        '''Append to aString a brief representation of its data, with column headers'''
-#        aString += 'time,'
-        timeIndex = 0
+        '''Append to aString a brief representation of its data: one line
+           per tick and unit, labelled with the tick (until 14 Oct 2026 with a
+           count from 0, wrong when collection began later; CD-15)'''
         for state in self.states:
             if self.states[state] is not None:
                 for key,value in self.states[state].items():
-                    aString += " time:    %u    " % timeIndex
+                    aString += " time:    %u    " % state
                     aString += value.name
                     aString += ":    "
                     aString += value.printEssentialVariableOn('')
-            timeIndex += 1
         return aString
 
 
@@ -156,8 +155,11 @@ class HomeoDataCollector(object):
         
         unitNames = []
         if len(self.states) == 0:
-            sys.stderr.write("DataCollector: There are no data to save")
-        for index, dataUnit in self.states[0].items():
+            sys.stderr.write("DataCollector: There are no data to save\n")
+            return aString
+        # The first recorded tick, which need not be 0 (CD-15: collection
+        # started after a flushData raised KeyError here)
+        for index, dataUnit in self.states[min(self.states)].items():
             unitNames.append(dataUnit.name)
         
         criticDevData = self.criticalDevAsCollectionOfArraysForAllUnits()
