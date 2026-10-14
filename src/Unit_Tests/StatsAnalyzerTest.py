@@ -36,5 +36,43 @@ class HallOfFameTest(unittest.TestCase):
         self.assertEqual([r[1] for r in rows], ['001-001', '001-002'])
 
 
+class ValueFilesTest(unittest.TestCase):
+    '''The comparison of input and output value files fails on a missing or
+    unreadable file and on files of different lengths, and checks the right
+    eye's dummy files too; until 14 Oct 2026 the first counted as identical,
+    the second raised and the third were skipped (HN-13).'''
+
+    def setUp(self):
+        import os, tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        self.addCleanup(os.chdir, self.cwd)
+
+    @staticmethod
+    def write(name, values):
+        with open(name, 'w') as f:
+            f.write('\n'.join(str(v) for v in values) + '\n')
+
+    def testComparison(self):
+        self.write('a', [1, 2, 3])
+        self.write('b', [1, 2, 3])
+        self.write('c', [1, 2, 4])
+        self.write('d', [1, 2])
+        self.assertIs(SA.areValueFilesIdentical('a', 'b'), True)
+        self.assertIs(SA.areValueFilesIdentical('a', 'c'), False)
+        self.assertIs(SA.areValueFilesIdentical('a', 'd'), False)
+        self.assertIs(SA.areValueFilesIdentical('a', 'missing'), False)
+
+    def testEveryKindOfFileIsChecked(self):
+        self.write('LeftMotorCommands1', [1, 2])
+        self.write('LeftMotorCommands2', [1, 2])
+        self.assertTrue(SA.areAllInpAndOutpFilesIdentical())
+        self.write('RightEyeDUMMYr1', [1, 2])
+        self.write('RightEyeDUMMYr2', [1, 3])
+        self.assertFalse(SA.areAllInpAndOutpFilesIdentical())
+
+
 if __name__ == '__main__':
     unittest.main()

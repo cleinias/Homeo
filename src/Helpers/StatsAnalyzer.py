@@ -320,16 +320,19 @@ def saveGenomeToCSV(genome, filename):
         print("Could not save the genome to", filename)
 
 def areValueFilesIdentical(fileN1,fileN2):
-    """Compare two files,  each containing a single 
-       column of floats. Return true iff all values are identical"""
+    """Compare two files,  each containing a single
+       column of floats. Return true iff all values are identical: an
+       unreadable file or files of different lengths are not identical.
+       (Until 14 Oct 2026 an unreadable file gave None, which the caller
+       counted as identical, and different lengths raised; HN-13.)"""
     try:
-        a = np.loadtxt(fileN1,  delimiter=',')        
+        a = np.loadtxt(fileN1,  delimiter=',')
         b = np.loadtxt(fileN2,  delimiter=',')
-    except IOError:
+    except (IOError, ValueError):
         print(" I could not load either of the two csv files")
-        return
+        return False
 
-    return len([x for x in a-b if not x==0]) == 0
+    return a.shape == b.shape and bool(np.all(a == b))
     
 def diffBetweenCSVFiles(fileN1,fileN2):
     """Compare two files,  each containing a single 
@@ -351,7 +354,7 @@ def areAllInpAndOutpFilesIdentical():
        '''
     
     results = []
-    patterns = [ 'LeftMotorCommands*', 'RightMotorCommands*', 'LeftEyeDUMMYr*', 'RightEyeDUMMYr', 'LeftEyeRead*', 'RightEyeRead*']
+    patterns = [ 'LeftMotorCommands*', 'RightMotorCommands*', 'LeftEyeDUMMYr*', 'RightEyeDUMMYr*', 'LeftEyeRead*', 'RightEyeRead*']
     for pattern in patterns:
         fileList = glob.glob(pattern)
         if fileList:
@@ -359,7 +362,7 @@ def areAllInpAndOutpFilesIdentical():
             print("Including:", fileList)
             for pair in list(combinations(fileList, 2)):
                 results.append(areValueFilesIdentical(pair[0], pair[1]))                                   
-    return len([x for x in results if x == False]) == 0
+    return all(x is True for x in results)
                                    
              
 if __name__=="__main__":
