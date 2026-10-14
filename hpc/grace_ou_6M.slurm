@@ -23,9 +23,36 @@
 #     sbatch --account=<your project account> grace_ou_6M.slurm
 #
 # Submit from the directory containing this file:
-#     mkdir -p logs && sbatch grace_ou_6M.slurm
+#     mkdir -p logs && sbatch grace_ou_6M.slurm [--env-seed E | --seed S]
+#
+# The task's seed seeds both the homeostat and the environment (the start
+# pose; the default pose draws nothing).  For the environment x seed design:
+#     --env-seed E  every task has environment seed E, the homeostat's seed
+#                   varying with the task (run directory ou6M-envE-<job>);
+#     --seed S      every task has homeostat seed S, the environment's seed
+#                   varying with the task (ou6M-seedS-<job>).
+# They matter only with a random start pose, which this array does not use as
+# it stands: add --random-heading or --random-start to the command below.
 
 set -euo pipefail
+
+FIXED_ENV_SEED=""; FIXED_SEED=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --env-seed) FIXED_ENV_SEED="$2"; shift 2;;
+        --seed)     FIXED_SEED="$2"; shift 2;;
+        *) echo "unknown option: $1" >&2; exit 2;;
+    esac
+done
+if [ -n "$FIXED_ENV_SEED" ] && [ -n "$FIXED_SEED" ]; then
+    echo "--env-seed and --seed are mutually exclusive" >&2; exit 2
+fi
+for s in "$FIXED_ENV_SEED" "$FIXED_SEED"; do
+    if [ -n "$s" ] && ! [[ "$s" =~ ^[0-9]+$ ]]; then
+        echo "a seed must be a non-negative integer, got '$s'" >&2; exit 2
+    fi
+done
+seed_tag="${FIXED_ENV_SEED:+-env$FIXED_ENV_SEED}${FIXED_SEED:+-seed$FIXED_SEED}"
 
 HOMEO_SRC="${HOMEO_SRC:-$SCRATCH/Homeo}"
 VENV="${VENV:-$SCRATCH/homeo-venv}"
@@ -42,7 +69,7 @@ source "$VENV/bin/activate"
 # hand silently overwrote the files of any two tasks that started in the same
 # second.
 # HOMEO_DATA_DIR is the data ROOT: the experiment appends "SimsData-<date>".
-export HOMEO_DATA_DIR="$SCRATCH/homeo/ou6M-$SLURM_ARRAY_JOB_ID"
+export HOMEO_DATA_DIR="$SCRATCH/homeo/ou6M${seed_tag}-$SLURM_ARRAY_JOB_ID"
 mkdir -p "$HOMEO_DATA_DIR"
 
 # Per-task numba cache: concurrent tasks must not share one.
@@ -53,10 +80,13 @@ cd "$HOMEO_SRC/src"
 
 # Seed from the array index so the whole set is reproducible and distinct.
 SEED=$(( 20260930 + SLURM_ARRAY_TASK_ID ))
+ENV_SEED=$SEED
+[ -n "$FIXED_ENV_SEED" ] && ENV_SEED=$FIXED_ENV_SEED
+[ -n "$FIXED_SEED" ] && SEED=$FIXED_SEED
 # Zero-padded so the filenames sort by task.
 SERIAL=$(printf '%02d' "$SLURM_ARRAY_TASK_ID")
 
-echo "task $SLURM_ARRAY_TASK_ID  seed $SEED  out $HOMEO_DATA_DIR"
+echo "task $SLURM_ARRAY_TASK_ID  seed $SEED  env seed $ENV_SEED  out $HOMEO_DATA_DIR"
 # Provenance: which commit produced these results.
 echo "code $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned checkout')"
 # numba draws its noise from its own generator: a seed gives a different run
@@ -75,6 +105,7 @@ srun python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direc
      --batch 1 \
      --steps 6000000 \
      --seed "$SEED" \
+     --env-seed "$ENV_SEED" \
      --start-at-rest \
      --traj-interval 200 \
      --run-tag "$SERIAL"

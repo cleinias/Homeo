@@ -12,7 +12,7 @@
 # (crossed/uncrossed x signs ++ +- -+ --) x 25 random start poses, 300,000
 # steps each, full trajectories (--traj-interval 1).
 #
-#     sbatch grace_fixedB2.slurm MIN MAX [SPIN [MOTOR [EYE OPTIONS...]]]
+#     sbatch grace_fixedB2.slurm MIN MAX [SPIN [MOTOR [OPTIONS...]]]
 #
 # MIN MAX: the distance from the light of the random start (--start-range).
 # SPIN:    baseline spin in place, fraction of max wheel speed, > 0 clockwise
@@ -24,10 +24,17 @@
 #              sbatch grace_fixedB2.slurm 4 8 0 aristotelian
 #              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian
 #              sbatch grace_fixedB2.slurm 4 8 0.05 aristotelian
-# EYE OPTIONS: --eye-response linear|log, --eye-saturation D, --eye-threshold I0,
-#          passed to the experiment and named in the run directory, e.g.
+# OPTIONS: the eyes, --eye-response linear|log, --eye-saturation D,
+#          --eye-threshold I0, --rim-eyes (the eyes on the rim, as before 13 Oct
+#          2026), passed to the experiment and named in the run directory, e.g.
 #              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian --eye-response log --eye-saturation 0.5
 #          writes to fixedB2-arist-r2to6-cw0.05-log-sat0.5-traj1-<jobid>.
+#          And one of two seed options, for the environment x seed design:
+#          --env-seed E  every task starts from the pose of environment seed E,
+#                        the homeostat's seed varying as below (dir "-envE");
+#          --seed S      every task has homeostat seed S, the start pose
+#                        varying with the task's environment seed, which
+#                        takes the per-task value below (dir "-seedS").
 #
 # Task -> run, identical to the 2026-10-03 polus baseline
 # (SimulationsData/fixedB2-r4to8-traj1-2026-10-03), so the arrays pair
@@ -37,8 +44,11 @@
 #            51- 75 crossed -+     151-175 uncrossed -+
 #            76-100 crossed --     176-200 uncrossed --
 #     seed = 20261004 + (task - 1) % 25
-# The seed alone fixes the start pose -- the spin and the wiring draw nothing --
+# The seed alone fixes the start pose -- it comes from the environment's
+# stream, which the seed also seeds unless --env-seed/--seed say otherwise --
 # so a seed has the same start pose in every variant, with or without a spin.
+# (Before 14 Oct 2026 the pose came from the homeostat's stream, after the
+# weights.)
 #
 # The "exploratory" arrays (2026-10-03), slow clockwise spin:
 #     mkdir -p logs
@@ -59,20 +69,32 @@
 set -euo pipefail
 
 if [ $# -lt 2 ]; then
-    echo "usage: sbatch grace_fixedB2.slurm MIN MAX [SPIN [MOTOR [EYE OPTIONS...]]]" >&2; exit 2
+    echo "usage: sbatch grace_fixedB2.slurm MIN MAX [SPIN [MOTOR [OPTIONS...]]]" >&2; exit 2
 fi
 START_MIN="$1"; START_MAX="$2"; SPIN="${3:-0}"; MOTOR="${4:-newtonian}"
 shift $(( $# < 4 ? $# : 4 ))
-EYE_ARGS=(); eye_tag=""
+EYE_ARGS=(); eye_tag=""; FIXED_ENV_SEED=""; FIXED_SEED=""
 while [ $# -gt 0 ]; do
     case "$1" in
+        --env-seed)       FIXED_ENV_SEED="$2"; shift 2; continue;;
+        --seed)           FIXED_SEED="$2"; shift 2; continue;;
+        --rim-eyes)       eye_tag+="-rimeyes"; EYE_ARGS+=("$1"); shift; continue;;
         --eye-response)   [ "$2" = log ] && eye_tag+="-log";;
         --eye-saturation) eye_tag+="-sat$2";;
         --eye-threshold)  eye_tag+="-thr$2";;
-        *) echo "unknown eye option: $1" >&2; exit 2;;
+        *) echo "unknown option: $1" >&2; exit 2;;
     esac
     EYE_ARGS+=("$1" "$2"); shift 2
 done
+if [ -n "$FIXED_ENV_SEED" ] && [ -n "$FIXED_SEED" ]; then
+    echo "--env-seed and --seed are mutually exclusive" >&2; exit 2
+fi
+for s in "$FIXED_ENV_SEED" "$FIXED_SEED"; do
+    if [ -n "$s" ] && ! [[ "$s" =~ ^[0-9]+$ ]]; then
+        echo "a seed must be a non-negative integer, got '$s'" >&2; exit 2
+    fi
+done
+seed_tag="${FIXED_ENV_SEED:+-env$FIXED_ENV_SEED}${FIXED_SEED:+-seed$FIXED_SEED}"
 case "$MOTOR" in
     newtonian) motor_tag="";;
     aristotelian) motor_tag="-arist";;
@@ -93,6 +115,10 @@ SIGNS_LIST=('++' '+-' '-+' '--')
 WIRING=${WIRINGS[$(( i / 100 ))]}
 SIGNS=${SIGNS_LIST[$(( i / 25 % 4 ))]}
 SEED=$(( 20261004 + i % 25 ))
+# The environment's seed (the start pose): by default the same per-task value.
+ENV_SEED=$SEED
+[ -n "$FIXED_ENV_SEED" ] && ENV_SEED=$FIXED_ENV_SEED
+[ -n "$FIXED_SEED" ] && SEED=$FIXED_SEED
 # Zero-padded to 2 digits, as run_array_local.sh did on polus.
 SERIAL=$(printf '%02d' "$SLURM_ARRAY_TASK_ID")
 
@@ -107,7 +133,7 @@ fi
 
 # ONE output directory for the whole array; filenames carry the serial.
 # HOMEO_DATA_DIR is the data ROOT: the experiment appends "SimsData-<date>".
-RUN_NAME="fixedB2${motor_tag}-r${START_MIN}to${START_MAX}${spin_tag}${eye_tag}-traj1-$SLURM_ARRAY_JOB_ID"
+RUN_NAME="fixedB2${motor_tag}-r${START_MIN}to${START_MAX}${spin_tag}${eye_tag}${seed_tag}-traj1-$SLURM_ARRAY_JOB_ID"
 export HOMEO_DATA_DIR="$SCRATCH/homeo/$RUN_NAME"
 mkdir -p "$HOMEO_DATA_DIR"
 
@@ -128,13 +154,16 @@ if [ ! -e "$HOMEO_DATA_DIR/PROVENANCE.txt" ]; then
         echo "spin $SPIN x max wheel speed (> 0 clockwise)"
         echo "motor $MOTOR"
         echo "eyes ${EYE_ARGS[*]:-default (linear, threshold 0, saturation 100)}"
+        if [ -n "$FIXED_ENV_SEED" ]; then echo "env seed $FIXED_ENV_SEED for every task (one start pose)"
+        elif [ -n "$FIXED_SEED" ]; then echo "seed $FIXED_SEED for every task; env seeds 20261004-20261028"
+        else echo "env seed = seed"; fi
         echo "code $CODE"
         echo "cpu  $(lscpu 2>/dev/null | sed -n 's/^Model name: *//p' | head -1)"
         echo "$PYENV"
     } > "$HOMEO_DATA_DIR/PROVENANCE.txt"
 fi
 
-echo "task $SLURM_ARRAY_TASK_ID: $MOTOR $WIRING $SIGNS  seed $SEED  start $START_MIN-$START_MAX  spin $SPIN"
+echo "task $SLURM_ARRAY_TASK_ID: $MOTOR $WIRING $SIGNS  seed $SEED  env seed $ENV_SEED  start $START_MIN-$START_MAX  spin $SPIN"
 echo "out  $HOMEO_DATA_DIR"
 echo "code $CODE"
 echo "$PYENV"
@@ -148,6 +177,7 @@ srun python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direc
      --batch 1 \
      --steps 300000 \
      --seed "$SEED" \
+     --env-seed "$ENV_SEED" \
      --start-at-rest \
      --traj-interval 1 \
      --run-tag "$SERIAL"
