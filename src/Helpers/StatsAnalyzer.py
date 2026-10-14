@@ -206,7 +206,10 @@ def hallOfFame(logbook, num=10, max=False):
        of individuals extracted from the logbook"""
     indivs, layout = indivsDecodedFromLogbook(logbook)
     meta_noUnits, meta_noEvolved, _ = _logbook_layout(logbook)
-    return genomeAndFitnessPrettyPrinter(hallOfFameInds(indivs, num, max=max),
+    # Flattened into rows, as the headers expect: until 14 Oct 2026 the
+    # (genome, fitness, name) tuples went to the table as they were, the whole
+    # genome under "Fitness" (HN-12)
+    return genomeAndFitnessPrettyPrinter(_flattenIndivs(hallOfFameInds(indivs, num, max=max)),
                                          noUnits=meta_noUnits,
                                          noEvolvedUnits=meta_noEvolved,
                                          layout=layout)
@@ -215,6 +218,11 @@ def hallOfFame(logbook, num=10, max=False):
 def _genome_headers(noUnits, noEvolvedUnits, layout=None):
     """Build column headers matching the genome layout."""
     return ['Fitness', 'IndivID'] + genomeHeaders(noUnits, noEvolvedUnits, layout)
+
+
+def _flattenIndivs(decodedIndivs):
+    """(genome, fitness, name) tuples as table rows: fitness, name, genome."""
+    return [list(ind[1]) + [ind[2]] + list(ind[0]) for ind in decodedIndivs]
 
 
 def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6, noEvolvedUnits=None,
@@ -229,12 +237,7 @@ def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6, noEvolvedUnits=None,
 
     headers = _genome_headers(noUnits, noEvolvedUnits, layout)
 
-    '''Flattens list of tuples including individual genomes and fitnesses to a list of lists.'''
-    individuals = []
-    for ind in decodedIndivs:
-        b = []
-        b.append(ind[2])
-        individuals.append(list(ind[1])+b+ind[0])
+    individuals = _flattenIndivs(decodedIndivs)
 
     if len(individuals)< num:
         return [headers,sorted(individuals, key=itemgetter(0), reverse=False)]
