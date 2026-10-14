@@ -12,6 +12,8 @@ import sys
 import os
 import tempfile
 
+import numpy as np
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
 app = QApplication.instance() or QApplication(sys.argv)
@@ -100,6 +102,34 @@ class TrajectoriesViewerImportTest(unittest.TestCase):
         viewer = TrajectoryViewer(appRef=app)
         self.assertIsNotNone(viewer)
         viewer.close()
+
+
+
+class HallOfFameTableTest(unittest.TestCase):
+    """The GA results table sorts fitness as numbers and keeps its row
+    selection (review finding HV-03): until 14 Oct 2026 it sorted the text,
+    10.2 before 2.5, and replaced its widget, losing the selection slots."""
+
+    def testTheTableSortsNumbersAndSelectsRows(self):
+        import contextlib, io
+        from Helpers.TrajectoriesViewer import TrajectoryViewer
+        fitnesses = [31.0, 2.5, 10.2, 0.75, 9.1]
+        rng = np.random.default_rng(1)
+        logbook = [{'genome': list(rng.random(60)), 'fitness': (f,),
+                    'indivId': '001-%03d' % i} for i, f in enumerate(fitnesses)]
+        viewer = TrajectoryViewer(appRef=app)
+        self.addCleanup(viewer.close)
+        table = viewer.hofWidget
+        viewer._currentLogbook = logbook
+        with contextlib.redirect_stdout(io.StringIO()):
+            viewer.visualizeIndsData(all=True)
+        self.addCleanup(table.close)
+        self.assertIs(viewer.hofWidget, table)
+        self.assertEqual([table.item(r, 0).data(Qt.DisplayRole) for r in range(5)],
+                         sorted(fitnesses))
+        self.assertEqual(table.windowTitle(), 'All individuals (5)')
+        table.cellPressed.emit(2, 3)
+        self.assertEqual([i.row() for i in table.selectionModel().selectedRows()], [2])
 
 
 if __name__ == '__main__':

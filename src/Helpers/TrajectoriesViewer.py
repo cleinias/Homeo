@@ -14,6 +14,7 @@ from PyQt5.QtGui import *
 from Helpers.TrajectoryGrapher import graphTrajectory
 from Helpers.StatsAnalyzer import plotFitnessesFromLogBook, genomeAndFitnessList, indivsDecodedFromLogbook, showGenealogyTree, _logbook_layout
 import sys
+import numbers
 import os
 from glob import glob
 from sys import stderr
@@ -356,20 +357,26 @@ class TrajectoryViewer(QWidget):
                                            noUnits=meta_noUnits,
                                            noEvolvedUnits=meta_noEvolved,
                                            layout=layout)
+            # Filled in place: a new widget lost the row-selection slots
+            # connectSlot made.  Numbers are stored as numbers, so the table
+            # sorts them as such; as text, 10.2 came before 2.5 (HV-03).
+            # Sorting is off while filling, or rows move under setItem.
+            self.hofWidget.setSortingEnabled(False)
             self.hofWidget.clear()
             self.hofWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
             self.hofWidget.setRowCount(len(hof[1]))
             self.hofWidget.setColumnCount(len(hof[0]))
-    
-            self.hofWidget = QTableWidget(len(hof[1]),len(hof[0]))
             self.hofWidget.setHorizontalHeaderLabels(hof[0])
-            self.hofWidget.setWindowTitle("Hall of Fame: 10 best results")
+            self.hofWidget.setWindowTitle("All individuals (%d)" % len(hof[1]) if all
+                                          else "Hall of Fame: %d best results" % len(hof[1]))
             for column in range(len(hof[0])):
                 for row in range(len(hof[1])):
-                    try:
-                        item = QTableWidgetItem(str(round(hof[1][row][column],3)))
-                    except TypeError:
-                        item = QTableWidgetItem(str(hof[1][row][column]))                    
+                    value = hof[1][row][column]
+                    item = QTableWidgetItem()
+                    if isinstance(value, numbers.Real):
+                        item.setData(Qt.DisplayRole, round(float(value), 3))
+                    else:
+                        item.setData(Qt.DisplayRole, str(value))
                     item.setFlags(Qt.ItemIsSelectable |  Qt.ItemIsEnabled)
                     self.hofWidget.setItem(row,column,item)
             self.hofWidget.setSortingEnabled(True)
