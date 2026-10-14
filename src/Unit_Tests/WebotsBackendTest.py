@@ -128,5 +128,24 @@ class WebotsBackendTest(unittest.TestCase):
                 self.assertNotEqual(r.returncode, 0, extra)
 
 
+    def testASeedReproducesAWebotsRun(self):
+        '''An adaptive run (noise, a random start) repeats exactly from its
+        seed: the worlds fix Webots' randomSeed and use one physics thread.'''
+        rows = []
+        for i in range(2):
+            with tempfile.TemporaryDirectory() as tmp:
+                command = [sys.executable, '-m', 'HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct',
+                           '--steps', '400', '--seed', '5', '--random-start', '--simulator', 'webots']
+                r = subprocess.run(command, cwd=SRC, capture_output=True, text=True, timeout=300,
+                                   env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+                self.assertEqual(r.returncode, 0, r.stdout[-2000:] + r.stderr[-2000:])
+                data = os.path.join(tmp, os.listdir(tmp)[0])
+                [traj] = [f for f in os.listdir(data) if f.endswith('.traj')]
+                with open(os.path.join(data, traj)) as f:
+                    rows.append([line for line in f if not line.startswith('#')])
+        self.assertGreater(len(rows[0]), 800)
+        self.assertEqual(rows[0], rows[1])
+
+
 if __name__ == '__main__':
     unittest.main()
