@@ -153,7 +153,7 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     target.  A single file is charted with graphTrajectory().
     """
     if len(trajDataFilenames) == 1:
-        return graphTrajectory(trajDataFilenames[0], output_path, dark, maxPoints)
+        return graphTrajectory(trajDataFilenames[0], output_path, dark, maxPoints, sensorRange)
 
     labels = _distinctEndings(trajDataFilenames)
     runs = []
