@@ -38,8 +38,10 @@
 #            51- 75 crossed -+     151-175 uncrossed -+
 #            76-100 crossed --     176-200 uncrossed --
 #     seed = 20261004 + (task - 1) % 25
-# The seed alone fixes the start pose -- the spin and the wiring draw nothing --
-# so a seed has the same start pose in every variant, with or without a spin.
+# The seed alone fixes the start pose -- it comes from the environment's
+# stream, which the seed also seeds -- so a seed has the same start pose in
+# every variant, with or without a spin.  (Before 14 Oct 2026 the pose came
+# from the homeostat's stream, after the weights.)
 #
 # The "exploratory" arrays (2026-10-03), slow clockwise spin:
 #     mkdir -p logs

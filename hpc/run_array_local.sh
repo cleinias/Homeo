@@ -342,10 +342,11 @@ run_task() {
     if [ -n "$HEADING" ]; then
         heading_args="--heading $HEADING"
     elif [ "$RANDOM_HEADING" -eq 1 ]; then
-        # Drawn from the run's own seed, and drawn AFTER the weights, so one seed
-        # gives the same homeostat at heading 0 and at a random heading -- which
-        # is what makes a random-heading batch a paired comparison against a
-        # heading-0 one rather than an independent sample.
+        # Drawn from the environment's own stream (seeded, by default, with the
+        # run's seed), never from the homeostat's, so one seed gives the same
+        # homeostat, noise included, at heading 0 and at a random heading --
+        # which is what makes a random-heading batch a paired comparison
+        # against a heading-0 one rather than an independent sample.
         heading_args="--random-heading"
     fi
     # The experiment selects the uniselector by the presence of --continuous;

@@ -47,18 +47,44 @@ RIM_EYE_RADIUS_RATIO = 1.0
 
 # --- Seeding and the world ----------------------------------------------------
 
+# A run has two independently seeded random streams (since 14 Oct 2026):
+#   - the homeostat's (--seed): numpy's, Python's and numba's global generators,
+#     which draw the units' and connections' parameters, the uniselectors'
+#     choices and every noise;
+#   - the environment's (--env-seed): a generator of its own, env_rng(), which
+#     draws the start pose.
+# One seed drove both before: a start pose drawn after the units consumed the
+# homeostat's stream, so the same seed gave a different noise history at a
+# random heading than at a fixed one, and the start pose depended on how many
+# draws the vehicle's setup made.  Separate streams allow the crossed
+# environment x seed decomposition: hold one stream, vary the other.  The
+# environment's seed defaults to the homeostat's, so --seed alone still
+# reproduces a run; the two streams use different generators (MT19937 and
+# PCG64 through SeedSequence), so equal seeds give unrelated draws.
+
+def new_seed():
+    "A fresh seed from os.urandom."
+    return int.from_bytes(os.urandom(4), 'big')
+
+
 def seed_run(seed=None):
-    '''Seed numpy's, Python's and numba's generators; draw a seed from
-    os.urandom if none is given.  Numba keeps a separate random state that
-    np.random.seed() does not reach: without seeding it the trajectory is not
-    reproducible from the seed (SH-03, RE-05).  Returns the seed.'''
+    '''Seed the homeostat's stream: numpy's, Python's and numba's generators;
+    draw a seed from os.urandom if none is given.  Numba keeps a separate
+    random state that np.random.seed() does not reach: without seeding it the
+    trajectory is not reproducible from the seed (SH-03, RE-05).  Returns the
+    seed.'''
     from Core.HomeoJIT import seed_jit_rng
     if seed is None:
-        seed = int.from_bytes(os.urandom(4), 'big')
+        seed = new_seed()
     np.random.seed(seed)
     random.seed(seed)
     seed_jit_rng(seed)
     return seed
+
+
+def env_rng(env_seed):
+    "The environment's stream: a generator of its own, untouched by the homeostat."
+    return np.random.default_rng(env_seed)
 
 
 def prepare_backend(backendSimulator, experiment_name, synchronous_stepping=True,
@@ -318,28 +344,30 @@ def set_start_pose(robot, x=None, y=None, heading=None):
     body.angle += delta
 
 
-def random_start_pose(target_pos, random_position, start_range=DEFAULT_START_RANGE):
-    '''Draw a start pose from np.random (so it follows the run's seed):
+def random_start_pose(target_pos, random_position, start_range=DEFAULT_START_RANGE, *, rng):
+    '''Draw a start pose from rng, the environment's stream (env_rng):
     a uniform heading, and if random_position, a position at a uniform
     distance within start_range (default 2-6 units) and uniform bearing
     from the light.
     Returns (x, y, heading); x and y are None when not randomised.'''
-    heading = np.random.uniform(0, 360)
+    heading = rng.uniform(0, 360)
     if not random_position:
         return None, None, heading
-    d = np.random.uniform(*start_range)
-    bearing = np.random.uniform(0, 2 * np.pi)
+    d = rng.uniform(*start_range)
+    bearing = rng.uniform(0, 2 * np.pi)
     return (target_pos[0] + d * np.cos(bearing),
             target_pos[1] + d * np.sin(bearing), heading)
 
 
 def place_robot(robot, random_heading=False, random_start=False, heading=None,
-                start_range=DEFAULT_START_RANGE):
+                start_range=DEFAULT_START_RANGE, env_seed=None):
     '''The start pose: random (heading, or heading and position, drawn from
-    the run's seed), a fixed heading (draws nothing, so a seed yields the same
-    homeostat whatever the heading), or as the world placed it.'''
+    the environment's stream, seeded with env_seed), a fixed heading, or as
+    the world placed it.  Draws nothing from the homeostat's stream, so a
+    seed yields the same homeostat, noise included, whatever the pose.'''
     if random_heading or random_start:
-        set_start_pose(robot, *random_start_pose(TARGET_POS, random_start, start_range))
+        set_start_pose(robot, *random_start_pose(TARGET_POS, random_start, start_range,
+                                                 rng=env_rng(env_seed)))
     elif heading is not None:
         set_start_pose(robot, heading=heading)
 
@@ -370,10 +398,11 @@ def _end_logs(hom, log_path, json_path):
     log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
 
 
-def run_settings(backend, light_intensity, stable_draws):
-    "The settings every run records in its JSON."
+def run_settings(backend, light_intensity, stable_draws, env_seed):
+    "The settings every run records in its JSON (the homeostat's seed is recorded apart)."
     eye_config = backend.kheperaSimulation.eyeConfig
-    return dict(stable_draws=stable_draws,
+    return dict(env_seed=env_seed,
+                stable_draws=stable_draws,
                 synchronous_stepping=backend.kheperaSimulation.synchronousStepping,
                 light_intensity=light_intensity,
                 eye_radius_ratio=backend.kheperaSimulation.allBodies['Khepera'].eyeRadiusRatio,
@@ -387,13 +416,14 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                  state_log=False, state_log_interval=1, heading=None,
                  random_heading=False, random_start=False,
                  start_range=DEFAULT_START_RANGE, stable_draws=False,
-                 eye_saturation=None, spin=0.0, extra=None):
+                 eye_saturation=None, spin=0.0, env_seed=None, extra=None):
     '''Run a phototaxis experiment headless.
 
     setup:   a function of no arguments that builds the experiment and returns
              (hom, backend, seed) -- an experiment's setup_phototaxis with its
              arguments bound.
     title:   the run's description, printed in the header.
+    env_seed: the environment's seed (the start pose); None: the homeostat's.
     extra:   experiment-specific fields of the result (e.g. the fixed-weight
              vehicle's wiring).
     The other arguments are described in COMMON_OPTIONS_HELP; light_intensity,
@@ -402,17 +432,19 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
 
     Returns a dict: hom, backend, final_dist, min_dist, min_t, steps_run,
     final_x, final_y, early_stopped, log_path, json_path, state_log_path,
-    seed, start_x, start_y, start_heading, start_dist, start_sees_light (did
+    seed, env_seed, start_x, start_y, start_heading, start_dist, start_sees_light (did
     either eye see the light at the start), first_acq (the first report tick
     within ACQUISITION_RADIUS of the light, or None), acquired, final_speed,
     final_bearing, the eyes as configured, spin, synchronous_stepping,
     stable_draws, and the extra fields.
     '''
     hom, backend, seed = setup()
+    if env_seed is None:
+        env_seed = seed
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target_pos = TARGET_POS
-    place_robot(robot, random_heading, random_start, heading, start_range)
+    place_robot(robot, random_heading, random_start, heading, start_range, env_seed)
     start_x, start_y = robot.body.position[0], robot.body.position[1]
     start_heading = degrees(robot.body.angle) % 360
     start_dist = sqrt((start_x - target_pos[0])**2 + (start_y - target_pos[1])**2)
@@ -429,7 +461,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
 
     eye_config = sim.eyeConfig
     log_path, json_path, stem = _start_logs(
-        hom, backend, seed, run_settings(backend, light_intensity, stable_draws))
+        hom, backend, seed, run_settings(backend, light_intensity, stable_draws, env_seed))
 
     # Optional per-tick state logger
     state_log_path = None
@@ -449,7 +481,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
         title += ', spin %g %s' % (abs(spin), 'CW' if spin > 0 else 'CCW')
     if not quiet:
         print(f'=== Phototaxis: {title} ===')
-        print(f'Seed: {seed}')
+        print(f'Seed: {seed}  environment seed: {env_seed}')
         print(f'Robot start: ({start_x:.3f}, {start_y:.3f})  heading {start_heading:.1f}  '
               f'light {"in view" if start_sees_light else "NOT in view"}')
         print(f'Light target: {target_pos}')
@@ -528,7 +560,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                   steps_run=steps_run, final_x=final_x, final_y=final_y,
                   early_stopped=early_stopped,
                   log_path=log_path, json_path=json_path,
-                  state_log_path=state_log_path, seed=seed,
+                  state_log_path=state_log_path, seed=seed, env_seed=env_seed,
                   start_x=start_x, start_y=start_y, start_heading=start_heading,
                   start_dist=start_dist, start_sees_light=start_sees_light,
                   first_acq=first_acq, acquired=first_acq is not None,
@@ -546,7 +578,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
     return result
 
 
-BATCH_FIELDS = ['run', 'seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response',
+BATCH_FIELDS = ['run', 'seed', 'env_seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response',
                 'eye_threshold', 'eye_saturation', 'eye_saturation_irradiance',
                 'eye_radius_ratio',
                 'start_x', 'start_y', 'start_heading', 'start_dist',
@@ -572,17 +604,43 @@ def batch_kind(variant, spin=0.0, eye_saturation=None, eye_threshold=None,
     return kind
 
 
+BATCH_VARY = ('both', 'homeostat', 'env')
+
+
+def batch_seeds(i, seed=None, env_seed=None, vary='both'):
+    '''Run i's (seed, env_seed) in a batch.  vary: which streams change from
+    run to run -- 'both' (run i uses seed+i and env_seed+i), 'homeostat'
+    (seed+i, the same environment throughout) or 'env' (the same homeostat,
+    env_seed+i).  An unset env_seed follows the run's seed; an unset seed
+    gives fresh seeds, except for a stream held fixed, which run_batch draws
+    once beforehand.'''
+    run_seed = seed if seed is None or vary == 'env' else seed + i
+    if env_seed is None:
+        if vary == 'both' or seed is None:
+            return run_seed, None
+        env_seed = seed
+    return run_seed, env_seed if vary == 'homeostat' else env_seed + i
+
+
 def run_batch(run_one, n_runs, experiment, kind, light_intensity=100, total_steps=60000,
-              seed=None):
+              seed=None, env_seed=None, vary='both'):
     '''Run a batch, print a summary table and save it as
     batch_<experiment>_<kind>_<light|dark>_<timestamp><run tag>.csv next to
     the runs' logs.
 
-    run_one(seed) runs one experiment quietly and returns run_headless's
-    dict.  With seed given, run i uses seed+i, so the batch is reproducible
-    and an array job can pin exactly one run per task with --batch 1
-    --seed N.'''
+    run_one(seed, env_seed) runs one experiment quietly and returns
+    run_headless's dict.  With seed given, run i uses seed+i, so the batch is
+    reproducible and an array job can pin exactly one run per task with
+    --batch 1 --seed N; env_seed and vary as in batch_seeds.'''
     import csv as _csv
+
+    if vary not in BATCH_VARY:
+        raise ValueError('vary must be one of %s, got %r' % (BATCH_VARY, vary))
+    # The stream held fixed needs one seed for every run
+    if vary == 'env' and seed is None:
+        seed = new_seed()
+    if vary == 'homeostat' and env_seed is None and seed is None:
+        env_seed = new_seed()
 
     mode = 'dark' if light_intensity < 0 else 'light'
     print(f'=== Batch ({experiment}): {n_runs} runs, {mode}, {total_steps} ticks budget ===')
@@ -601,7 +659,7 @@ def run_batch(run_one, n_runs, experiment, kind, light_intensity=100, total_step
         if n_runs > 1:
             os.environ['HOMEO_RUN_TAG'] = (
                 '%s-r%02d' % (_base_tag, i + 1) if _base_tag else 'r%02d' % (i + 1))
-        r = run_one(None if seed is None else seed + i)
+        r = run_one(*batch_seeds(i, seed, env_seed, vary))
         elapsed = time.time() - t0
         r.pop('hom'); r.pop('backend')
         r['run'] = i + 1
@@ -612,7 +670,7 @@ def run_batch(run_one, n_runs, experiment, kind, light_intensity=100, total_step
                 os.environ.pop('HOMEO_RUN_TAG', None)
             else:
                 os.environ['HOMEO_RUN_TAG'] = _base_tag
-        print(f'  seed={r["seed"]}  '
+        print(f'  seed={r["seed"]}  env_seed={r["env_seed"]}  '
               f'start=({r["start_x"]:.2f},{r["start_y"]:.2f}) hdg={r["start_heading"]:.0f} '
               f'sees_light={r["start_sees_light"]}  '
               f'final_dist={r["final_dist"]:.3f}  min_dist={r["min_dist"]:.3f}  '
@@ -656,7 +714,7 @@ def run_batch(run_one, n_runs, experiment, kind, light_intensity=100, total_step
 
 def run_visualized(setup, caption, light_intensity=100, stable_draws=False,
                    random_heading=False, random_start=False, heading=None,
-                   start_range=DEFAULT_START_RANGE):
+                   start_range=DEFAULT_START_RANGE, env_seed=None):
     '''Run a phototaxis experiment with the pyglet visualizer.  setup and the
     other arguments as for run_headless.
 
@@ -682,11 +740,13 @@ def run_visualized(setup, caption, light_intensity=100, stable_draws=False,
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target_pos = sim.allBodies['TARGET'].position
-    place_robot(robot, random_heading, random_start, heading, start_range)
-    print(f'{caption}: seed {seed}')
+    if env_seed is None:
+        env_seed = seed
+    place_robot(robot, random_heading, random_start, heading, start_range, env_seed)
+    print(f'{caption}: seed {seed}, environment seed {env_seed}')
 
     log_path, json_path, _ = _start_logs(
-        hom, backend, seed, run_settings(backend, light_intensity, stable_draws))
+        hom, backend, seed, run_settings(backend, light_intensity, stable_draws, env_seed))
 
     from KheperaSimulator.KheperaSimulator import _get_shape_program
     from pyglet.gl import GL_LINES
@@ -734,7 +794,7 @@ def run_visualized(setup, caption, light_intensity=100, stable_draws=False,
 
         dist = sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
         window.set_caption(
-            f'{caption} - seed {seed}  t={state[0]}  speed={state[1]}  '
+            f'{caption} - seed {seed}/{env_seed}  t={state[0]}  speed={state[1]}  '
             f'dist={dist:.2f}  [{1/max(dt, 0.001):.0f} fps]')
 
     @window.event
@@ -762,7 +822,14 @@ Options both experiments take
 -----------------------------
    --steps N            run length in ticks (default 60000)
    --batch N            N runs and a summary CSV; with --seed S, run i uses S+i
-   --seed S             the run's seed (default: drawn, printed and recorded)
+   --seed S             the homeostat's seed: its parameters, uniselectors and
+                        noise (default: drawn, printed and recorded)
+   --env-seed E         the environment's seed: the random start pose
+                        (default: the homeostat's seed); in a batch, run i
+                        uses E+i
+   --batch-vary V       which seeds change from run to run in a batch: both
+                        (default), homeostat (one environment throughout) or
+                        env (one homeostat throughout)
    --run-tag NN         a serial appended to every output file name
    --visualize          the pyglet visualizer, with the same options
    --random-topology    every connection between the adaptive units on
@@ -781,10 +848,11 @@ Options both experiments take
                         "_async"
 
    Start pose: default (4, 4), heading 0, the light at (7, 7) in view.
-   --random-heading     random heading, default position
+   --random-heading     random heading (from the environment's seed), default
+                        position
    --random-start       random heading, and a position --start-range MIN MAX
                         units from the light (default 2 6)
-   --heading DEG        a fixed heading (draws nothing from the seed)
+   --heading DEG        a fixed heading
 
    --spin RATE          a baseline spin: +RATE x max speed on the left wheel and
                         -RATE on the right; > 0 clockwise.  0.05 is about 0.074
@@ -842,6 +910,17 @@ def parse_common_args(argv):
     o['state_log_interval'] = (_value(argv, '--log-interval', int, '--log-interval needs a number')
                                if '--log-interval' in argv else 1)
     o['seed'] = _value(argv, '--seed', int, '--seed needs an integer') if '--seed' in argv else None
+    o['env_seed'] = (_value(argv, '--env-seed', int, '--env-seed needs an integer')
+                     if '--env-seed' in argv else None)
+    o['batch_vary'] = 'both'
+    if '--batch-vary' in argv:
+        idx = argv.index('--batch-vary')
+        o['batch_vary'] = argv[idx + 1] if idx + 1 < len(argv) else ''
+        if o['batch_vary'] not in BATCH_VARY:
+            raise SystemExit('--batch-vary must be one of %s, got %r'
+                             % (' '.join(BATCH_VARY), o['batch_vary']))
+        if o['n_batch'] is None:
+            raise SystemExit('--batch-vary applies only with --batch')
     o['stable_draws'] = '--stable-draws' in argv     # off by default since 13 Oct 2026
     o['start_at_rest'] = '--start-at-rest' in argv
     o['random_start'] = '--random-start' in argv
@@ -921,8 +1000,8 @@ SETUP_OPTIONS = ('topology', 'light_intensity', 'uniselector_type', 'seed', 'sta
                  'eye_radius_ratio', 'synchronous_stepping')
 RUN_OPTIONS = ('total_steps', 'light_intensity', 'early_stop_distance', 'state_log',
                'state_log_interval', 'heading', 'random_heading', 'random_start',
-               'start_range', 'stable_draws', 'eye_saturation', 'spin')
-POSE_OPTIONS = ('random_heading', 'random_start', 'heading', 'start_range')
+               'start_range', 'stable_draws', 'eye_saturation', 'spin', 'env_seed')
+POSE_OPTIONS = ('random_heading', 'random_start', 'heading', 'start_range', 'env_seed')
 
 
 def pick(options, names):

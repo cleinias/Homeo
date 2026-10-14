@@ -85,21 +85,20 @@ class StartPoseTest(unittest.TestCase):
     def testStartRangeIsRespected(self):
         "random positions fall within the requested distance from the light"
         target = (7, 7)
-        np.random.seed(11)
+        rng = np.random.default_rng(11)
         for _ in range(2000):
-            x, y, heading = D.common.random_start_pose(target, True, (4.0, 8.0))
+            x, y, heading = D.common.random_start_pose(target, True, (4.0, 8.0), rng=rng)
             d = np.hypot(x - target[0], y - target[1])
             self.assertTrue(4.0 <= d <= 8.0, d)
             self.assertTrue(0 <= heading < 360)
 
     def testDefaultRangeUnchanged(self):
-        "without a range, the draws are exactly the old 2-6 ones"
-        np.random.seed(5)
-        new = D.common.random_start_pose((7, 7), True)
-        np.random.seed(5)
-        heading = np.random.uniform(0, 360)
-        d = np.random.uniform(2.0, 6.0)
-        bearing = np.random.uniform(0, 2 * np.pi)
+        "without a range, the draws are the 2-6 ones: heading, distance, bearing"
+        new = D.common.random_start_pose((7, 7), True, rng=np.random.default_rng(5))
+        rng = np.random.default_rng(5)
+        heading = rng.uniform(0, 360)
+        d = rng.uniform(2.0, 6.0)
+        bearing = rng.uniform(0, 2 * np.pi)
         self.assertEqual(new, (7 + d * np.cos(bearing), 7 + d * np.sin(bearing), heading))
 
     def testSameSeedSamePoseWhateverTheWiring(self):

@@ -306,7 +306,7 @@ def _setup(**kwargs):
 def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  light_intensity=100, early_stop_distance=None, quiet=False,
                  uniselector_type='ashby', continuous_params=None,
-                 state_log=False, state_log_interval=1, seed=None, heading=None,
+                 state_log=False, state_log_interval=1, seed=None, env_seed=None, heading=None,
                  random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
                  stable_draws=False, start_at_rest=False, spin=0.0,
                  eye_saturation=None, eye_threshold=None, eye_response=None,
@@ -329,13 +329,14 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         quiet=quiet, state_log=state_log, state_log_interval=state_log_interval,
         heading=heading, random_heading=random_heading, random_start=random_start,
         start_range=start_range, stable_draws=stable_draws,
-        eye_saturation=eye_saturation, spin=spin)
+        eye_saturation=eye_saturation, spin=spin, env_seed=env_seed)
 
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               report_interval=500, light_intensity=100,
               early_stop_distance=None,
-              uniselector_type='ashby', continuous_params=None, seed=None,
+              uniselector_type='ashby', continuous_params=None, seed=None, env_seed=None,
+              batch_vary='both',
               state_log=False, state_log_interval=1, heading=None,
               random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
               stable_draws=False, start_at_rest=False, spin=0.0,
@@ -343,18 +344,20 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               eye_radius_ratio=EYE_RADIUS_RATIO,
               synchronous_stepping=True):
     '''Run a batch of experiments and print a summary table
-    (phototaxis_common.run_batch).  With seed given, run i uses seed+i.'''
+    (phototaxis_common.run_batch).  With seed given, run i uses seed+i;
+    env_seed and batch_vary: see phototaxis_common.batch_seeds.'''
     kind = common.batch_kind(uniselector_tag(uniselector_type), spin, eye_saturation,
                              eye_threshold, eye_response, synchronous_stepping,
                              stable_draws, eye_radius_ratio)
 
-    def run_one(run_seed):
+    def run_one(run_seed, run_env_seed):
         return run_headless(topology=topology, total_steps=total_steps,
                             report_interval=report_interval,
                             light_intensity=light_intensity,
                             early_stop_distance=early_stop_distance, quiet=True,
                             uniselector_type=uniselector_type,
-                            continuous_params=continuous_params, seed=run_seed,
+                            continuous_params=continuous_params,
+                            seed=run_seed, env_seed=run_env_seed,
                             state_log=state_log, state_log_interval=state_log_interval,
                             heading=heading, random_heading=random_heading,
                             random_start=random_start, start_range=start_range,
@@ -365,11 +368,12 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                             synchronous_stepping=synchronous_stepping)
     return common.run_batch(run_one, n_runs, 'ashby', kind,
                             light_intensity=light_intensity, total_steps=total_steps,
-                            seed=seed)
+                            seed=seed, env_seed=env_seed,
+                            vary=batch_vary)
 
 
 def run_visualized(topology='fixed', light_intensity=100, uniselector_type='ashby',
-                   continuous_params=None, seed=None, heading=None,
+                   continuous_params=None, seed=None, env_seed=None, heading=None,
                    random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
                    stable_draws=False, start_at_rest=False, spin=0.0,
                    eye_saturation=None, eye_threshold=None, eye_response=None,
@@ -392,7 +396,7 @@ def run_visualized(topology='fixed', light_intensity=100, uniselector_type='ashb
     common.run_visualized(setup, 'Phototaxis ' + title, light_intensity=light_intensity,
                           stable_draws=stable_draws, random_heading=random_heading,
                           random_start=random_start, heading=heading,
-                          start_range=start_range)
+                          start_range=start_range, env_seed=env_seed)
 
 
 def main(argv):
@@ -403,7 +407,7 @@ def main(argv):
     else:
         run_options = dict(setup_options, **common.pick(o, common.RUN_OPTIONS))
         if o['n_batch'] is not None:
-            run_batch(n_runs=o['n_batch'], **run_options)
+            run_batch(n_runs=o['n_batch'], batch_vary=o['batch_vary'], **run_options)
         else:
             run_headless(**run_options)
 
