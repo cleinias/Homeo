@@ -409,8 +409,13 @@ class HomeoGASimulation(object):
         self.toolbox.decorate("mutate", self.hist.decorator)
         
     def recordGADataToLogbook(self,timeElapsed, pop):
-        " Insert general GA simulation parameters into logbook"
-        
+        """Insert general GA simulation parameters into logbook, replacing
+           the previous summary: there is one, the latest.  Until 14 Oct 2026
+           every save appended one, so a run of G generations had G+1, each
+           with the whole final population, and readers disagreed on which
+           they read (SG-08)."""
+        self.logbook[:] = [rec for rec in self.logbook if 'finalIndivs' not in rec]
+
         " for non cloned population the self._cloname attr is None"
         try:
             clone = self._cloneName
@@ -563,10 +568,12 @@ class HomeoGASimulation(object):
                 print(ind.ID+", ", end="")
             print()
 
-            # Report gen-0 progress
+            # Generation 0's statistics, recorded whether or not anyone is
+            # told of them (until 14 Oct 2026 only with a progressCallback,
+            # so headless runs' fitness curves had no generation 0; SG-08)
+            record0 = self.stats.compile(pop)
+            self.logbook.record(gen=0, evaluations=len(pop), **record0)
             if progressCallback:
-                record0 = self.stats.compile(pop)
-                self.logbook.record(gen=0, evaluations=len(pop), **record0)
                 progressCallback(0, record0, self.hof[0].fitness.values[0])
 
             #print "  With ID's ", sorted([ind.ID for ind in pop])
