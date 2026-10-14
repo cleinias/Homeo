@@ -60,8 +60,14 @@ class TrajectoryRecordTest(unittest.TestCase):
 
     def testOneTripletPerSource(self):
         "The column line names a light_x, light_y, distance triplet per source"
-        import HomeoExperiments.KheperaExperiments.braitenberg3c_control as C
-        hom, backend, _ = C.setup_braiten3c_control(seed=1)
+        import threading
+        import numpy as np
+        import Simulator.HomeoExperiments as HE
+        from Simulator.SimulatorBackend import SimulatorBackendHOMEO
+        backend = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera')
+        backend.kheperaSimulation.dataDir = self.tmp.name
+        setup = HE.initializeBraiten3c_GA_continuous_weightfree_fixed   # the 3c world
+        setup(np.full(setup.genomeSize, 0.5), backendSimulator=backend)
         sim = backend.kheperaSimulation
         for _ in range(3):
             sim.advanceSim()

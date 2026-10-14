@@ -17,7 +17,7 @@ import HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct as D
 
 
 def motorRatios(hom):
-    return [D._integration_ratio(u) for u in hom.homeoUnits if 'Motor' in u.name]
+    return [D.common.integration_ratio(u) for u in hom.homeoUnits if 'Motor' in u.name]
 
 
 class StableDrawsTest(unittest.TestCase):

@@ -2,8 +2,7 @@
 Ashby-style phototaxis experiment using a Braitenberg type-2 vehicle
 with the internal HOMEO Khepera simulator backend.
 
-This is the self-organizing counterpart to phototaxis_braitenberg2_control.py.
-Instead of hand-picked parameters, all unit parameters (mass, viscosity,
+All unit parameters (mass, viscosity,
 noise, potentiometer, switch) and connection weights start at random values.
 The uniselectors are active on the four real units (motors and eyes), so
 that when a unit's essential variable stays critical for too long
@@ -13,7 +12,7 @@ incoming connections.  This is Ashby's core idea: the system searches
 through parameter space by random trial until it finds a configuration
 where all units remain within their viable range.
 
-The experiment uses the same 6-unit Braitenberg topology as the control:
+The experiment uses the 6-unit Braitenberg topology of initializeBraiten2_2:
 2 motors, 2 eyes, 2 sensor inputs, with the robot starting at (4,4) and
 a light source at (7,7).
 
@@ -68,6 +67,12 @@ All three can be passed as parameters to setup_phototaxis() and the
 _ashby_* functions for systematic exploration.
 
 
+Options
+-------
+   Those of phototaxis_common.COMMON_OPTIONS_HELP, which both phototaxis
+   experiments share.
+
+
 Usage
 -----
     # Headless, fixed topology (default)
@@ -79,19 +84,17 @@ Usage
     # With visualizer
     python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby --visualize
 
-    # Combined
-    python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby --random-topology --visualize
+    # A seeded batch in the dark, continuous uniselector
+    python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby --dark --continuous --batch 10 --seed 1
 
 @author: stefano
 '''
 
-from Helpers.General_Helper_Functions import (unique_stem, run_tag, RUN_LOG_EXTENSIONS,
-                                              report_ticks)
-import os
-import random
-import time
-import threading
-from math import sqrt, degrees
+from HomeoExperiments.KheperaExperiments import phototaxis_common as common
+from HomeoExperiments.KheperaExperiments.phototaxis_common import (
+    DEFAULT_START_RANGE, seed_run, prepare_backend, experiment_suffix, set_light,
+    apply_spin, set_uniselector_type, uniselector_tag, randomize_unit,
+    set_motor_response)
 
 import numpy as np
 
@@ -100,7 +103,9 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      mass_range=(1, 10), max_speed_fraction=0.8,
                      switching_rate=0.5, light_intensity=100,
                      uniselector_type='ashby', continuous_params=None,
-                     seed=None):
+                     seed=None, stable_draws=False, start_at_rest=False,
+                     spin=0.0, eye_saturation=None, eye_threshold=None,
+                     eye_response=None, synchronous_stepping=True):
     '''Set up an Ashby-style phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -126,95 +131,51 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             uniselector_type='continuous'.  None = defaults.
         seed:               RNG seed for reproducibility.  If None, a
                             random seed is generated from os.urandom().
+        stable_draws, start_at_rest: see phototaxis_common.randomize_unit.
+        spin:               baseline spin, fraction of the motors' max speed,
+                            > 0 clockwise (see phototaxis_common.apply_spin).
+        eye_saturation, eye_threshold, eye_response: the eyes' sensitivity
+                            (see phototaxis_common.configure_eyes).
+        synchronous_stepping: see phototaxis_common.prepare_backend.
 
     Returns:
         (hom, backend, seed) - the configured Homeostat, the backend
                                simulator, and the RNG seed used
     '''
-    from Simulator.SimulatorBackend import SimulatorBackendHOMEO
     from Simulator.HomeoExperiments import initializeBraiten2_2Pos
 
-    # Seed both RNGs before any stochastic initialization
-    if seed is None:
-        seed = int.from_bytes(os.urandom(4), 'big')
-    np.random.seed(seed)
-    random.seed(seed)
-    # Numba keeps a separate random state that np.random.seed() does not reach;
-    # without this the trajectory is not reproducible from the seed (SH-03, RE-05).
-    from Core.HomeoJIT import seed_jit_rng
-    seed_jit_rng(seed)
+    # Seed every generator before any stochastic initialization
+    seed = seed_run(seed)
 
-    if backendSimulator is None:
-        lock = threading.Lock()
-        backendSimulator = SimulatorBackendHOMEO(lock=lock, robotName='Khepera')
-
-    # Set log directory and experiment name before world setup
-    from Helpers.General_Helper_Functions import simulations_data_dir
-    sims_root = simulations_data_dir()
-    log_dir = os.path.join(sims_root, 'SimsData-' + time.strftime("%Y-%m-%d"))
-    os.makedirs(log_dir, exist_ok=True)
-    backendSimulator.kheperaSimulation.dataDir = log_dir
-
-    if topology == 'random':
-        exp_name = 'phototaxis_braitenberg2_Ashby_random'
-    else:
-        exp_name = 'phototaxis_braitenberg2_Ashby_fixed'
-    if light_intensity < 0:
-        exp_name += '_dark'
-    if uniselector_type == 'continuous':
-        exp_name += '_continuous'
-    backendSimulator.kheperaSimulation.experimentName = exp_name
+    exp_name = ('phototaxis_braitenberg2_Ashby_random' if topology == 'random'
+                else 'phototaxis_braitenberg2_Ashby_fixed')
+    exp_name += experiment_suffix(light_intensity, uniselector_type, True, spin,
+                                  eye_saturation, eye_threshold, eye_response)
+    backendSimulator = prepare_backend(backendSimulator, exp_name, synchronous_stepping)
 
     hom = initializeBraiten2_2Pos(backendSimulator=backendSimulator)
-
-    # Override light intensity on the already-created light body
-    if light_intensity != 100:
-        sim = backendSimulator.kheperaSimulation
-        target_body = sim.allBodies['TARGET']
-        target_body.userData['intensity'] = light_intensity
-        target_body.userData['lightIntensity'] = light_intensity
+    set_light(backendSimulator, light_intensity, eye_saturation, eye_threshold, eye_response)
 
     kwargs = dict(mass_range=mass_range,
                   max_speed_fraction=max_speed_fraction,
                   switching_rate=switching_rate,
                   uniselector_type=uniselector_type,
-                  continuous_params=continuous_params)
+                  continuous_params=continuous_params,
+                  stable_draws=stable_draws,
+                  start_at_rest=start_at_rest)
     if topology == 'random':
         _ashby_random_topology(hom, **kwargs)
     else:
         _ashby_fixed_topology(hom, **kwargs)
+    apply_spin(hom, spin)
 
     return hom, backendSimulator, seed
 
 
-def _set_uniselector_type(unit, uniselector_type, continuous_params=None):
-    '''Set the uniselector on a unit according to the requested type.
-
-    Parameters:
-        unit:              HomeoUnit instance
-        uniselector_type:  'ashby', 'random', or 'continuous'
-        continuous_params: dict of HomeoUniselectorContinuous overrides
-    '''
-    from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
-    from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
-    from Core.HomeoUniselectorUniformRandom import HomeoUniselectorUniformRandom
-
-    if uniselector_type == 'continuous':
-        unis = HomeoUniselectorContinuous()
-        if continuous_params:
-            for key, val in continuous_params.items():
-                setattr(unis, key, val)
-        unit.uniselector = unis
-    elif uniselector_type == 'random':
-        unit.uniselector = HomeoUniselectorUniformRandom()
-    else:
-        # Default: Ashby stepping switch (already the default on new units)
-        pass
-
-
 def _ashby_fixed_topology(hom, mass_range=(1, 10),
                           max_speed_fraction=0.8, switching_rate=0.5,
-                          uniselector_type='ashby', continuous_params=None):
+                          uniselector_type='ashby', continuous_params=None,
+                          stable_draws=False, start_at_rest=False):
     '''Randomize unit parameters and connection weights, keeping the
     Braitenberg cross-wiring topology intact.
 
@@ -241,6 +202,7 @@ def _ashby_fixed_topology(hom, mass_range=(1, 10),
                             almost no speed.
         uniselector_type:   'ashby', 'random', or 'continuous'.
         continuous_params:  dict of HomeoUniselectorContinuous parameters.
+        stable_draws, start_at_rest: see phototaxis_common.randomize_unit.
     '''
 
     for u in hom.homeoUnits:
@@ -248,21 +210,16 @@ def _ashby_fixed_topology(hom, mass_range=(1, 10),
             # Sensor-only units: pure input, no self-organization
             continue
 
-        # Randomize unit parameters
-        u.setRandomValues()
-
-        # Override mass to a responsive range (setRandomValues doesn't touch it)
-        u.mass = np.random.uniform(*mass_range)
+        # Randomize unit parameters, mass in a responsive range
+        randomize_unit(u, mass_range, stable_draws, start_at_rest)
 
         # Activate uniselector and set type
         u.uniselectorActive = True
-        _set_uniselector_type(u, uniselector_type, continuous_params)
+        set_uniselector_type(u, uniselector_type, continuous_params)
 
         # Motor-specific overrides
         if 'Motor' in u.name:
-            u._maxSpeedFraction = max_speed_fraction
-            u._switchingRate = switching_rate
-            u._maxSpeed = None  # force recalculation from new fraction
+            set_motor_response(u, max_speed_fraction, switching_rate)
 
         for conn in u.inputConnections:
             if conn.incomingUnit == u:
@@ -278,9 +235,11 @@ def _ashby_fixed_topology(hom, mass_range=(1, 10),
                 conn.state = 'uniselector'
 
 
+
 def _ashby_random_topology(hom, mass_range=(1, 10),
                            max_speed_fraction=0.8, switching_rate=0.5,
-                           uniselector_type='ashby', continuous_params=None):
+                           uniselector_type='ashby', continuous_params=None,
+                          stable_draws=False, start_at_rest=False):
     '''Fully randomize all connections between the 4 real units.
 
     Every connection on motors and eyes gets a random weight and is
@@ -298,6 +257,7 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
                             Default 0.5.
         uniselector_type:   'ashby', 'random', or 'continuous'.
         continuous_params:  dict of HomeoUniselectorContinuous parameters.
+        stable_draws, start_at_rest: see phototaxis_common.randomize_unit.
     '''
 
     for u in hom.homeoUnits:
@@ -308,11 +268,8 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
                 conn.status = False
             continue
 
-        # Randomize unit parameters
-        u.setRandomValues()
-
-        # Override mass to a responsive range (setRandomValues doesn't touch it)
-        u.mass = np.random.uniform(*mass_range)
+        # Randomize unit parameters, mass in a responsive range
+        randomize_unit(u, mass_range, stable_draws, start_at_rest)
 
         # Set all connections active with small random weights
         for conn in u.inputConnections:
@@ -323,390 +280,123 @@ def _ashby_random_topology(hom, mass_range=(1, 10),
 
         # Activate uniselector and set type
         u.uniselectorActive = True
-        _set_uniselector_type(u, uniselector_type, continuous_params)
+        set_uniselector_type(u, uniselector_type, continuous_params)
 
         # Protect self-connection from uniselector
         u.inputConnections[0].state = 'manual'
 
         # Motor-specific overrides
         if 'Motor' in u.name:
-            u._maxSpeedFraction = max_speed_fraction
-            u._switchingRate = switching_rate
-            u._maxSpeed = None  # force recalculation from new fraction
+            set_motor_response(u, max_speed_fraction, switching_rate)
+
+
+def _setup(**kwargs):
+    "setup_phototaxis bound to its arguments, and the run's title."
+    def setup():
+        return setup_phototaxis(**kwargs)
+    return setup, 'Braitenberg 2 — Ashby (%s topology, %s uniselector)' % (
+        kwargs.get('topology', 'fixed'), kwargs.get('uniselector_type', 'ashby'))
 
 
 def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  light_intensity=100, early_stop_distance=None, quiet=False,
                  uniselector_type='ashby', continuous_params=None,
-                 state_log=False, state_log_interval=1, seed=None):
-    '''Run the Ashby phototaxis experiment headless and print the trajectory.
-
-    Parameters:
-        topology:             'fixed' or 'random'
-        total_steps:          number of simulation steps to run
-        report_interval:      print robot state every this many steps
-        light_intensity:      intensity of the light source (negative for
-                              a "darkness source")
-        early_stop_distance:  if set, stop when the robot gets closer than
-                              this distance to the target
-        quiet:                if True, suppress per-tick output (for batch mode)
-        uniselector_type:     'ashby', 'random', or 'continuous'
-        continuous_params:    dict of HomeoUniselectorContinuous overrides
-        state_log:            if True, write per-tick .statelog file
-        state_log_interval:   log every N-th tick (default 1)
-        seed:                 RNG seed for reproducibility (None = random)
-
-    Returns:
-        dict with keys: hom, backend, final_dist, min_dist, min_t,
-                        steps_run, final_x, final_y, early_stopped,
-                        log_path, json_path, state_log_path, seed
-    '''
-    from Helpers.HomeostatConditionLogger import (
-        log_homeostat_conditions, log_homeostat_conditions_json)
-
-    hom, backend, seed = setup_phototaxis(topology=topology,
-                                          light_intensity=light_intensity,
-                                          uniselector_type=uniselector_type,
-                                          continuous_params=continuous_params,
-                                          seed=seed)
-
-    # Headless optimizations: disable the per-tick sleep and in-memory data
-    # collection (initial/final state is logged separately to file)
-    hom.slowingFactor = 0
-    hom.collectsData = False
-    hom._headless = True
-    for u in hom.homeoUnits:
-        u._headless = True
-
-    sim = backend.kheperaSimulation
-    robot = sim.allBodies['Khepera']
-    target_pos = (7, 7)
-    exp_name = sim.experimentName
-
-    # Log initial conditions
-    timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
-    log_dir = sim.dataDir
-    stem = unique_stem(log_dir, exp_name + '-' + timestamp + run_tag(),
-                       RUN_LOG_EXTENSIONS)
-    log_path = os.path.join(log_dir, stem + '.log')
-    json_path = os.path.join(log_dir, stem + '.json')
-    log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
-    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name,
-                                  seed=seed)
-
-    # Optional per-tick state logger
-    state_log_path = None
-    if state_log:
-        from Helpers.HomeostatStateLogger import HomeostatStateLogger
-        state_log_path = os.path.join(log_dir, stem + '.statelog')
-        state_logger = HomeostatStateLogger(
-            hom, sim, state_log_path, log_interval=state_log_interval, seed=seed)
-        state_logger.log_tick(0)  # capture initial state before any dynamics
-        hom._state_logger = state_logger
-
-    def dist_to_target():
-        rx, ry = robot.body.position[0], robot.body.position[1]
-        return sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
-
-    mode_label = 'fixed topology' if topology == 'fixed' else 'random topology'
-    if not quiet:
-        print(f'=== Phototaxis: Braitenberg 2 — Ashby ({mode_label}) ===')
-        print(f'Robot start: ({robot.body.position[0]:.3f}, {robot.body.position[1]:.3f})')
-        print(f'Light target: {target_pos}')
-        print(f'Initial distance: {dist_to_target():.3f}')
-        print()
-        print(f'{"Step":>6}  {"Robot X":>8}  {"Robot Y":>8}  {"Angle":>7}  {"Dist":>7}  {"L Sens":>7}  {"R Sens":>7}')
-        print('-' * 65)
-
-    min_dist = dist_to_target()
-    min_t = 0
-    early_stopped = False
-
-    target_tick = 0
-    for target_tick in report_ticks(report_interval, total_steps):
-        hom.runFor(target_tick)
-        rx, ry = robot.body.position[0], robot.body.position[1]
-        d = dist_to_target()
-        a = degrees(robot.body.angle) % 360
-        lsensor = robot.getSensorRead('leftEye')
-        rsensor = robot.getSensorRead('rightEye')
-
-        if d < min_dist:
-            min_dist = d
-            min_t = target_tick
-
-        if not quiet:
-            print(f'{target_tick:>6}  {rx:>8.3f}  {ry:>8.3f}  {a:>7.1f}  {d:>7.3f}  {lsensor:>7.2f}  {rsensor:>7.2f}')
-
-        if early_stop_distance is not None and d < early_stop_distance:
-            if not quiet:
-                print(f'\n  *** Early stop: distance {d:.3f} < {early_stop_distance}')
-            early_stopped = True
-            break
-
-    final_dist = dist_to_target()
-    final_x, final_y = robot.body.position[0], robot.body.position[1]
-    steps_run = target_tick
-
-    if not quiet:
-        print()
-        print(f'Closest approach: {min_dist:.3f} at t={min_t}')
-        print(f'Final distance:   {final_dist:.3f}')
-
-    sim.saveTrajectory()
-
-    # Close state logger if active
-    if state_log and hom._state_logger is not None:
-        hom._state_logger.close()
-        hom._state_logger = None
-
-    # Log final conditions
-    log_homeostat_conditions(hom, log_path, 'FINAL CONDITIONS')
-    log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
-
-    return dict(hom=hom, backend=backend,
-                final_dist=final_dist, min_dist=min_dist, min_t=min_t,
-                steps_run=steps_run, final_x=final_x, final_y=final_y,
-                early_stopped=early_stopped,
-                log_path=log_path, json_path=json_path,
-                state_log_path=state_log_path, seed=seed)
+                 state_log=False, state_log_interval=1, seed=None, heading=None,
+                 random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
+                 stable_draws=False, start_at_rest=False, spin=0.0,
+                 eye_saturation=None, eye_threshold=None, eye_response=None,
+                 synchronous_stepping=True):
+    '''Run the Ashby phototaxis experiment headless
+    (phototaxis_common.run_headless, which describes the options and the
+    result; the setup's are setup_phototaxis's).'''
+    setup, title = _setup(topology=topology, light_intensity=light_intensity,
+                          uniselector_type=uniselector_type,
+                          continuous_params=continuous_params, seed=seed,
+                          stable_draws=stable_draws, start_at_rest=start_at_rest,
+                          spin=spin, eye_saturation=eye_saturation,
+                          eye_threshold=eye_threshold, eye_response=eye_response,
+                          synchronous_stepping=synchronous_stepping)
+    return common.run_headless(
+        setup, title, total_steps=total_steps, report_interval=report_interval,
+        light_intensity=light_intensity, early_stop_distance=early_stop_distance,
+        quiet=quiet, state_log=state_log, state_log_interval=state_log_interval,
+        heading=heading, random_heading=random_heading, random_start=random_start,
+        start_range=start_range, stable_draws=stable_draws,
+        eye_saturation=eye_saturation, spin=spin)
 
 
 def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               report_interval=500, light_intensity=100,
               early_stop_distance=None,
-              uniselector_type='ashby', continuous_params=None):
-    '''Run a batch of experiments and print a summary table.
+              uniselector_type='ashby', continuous_params=None, seed=None,
+              state_log=False, state_log_interval=1, heading=None,
+              random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
+              stable_draws=False, start_at_rest=False, spin=0.0,
+              eye_saturation=None, eye_threshold=None, eye_response=None,
+              synchronous_stepping=True):
+    '''Run a batch of experiments and print a summary table
+    (phototaxis_common.run_batch).  With seed given, run i uses seed+i.'''
+    kind = common.batch_kind(uniselector_tag(uniselector_type), spin, eye_saturation,
+                             eye_threshold, eye_response, synchronous_stepping,
+                             stable_draws)
 
-    Parameters:
-        n_runs:               number of independent runs
-        topology:             'fixed' or 'random'
-        total_steps:          step budget per run
-        report_interval:      ticks between position checks
-        light_intensity:      intensity (negative for darkness)
-        early_stop_distance:  stop run early if robot gets this close
-        uniselector_type:     'ashby', 'random', or 'continuous'
-        continuous_params:    dict of HomeoUniselectorContinuous overrides
-
-    Returns:
-        list of result dicts (one per run, without hom/backend)
-    '''
-    import csv as _csv
-
-    mode = 'dark' if light_intensity < 0 else 'light'
-    print(f'=== Batch: {n_runs} runs, {mode}, {total_steps} ticks budget ===')
-    print()
-
-    results = []
-    for i in range(n_runs):
-        t0 = time.time()
-        print(f'--- Run {i+1}/{n_runs} ---', flush=True)
-        r = run_headless(topology=topology, total_steps=total_steps,
-                         report_interval=report_interval,
-                         light_intensity=light_intensity,
-                         early_stop_distance=early_stop_distance,
-                         quiet=True,
-                         uniselector_type=uniselector_type,
-                         continuous_params=continuous_params)
-        elapsed = time.time() - t0
-        # Drop non-serialisable objects before storing
-        r.pop('hom'); r.pop('backend')
-        r['run'] = i + 1
-        r['wall_time'] = elapsed
-        results.append(r)
-        print(f'  final_dist={r["final_dist"]:.3f}  min_dist={r["min_dist"]:.3f}  '
-              f'steps={r["steps_run"]}  early_stop={r["early_stopped"]}  '
-              f'wall={elapsed:.1f}s', flush=True)
-
-    # Summary table
-    print()
-    print(f'{"Run":>4}  {"Final Dist":>10}  {"Min Dist":>10}  {"Min@t":>8}  '
-          f'{"Steps":>8}  {"EarlyStop":>9}  {"Wall(s)":>7}')
-    print('-' * 68)
-    for r in results:
-        print(f'{r["run"]:>4}  {r["final_dist"]:>10.3f}  {r["min_dist"]:>10.3f}  '
-              f'{r["min_t"]:>8}  {r["steps_run"]:>8}  '
-              f'{"Yes" if r["early_stopped"] else "No":>9}  '
-              f'{r["wall_time"]:>7.1f}')
-
-    dists = [r['final_dist'] for r in results]
-    mins = [r['min_dist'] for r in results]
-    stops = sum(1 for r in results if r['early_stopped'])
-    print('-' * 68)
-    print(f'Mean final dist: {np.mean(dists):.3f}  (std {np.std(dists):.3f})')
-    print(f'Mean min dist:   {np.mean(mins):.3f}  (std {np.std(mins):.3f})')
-    print(f'Early stops:     {stops}/{n_runs}')
-
-    # Save summary CSV next to the individual log files
-    if results:
-        log_dir = os.path.dirname(results[0]['log_path'])
-        csv_name = unique_stem(log_dir, f'batch_{mode}_{time.strftime("%Y-%m-%d-%H-%M-%S")}'
-                               + run_tag(), ('.csv',)) + '.csv'
-        csv_path = os.path.join(log_dir, csv_name)
-        fields = ['run', 'seed', 'final_dist', 'min_dist', 'min_t', 'steps_run',
-                  'early_stopped', 'final_x', 'final_y', 'wall_time',
-                  'log_path', 'json_path', 'state_log_path']
-        with open(csv_path, 'w', newline='') as f:
-            w = _csv.DictWriter(f, fieldnames=fields)
-            w.writeheader()
-            w.writerows(results)
-        print(f'\nSummary saved to: {csv_path}')
-
-    return results
+    def run_one(run_seed):
+        return run_headless(topology=topology, total_steps=total_steps,
+                            report_interval=report_interval,
+                            light_intensity=light_intensity,
+                            early_stop_distance=early_stop_distance, quiet=True,
+                            uniselector_type=uniselector_type,
+                            continuous_params=continuous_params, seed=run_seed,
+                            state_log=state_log, state_log_interval=state_log_interval,
+                            heading=heading, random_heading=random_heading,
+                            random_start=random_start, start_range=start_range,
+                            stable_draws=stable_draws, start_at_rest=start_at_rest,
+                            spin=spin, eye_saturation=eye_saturation,
+                            eye_threshold=eye_threshold, eye_response=eye_response,
+                            synchronous_stepping=synchronous_stepping)
+    return common.run_batch(run_one, n_runs, 'ashby', kind,
+                            light_intensity=light_intensity, total_steps=total_steps,
+                            seed=seed)
 
 
-def run_visualized(topology='fixed'):
-    '''Run the Ashby phototaxis experiment with the pyglet visualizer.
+def run_visualized(topology='fixed', light_intensity=100, uniselector_type='ashby',
+                   continuous_params=None, seed=None, heading=None,
+                   random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
+                   stable_draws=False, start_at_rest=False, spin=0.0,
+                   eye_saturation=None, eye_threshold=None, eye_response=None,
+                   synchronous_stepping=True):
+    '''Run the Ashby phototaxis experiment with the pyglet visualizer, with
+    the same options as run_headless.
 
     Press Q or Escape to close the window.
     Up/Down arrows adjust simulation speed (steps per frame).
     '''
-    import pyglet
-    from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
-                           GL_BLEND, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
-                           GL_LINE_SMOOTH, GL_LINE_SMOOTH_HINT, GL_NICEST,
-                           GL_COLOR_BUFFER_BIT)
-    from KheperaSimulator.KheperaSimulator import KheperaCamera
+    setup, title = _setup(topology=topology, light_intensity=light_intensity,
+                          uniselector_type=uniselector_type,
+                          continuous_params=continuous_params, seed=seed,
+                          stable_draws=stable_draws, start_at_rest=start_at_rest,
+                          spin=spin, eye_saturation=eye_saturation,
+                          eye_threshold=eye_threshold, eye_response=eye_response,
+                          synchronous_stepping=synchronous_stepping)
+    common.run_visualized(setup, 'Phototaxis ' + title, light_intensity=light_intensity,
+                          stable_draws=stable_draws, random_heading=random_heading,
+                          random_start=random_start, heading=heading,
+                          start_range=start_range)
 
-    mode_label = 'fixed' if topology == 'fixed' else 'random'
-    window = pyglet.window.Window(width=800, height=600, resizable=True,
-                                  caption=f'Phototaxis Ashby ({mode_label})')
 
-    glEnable(GL_LINE_SMOOTH)
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    glClearColor(0.55, 0.95, 1.0, 1.0)
-
-    from Helpers.HomeostatConditionLogger import (
-        log_homeostat_conditions, log_homeostat_conditions_json)
-
-    hom, backend, seed = setup_phototaxis(topology=topology)
-    sim = backend.kheperaSimulation
-    robot = sim.allBodies['Khepera']
-    target_pos = sim.allBodies['TARGET'].position
-    exp_name = sim.experimentName
-
-    # Log initial conditions
-    timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
-    log_dir = sim.dataDir
-    stem = unique_stem(log_dir, exp_name + '-' + timestamp + run_tag(),
-                       RUN_LOG_EXTENSIONS)
-    log_path = os.path.join(log_dir, stem + '.log')
-    json_path = os.path.join(log_dir, stem + '.json')
-    log_homeostat_conditions(hom, log_path, 'INITIAL CONDITIONS', exp_name)
-    log_homeostat_conditions_json(hom, json_path, 'INITIAL CONDITIONS', exp_name)
-
-    from KheperaSimulator.KheperaSimulator import _get_shape_program, _make_vlist
-    from pyglet.gl import GL_LINES
-
-    camera = KheperaCamera(position=(5.5, 5.5), zoom=8.0)
-    state = [0, 5]
-    trail_vlists = []  # list of vertex lists for trail segments
-    trail_last = [None] # last recorded (x, y)
-    TRAIL_MIN_DIST = 0.05  # minimum distance before adding a trail segment
-
-    @window.event
-    def on_draw():
-        glClear(GL_COLOR_BUFFER_BIT)
-        camera.focus(window)
-        sim.pygletDraw()
-        # Draw trail using the same shader (respects camera projection)
-        program = _get_shape_program()
-        program.use()
-        for vl in trail_vlists:
-            vl.draw(GL_LINES)
-        program.stop()
-
-    def update(dt):
-        state[0] += state[1]
-        hom.runFor(state[0])
-        rx, ry = robot.body.position[0], robot.body.position[1]
-
-        # Only add a trail segment when the robot has moved enough
-        if trail_last[0] is not None:
-            px, py = trail_last[0]
-            if sqrt((rx - px)**2 + (ry - py)**2) >= TRAIL_MIN_DIST:
-                program = _get_shape_program()
-                vl = program.vertex_list(
-                    2, GL_LINES,
-                    position=('f', [px, py, rx, ry]),
-                    colors=('f', [0.8, 0.2, 0.2, 0.7] * 2),
-                    translation=('f', [0.0, 0.0] * 2),
-                    rotation=('f', [0.0] * 2),
-                    zposition=('f', [0.0] * 2),
-                )
-                trail_vlists.append(vl)
-                trail_last[0] = (rx, ry)
+def main(argv):
+    o = common.parse_common_args(argv)
+    setup_options = common.pick(o, common.SETUP_OPTIONS)
+    if o['visualize']:
+        run_visualized(**setup_options, **common.pick(o, common.POSE_OPTIONS))
+    else:
+        run_options = dict(setup_options, **common.pick(o, common.RUN_OPTIONS))
+        if o['n_batch'] is not None:
+            run_batch(n_runs=o['n_batch'], **run_options)
         else:
-            trail_last[0] = (rx, ry)
-
-        dist = sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
-        window.set_caption(
-            f'Phototaxis Ashby ({mode_label}) - t={state[0]}  speed={state[1]}  '
-            f'dist={dist:.2f}  [{1/max(dt, 0.001):.0f} fps]')
-
-    @window.event
-    def on_key_press(symbol, modifiers):
-        if symbol == pyglet.window.key.ESCAPE or symbol == pyglet.window.key.Q:
-            window.close()
-        elif symbol == pyglet.window.key.UP:
-            state[1] = min(state[1] * 2, 200)
-        elif symbol == pyglet.window.key.DOWN:
-            state[1] = max(state[1] // 2, 1)
-
-    @window.event
-    def on_close():
-        sim.saveTrajectory()
-        log_homeostat_conditions(hom, log_path, 'FINAL CONDITIONS')
-        log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
-
-    pyglet.clock.schedule(update)
-    pyglet.app.run()
+            run_headless(**run_options)
 
 
 if __name__ == '__main__':
     import sys
-
-    topology = 'random' if '--random-topology' in sys.argv else 'fixed'
-
-    # Parse --steps N (default 60000)
-    total_steps = 60000
-    if '--steps' in sys.argv:
-        idx = sys.argv.index('--steps')
-        if idx + 1 < len(sys.argv):
-            total_steps = int(sys.argv[idx + 1])
-
-    # Parse --dark (negative light intensity) and --early-stop DIST
-    light_intensity = -100 if '--dark' in sys.argv else 100
-    early_stop_distance = None
-    if '--early-stop' in sys.argv:
-        idx = sys.argv.index('--early-stop')
-        if idx + 1 < len(sys.argv):
-            early_stop_distance = float(sys.argv[idx + 1])
-    elif '--dark' in sys.argv:
-        early_stop_distance = 1.5  # default: TrajectoryGrapher's gray circle
-
-    # Parse --batch N
-    n_batch = None
-    if '--batch' in sys.argv:
-        idx = sys.argv.index('--batch')
-        if idx + 1 < len(sys.argv):
-            n_batch = int(sys.argv[idx + 1])
-
-    # Parse --continuous (use Ornstein-Uhlenbeck weight drift)
-    uniselector_type = 'continuous' if '--continuous' in sys.argv else 'ashby'
-
-    if '--visualize' in sys.argv:
-        run_visualized(topology=topology)
-    elif n_batch is not None:
-        run_batch(n_runs=n_batch, topology=topology,
-                  total_steps=total_steps,
-                  light_intensity=light_intensity,
-                  early_stop_distance=early_stop_distance,
-                  uniselector_type=uniselector_type)
-    else:
-        run_headless(topology=topology, total_steps=total_steps,
-                     light_intensity=light_intensity,
-                     early_stop_distance=early_stop_distance,
-                     uniselector_type=uniselector_type)
+    main(sys.argv)

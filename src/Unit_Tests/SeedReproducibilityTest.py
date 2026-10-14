@@ -54,10 +54,13 @@ class SeedReproducibilityTest(unittest.TestCase):
                     lambda: A.setup_phototaxis(seed=123, uniselector_type=kind))
                 self.assertEqual(first, second)
 
-    def testBraitenberg3c(self):
-        import HomeoExperiments.KheperaExperiments.braitenberg3c_control as C
-        first, second = self.twice(lambda: C.setup_braiten3c_control(seed=123))
-        self.assertEqual(first, second)
+    def testDirectPhototaxis(self):
+        import HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct as D
+        for kind in ('ashby', 'random', 'continuous'):
+            with self.subTest(uniselector=kind):
+                first, second = self.twice(
+                    lambda: D.setup_phototaxis(seed=123, uniselector_type=kind))
+                self.assertEqual(first, second)
 
 
 if __name__ == '__main__':

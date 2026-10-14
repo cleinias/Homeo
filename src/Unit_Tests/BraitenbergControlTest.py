@@ -87,7 +87,7 @@ class StartPoseTest(unittest.TestCase):
         target = (7, 7)
         np.random.seed(11)
         for _ in range(2000):
-            x, y, heading = D._random_start_pose(target, True, (4.0, 8.0))
+            x, y, heading = D.common.random_start_pose(target, True, (4.0, 8.0))
             d = np.hypot(x - target[0], y - target[1])
             self.assertTrue(4.0 <= d <= 8.0, d)
             self.assertTrue(0 <= heading < 360)
@@ -95,7 +95,7 @@ class StartPoseTest(unittest.TestCase):
     def testDefaultRangeUnchanged(self):
         "without a range, the draws are exactly the old 2-6 ones"
         np.random.seed(5)
-        new = D._random_start_pose((7, 7), True)
+        new = D.common.random_start_pose((7, 7), True)
         np.random.seed(5)
         heading = np.random.uniform(0, 360)
         d = np.random.uniform(2.0, 6.0)

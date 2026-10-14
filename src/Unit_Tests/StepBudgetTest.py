@@ -41,13 +41,9 @@ class StepBudgetTest(unittest.TestCase):
     def testEveryExperimentRunsItsBudget(self):
         import HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct as D
         import HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby as A
-        import HomeoExperiments.KheperaExperiments.braitenberg3c_control as C
-        import HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_control as P
         runs = {
             'direct': lambda n: D.run_headless(total_steps=n, quiet=True, seed=1),
             'Ashby': lambda n: A.run_headless(total_steps=n, quiet=True, seed=1),
-            '3c': lambda n: C.run_headless(total_steps=n, seed=1),
-            'control': lambda n: P.run_headless(total_steps=n),
         }
         for name, run in runs.items():
             for steps in (1250, 100):
