@@ -67,6 +67,7 @@ class HomeoSimulationControllerGui(QDialog):
 #         params = {'dataDir' : self.dataDir, 'simulator':"VREP"}
         params = dict({'simulator':simulatorBackend}, **(experimentParams or {}))
         self._simulation.initializeExperSetup(**params)
+        self._paceHomeostat()
         
         "Initialize live data recording and display "
         self._simulation.initializeLiveData()
@@ -114,7 +115,7 @@ class HomeoSimulationControllerGui(QDialog):
         'Labels'
         self.maxRunsLabel = QLabel("Max Runs")
         self.currentTimeLabel = QLabel("Current time")
-        self.slowingFactorLabel = QLabel("Slowing Factor (millisec.)")
+        self.slowingFactorLabel = QLabel("Delay per tick (millisec.)")
         'Buttons'
         self.startButton = QPushButton("Start")
         self.pauseButton = QPushButton("Stop")
@@ -142,7 +143,7 @@ class HomeoSimulationControllerGui(QDialog):
         self.currentTimeSpinBox.setRange(0,10000000)
         self.currentTimeSpinBox.setReadOnly(True)
         
-        self.slowingFactorSpinBox.setRange(0.001,1000)
+        self.slowingFactorSpinBox.setRange(0,1000)
         
         "Separators"
         self.runningSectionSep1 = Separator()
@@ -191,7 +192,12 @@ class HomeoSimulationControllerGui(QDialog):
         "Initial values"
         self.maxRunSpinBox.setValue(self._simulation.maxRuns)
         self.currentTimeSpinBox.setValue(self._simulation.homeostat.time)
-        self.slowingFactorSpinBox.setValue(self._simulation.homeostat.slowingFactor)
+        # The one delay per tick: the simulation's (simulDelay), shown and set
+        # here; the homeostat's own pause (slowingFactor, 10 ms by default) is
+        # off in the GUI (_paceHomeostat).  Until 14 Oct 2026 the box showed
+        # slowingFactor but set simulDelay, and both applied: never under
+        # 10 ms a tick, whatever it showed (SR-08).
+        self.slowingFactorSpinBox.setValue(self._simulation.simulDelay)
 
         "Connections"
         self.startButton.clicked.connect(self.go)
@@ -956,6 +962,10 @@ class HomeoSimulationControllerGui(QDialog):
         self.clearLiveCharts()
         self._reconnectAfterHomeostatChange()
 
+    def _paceHomeostat(self):
+        "The GUI paces the run with its delay per tick alone (SR-08)"
+        self._simulation.homeostat.slowingFactor = 0
+
     def _reconnectAfterHomeostatChange(self):
         """Reconnect all GUI signals to the new unit/connection objects
         after the homeostat has been replaced (New / Load).
@@ -963,6 +973,7 @@ class HomeoSimulationControllerGui(QDialog):
 
         hom = self._simulation.homeostat
         gui = self._homeostat_gui
+        self._paceHomeostat()
         numUnits = len(hom.homeoUnits)
         # Connections from widgets that trigger unit/connection methods
         # (combo currentIndexChanged, checkbox stateChanged, slider valueChanged)

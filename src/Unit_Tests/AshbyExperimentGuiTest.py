@@ -235,5 +235,31 @@ class AshbyGuiSeedTest(unittest.TestCase):
         self.assertEqual(Homeostat.readFrom(path).seed, new_seed)
 
 
+
+class DelayPerTickTest(unittest.TestCase):
+    """The GUI's delay box sets the only delay per tick (SR-08): until 14 Oct
+    2026 it showed the homeostat's slowingFactor (10 ms) but set the
+    simulation's delay, and both applied."""
+
+    def testTheBoxIsTheDelay(self):
+        gui = makeGui(self, 1)
+        box = gui.slowingFactorSpinBox
+        self.assertEqual(gui._simulation.homeostat.slowingFactor, 0)
+        self.assertEqual(box.value(), gui._simulation.simulDelay)
+        self.assertEqual(box.minimum(), 0)
+        box.setValue(0)
+        self.assertEqual(gui._simulation.simulDelay, 0)
+        gui.newHomeostat()
+        self.assertEqual(gui._simulation.homeostat.slowingFactor, 0)
+        path = os.path.join(_tmpdir, 'slow.pickled')
+        hom = gui._simulation.homeostat
+        hom.slowingFactor = 10
+        hom.saveTo(path)
+        with mock.patch.object(QFileDialog, 'getOpenFileName', return_value=(path, '')):
+            gui.loadHomeostat()
+        self.assertIsNot(gui._simulation.homeostat, hom)
+        self.assertEqual(gui._simulation.homeostat.slowingFactor, 0)
+
+
 if __name__ == '__main__':
     unittest.main()
