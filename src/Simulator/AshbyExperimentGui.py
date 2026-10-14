@@ -304,7 +304,7 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
     experiment-specific controls, callbacks, and protocol display.
     '''
 
-    def __init__(self, parent=None, exp_num=None):
+    def __init__(self, parent=None, exp_num=None, seed=None):
         # Show selector if no experiment specified
         if exp_num is None:
             exp_num = ExperimentSelectorDialog.getExperiment()
@@ -316,7 +316,9 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
         title, func_name, ref = EXPERIMENT_INFO[exp_num]
 
         # Initialize parent with the chosen experiment
-        super().__init__(parent=parent, experiment=func_name)
+        # seed: the homeostat's (None: drawn); shown in the panel
+        super().__init__(parent=parent, experiment=func_name,
+                         experimentParams=None if seed is None else {'seed': seed})
 
         # 1. Default maxRuns to 10000
         self._simulation._maxRuns = 10000
@@ -379,6 +381,12 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
         self._stabilityLabel.setStyleSheet(
             'color: red; font-weight: bold; padding: 2px;')
         expLayout.addWidget(self._stabilityLabel)
+
+        # The seed the homeostat was built from: setup_expN(seed=...) builds
+        # the same one headless
+        self._seedLabel = QLabel()
+        self._seedLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        expLayout.addWidget(self._seedLabel)
 
         # Protocol button (Ashby experiments only)
         if self._exp_num >= 1:
@@ -497,6 +505,8 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
 
     def _resetExperimentWidgets(self):
         '''Put the action panel in the state of a fresh experiment.'''
+        seed = getattr(self._simulation.homeostat, 'seed', None)
+        self._seedLabel.setText('Seed: %s' % ('unknown' if seed is None else seed))
         self._stabilityLabel.setText('UNSTABLE')
         self._stabilityLabel.setStyleSheet(
             'color: red; font-weight: bold; padding: 2px;')

@@ -3869,6 +3869,12 @@ initializeBraiten3c_GA_continuous_weightfree_open.genomeSize = 10
 #  are NOT installed here; the GUI subclass installs them.
 # ===============================================================
 
+# The GUI's Ashby experiments build their homeostats with the headless
+# setups (AshbyOriginalExperiments.setup_expN), seeded with params['seed']
+# (drawn if absent) and the seed kept as hom.seed: a GUI run's homeostat is
+# the headless run's with the same seed (the unused slots draw nothing, see
+# _add_unused_slots).  Until 14 Oct 2026 the seed was thrown away (SR-06).
+
 def initializeAshbyExp1BasicUltrastability(**params):
     '''Exp 1: Basic Ultrastability (DftB 8/4, Fig. 8/4/1).
 
@@ -3878,7 +3884,8 @@ def initializeAshbyExp1BasicUltrastability(**params):
     and 4 inactive.
     '''
     from Simulator.AshbyOriginalExperiments import setup_exp1_basic_ultrastability
-    hom, seed, meta = setup_exp1_basic_ultrastability(unused_slots=True)
+    hom, seed, meta = setup_exp1_basic_ultrastability(seed=params.get('seed'), unused_slots=True)
+    hom.seed = seed          # shown by the GUI and pickled with the homeostat
     return hom
 
 
@@ -3891,7 +3898,8 @@ def initializeAshbyExp2SelfReorganization(**params):
     with unit 4 inactive.
     '''
     from Simulator.AshbyOriginalExperiments import setup_exp2_self_reorganization
-    hom, seed, meta = setup_exp2_self_reorganization()
+    hom, seed, meta = setup_exp2_self_reorganization(seed=params.get('seed'))
+    hom.seed = seed          # shown by the GUI and pickled with the homeostat
     return hom
 
 
@@ -3903,7 +3911,8 @@ def initializeAshbyExp3Training(**params):
     AshbyOriginalExperiments.setup_exp3_training, with unit 4 inactive.
     '''
     from Simulator.AshbyOriginalExperiments import setup_exp3_training
-    hom, seed, meta = setup_exp3_training(unused_slots=True)
+    hom, seed, meta = setup_exp3_training(seed=params.get('seed'), unused_slots=True)
+    hom.seed = seed          # shown by the GUI and pickled with the homeostat
     return hom
 
 
@@ -3916,7 +3925,8 @@ def initializeAshbyExp4AlternatingEnvironments(**params):
     units 3 and 4 inactive.
     '''
     from Simulator.AshbyOriginalExperiments import setup_exp4_alternating_environments
-    hom, seed, meta = setup_exp4_alternating_environments(unused_slots=True)
+    hom, seed, meta = setup_exp4_alternating_environments(seed=params.get('seed'), unused_slots=True)
+    hom.seed = seed          # shown by the GUI and pickled with the homeostat
     return hom
 
 
@@ -3929,7 +3939,8 @@ def initializeAshbyExp5Constraint(**params):
     with unit 4 inactive.
     '''
     from Simulator.AshbyOriginalExperiments import setup_exp5_constraint
-    hom, seed, meta = setup_exp5_constraint(unused_slots=True)
+    hom, seed, meta = setup_exp5_constraint(seed=params.get('seed'), unused_slots=True)
+    hom.seed = seed          # shown by the GUI and pickled with the homeostat
     return hom
 
 
@@ -3942,7 +3953,8 @@ def initializeAshbyExp6Habituation(**params):
     inactive.
     '''
     from Simulator.AshbyOriginalExperiments import setup_exp6_habituation
-    hom, seed, meta = setup_exp6_habituation(unused_slots=True)
+    hom, seed, meta = setup_exp6_habituation(seed=params.get('seed'), unused_slots=True)
+    hom.seed = seed          # shown by the GUI and pickled with the homeostat
     return hom
 
 
@@ -3955,6 +3967,7 @@ def initializeAshbyExp7Multistable(**params):
     AshbyOriginalExperiments.setup_exp7_multistable, with unit 4 inactive.
     '''
     from Simulator.AshbyOriginalExperiments import setup_exp7_multistable
-    hom, seed, meta = setup_exp7_multistable(unused_slots=True)
+    hom, seed, meta = setup_exp7_multistable(seed=params.get('seed'), unused_slots=True)
+    hom.seed = seed          # shown by the GUI and pickled with the homeostat
     return hom
 

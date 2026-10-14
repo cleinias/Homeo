@@ -329,12 +329,23 @@ def _make_unit(name, mass=100, viscosity=None, noise=None,
 def _add_unused_slots(hom, n_slots=4):
     '''Fill the homeostat up to n_slots units with inactive ones (Ashby's
     machine had four units; the GUI shows four).  The unused units and all
-    their connections, in both directions, are switched off.'''
-    for i in range(len(hom.homeoUnits), n_slots):
-        unit = HomeoUnitNewtonian()
-        unit.name = 'UNUSED_%d' % (i + 1)
-        hom.addFullyConnectedUnit(unit)
-        unit.disactivate()
+    their connections, in both directions, are switched off.
+
+    Creating units and connections draws from the random generators, so
+    their state is saved and restored: the setup's later draws are the
+    same with the slots as without, and a seed builds the GUI's homeostat
+    exactly as the headless run's (until 14 Oct 2026 Exps 3, 4 and 5
+    differed; SR-06).'''
+    np_state, py_state = np.random.get_state(), random.getstate()
+    try:
+        for i in range(len(hom.homeoUnits), n_slots):
+            unit = HomeoUnitNewtonian()
+            unit.name = 'UNUSED_%d' % (i + 1)
+            hom.addFullyConnectedUnit(unit)
+            unit.disactivate()
+    finally:
+        np.random.set_state(np_state)
+        random.setstate(py_state)
     for unit in hom.homeoUnits:
         for conn in unit.inputConnections:
             if not unit.isActive() or not conn.incomingUnit.isActive():

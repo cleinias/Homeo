@@ -25,7 +25,8 @@ pip install -e .                        # Homeo itself, editable
 Interactive runs (the `python -m` commands work from any directory):
 
 ```bash
-python src/run_ashby_gui.py             # Ashby's 7 experiments (--exp N to skip the selector)
+python src/run_ashby_gui.py             # Ashby's 7 experiments (--exp N skips the selector,
+                                        # --seed S builds the homeostat of seed S)
 python -m Simulator.HomeoGeneralGUI     # general homeostat GUI
 python -m Simulator.HomeoGenAlgGui      # genetic-algorithm GUI (needs DEAP)
 

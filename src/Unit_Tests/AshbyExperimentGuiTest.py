@@ -197,5 +197,43 @@ class SaveDialogTest(unittest.TestCase):
         self.assertEqual(os.listdir(canceldir), [])
 
 
+
+class AshbyGuiSeedTest(unittest.TestCase):
+    """The GUI builds an experiment's homeostat from a seed it shows and
+    pickles, the headless setup's homeostat for that seed (SR-06): until 14
+    Oct 2026 the seed was thrown away, and Exps 3-5 built a different
+    homeostat from the same seed."""
+
+    @staticmethod
+    def describe(hom):
+        return [(u.name, u.mass, u.viscosity, u.criticalDeviation,
+                 [(c.weight, c.switch, c.noise, c.state, c.status)
+                  for c in u.inputConnections if c.incomingUnit.isActive()])
+                for u in hom.homeoUnits if u.isActive()]
+
+    def testTheSeedIsShownAndBuildsTheHeadlessHomeostat(self):
+        from Simulator.AshbyExperimentGui import AshbyExperimentGui
+        from Simulator import AshbyOriginalExperiments as AOE
+        setups = {1: AOE.setup_exp1_basic_ultrastability, 2: AOE.setup_exp2_self_reorganization,
+                  3: AOE.setup_exp3_training, 4: AOE.setup_exp4_alternating_environments,
+                  5: AOE.setup_exp5_constraint, 6: AOE.setup_exp6_habituation,
+                  7: AOE.setup_exp7_multistable}
+        for exp_num, setup in setups.items():
+            with self.subTest(exp=exp_num):
+                gui = AshbyExperimentGui(exp_num=exp_num, seed=11)
+                self.addCleanup(closeGui, gui)
+                hom = gui._simulation.homeostat
+                self.assertEqual(hom.seed, 11)
+                self.assertEqual(gui._seedLabel.text(), 'Seed: 11')
+                self.assertEqual(self.describe(hom), self.describe(setup(seed=11)[0]))
+        # New draws a new seed, and shows it; a saved homeostat keeps its seed
+        gui.newHomeostat()
+        new_seed = gui._simulation.homeostat.seed
+        self.assertEqual(gui._seedLabel.text(), 'Seed: %d' % new_seed)
+        path = os.path.join(_tmpdir, 'seeded.pickled')
+        gui._simulation.homeostat.saveTo(path)
+        self.assertEqual(Homeostat.readFrom(path).seed, new_seed)
+
+
 if __name__ == '__main__':
     unittest.main()

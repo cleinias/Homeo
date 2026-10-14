@@ -39,7 +39,7 @@ class HomeoSimulationControllerGui(QDialog):
     from Helpers.General_Helper_Functions import simulations_data_dir as _sdd
     dataDirRoot = _sdd()
 
-    def __init__(self, parent = None, simulatorBackend = 'VREP', experiment=None):
+    def __init__(self, parent = None, simulatorBackend = 'VREP', experiment=None, experimentParams=None):
         '''
         Build all the widgets and layouts and set them up with proper connections
         Initialize the iVars to hold on to the simulation being run
@@ -65,7 +65,7 @@ class HomeoSimulationControllerGui(QDialog):
         '''Create the homeostat according to desired experiment (with proper number of units
            connections, etcetera), and set data directory and robotic simulator back-end'''
 #         params = {'dataDir' : self.dataDir, 'simulator':"VREP"}
-        params = {'simulator':simulatorBackend}
+        params = dict({'simulator':simulatorBackend}, **(experimentParams or {}))
         self._simulation.initializeExperSetup(**params)
         
         "Initialize live data recording and display "

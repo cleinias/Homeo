@@ -4,6 +4,10 @@
 Usage:
     python run_ashby_gui.py             # show experiment selector
     python run_ashby_gui.py --exp 2     # jump directly to experiment 2
+    python run_ashby_gui.py --exp 3 --seed 2   # the homeostat of seed 2
+
+The panel shows the seed of the homeostat; the headless setup_expN(seed=...)
+of Simulator.AshbyOriginalExperiments builds the same one.
 '''
 
 import argparse
@@ -22,10 +26,12 @@ def main():
         description="Interactive GUI for Ashby's 7 original Homeostat experiments")
     parser.add_argument('--exp', type=int, default=None, choices=range(1, 8),
                         help='Experiment number (1-7). If omitted, shows selector.')
+    parser.add_argument('--seed', type=int, default=None,
+                        help='Seed of the homeostat (default: drawn, and shown)')
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
-    gui = AshbyExperimentGui(exp_num=args.exp)
+    gui = AshbyExperimentGui(exp_num=args.exp, seed=args.seed)
     gui.show()
     sys.exit(app.exec_())
 
