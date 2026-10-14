@@ -70,7 +70,7 @@ At each step, `produceNewValue()` returns the next weight from the matrix. The d
 
 `HomeoDataCollector` (in `Core/HomeoDataCollector.py`) records a snapshot of every unit's state at each tick. Each snapshot is a `HomeoDataUnit` (in `Core/HomeoDataUnit.py`) holding the unit's name, critical deviation, output, uniselector state, and a dictionary of all incoming connection parameters.
 
-The collector offers several export methods: `saveCompleteDataOnFile(filename)` writes all data as formatted text, `saveEssentialDataOnFile(filename)` writes a CSV of critical deviations and uniselector activations, and `criticalDevAsNPArrayForAllUnits()` returns the deviation history as a NumPy array for direct analysis.
+The collector offers several export methods: `saveCompleteDataOnFile(filename)` writes all data as formatted text, `saveEssentialDataOnFile(filename)` writes a CSV of critical deviations and uniselector activations, and `criticalDevAsNPArrayForAllUnits()` returns the deviation history as a NumPy array for direct analysis: one row per tick, one column per unit, in the homeostat's unit order.
 
 ## Running a simulation
 
@@ -104,7 +104,7 @@ for _ in range(4):
 
 hom.runFor(500)
 
-# extract deviation history as a NumPy array
+# extract deviation history as a NumPy array: data[t, j] is unit j's deviation at tick t
 data = hom.dataCollector.criticalDevAsNPArrayForAllUnits()
 ```
 

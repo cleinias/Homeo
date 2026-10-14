@@ -263,6 +263,15 @@ class ExportersTest(unittest.TestCase):
             for name in self.names:
                 self.assertTrue(back.states[tick][name].sameValuesAs(self.collector.states[tick][name]))
 
+    def testTheDeviationHistoryArray(self):
+        """criticalDevAsNPArrayForAllUnits is what CODE_OVERVIEW says: one
+        column per unit, its deviations; until 14 Oct 2026 the deviations
+        were interleaved with 0/1 uniselector columns (CD-14)."""
+        data = self.collector.criticalDevAsNPArrayForAllUnits()
+        self.assertEqual(data.shape, (len(self.collector.states), len(self.names)))
+        for j, unit in enumerate(self.homeostat.homeoUnits):
+            self.assertEqual(list(data[:, j]), self.collector.criticalDevAsCollectionForUnit(unit))
+
     def testTheBrokenExportersAreGone(self):
         for name in ('saveDeviationOnForUnit', 'saveEssentialsOnAStringWithSeparator',
                      'printPlottingDataForGgobiOnAString', 'printPlottingDataOnAString',

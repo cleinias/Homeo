@@ -207,9 +207,11 @@ class HomeoDataCollector(object):
         return aCollection
 
     def criticalDevAsCollectionOfArraysForAllUnits(self):
-        '''Extract the Critical Deviation and Uniselector activation data for all units 
-           and returns them as a list of lists 
-           Each list has all the homeoDataunits for a point in time'''
+        '''Extract the Critical Deviation and Uniselector activation data for all units
+           and returns them as a list of lists, one per point in time:
+           [unit 1 deviation, unit 1 uniselector active (0/1), unit 2 deviation, ...]
+           (the R exporter's columns).  criticalDevAsNPArrayForAllUnits has
+           the deviations alone.'''
 
         aCollection = []
         for stateAtTick, data in self.states.items():
@@ -221,18 +223,21 @@ class HomeoDataCollector(object):
                         dataPoint.append(1)
                     else:
                         dataPoint.append(0)
-                        
-            aCollection.append(dataPoint)
+                aCollection.append(dataPoint)
 
         return aCollection
 
 
     def criticalDevAsNPArrayForAllUnits(self):
-        '''Convert the representation of critical deviation homeoDataunits for all units 
-           from a list of list into a multi-dim NP-Array'''
+        '''The critical deviations of all units as a (ticks, units) NumPy
+           array, one row per recorded tick and one column per unit, in the
+           order the units were recorded (the homeostat's).  Until 14 Oct 2026
+           it returned criticalDevAsCollectionOfArraysForAllUnits as an array,
+           each deviation column followed by a 0/1 uniselector column, although
+           CODE_OVERVIEW called it the deviation history (CD-14).'''
 
-        npArr = np.array(self.criticalDevAsCollectionOfArraysForAllUnits())
-        return npArr
+        return np.array([[dataUnit.criticalDeviation for dataUnit in data.values()]
+                         for data in self.states.values() if data is not None])
     
     def criticalDevAsNPArrayForUnit(self,aHomeoUnit):
         '''Convert the representaiton of critical deviation homeoDataunits for aHomeoUJnit 
