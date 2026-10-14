@@ -351,24 +351,38 @@ def loadTrajectory(trajDataFilename, maxPoints=MAX_PLOT_POINTS):
     x, y positions thinned to at most about maxPoints rows (first and last
     rows always included), and the total number of data rows in the file.
     Reads in chunks, so very large files never have to fit in memory whole.
-    Incomplete rows (e.g. the last line of a run still being written) are skipped.
+    Incomplete rows (e.g. the last line of a run still being written) are
+    skipped: rows with a missing field, and a last line with no newline, which
+    may be cut in the middle of a number (until 14 Oct 2026 it was kept, and
+    became the final position; HV-08).
     """
     header = readDataFileHeader(trajDataFilename)
     step = max(1, ceil(_countLines(trajDataFilename) / max(1, maxPoints)))
+    complete = _endsWithNewline(trajDataFilename)
     kept = []
     nRows = 0
     last = None
+
+    def take(chunk):
+        nonlocal nRows, last
+        xy = chunk.to_numpy()
+        xy = xy[~np.isnan(xy).any(axis=1)]
+        if len(xy) == 0:
+            return
+        kept.append(xy[(-nRows) % step::step])
+        last = xy[-1]
+        nRows += len(xy)
+
     try:
         reader = pd.read_csv(trajDataFilename, sep=r'\s+', header=None, usecols=[0, 1],
                              skiprows=len(header), dtype=np.float64, chunksize=1_000_000)
+        pending = None          # one chunk behind, so the file's last row can be dropped
         for chunk in reader:
-            xy = chunk.to_numpy()
-            xy = xy[~np.isnan(xy).any(axis=1)]
-            if len(xy) == 0:
-                continue
-            kept.append(xy[(-nRows) % step::step])
-            last = xy[-1]
-            nRows += len(xy)
+            if pending is not None:
+                take(pending)
+            pending = chunk
+        if pending is not None:
+            take(pending if complete else pending.iloc[:-1])
     except pd.errors.EmptyDataError:
         pass
     if nRows == 0:
@@ -378,6 +392,16 @@ def loadTrajectory(trajDataFilename, maxPoints=MAX_PLOT_POINTS):
     if not np.array_equal(xy[-1], last):
         xy = np.vstack([xy, last])
     return header, xy, nRows
+
+
+def _endsWithNewline(filename):
+    "Does the file end with a newline (or is it empty)?"
+    with open(filename, 'rb') as f:
+        f.seek(0, os.SEEK_END)
+        if f.tell() == 0:
+            return True
+        f.seek(-1, os.SEEK_END)
+        return f.read(1) == b'\n'
 
 
 def _countLines(filename):

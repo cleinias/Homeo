@@ -102,5 +102,18 @@ class TrajectoryGrapherTest(unittest.TestCase):
         self.assertAlmostEqual(TG.noInputRadius(header, TG.readLightsFromHeader(header)), 10.0)
 
 
+    def testATruncatedLastRowIsDropped(self):
+        '''A last line with no newline -- a run still being written -- may be cut
+        mid-number: it is not the final position (HV-08).'''
+        path = self.path('live.traj')
+        writeTraj(path, rows=((4.0, 4.0), (6.5, 6.987654)))
+        _, xy, nRows = TG.loadTrajectory(path)
+        self.assertEqual((nRows, list(xy[-1])), (2, [6.5, 6.987654]))
+        with open(path, 'a') as f:
+            f.write('6.500000\t6.9')
+        _, xy, nRows = TG.loadTrajectory(path)
+        self.assertEqual((nRows, list(xy[-1])), (2, [6.5, 6.987654]))
+
+
 if __name__ == '__main__':
     unittest.main()
