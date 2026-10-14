@@ -130,15 +130,20 @@ class SimulatorBackendAbstract(object, metaclass=ABCMeta):
 class SimulatorBackendHOMEO(SimulatorBackendAbstract):
     "Interface to the internal HOMEO Khepera-like robotic simulator" 
 
-    def __init__(self, lock = None, robotName='', dataDir = None, synchronousStepping = True):
+    def __init__(self, lock = None, robotName='', dataDir = None, synchronousStepping = True,
+                 eyeRadiusRatio = 0.5):
         '''synchronousStepping: advance the world once per homeostat tick, after
         all units have updated (default), or, if False, once per motor command,
-        as all runs before 13 Oct 2026 did (see KheperaSimulation).'''
+        as all runs before 13 Oct 2026 did (see KheperaSimulation).
+        eyeRadiusRatio: where the robot's eyes sit along their radii, 0.5 (no
+        blind wedge between them) or 1.0 (on the rim, as all runs before 13 Oct
+        2026); see KheperaRobot.'''
         self._robotName = robotName
         self.lock = lock
         if KheperaSimulation is None:
             raise ImportError("KheperaSimulator requires Box2D. Install with: pip install box2d-py")
-        self.kheperaSimulation = KheperaSimulation(synchronousStepping=synchronousStepping)
+        self.kheperaSimulation = KheperaSimulation(synchronousStepping=synchronousStepping,
+                                                   robotEyeRadiusRatio=eyeRadiusRatio)
         if dataDir is not None:
             self.kheperaSimulation.setDataDir(dataDir)
         self.host = None
