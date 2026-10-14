@@ -232,6 +232,10 @@ def smoothWindow(args, meta):
 
 
 def _running(v, w):
+    '''The running mean of v over w samples, one value per full window.
+    Plot it against _running(tick, w), the windows' centres: until 14 Oct 2026
+    it was drawn at each window's last tick, so every smoothed feature, zero
+    crossing and ribbon was late by half the window (HV-07).'''
     if w <= 1:
         return v
     return np.convolve(v, np.ones(w) / w, mode='valid')
@@ -268,7 +272,7 @@ def _drawStrip(ax, tick, series, window, signed, showRaw, ylim=None, bounds=None
             ax.plot(tick, values, color=color, lw=0.3, alpha=0.18,
                     zorder=2, rasterized=True)
         sm = _running(values, window)
-        t = tick[window - 1:] if window > 1 else tick
+        t = _running(tick, window)
         ax.plot(t, sm, color=color, lw=1.5 if window > 1 else 0.6,
                 label=label, zorder=6, rasterized=(window <= 1))
         if signed and window > 1:
@@ -303,7 +307,7 @@ def _drawStrip(ax, tick, series, window, signed, showRaw, ylim=None, bounds=None
 def _drawRibbon(ax, tick, values, window, color, label):
     "Sign of a signed series over time: a polarity change is a colour change."
     sm = _running(values, window)
-    t = tick[window - 1:] if window > 1 else tick
+    t = _running(tick, window)
     ax.imshow((sm > 0).astype(float)[None, :], aspect='auto', interpolation='nearest',
               cmap=ListedColormap([PALE, color]), vmin=0, vmax=1,
               extent=[t[0], t[-1], 0, 1], rasterized=True)
