@@ -166,5 +166,36 @@ class AshbyGuiNewAndLoadTest(unittest.TestCase):
                 self.assertExperimentRunsOn(gui, hom, n_callbacks)
 
 
+
+class SaveDialogTest(unittest.TestCase):
+    """The GUI's save buttons save to the file chosen, and Cancel saves
+    nothing (review finding SR-02): until 14 Oct 2026 they took PyQt5's
+    (filename, filter) tuple for the filename, so none could save."""
+
+    def testSaveSlots(self):
+        gui = makeGui(self, 1)
+        for _ in range(3):
+            gui._simulation.step()
+        outdir = tempfile.mkdtemp(dir=_tmpdir)
+        slots = (('homeostat.pickled', gui.saveHomeostat, ()),
+                 ('all.txt', gui.saveAllData, ()),
+                 ('plot-w.txt', gui.savePlotData, (True,)),
+                 ('plot.txt', gui.savePlotData, (False,)))
+        for name, slot, args in slots:
+            with self.subTest(name):
+                path = os.path.join(outdir, name)
+                with mock.patch.object(QFileDialog, 'getSaveFileName',
+                                       return_value=(path, 'All (*)')):
+                    slot(*args)
+                self.assertGreater(os.path.getsize(path), 0)
+        canceldir = tempfile.mkdtemp(dir=_tmpdir)
+        gui._simulation.homeostatFilename = os.path.join(canceldir, 'current.pickled')
+        gui._simulation.dataFilename = os.path.join(canceldir, 'current-data')
+        for name, slot, args in slots:
+            with mock.patch.object(QFileDialog, 'getSaveFileName', return_value=('', '')):
+                slot(*args)
+        self.assertEqual(os.listdir(canceldir), [])
+
+
 if __name__ == '__main__':
     unittest.main()

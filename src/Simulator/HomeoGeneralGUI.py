@@ -933,17 +933,17 @@ class HomeoSimulationControllerGui(QDialog):
             "pop up a warning: homeostat cannot be saved"
             messageBox =  QMessageBox.warning(self, 'The Homeostat cannot be saved', 'Homeostats using sockets cannot be saved', QMessageBox.Cancel)
         else:
-            filename = QFileDialog.getSaveFileName(parent = self,
-                                                   caption = 'Choose the file to save the Homeostat to', 
-                                                   directory = self._simulation.homeostatFilename)    #QFileDialog.GetSave returns a QString
-            if len(filename) > 0:                            # Change the filename to the newly selected one
-                self._simulation.homeostatFilename = filename
-                #if #Check that files exists here"
-                self._simulation.save()
-                self._simulation.homeostatIsSaved = True
-            else:                                               # Use the current filename
-                self._simulation.save()
-                self._simulation.homeostatIsSaved = True
+            # PyQt5's dialog returns (filename, filter), and '' on Cancel.
+            # Until 14 Oct 2026 every save slot took the tuple for the
+            # filename, so none of them could save, and Cancel saved (SR-02).
+            filename, _ = QFileDialog.getSaveFileName(parent = self,
+                                                      caption = 'Choose the file to save the Homeostat to',
+                                                      directory = self._simulation.homeostatFilename)
+            if not filename:
+                return
+            self._simulation.homeostatFilename = filename
+            self._simulation.save()
+            self._simulation.homeostatIsSaved = True
 
     def newHomeostat(self):
         self._simulation.fullReset()
@@ -1119,22 +1119,21 @@ class HomeoSimulationControllerGui(QDialog):
         emitter(hom).homeostatTimeChanged.connect(self.currentTimeSpinBox.setValue)
     
     def saveAllData(self):       
-        filename = QFileDialog.getSaveFileName(parent = self, 
-                                                       caption = "Save simulation's complete data", 
-                                                       directory = self._simulation.dataFilename)    #QFileDialog.GetSave returns a QString
-        print(filename)
-        if len(filename) > 0:                            # Change the filename to the newly selected one
-            self._simulation.dataFilename = filename
+        filename, _ = QFileDialog.getSaveFileName(parent = self,
+                                                  caption = "Save simulation's complete data",
+                                                  directory = self._simulation.dataFilename)
+        if not filename:
+            return
+        self._simulation.dataFilename = filename
         self._simulation.saveCompleteRunOnFile(filename)
         self._simulation.dataAreSaved = True
                 
     def savePlotData(self, withWeights):
-        filename = QFileDialog.getSaveFileName(parent = self, 
-                                                       caption = "Save simulation's essential data", 
-                                                       directory = (self._simulation.dataFilename + "-essential.txt"))    #QFileDialog.GetSave returns a QString
-        print(filename)
-        if len(filename) <= 0:                            # Change the filename to the newly selected one
-            filename = (self._simulation.dataFilename + "-essential.txt")
+        filename, _ = QFileDialog.getSaveFileName(parent = self,
+                                                  caption = "Save simulation's essential data",
+                                                  directory = (self._simulation.dataFilename + "-essential.txt"))
+        if not filename:
+            return
         self._simulation.saveEssentialDataOnFile(filename, withWeights)
 
     def choosePlotDataAndSave(self):
@@ -1144,8 +1143,8 @@ class HomeoSimulationControllerGui(QDialog):
                                           QMessageBox.No|QMessageBox.Yes|QMessageBox.Cancel)
         if reply == QMessageBox.No:
             self.savePlotData(False)
-        else:
-            self.savePlotData(True) 
+        elif reply == QMessageBox.Yes:
+            self.savePlotData(True)
 
     def graphData(self):
         "Chart essential data (crit dev and uniselector ticks) with matplotlib"
