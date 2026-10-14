@@ -202,6 +202,7 @@ class HomeoQtSimulation(QObject):
         self._simulDelay = 1           # in milliseconds
         self._isRunning = False
         self.liveData = {}
+        self.liveTicks = []             # the homeostat time of each live-data sample
         self.unitsSelfWeights = {}
         self.liveDataOn = False
         self._homeostat.collectsData = False
@@ -228,7 +229,14 @@ class HomeoQtSimulation(QObject):
         return (unit, 'uniselector')
 
     def initializeLiveData(self):
-        "set up the liveData dictionary for live graphing"
+        """set up the liveData dictionary for live graphing, empty, for the
+        current homeostat's units.  The containers are emptied in place (the
+        GUI's charts hold them), dropping the units of a previous homeostat;
+        liveTicks holds the homeostat time of each sample (SR-15)."""
+        self.liveData.clear()
+        self.liveDataWindow.clear()
+        self.unitsSelfWeights.clear()
+        self.liveTicks = []
         for unit in  self._homeostat.homeoUnits:
             self.liveData[unit] = []                                                  # add empty list to hold critDev data for unit
             self.liveData[self.uniselectorKey(unit)] = []                                      # add empty list to hold uniselector activation data for unit
@@ -311,6 +319,7 @@ class HomeoQtSimulation(QObject):
     def updateLiveData(self):
 #        import pdb;
 #        pdb.set_trace()
+        self.liveTicks.append(self._homeostat.time)
         for unit in self._homeostat.homeoUnits:
             self.liveData[unit].append(unit.criticalDeviation)
             self.liveData[self.uniselectorKey(unit)].append(unit.uniselectorActivated)
@@ -426,7 +435,7 @@ class HomeoQtSimulation(QObject):
         # ("Unit-1_weightUnit-2") or ended in a stray comma, so a reader
         # mapping names to columns mislabelled every one (SR-07)
         columns = ['time']
-        npDataArray = np.arange(len(self.liveData[self.homeostat.homeoUnits[0]]))
+        npDataArray = np.array(self.liveTicks)
         listOfFormatStrings = ['%u']                    # First column: unsigned integers for the time indexes
         formatForUnitsAndUnisel = '%10.8f'              # Float values for all successive columns
         for unit in self.homeostat.homeoUnits:
@@ -490,6 +499,9 @@ class HomeoQtSimulation(QObject):
         """
         self._homeostat.timeReset()
         self._homeostat.flushData()
+        # The live data restart with the time: until 14 Oct 2026 they ran on,
+        # and saved plot data mixed two runs on one time axis (SR-15)
+        self.initializeLiveData()
         self._dataAreSaved = True
         
     def fullReset(self):

@@ -293,9 +293,32 @@ class HomeoQtSimulationTest(unittest.TestCase):
                                     ([u.name, u.name + '_unisel', u.name + '_weight'] if withWeights
                                      else [u.name, u.name + '_unisel'])]
                 self.assertEqual(list(data.dtype.names), names)
-                self.assertEqual(list(data['time']), [0, 1, 2, 3])
+                self.assertEqual(list(data['time']), [1, 2, 3, 4])   # the time after each tick
                 for u in units:
                     self.assertTrue(np.allclose(data[u.name], self.simulation.liveData[u]))
+
+    def testTimeResetRestartsTheLiveData(self):
+        """
+        After a time reset the live data, and so the saved plot data, start
+        again with the time, in the same containers (the GUI's charts hold
+        them); a new homeostat's live data have only its units (SR-15)
+        """
+        self.simulation.initializeExperSetup()
+        self.simulation.maxRuns = 20
+        for _ in range(20):
+            self.simulation.step()
+        liveData = self.simulation.liveData
+        self.simulation.timeReset()
+        self.simulation.maxRuns = 5
+        for _ in range(5):
+            self.simulation.step()
+        unit = self.simulation.homeostat.homeoUnits[0]
+        self.assertIs(self.simulation.liveData, liveData)
+        self.assertEqual(len(liveData[unit]), 5)
+        self.assertEqual(self.simulation.liveTicks, [1, 2, 3, 4, 5])
+        old = set(self.simulation.homeostat.homeoUnits)
+        self.simulation.fullReset()
+        self.assertFalse(old & set(k for k in liveData if not isinstance(k, str)))
 
     def testStepBeforeStart(self):
         """
