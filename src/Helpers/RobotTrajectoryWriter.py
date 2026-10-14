@@ -74,6 +74,7 @@ class RobotTrajectoryWriter(object):
         # before the header is written, None if unknown
         self.eyes = None
         self.eyeRadiusRatio = None
+        self.robotModel = None
         self.posFile = open(self.buildTrajFilename(modelName), 'w') if self._enabled else None
         self._openHeader(initialPos)
 
@@ -220,6 +221,8 @@ class RobotTrajectoryWriter(object):
         '''The eyes' sensitivity, one comment line each, so that a chart can
         tell how far they see: an eye stops seeing a source of intensity I at
         sqrt(I / threshold) (on its axis).  Since 14 Oct 2026 (HV-11).'''
+        if self.robotModel is not None:
+            self.posFile.write("# Robot model\t%s\n" % self.robotModel)
         if self.eyeRadiusRatio is not None:
             self.posFile.write("# Eye radius ratio\t%g\n" % self.eyeRadiusRatio)
         for name, (threshold, saturation, response) in (self.eyes or {}).items():

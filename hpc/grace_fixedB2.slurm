@@ -25,8 +25,10 @@
 #              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian
 #              sbatch grace_fixedB2.slurm 4 8 0.05 aristotelian
 # OPTIONS: the eyes, --eye-response linear|log, --eye-saturation D,
-#          --eye-threshold I0, --rim-eyes (the eyes on the rim, as before 13 Oct
-#          2026), passed to the experiment and named in the run directory, e.g.
+#          --eye-threshold I0; the robot, --robot epuck2|kjunior|kjunior-rim (default
+#          e-puck2; the K-Junior of runs before 14 Oct 2026), --rim-eyes (=
+#          --robot kjunior-rim, before 13 Oct); passed to the experiment and named
+#          in the run directory, e.g.
 #              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian --eye-response log --eye-saturation 0.5
 #          writes to fixedB2-arist-r2to6-cw0.05-log-sat0.5-traj1-<jobid>.
 #          And one of two seed options, for the environment x seed design:
@@ -78,7 +80,8 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --env-seed)       FIXED_ENV_SEED="$2"; shift 2; continue;;
         --seed)           FIXED_SEED="$2"; shift 2; continue;;
-        --rim-eyes)       eye_tag+="-rimeyes"; EYE_ARGS+=("$1"); shift; continue;;
+        --rim-eyes)       eye_tag+="-kjunior-rimeyes"; EYE_ARGS+=("$1"); shift; continue;;
+        --robot)          [ "$2" != epuck2 ] && eye_tag+="-$2";;
         --eye-response)   [ "$2" = log ] && eye_tag+="-log";;
         --eye-saturation) eye_tag+="-sat$2";;
         --eye-threshold)  eye_tag+="-thr$2";;

@@ -98,7 +98,7 @@ class TrajectoryGrapherTest(unittest.TestCase):
         eyes = TG.readEyesFromHeader(header)
         self.assertEqual(eyes['leftEye'], (1.0, 400.0, 'log'))
         self.assertEqual(eyes['rightEye'], (1.0, 400.0, 'log'))
-        self.assertIn('# Eye radius ratio\t0.5\n', header)
+        self.assertIn('# Robot model\tepuck2\n', header)
         self.assertAlmostEqual(TG.noInputRadius(header, TG.readLightsFromHeader(header)), 10.0)
 
 

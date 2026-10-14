@@ -236,8 +236,28 @@ b2Body.update = b2BodyDefaultUpdate
 "Khepera simulation classes"
 
 class KheperaRobot(object):
-    """The body of a Khepera-like robot.
+    """The body of a small two-wheeled robot: an e-puck2 by default, or the
+       K-Junior of every run before 14 Oct 2026 (model='kjunior').
        The body is implemented as a simple circle with two wheels and light sensors.
+
+       model='epuck2' (default since 14 Oct 2026): the e-puck2 of Webots'
+       E-puck.proto (R2025a, version "2"), so that the Box2D and the Webots
+       vehicles are one robot (see EPUCK2):
+       - body 74 mm across (the PROTO's bounding cylinder; GCtronic's 70 mm
+         is the shell), wheels of 20 mm radius, 52 mm apart;
+       - top wheel speed capped at the K-Junior vehicle's 24.3 mm/s (1.2166
+         rad/s), not the e-puck2's 151 mm/s, so that the homeostat's
+         timescales keep their relation to the motion (decision of 14 Oct);
+       - each eye is a pair of the e-puck's light sensors, ls0+ls1 on the
+         right and ls7+ls6 on the left, at their real positions and facing
+         their real directions (+-17.2 and +-45.8 degrees); the eye's
+         irradiance is the mean of the pair's, and each sensor has a
+         LightSensor's field: the cosine law, nothing from behind (180
+         degrees).  No hoods.  A pair is one cosine eye facing about +-31.5
+         degrees; together the eyes see the front 146 degrees, and neither
+         sees an 88-degree sector behind.
+       The K-Junior geometry below is model='kjunior', kept to reproduce the
+       runs before 14 Oct 2026.
        Main physical parameters affecting KheperaBody's behavior are:
        - self.density (default is 0.7. It controls the bosy's mass, and hence the steering, since it affects the torque
                        that the wheels are capable of transmitting to the body. 
@@ -290,13 +310,30 @@ class KheperaRobot(object):
         (m/s), which setRightSpeed read as rad/s (review finding RS-03)."""
 
     DRIVES = ('kinematic', 'legacy')
+    MODELS = ('epuck2', 'kjunior')
 
-    def __init__(self, world, diameter = 126, wheelRadiusRatio = 0.12380, wheelThicknessRatio = 0.02380, wheelSepRatio = 0.76190, maxWheelSpeed = 1.55988,
+    # The e-puck2 of Webots' E-puck.proto (R2025a), in metres, in the robot's
+    # frame: x forward, y to the left (Webots' convention, and Box2D's for a
+    # body at angle 0).  Light sensors: position and facing, in degrees, > 0
+    # to the left.
+    EPUCK2 = dict(diameter=0.074, wheelRadius=0.020, wheelThickness=0.005, wheelSeparation=0.052,
+                  receptors={'ls0': ((0.030, -0.010), -17.235), 'ls1': ((0.022, -0.025), -45.882),
+                             'ls6': ((0.022, 0.025), 45.791), 'ls7': ((0.030, 0.010), 17.143)},
+                  eyes={'rightEye': ('ls0', 'ls1'), 'leftEye': ('ls7', 'ls6')},
+                  fieldOfView=180)
+    # The K-Junior vehicle's top rim speed, 0.0243322561 m/s, over the
+    # e-puck2's wheel radius: the cap of 14 Oct 2026
+    EPUCK2_CAPPED_WHEEL_SPEED = 0.0243322561 / 0.020         # rad/s
+
+    def __init__(self, world, diameter = 126, wheelRadiusRatio = 0.12380, wheelThicknessRatio = 0.02380, wheelSepRatio = 0.76190, maxWheelSpeed = None,
                  rightEyeAngle = 21.9017, leftEyeAngle = -21.9017, centerEyeAngle = 0, density = 0.8, unit = 'mm',
                  color = (1.,0.,0.,0.5), name = "Khepera", ID = "Unspecified", initialPose = (0,0),
-                 drive = 'kinematic', eyeRadiusRatio = 0.5):
-        
-        "create body"        
+                 drive = 'kinematic', eyeRadiusRatio = None, model = 'epuck2'):
+        '''model: 'epuck2' (default) or 'kjunior'.  diameter, the ratios, unit
+        and eyeRadiusRatio (default 0.5) describe the K-Junior and apply only to
+        it; maxWheelSpeed (rad/s) defaults to the model's.'''
+
+        "create body"
         if unit == 'mm':
             factor = 0.001
         elif unit == 'cm':
@@ -307,17 +344,36 @@ class KheperaRobot(object):
             factor = 1
         if drive not in self.DRIVES:
             raise ValueError('drive must be one of %s, not %r' % (self.DRIVES, drive))
+        if model not in self.MODELS:
+            raise ValueError('model must be one of %s, not %r' % (self.MODELS, model))
         self.drive = drive
-        if not 0 < eyeRadiusRatio <= 1:
-            raise ValueError('eyeRadiusRatio must be in (0, 1], not %r' % eyeRadiusRatio)
-        self.eyeRadiusRatio = eyeRadiusRatio
-        self.diameter = diameter * factor
+        self.model = model
         self.density = density
-        self.wheelRadius = self.diameter* wheelRadiusRatio
-        self.wheelSeparation = self.diameter * wheelSepRatio
+        if model == 'epuck2':
+            if eyeRadiusRatio is not None:
+                raise ValueError("eyeRadiusRatio applies only to the K-Junior (model='kjunior')")
+            self.eyeRadiusRatio = None
+            self.diameter = self.EPUCK2['diameter']
+            self.wheelRadius = self.EPUCK2['wheelRadius']
+            self.wheelSeparation = self.EPUCK2['wheelSeparation']
+            wheelThickness = self.EPUCK2['wheelThickness']
+            if maxWheelSpeed is None:
+                maxWheelSpeed = self.EPUCK2_CAPPED_WHEEL_SPEED
+        else:
+            if eyeRadiusRatio is None:
+                eyeRadiusRatio = 0.5
+            if not 0 < eyeRadiusRatio <= 1:
+                raise ValueError('eyeRadiusRatio must be in (0, 1], not %r' % eyeRadiusRatio)
+            self.eyeRadiusRatio = eyeRadiusRatio
+            self.diameter = diameter * factor
+            self.wheelRadius = self.diameter* wheelRadiusRatio
+            self.wheelSeparation = self.diameter * wheelSepRatio
+            wheelThickness = self.diameter * wheelThicknessRatio
+            if maxWheelSpeed is None:
+                maxWheelSpeed = 1.55988
         self.maxWheelSpeed = maxWheelSpeed                               # rad/s
-        self.maxSpeed = maxWheelSpeed * self.diameter* wheelRadiusRatio # maxSpeed is in rad/sec. convert to m/s
-        
+        self.maxSpeed = maxWheelSpeed * self.wheelRadius                 # m/s
+
         bodyDef = b2BodyDef()
         bodyDef.type = b2_dynamicBody
         self.body = world.CreateBody(bodyDef)
@@ -337,20 +393,26 @@ class KheperaRobot(object):
         self.speedIncrease = 1
         
         'Left wheel'       
-        frontLeftWheel = KheperaWheel(world, thickness = self.diameter * wheelThicknessRatio,  diameter = self.diameter* wheelRadiusRatio*2,
+        frontLeftWheel = KheperaWheel(world, thickness = wheelThickness,  diameter = self.wheelRadius*2,
                                         maxForwardSpeed = self.maxSpeed,  name = 'left',
                                         follower = (drive == 'kinematic'))
-        frontLeftWheel.body.position = self.body.worldCenter + (0, self.diameter * wheelSepRatio/2)
+        frontLeftWheel.body.position = self.body.worldCenter + (0, self.wheelSeparation/2)
         if drive == 'kinematic':
-            frontRightWheel = KheperaWheel(world, thickness = self.diameter * wheelThicknessRatio,
-                                           diameter = self.diameter * wheelRadiusRatio*2,
+            frontRightWheel = KheperaWheel(world, thickness = wheelThickness,
+                                           diameter = self.wheelRadius*2,
                                            maxForwardSpeed = self.maxSpeed,  name = 'right', follower = True)
             self.wheels = {'left': frontLeftWheel, 'right': frontRightWheel}
             self._placeWheels(self.body.position, self.body.angle)
         else:
+            if model != 'kjunior':
+                raise ValueError("the 'legacy' drive exists only for the K-Junior")
             self._addJointedWheels(world, frontLeftWheel, wheelThicknessRatio, wheelRadiusRatio, wheelSepRatio)
 
-        self._addSensors()
+        self.eyeReceptors = {}       # eye name -> [((x, y), facing in degrees), ...]
+        if model == 'epuck2':
+            self._addEpuckEyes()
+        else:
+            self._addSensors()
 
         "Add a pyglet shape to robot's body for rendering"
         self.setRenderingParameters(color = color)
@@ -443,6 +505,48 @@ class KheperaRobot(object):
         self.detectableLights = []
         self.detectableSources = {}   # quality -> [body, ...]
 
+    def _addEpuckEyes(self):
+        "The e-puck2's two eyes: ls0+ls1 on the right, ls7+ls6 on the left (see EPUCK2)"
+        receptors = self.EPUCK2['receptors']
+        for eye, names in self.EPUCK2['eyes'].items():
+            self.addEye(eye, [receptors[n] for n in names], self.EPUCK2['fieldOfView'])
+        self.detectableLights = []
+        self.detectableSources = {}   # quality -> [body, ...]
+
+    def addEye(self, eyeName, receptors, fieldOfView, threshold=0, saturation=100,
+               response='linear', renderRange=10):
+        """Add an eye: one or more light receptors, each a ((x, y), facing) --
+        a position in the robot's frame (x forward, y left) and a facing in
+        degrees (> 0 left) -- each with the field fieldOfView (degrees, centred
+        on its facing).  The eye's irradiance is the mean of its receptors'
+        (irradAtSensor); its sensitivity (threshold, saturation, response) is
+        the eye's (see eyeResponse).  renderRange: the radius of the receptors'
+        field arcs in the visualizer, rendering only."""
+        receptors = [((float(p[0]), float(p[1])), float(f)) for p, f in receptors]
+        cx = sum(p[0] for p, _ in receptors) / len(receptors)
+        cy = sum(p[1] for p, _ in receptors) / len(receptors)
+        eyeDef = b2FixtureDef()
+        eyeDef.shape = b2CircleShape(radius=self.diameter * 0.02, pos=(cx, cy))
+        eyeFixture = self.body.CreateFixture(eyeDef)
+        eyeFixture.userData = {eyeName + 'AngleRange': fieldOfView,
+                               eyeName + 'Receptors': receptors,
+                               'pygletShape': None, 'color': (0., 0.8, 0., 0.5),
+                               'position': eyeFixture.shape.pos}
+        self.setEyeSensitivity(eyeName, threshold=threshold, saturation=saturation,
+                               response=response, fixture=eyeFixture)
+        self.sensors[eyeName] = eyeFixture
+        self.eyeReceptors[eyeName] = receptors
+        self.eyeFieldOfView = fieldOfView
+        # One small fixture per receptor, for rendering only
+        for (x, y), facing in receptors:
+            receptorDef = b2FixtureDef()
+            receptorDef.shape = b2CircleShape(radius=self.diameter * 0.05, pos=(x, y))
+            receptor = self.body.CreateFixture(receptorDef)
+            receptor.userData = {'color': (0., 0.8, 0., 0.5), 'position': receptor.shape.pos,
+                                 'pygletShape': (makePygletArc(r=renderRange, span=radians(fieldOfView),
+                                                               orientation=facing, draw_mode=GL_LINE_STRIP)
+                                                 if _has_gl_context() else None)}
+
     def setModelName(self,ID_String):
         "Resets the ID, or modelName, of the robot"
         self.body.userData['ID'] = ID_String
@@ -486,6 +590,7 @@ class KheperaRobot(object):
         "Store sensor's values"
         sensorFixture.userData = {}
         sensorFixture.userData[sensorName + 'AngleRange'] = angleRange
+        self.eyeFieldOfView = angleRange
         self.setEyeSensitivity(sensorName, threshold=threshold, saturation=saturation,
                                response=response, fixture=sensorFixture)
         
@@ -493,6 +598,10 @@ class KheperaRobot(object):
         "Cache angles (in degrees) of eye sensors from robot's normal heading for future computation of irradiance"
         sensorAngle = degrees(atan((rotMatrix * positionVector).A1[1]  / (rotMatrix * positionVector).A1[0]))
         sensorFixture.userData[sensorName + 'Angle']  = sensorAngle
+        # One receptor, at the fixture, facing out along its radius
+        sensorFixture.userData[sensorName + 'Receptors'] = [
+            ((circleShape.pos[0], circleShape.pos[1]), sensorAngle)]
+        self.eyeReceptors[sensorName] = sensorFixture.userData[sensorName + 'Receptors']
         self.sensors[sensorName] = sensorFixture
 #         print "At time %s I added fixture %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'),id(sensorFixture), id(self), sensorName)
         
@@ -534,84 +643,42 @@ class KheperaRobot(object):
 #         print "                    my sensors are: ", self.sensors
 #         print "                    sensor is at: ", self.sensors['rightEye']
         sensorFixture = self.sensors[sensorName]
-#         print "the fixture is: %s\n the  shape is: %s " % (sensorFixture, sensorFixture.shape)#.pos
-#         except KeyError as e:
-#             print "Cannot find the desired sensor: %s, KeyError: %s" % (sensorName, e)
-#         return 0
-        
-        sensorIrrad = 0 
-        
+        receptors = sensorFixture.userData[sensorName + 'Receptors']
+        eyeAngleRange = sensorFixture.userData[sensorName + 'AngleRange']
         rotMatrix = b2Rot(self.body.angle)
-        sensorRelPosition = rotMatrix * sensorFixture.shape.pos
-        sensorPosition = self.body.position + sensorRelPosition
-        
+        sensorIrrad = 0
+        for (rx, ry), facing in receptors:
+            sensorIrrad += self._receptorIrrad(rotMatrix, b2Vec2(rx, ry), facing,
+                                               eyeAngleRange, lightsList)
+        # The eye's irradiance is its receptors' mean (an e-puck eye has two;
+        # a K-Junior eye one, so its value is unchanged)
+        return sensorIrrad / len(receptors)
+
+    def _receptorIrrad(self, rotMatrix, relPosition, facing, eyeAngleRange, lightsList):
+        "The irradiance on one receptor at relPosition (robot frame) facing `facing` degrees"
+        sensorIrrad = 0
+        sensorPosition = self.body.position + rotMatrix * relPosition
+        "Compute vector of eye's normal from the robot's angle and the receptor's facing."
+        eyeAngle = (self.body.angle + radians(facing))
+        eyeNormalVec = np.array([cos(eyeAngle),sin(eyeAngle)])
         for targetLight in lightsList:
             targetPose = b2Vec2(targetLight.userData['lightPos'][0],targetLight.userData['lightPos'][2])
             vecToTarget = targetPose-sensorPosition
             targetDistance = vecToTarget.length
             lightIntensity = targetLight.userData['intensity']
             lightAttenVec = targetLight.userData['attenVec']
-            eyeAngleRange = sensorFixture.userData[sensorName+'AngleRange']
             lightAmbRatio = targetLight.userData['ambRatio']
-        
-        
-            "Compute vector of eye's normal from the robot's angle and cached eyeAngle."
-            eyeAngle = (self.body.angle + radians(sensorFixture.userData[sensorName+'Angle']))
-#             eyeNormalVec = b2Vec2(cos(eyeAngle), sin(eyeAngle))
-            eyeNormalVec = np.array([cos(eyeAngle),sin(eyeAngle)])
-#             print "eye normal vector length = %.12f (numpy) %.12f (Box2D)" % (np.linalg.norm(eyeNormalVec), eyeNormalVec.length)
-#             cosAngleToTarget = b2Dot(vecToTarget/vecToTarget.length,eyeNormalVec)
-#             if np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget)) != 1:
-#                 print "the vector to target normalized vector is <> from 1", np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget))
-#             else:
-#                 print "OK"
-#             
-#             if np.linalg.norm(eyeNormalVec) != 1:
-#                 print "The eye normal vector normalized is <>  from 1"
-#             else:
-#                 print "OK"
-    
-#             cosAngleToTarget = np.dot(vecToTarget/np.linalg.norm(vecToTarget),eyeNormalVec)
             cosAngleToTarget = np.dot(normalize(vecToTarget),eyeNormalVec)
-#             targetAngle = atan(vecToTarget[1]/vecToTarget[0])
-#             cosAngleToTarget = cos(eyeAngle - targetAngle)
-#             print "cosAngle to Target = ", cosAngleToTarget
-            "Testing"
-#             print "V2T: %.3f,%.3f   eyeNormV: %.12f,%.12f normV2T: %.3f,%.3f   NormNormzdV2T: %.25f NormNormalEyeVec: %.25f, eyeAngle: %.5f, cos:%.12f"% (vecToTarget[0], vecToTarget[1], 
-#                                                                                   eyeNormalVec[0],eyeNormalVec[1], 
-#                                                                                   normalize(vecToTarget)[0], normalize(vecToTarget)[1], 
-#                                                                                   np.linalg.norm(vecToTarget/np.linalg.norm(vecToTarget)),
-#                                                                                   np.linalg.norm(eyeNormalVec),
-#                                                                                   degrees(eyeAngle),
-#                                                                                   cosAngleToTarget)
-#             assert -1 <= cosAngleToTarget <= 1
-#             np.testing.assert_allclose(np.linalg.norm(eyeNormalVec), 1)
-#             np.testing.assert_allclose(np.linalg.norm(normalize(vecToTarget)),1.0)      
-
-            "End testing"
-        
             "Is target in range?"
-    #         print "to target: %.3f, robot's angle: %3f, angle to target: %.3f, vectToTarget: %s, OUT OF RANGE ==> %s" %(targetDistance, 
-    #                                                                                            self.allBodies[self.robotName].angle,
-    #                                                                                            degrees(acos(cosAngleToTarget)),
-    #                                                                                            vecToTarget,
-    #                                                                                            (targetDistance > eyeMaxRange or abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange/2))
-    #         print targetDistance, degrees(acos(cosAngleToTarget))
-            try:
-                if abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange / 2:
-                    sensorIrrad +=  0
-                else:        
-                    directIntens = (lightIntensity * (1-lightAmbRatio)) * cosAngleToTarget
-                    attenuationFactor = 1/( lightAttenVec[0]+
-                                           (lightAttenVec[1]*targetDistance)+
-                                           (lightAttenVec[2]*targetDistance**2))
-        #             print "Irradiance: %.5f" % min((directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor, eyeMaxValue)            
-                    sensorIrrad +=  (directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor
-            except Exception as e:
-                print(e)
-                raise
+            if abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange / 2:
+                continue
+            directIntens = (lightIntensity * (1-lightAmbRatio)) * cosAngleToTarget
+            attenuationFactor = 1/( lightAttenVec[0]+
+                                   (lightAttenVec[1]*targetDistance)+
+                                   (lightAttenVec[2]*targetDistance**2))
+            sensorIrrad +=  (directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor
         return sensorIrrad
-    
+
     def setRenderingParameters(self, color = (1.,0.,0.,0.5)):
         "default rendering: circle of partially transparent red color"
         if _has_gl_context():
@@ -996,14 +1063,16 @@ class KheperaSimulation(object):
     
     def __init__(self, timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False,
                  robotDrive = 'kinematic', synchronousStepping = True, stepsPerTick = 2,
-                 robotEyeRadiusRatio = 0.5):
+                 robotEyeRadiusRatio = None, robotModel = 'epuck2'):
         '''
         Default time step is 1/60 of a second, values for velocity 
         and position iterations are those recommended by pyBox2D docs
         robotDrive: the robots' drive, 'kinematic' or 'legacy' (see KheperaRobot).
-        robotEyeRadiusRatio: where the robots' eyes sit along their radii, 0.5
-            (half way in, no blind wedge between them) or 1.0 (on the rim, as in
-            every run before 13 Oct 2026); see KheperaRobot.
+        robotModel: the robots' model, 'epuck2' (default since 14 Oct 2026) or
+            'kjunior' (every run before); see KheperaRobot.
+        robotEyeRadiusRatio: for the K-Junior only, where its eyes sit along
+            their radii, 0.5 (half way in, no blind wedge between them; the
+            default) or 1.0 (on the rim, as in every run before 13 Oct 2026).
         synchronousStepping: if True (default), the motors only set their wheel
             speeds and the world advances by stepsPerTick steps once per
             homeostat tick, after every unit has updated (tickAdvance, called by
@@ -1020,6 +1089,7 @@ class KheperaSimulation(object):
         self.running = running
         self.robotDrive = robotDrive
         self.robotEyeRadiusRatio = robotEyeRadiusRatio
+        self.robotModel = robotModel
         self.synchronousStepping = synchronousStepping
         self.stepsPerTick = stepsPerTick
         self.timeStep = timeStep
@@ -1115,6 +1185,7 @@ class KheperaSimulation(object):
             robot = self.allBodies[self.robotName]
             self.trajectoryWriter.eyes = robot.eyeSettings()
             self.trajectoryWriter.eyeRadiusRatio = robot.eyeRadiusRatio
+            self.trajectoryWriter.robotModel = robot.model
             self.trajectoryWriter.writeHeaderNow(robot.body)
         for body in self.allBodies.values():
             body.update(self.timeStep)
@@ -1188,7 +1259,8 @@ class KheperaSimulation(object):
                                                       ID = kheperaRobotDefaultID,
                                                       initialPose = kheperaDefaultPosition,
                                                       drive = self.robotDrive,
-                                                      eyeRadiusRatio = self.robotEyeRadiusRatio)
+                                                      eyeRadiusRatio = self.robotEyeRadiusRatio,
+                                                      model = self.robotModel)
 
         'Add a light'
         
@@ -1257,12 +1329,13 @@ class KheperaSimulation(object):
             ID=kheperaRobotDefaultID,
             initialPose=kheperaDefaultPosition,
             drive=self.robotDrive,
-            eyeRadiusRatio=self.robotEyeRadiusRatio)
+            eyeRadiusRatio=self.robotEyeRadiusRatio,
+            model=self.robotModel)
         robot = self.allBodies[self.robotName]
 
         'Add extra sensor pairs to the robot'
-        """Each extra pair sits where the light eyes sit, with their field (see
-        KheperaRobot's eyeRadiusRatio): the four modalities share one geometry,
+        """Each extra pair has the light eyes' receptors and field (see
+        KheperaRobot): the four modalities share one geometry,
         so they differ only in how they are wired, and none has a blind wedge
         ahead.  Before 13 Oct 2026 the pairs sat on the rim at +/-45 (temperature),
         +/-10 (oxygen) and +/-35 degrees (organic), with wedges reaching 0.078 and
@@ -1270,18 +1343,10 @@ class KheperaSimulation(object):
         seen.  Other layouts (direction-free sensing of heat and chemicals, more
         sensors per modality): research note "Khepera sensor placement for
         Vehicle 3c"."""
-        kheperaEyeDefaultMaxValue  = 100
-        kheperaEyeDefaultMaxRange  = 10
-        kheperaEyeDefaultAngleRange = 90
-        kheperaEyeDefaultDiameterRatio = 0.1
-
         for modality in ('Temp', 'Oxy', 'Org'):
             for side in ('left', 'right'):
-                robot.addSensor(robot.eyePoses[side + 'Eye'], side + modality + 'Eye',
-                                diameter=robot.diameter * kheperaEyeDefaultDiameterRatio,
-                                maxRange=kheperaEyeDefaultMaxRange,
-                                angleRange=kheperaEyeDefaultAngleRange,
-                                maxValue=kheperaEyeDefaultMaxValue)
+                robot.addEye(side + modality + 'Eye', robot.eyeReceptors[side + 'Eye'],
+                             robot.eyeFieldOfView, saturation=100)
 
         'Define source specifications: (name, quality, position, color, intensity)'
         source_specs = [

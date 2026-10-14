@@ -254,12 +254,14 @@ class SpinTest(unittest.TestCase):
 
     def testSpinTurnsInPlaceInTheRequestedDirection(self):
         "positive spin turns clockwise (heading decreases), negative counter-clockwise, in place"
-        cw, cw_moved = self._spin_in_the_dark(0.05)
-        ccw, ccw_moved = self._spin_in_the_dark(-0.05)
-        still, still_moved = self._spin_in_the_dark(0.0)
-        # differential-drive kinematics: ~0.074 deg/tick (the old wheel physics
-        # gave ~0.012); 1000 ticks keep the light out of the eyes' fields
-        self.assertAlmostEqual(cw, -73.9, delta=1.0)
+        cw, cw_moved = self._spin_in_the_dark(0.05, ticks=250)
+        ccw, ccw_moved = self._spin_in_the_dark(-0.05, ticks=250)
+        still, still_moved = self._spin_in_the_dark(0.0, ticks=250)
+        # differential-drive kinematics, e-puck2 (52 mm between the wheels,
+        # top speed capped at 24.3 mm/s, motors at 0.8 of it): 0.137 deg/tick
+        # (the K-Junior: 0.074; the old wheel physics: ~0.012); 250 ticks keep
+        # the light, behind, in the eyes' unseen rear sector (88 degrees)
+        self.assertAlmostEqual(cw, -34.3, delta=0.5)
         self.assertAlmostEqual(cw, -ccw, delta=0.5)
         self.assertEqual(still, 0.0)
         self.assertEqual(still_moved, 0.0)

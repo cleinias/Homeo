@@ -25,7 +25,9 @@ class KheperaDriveTest(unittest.TestCase):
         shutil.rmtree(self.dataDir, ignore_errors=True)
 
     def simulation(self, timeStep=0.032, drive='kinematic'):
-        sim = KheperaSimulation(timeStep=timeStep, robotDrive=drive)
+        # The legacy drive exists only for the K-Junior
+        sim = KheperaSimulation(timeStep=timeStep, robotDrive=drive,
+                                robotModel='kjunior' if drive == 'legacy' else 'epuck2')
         sim.setupWorld('kheperaBraitenberg2_HOMEO_World', self.dataDir)
         return sim, sim.allBodies['Khepera']
 
@@ -41,7 +43,8 @@ class KheperaDriveTest(unittest.TestCase):
         return robot, robot.body.position - start, robot.body.angle - angle
 
     def expected(self, robot, right, left, seconds, heading=0.0):
-        vR, vL = right * robot.wheelRadius, left * robot.wheelRadius
+        clip = lambda v: max(-robot.maxSpeed, min(robot.maxSpeed, v))
+        vR, vL = clip(right * robot.wheelRadius), clip(left * robot.wheelRadius)
         v, omega = (vR + vL) / 2, (vR - vL) / robot.wheelSeparation
         turn = omega * seconds
         if abs(turn) < 1e-12:

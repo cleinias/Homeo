@@ -52,7 +52,11 @@ class KheperaEyeTest(unittest.TestCase):
         self._face_light(robot, 15)
         far = robot.irradAtSensor('leftEye', robot.detectableLights)
         self.assertGreater(far, 0)
-        self.assertAlmostEqual(far, 100 * cos(radians(21.8858)) / 15 ** 2, delta=0.01 * far)
+        # the e-puck2's left eye, facing the light: the mean of its two
+        # sensors' cosines (they face 17.1 and 45.8 degrees off the heading)
+        facings = [f for _, f in robot.eyeReceptors['leftEye']]
+        expected = sum(cos(radians(f)) for f in facings) / len(facings) * 100 / 15 ** 2
+        self.assertAlmostEqual(far, expected, delta=0.01 * far)
 
     def testFieldOfViewStillApplies(self):
         "a light behind the eye gives no irradiance"

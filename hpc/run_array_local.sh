@@ -35,8 +35,10 @@
 #     bash hpc/run_array_local.sh ... --eye-response log --eye-saturation 0.5
 #                                  # the eyes' sensitivity: response linear|log,
 #                                  # saturation distance, --eye-threshold I0
-#     bash hpc/run_array_local.sh ... --rim-eyes
-#                                  # the eyes on the rim, as before 13 Oct 2026
+#     bash hpc/run_array_local.sh ... --robot kjunior|kjunior-rim
+#                                  # the K-Junior of runs before 14 Oct 2026
+#                                  # (default: the e-puck2); --rim-eyes is
+#                                  # --robot kjunior-rim (runs before 13 Oct)
 #
 # Mirrors grace_ou_6M.slurm exactly -- same seeds (20260930 + task), same flags
 # (--continuous --batch 1 --start-at-rest --traj-interval 200 --run-tag <NN>),
@@ -189,6 +191,7 @@ while [ $# -gt 0 ]; do
         --eye-response|--eye-threshold|--eye-saturation)
                          EYE_ARGS+=("$1" "$2"); shift 2;;
         --rim-eyes)      EYE_ARGS+=("$1"); shift;;
+        --robot)         EYE_ARGS+=("$1" "$2"); shift 2;;
         --uniselector)   UNISELECTOR="$2"; shift 2;;
         --dry-run)     DRY_RUN=1; shift;;
         -h|--help)     usage;;
