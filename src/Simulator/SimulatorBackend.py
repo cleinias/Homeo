@@ -218,3 +218,43 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
 
         return HOMEO_QualitySensor(sensorName, quality,
                                    self.kheperaSimulation.allBodies[self._robotName])
+
+
+class SimulatorBackendWEBOTS(SimulatorBackendHOMEO):
+    '''Webots, run by Homeo as its robot's extern controller (see
+    WebotsSimulator.WebotsSimulation).  Its kheperaSimulation is a
+    WebotsSimulation, with KheperaSimulation's interface, so the HOMEO
+    backend's transducers and the experiment setups work unchanged.
+
+    The robot is the e-puck2; the worlds are the Webots twins of
+    KheperaSimulation's (WebotsSimulator.WebotsSimulation.WORLDS).  One
+    process runs one Webots, shared by every backend made in it: a later
+    start() resets the world.
+
+    rendering: show Webots' window and render (figures), or not (batch).'''
+
+    def __init__(self, lock = None, robotName='Khepera', dataDir = None, rendering = False,
+                 robotModel = 'epuck2', eyeRadiusRatio = None, synchronousStepping = True):
+        if robotModel != 'epuck2' or eyeRadiusRatio is not None:
+            raise ValueError("the Webots robot is the e-puck2 (robot 'epuck2')")
+        if not synchronousStepping:
+            raise ValueError('Webots is stepped once per tick: no asynchronous stepping')
+        from WebotsSimulator.WebotsSimulation import WebotsSimulation
+        self._robotName = robotName
+        self.lock = lock
+        self.kheperaSimulation = WebotsSimulation.shared(rendering=rendering)
+        if dataDir is not None:
+            self.kheperaSimulation.setDataDir(dataDir)
+        self.host = None
+        self.port = None
+
+    @property
+    def name(self):
+        return "WEBOTS"
+
+    def finalDisFromTarget(self):
+        return self.kheperaSimulation.finalDisFromTarget()
+
+    def quit(self):
+        "Keep the process's Webots for the next backend; WebotsSimulation.quit stops it"
+        pass

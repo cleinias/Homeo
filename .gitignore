@@ -72,3 +72,5 @@ SimulationsData/
 .DS_Store
 .directory
 Thumbs.db
+# Webots per-user project state
+.*.wbproj

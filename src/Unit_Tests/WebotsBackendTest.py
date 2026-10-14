@@ -1,0 +1,132 @@
+'''
+Created on Oct 14, 2026
+
+@author: stefano
+
+The Webots backend (Phase F of the 7 Oct 2026 review plan): Homeo runs
+Webots as its e-puck2's extern controller.  Each test runs its Webots in a
+subprocess -- one process can control one Webots robot -- and compares it
+with the Box2D twin: the same eyes' irradiance, the same capped wheel speed,
+the same virtual quality sensors, and a phototaxis run through the
+experiments' own scripts.  Skipped where Webots cannot run (not installed,
+or neither a display nor xvfb-run).
+'''
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+
+from WebotsSimulator.WebotsSimulation import available
+
+SRC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Measures in Webots and in Box2D, for one world, and prints them as JSON
+_MEASURE = r'''
+import json, math, sys
+sys.path.insert(0, {src!r})
+from Box2D import b2Vec2
+from KheperaSimulator.KheperaSimulator import KheperaSimulation
+from WebotsSimulator.WebotsSimulation import WebotsSimulation
+from HomeoExperiments.KheperaExperiments.phototaxis_common import set_start_pose
+
+world = {world!r}
+poses = [(4, 4, 0), (6.5, 6.2, 30), (7.3, 6.6, 160), (5, 8, -60), (8, 8, 45)]   # the last: light behind
+webots = WebotsSimulation.shared()
+webots.setupWorld(world, {data!r})
+box2d = KheperaSimulation()
+box2d.setupWorld(world, {data!r})
+wr, br = webots.allBodies['Khepera'], box2d.allBodies['Khepera']
+out = dict(eyes=[], qualities=[])
+for x, y, h in poses:
+    set_start_pose(wr, x, y, h)
+    webots._supervisor.step(webots._timeStepMs)
+    set_start_pose(br, x, y, h)
+    for eye in ('leftEye', 'rightEye'):
+        out['eyes'].append((wr.lightIrradiance(eye), br.irradAtSensor(eye, br.detectableLights)))
+    for quality in [q for q in br.detectableSources if q != 'light']:
+        for side in ('left', 'right'):
+            name = side + {{'temperature': 'Temp', 'oxygen': 'Oxy', 'organic': 'Org'}}[quality] + 'Eye'
+            out['qualities'].append((wr.getSensorReadByQuality(name, quality),
+                                     br.getSensorReadByQuality(name, quality)))
+# the capped top speed, straight ahead for 100 steps
+set_start_pose(wr, 4, 4, 0)
+webots._supervisor.step(webots._timeStepMs)
+start = wr.body.position
+wr.setSpeed(10.0, 10.0)                   # far above the cap
+for i in range(100):
+    webots.advanceSim()
+end = wr.body.position
+out['speed'] = (end - start).length / (100 * webots.timeStep)
+out['maxSpeed'] = wr.maxSpeed
+webots.saveTrajectory()
+box2d.saveTrajectory()
+print('MEASURES ' + json.dumps(out))
+'''
+
+
+@unittest.skipUnless(available(), 'Webots cannot run here (not installed, or no display/xvfb-run)')
+class WebotsBackendTest(unittest.TestCase):
+
+    def measure(self, world):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = os.path.join(tmp, 'measure.py')
+            with open(script, 'w') as f:
+                f.write(_MEASURE.format(src=SRC, world=world, data=tmp))
+            r = subprocess.run([sys.executable, script], capture_output=True, text=True,
+                               timeout=300, env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+        lines = [l for l in r.stdout.splitlines() if l.startswith('MEASURES ')]
+        self.assertTrue(lines, r.stdout[-2000:] + r.stderr[-2000:])
+        return json.loads(lines[0][len('MEASURES '):])
+
+    def testBraitenberg2World(self):
+        '''Webots' LightSensors read the Box2D eyes' irradiance (same
+        positions, facings and light model; 0.5% for the sensors' float
+        poses), and the wheels top out at the cap.'''
+        m = self.measure('kheperaBraitenberg2_HOMEO_World')
+        for webots, box2d in m['eyes']:
+            self.assertAlmostEqual(webots, box2d, delta=0.005 * box2d + 1e-6)
+        self.assertTrue(any(box2d > 0 for _, box2d in m['eyes']))
+        self.assertTrue(any(box2d == 0 for _, box2d in m['eyes']))     # the light behind
+        self.assertAlmostEqual(m['speed'], m['maxSpeed'], delta=0.02 * m['maxSpeed'])
+
+    def testVehicle3cWorldsVirtualSensors(self):
+        '''Temperature, oxygen and organic matter, computed from the Webots
+        poses with the Box2D formula, read as in Box2D.'''
+        m = self.measure('kheperaBraitenberg3c_HOMEO_World')
+        self.assertEqual(len(m['qualities']), 5 * 3 * 2)
+        for webots, box2d in m['qualities']:
+            self.assertAlmostEqual(webots, box2d, delta=0.005 * abs(box2d) + 1e-6)
+        for webots, box2d in m['eyes']:
+            self.assertAlmostEqual(webots, box2d, delta=0.005 * box2d + 1e-6)
+
+    def testAPhototaxisRun(self):
+        '''The direct experiment runs on Webots, records it, and refuses what
+        Webots cannot do (darkness sources, the K-Junior).'''
+        with tempfile.TemporaryDirectory() as tmp:
+            command = [sys.executable, '-m', 'HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct',
+                       '--fixed-weights', '--eye-response', 'log', '--steps', '200', '--seed', '3',
+                       '--batch', '1', '--simulator', 'webots']
+            r = subprocess.run(command, cwd=SRC, capture_output=True, text=True, timeout=300,
+                               env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+            self.assertEqual(r.returncode, 0, r.stdout[-2000:] + r.stderr[-2000:])
+            data = os.path.join(tmp, os.listdir(tmp)[0])
+            files = os.listdir(data)
+            [traj] = [f for f in files if f.endswith('.traj')]
+            [js] = [f for f in files if f.endswith('.json')]
+            [csv] = [f for f in files if f.startswith('batch_')]
+            self.assertIn('_webots', traj)
+            self.assertIn('_webots', csv)
+            with open(os.path.join(data, traj)) as f:
+                self.assertIn('# Robot model\tepuck2 (Webots)\n', f.read())
+            with open(os.path.join(data, js)) as f:
+                self.assertEqual(json.load(f)['settings']['simulator'], 'webots')
+            for extra in (['--dark'], ['--robot', 'kjunior']):
+                r = subprocess.run(command + extra, cwd=SRC, capture_output=True, text=True,
+                                   timeout=300, env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+                self.assertNotEqual(r.returncode, 0, extra)
+
+
+if __name__ == '__main__':
+    unittest.main()

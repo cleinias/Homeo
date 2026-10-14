@@ -56,7 +56,7 @@ package-dir = { "" = "src" }
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["Core*", "Helpers*", "Simulator*", "KheperaSimulator*",
-           "RobotSimulator*", "HomeoExperiments*"]
+           "RobotSimulator*", "HomeoExperiments*", "WebotsSimulator*"]
 
 [tool.ruff.lint]
 # Modules use CamelCase file names (HomeoExperiments.py etc.); renaming would break imports.

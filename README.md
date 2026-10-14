@@ -12,8 +12,9 @@ A software simulation of W. Ross Ashby's Homeostat, as described in
 - Extensible to an arbitrary number of homeostatic units
 - Generalized and supplemented model of a homeostatic unit, including
   Newtonian physics and continuous (Ornstein-Uhlenbeck) uniselectors
-- Robotic component: use a homeostat as the controller of virtual robots,
-  in a built-in Box2D simulator (a Webots backend is being built)
+- Robotic component: use a homeostat as the controller of a virtual e-puck2,
+  in a built-in Box2D simulator or in Webots (Homeo as the robot's extern
+  controller; `--simulator webots` in the phototaxis scripts, see `src/Webots`)
 
 ## Getting started
 
@@ -77,8 +78,10 @@ src/
   Simulator/      # Simulation runners (CLI and GUI), GA experiments
   Unit_Tests/     # Pytest test suite
   HomeoExperiments/  # Predefined experiment configurations
-  KheperaSimulator/  # Khepera robot integration
-  RobotSimulator/    # Generic robot simulator
+  KheperaSimulator/  # The Box2D robot simulator (an e-puck2; the K-Junior of older runs)
+  WebotsSimulator/   # Webots as the robot simulator (Homeo as extern controller)
+  Webots/            # The Webots project: HomeoEpuck.proto and the worlds
+  RobotSimulator/    # Transducers and transducer-equipped units
 resources/        # GUI resources (icons, images)
 ```
 

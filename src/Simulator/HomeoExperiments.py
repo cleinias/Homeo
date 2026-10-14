@@ -347,7 +347,8 @@ def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir
         # to build the same vehicle as raw=False (SE-04)
         raise ValueError("initializeBraiten2_2: raw=True is not supported with a "
                          "backendSimulator; its sensors have only the standard polarity")
-    worlds = {'HOMEO': 'kheperaBraitenberg2_HOMEO_World'}
+    worlds = {'HOMEO': 'kheperaBraitenberg2_HOMEO_World',
+              'WEBOTS': 'kheperaBraitenberg2_HOMEO_World'}     # its Webots twin
     try:
         world = worlds[backendSimulator.name]
     except KeyError:
@@ -594,6 +595,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
                       
 ''' 
     worlds = {
+              'WEBOTS_World': 'kheperaBraitenberg2_HOMEO_World',
               'HOMEO_World' : 'kheperaBraitenberg2_HOMEO_World'
               }
     
@@ -987,6 +989,7 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
     worlds = {
+        'WEBOTS_World': 'kheperaBraitenberg2_HOMEO_World',
         'HOMEO_World': 'kheperaBraitenberg2_HOMEO_World'
     }
 
@@ -1237,6 +1240,7 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
     worlds = {
+        'WEBOTS_World': 'kheperaBraitenberg2_HOMEO_World',
         'HOMEO_World': 'kheperaBraitenberg2_HOMEO_World'
     }
 
@@ -1508,6 +1512,7 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
     worlds = {
+        'WEBOTS_World': 'kheperaBraitenberg3c_HOMEO_World',
         'HOMEO_World': 'kheperaBraitenberg3c_HOMEO_World'
     }
 

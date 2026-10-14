@@ -2,7 +2,7 @@
 
 Ashby conceived the Homeostat as a model of adaptive behaviour: a system that, without being told what to do, finds and maintains stable configurations in the face of disturbance. The robotic component of Homeo applies this idea to mobile robot control. Instead of hand-coding a controller that maps sensor readings to motor commands, a homeostat network is placed between the robot's sensors and its wheels. The units treat sensor input as a perturbation to be absorbed and motor output as the means to do so. Because the uniselector mechanism randomly reassigns connection weights whenever a unit's essential variable leaves its viable range, the network explores the space of possible sensorimotor couplings until it discovers one that keeps every unit within bounds -- which, given the right wiring, corresponds to a robot that tracks a light source or avoids obstacles without any explicit goal representation.
 
-The simulators sit behind a uniform backend interface, so the same homeostat configuration can drive a robot in any of them.  Today there is one: KheperaSimulator, a lightweight Box2D simulator in the same process.  A new Webots backend (Homeo as the robot's extern controller) is being built; the V-REP backend and the old Webots TCP bridge were deleted on 14 Oct 2026.
+The simulators sit behind a uniform backend interface, so the same homeostat configuration can drive a robot in either of them: KheperaSimulator, a lightweight Box2D simulator in the same process (the GA and the batch arrays), and Webots, run by Homeo as its robot's extern controller (re-testing selected results, figures).  Both model the same robot, an e-puck2.  The V-REP backend and the old Webots TCP bridge were deleted on 14 Oct 2026.
 
 ## Architecture
 
@@ -55,9 +55,11 @@ A simpler variant, `HomeoUnitAristotelianActuator`, uses linear scaling instead 
 - `setRobotModel(name)` -- label the robot with an identifier (used for trajectory logging).
 - `setDataDir(path)` -- set the directory for trajectory files.
 
-The concrete backend:
+The concrete backends:
 
 **`SimulatorBackendHOMEO`** wraps the internal `KheperaSimulation` class. Since the simulator runs in the same process, transducers call Python methods directly -- `HOMEO_DiffMotor.act()` calls `robot.setRightSpeed(speed)` and `HOMEO_LightSensor.read()` calls `robot.getSensorRead(eye)` -- making it the fastest backend and the natural choice for batch experiments and genetic-algorithm optimisation.
+
+**`SimulatorBackendWEBOTS`** runs Webots (`WebotsSimulator/WebotsSimulation.py`, the project in `src/Webots`). Homeo launches Webots with the Webots twin of the Box2D world (`homeo_braitenberg2.wbt`, `homeo_braitenberg3c.wbt`) and is its robot's *extern* controller, in Homeo's own process, and a supervisor. Webots advances only when Homeo steps it, once per homeostat tick, as the Box2D world does. Its `kheperaSimulation` is a `WebotsSimulation`, with KheperaSimulation's interface, so the same transducers and experiment setups work unchanged. The robot is `HomeoEpuck.proto`, Webots' e-puck with its light sensors reading plain irradiance; an eye's irradiance is the mean of its two LightSensors', its response Homeo's. The Vehicle 3c qualities other than light have no Webots physics: Homeo computes them from the Webots poses with the Box2D formula ("virtual sensors"). The light is a PointLight of the same intensity and attenuation as the Box2D one, at the sensors' height, so the two simulators' eyes read the same irradiance (checked by `Unit_Tests/WebotsBackendTest.py`); what differs is the physics of motion. Darkness sources and the K-Junior are Box2D only. One process runs one Webots. In the phototaxis scripts: `--simulator webots`, and `--render` to watch.
 
 Swapping backends is transparent. The experiment-setup functions in `HomeoExperiments.py` take a backend instance (`backendSimulator`), call `basicBraiten2Tranducers(backend, world)` to obtain a dictionary of four transducers (two wheels, two eyes), and wire them into the same homeostat structure regardless of which backend produced them.
 

@@ -1,0 +1,147 @@
+#VRML_SIM R2025a utf8
+# Homeo's Vehicle 3c world, the Webots twin of KheperaSimulation's
+# kheperaBraitenberg3c_HOMEO_World: an open plane, the robot at (4, 4) facing
+# +x, and five sources of four qualities.  Lengths in metres, z up.
+# - Only the light, LIGHT1, is a Webots light (as in homeo_braitenberg2.wbt:
+#   intensity 100, quadratic attenuation, white, at the e-puck's sensor
+#   height), read by the e-puck's LightSensors.
+# - Temperature (TEMP1, TEMP2), oxygen (OXY1) and organic matter (ORG1) have
+#   no Webots physics: they are markers whose positions Homeo reads, and
+#   Homeo computes their fields at the e-puck's sensors with the Box2D
+#   formula ("virtual sensors", WebotsSimulator.WebotsSimulation; their
+#   intensities are there, in WORLDS).  Real gradients are a TODO.
+# - Reproducibility: a fixed randomSeed and one physics thread.
+
+EXTERNPROTO "../protos/HomeoEpuck.proto"
+
+WorldInfo {
+  info [
+    "Homeo: Vehicle 3c world (twin of kheperaBraitenberg3c_HOMEO_World)"
+  ]
+  title "Homeo Vehicle 3c"
+  basicTimeStep 32
+  randomSeed 1
+  optimalThreadCount 1
+}
+Viewpoint {
+  orientation -0.4 0.4 0.8 1.75
+  position 5.5 2.0 6.0
+}
+Background {
+  skyColor [
+    0.4 0.7 1
+  ]
+  luminosity 1
+}
+DEF FLOOR Solid {
+  translation 7 7 0
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.5 0.3
+        roughness 1
+        metalness 0
+      }
+      geometry Plane {
+        size 100 100
+      }
+    }
+  ]
+  name "floor"
+  boundingObject Plane {
+    size 100 100
+  }
+  locked TRUE
+}
+DEF LIGHT1 PointLight {
+  attenuation 0 0 1
+  color 1 1 1
+  intensity 100
+  location 7 7 0.0329
+  ambientIntensity 0
+  castShadows FALSE
+}
+DEF LIGHT1_MARKER Pose {
+  translation 7 7 0.0329
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 1 0
+        emissiveColor 1 1 0
+        metalness 0
+      }
+      geometry Sphere {
+        radius 0.06
+      }
+    }
+  ]
+}
+DEF TEMP1 Pose {
+  translation 7 7 0.0329
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0.2 0.2
+        emissiveColor 0 0 0
+        metalness 0
+      }
+      geometry Sphere {
+        radius 0.06
+      }
+    }
+  ]
+}
+DEF TEMP2 Pose {
+  translation 1 7 0.0329
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0.2 0.2
+        emissiveColor 0 0 0
+        metalness 0
+      }
+      geometry Sphere {
+        radius 0.06
+      }
+    }
+  ]
+}
+DEF OXY1 Pose {
+  translation 2 2 0.0329
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 0.8 0.8
+        emissiveColor 0 0 0
+        metalness 0
+      }
+      geometry Sphere {
+        radius 0.06
+      }
+    }
+  ]
+}
+DEF ORG1 Pose {
+  translation 6 1 0.0329
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.2 0.8 0.2
+        emissiveColor 0 0 0
+        metalness 0
+      }
+      geometry Sphere {
+        radius 0.06
+      }
+    }
+  ]
+}
+DEF ROBOT HomeoEpuck {
+  translation 4 4 0
+  rotation 0 0 1 0
+  name "e-puck"
+  controller "<extern>"
+  supervisor TRUE
+  version "2"
+  window "<none>"
+}

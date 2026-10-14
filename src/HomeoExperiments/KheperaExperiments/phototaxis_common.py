@@ -48,6 +48,11 @@ ROBOTS = {'epuck2': ('epuck2', None),
           'kjunior-rim': ('kjunior', 1.0)}
 DEFAULT_ROBOT = 'epuck2'
 
+# The robot simulator: Box2D (KheperaSimulation, the default: the GA and the
+# batch arrays) or Webots (SimulatorBackendWEBOTS: re-testing selected
+# results, figures).  Webots runs the e-puck2 only.
+SIMULATORS = ('box2d', 'webots')
+
 
 def robot_name(model, eye_radius_ratio):
     "The ROBOTS name of a robot model and eye radius ratio"
@@ -97,21 +102,31 @@ def env_rng(env_seed):
 
 
 def prepare_backend(backendSimulator, experiment_name, synchronous_stepping=True,
-                    robot=DEFAULT_ROBOT):
+                    robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
     '''The run's backend (a new SimulatorBackendHOMEO if None), stepping as
     asked, writing to today's SimsData directory under experiment_name.
     synchronous_stepping: advance the world once per tick, after all units
     have updated (default), or, if False, once per motor command, as runs
     before 13 Oct 2026 did (see KheperaSimulation).
     robot: the robot, a name in ROBOTS; it takes effect when the setup
-    builds the world.'''
+    builds the world.
+    simulator: 'box2d' or 'webots' (SIMULATORS); rendering: for Webots, show
+    its window (figures) rather than run it without rendering.'''
     from Simulator.SimulatorBackend import SimulatorBackendHOMEO
     from Helpers.General_Helper_Functions import simulations_data_dir
 
     if robot not in ROBOTS:
         raise ValueError('robot must be one of %s, got %r' % (tuple(ROBOTS), robot))
     model, eye_radius_ratio = ROBOTS[robot]
-    if backendSimulator is None:
+    if simulator not in SIMULATORS:
+        raise ValueError('simulator must be one of %s, got %r' % (SIMULATORS, simulator))
+    if backendSimulator is None and simulator == 'webots':
+        from Simulator.SimulatorBackend import SimulatorBackendWEBOTS
+        backendSimulator = SimulatorBackendWEBOTS(lock=threading.Lock(), robotName='Khepera',
+                                                  rendering=rendering, robotModel=model,
+                                                  eyeRadiusRatio=eye_radius_ratio,
+                                                  synchronousStepping=synchronous_stepping)
+    elif backendSimulator is None:
         backendSimulator = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera',
                                                  synchronousStepping=synchronous_stepping,
                                                  eyeRadiusRatio=eye_radius_ratio,
@@ -130,9 +145,10 @@ def prepare_backend(backendSimulator, experiment_name, synchronous_stepping=True
 
 def experiment_suffix(light_intensity=100, uniselector_type='ashby', adaptive=True,
                       spin=0.0, eye_saturation=None, eye_threshold=None, eye_response=None,
-                      robot=DEFAULT_ROBOT):
-    "The experiment name's tags: '_dark', the uniselector if not Ashby's, spin, eyes."
-    suffix = '_dark' if light_intensity < 0 else ''
+                      robot=DEFAULT_ROBOT, simulator='box2d'):
+    "The experiment name's tags: '_webots', '_dark', the uniselector if not Ashby's, spin, eyes."
+    suffix = '_webots' if simulator == 'webots' else ''
+    suffix += '_dark' if light_intensity < 0 else ''
     if adaptive and uniselector_type != 'ashby':
         suffix += '_' + uniselector_tag(uniselector_type)
     return suffix + spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response,
@@ -339,8 +355,12 @@ def set_start_pose(robot, x=None, y=None, heading=None):
 
     Moves the wheel bodies with the chassis, rotating them about its centre,
     so the wheel joints stay intact (KheperaRobot.rotateTo/moveTo do not).
+    A Webots robot places itself (WebotsRobot.setPose).
     Call before the first simulation step.
     '''
+    if hasattr(robot, 'setPose'):
+        robot.setPose(x, y, heading)
+        return
     from math import radians, cos, sin
     from Box2D import b2Vec2
 
@@ -416,6 +436,7 @@ def run_settings(backend, light_intensity, stable_draws, env_seed):
     "The settings every run records in its JSON (the homeostat's seed is recorded apart)."
     eye_config = backend.kheperaSimulation.eyeConfig
     return dict(env_seed=env_seed,
+                simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
                 stable_draws=stable_draws,
                 synchronous_stepping=backend.kheperaSimulation.synchronousStepping,
                 light_intensity=light_intensity,
@@ -587,6 +608,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                   eye_saturation='' if eye_saturation is None else eye_saturation,
                   eye_saturation_irradiance=eye_config[1],
                   robot=robot_name(robot.model, robot.eyeRadiusRatio),
+                  simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
                   eye_radius_ratio='' if robot.eyeRadiusRatio is None else robot.eyeRadiusRatio,
                   final_speed=final_speed, final_bearing=final_bearing,
                   spin=spin, synchronous_stepping=sim.synchronousStepping,
@@ -597,7 +619,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
 
 BATCH_FIELDS = ['run', 'seed', 'env_seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response',
                 'eye_threshold', 'eye_saturation', 'eye_saturation_irradiance',
-                'robot', 'eye_radius_ratio',
+                'simulator', 'robot', 'eye_radius_ratio',
                 'start_x', 'start_y', 'start_heading', 'start_dist',
                 'start_sees_light', 'acquired', 'first_acq',
                 'final_dist', 'min_dist', 'min_t', 'steps_run',
@@ -609,15 +631,17 @@ BATCH_FIELDS = ['run', 'seed', 'env_seed', 'motor', 'wiring', 'signs', 'spin', '
 
 def batch_kind(variant, spin=0.0, eye_saturation=None, eye_threshold=None,
                eye_response=None, synchronous_stepping=True, stable_draws=False,
-               robot=DEFAULT_ROBOT):
+               robot=DEFAULT_ROBOT, simulator='box2d'):
     '''The batch file's tag: the variant (the uniselector, or the fixed-weight
-    vehicle), then spin, eyes, '_async' and '_stabledraws'.'''
+    vehicle), then spin, eyes, '_async', '_stabledraws' and '_webots'.'''
     kind = variant + spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response,
                                               robot)
     if not synchronous_stepping:
         kind += '_async'
     if stable_draws:
         kind += '_stabledraws'
+    if simulator == 'webots':
+        kind += '_webots'
     return kind
 
 
@@ -887,6 +911,12 @@ Options both experiments take
                         eyes on the rim, as every run before 13 Oct 2026);
                         files get "_kjunior" or "_kjunior_rimeyes"
    --rim-eyes           the same as --robot kjunior-rim
+   --simulator S        the robot simulator: box2d (default) or webots (the
+                        e-puck2 only; Webots must be installed: WEBOTS_HOME
+                        or webots on the PATH); files get "_webots"
+   --render             with --simulator webots, show Webots' window and
+                        render (for figures); without it Webots runs
+                        unrendered and minimized
 
    --traj-interval N    record every N-th trajectory point (the final pose is
                         always kept); --no-traj records none
@@ -947,6 +977,18 @@ def parse_common_args(argv):
     o['random_heading'] = '--random-heading' in argv
     o['synchronous_stepping'] = '--async-stepping' not in argv
     o['visualize'] = '--visualize' in argv
+    o['simulator'] = 'box2d'
+    if '--simulator' in argv:
+        idx = argv.index('--simulator')
+        o['simulator'] = argv[idx + 1] if idx + 1 < len(argv) else ''
+        if o['simulator'] not in SIMULATORS:
+            raise SystemExit('--simulator must be one of %s, got %r'
+                             % (' '.join(SIMULATORS), o['simulator']))
+    o['rendering'] = '--render' in argv
+    if o['rendering'] and o['simulator'] != 'webots':
+        raise SystemExit('--render applies to --simulator webots (Box2D: --visualize)')
+    if o['visualize'] and o['simulator'] == 'webots':
+        raise SystemExit('--visualize is the Box2D window; for Webots use --render')
 
     o['heading'] = None
     if '--heading' in argv:
@@ -1003,6 +1045,11 @@ def parse_common_args(argv):
         if not o['eye_saturation'] > 0:
             raise SystemExit('--eye-saturation must be > 0, got %g' % o['eye_saturation'])
 
+    if o['simulator'] == 'webots' and o['robot'] != 'epuck2':
+        raise SystemExit('Webots runs the e-puck2 only (--robot epuck2)')
+    if o['simulator'] == 'webots' and not o['synchronous_stepping']:
+        raise SystemExit('Webots is stepped once per tick: no --async-stepping')
+
     '''Trajectory volume.  Two rows are recorded per homeostat tick at ~50 bytes
        each, so a 6M-step run writes ~600 MB and a batch of 20 wrote 11.5 GB on
        2026-09-30.  --traj-interval decimates at write time; the final pose is
@@ -1027,7 +1074,7 @@ def parse_common_args(argv):
 # the runners
 SETUP_OPTIONS = ('topology', 'light_intensity', 'uniselector_type', 'seed', 'stable_draws',
                  'start_at_rest', 'spin', 'eye_saturation', 'eye_threshold', 'eye_response',
-                 'robot', 'synchronous_stepping')
+                 'robot', 'simulator', 'rendering', 'synchronous_stepping')
 RUN_OPTIONS = ('total_steps', 'light_intensity', 'early_stop_distance', 'state_log',
                'state_log_interval', 'heading', 'random_heading', 'random_start',
                'start_range', 'stable_draws', 'eye_saturation', 'spin', 'env_seed')
