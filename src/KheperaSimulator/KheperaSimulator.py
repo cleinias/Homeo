@@ -701,6 +701,13 @@ class KheperaRobot(object):
         if shape == 'log' and I0 <= 0:
             raise ValueError("a logarithmic eye needs a threshold > 0, got %g" % I0)
 
+    def eyeSettings(self):
+        """Every eye's (threshold, saturation, response), by sensor name: what
+        the trajectory header records, so a chart can tell how far an eye sees."""
+        return {name: (fixture.userData[name + 'Threshold'], fixture.userData[name + 'Saturation'],
+                       fixture.userData[name + 'Response'])
+                for name, fixture in self.sensors.items()}
+
     def eyeResponse(self, sensorName, irradiance):
         """The named eye's response to the irradiance falling on it, in [0, 1]:
         0 up to its threshold I0, 1 from its saturation Isat on, and in between
@@ -1105,7 +1112,10 @@ class KheperaSimulation(object):
         if self.currentStep == 0:
             # The trajectory header records the world as the experiment set it up
             self.trajectoryWriter.stepsPerTick = self.stepsPerTick
-            self.trajectoryWriter.writeHeaderNow(self.allBodies[self.robotName].body)
+            robot = self.allBodies[self.robotName]
+            self.trajectoryWriter.eyes = robot.eyeSettings()
+            self.trajectoryWriter.eyeRadiusRatio = robot.eyeRadiusRatio
+            self.trajectoryWriter.writeHeaderNow(robot.body)
         for body in self.allBodies.values():
             body.update(self.timeStep)
         self.world.Step(self.timeStep, self.vel_iters, self.pos_iters)

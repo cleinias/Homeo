@@ -34,25 +34,24 @@ from math import sqrt, ceil
 # far more points than a chart can show.  The first and last points are always kept.
 MAX_PLOT_POINTS = 50000
 
-# Radius, in world units, beyond which a source produces NO sensor input at all.
-# irradAtSensor() returns 0 once targetDistance exceeds the eye's maxRange, which
-# KheperaSimulator sets to kheperaEyeDefaultMaxRange = 10 -- a hard cutoff, not a
-# fade: measured over the 600,020 samples of the 2026-10-01 6M array, the largest
-# reading anywhere beyond distance 10 is exactly 0.0000, against 1.0141 at 10.0.
-# The constant is duplicated here because it is a local inside KheperaSimulator's
-# methods and cannot be imported; --sensor-range overrides it.
+# The no-input ring: the radius, in world units, beyond which the main source
+# gives the eyes no input at all, whatever the vehicle's heading.  Outside it
+# the vehicle is driven by nothing but its own noise -- the no-input state the
+# equilibrium analysis calls an attractor; a run ending outside it has reached
+# it.
 #
-# Drawing it matters: outside that circle the vehicle receives nothing whatever
-# its heading, so the region is the no-input state the equilibrium analysis calls
-# an attractor.  A run ending outside the circle has reached it.
+# Since the eye redesign of 2026-10-03 an eye stops seeing a source of
+# intensity I where the irradiance on its axis falls to its threshold I0, at
+# sqrt(I / I0) (KheperaRobot.eyeResponse) -- never for the default eye (I0 = 0),
+# 10 units from an intensity-100 light for a log eye with I0 = 1.  The chart
+# takes I0 from the trajectory's header (since 14 Oct 2026) or the run's JSON
+# beside it, and draws no ring when neither says (noInputRadius); --sensor-range
+# overrides it.  Until 14 Oct 2026 the ring was always drawn at 10 (HV-11).
 #
-# Since the eye redesign of 2026-10-03 there is no such cut-off: irradAtSensor is
-# pure physics, and an eye stops seeing a light only where the irradiance falls
-# below its threshold (KheperaRobot.eyeResponse) -- never, for the default eye
-# (threshold 0); at 10 units from an intensity-100 light for a log eye with
-# threshold 1.  The ring is right for runs made before that; for later ones pass
-# the threshold distance, sqrt(intensity / threshold), or 0 to omit it.
-SENSOR_MAX_RANGE = 10.0
+# Before 2026-10-03 the eyes had a hard cut-off at 10 units (measured over the
+# 600,020 samples of the 2026-10-01 6M array, the largest reading beyond 10 is
+# exactly 0, against 1.0141 at 10.0): chart those runs with --sensor-range 10.
+OLD_SENSOR_MAX_RANGE = 10.0
 
 
 def main(argv=None):
@@ -69,10 +68,13 @@ def main(argv=None):
                              '(reverses the irradiance gradient).  Since 13 Oct 2026 '
                              'a file says so itself (negative intensity in its '
                              'header); needed only for older --dark runs')
-    parser.add_argument('--sensor-range', type=float, default=SENSOR_MAX_RANGE,
+    parser.add_argument('--sensor-range', type=float, default=None,
                         help='Radius of the no-input ring drawn around the target, '
-                             'the distance beyond which a source gives zero sensor '
-                             'input (default %(default)s). 0 omits the ring.')
+                             'the distance beyond which the eyes see nothing of it '
+                             '(default: sqrt(intensity / eye threshold), from the '
+                             "file's header or the run's JSON; no ring for eyes with "
+                             'threshold 0 or when neither records it).  0 omits the '
+                             'ring; 10 for runs made before 3 Oct 2026.')
     parser.add_argument('--max-points', type=int, default=MAX_PLOT_POINTS,
                         help='Thin each trajectory to at most this many plotted points '
                              '(default %(default)s)')
@@ -82,7 +84,7 @@ def main(argv=None):
 
 
 def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MAX_PLOT_POINTS,
-                    sensorRange=SENSOR_MAX_RANGE):
+                    sensorRange=None):
     """Chart the vehicle's trajectory with matplotlib.
 
     The background shows a radial grey gradient centered on the light
@@ -98,6 +100,8 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MA
         dark: if True, treat the source as a "darkness source" (reverses
               the gradient direction).
         maxPoints: thin the trajectory to at most this many plotted points.
+        sensorRange: the no-input ring's radius, 0 for none; None: the run's
+                     own (noInputRadius).
     """
 
     'Read header and (thinned) trajectory data'
@@ -105,6 +109,8 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MA
     ticks = ticksFromRows(dataFileHeader, nRows)
     lightsOnDic = readLightsFromHeader(dataFileHeader)
     dark = dark or _hasDarknessSource(lightsOnDic)
+    if sensorRange is None:
+        sensorRange = noInputRadius(dataFileHeader, lightsOnDic, trajDataFilename)
 
     'Compute initial and final distance'
     target = _mainTarget(lightsOnDic)
@@ -143,14 +149,15 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MA
 
 
 def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints=MAX_PLOT_POINTS,
-                      sensorRange=SENSOR_MAX_RANGE):
+                      sensorRange=None):
     """Chart several trajectories on the same axes.
 
     Each trajectory gets its own colour; its end point is marked with a dot of
     the same colour, the (shared) start point in green.  The axes are sized to
     show every trajectory in full.  A legend below the plot labels each run by
     the distinguishing ending of its filename, plus its final distance from the
-    target.  A single file is charted with graphTrajectory().
+    target.  A single file is charted with graphTrajectory().  With
+    sensorRange None, the no-input ring is drawn only if every run has the same.
     """
     if len(trajDataFilenames) == 1:
         return graphTrajectory(trajDataFilenames[0], output_path, dark, maxPoints, sensorRange)
@@ -158,13 +165,22 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     labels = _distinctEndings(trajDataFilenames)
     runs = []
     lightsOnDic = {}
+    radii = set()
     for filename, label in zip(trajDataFilenames, labels):
         print("Reading %s ..." % os.path.basename(filename), file=sys.stderr, flush=True)
         header, trajData, nRows = loadTrajectory(filename, maxPoints)
         ticks = ticksFromRows(header, nRows)
-        for name, light in readLightsFromHeader(header).items():
+        lights = readLightsFromHeader(header)
+        for name, light in lights.items():
             lightsOnDic.setdefault(name, light)
+        if sensorRange is None:
+            radii.add(round(noInputRadius(header, lights, filename), 9))
         runs.append((label, trajData, ticks))
+    if sensorRange is None:
+        sensorRange = radii.pop() if len(radii) == 1 else 0.0
+        if radii:
+            print("The runs' eyes see to different distances: no no-input ring "
+                  "(--sensor-range draws one)", file=sys.stderr)
 
     target = _mainTarget(lightsOnDic)
     colors = _distinctColors(len(runs))
@@ -433,7 +449,50 @@ def _drawIrradianceBackground(ax, lightsOnDic, bounds, dark):
               cmap='gray', vmin=0, vmax=1, aspect='equal', zorder=0)
 
 
-def _drawNoInputBoundary(ax, lightsOnDic, radius=SENSOR_MAX_RANGE):
+def noInputRadius(dataFileHeader, lightsOnDic, trajDataFilename=None):
+    """The distance beyond which the eyes see nothing of the main source,
+    sqrt(|intensity| / I0) for the least threshold I0 of the light eyes
+    (leftEye, rightEye; else of any eye), on the eyes' axis.  I0 comes from
+    the header's eye lines (since 14 Oct 2026) or else from the run's JSON
+    beside the file (same name, eye_threshold in its settings; runs since 13
+    Oct 2026).  0 -- no ring -- for eyes with threshold 0, which see any
+    source at any distance, or when neither records the threshold."""
+    target = _mainTarget(lightsOnDic)
+    if target is None:
+        return 0.0
+    eyes = readEyesFromHeader(dataFileHeader)
+    thresholds = ([eyes[name][0] for name in ('leftEye', 'rightEye') if name in eyes]
+                  or [eye[0] for eye in eyes.values()])
+    if not thresholds and trajDataFilename is not None:
+        thresholds = _eyeThresholdsFromJson(trajDataFilename)
+    if not thresholds or min(thresholds) <= 0:
+        return 0.0
+    return sqrt(abs(target[2]) / min(thresholds))
+
+
+def readEyesFromHeader(dataFileHeader):
+    "The header's eye lines, {name: (threshold, saturation, response)}; {} if none."
+    eyes = {}
+    for line in dataFileHeader:
+        m = re.match(r'#\s*Eye\t(\S+)\tthreshold\t(\S+)\tsaturation\t(\S+)\tresponse\t(\S+)',
+                     line)
+        if m:
+            eyes[m.group(1)] = (float(m.group(2)), float(m.group(3)), m.group(4))
+    return eyes
+
+
+def _eyeThresholdsFromJson(trajDataFilename):
+    "The eye threshold the run's JSON (same name as the .traj) records, as a list; [] if none."
+    import json
+    try:
+        with open(os.path.splitext(trajDataFilename)[0] + '.json') as f:
+            threshold = json.load(f).get('settings', {}).get('eye_threshold')
+    except (OSError, ValueError):
+        return []
+    return [] if threshold is None else [float(threshold)]
+
+
+def _drawNoInputBoundary(ax, lightsOnDic, radius=0.0):
     """Ring each source at the radius beyond which it gives no sensor input.
 
     Everything outside the ring is the no-input region: zero irradiance at any

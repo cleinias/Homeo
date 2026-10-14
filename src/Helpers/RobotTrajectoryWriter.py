@@ -69,6 +69,11 @@ class RobotTrajectoryWriter(object):
         # Simulator steps per homeostat tick, for the header (2: the
         # KheperaSimulation default, one per wheel before synchronous stepping)
         self.stepsPerTick = 2
+        # The eyes as configured, {name: (threshold, saturation, response)},
+        # and where they sit along the robot's radii; set by KheperaSimulation
+        # before the header is written, None if unknown
+        self.eyes = None
+        self.eyeRadiusRatio = None
         self.posFile = open(self.buildTrajFilename(modelName), 'w') if self._enabled else None
         self._openHeader(initialPos)
 
@@ -198,6 +203,7 @@ class RobotTrajectoryWriter(object):
             self.posFile.write(light.userData['name'] + '\t%f\t%f\t%f\t%s\n' % (
                 light.userData['lightPos'][0], light.userData['lightPos'][2], intensity,
                 light.userData['lightIsOn']))
+        self.writeEyes()
         self.posFile.write("# Vehicle's initial position at:\n")
         self.posFile.write('%f\t %f%s\n\n' % (initialPos[0], initialPos[2], heading))
         '''One light_x, light_y, distance triplet per source, in the order of
@@ -210,6 +216,16 @@ class RobotTrajectoryWriter(object):
         self.posFile.flush()
 
         
+    def writeEyes(self):
+        '''The eyes' sensitivity, one comment line each, so that a chart can
+        tell how far they see: an eye stops seeing a source of intensity I at
+        sqrt(I / threshold) (on its axis).  Since 14 Oct 2026 (HV-11).'''
+        if self.eyeRadiusRatio is not None:
+            self.posFile.write("# Eye radius ratio\t%g\n" % self.eyeRadiusRatio)
+        for name, (threshold, saturation, response) in (self.eyes or {}).items():
+            self.posFile.write("# Eye\t%s\tthreshold\t%f\tsaturation\t%f\tresponse\t%s\n"
+                               % (name, threshold, saturation, response))
+
     def trajFileRename(self, trajFileHandle, oldFileName, modelName):
         "rename trajectory file to include robot's model, if needed"
 
