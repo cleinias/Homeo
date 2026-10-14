@@ -456,10 +456,7 @@ class ExperimentAttributesTest(unittest.TestCase):
 
     def testExistingExperimentsFitnessSign(self):
         """Existing experiment functions have fitnessSign == 1 (backward compat)"""
-        for name in ['initializeBraiten2_2_Full_GA',
-                      'initializeBraiten2_2_NoUnisel_Full_GA',
-                      'initializeBraiten2_2_NoUnisel_No_Noise_Full_GA',
-                      'initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE']:
+        for name in ['initializeBraiten2_2_Full_GA']:
             func = getattr(self.exps, name)
             self.assertEqual(func.fitnessSign, 1,
                              "%s should have fitnessSign == 1" % name)

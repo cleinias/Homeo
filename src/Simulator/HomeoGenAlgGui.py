@@ -186,9 +186,6 @@ class HomeoGASimulGUI(QWidget):
             "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt",
             "initializeBraiten2_2_Full_GA_scototaxis",
             "initializeBraiten2_2_Full_GA",
-            "initializeBraiten2_2_NoUnisel_Full_GA",
-            "initializeBraiten2_2_NoUnisel_No_Noise_Full_GA",
-            "initializeBraiten2_2_Full_GA_DUMMY_SENSORS_NO_UNISEL__NO_NOISE",
         ])
 
         self.noNoiseCheckBox = QCheckBox("No Noise")

@@ -176,18 +176,8 @@ class HomeoQtSimulation(QObject):
         if experiment == None:
 #            self.currentExperiment = 'initialize10UnitHomeostat'
             self.currentExperiment = 'initializeAshbyNoNoiseSimulation'
-#            self.currentExperiment = 'initializeBraiten1_1Arist'
-#            self.currentExperiment = 'initializeBraiten1_1Pos'
-#            self.currentExperiment = 'initializeBraiten1_1Neg'
-#            self.currentExperiment = 'initializeBraiten1_2Pos'
-#            self.currentExperiment = 'initializeBraiten1_2Neg'
-#            self.currentExperiment = 'initializeBraiten1_3'
 #            self.currentExperiment = 'initializeBraiten2_2Pos'
 #            self.currentExperiment = 'initializeBraiten2_2Neg'
-#            self.currentExperiment = 'initializeBraiten2_2_Full_Neg'
-#            self.currentExperiment = 'initializeBraiten2_2_Full_Pos'
-#            self.currentExperiment = 'initializeBraiten2_7_Full'
-#            self.currentExperiment = 'initializeBraiten2_2Aristotelian'
         else:
             self.currentExperiment = experiment
             
