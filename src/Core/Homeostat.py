@@ -315,39 +315,6 @@ class Homeostat(object):
         upTo = self.time + 1
         self.runFor(upTo)
         
-    def start(self):
-        '''Start the simulation by setting the units "in motion." 
-           This involves cycling though the units and asking them to update themselves, 
-           then collecting data for each unit
-           First check that it there are enough data to start
-           Notice that once started the Homeostat goes on forever. 
-           The only way to stop it is to send it the message stop.'''
-        
-        sleepTime = self.slowingFactor
-        
-        if self.isReadyToGo():
-            if self.time is None:
-                self.time = 0
-            self.isRunning = True
-            while self.isRunning:
-                for unit in self.homeoUnits:
-                    unit.time = time
-                    unit.selfUpdate()
-                    if self.collectsData:
-                        self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
-                    self.time += 1
-                    if sleepTime > 0:
-                        time.sleep(sleepTime / 1000)           # sleep accepts seconds, slowingFactor is in milliseconds
-        else:
-            sys.stderr.write('Warning: Homeostat is not ready to start')
-
-    def stop(self):
-        '''Stop the homeostat's running by changing the value of the isRunning ivar to false. 
-           This procedure is equivalent to, and indeed wants to simulate, 
-           turning the switch off on the physical equivalent of the homeostat'''
-
-        self.isRunning = False
-
     def timeReset(self):
         '''Reset time to 0. Does not change the external values of the units
            or their connections, but do change their internal computational values:

@@ -10,7 +10,6 @@ from   Helpers.General_Helper_Functions import *
 
 import unittest, pickle, os, time
 from copy import copy, deepcopy
-from threading import Thread
 
 class HomeostatTest(unittest.TestCase):
 
@@ -33,22 +32,13 @@ class HomeostatTest(unittest.TestCase):
 #        self.homeostat.collectsData = False
 
 
-    def testStartAndStop(self):
-        '''As the start method runs an infinite loop, it must be run
-           in a separate thread. That will allow setting the ivar isRunning to False
-           thereby stopping the homeostat'''
-        
+    def testNoStartOrStop(self):
+        '''Homeostat.start ran forever in a thread, advancing time once per
+        unit and setting each unit's time to the time module; it and stop()
+        were deleted on 14 Oct 2026 (CD-06).  runFor and runOnce run it.'''
+        self.assertFalse(hasattr(Homeostat, 'start'))
+        self.assertFalse(hasattr(Homeostat, 'stop'))
 
-        self.assertTrue(self.homeostat.isReadyToGo)
-
-        thr = Thread(target=self.homeostat.start, name = 'homeostatInAThread')
-        thr.start()
-     
-        self.assertTrue(self.homeostat.isRunning == True)
-        time.sleep(1)
-        self.homeostat.stop()
-        self.assertTrue(self.homeostat.isRunning == False)
-        
     def testAddFullyConnectedUnits(self):
         """
         
@@ -277,24 +267,16 @@ class HomeostatTest(unittest.TestCase):
 
     def testRun(self):
         """
-        Test that homeostat runs without raising exceptions/errors
-        and that it can be stopped once it starts. It needs to be run in a thread,
-        otherwise we would never get control back
+        A homeostat runs for the ticks asked, recording every unit at each tick
         """
-        unit1 = HomeoUnit()
-        unit2 = HomeoUnit()
-        unit3 = HomeoUnit()
-        unit4 = HomeoUnit()
-        self.homeostat.addFullyConnectedUnit(unit1)
-        self.homeostat.addFullyConnectedUnit(unit2)
-        self.homeostat.addFullyConnectedUnit(unit3)
-        self.homeostat.addFullyConnectedUnit(unit4)
+        self.homeostat.slowingFactor = 0
+        self.homeostat.runFor(20)
+        self.assertEqual(self.homeostat.time, 20)
+        states = self.homeostat.dataCollector.states
+        self.assertEqual(sorted(states), list(range(20)))
+        self.assertTrue(all(len(units) == len(self.homeostat.homeoUnits) == 4 for units in states.values()))
+        self.assertTrue(all(unit.time == 19 for unit in self.homeostat.homeoUnits))
 
-        thr = Thread(target = self.homeostat.start)
-        thr.start()
-        time.sleep(1)
-        self.homeostat.stop()
-        
     def tearDown(self):
         pass
 
