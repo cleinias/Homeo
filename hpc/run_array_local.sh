@@ -10,6 +10,15 @@
 #     bash hpc/run_array_local.sh --random-heading         # heading from the seed
 #     bash hpc/run_array_local.sh --heading 45 --seeds 20261013,20261014,...
 #                                                  # chosen seeds, fixed heading
+#     bash hpc/run_array_local.sh --random-start --env-seed 7
+#                                  # one start pose for every task, the homeostat
+#                                  # varying with the task's seed
+#     bash hpc/run_array_local.sh --random-start --seeds 5,5,5 --env-seeds 7,8,9
+#                                  # one homeostat, three start poses; with both
+#                                  # lists any crossed design (task i takes the
+#                                  # i-th entry of each)
+#                                  # The environment's seed (--env-seed, the start
+#                                  # pose) defaults to the task's seed.
 #     bash hpc/run_array_local.sh --fixed-weights --signs +- --uncrossed \
 #          --random-start --start-range 4 8 -s 300000 -a 101-125
 #                                  # non-adaptive Braitenberg 2 vehicle: wiring
@@ -132,6 +141,8 @@ DRY_RUN=0
 STATE_LOG=0
 LOG_INTERVAL=200
 SEEDS=""
+ENV_SEED=""
+ENV_SEEDS=""
 HEADING=""
 RANDOM_HEADING=0
 FIXED_WEIGHTS=0
@@ -164,6 +175,8 @@ while [ $# -gt 0 ]; do
         --state-log)     STATE_LOG=1; shift;;
         --log-interval)  LOG_INTERVAL="$2"; shift 2;;
         --seeds)         SEEDS="$2"; shift 2;;
+        --env-seed)      ENV_SEED="$2"; shift 2;;
+        --env-seeds)     ENV_SEEDS="$2"; shift 2;;
         --heading)       HEADING="$2"; shift 2;;
         --random-heading) RANDOM_HEADING=1; shift;;
         --fixed-weights) FIXED_WEIGHTS=1; shift;;
@@ -202,6 +215,12 @@ fi
 DATADIR="$RUNDIR/SimsData-$(date +%Y-%m-%d)"
 mkdir -p "$DATADIR"
 
+if [ -n "$ENV_SEED" ] && [ -n "$ENV_SEEDS" ]; then
+    echo "--env-seed and --env-seeds are mutually exclusive" >&2; exit 2
+fi
+if [ -n "$ENV_SEED" ] && ! [[ "$ENV_SEED" =~ ^[0-9]+$ ]]; then
+    echo "--env-seed needs a non-negative integer, got '$ENV_SEED'" >&2; exit 2
+fi
 if [ -n "$HEADING" ] && [ "$RANDOM_HEADING" -eq 1 ]; then
     echo "--heading and --random-heading are mutually exclusive" >&2; exit 2
 fi
@@ -276,11 +295,13 @@ else
     echo "   uniselector: $UNISELECTOR"
 fi
 [ -n "$HEADING" ] && echo "   heading    : $HEADING deg (fixed)"
-[ "$RANDOM_HEADING" -eq 1 ] && echo "   heading    : random, drawn from each run's seed"
+[ "$RANDOM_HEADING" -eq 1 ] && echo "   heading    : random, drawn from each run's environment seed"
 [ -n "$SPIN" ]    && echo "   spin       : $SPIN x max wheel speed ($(spin_dir))"
 [ ${#EYE_ARGS[@]} -gt 0 ] && echo "   eyes       : ${EYE_ARGS[*]}"
 [ "$RANDOM_START" -eq 1 ] && echo "   start      : random position ${START_RANGE/ /-} from the light (default 2-6), random heading"
 [ -n "$SEEDS" ]   && echo "   seeds      : explicit -- $SEEDS"
+[ -n "$ENV_SEED" ]  && echo "   env seed   : $ENV_SEED for every task"
+[ -n "$ENV_SEEDS" ] && echo "   env seeds  : explicit -- $ENV_SEEDS"
 if [ "$STATE_LOG" -eq 1 ]; then
     echo "   state log  : on, every $LOG_INTERVAL ticks (weights, stress, sigma)"
 fi
@@ -308,7 +329,9 @@ echo
     [ "$RANDOM_START" -eq 1 ] && echo "random start ${START_RANGE/ /-} from the light (default 2-6)"
     [ -n "$SPIN" ] && echo "spin $SPIN x max wheel speed ($(spin_dir))"
     [ ${#EYE_ARGS[@]} -gt 0 ] && echo "eyes ${EYE_ARGS[*]}"
-    [ -n "$SEEDS" ] && echo "seeds $SEEDS" 
+    [ -n "$SEEDS" ] && echo "seeds $SEEDS"
+    [ -n "$ENV_SEED" ] && echo "env seed $ENV_SEED for every task"
+    [ -n "$ENV_SEEDS" ] && echo "env seeds $ENV_SEEDS"
     echo "code $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned')"
     echo "cpu  $(lscpu 2>/dev/null | sed -n 's/^Model name: *//p' | head -1)"
     echo "python $("$PYTHON" -c 'import platform; print(platform.python_version())' 2>/dev/null), numba $("$PYTHON" -c 'import numba; print(numba.__version__)' 2>/dev/null || echo absent)"
@@ -323,26 +346,43 @@ task_done() {   # a task counts as finished once its own batch CSV exists
         compgen -G "$RUNDIR/task_$1/*/batch_*.csv" >/dev/null 2>&1
 }
 
-run_task() {
-    local i="$1" seed=$(( 20260930 + $1 )) serial state_log_args heading_args
-    serial=$(printf '%02d' "$i")
-    # --seeds overrides the index-derived seed: task i takes the i-th entry,
-    # counting from FIRST.  Needed whenever the seeds are chosen rather than
-    # enumerated -- e.g. picked so that each connection-polarity class is
-    # represented a fixed number of times, which no arithmetic rule can give.
-    if [ -n "$SEEDS" ]; then
-        local pos=$(( i - FIRST + 1 ))
-        seed=$(echo "$SEEDS" | cut -d, -f"$pos")
-        if [ -z "$seed" ]; then
-            echo "   task $i: no $pos-th entry in --seeds" >&2
-            return 1
-        fi
+# Task i's entry in a comma-separated list, counting from FIRST.
+list_entry() {   # list_entry <list> <option name> <task>
+    local pos=$(( $3 - FIRST + 1 )) value
+    value=$(echo "$1" | cut -d, -f"$pos")
+    if [ -z "$value" ]; then
+        echo "   task $3: no $pos-th entry in $2" >&2
+        return 1
     fi
+    echo "$value"
+}
+
+# Task i's seed (the homeostat's): 20260930 + i, unless --seeds gives it.
+# --seeds is needed whenever the seeds are chosen rather than enumerated --
+# e.g. picked so that each connection-polarity class is represented a fixed
+# number of times, which no arithmetic rule can give.
+task_seed() {
+    if [ -n "$SEEDS" ]; then list_entry "$SEEDS" --seeds "$1"; else echo $(( 20260930 + $1 )); fi
+}
+
+# Task i's environment seed (the start pose): --env-seed, the task's entry in
+# --env-seeds, or nothing -- the experiment then uses the task's seed.
+task_env_seed() {
+    if [ -n "$ENV_SEEDS" ]; then list_entry "$ENV_SEEDS" --env-seeds "$1"; else echo "$ENV_SEED"; fi
+}
+
+run_task() {
+    local i="$1" seed env_seed serial state_log_args heading_args
+    serial=$(printf '%02d' "$i")
+    seed=$(task_seed "$i") || return 1
+    env_seed=$(task_env_seed "$i") || return 1
+    local env_seed_args=()
+    [ -n "$env_seed" ] && env_seed_args=(--env-seed "$env_seed")
     heading_args=""
     if [ -n "$HEADING" ]; then
         heading_args="--heading $HEADING"
     elif [ "$RANDOM_HEADING" -eq 1 ]; then
-        # Drawn from the environment's own stream (seeded, by default, with the
+        # Drawn from the environment's own stream (--env-seed; by default the
         # run's seed), never from the homeostat's, so one seed gives the same
         # homeostat, noise included, at heading 0 and at a random heading --
         # which is what makes a random-heading batch a paired comparison
@@ -397,6 +437,7 @@ run_task() {
         --batch 1 \
         --steps "$STEPS" \
         --seed "$seed" \
+        "${env_seed_args[@]}" \
         --start-at-rest \
         --traj-interval "$TRAJ_INTERVAL" \
         --run-tag "$serial" \
@@ -416,7 +457,7 @@ for i in $(seq "$FIRST" "$LAST"); do
         continue
     fi
     if [ "$DRY_RUN" -eq 1 ]; then
-        echo "   task $i: would run with seed $(( 20260930 + i ))"
+        echo "   task $i: would run with seed $(task_seed "$i")$(e=$(task_env_seed "$i") && [ -n "$e" ] && echo ", env seed $e")"
         continue
     fi
     # Block until a worker slot frees up.

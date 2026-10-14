@@ -57,7 +57,7 @@ dupes = df.task[df.task.duplicated()].tolist()
 if dupes:
     sys.exit(f'more than one CSV claims the same task index: {sorted(set(dupes))}')
 
-cols = [c for c in ('task', 'seed', 'acquired', 'first_acq', 'final_dist',
+cols = [c for c in ('task', 'seed', 'env_seed', 'acquired', 'first_acq', 'final_dist',
                     'min_dist', 'min_t', 'steps_run', 'wall_time') if c in df]
 print(df[cols].to_string(index=False))
 print()
