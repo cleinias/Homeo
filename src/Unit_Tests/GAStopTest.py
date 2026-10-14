@@ -67,5 +67,21 @@ class GAStopTest(unittest.TestCase):
         self.assertEqual([r['gen'] for r in logbook if 'gen' in r], [0])
 
 
+    def testACrashInGenerationOneKeepsGenerationZero(self):
+        '''A crash during generation 1 re-raises, and the logbook saved has
+        generation 0's evaluations and statistics (SG-04).'''
+        def crashOnTheEighth(ga, k):
+            if k == 8:
+                raise RuntimeError('simulated crash in generation 1')
+        ga = self.ga(crashOnTheEighth)
+        with contextlib.redirect_stdout(io.StringIO()):
+            pop = ga.generateRandomPop(randomSeed=1)
+            with self.assertRaises(RuntimeError):
+                ga.runGaSimulation(pop)
+        logbook = self.savedLogbook(ga)
+        self.assertEqual(len([r for r in logbook if 'indivId' in r]), 7)
+        self.assertEqual([r['gen'] for r in logbook if 'gen' in r], [0])
+
+
 if __name__ == '__main__':
     unittest.main()

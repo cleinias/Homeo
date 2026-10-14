@@ -575,6 +575,10 @@ class HomeoGASimulation(object):
             self.logbook.record(gen=0, evaluations=len(pop), **record0)
             if progressCallback:
                 progressCallback(0, record0, self.hof[0].fitness.values[0])
+            # Saved now: until 14 Oct 2026 the first save came after
+            # generation 1, so a crash in it lost generation 0 too (SG-04)
+            self.saveLogbook(pop, time() - timeStarted, timeStarted)
+            self.saveHistory(timeStarted)
 
             #print "  With ID's ", sorted([ind.ID for ind in pop])
 
@@ -706,8 +710,13 @@ class HomeoGASimulation(object):
         except TCPConnectionError as e:
             hDebug("network major",("TCP connection error: \n" + e.value + "Cleaning up and quitting..."))
             hDebug("network",("Trying to quit simulation environment %s" % self.simulatorBackend))
+            # Saved, and raised: until 14 Oct 2026 the run returned as if
+            # finished, with nothing saved (SG-04)
+            self.saveLogbook(pop, time() - timeStarted, timeStarted)
+            self.saveHistory(timeStarted)
             if self.simulatorBackend is not None:
                 self.simulatorBackend.quit()
+            raise
         #=======================================================================
         # except VREP_Error as e:
         #     "Try to close connection to V-REP"
@@ -720,13 +729,9 @@ class HomeoGASimulation(object):
         #=======================================================================
 
         except Exception:
-            "Something bad happened: Check if we did anything and save logbook and history of work done so far and re-raise."
-            if timeElapsed is not None:
-                self.saveLogbook(pop, timeElapsed, timeStarted)
-                self.saveHistory(timeStarted)
-            else:
-                'TimeElapsed still unbound: we did not even get started.'
-                pass
+            "Something bad happened: save the logbook and history of the work done so far and re-raise."
+            self.saveLogbook(pop, time() - timeStarted, timeStarted)
+            self.saveHistory(timeStarted)
             raise
         finally:
             if self._pool is not None:
