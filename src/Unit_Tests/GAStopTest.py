@@ -83,5 +83,29 @@ class GAStopTest(unittest.TestCase):
         self.assertEqual([r['gen'] for r in logbook if 'gen' in r], [0])
 
 
+
+class GAReuseTest(unittest.TestCase):
+    """A GA object runs more than once, serial or parallel (SG-10): until 14
+    Oct 2026 the first run closed the pool and discarded the simulator."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = HomeoGASimulation.dataDirRoot
+        HomeoGASimulation.dataDirRoot = tmp.name
+        self.addCleanup(setattr, HomeoGASimulation, 'dataDirRoot', root)
+
+    def testTwoRuns(self):
+        for workers in (1, 2):
+            with self.subTest(workers=workers):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    ga = HomeoGASimulation(stepsSize=20, popSize=4, generSize=1, exp=EXP,
+                                           simulatorBackend='HOMEO', nWorkers=workers)
+                    for seed in (1, 2):
+                        pop = ga.generateRandomPop(randomSeed=seed)
+                        ga.runGaSimulation(pop)
+                        self.assertTrue(all(ind.fitness.valid for ind in pop))
+
+
 if __name__ == '__main__':
     unittest.main()

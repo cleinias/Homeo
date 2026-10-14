@@ -363,9 +363,10 @@ class HomeoGASimulation(object):
         "Register map and evaluate functions (parallel or serial)"
         self.nWorkers = nWorkers
         self._pool = None
+        self._poolConfig = None         # the workers' setup, when evaluating in parallel
 
         if nWorkers > 1 and simulatorBackend == "HOMEO":
-            config = {
+            self._poolConfig = {
                 'experiment': exp,
                 'experimentParams': {
                     'dataDir': self.dataDir,
@@ -376,12 +377,7 @@ class HomeoGASimulation(object):
                 'dataDir': self.dataDir,
                 'fitnessSign': self.fitnessSign,
             }
-
-            ctx = multiprocessing.get_context('forkserver')
-            self._pool = ctx.Pool(
-                nWorkers, initializer=_init_worker, initargs=(config,))
-            self.toolbox.register('map', self._pool.map)
-            self.toolbox.register("evaluate", _evaluate_genome_worker)
+            # The pool itself is made by each run (_startPool), which closes it
             print("Using %d worker processes for parallel evaluation" % nWorkers)
         else:
             self.toolbox.register('map', map)
@@ -524,6 +520,18 @@ class HomeoGASimulation(object):
         self._type = 'random'
         return self.toolbox.population(n=self.popSize)
 
+    def _startPool(self):
+        """The run's worker pool, when evaluating in parallel.  One per run:
+        until 14 Oct 2026 __init__ made it and the first run closed it, so a
+        second run on the same object failed ('Pool not running', SG-10)."""
+        if self._poolConfig is None:
+            return
+        ctx = multiprocessing.get_context('forkserver')
+        self._pool = ctx.Pool(
+            self.nWorkers, initializer=_init_worker, initargs=(self._poolConfig,))
+        self.toolbox.register('map', self._pool.map)
+        self.toolbox.register("evaluate", _evaluate_genome_worker)
+
     def runGaSimulation(self, pop, progressCallback=None):
         """Execute a complete GA run. Could be either over a population of clones
            or over a truly randomly generated  population.
@@ -537,6 +545,7 @@ class HomeoGASimulation(object):
 
         'Record time for naming logbook pickled object and computing time statistics'
         self._stopRequested = False
+        self._startPool()
         timeStarted = time()
         timeElapsed = None
         if self.randomSeed is None:
@@ -701,7 +710,10 @@ class HomeoGASimulation(object):
             self.saveLogbook(pop, timeElapsed, timeStarted)
             self.saveHistory(timeStarted)
 
-            if self.simulatorBackend is not None:
+            # The built-in simulator stays, for another run on this object
+            # (quitting it discarded its simulation; SG-10); an external one
+            # is shut down
+            if self.simulatorBackend is not None and self.simulatorBackend.name != "HOMEO":
                 self.simulatorBackend.quit()
 
             #best_ind = tools.selBest(pop, 1)[0]
@@ -737,6 +749,7 @@ class HomeoGASimulation(object):
             if self._pool is not None:
                 self._pool.close()
                 self._pool.join()
+                self._pool = None
         
             
 
@@ -958,11 +971,10 @@ class HomeoGASimulation(object):
         timeNow = time()
         hDebug('eval' , "Simulation started at time: " +  str(timeNow))
         hDebug('eval', ("Now computing %d ticks..." % self.stepsSize))
-        self.worldBeingResetLock.acquire()
-        for i in range(self.stepsSize):
-            hDebug('eval', ("Step: "+ str(i+1)+"\n"))
-            self._simulation.step()
-        self.worldBeingResetLock.release()
+        with self.worldBeingResetLock:          # released if a step raises (SG-10)
+            for i in range(self.stepsSize):
+                hDebug('eval', ("Step: "+ str(i+1)+"\n"))
+                self._simulation.step()
         if self.simulatorBackend.name == "HOMEO":
             self.simulatorBackend.kheperaSimulation.saveTrajectory()   # close (and flush) the .traj file
         hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
