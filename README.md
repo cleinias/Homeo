@@ -20,8 +20,24 @@ A software simulation of W. Ross Ashby's Homeostat, as described in
 ```bash
 pip install -r requirements.txt
 pip install -e .                        # Homeo itself, editable
-python -m Simulator.HomeoQtSimulation   # launch the GUI, from any directory
 ```
+
+Interactive runs (the `python -m` commands work from any directory):
+
+```bash
+python src/run_ashby_gui.py             # Ashby's 7 experiments (--exp N to skip the selector)
+python -m Simulator.HomeoGeneralGUI     # general homeostat GUI
+python -m Simulator.HomeoGenAlgGui      # genetic-algorithm GUI (needs DEAP)
+
+# Braitenberg vehicles on the built-in Khepera simulator, in a pyglet window;
+# --visualize takes the same options as the batch runs (listed in the
+# scripts' docstrings and in HomeoExperiments/KheperaExperiments/phototaxis_common.py)
+python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct --visualize
+python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby --visualize
+```
+
+`Simulator.HomeoQtSimulation` is the simulation engine behind the Qt GUIs;
+it has no window of its own.
 
 The editable install (`pyproject.toml`) puts `src/` on Python's path, so the
 modules, which import each other as top-level packages (`from Helpers.X import
