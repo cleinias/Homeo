@@ -9,7 +9,7 @@ This software reproduces all the components of Ashby's machine -- units, connect
 All source code lives under `src/`. The four main directories are:
 
 - **`Core/`** -- The simulation engine: `Homeostat`, `HomeoUnit`, `HomeoConnection`, `HomeoUniselector`, and data-collection classes.
-- **`Simulator/`** -- Simulation runners (`HomeoSimulation` for headless runs, `HomeoQtSimulation` for the Qt event loop), GUI windows (`HomeoGeneralGUI`, `HomeoMinimalGui`, `HomeoGenAlgGui`), the GUI-free genetic-algorithm engine (`HomeoGenAlg`), and predefined experiment setups (`HomeoExperiments`).
+- **`Simulator/`** -- Simulation runners (`HomeoSimulation` for headless runs, `HomeoQtSimulation` for the Qt event loop), GUI windows (`HomeoGeneralGUI`, `AshbyExperimentGui`, `HomeoGenAlgGui`), the GUI-free genetic-algorithm engine (`HomeoGenAlg`), and predefined experiment setups (`HomeoExperiments`).
 - **`Helpers/`** -- Noise generation (`HomeoNoise`), PyQt signal proxying (`QObjectProxyEmitter`, with a null fallback when PyQt5 is absent), trajectory and statistics utilities.
 - **`Unit_Tests/`** -- Pytest test suite covering every core class.
 
@@ -112,10 +112,10 @@ data = hom.dataCollector.criticalDevAsNPArrayForAllUnits()
 
 `HomeoQtSimulation` (in `Simulator/HomeoQtSimulation.py`) integrates the simulation into the PyQt5 event loop, providing live charting and signal-based updates. It is not normally instantiated directly; instead, one of the GUI entry points creates it.
 
-Three GUIs are available, each launched as a module (`python -m`).  With Homeo installed editable (`pip install -e .`, see the README) this works from any directory; without it, only from `src/`:
+Three GUIs are available, launched as modules (`python -m`) or, for Ashby's experiments, as a script.  With Homeo installed editable (`pip install -e .`, see the README) this works from any directory; without it, only from `src/`:
 
 - **`python -m Simulator.HomeoGeneralGUI`** -- Full-featured interface: unit and connection configuration, real-time deviation charts, save/load, experiment selection.
-- **`python -m Simulator.HomeoMinimalGui`** -- Stripped-down interface with start/pause, save, and basic graphing.
+- **`python src/run_ashby_gui.py`** -- Ashby's seven experiments from _Design for a Brain_ (`AshbyExperimentGui`, a `HomeoGeneralGUI` with an experiment selector and each experiment's controls); `--exp N` skips the selector.
 - **`python -m Simulator.HomeoGenAlgGui`** -- Genetic-algorithm interface for evolutionary parameter optimisation (requires the DEAP library).  The engine behind it, `Simulator/HomeoGenAlg.py`, runs without the GUI and without PyQt5, e.g. from `run_direct_vehicle_ga.py`.
 
 ### Predefined experiments
