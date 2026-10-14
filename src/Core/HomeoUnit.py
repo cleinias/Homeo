@@ -233,7 +233,7 @@ class HomeoUnit(object):
         DefaultParameters. Assign a random but unique name and sets the output to 
         some value around 0, i.e. at equilibrium.
         These values are supposed to be overridden in normal practice, because the values are set by the simulation 
-        (an instance of HomeoSimulation or by the graphic interface)
+        (an instance of HomeoQtSimulation or by the graphic interface)
         '''
         self._showUniselectorAction = False
         # A reset keeps the unit's mode (review finding CU-06)

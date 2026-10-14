@@ -9,7 +9,7 @@ This software reproduces all the components of Ashby's machine -- units, connect
 All source code lives under `src/`. The four main directories are:
 
 - **`Core/`** -- The simulation engine: `Homeostat`, `HomeoUnit`, `HomeoConnection`, `HomeoUniselector`, and data-collection classes.
-- **`Simulator/`** -- Simulation runners (`HomeoSimulation` for headless runs, `HomeoQtSimulation` for the Qt event loop), GUI windows (`HomeoGeneralGUI`, `AshbyExperimentGui`, `HomeoGenAlgGui`), the GUI-free genetic-algorithm engine (`HomeoGenAlg`), and predefined experiment setups (`HomeoExperiments`).
+- **`Simulator/`** -- Simulation runner (`HomeoQtSimulation`, for the GUIs and the GA, also without PyQt5), GUI windows (`HomeoGeneralGUI`, `AshbyExperimentGui`, `HomeoGenAlgGui`), the GUI-free genetic-algorithm engine (`HomeoGenAlg`), and predefined experiment setups (`HomeoExperiments`).
 - **`Helpers/`** -- Noise generation (`HomeoNoise`), PyQt signal proxying (`QObjectProxyEmitter`, with a null fallback when PyQt5 is absent), trajectory and statistics utilities.
 - **`Unit_Tests/`** -- Pytest test suite covering every core class.
 
@@ -76,21 +76,9 @@ The collector offers several export methods: `saveCompleteDataOnFile(filename)` 
 
 ### Headless (scripted)
 
-`HomeoSimulation` (in `Simulator/HomeoSimulation.py`) wraps a `Homeostat` with administrative bookkeeping -- filenames, save flags, a run counter. The simplest way to set up a standard four-unit homeostat is:
+A `Homeostat` runs by itself: build it, run it with `runFor`, and read or save what it collected.  Set `slowingFactor` to 0 for headless runs: it is a per-tick pause in milliseconds (10 by default), there for the GUI.  `Simulator/AshbyOriginalExperiments.py` (driven by `run_ashby_original_experiments.py`) and the phototaxis scripts in `HomeoExperiments/KheperaExperiments/` are the headless experiment runners.  (`HomeoSimulation`, an older wrapper with filenames and save flags, was deleted on 14 Oct 2026; `HomeoQtSimulation` does that bookkeeping and runs without PyQt5.)
 
-```python
-from Simulator.HomeoSimulation import HomeoSimulation
-
-sim = HomeoSimulation()
-sim.initializeAshbySimulation()   # 4 fully connected HomeoUnitNewtonian units
-sim.maxRuns = 1000
-sim.start()                       # runs for maxRuns ticks
-
-sim.saveCompleteRunOnFile()       # writes all data to a timestamped file
-sim.save()                        # pickles the homeostat
-```
-
-For a custom topology:
+A four-unit homeostat of Newtonian units:
 
 ```python
 from Core.Homeostat import Homeostat
@@ -102,8 +90,11 @@ for _ in range(4):
     unit.setRandomValues()
     hom.addFullyConnectedUnit(unit)
 
+hom.slowingFactor = 0
 hom.runFor(500)
 
+hom.saveTo('run.pickled')                                  # the homeostat
+hom.dataCollector.saveCompleteDataOnFile('run-data.txt')   # every unit at every tick
 # extract deviation history as a NumPy array: data[t, j] is unit j's deviation at tick t
 data = hom.dataCollector.criticalDevAsNPArrayForAllUnits()
 ```

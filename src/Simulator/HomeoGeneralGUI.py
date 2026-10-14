@@ -24,7 +24,7 @@ from time import strftime, localtime, time
 
 class HomeoSimulationControllerGui(QDialog):    
     '''
-    Part of a complete GUI for  a HomeoSimulation. 
+    Part of a complete GUI for  a HomeoQtSimulation. 
     It provides access to starting and stopping the simulation and to saving and graphing data.
     Real-time interactive access to the homeostat is provided by class Classic_Homeostat,
     which this class instantiates and then modifies it.

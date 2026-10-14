@@ -20,7 +20,7 @@ class Homeostat(object):
     Homeostat manages a complete homeostat by taking care of the communication between the units and between the Units and the Uniselector.
     It stores a collection of units, and some state variables representing the general state of the Homeostat at any point in time. 
     "Starting" (an instance of) this class is equivalent to turning the switch on the electro-mechanical machine built by Ashby. 
-    Notice that this is typically done by the application class HomeoSimulation, which offers facilities for adding units, 
+    Notice that this is typically done by the application class HomeoQtSimulation, which offers facilities for adding units, 
     adding connections, selecting parameters pertaining to the homeostat (weights, etcetera) and pertaining to the simulation 
     (number of iterations, print out and/or display of data, etcetera). Homeostat collaborates with DataCollector 
     (an instance of which it holds) to record its states for any instant of time it goes through. However, it does not contain any facility
@@ -514,7 +514,7 @@ class Homeostat(object):
 # Private-saving methods
 #===============================================================================
 
-'''No private saving methods, perhaps add later depending on HomeoSimulation needs'''
+'''No private saving methods, perhaps add later depending on HomeoQtSimulation needs'''
 
 #===============================================================================
 # Printing methods
