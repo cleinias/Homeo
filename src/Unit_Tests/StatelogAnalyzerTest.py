@@ -1,0 +1,70 @@
+'''
+Created on Oct 14, 2026
+
+@author: stefano
+
+StatelogAnalyzer's drift/diffusion split (review finding HN-04): on a
+noise-free weight trajectory the diffusion residual is zero.  Until 14 Oct
+2026 the drift used the unit's dt_fast instead of the uniselector's own dt,
+was one tick's drift compared with the change over log_interval ticks,
+was evaluated at the new weight instead of the old one, and always used the
+legacy model's formula.
+'''
+import os
+import tempfile
+import unittest
+
+import numpy as np
+
+from Helpers import StatelogAnalyzer as SLA
+
+
+def _write_statelog(path, model, w, ticks, tau_a=100.0, theta=0.5, ou_dt=1.0, dt_fast=0.2):
+    with open(path, 'w') as f:
+        f.write('# HomeostatStateLog v1\n')
+        f.write('# log_interval\t%d\n' % (ticks[1] - ticks[0]))
+        for name in ('Left Motor', 'Right Motor'):
+            prefix = '# unit_%s' % name
+            f.write('%s_dt_fast\t%f\n' % (prefix, dt_fast))
+            if model is not None:
+                f.write('%s_ou_model\t%s\n' % (prefix, model))
+            f.write('%s_tau_a\t%f\n%s_theta\t%f\n%s_ou_dt\t%f\n'
+                    % (prefix, tau_a, prefix, theta, prefix, ou_dt))
+        f.write('tick\tw_Left Motor<-Right Motor\n')
+        for t, v in zip(ticks, w):
+            f.write('%d\t%.15f\n' % (t, v))
+
+
+class DriftDiffusionTest(unittest.TestCase):
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def residual(self, model, k, interval, ou_dt=1.0):
+        "Median |diffusion|/|drift| on the noise-free trajectory w_n = 0.8 (1 - k ou_dt)^n."
+        ticks = np.arange(0, 2000, interval)
+        w = 0.8 * (1.0 - k * ou_dt) ** ticks
+        path = os.path.join(self.tmp.name, 'run.statelog')
+        _write_statelog(path, model, w, ticks, ou_dt=ou_dt)
+        data = SLA.parse_statelog(path)
+        SLA.enrich(data)
+        col = 'w_Left Motor<-Right Motor'
+        df = data.df.iloc[1:]
+        return (df['diffusion_' + col].abs() / df['drift_' + col].abs()).median()
+
+    def testNoiseFreeTrajectoriesHaveNoDiffusion(self):
+        for model, k in (('legacy', 0.5 / 100), ('ou', 1 / 100), (None, 0.5 / 100)):
+            for interval in (1, 100):
+                with self.subTest(model=model, interval=interval):
+                    self.assertLess(self.residual(model, k, interval), 1e-6)
+        with self.subTest('ou_dt'):
+            self.assertLess(self.residual('ou', 1 / 100, 10, ou_dt=0.5), 1e-6)
+
+    def testTheDiffusionModelHasNoDrift(self):
+        self.assertEqual(SLA.ou_drift_rate({'ou_model': 'diffusion', 'tau_a': 100.0}), 0.0)
+        self.assertIsNone(SLA.ou_drift_rate({'dt_fast': 1.0}))
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -148,6 +148,25 @@ def _auto_cast(val: str):
 # B. Derived quantities
 # ---------------------------------------------------------------------------
 
+def ou_drift_rate(umeta):
+    '''The fraction of a weight its uniselector's drift removes per tick,
+    k * ou_dt, from a unit's logged metadata; None if the unit has no
+    continuous uniselector.  k is theta/tau_a for the 'legacy' model (the
+    only one, and so the default, before 12 Oct 2026), 1/tau_a for 'ou' and
+    0 for 'diffusion' (HomeoUniselectorContinuous.step).  The step is the
+    uniselector's own dt (ou_dt, default 1), not the unit's dt_fast.'''
+    tau_a = umeta.get('tau_a')
+    if tau_a is None or not tau_a > 0:
+        return None
+    model = umeta.get('ou_model', 'legacy')
+    k = {'legacy': umeta.get('theta', 0.0) / tau_a,
+         'ou': 1.0 / tau_a,
+         'diffusion': 0.0}.get(model)
+    if k is None:
+        return None
+    return k * umeta.get('ou_dt', 1.0)
+
+
 def enrich(data: StatelogData, smooth: int = 500):
     '''Add derived columns to the DataFrame in-place.
 
@@ -158,7 +177,7 @@ def enrich(data: StatelogData, smooth: int = 500):
     df = data.df
     meta = data.metadata
 
-    # Weight changes per tick
+    # Weight changes between logged rows (log_interval ticks apart)
     for col in data.conn_keys:
         df['d' + col] = df[col].diff()
 
@@ -166,21 +185,20 @@ def enrich(data: StatelogData, smooth: int = 500):
     if 'distance' in df.columns:
         df['dd'] = df['distance'].diff()
 
-    # OU drift decomposition for each cross-connection
+    # Drift/diffusion decomposition for each cross-connection: drift is the
+    # change the uniselector's deterministic part makes between two logged
+    # rows, diffusion the rest (see ou_drift_rate)
     units_meta = meta.get('units', {})
+    ticks = df['tick'].diff() if 'tick' in df.columns else pd.Series(1, index=df.index)
     for col in data.cross_conns:
         m = re.match(r'^w_(.+)<-', col)
         if not m:
             continue
-        uname = m.group(1)
-        umeta = units_meta.get(uname, {})
-        theta = umeta.get('theta', None)
-        tau_a = umeta.get('tau_a', None)
-        dt = umeta.get('dt_fast', 1.0)
-        if theta is not None and tau_a is not None and tau_a > 0:
+        rate = ou_drift_rate(units_meta.get(m.group(1), {}))
+        if rate is not None:
             drift_col = 'drift_' + col
             resid_col = 'diffusion_' + col
-            df[drift_col] = -(theta / tau_a) * df[col] * dt
+            df[drift_col] = df[col].shift(1) * ((1.0 - rate) ** ticks - 1.0)
             df[resid_col] = df['d' + col] - df[drift_col]
 
     # Mean stress across all units
