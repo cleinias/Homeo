@@ -80,7 +80,21 @@ for ray in (60, -60):
     counts[ray] = len(hits)
 bx = int(round(200 + 0.3 * r / perPixel * cos(radians(240))))
 by = int(round(200 + 0.3 * r / perPixel * sin(radians(240))))
-print('RESULT', json.dumps({'counts': counts, 'behind': pixels[by, bx, :3].tolist()}))
+from math import atan2, degrees
+fields = {}
+for fixture in robot.body.fixtures:
+    field = (fixture.userData or {}).get('pygletField')
+    if field is not None:
+        eye = [k[:-len('AngleRange')] for k in fixture.userData if k.endswith('AngleRange')]
+        position = list(field.position)
+        # A receptor, the arc's points, a receptor: the directions of the two
+        # edge lines, from their receptors to the arc's ends
+        low = (position[2] - position[0], position[3] - position[1])
+        high = (position[-4] - position[-2], position[-3] - position[-1])
+        fields[eye[0] if eye else 'receptor %d' % len(fields)] = [
+            round(degrees(atan2(low[1], low[0])), 2), round(degrees(atan2(high[1], high[0])), 2)]
+print('RESULT', json.dumps({'counts': counts, 'behind': pixels[by, bx, :3].tolist(),
+                            'fields': fields}))
 sim.trajectoryWriter.runOnce(transitionMessage='CLOSEFILE')
 '''
 
@@ -142,6 +156,15 @@ class KheperaRenderingTest(unittest.TestCase):
         "inside the body, away from its outline and heading, the body's fill, not the background"
         result, _ = self._draw(_HEADING)
         self.assertTrue(all(abs(a - b) > 20 for a, b in zip(result['behind'], BACKGROUND)), result)
+
+    def testEachEyeDrawsOneFieldBoundary(self):
+        """the e-puck2's eyes each draw one field outline, the outer boundary
+        of their two receptors' fields, not one arc per receptor"""
+        result, _ = self._draw(_HEADING)
+        self.assertEqual(sorted(result['fields']), ['leftEye', 'rightEye'], result)
+        # ls7 at 17.143 and ls6 at 45.791 degrees, 180-degree fields
+        self.assertEqual(result['fields']['leftEye'], [-72.86, 135.79])
+        self.assertEqual(result['fields']['rightEye'], [-135.88, 72.77])
 
     def testTheVisualizerDrawsAndCloses(self):
         "--visualize opens, draws a close-up centred on the robot, and closes on Q"

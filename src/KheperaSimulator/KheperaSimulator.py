@@ -155,6 +155,37 @@ def makePygletReceptor(r, tick, facing=0, numPoints=24):
     vertices += [(r + tick) * cos(f), (r + tick) * sin(f)]
     return _make_vlist(numPoints + 2, GL_LINE_STRIP, vertices)
 
+def makePygletEyeField(receptors, centre, fieldOfView, r, numPoints=100):
+    """Create a vertex list for the outer boundary of an eye's field, the
+       union of its receptors' fields, each fieldOfView degrees wide about its
+       facing: the outermost edge line on either side, each from the receptor
+       it belongs to, out to the circle of radius r about the eye's centre,
+       and the arc of that circle between them.  receptors: ((x, y), facing)
+       as in KheperaRobot.addEye; the vertices are relative to centre."""
+    half = fieldOfView / 2
+    def edge(receptor, angle):
+        "The receptor's position, and where its edge at angle meets the circle"
+        (x, y), _ = receptor
+        x, y = x - centre[0], y - centre[1]
+        ux, uy = cos(angle), sin(angle)
+        along = x * ux + y * uy
+        t = -along + sqrt(along**2 - (x * x + y * y) + r * r)
+        return (x, y), (x + t * ux, y + t * uy)
+    lowReceptor = min(receptors, key=lambda receptor: receptor[1])
+    highReceptor = max(receptors, key=lambda receptor: receptor[1])
+    lowStart, lowEnd = edge(lowReceptor, radians(lowReceptor[1] - half))
+    highStart, highEnd = edge(highReceptor, radians(highReceptor[1] + half))
+    low = atan2(lowEnd[1], lowEnd[0])
+    high = atan2(highEnd[1], highEnd[0])
+    if high < low:
+        high += 2 * pi
+    vertices = list(lowStart)
+    for i in range(numPoints + 1):
+        angle = low + (high - low) * i / numPoints
+        vertices += [r * cos(angle), r * sin(angle)]
+    vertices += list(highStart)
+    return _make_vlist(numPoints + 3, GL_LINE_STRIP, vertices)
+
 def makePygletRing(r, numPoints=48):
     "Create a vertex list for a circle of radius r centred at 0,0, outline only"
     vertices = []
@@ -215,8 +246,8 @@ def _drawShapes(userData, position, angle, fields=False):
        placed was right)."""
     shapes = userData['pygletShape']
     if shapes is None:
-        return
-    if isinstance(shapes, list):
+        drawn = []
+    elif isinstance(shapes, list):
         drawn = list(zip(shapes, userData['colors']))
     else:
         drawn = [(shapes, userData['color'])]
@@ -550,7 +581,8 @@ class KheperaRobot(object):
         the eye's (see eyeResponse).  renderRange: the radius of the receptors'
         field arcs in the visualizer, rendering only.
         Drawn: each receptor as a small circle with a tick along its facing,
-        and, when the visualizer shows the fields, its field as an arc; a
+        and, when the visualizer shows the fields, the outer boundary of the
+        eye's field, its receptors' fields combined (makePygletEyeField); a
         left eye in blue, a right eye in orange."""
         receptors = [((float(p[0]), float(p[1])), float(f)) for p, f in receptors]
         cx = sum(p[0] for p, _ in receptors) / len(receptors)
@@ -576,6 +608,11 @@ class KheperaRobot(object):
             receptor.userData = {'color': color, 'fieldColor': color[:3] + (0.4,),
                                  'position': receptor.shape.pos}
             self._receptorShapes(receptor.userData, facing, fieldOfView, renderRange)
+            receptor.userData['pygletField'] = None
+        eyeFixture.userData['fieldColor'] = color[:3] + (0.4,)
+        eyeFixture.userData['pygletField'] = (
+            makePygletEyeField(receptors, (cx, cy), fieldOfView, renderRange)
+            if _has_gl_context() else None)
 
     @staticmethod
     def _eyeColor(eyeName):
