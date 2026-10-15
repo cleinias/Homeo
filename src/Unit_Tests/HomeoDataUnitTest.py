@@ -165,6 +165,36 @@ class HomeoDataUnitTest(unittest.TestCase):
                 setattr(changed, attribute, value)
                 self.assertFalse(self.dataUnit.sameValuesAs(changed))
 
+    def testAFiringShowsWithTheWeightsItDrew(self):
+        '''The row recorded at time t holds the state left by the update of
+           tick t-1: a uniselector firing in that update shows in the same row
+           as the weights it drew, and only there (CD-12).'''
+        hom = Homeostat()
+        hom.slowingFactor = 0
+        units = [HomeoUnit() for i in range(2)]
+        for unit in units:
+            unit.setRandomValues()
+            hom.addFullyConnectedUnit(unit)
+        unit = units[0]
+        unit.critThreshold = 0.01           # critical at almost any deviation
+        unit.uniselectorTimeInterval = 5
+        firings = []
+        for tick in range(40):
+            count = unit.uniselectorActivationCount
+            hom.runFor(tick + 1)
+            if unit.uniselectorActivationCount > count:
+                firings.append(tick)
+        self.assertTrue(firings)
+        states = hom.dataCollector.states
+        other = units[1].name
+        for tick in range(1, 40):
+            row, before = states[tick][unit.name], states[tick - 1][unit.name]
+            self.assertEqual(row.uniselectorActive, 1 if tick - 1 in firings else 0, tick)
+            if tick - 1 in firings:
+                self.assertNotEqual(row.connectedTo[other][0], before.connectedTo[other][0])
+            else:
+                self.assertEqual(row.connectedTo[other][0], before.connectedTo[other][0])
+
 
 
 if __name__ == "__main__":

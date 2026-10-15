@@ -21,8 +21,14 @@ class HomeoDataUnit(object):
         name                    <aString>        name of the unit
         output                  <aNumber>        output value at t
         uniselectorState        <aString>        state of the unit's uniselector
-        uniselectorActive       <aNumber>        indicates whether the uniselector is active at time t 
-                                                 (thus potentially changing connections' weight for time t+1) 
+        uniselectorActive       <aNumber>        1 if the discrete uniselector fired in the update that
+                                                 produced this state, else 0.  The homeostat records a
+                                                 unit's state at time t before the unit's update of tick t,
+                                                 so the state, the flag and the weights in connectedTo are
+                                                 all the ones left by the update of tick t-1: a firing shows
+                                                 in the same row as the weights it drew.  The continuous (OU)
+                                                 uniselector, whose weights drift every tick, never sets
+                                                 the flag (review finding CD-12).
     '''
 
 #===============================================================================
