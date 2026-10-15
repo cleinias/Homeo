@@ -138,12 +138,10 @@ class HomeoUnit(object):
     
     @classmethod    
     def readFrom(self,filename):
-        '''This is a class method that creates a new HomeoUnit instance from filename'''
-        fileIn = open(filename, 'rb')
-        unpickler = pickle.Unpickler(fileIn)
-        newHomeoUnit = unpickler.load()
-        fileIn.close()
-        return newHomeoUnit
+        '''This is a class method that creates a new HomeoUnit instance from
+           filename (a pickle: load only files you trust)'''
+        with open(filename, 'rb') as fileIn:
+            return pickle.Unpickler(fileIn).load()
     
     @classmethod
     def clearNames(cls):
@@ -1683,6 +1681,19 @@ class HomeoUnit(object):
         aStream.write(self.name)
         return aStream
         
+    def __setstate__(self, state):
+        '''An unpickled (or deep-copied) unit registers its name, as setName
+           does, so that new units are not given it (produceNewName) and the
+           data collector, keyed by name, does not mix them up.  It takes the
+           name over from a live unit that has it (a homeostat loaded while
+           the old one is alive): the old unit's death then leaves it
+           registered (review finding CU-14).'''
+        self.__dict__.update(state)
+        name = state.get('_name')
+        if name is not None:
+            HomeoUnit.allNames.add(name)
+            HomeoUnit._nameOwners[name] = self
+
     def __del__(self):
         ''''Remove a HomeoUnit's name from the set of used names.
             Subclasses' instances must call this method explicitly 

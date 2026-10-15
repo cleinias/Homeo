@@ -102,6 +102,27 @@ class HomeostatTest(unittest.TestCase):
         self.assertTrue(self.homeostat.sameAs(anotherHomeostat))
         
 
+    def testLoadedUnitsKeepTheirNames(self):
+        '''A loaded homeostat's units register their names (CU-14): a unit
+           made afterwards gets a new name, also once the units they were
+           saved from are gone.'''
+        filename = os.path.join(self.tmpdir.name, 'names')
+        names = [unit.name for unit in self.homeostat.homeoUnits]
+        self.homeostat.saveTo(filename)
+        self.homeostat = None                   # the saved units die
+        HomeoUnit.clearNames()                  # as in a fresh process
+        loaded = Homeostat.readFrom(filename)
+        self.assertEqual([unit.name for unit in loaded.homeoUnits], names)
+        self.assertTrue(set(names) <= HomeoUnit.allNames)
+        self.assertNotIn(HomeoUnit().name, names)
+        "loaded while the first loaded homeostat is alive, which then dies"
+        again = Homeostat.readFrom(filename)
+        loaded = None
+        import gc
+        gc.collect()
+        self.assertTrue(set(names) <= HomeoUnit.allNames)
+        self.assertNotIn(HomeoUnit().name, names)
+
     def testHomeostatReadyToGo(self):
         """
         Test that a homeostat is ready to go as soon as fully connected units are added
