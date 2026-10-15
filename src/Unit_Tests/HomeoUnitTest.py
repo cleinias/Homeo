@@ -1411,6 +1411,25 @@ class HomeoUnitTest(unittest.TestCase):
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
+    def testOutputRangeIsTheUnitsOwn(self):
+        '''Each unit has its own output range: changing one unit's leaves the
+           others' and the class default alone (CU-15).'''
+        default = dict(HomeoUnit.unitRange)
+        def restore():
+            HomeoUnit.unitRange.clear()
+            HomeoUnit.unitRange.update(default)
+        self.addCleanup(restore)
+        other = HomeoUnit()
+        self.unit.highRange = 5
+        self.unit.lowRange = -3
+        self.assertEqual(self.unit.outputRange, {'high': 5, 'low': -3})
+        self.assertEqual(other.outputRange, default)
+        self.assertEqual(HomeoUnit.unitRange, default)
+        self.assertEqual(HomeoUnit().outputRange, default)
+        other.outputRange = {'low': -2, 'high': 2}
+        self.assertEqual((other.lowRange, other.highRange), (-2, 2))
+        self.assertEqual(self.unit.outputRange, {'high': 5, 'low': -3})
+
     def testNeedleCompMethodIsValidated(self):
         '''An unknown needle computation method is refused; it used to switch
            the unit silently to random needle positions (CU-16).'''

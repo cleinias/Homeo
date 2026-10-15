@@ -241,7 +241,10 @@ class HomeoUnit(object):
         self._jit_dirty = True
         self._viscosity = HomeoUnit.DefaultParameters['viscosity']
         self._maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
-        self._outputRange = HomeoUnit.DefaultParameters['outputRange']
+        # A unit's own copy: the class default was shared by every unit, so
+        # setting one unit's highRange or lowRange changed them all (review
+        # finding CU-15)
+        self._outputRange = dict(HomeoUnit.DefaultParameters['outputRange'])
         self._noise = HomeoUnit.DefaultParameters['noise']
         self._potentiometer = HomeoUnit.DefaultParameters['potentiometer']
         self._time = HomeoUnit.DefaultParameters['time']
@@ -632,8 +635,10 @@ class HomeoUnit(object):
     
     def getOutputRange(self):
         return self._outputRange
+    # Set with a dict {'low': .., 'high': ..}, or setOutputRange(low, high)
+    # (the setter took two arguments, which a property cannot pass)
     outputRange = property(fget = lambda self: self.getOutputRange(),
-                           fset = lambda self, minOut, maxOut: self.setOutputRange(minOut,maxOut))  
+                           fset = lambda self, aDict: self.setOutputRange(aDict['low'], aDict['high']))
     def setUniselectorActive(self,aBoolean):
         self._uniselectorActive = aBoolean
     def getUniselectorActive(self):
