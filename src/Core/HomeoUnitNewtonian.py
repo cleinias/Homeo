@@ -232,14 +232,17 @@ class HomeoUnitNewtonian(HomeoUnit):
         out_here = (self._criticalDeviation - low_dev) * slope + self._outputRange['low']
         return aTorqueValue + w * (out_here - out), -w * slope
 
+    # Newton's second law is the 'linear' computation; the others have no
+    # Newtonian version (a needle with mass and velocity).
+    NEEDLE_COMP_METHODS = ('linear',)
+
     def newNeedlePosition(self, aTorqueValue):
         '''Compute the new needle position on the basis of aTorqueValue, 
-           which represents the torque applied to the unit's needle'''
+           which represents the torque applied to the unit's needle.  Only
+           'linear' (setNeedleCompMethod refuses the others: they crashed here,
+           review finding CU-16).'''
     
-        if self.needleCompMethod == 'linear':
-            return self.newLinearNeedlePosition(aTorqueValue)
-        else:
-            return self.newRandomNeedlePosition       # defaults to a random computation method if the method is not specified
+        return self.newLinearNeedlePosition(aTorqueValue)
 
     def selfUpdate(self):
         '''This is the master loop for the unit. It goes through the following sequence:

@@ -931,8 +931,8 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertFalse(self.unit.sameFirstLevelParamsAs(anotherUnit))
 
     def testComputeNextDeviationRandom(self):
-            "Test that a unit's deviation will go through random value when no computation method is chosen"
-            self.unit.needleCompMethod = ''      # empty string should trigger the random method"
+            "Test that a unit's deviation goes through random values with the 'random' computation method"
+            self.unit.needleCompMethod = 'random'
             deviationValues = [] 
             #check that the critical deviation values are always different"
             
@@ -1411,12 +1411,16 @@ class HomeoUnitTest(unittest.TestCase):
                     self.unit.newNeedlePosition(aTorqueValue)
                     self.assertTrue(oldDeviation == self.unit.criticalDeviation)
 
-        self.unit.needleCompMethod = ''
-        for i in range(10):
-                    aTorqueValue = numpy.random.uniform( -1 ,  1)
-                    oldDeviation = self.unit.criticalDeviation
-                    self.unit.newNeedlePosition(aTorqueValue)
-                    self.assertTrue(oldDeviation == self.unit.criticalDeviation)
+    def testNeedleCompMethodIsValidated(self):
+        '''An unknown needle computation method is refused; it used to switch
+           the unit silently to random needle positions (CU-16).'''
+        for method in ('linear', 'proportional', 'random'):
+            self.unit.needleCompMethod = method
+            self.assertEqual(self.unit.needleCompMethod, method)
+        for method in ('', 'Linear', 'lineal', None):
+            with self.assertRaises(ValueError):
+                self.unit.needleCompMethod = method
+        self.assertEqual(self.unit.needleCompMethod, 'random')
     
      
 if __name__ == "__main__":

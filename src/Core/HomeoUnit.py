@@ -583,7 +583,14 @@ class HomeoUnit(object):
     uniselectorTime = property(fget = lambda self: self.getUniselectorTime(),
                                fset = lambda self, value: self.setUniselectorTime(value))  
     
+    NEEDLE_COMP_METHODS = ('linear', 'proportional', 'random')
+
     def setNeedleCompMethod(self, aString):
+        '''One of NEEDLE_COMP_METHODS.  Anything else used to switch the unit
+           silently to random needle positions (review finding CU-16).'''
+        if aString not in self.NEEDLE_COMP_METHODS:
+            raise ValueError('needleCompMethod must be one of %s, not %r'
+                             % (self.NEEDLE_COMP_METHODS, aString))
         self._needleCompMethod = aString
     def getNeedleCompMethod(self):
         return self._needleCompMethod
@@ -1472,7 +1479,7 @@ class HomeoUnit(object):
             if self.needleCompMethod == 'proportional':
                 return self.newProportionalNeedlePosition(aTorqueValue)
             else:
-                return self.newRandomNeedlePosition()       #defaults to a random computation method if the method is not specified"
+                return self.newRandomNeedlePosition()       # 'random'"
 
         """In Asbhy's original implementation, each incoming connection corresponded to a coil 
         around the unit's magnet. The sum of the input currents flowing through the coils produced  

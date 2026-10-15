@@ -21,6 +21,16 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
     def setUp(self):
         self.unit = HomeoUnitNewtonian()
 
+    def testNeedleCompMethodIsLinearOnly(self):
+        '''Newton's second law is the 'linear' computation: a Newtonian unit
+           refuses the others, which used to crash its update (CU-16).'''
+        self.unit.needleCompMethod = 'linear'
+        for method in ('proportional', 'random', ''):
+            with self.assertRaises(ValueError):
+                self.unit.needleCompMethod = method
+        self.assertEqual(self.unit.needleCompMethod, 'linear')
+        self.unit.selfUpdate()
+
     def testComputeNextDeviationLinear(self):
         """
         Test that the displacement of the needle of  Newtonian unit is computed
