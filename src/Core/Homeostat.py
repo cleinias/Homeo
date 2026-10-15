@@ -211,7 +211,8 @@ class Homeostat(object):
 
     def runFor(self,ticks):
         '''Start the simulation by setting the units 'in motion' and run it 
-           for a certain number of ticks. 
+           until its time reaches ticks (from time 0, for that many ticks; a
+           later call carries on to the new target). 
            This involves cycling through the units and asking them to update themselves, 
            then collecting data for each unit.
            First check that there are enough data to start'''

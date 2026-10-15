@@ -277,6 +277,30 @@ class HomeostatTest(unittest.TestCase):
         self.assertTrue(all(len(units) == len(self.homeostat.homeoUnits) == 4 for units in states.values()))
         self.assertTrue(all(unit.time == 19 for unit in self.homeostat.homeoUnits))
 
+    def testRunContinuesFromItsTime(self):
+        """
+        runFor(t) runs until the homeostat's time reaches t, the way the batch
+        scripts call it (runFor(target_tick)).  A second runFor carries on
+        from where the first stopped: time goes on from 20, the new ticks are
+        recorded under their own indices, and the units' times follow; a
+        target already reached runs nothing.  (Review finding TS-10: no test
+        ran a homeostat whose time was not 0.)
+        """
+        self.homeostat.slowingFactor = 0
+        self.homeostat.runFor(20)
+        before = {tick: dict(units) for tick, units in self.homeostat.dataCollector.states.items()}
+        self.homeostat.runFor(35)
+        self.assertEqual(self.homeostat.time, 35)
+        states = self.homeostat.dataCollector.states
+        self.assertEqual(sorted(states), list(range(35)))
+        for tick, units in before.items():
+            self.assertEqual(states[tick], units)
+        self.assertTrue(all(len(states[tick]) == 4 for tick in range(20, 35)))
+        self.assertTrue(all(unit.time == 34 for unit in self.homeostat.homeoUnits))
+        self.homeostat.runFor(30)
+        self.assertEqual(self.homeostat.time, 35)
+        self.assertEqual(len(states), 35)
+
     def tearDown(self):
         pass
 
