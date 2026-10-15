@@ -65,6 +65,9 @@ def readStatelog(path):
     meta    -- dict of the '# key<TAB>value' header lines, values left as text
     columns -- list of column names, in file order
     data    -- float64 array, one row per sample, one column per name
+
+    A row that is not a full row of numbers -- the last line of a log still
+    being written -- is skipped (until 14 Oct 2026 it raised: HV-12).
     """
     meta, columns, rows = {}, None, []
     with open(path) as f:
@@ -78,10 +81,15 @@ def readStatelog(path):
             if columns is None:
                 columns = parts
                 continue
-            rows.append(parts)
+            if len(parts) != len(columns):
+                continue
+            try:
+                rows.append([float(x) for x in parts])
+            except ValueError:
+                continue
     if columns is None:
         raise ValueError('%s has no column header; is it a .statelog?' % path)
-    return meta, columns, np.array(rows, dtype=np.float64)
+    return meta, columns, np.array(rows, dtype=np.float64).reshape(-1, len(columns))
 
 
 def unitsIn(columns):
@@ -221,16 +229,6 @@ def isSigned(column):
             or column.endswith(SIGNED_SUFFIXES))
 
 
-def smoothWindow(args, meta):
-    "Smoothing window in SAMPLES, from --smooth or --smooth-ticks."
-    if args.smooth:
-        return max(1, args.smooth)
-    if args.smooth_ticks:
-        interval = float(meta.get('log_interval', 1)) or 1.0
-        return max(1, int(round(args.smooth_ticks / interval)))
-    return 1
-
-
 def _running(v, w):
     '''The running mean of v over w samples, one value per full window.
     Plot it against _running(tick, w), the windows' centres: until 14 Oct 2026
@@ -331,6 +329,9 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
         if smoothTicks:
             interval = float(meta.get('log_interval', 1)) or 1.0
             w = max(1, int(round(smoothTicks / interval)))
+        # A window longer than the log smooths over all of it (it used to
+        # make np.convolve swap its arguments and draw garbage: HV-12)
+        w = min(w, len(data))
         picked = resolveSeries(cols, list(units), list(values), crossOnly, list(columns))
         loaded.append((p, meta, cols, data, picked, w))
 
@@ -351,7 +352,6 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
                                           SERIES_COLORS[i % len(SERIES_COLORS)])],
                                w, isSigned(c), [(c, lab)], seriesBounds(c, meta)))
 
-    nRibbon = sum(1 for s in strips if ribbons and s[4] for _ in s[2])
     rowsPer = [1 + (len(s[2]) if ribbons and s[4] else 0) for s in strips]
     heights = []
     for s, extra in zip(strips, rowsPer):
@@ -372,9 +372,12 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
                   left=0.145, right=0.985,
                   top=1 - (titleIn + legendIn) / figH, bottom=bottomIn / figH)
 
+    # The shared symmetric range spans the signed strips only, the ones it is
+    # applied to (an unsigned series used to set it too: HV-12)
     ylim = None
-    if symmetric:
-        m = max(np.abs(_running(v, s[3])).max() for s in strips for v, _, _ in s[2])
+    signedStrips = [s for s in strips if s[4]]
+    if symmetric and signedStrips:
+        m = max(np.abs(_running(v, s[3])).max() for s in signedStrips for v, _, _ in s[2])
         ylim = (-1.12 * m, 1.12 * m)
 
     row = 0
