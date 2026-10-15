@@ -50,7 +50,11 @@ class HomeostatStateLogger:
         self._interval = max(1, int(log_interval))
         self._headless = getattr(homeostat, '_headless', False)
 
-        # Compute minimum dt_fast across all units for physical time column
+        # Minimum dt_fast across all units (and at most 1.0), for the
+        # phys_time column: ticks x that minimum, the needle time of the
+        # unit with the shortest step.  It is not the robot's world time,
+        # which advances the same amount every tick whatever the units'
+        # dt_fast (stepsPerTick x the physics step; SG-02).
         self._min_dt_fast = 1.0
         for u in homeostat.homeoUnits:
             dt = getattr(u, '_dt_fast', 1.0)
