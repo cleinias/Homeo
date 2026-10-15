@@ -137,7 +137,7 @@ def initialize_1minus_2xExperiment(params=None):
     
     'Environment for Homeostat 1'
     homeo1_unit2x.name = 'H1_Env'
-    homeo1_unit2x.mass - env_mass
+    homeo1_unit2x.mass = env_mass
     homeo1_unit2x.viscosity = env_visc
     homeo1_unit2x.density = env_density
     homeo1_unit2x.noise = env_self_noise
@@ -183,7 +183,7 @@ def initialize_1minus_2xExperiment(params=None):
     
     'Environment for Homeostat 2'
     homeo2_unit2x.name = 'H2_Env'
-    homeo2_unit2x.mass - env_mass
+    homeo2_unit2x.mass = env_mass
     homeo2_unit2x.viscosity = env_visc
     homeo2_unit2x.density = env_density
     homeo2_unit2x.noise = env_self_noise
@@ -296,7 +296,7 @@ def initialize_1minus_2_minus_3xExperiment(params=None):
     
     'Environment '
     homeo1_unit3x.name = 'Env'
-    homeo1_unit3x.mass - env_mass
+    homeo1_unit3x.mass = env_mass
     homeo1_unit3x.viscosity = env_visc
     homeo1_unit3x.density = env_density
     homeo1_unit3x.noise = env_self_noise

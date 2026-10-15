@@ -3,7 +3,7 @@ Created on Oct 14, 2026
 
 @author: stefano
 
-The experiment setups' small defects (review findings SE-06, SE-10, SE-11,
+The experiment setups' small defects (review findings SE-06, SE-10, SE-11 (a-c),
 SE-13; Phase H of the 7 Oct 2026 review plan).
 '''
 import unittest
@@ -26,6 +26,23 @@ class LegacySetupsTwiceTest(unittest.TestCase):
             second = setup()
             self.assertEqual([u.name for u in first.homeoUnits], units, name)
             self.assertEqual([u.name for u in second.homeoUnits], units, name)
+
+
+class LegacyEnvironmentMassTest(unittest.TestCase):
+    '''SE-11 (b): the environment units' mass was written "unit.mass -
+    env_mass", a no-op masked by the default mass being env_mass (100).  With
+    another default the setups must still give env_mass.'''
+
+    def testTheEnvironmentHasItsMass(self):
+        from unittest import mock
+        from Core.HomeoUnit import HomeoUnit
+        with mock.patch.dict(HomeoUnit.DefaultParameters, {'mass': 7}):
+            for name, envs in (('initialize_1minus_2xExperiment', ['H1_Env', 'H2_Env']),
+                               ('initialize_1minus_2_minus_3xExperiment', ['Env'])):
+                hom = getattr(HomeoExperiments, name)()
+                masses = {u.name: u.mass for u in hom.homeoUnits}
+                for env in envs:
+                    self.assertEqual(masses[env], 100, (name, env))
 
 
 class SetupsWithoutABackendTest(unittest.TestCase):
