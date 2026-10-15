@@ -19,7 +19,10 @@ deap>=1.4
 dill>=0.3
 tabulate>=0.9
 
-# KheperaSimulator (Box2D physics + rendering)
+# KheperaSimulator (Box2D physics + rendering).  The module Box2D also ships as
+# the distribution "Box2D" (e.g. Arch's python-box2d 2.3.10); either works.
+# box2d-py has no wheel for current CPythons: pip builds it with swig (see
+# hpc/grace_setup.sh).
 box2d-py>=2.3.8
 pyglet>=2.1
 
