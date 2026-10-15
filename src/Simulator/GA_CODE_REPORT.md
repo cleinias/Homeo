@@ -8,8 +8,14 @@ The fitness function measures how close the robot ends up to a light target
 after a fixed number of simulation steps. The GA minimises this distance.
 
 The implementation uses the **DEAP** framework (Distributed Evolutionary
-Algorithms in Python) and supports three robotic simulation back-ends:
-an internal Python simulator (HOMEO), Webots, and V-REP/CoppeliaSim.
+Algorithms in Python).  Evaluations run on the internal Box2D simulator
+(the HOMEO backend, an e-puck2 since 14 Oct 2026).  The Webots backend is for
+re-testing selected results, one Webots per process, not for the GA; the
+V-REP/CoppeliaSim backend and the old Webots bridge were deleted on 14 Oct 2026.
+
+*Brought up to date on 14 Oct 2026 (review finding SG-12).  Two behaviours
+described here are open decisions: elitism under noisy evaluation (SG-06,
+section 4.1) and the re-evaluation of pre-scored clones (SG-09, section 6).*
 
 **Key files:**
 
@@ -175,9 +181,12 @@ inhibitory; above 0.5 it is excitatory.
 ### 4.1 Algorithm type
 
 Generational GA with **elitist replacement**: each generation, the
-population is replaced by selected-and-varied offspring, with the best
-individual from the previous generation guaranteed to survive (k=1
-elitism).
+population is replaced by selected-and-varied offspring; if the best
+individual so far (the Hall of Fame's first, by its *recorded* fitness) is no
+longer among them, a copy of it replaces the worst offspring (k=1 elitism).
+With noisy evaluations the recorded fitness can be a lucky draw that the
+individual would not repeat, so the survivor is the luckiest, not necessarily
+the best; whether to re-evaluate it is an open decision (SG-06).
 
 ### 4.2 Default parameters
 
@@ -273,11 +282,17 @@ Each call to `evaluateGenomeFitness(genome)` performs:
    - Wires transducers (wheels and sensors) to the appropriate units
 4. Connect to the simulator backend and reset the world
 5. Set the robot model name (for trajectory file naming)
-6. Run exactly `stepsSize` simulation steps:
+6. Run `stepsSize` homeostat ticks, whatever the units' `dt_fast` (since
+   13 Oct 2026, SG-02: the world advances the same amount every tick, so every
+   individual gets the same time in the world):
    ```python
    for i in range(stepsSize):
        simulation.step()
    ```
+   Parallel workers build the same simulation through
+   `prepare_genome_evaluation`, which `replay_best_with_statelog.py` also uses,
+   seeded with the individual's `evalSeed`, so a logged evaluation can be
+   repeated exactly.
 7. After the simulation, query the backend for the robot-to-target distance
 8. Return the distance as a single-element tuple `(distance,)`
 
@@ -304,8 +319,10 @@ All individuals in the population start with the same genome, extracted
 from a previous GA run's logbook via `extractGenomeOfIndID()`. This
 allows re-evolving from a known good starting point.
 
-Note: cloned individuals do *not* have pre-filled fitness values (marked
-as FIXME in the code), so they are all evaluated fresh in generation 0.
+Cloned individuals carry the source individual's fitness
+(`ind.fitness.values`), but generation 0 evaluates the whole population,
+clones included, so that fitness is overwritten by a fresh evaluation.
+Whether pre-scored clones should skip it is an open decision (SG-09).
 
 ---
 
@@ -313,15 +330,19 @@ as FIXME in the code), so they are all evaluated fresh in generation 0.
 
 ### Logbook (`.lgb` files)
 
-Pickled DEAP `Logbook` containing two types of records:
+Pickled DEAP `Logbook` containing three types of records:
 
-1. **Per-individual:** `{indivId, fitness, genome}` — recorded each time
-   an individual is evaluated
+1. **Per-individual:** `{indivId, fitness, genome, evalSeed}` — recorded each
+   time an individual is evaluated; `evalSeed` seeds its evaluation
 2. **Per-generation:** `{gen, evaluations, avg, std, min, max}` — population
-   statistics
-3. **Summary record** (appended at save time): date, experiment name,
-   population size, generations, genome size, steps, operator probabilities,
-   elapsed time, final population with fitnesses
+   statistics, generation 0 included (since 14 Oct 2026, SG-08: it used to be
+   recorded only when a progress callback was given)
+3. **Summary record**, one, rewritten at every save (since 14 Oct 2026,
+   SG-08: one used to be appended at every save): date, experiment name,
+   population size, generations, genome size, evolved and total units, run
+   length, operator probabilities, fitness sign, elapsed time, final
+   population with fitnesses, population type and clone name, random seed,
+   noise scheme, noNoise and noUnisel
 
 ### History (`.hist` files)
 
@@ -342,10 +363,12 @@ Per-generation: mean, standard deviation, minimum, and maximum fitness.
 
 ## 8. Parallelisation
 
-Fitness evaluation is parallelised using `multiprocessing.Pool`. Each
-worker process creates an independent simulator instance and evaluates a
-single genome. The number of workers is configurable via the `nWorkers`
-parameter (defaults to 1 for serial evaluation).
+Fitness evaluation is parallelised using `multiprocessing.Pool` (the
+`forkserver` start method).  Each worker process creates an independent
+simulator instance and evaluates a single genome. The number of workers is
+configurable via the `nWorkers` parameter (defaults to 1 for serial
+evaluation).  Each run starts its own pool and closes it at its end, so a
+`HomeoGASimulation` can run more than once (SG-10).
 
 | Strategy | Status | Notes |
 |----------|--------|-------|
@@ -423,11 +446,12 @@ The alternatives were rejected for the following reasons:
 
 4. ~~**No elitism:**~~ **Resolved.** The best individual from the Hall of
    Fame is re-inserted into the offspring (replacing the worst) when it
-   would otherwise be lost (k=1 elitism).
+   would otherwise be lost (k=1 elitism).  "Best" is by recorded fitness,
+   which under noise can be a lucky draw: open decision SG-06 (section 4.1).
 
-5. ~~**Clone fitness not preserved:**~~ **Resolved.** Cloned individuals
-   now carry the source individual's fitness via `ind.fitness.values`,
-   avoiding redundant re-evaluation in generation 0.
+5. **Clone fitness:** cloned individuals carry the source individual's
+   fitness via `ind.fitness.values`, but generation 0 still evaluates them
+   again (section 6): open decision SG-09.
 
 6. **Fixed topology:** The GA evolves only unit parameters and connection
    weights. The network topology (which units exist, which connections are

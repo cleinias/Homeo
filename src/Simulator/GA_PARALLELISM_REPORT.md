@@ -1,5 +1,13 @@
 # GA Parallelism & GPU Acceleration — Feasibility Report
 
+> **Historical.** A feasibility study written before the GA's parallel
+> evaluation and the Numba JIT existed.  Both are now in the code: a
+> `forkserver` `multiprocessing.Pool` (`HomeoGASimulation._startPool`, one per
+> run) and the JIT-compiled headless step (`Core/HomeoJIT.py`), so the profile
+> in section 1 and the "map registrations commented out" of section 2 no longer
+> describe the code.  The current design is in `GA_CODE_REPORT.md`, section 8.
+> (Review finding SG-12, 14 Oct 2026.)
+
 ## 1. Current Performance Profile
 
 Each GA fitness evaluation runs a homeostat simulation for N steps inside a
