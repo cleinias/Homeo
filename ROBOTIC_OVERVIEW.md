@@ -24,7 +24,7 @@ A transducer wraps a single sensor or actuator and exposes three methods:
 - `act()` sends the current command (stored in the `funcParameters` property) to the actuator.
 - `range()` returns a `(min, max)` tuple describing the transducer's value range, used for scaling.
 
-Every backend provides its own concrete transducer classes. For the internal KheperaSimulator, `HOMEO_LightSensor` calls `robot.getSensorRead(eye)` directly in Python.
+The concrete transducers (in `RobotSimulator/Transducer.py`) call the robot directly in Python, in both simulators: `HOMEO_DiffMotor` sets a wheel's speed (`setRightSpeed`/`setLeftSpeed`, in rad/s; its range is +/- the robot's top wheel speed); `HOMEO_LightSensor` reads an eye's response to the lights (`getSensorRead`), in [0, 1], or in [-1, 0] for a darkness source; `HOMEO_QualitySensor` reads an eye's response to the sources of one quality only (`getSensorReadByQuality`: light, temperature, oxygen, organic matter), for Vehicle 3c. The motor finds its robot by name each time it acts, the sensors keep the robot object they were made with: after a backend reset, which builds a new robot, make the sensors again (every experiment does).
 
 Because all transducers share the same three-method interface, the homeostat has no knowledge of which backend it is talking to.
 
@@ -38,9 +38,9 @@ Two specialised HomeoUnit subclasses bridge the homeostat to the robot.
 
     speed = -maxSpeed + 2 * maxSpeed / (1 + exp(-switchingRate * criticalDeviation))
 
-where `maxSpeed` is a fraction (default 20 %) of the actuator's physical maximum, and `switchingRate` (default 0.1) controls how sharply the function transitions. The resulting speed is sent to the transducer via `act()`. This sigmoid mapping means that small deviations produce gentle corrections and large deviations saturate the motor at its limits.
+where `maxSpeed` is a fraction (`_maxSpeedFraction`, default 20 %) of the actuator's top speed, and `switchingRate` (default 0.1) sets the slope. The resulting speed, rounded to 0.001, is sent to the transducer via `act()`. The sigmoid never reaches `maxSpeed`: the deviation stops at +/-`maxDeviation`, and with the defaults (10 and 0.1) the speed there is tanh(0.5) = 0.462 of `maxSpeed`, about 9 % of the wheel's top speed. Small deviations give a speed nearly proportional to the deviation, 0.05 x `maxSpeed` per unit of deviation. An optional `_speedBias` adds a constant fraction of `maxSpeed` to one wheel (a baseline spin, `--spin` in the phototaxis scripts), clipped at +/-`maxSpeed`.
 
-A simpler variant, `HomeoUnitAristotelianActuator`, uses linear scaling instead of a sigmoid: the deviation is mapped proportionally onto the actuator's range.
+A simpler variant, `HomeoUnitAristotelianActuator` (an Aristotelian needle, `--motor aristotelian`), maps the deviation linearly onto the actuator's range (times `_maxSpeedFraction`, default 1: the whole range), with the same optional bias.
 
 ## Simulator backends
 
@@ -50,7 +50,7 @@ A simpler variant, `HomeoUnitAristotelianActuator`, uses linear scaling instead 
 - `reset()` / `resetPhysics()` -- restore the simulation to its initial state.
 - `connect()` / `close()` / `quit()` -- manage the connection lifecycle.
 - `getWheel(name)` -- return an actuator transducer for the named wheel (`'right'` or `'left'`).
-- `getSensor(name)` -- return a sensor transducer for the named eye.
+- `getSensor(name)` -- return a sensor transducer for the named eye (`'right'` or `'left'`); `getQualitySensor(name, quality)` one that reads a single quality.
 - `finalDisFromTarget()` -- query the current distance between the robot and the target, used as a fitness measure in genetic-algorithm experiments.
 - `setRobotModel(name)` -- label the robot with an identifier (used for trajectory logging).
 - `setDataDir(path)` -- set the directory for trajectory files.
@@ -61,11 +61,11 @@ The concrete backends:
 
 **`SimulatorBackendWEBOTS`** runs Webots (`WebotsSimulator/WebotsSimulation.py`, the project in `src/Webots`). Homeo launches Webots with the Webots twin of the Box2D world (`homeo_braitenberg2.wbt`, `homeo_braitenberg3c.wbt`) and is its robot's *extern* controller, in Homeo's own process, and a supervisor. Webots advances only when Homeo steps it, once per homeostat tick, as the Box2D world does. Its `kheperaSimulation` is a `WebotsSimulation`, with KheperaSimulation's interface, so the same transducers and experiment setups work unchanged. The robot is `HomeoEpuck.proto`, Webots' e-puck with its light sensors reading plain irradiance; an eye's irradiance is the mean of its two LightSensors', its response Homeo's. The Vehicle 3c qualities other than light have no Webots physics: Homeo computes them from the Webots poses with the Box2D formula ("virtual sensors"). The light is a PointLight of the same intensity and attenuation as the Box2D one, at the sensors' height, so the two simulators' eyes read the same irradiance (checked by `Unit_Tests/WebotsBackendTest.py`); what differs is the physics of motion. Darkness sources and the K-Junior are Box2D only. One process runs one Webots. In the phototaxis scripts: `--simulator webots`, and `--render` to watch.
 
-Swapping backends is transparent. The experiment-setup functions in `HomeoExperiments.py` take a backend instance (`backendSimulator`), call `basicBraiten2Tranducers(backend, world)` to obtain a dictionary of four transducers (two wheels, two eyes), and wire them into the same homeostat structure regardless of which backend produced them.
+Swapping backends is transparent. The experiment-setup functions in `HomeoExperiments.py` take a backend instance (`backendSimulator`), call `basicBraiten2Tranducers(backend, world)` to obtain a dictionary of four transducers (two wheels, two eyes), and wire them into the same homeostat structure regardless of which backend produced them. The phototaxis scripts choose the backend with `--simulator` (`phototaxis_common.prepare_backend`).
 
 ## KheperaSimulator
 
-KheperaSimulator (in `KheperaSimulator/KheperaSimulator.py`) is a lightweight 2D physics simulator built on pyBox2D and pyglet, designed for fast headless execution during genetic-algorithm runs.
+KheperaSimulator (in `KheperaSimulator/KheperaSimulator.py`) is a lightweight 2D physics simulator built on pyBox2D and pyglet, designed for fast headless execution during genetic-algorithm runs. Its step is 0.032 s (`timeStep`), Webots' `basicTimeStep` in the twin worlds.
 
 **`KheperaRobot`** models a differential-drive robot as a Box2D circular body. Since 14 Oct 2026 it is an **e-puck2** (`model='epuck2'`, the default), built to the dimensions of Webots' `E-puck.proto` so that the Box2D and the Webots vehicles are one robot: a body 74 mm across, wheels of 20 mm radius, 52 mm apart. Its motion is kinematic: with wheel speeds vR and vL (set in rad/s, times the wheel radius) and wheel separation L, the body moves forward at (vR + vL)/2 and turns at (vR - vL)/L, integrated exactly over each simulation step; the two `KheperaWheel` bodies only follow the chassis, for rendering. The top wheel speed, `maxWheelSpeed`, is in rad/s, the unit of `setRightSpeed`/`setLeftSpeed` and of the motor transducers' range. It is capped at the old vehicle's top speed, 24.3 mm/s (1.2166 rad/s), not the e-puck2's 151 mm/s, so that the homeostat's timescales keep their relation to the motion.
 
@@ -90,23 +90,30 @@ The top-level function `runKheperaSimulator(headless=True/False, ...)` provides 
 The module `Simulator/HomeoExperiments.py` contains functions that return a fully wired homeostat for specific robotic experiments. The standard configuration for a Braitenberg-type light-seeking vehicle uses six units:
 
 - Two **sensor-input units** (`HomeoUnitInput`) that read the left and right light sensors.
-- Two **sensory units** (regular `HomeoUnitNewtonian`) that receive input from the sensor units and participate in the internal homeostat dynamics.
+- Two **eye units** (regular `HomeoUnitNewtonian`) that receive input from the sensor units and participate in the internal homeostat dynamics.
 - Two **motor units** (`HomeoUnitNewtonianActuator`) that drive the left and right wheels.
 
-All six units are interconnected, forming a network whose internal feedback connections are subject to uniselector adaptation. The sensor-input units are passive bridges; the four active units maintain their essential variables through mutual interaction and, when necessary, randomised weight changes. The emergent motor patterns that keep every unit's deviation within bounds correspond -- by construction of the sensor/motor wiring -- to the robot approaching or orbiting a light source.
+In the fixed topology (the default) only the Braitenberg wiring is active: each sensor feeds its eye, and each eye the motor on the other side (crossed, Vehicle 2b); the self-connections are manual, the cross-connections under uniselector control. In the random topology every connection between the four adaptive units is active. The sensor-input units are passive bridges; the four adaptive units maintain their essential variables through mutual interaction and, when necessary, changes of weights. The direct vehicle drops the eye units: two sensor-input units feed two motor units, the motors with negative self-connections.
 
-Several experiment functions are provided:
+The experiments, in `HomeoExperiments/KheperaExperiments/`:
 
-- `initializeBraiten2_2()` -- full adaptive vehicle with the six-unit architecture described above.
-- `initializeBraiten2_2_Full_GA()` -- same structure, but initialised from a 60-element genome encoding unit parameters and connection weights, for use with the DEAP genetic-algorithm framework.
+- `phototaxis_braitenberg2_Ashby` -- the six-unit vehicle (`initializeBraiten2_2`), parameters and weights random, the uniselectors on the eyes and motors.
+- `phototaxis_braitenberg2_direct` -- the direct vehicle; with `--fixed-weights` a non-adaptive Braitenberg vehicle (wiring crossed or `--uncrossed`, `--signs`, Newtonian or Aristotelian `--motor`), the baseline of the adaptive runs.
+
+Both take the options listed in `phototaxis_common`'s docstring: the run length, seeds (`--seed` for the homeostat, `--env-seed` for the start pose), batches, the uniselector (Ashby's, or the continuous one with `--continuous`), the topology (`--random-topology`), the start pose, the eyes' response, a darkness source (`--dark`), the robot (`--robot`) and the simulator (`--simulator`). Each run records its settings in a JSON file, and a batch writes a summary CSV.
+
+For the genetic algorithm (`Simulator/HomeoGenAlg.py`), each setup builds a homeostat from a genome of values in [0, 1]:
+
+- `initializeBraiten2_2_Full_GA()` -- the six-unit vehicle, the genome (40 genes) encoding the four adaptive units' parameters and their connection weights; `_phototaxis` and `_scototaxis` variants set the fitness's sign.
+- `initializeBraiten2_2_Full_GA_continuous_weightfree...`, `initializeBraiten2_direct_GA_continuous_weightfree...`, `initializeBraiten3c_GA_continuous_weightfree...` -- "weight-free" setups: the genome holds only the evolved units' parameters (mass, viscosity, the continuous uniselector's `tau_a`, `maxDeviation`, and in some `dt_fast`), the weights start small and random and adapt during the run through the continuous uniselector.
 
 Each function takes the backend instance (`backendSimulator`), plus optional flags like `noNoise` and `noUnisel` for ablation studies.
 
 ## Trajectory logging
 
-Every simulation run produces a `.traj` file that records the robot's state at every tick. The file is written by `RobotTrajectoryWriter` (in `Helpers/RobotTrajectoryWriter.py`), which is created automatically when a simulation world is set up.
+Every simulation run produces a `.traj` file that records the robot's pose at every simulator step (two per homeostat tick), or every N-th step with `--traj-interval N`; the last row is always the final pose. The file is written by `RobotTrajectoryWriter` (in `Helpers/RobotTrajectoryWriter.py`), which is created automatically when a simulation world is set up.
 
-Each `.traj` file contains a header with light positions and the robot's initial position, followed by one tab-separated row per tick with these columns:
+Each `.traj` file starts with a header of comment lines and values, written at the run's first step: the sampling ("Sampled every N simulator steps, M steps per homeostat tick"), each light source's position, intensity (negative for a darkness source) and state, the robot model, the eyes as configured (threshold, saturation, response), and the robot's start position and heading. One tab-separated row per sample follows, with these columns:
 
 | Column | Description |
 |--------|-------------|
@@ -117,9 +124,9 @@ Each `.traj` file contains a header with light positions and the robot's initial
 | `light_y` | Light source y position |
 | `distance` | Euclidean distance from robot to light |
 
-If multiple lights are present, the light columns are repeated for each light source.
+If multiple lights are present, a light_x, light_y, distance triplet follows for each further source, named after it.
 
-Trajectory files are saved to the `SimulationsData/` directory at the project root (one level above `src/`). Experiment scripts set `kheperaSimulation.dataDir` to this path before the world is created. When an experiment also sets `kheperaSimulation.experimentName`, the resulting filename follows the pattern `experimentName-YYYY-MM-DD-HH-MM-SS.traj` (e.g. `phototaxis_braitenberg2-2026-02-21-14-30-00.traj`). Without an experiment name, the legacy pattern `trajData-YYYY-MM-DD-HH-MM-SS-ID-modelName.traj` is used.
+Trajectory files are saved under the `SimulationsData` directory (`$HOMEO_DATA_DIR` if set, else Cybernetics-research/SimulationsData or Homeo/SimulationsData: `simulations_data_dir` in `Helpers/General_Helper_Functions.py`), the experiment scripts' in a dated subdirectory, `SimsData-YYYY-MM-DD`. When an experiment sets `kheperaSimulation.experimentName`, the filename is `experimentName-YYYY-MM-DD-HH-MM-SS<tag>.traj` (e.g. `phototaxis_braitenberg2_direct-2026-02-21-14-30-00.traj`), `<tag>` being `-NN` for a run with `--run-tag NN` (the HPC arrays' task serial); without one, `trajData-ID-modelName-YYYY-MM-DD-HH-MM-SS<tag>.traj`. A name already taken gets `-2`, `-3`, ..., so runs started in the same second do not overwrite each other. A run's `.log`, `.json` and `.statelog` share its stem.
 
 The GA (`HomeoGenAlg.py`, run from its GUI `HomeoGenAlgGui.py` or from a script) creates timestamped subdirectories under `SimulationsData/` (`SimsData-YYYY-MM-DD-HH-MM-SS`) containing `.traj`, `.lgb` logbook, and `.hist` history files. Note that `.lgb` logbook files are only produced by GA optimisation runs, not by standalone experiments.
 
@@ -127,9 +134,10 @@ The GA (`HomeoGenAlg.py`, run from its GUI `HomeoGenAlgGui.py` or from a script)
 
 Two tools are provided for inspecting trajectory data:
 
-**`TrajectoryGrapher`** (`Helpers/TrajectoryGrapher.py`) is a command-line script that plots a single trajectory with matplotlib. It reads the `.traj` file, draws the robot's (x, y) path, marks the start position in green and the end position in red, overlays circles for each light source (sized by intensity), and annotates the final distance to the target.
+**`TrajectoryGrapher`** (`Helpers/TrajectoryGrapher.py`, the command `homeo-traj`) plots one or more trajectories with matplotlib. It reads each `.traj` file, draws the robot's (x, y) path, marks the start position in green and the end position in red, overlays each light source, the ring beyond which the eyes see nothing (from the eyes in the file's header, or `--sensor-range`), and annotates the final distance to the target and the run's length in ticks. Several files are drawn on one chart; `-o` saves it (PDF, PNG, ...) instead of showing it.
 
-    python -m Helpers.TrajectoryGrapher path/to/file.traj
+    homeo-traj path/to/file.traj
+    homeo-traj SimsData-*/run*.traj -o runs.pdf
 
 **`TrajectoriesViewer`** (`Helpers/TrajectoriesViewer.py`) is a PyQt5 GUI for browsing and visualising multiple experiment runs. It lists all `.traj` files in a directory, supports changing directories, and auto-refreshes every second to pick up new files as they are written. Single-click a trajectory to select it; double-click or press "Visualize" to plot it via `TrajectoryGrapher`. If DEAP genetic-algorithm logbook files (`.lgb`) are present in the same directory, the viewer also provides buttons for inspecting GA statistics: hall of fame, full individual genomes, average fitness charts, and genealogy trees.
 
