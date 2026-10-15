@@ -145,18 +145,32 @@ class HOMEO_DiffMotor(Transducer):
         return (-self._range, self._range)
 
 
-class HOMEO_LightSensor(Transducer):
+class _HOMEO_RobotByName(object):
+    """The robot a sensor reads: looked up by name in its simulation at each
+    read, as HOMEO_DiffMotor does, so that a sensor made before a world reset
+    (which builds a new robot) reads the new robot.  Given a robot object
+    instead (no simul), the sensor reads that robot (review finding RS-11)."""
+
+    def getRobot(self):
+        if getattr(self, 'simul', None) is not None:
+            return self.simul.allBodies[self._robot]
+        return self._robot
+
+
+class HOMEO_LightSensor(_HOMEO_RobotByName, Transducer):
     """ Connects a unit to a HomeoLight sensor of  a Khepera-like robot
-        in the internal HOMEO simulator"""
+        in the internal HOMEO simulator.  robotRef: the robot's name in simul,
+        or (without simul) the robot itself."""
         
-    def __init__(self, eye, robotRef):
+    def __init__(self, eye, robotRef, simul=None):
         "Current HOMEO Khepera models only have a 'right' and a 'left' eye and nothing else"
 
         if eye not in ["right","left"]:
             raise TransducerException("Eye must either be right or left")
         self._eye = eye + "Eye"
+        self.simul = simul
         self.robot = robotRef
-        self._transdFunction = self.robot.getSensorRead
+        self._transdFunction = 'getSensorRead'
         self._range = self.getRange()
         
     def getRange(self):
@@ -174,7 +188,7 @@ class HOMEO_LightSensor(Transducer):
            darkness source (negative intensity)."""
 #         value = 0
         try:
-            value =  self._transdFunction(self._eye)
+            value =  self.robot.getSensorRead(self._eye)
         except:
             raise Exception("Cannot read value for HOMEO sensor " + self._eye)
 #             stderr.write("Cannot read value for HOMEO sensor " + self._eye)
@@ -191,7 +205,7 @@ class HOMEO_LightSensor(Transducer):
         raise TransducerException("HOMEO sensor %s cannot act" %self._eye)
 
 
-class HOMEO_QualitySensor(Transducer):
+class HOMEO_QualitySensor(_HOMEO_RobotByName, Transducer):
     """Sensor transducer that reads from sources of a specific quality only.
 
     Unlike HOMEO_LightSensor which reads from all detectable lights,
@@ -199,17 +213,19 @@ class HOMEO_QualitySensor(Transducer):
     'oxygen', 'organic') using KheperaRobot.getSensorReadByQuality().
     """
 
-    def __init__(self, sensorName, quality, robotRef):
+    def __init__(self, sensorName, quality, robotRef, simul=None):
         # sensorName: fixture name (e.g. 'rightTempEye')
         # quality: 'light', 'temperature', 'oxygen', 'organic'
+        # robotRef: the robot's name in simul, or (without simul) the robot
         self._eye = sensorName
         self._quality = quality
+        self.simul = simul
         self.robot = robotRef
-        self._transdFunction = self.robot.getSensorReadByQuality
+        self._transdFunction = 'getSensorReadByQuality'
         self._range = self.robot.getMaxSensorValue(self._eye)
 
     def read(self):
-        return self._transdFunction(self._eye, self._quality)
+        return self.robot.getSensorReadByQuality(self._eye, self._quality)
 
     def range(self):
         return (0, self._range)

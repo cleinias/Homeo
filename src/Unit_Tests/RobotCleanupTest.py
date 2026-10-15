@@ -173,5 +173,58 @@ class WorldSetupErrorsTest(_WorldTest):
         self.assertFalse(hasattr(wheel, 'getCurrentSpeed'))
 
 
+class SensorsAcrossAResetTest(unittest.TestCase):
+    '''RS-11: the light and quality sensors held the robot object, so a
+    sensor made before backend.reset() kept reading the old robot (the
+    motors find the robot by name and drove the new one).'''
+
+    def setUp(self):
+        import os
+        self.dataDir = tempfile.mkdtemp()
+        self.oldDataDir = os.environ.get('HOMEO_DATA_DIR')
+        os.environ['HOMEO_DATA_DIR'] = self.dataDir
+
+    def tearDown(self):
+        import os
+        if self.oldDataDir is None:
+            os.environ.pop('HOMEO_DATA_DIR', None)
+        else:
+            os.environ['HOMEO_DATA_DIR'] = self.oldDataDir
+        shutil.rmtree(self.dataDir, ignore_errors=True)
+
+    def backend(self, world):
+        import threading
+        from Simulator.SimulatorBackend import SimulatorBackendHOMEO
+        b = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera')
+        b.setDataDir(self.dataDir)
+        b.kheperaSimulation.setupWorld(world, self.dataDir)
+        return b
+
+    def testSensorsMadeBeforeAResetReadTheNewRobot(self):
+        from HomeoExperiments.KheperaExperiments.phototaxis_common import set_start_pose
+        b = self.backend('kheperaBraitenberg3c_HOMEO_World')
+        sim = b.kheperaSimulation
+        eyes = {side: b.getSensor(side) for side in ('left', 'right')}
+        heat = {side: b.getQualitySensor(side + 'TempEye', 'temperature') for side in ('left', 'right')}
+        set_start_pose(sim.allBodies['Khepera'], 6.5, 6.5, 45)
+        before = {side: eyes[side].read() for side in eyes}
+        b.reset()
+        robot = sim.allBodies['Khepera']
+        for side in ('left', 'right'):
+            self.assertIs(eyes[side].robot, robot)
+            self.assertEqual(eyes[side].read(), robot.getSensorRead(side + 'Eye'))
+            self.assertNotEqual(eyes[side].read(), before[side])
+            self.assertEqual(heat[side].read(),
+                             robot.getSensorReadByQuality(side + 'TempEye', 'temperature'))
+
+    def testASensorGivenTheRobotItselfReadsIt(self):
+        from RobotSimulator.Transducer import HOMEO_LightSensor
+        b = self.backend('kheperaBraitenberg2_HOMEO_World')
+        robot = b.kheperaSimulation.allBodies['Khepera']
+        eye = HOMEO_LightSensor('left', robot)
+        self.assertIs(eye.robot, robot)
+        self.assertEqual(eye.read(), robot.getSensorRead('leftEye'))
+
+
 if __name__ == '__main__':
     unittest.main()

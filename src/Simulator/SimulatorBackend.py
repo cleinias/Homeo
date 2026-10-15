@@ -209,15 +209,15 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
         """Return a transducer to a HOMEO's khepera-like robot's 'eye'.
            Eye is a string: 'left' or 'right'"""
 
-        return HOMEO_LightSensor(eye, self.kheperaSimulation.allBodies[self._robotName])
+        return HOMEO_LightSensor(eye, self._robotName, self.kheperaSimulation)
 
     def getQualitySensor(self, sensorName, quality):
         """Return a quality-filtered sensor transducer.
            sensorName: fixture name (e.g. 'leftTempEye')
            quality: 'light', 'temperature', 'oxygen', 'organic'"""
 
-        return HOMEO_QualitySensor(sensorName, quality,
-                                   self.kheperaSimulation.allBodies[self._robotName])
+        return HOMEO_QualitySensor(sensorName, quality, self._robotName,
+                                   self.kheperaSimulation)
 
 
 class SimulatorBackendWEBOTS(SimulatorBackendHOMEO):

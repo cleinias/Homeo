@@ -35,11 +35,13 @@ class SynchronousSteppingTest(unittest.TestCase):
 
     def testMotorsOnlySetSpeeds(self):
         "With synchronous stepping a motor command does not advance the world"
+        from RobotSimulator.Transducer import HOMEO_DiffMotor
         hom, sim = self.vehicle(True)
-        for unit in hom.homeoUnits:
-            if hasattr(unit, 'transducer') and hasattr(unit.transducer, 'simul'):
-                unit.transducer.funcParameters = 1.0
-                unit.transducer.act()
+        motors = [u for u in hom.homeoUnits if isinstance(getattr(u, 'transducer', None), HOMEO_DiffMotor)]
+        self.assertEqual(len(motors), 2)
+        for unit in motors:
+            unit.transducer.funcParameters = 1.0
+            unit.transducer.act()
         self.assertEqual(sim.currentStep, 0)
 
     def testOneTickIsStepsPerTickSteps(self):
