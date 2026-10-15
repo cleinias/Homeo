@@ -28,12 +28,14 @@ class Homeostat(object):
     
     Instance Variables:
         homeoUnits           <aCollection>    the collection of homeoUnits making up the homeostat
-        microTime            <aNumber>        the temporal scale regulating the communication among units (typically identical to the unit time)
-        slowingFactor        <aNumber>        the current slowingFactor index (i.e., t)
+        time                 <anInteger>      the current tick
         dataCollector        <aDataCollector> the object recording the states of the homeostat
         collectsData         <aBoolean>       whether or not the homeostat collects data about its run
-        slowingFactor:       <milliseconds>   it slows down the simulation by inserting a slowingFactor wait after each cycle.
-        isRunning            <aBoolean>       whether the homeostat is running
+        slowingFactor:       <milliseconds>   it slows down the simulation by inserting a slowingFactor wait after each cycle
+                                              (default 10; headless runs set it to 0).
+    Whether a simulation is running is HomeoQtSimulation's business: the
+    homeostat's own isRunning and microTime, which nothing used (microTime's
+    getter raised), were deleted on 14 Oct 2026 (review finding CU-21).
     '''
 
 #===============================================================================
@@ -60,19 +62,15 @@ class Homeostat(object):
 #===============================================================================
 
     def __init__(self):
-        '''Set slowingFactor to 0, and microTime to 0 as well, reflecting the default 
-           conditions of a Homeostat. Sets also some physical equivalence parameters'''
+        '''A homeostat at time 0, with no units, collecting data, slowed
+           down by 10 ms a tick.'''
 
-#        super(Homeostat,self).__init__()
-        self._slowingFactor = 0
         self._time = 0                                  # a newly created homeostat starts at 0
-        self._microTime = 0
         self._homeoUnits = []
         self._dataCollector = HomeoDataCollector()
         self._collectsData = True                       # default is to collect data. Can be turned off via accessor.
-        self._slowingFactor = 10                        # Default slowing time is 10 milliseconds 
-        self._isRunning = False                         # a new homeostat is not running
-        self._headless = False                          # when True, skip signal emissions for GUI
+        self._slowingFactor = 10                        # Default slowing time is 10 milliseconds
+        self._headless = False                         # when True, skip signal emissions for GUI
         self._state_logger = None                       # optional HomeostatStateLogger
 
     def getTime(self):
@@ -84,13 +82,6 @@ class Homeostat(object):
     time = property(fget = lambda self: self.getTime(),
                     fset = lambda self, value: self.setTime(value))
 
-    def getMicroTime(self):
-        return self._microtime
-    def setMicroTime(self,aValue):
-        self._microtime = aValue
-    microtime = property(fget = lambda self: self.getMicroTime(),
-                         fset = lambda self, value: self.setMicroTime(value))
-    
     def getHomeoUnits(self):
         return self._homeoUnits
     def setHomeoUnits(self,aValue):
@@ -120,13 +111,6 @@ class Homeostat(object):
         self._slowingFactor = aValue
     slowingFactor = property(fget = lambda self: self.getSlowingFactor(),
                              fset = lambda self, value: self.setSlowingFactor(value))
-
-    def getIsRunning(self):
-        return self._isRunning
-    def setIsRunning(self,aValue):
-        self._isRunning = aValue
-    isRunning = property(fget = lambda self: self.getIsRunning(),
-                         fset = lambda self, value: self.setIsRunning(value))
 
 
 #===============================================================================
