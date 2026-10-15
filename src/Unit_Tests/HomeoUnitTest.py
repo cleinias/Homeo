@@ -106,6 +106,21 @@ class HomeoUnitTest(unittest.TestCase):
         self.unit.removeConnectionFromUnit(newUnit)
         self.assertFalse(self.unit.isConnectedTo(newUnit))
 
+    def testRemoveEveryConnectionFromAUnit(self):
+        '''Every connection from the unit goes, the others stay, and the
+           headless arrays are marked for rebuilding (CU-18).'''
+        q, r = HomeoUnit(), HomeoUnit()
+        self.unit.addConnectionUnitWeightPolarityState(q, 0.5, 1, 'manual')
+        self.unit.addConnectionUnitWeightPolarityState(q, 0.3, 1, 'manual')
+        self.unit.addConnectionUnitWeightPolarityState(r, 0.2, 1, 'manual')
+        before = len(self.unit.inputConnections)
+        self.unit._jit_dirty = False
+        self.unit.removeConnectionFromUnit(q)
+        self.assertFalse(self.unit.isConnectedTo(q))
+        self.assertTrue(self.unit.isConnectedTo(r))
+        self.assertEqual(len(self.unit.inputConnections), before - 2)
+        self.assertTrue(self.unit._jit_dirty)
+
     def testIstReadyToGo(self):
         "test the initialization procedure of a HomeoUnit against the conditions set in the isReadyToGo method"
         "A newly created unit must be ready to go"

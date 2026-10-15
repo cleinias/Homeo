@@ -1141,11 +1141,14 @@ class HomeoUnit(object):
         self.inputConnections.append(aNewConnection)
 
     def removeConnectionFromUnit(self, aHomeoUnit): 
-        '''Remove the connection(s) to self and originating from aHomeoUnit'''
-        
-        for conn in self._inputConnections:
-            if conn.incomingUnit == aHomeoUnit:
-                self.inputConnections.remove(conn)
+        '''Remove the connection(s) to self and originating from aHomeoUnit.
+           (Removing them while iterating over the list skipped the one after
+           each removed, leaving duplicates behind; and the headless arrays
+           were not rebuilt: review finding CU-18.)'''
+
+        self._inputConnections[:] = [conn for conn in self._inputConnections
+                                     if conn.incomingUnit != aHomeoUnit]
+        self._jit_dirty = True
 
     def addConnectionWithRandomValues(self,aHomeoUnit):
         '''
