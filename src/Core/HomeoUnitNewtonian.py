@@ -40,6 +40,15 @@ class HomeoUnitNewtonian(HomeoUnit):
         self._dt_fast = 1.0
         self._lastAcceleration = 0.0
 
+    # dt_fast: how much of the needle's own time passes in one tick.  Only the
+    # needle step reads it; noise, the connections, both uniselectors and the
+    # world advance once per tick whatever its value.  It is no time step but
+    # a rescaling of the needle: (mass m, viscosity c, dt_fast dt) moves
+    # exactly as (m / dt**2, c / dt, 1) -- the spring of the self-connection
+    # and the stops are unchanged (HomeoUnitNewtonianTest).  Kept, at 1 by
+    # default, only to replay the genomes of the GA setups that evolved it,
+    # before 15 Oct 2026; the setups since evolve mass and viscosity over
+    # ranges that cover what it reached (review finding CU-11).
     def getDtFast(self):
         return self._dt_fast
 
@@ -49,6 +58,23 @@ class HomeoUnitNewtonian(HomeoUnit):
 
     dt_fast = property(fget=lambda self: self.getDtFast(),
                        fset=lambda self, value: self.setDtFast(value))
+
+    def setViscosity(self, aValue):
+        '''The needle's drag coefficient (Stokes drag, -viscosity * v): any
+        value >= 0.  HomeoUnit's ceiling, maxViscosity, belongs to its own
+        model, where viscosity is the fraction viscosity / maxViscosity of the
+        torque cancelled; a drag coefficient has none, and the GA setups since
+        15 Oct 2026 draw it up to 50 (review finding CU-11).'''
+        try:
+            aValue = float(aValue)
+        except ValueError:
+            sys.stderr.write("Tried to assign a non-numeric value to unit  %s's Viscosity. The value was: %s\n" % (self.name, aValue))
+            return
+        if aValue < 0:
+            raise HomeoUnitError("The viscosity of a Newtonian unit must not be negative")
+        self._viscosity = aValue
+        emitter(self).viscosityChanged.emit(self._viscosity)
+        emitter(self).viscosityChangedLineEdit.emit(str(round(self._viscosity, 4)))
 
     def clearFutureValues(self):
         "As HomeoUnit's, and the needle stops."

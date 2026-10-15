@@ -369,6 +369,62 @@ if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
 
+class HomeoUnitNewtonianTimeScaleTest(unittest.TestCase):
+    """dt_fast is a rescaling of the needle, not a time step (review finding
+    CU-11): a unit with mass m, viscosity c and dt_fast dt moves exactly as
+    one with m / dt**2, c / dt and dt_fast 1 -- with noise (per tick either
+    way), the self-connection's spring and the stops.  Both paths."""
+
+    def trajectory(self, mass, viscosity, dtFast, selfWeight, torque, x0, headless, seed):
+        import random
+        from Core.HomeoJIT import seed_jit_rng
+        unit = HomeoUnitNewtonianSpringTest.makeUnit(self, mass, viscosity, dtFast,
+                                                     selfWeight, torque, x0, headless)
+        unit.noise = 0.05
+        for conn in unit.inputConnections:
+            conn.noise = 0.05
+        numpy.random.seed(seed)
+        random.seed(seed)
+        seed_jit_rng(seed)                      # numba's own stream, headless
+        positions = []
+        for _ in range(200):
+            unit.selfUpdate()
+            positions.append(unit.criticalDeviation)
+        return positions
+
+    def check(self, headless):
+        for dtFast in (0.3, 1.7):
+            for mass, viscosity, selfWeight, torque, x0 in (
+                    (2.0, 0.3, -0.5, 0.02, 0.5),        # underdamped
+                    (5.0, 4.0, -0.2, -0.03, -0.4),      # overdamped
+                    (1.0, 0.0, 0.05, 0.2, 0.0)):        # positive feedback, to the stop
+                scaled = self.trajectory(mass / dtFast**2, viscosity / dtFast, 1.0,
+                                         selfWeight, torque, x0, headless, seed=7)
+                original = self.trajectory(mass, viscosity, dtFast,
+                                           selfWeight, torque, x0, headless, seed=7)
+                for tick, (a, b) in enumerate(zip(original, scaled)):
+                    self.assertAlmostEqual(a, b, delta=1e-9,
+                                           msg="tick %d, dt %s, m %s, c %s" % (tick, dtFast,
+                                                                               mass, viscosity))
+
+    def testPythonPath(self):
+        self.check(headless=False)
+
+    def testHeadlessPath(self):
+        self.check(headless=True)
+
+    def testANewtonianViscosityHasNoCeiling(self):
+        "a drag coefficient; HomeoUnit's own viscosity stays capped at maxViscosity"
+        unit = HomeoUnitNewtonian()
+        unit.viscosity = 50.0
+        self.assertEqual(unit.viscosity, 50.0)
+        from Core.HomeoUnit import HomeoUnitError
+        with self.assertRaises(HomeoUnitError):
+            unit.viscosity = -1.0
+        with self.assertRaises(HomeoUnitError):
+            HomeoUnit().viscosity = 50.0
+
+
 class HomeoUnitNewtonianIntegratorTest(unittest.TestCase):
     """The integrator, step by step, against the exact solution.
 
