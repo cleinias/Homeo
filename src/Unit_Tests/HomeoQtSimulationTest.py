@@ -343,6 +343,85 @@ class HomeoQtSimulationTest(unittest.TestCase):
         unit = self.simulation.homeostat.homeoUnits[0]
         self.assertEqual(len(self.simulation.liveData[unit]), 1)
 
+    def testPauseAndResume(self):
+        """
+        Pause, here from a tick callback, ends go() after the tick under way;
+        resume() carries on from there to maxRuns, with one live-data sample
+        and one callback and observer call per tick (SR-12)
+        """
+        sim = self.simulation
+        sim.initializeExperSetup()
+        sim.simulDelay = 0
+        sim.maxRuns = 20
+        seen, observed = [], []
+
+        def pauseAt7(hom, t):
+            seen.append(t)
+            if t == 7:
+                sim.pause()
+        sim.tick_callbacks.append(pauseAt7)
+        sim.tick_observers.append(lambda hom, t: observed.append(t))
+        sim.go()
+        self.assertEqual(sim.homeostat.time, 8)
+        self.assertFalse(sim._isRunning)
+        sim.resume()
+        self.assertEqual(sim.homeostat.time, 20)
+        self.assertEqual(seen, list(range(20)))
+        self.assertEqual(observed, list(range(1, 21)))
+        self.assertEqual(sim.liveTicks, list(range(1, 21)))
+        unit = sim.homeostat.homeoUnits[0]
+        self.assertEqual(len(sim.liveData[unit]), 20)
+
+    def testStepStopsAtMaxRuns(self):
+        sim = self.simulation
+        sim.initializeExperSetup()
+        sim.maxRuns = 3
+        for _ in range(5):
+            sim.step()
+        self.assertEqual(sim.homeostat.time, 3)
+        self.assertEqual(sim.liveTicks, [1, 2, 3])
+
+    def testSaveAndLoadAHomeostat(self):
+        """
+        save() pickles the homeostat to its file; loadNewHomeostat reads it
+        back into another simulation, live data restarted for the loaded
+        units; a file that is not a homeostat raises HomeostatError (SR-12)
+        """
+        import tempfile
+        sim = self.simulation
+        sim.initializeExperSetup()
+        sim.homeostat.randomizeValuesforAllUnits()
+        sim.maxRuns = 5
+        for _ in range(5):
+            sim.step()
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, 'saved.pickled')
+            sim.homeostatFilename = path
+            sim.save()
+            self.assertTrue(sim.homeostatIsSaved)
+            other = HomeoQtSimulation()
+            other.loadNewHomeostat(path)
+            loaded = other.homeostat
+            self.assertIsNot(loaded, sim.homeostat)
+            self.assertEqual(other.homeostatFilename, path)
+            self.assertTrue(other.homeostatIsSaved)
+            self.assertTrue(other.dataAreSaved)
+            self.assertEqual(loaded.time, 5)
+            for a, b in zip(sim.homeostat.homeoUnits, loaded.homeoUnits):
+                self.assertEqual(a.name, b.name)
+                self.assertEqual(a.criticalDeviation, b.criticalDeviation)
+                self.assertEqual([c.weight * c.switch for c in a.inputConnections],
+                                 [c.weight * c.switch for c in b.inputConnections])
+            self.assertEqual(set(k[0] if isinstance(k, tuple) else k for k in other.liveData),
+                             set(loaded.homeoUnits))
+            self.assertEqual(other.liveTicks, [])
+            bad = os.path.join(tmp, 'not-a-homeostat.pickled')
+            with open(bad, 'wb') as f:
+                f.write(b'nothing to see')
+            with self.assertRaises(HomeostatError):
+                other.loadNewHomeostat(bad)
+            self.assertIs(other.homeostat, loaded)
+
     def tearDown(self):
         pass
 

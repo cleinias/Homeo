@@ -293,5 +293,79 @@ class ResumeThreadTest(unittest.TestCase):
         self.assertTrue(all(t is not app.thread() for t in threads))
 
 
+class GeneralGuiSmokeTest(unittest.TestCase):
+    '''The general homeostat GUI (HomeoGeneralGUI), on its own default
+    homeostat, offscreen: build it, step, reset, New, Save and Load through
+    mocked dialogs, a bad file reported in a message box, and the plot data
+    saved with the weights (review finding SR-12).'''
+
+    def setUp(self):
+        from Simulator.HomeoGeneralGUI import HomeoSimulationControllerGui
+        patcher = mock.patch.object(HomeoSimulationControllerGui, 'dataDirRoot', _tmpdir)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.gui = HomeoSimulationControllerGui()
+        self.addCleanup(closeGui, self.gui)
+        self.sim = self.gui._simulation
+
+    def assertBound(self, hom):
+        self.assertIs(self.sim.homeostat, hom)
+        self.assertEqual(set(self.gui.pgChartsAndItems), set(hom.homeoUnits))
+
+    def testBuildAndStep(self):
+        self.assertTrue(self.gui.dataDir.startswith(_tmpdir))
+        with open(os.path.join(_tmpdir, '.HomeoSimDataDir.txt')) as f:
+            self.assertEqual(f.read(), self.gui.dataDir)
+        self.assertGreater(len(self.sim.homeostat.homeoUnits), 0)
+        self.assertBound(self.sim.homeostat)
+        self.sim.maxRuns = 10
+        for _ in range(3):
+            self.gui.step()
+        self.assertEqual(self.sim.homeostat.time, 3)
+        self.gui.timeReset()
+        self.assertEqual(self.sim.homeostat.time, 0)
+        self.assertTrue(self.gui.stepButton.isEnabled())
+
+    def testNewSaveAndLoad(self):
+        old = self.sim.homeostat
+        self.gui.newHomeostat()
+        new = self.sim.homeostat
+        self.assertIsNot(new, old)
+        self.assertBound(new)
+        path = os.path.join(tempfile.mkdtemp(dir=_tmpdir), 'general.pickled')
+        with mock.patch.object(QFileDialog, 'getSaveFileName', return_value=(path, '')):
+            self.gui.saveHomeostat()
+        self.assertEqual(self.sim.homeostatFilename, path)
+        with mock.patch.object(QFileDialog, 'getOpenFileName', return_value=(path, '')):
+            self.gui.loadHomeostat()
+        loaded = self.sim.homeostat
+        self.assertIsNot(loaded, new)
+        self.assertBound(loaded)
+        self.assertEqual([u.name for u in loaded.homeoUnits], [u.name for u in new.homeoUnits])
+        bad = os.path.join(_tmpdir, 'not-a-homeostat.pickled')
+        with open(bad, 'wb') as f:
+            f.write(b'nothing')
+        from PyQt5.QtWidgets import QMessageBox
+        with mock.patch.object(QFileDialog, 'getOpenFileName', return_value=(bad, '')), \
+                mock.patch.object(QMessageBox, 'exec_') as shown:
+            self.gui.loadHomeostat()
+        shown.assert_called_once()
+        self.assertBound(loaded)
+
+    def testPlotDataWithWeights(self):
+        from PyQt5.QtWidgets import QMessageBox
+        self.sim.maxRuns = 4
+        for _ in range(4):
+            self.gui.step()
+        path = os.path.join(tempfile.mkdtemp(dir=_tmpdir), 'plot.txt')
+        with mock.patch.object(QMessageBox, 'question', return_value=QMessageBox.Yes), \
+                mock.patch.object(QFileDialog, 'getSaveFileName', return_value=(path, '')):
+            self.gui.choosePlotDataAndSave()
+        with open(path) as f:
+            columns = [line for line in f if not line.startswith('#')][0].strip().split(',')
+        self.assertEqual(columns[0], 'time')
+        self.assertIn(self.sim.homeostat.homeoUnits[0].name + '_weight', columns)
+
+
 if __name__ == '__main__':
     unittest.main()
