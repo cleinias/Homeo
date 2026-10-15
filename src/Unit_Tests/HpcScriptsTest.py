@@ -4,9 +4,10 @@ Created on Oct 14, 2026
 @author: stefano
 
 The array scripts in hpc/ (review findings SH-05, SH-06, SH-07):
-run_array_local.sh's dry run: which tasks it would run, with which seeds,
-and which it skips as finished.  It runs as the user runs it, in a
-subprocess, on files made up in a temporary directory; nothing is simulated.
+run_array_local.sh's dry run -- which tasks it would run, with which seeds,
+and which it skips as finished -- and aggregate_array.py, which joins the
+tasks' batch CSVs.  Both run as the user runs them, in a subprocess, on files
+made up in a temporary directory; nothing is simulated.
 '''
 import os
 import subprocess
@@ -63,6 +64,53 @@ class RunArrayLocalDryRunTest(unittest.TestCase):
             self.assertIn('task 1: would run', out)
             self.assertIn('task 3: would run', out)
             self.assertNotIn('task 2: would run', out)
+
+
+class AggregateArrayTest(unittest.TestCase):
+
+    def aggregate(self, rundir, *options):
+        return subprocess.run([sys.executable, os.path.join(HPC, 'aggregate_array.py'), rundir]
+                              + list(options), capture_output=True, text=True, timeout=120)
+
+    def testTasksFromSerialsAndLegacyDirectories(self):
+        '''The task index comes from the serial after the timestamp, or, for
+        the old layout, from the task_<i>/ directory; a combined table
+        written before is not an input.'''
+        with tempfile.TemporaryDirectory() as rundir:
+            write_batch_csv(os.path.join(rundir, 'SimsData-2026-10-01'), 7, seed=107)
+            write_batch_csv(os.path.join(rundir, 'SimsData-2026-10-02'), 12, seed=112)
+            legacy = os.path.join(rundir, 'task_3', 'SimsData-2026-09-30')
+            os.makedirs(legacy)
+            with open(os.path.join(legacy, 'batch_direct_continuous_light_2026-09-30-10-00-07.csv'), 'w') as f:
+                f.write(CSV_HEADER + '103,103,False,,2.0,1.5,500,6000,10.0\n')
+            out = os.path.join(rundir, 'combined.csv')
+            r = self.aggregate(rundir, '-o', out)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            import pandas as pd
+            df = pd.read_csv(out)
+            self.assertEqual(df.task.tolist(), [3, 7, 12])
+            self.assertEqual(df.seed.tolist(), [103, 107, 112])
+            self.assertIn('acquired: 2/3', r.stdout)
+            # the combined table under the run directory is not read back
+            with open(os.path.join(rundir, 'batch_direct_ALL.csv'), 'w') as f:
+                f.write(open(out).read())
+            r = self.aggregate(rundir)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn('runs: 3', r.stdout)
+
+    def testTwoCSVsForOneTaskAreRefused(self):
+        with tempfile.TemporaryDirectory() as rundir:
+            write_batch_csv(os.path.join(rundir, 'SimsData-2026-10-01'), 4)
+            write_batch_csv(os.path.join(rundir, 'SimsData-2026-10-02'), 4)
+            r = self.aggregate(rundir)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('more than one CSV claims the same task index: [4]', r.stderr)
+
+    def testAnEmptyRunDirectory(self):
+        with tempfile.TemporaryDirectory() as rundir:
+            r = self.aggregate(rundir)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('no per-task CSVs', r.stderr)
 
 
 if __name__ == '__main__':

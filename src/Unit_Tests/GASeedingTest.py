@@ -289,6 +289,15 @@ class ReplayReproducesEvaluationTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
         self.assertIn('predates seeded GA evaluations', r.stdout)
         self.assertIn('Seed: 45', r.stdout)
+        # ... and, seeded with 45, it repeats itself (review finding SH-06:
+        # the test checked only the printed seed)
+        again = self._replay(old, '--steps', '100')
+        self.assertEqual(again.returncode, 0, again.stdout[-1500:] + again.stderr[-1500:])
+        distances = [[line for line in run.stdout.splitlines() if 'Final distance:' in line]
+                     for run in (r, again)]
+        self.assertTrue(distances[0], r.stdout[-1500:])
+        self.assertEqual(distances[0][0].split('Final distance:')[1],
+                         distances[1][0].split('Final distance:')[1])
 
 
 if __name__ == "__main__":
