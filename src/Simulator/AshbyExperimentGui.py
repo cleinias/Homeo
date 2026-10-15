@@ -482,7 +482,7 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
         self._punishment_log = []
         self._constraint_flag = None
         self._stimulus_count = 0
-        self._stability_tracker = StabilityTracker(hom, window=200, burn_in=200)
+        self._stability_tracker = StabilityTracker(hom, window=200)
 
         # Callbacks modify or read homeostat state only (no GUI): they run
         # in the simulation thread.  The experiment's own come first.

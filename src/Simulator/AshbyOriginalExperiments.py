@@ -52,21 +52,52 @@ def _seed_rngs(seed):
 class StabilityTracker:
     '''Track whether all active units have stayed within bounds.
 
-    Call check(tick) every tick.  stability_achieved_at will be set to the
-    first tick at which window consecutive non-critical ticks were observed.
+    Call check(tick) every tick, after the update that produced tick.  The
+    homeostat is stable once no active unit has been critical for window
+    consecutive ticks; a stable stretch begins at the first of those ticks.
+    episodes lists every stable stretch as [onset, end] (end: its last
+    uncritical tick so far); the measures are read off it:
+    - stability_achieved_at: the onset of the first stretch (1 if the
+      homeostat was stable from the start), None if never stable;
+    - stable_since: the onset of the stretch in progress, None if not
+      currently stable;
+    - restabilisation(t, until): what a disturbance at t did (see there).
+    Until 15 Oct 2026 (review finding SR-14) onsets were recorded one tick
+    early and never before a burn-in of 200 ticks (a stretch from tick 1
+    came out as 200), and the "last stability" reported was the latest
+    tick minus window, not the onset of the stretch in progress.
     total_uniselector_firings counts only the firings of units that have an
     input their uniselector can re-draw; the others change nothing.
     '''
 
-    def __init__(self, homeostat, window=200, burn_in=None):
+    def __init__(self, homeostat, window=200):
         self.hom = homeostat
         self.window = window
-        self.burn_in = burn_in if burn_in is not None else window
         self._run = 0
-        self.stability_achieved_at = None
-        self.last_stability_at = None
+        self.episodes = []
         self.currently_stable = False
         self.total_uniselector_firings = 0
+
+    @property
+    def stability_achieved_at(self):
+        return self.episodes[0][0] if self.episodes else None
+
+    @property
+    def stable_since(self):
+        return self.episodes[-1][0] if self.currently_stable else None
+
+    def restabilisation(self, t, until):
+        '''What a disturbance at tick t did, judged up to tick until (the next
+        disturbance, or the run's end): ('held', None) if a stable stretch
+        begun by t lasted to until; ('restabilised', latency) if a stretch
+        began after t and before until, latency ticks after t; ('never', None)
+        otherwise.'''
+        for onset, end in self.episodes:
+            if onset <= t and end >= until:
+                return ('held', None)
+            if t < onset < until:
+                return ('restabilised', onset - t)
+        return ('never', None)
 
     def _is_critical(self, unit):
         '''Check if a unit's current deviation is beyond the critical threshold.
@@ -91,13 +122,11 @@ class StabilityTracker:
         else:
             self._run = 0
             self.currently_stable = False
-        if self._run >= self.window:
-            stable_since = tick - self.window
-            if stable_since >= self.burn_in:
-                if self.stability_achieved_at is None:
-                    self.stability_achieved_at = stable_since
-                self.last_stability_at = stable_since
-                self.currently_stable = True
+        if self._run == self.window:
+            self.episodes.append([tick - self.window + 1, tick])
+            self.currently_stable = True
+        elif self._run > self.window:
+            self.episodes[-1][1] = tick
 
 
 # ---------------------------------------------------------------

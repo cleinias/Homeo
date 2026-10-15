@@ -83,6 +83,7 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
         events = [(t, _marker(protocol, 'R%d' % (i + 1), state21))
                   for i, t in enumerate(reversals)] + events
         tick_callback = None
+        disturbances = reversals
     elif exp_num == 2:
         hom, seed, meta = setup_exp2_self_reorganization(seed)
         u1, u2 = hom.homeoUnits[:2]
@@ -91,11 +92,13 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
         events = [(EXP2_R, _marker(protocol, 'R', state12)), (EXP2_R, exp2_reversal_event)]
         tick_callback = None
         meta['reversal_tick'] = EXP2_R
+        disturbances = [EXP2_R]
     elif exp_num == 3:
         hom, seed, meta = setup_exp3_training(seed)
         events = []
         trainer, punishment_log = make_trainer_callback()
         tick_callback = trainer
+        disturbances = []        # the trainer acts whenever the operator's unit is wrong
     elif exp_num == 4:
         hom, seed, meta = setup_exp4_alternating_environments(seed)
         u1 = hom.homeoUnits[0]
@@ -105,12 +108,14 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
                   for t in reversals] + events
         tick_callback = None
         meta['reversal_ticks'] = reversals
+        disturbances = reversals
     elif exp_num == 5:
         hom, seed, meta = setup_exp5_constraint(seed)
         constrain_cb, flag = make_constraint_callback()
         events = exp5_events(flag)
         tick_callback = constrain_cb
         meta['join_tick'], meta['release_tick'] = EXP5_J, EXP5_R
+        disturbances = [EXP5_J, EXP5_R]
     elif exp_num == 6:
         if figure == 2:
             hom, seed, meta = setup_exp6b_habituation_ultrastable(seed)
@@ -123,12 +128,14 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
         stim_ticks = [e[0] for e in stim_events]
         tick_callback = None
         meta['stimulus_ticks'] = stim_ticks
+        disturbances = stim_ticks
     elif exp_num == 7:
         hom, seed, meta = setup_exp7_multistable(seed)
         u1 = hom.homeoUnits[0]
         events = [(EXP7_TEST, _marker(protocol, 'test', lambda h: u1.uniselectorActivationCount))]
         events += exp7_test_events()
         tick_callback = make_multistable_callback()
+        disturbances = [t for t, f in exp7_test_events()]
     else:
         print('Unknown experiment number: %d' % exp_num)
         sys.exit(1)
@@ -195,8 +202,9 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
         'total_ticks': total_ticks,
         'elapsed_seconds': elapsed,
         'stability_achieved_at': stability_tracker.stability_achieved_at,
-        'last_stability_at': stability_tracker.last_stability_at,
+        'stable_since': stability_tracker.stable_since,
         'currently_stable': stability_tracker.currently_stable,
+        'stable_episodes': [list(e) for e in stability_tracker.episodes],
         'total_uniselector_firings': stability_tracker.total_uniselector_firings,
         'statelog_path': statelog_path,
         'json_path': json_path,
@@ -204,16 +212,27 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
 
     print('\nResults:')
     print('  Elapsed: %.1f s' % elapsed)
-    if stability_tracker.stability_achieved_at is not None:
-        print('  First stability at tick: %d' %
-              stability_tracker.stability_achieved_at)
+    first = stability_tracker.stability_achieved_at
+    if first is not None:
+        print('  First stability at tick: %d%s' % (first, ' (from the start)' if first == 1 else ''))
     else:
         print('  Stability NOT achieved within %d ticks' % total_ticks)
     if stability_tracker.currently_stable:
-        print('  Currently stable (since tick %d)' %
-              stability_tracker.last_stability_at)
-    elif stability_tracker.stability_achieved_at is not None:
+        print('  Currently stable (since tick %d)' % stability_tracker.stable_since)
+    elif first is not None:
         print('  Currently UNSTABLE (was stable earlier)')
+    print('  Stable stretches: %d' % len(stability_tracker.episodes))
+    # What each disturbance did, judged up to the next one (or the run's end)
+    after = []
+    for t, until in zip(disturbances, list(disturbances[1:]) + [total_ticks]):
+        outcome, latency = stability_tracker.restabilisation(t, until)
+        after.append({'tick': t, 'outcome': outcome, 'latency': latency})
+    if after:
+        print('  After each disturbance: %s' % '; '.join(
+            '%d %s' % (a['tick'], 're-stabilised after %d' % a['latency']
+                       if a['outcome'] == 'restabilised' else a['outcome'])
+            for a in after))
+    summary['disturbances'] = after
     print('  Total uniselector firings: %d' %
           stability_tracker.total_uniselector_firings)
 

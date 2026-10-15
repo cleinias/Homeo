@@ -79,6 +79,68 @@ class AshbyHelpersTest(unittest.TestCase):
         self.assertEqual(tracker.total_uniselector_firings, u1.uniselectorActivationCount)
 
 
+class StabilityTrackerTest(unittest.TestCase):
+    """Stable stretches and their onsets (review finding SR-14), on a stand-in
+    homeostat whose one unit is critical at the ticks given"""
+
+    class Unit:
+        critThreshold, maxDeviation = 0.9, 1.0
+        uniselectorActivated = False
+        def __init__(self):
+            self.criticalDeviation = 0.0
+        def isActive(self):
+            return True
+
+    def track(self, critical, ticks, window=200):
+        unit = self.Unit()
+        tracker = StabilityTracker(mock.Mock(homeoUnits=[unit]), window=window)
+        for tick in range(1, ticks + 1):
+            unit.criticalDeviation = 1.0 if tick in critical else 0.0
+            tracker.check(tick)
+        return tracker
+
+    def testStableFromTheStartIsOnsetOne(self):
+        "until 15 Oct 2026: 200, the burn-in"
+        tracker = self.track(set(), 4000)
+        self.assertEqual(tracker.stability_achieved_at, 1)
+        self.assertEqual(tracker.stable_since, 1)
+        self.assertEqual(tracker.episodes, [[1, 4000]])
+
+    def testTheOnsetIsTheStretchsFirstTick(self):
+        "critical up to tick 500: stable from 501 (until 15 Oct 2026: 500)"
+        tracker = self.track(set(range(1, 501)), 4000)
+        self.assertEqual(tracker.stability_achieved_at, 501)
+
+    def testNotStableUntilWindowTicks(self):
+        tracker = self.track(set(), 199)
+        self.assertFalse(tracker.currently_stable)
+        self.assertIsNone(tracker.stability_achieved_at)
+        tracker.check(200)
+        self.assertTrue(tracker.currently_stable)
+
+    def testStableSinceIsTheOnsetOfTheStretchInProgress(self):
+        """until 15 Oct 2026 the 'since' reported was the last tick minus
+        window (3800 here), and a stretch from 1 to 300 was a first stability at 100"""
+        tracker = self.track({301, 2000}, 4000)
+        self.assertEqual(tracker.episodes, [[1, 300], [302, 1999], [2001, 4000]])
+        self.assertEqual(tracker.stability_achieved_at, 1)
+        self.assertEqual(tracker.stable_since, 2001)
+
+    def testAShortStretchIsNotAnEpisode(self):
+        tracker = self.track({100, 250}, 450)
+        self.assertEqual(tracker.episodes, [[251, 450]])
+        tracker = self.track({100, 250, 449}, 450)
+        self.assertEqual(tracker.episodes, [])
+        self.assertIsNone(tracker.stable_since)
+
+    def testRestabilisation(self):
+        tracker = self.track(set(range(1010, 1100)), 4000)
+        self.assertEqual(tracker.restabilisation(1000, 3000), ('restabilised', 100))
+        self.assertEqual(tracker.restabilisation(3000, 4000), ('held', None))
+        tracker = self.track(set(range(1010, 3950)), 4000)
+        self.assertEqual(tracker.restabilisation(1000, 4000), ('never', None))
+
+
 class AshbyGuiIsHeadlessTest(unittest.TestCase):
     """Each GUI setup is the headless one: given the seed the headless
     setup would draw, the two homeostats are the same."""
