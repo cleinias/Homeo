@@ -323,6 +323,49 @@ class SpinTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed — KheperaSimulator unavailable")
+class VehicleBehaviourTest(unittest.TestCase):
+    """Braitenberg's two excitatory vehicles do what he says (TS-09): with the
+       light 30 degrees to one side, 2b (crossed) turns toward it, 2a
+       (uncrossed) away from it, on either side and with either motor."""
+
+    def _bearings(self, wiring, motor, heading, ticks=1500):
+        "The light's bearing from the robot's heading (deg, left > 0), before and after"
+        from math import atan2, degrees, pi
+        def bearing(body):
+            to = atan2(D.TARGET_POS[1] - body.position[1], D.TARGET_POS[0] - body.position[0])
+            return degrees((to - body.angle + pi) % (2 * pi) - pi)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ['HOMEO_DATA_DIR'] = tmp
+            try:
+                hom, backend, _ = D.setup_phototaxis(seed=7, fixed_weights=True, wiring=wiring,
+                                                     signs='++', motor=motor)
+                robot = backend.kheperaSimulation.allBodies['Khepera']
+                D.set_start_pose(robot, heading=heading)
+                before = bearing(robot.body)
+                hom.slowingFactor = 0
+                hom.collectsData = False
+                hom._headless = True
+                for u in hom.homeoUnits:
+                    u._headless = True
+                hom.runFor(ticks)
+                return before, bearing(robot.body)
+            finally:
+                os.environ.pop('HOMEO_DATA_DIR', None)
+                backend.kheperaSimulation.saveTrajectory()
+
+    def testTwoBTurnsTowardTheLightAndTwoAAway(self):
+        for motor in ('aristotelian', 'newtonian'):
+            for heading in (15, 75):            # the light 30 degrees left, then right
+                with self.subTest(motor=motor, heading=heading):
+                    before, after = self._bearings('crossed', motor, heading)
+                    self.assertAlmostEqual(abs(before), 30, places=3)
+                    self.assertLess(abs(after), 10)
+                    before, after = self._bearings('uncrossed', motor, heading)
+                    self.assertGreater(abs(after), 90)
+                    self.assertEqual(after > 0, before > 0)       # turned away on its own side
+
+
+@unittest.skipUnless(HAS_BOX2D, "Box2D not installed — KheperaSimulator unavailable")
 class AristotelianMotorTest(unittest.TestCase):
     """--motor aristotelian: the true Braitenberg vehicle.  Each motor's output
        depends only on its sensor's reading on the previous tick -- no memory,

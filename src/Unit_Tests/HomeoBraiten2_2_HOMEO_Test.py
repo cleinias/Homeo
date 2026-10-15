@@ -94,12 +94,17 @@ class Braiten2_2_HOMEO_Test(unittest.TestCase):
         self.assertIsInstance(pos[1], float)
 
     def test_final_distance_from_target(self):
-        """The backend can report distance from target after a run."""
+        """The backend reports the robot's distance from the light (the GA's
+        fitness) after a run: from where the robot is, not where it began."""
         hom = initializeBraiten2_2(backendSimulator=self.backend)
+        sim = self.backend.kheperaSimulation
+        start = sim.allBodies['Khepera'].body.position.copy()
         hom.runFor(50)
+        robot = sim.allBodies['Khepera'].body.position
+        target = sim.allBodies['TARGET'].position
         distance = self.backend.finalDisFromTarget()
-        self.assertIsInstance(distance, float)
-        self.assertGreater(distance, 0)
+        self.assertAlmostEqual(distance, (robot - target).length, places=9)
+        self.assertNotEqual(tuple(robot), tuple(start))
 
 
 if __name__ == "__main__":

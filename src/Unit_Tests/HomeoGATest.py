@@ -67,17 +67,23 @@ class GenomeDecoderTest(unittest.TestCase):
             self.assertGreaterEqual(mass, minMass)
             self.assertLessEqual(mass, maxMass)
 
-    def testGenomeDecoderViscosityRange(self):
-        """Decoded viscosity values fall within HomeoUnit viscosity range"""
-        noUnits = 4
-        essentParams = 4
-        genomeSize = noUnits * essentParams + noUnits ** 2
-        genome = np.random.uniform(0, 1, size=genomeSize)
-        decoded = genomeDecoder(noUnits, genome)
-        for unit in range(noUnits):
-            viscosity = decoded[unit * essentParams + 1]
-            # viscosity is scaled from (0,1) weight; check it's a reasonable float
-            self.assertIsInstance(viscosity, (int, float, np.floating))
+    def testGenomeDecoderValues(self):
+        """Genes 0, 0.5 and 1 decode to each parameter's documented minimum,
+        midpoint and maximum: classic (mass, viscosity, uniselector interval,
+        maxDeviation, then weights) and weight-free with dt_fast (mass,
+        viscosity, tau_a, maxDeviation, dt_fast)."""
+        for gene, classic, weightfree in (
+                (0.0, [10, 0, 0, 0.1], [1, 0, 100, 0.1, 0.2]),
+                (0.5, [5005, 5, 500, 500.05], [5.5, 5, 1000, 500.05, 1.1]),
+                (1.0, [10000, 10, 1000, 1000], [10, 10, 10000, 1000, 2.0])):
+            with self.subTest(gene=gene):
+                decoded = genomeDecoder(2, [gene] * 12, layout='classic')
+                expected = classic * 2 + [2 * gene - 1] * 4
+                for value, want in zip(decoded, expected):
+                    self.assertAlmostEqual(value, want, places=9)
+                decoded = genomeDecoder(2, [gene] * 10, layout='weightfree_dt')
+                for value, want in zip(decoded, weightfree * 2):
+                    self.assertAlmostEqual(value, want, places=9)
 
     def testGenomeDecoderConnectionWeights(self):
         """Decoded connection weights map (0,1) to (-1,1)"""
@@ -263,12 +269,15 @@ class HomeoGASimulationTest(unittest.TestCase):
         self.assertTrue(os.path.isdir(self.ga.dataDir))
 
     def testToolboxRegistered(self):
-        """Toolbox has all required operators registered"""
-        required_ops = ['evaluate', 'mate', 'mutate', 'select',
-                        'population', 'individual', 'map']
-        for op in required_ops:
-            self.assertTrue(hasattr(self.ga.toolbox, op),
-                            "Toolbox missing operator: %s" % op)
+        """The serial toolbox evaluates seeded, selects by tournaments of
+        tournamentSize, and maps serially (mate and mutate: GALoopTest)"""
+        from deap import tools
+        toolbox = self.ga.toolbox
+        self.assertEqual(toolbox.evaluate.func, self.ga.evaluateGenomeFitnessSeeded)
+        self.assertIs(toolbox.select.func, tools.selTournament)
+        self.assertEqual(toolbox.select.keywords, {'tournsize': self.ga.tournamentSize})
+        self.assertIs(toolbox.map.func, map)
+        self.assertEqual(len(toolbox.population(n=3)), 3)
 
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed — HOMEO backend unavailable")
