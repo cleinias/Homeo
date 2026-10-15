@@ -8,7 +8,7 @@ from   Core.HomeoUniselectorAshby import *
 from   Core.Homeostat import *
 import scipy.stats as stats
 import unittest, numpy
-from copy import copy
+from copy import deepcopy
 
 class HomeoUniselectorAshbyTest(unittest.TestCase):
     '''
@@ -226,22 +226,23 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         
     def testSameAs(self):
         '''
-        True if they are of same class, have same ashbyKind, and have the same transition matrix
+        True if they are of same class, have same ashbyKind, and have the same
+        transition matrix.  A deep copy is the same, for every kind of matrix;
+        changing one weight of the copy, or making a fresh matrix of the same
+        kind, makes it different (review finding CD-09: the test used shallow
+        copies, which share the matrix, and only one kind).
         '''
-    
-        "Copies should always be the same, no matter the matrix's computation method"
-        self.uniselector.equallySpaced()
-        anotherUniselector = copy(self.uniselector)
-        
-        self.assertTrue(self.uniselector.sameAs(anotherUniselector))
-     
-        self.uniselector.equallySpaced()
-        anotherUniselector = copy(self.uniselector)
-        self.assertTrue(self.uniselector.sameAs(anotherUniselector))
-        
-        self.uniselector.equallySpaced()
-        anotherUniselector = copy(self.uniselector)
-        self.assertTrue(self.uniselector.sameAs(anotherUniselector))
+        for kind in ('equallySpaced', 'independentlyRandomized', 'randomized'):
+            with self.subTest(kind):
+                getattr(self.uniselector, kind)()
+                anotherUniselector = deepcopy(self.uniselector)
+                self.assertIsNot(anotherUniselector.matrix(), self.uniselector.matrix())
+                self.assertTrue(self.uniselector.sameAs(anotherUniselector))
+                anotherUniselector.matrix()[3, 2] += 0.01
+                self.assertFalse(self.uniselector.sameAs(anotherUniselector))
+                fresh = HomeoUniselectorAshby()
+                getattr(fresh, kind)()
+                self.assertFalse(self.uniselector.sameAs(fresh))
 
         '''Otherwise, two uniselectors will almost never be the same.
         Test that they will not be equal in  more than 5% of the cases'''

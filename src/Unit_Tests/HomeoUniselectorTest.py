@@ -28,17 +28,23 @@ class HomeoUniselectorTest(unittest.TestCase):
         currentClasses.extend([class_.__name__ for class_ in withAllSubclasses(HomeoUniselector)])
         for bogusClass in range(5):
             newRandomName = ''.join(random.choice(string.ascii_lowercase) for x in range(10))
-            bogusClasses.extend(newRandomName)
+            bogusClasses.append(newRandomName)
         for currentClass in currentClasses:
             self.assertTrue(HomeoUniselector.includesType(currentClass))
+        self.assertEqual(len(bogusClasses), 5)
         for bogusClass in bogusClasses:
             self.assertFalse(HomeoUniselector.includesType(bogusClass))
 
     def testIntervalBounds(self):
         """
-        Test that HomeoUniselector has a positive interval
+        A HomeoUniselector's weights default to the interval [0, 1], and its
+        bounds can be set (Ashby's uniselector keeps them at 0 and 1: see
+        HomeoUniselectorAshbyTest.testIntervalBounds)
         """
-        self.assertTrue((self.uniselector.upperBound - self.uniselector.lowerBound) >= 0)
+        self.assertEqual((self.uniselector.lowerBound, self.uniselector.upperBound), (0, 1))
+        self.uniselector.lowerBound = -0.5
+        self.uniselector.upperBound = 2
+        self.assertEqual((self.uniselector.lowerBound, self.uniselector.upperBound), (-0.5, 2))
                         
     def testHomeoUniselectorIsAbstractClass(self):
         '''
