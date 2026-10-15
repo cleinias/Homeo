@@ -344,6 +344,12 @@ def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir
     a weak stimulus); the backends have only the standard polarity, so it
     raises a ValueError (SE-04).  The V-REP and old Webots paths, chosen by a
     `simulator` string, were deleted on 14 Oct 2026.
+
+    Every active link between units is under the uniselector, the sensor ->
+    eye links included: as in every adaptive vehicle (and Ashby's homeostat),
+    only the self-connections are manual.  Unused 'sensor_incoming_*'
+    parameters declared those links manual until 15 Oct 2026; nothing read
+    them (review finding SE-11 (d), decided to keep the links adaptive).
 '''
     if backendSimulator is None:
         raise ValueError("initializeBraiten2_2 needs a backendSimulator")
@@ -417,11 +423,6 @@ def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir
     motor_incoming_conn_noise = 0.05
     motor_incoming_connection_polarity = 1
     motor_incoming_connection_uniselector = 'uniselector' 
-    
-    sensor_incoming_connection_weight = 0.5
-    sensor_incoming_connection_noise = 0.05
-    sensor_incoming_connection_polarity = 1
-    sensor_incoming_connection_uniselector = 'manual'
     
     "4. Set up Homeostat"   
 
@@ -592,6 +593,11 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     2. Right Motor
     3. Left Sensor (eye)
     4. Right Sensor (eye)   
+
+    The genome sets every link's starting weight; every link but the
+    self-connections is then under the uniselector, the sensor -> eye links
+    included, as in every adaptive vehicle (review finding SE-11 (d): an
+    unused 'manual' setting for those links was removed on 15 Oct 2026).
     
     Initialize the homeostat to be **fully connected** (real units only)
     
@@ -662,7 +668,6 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     motor_self_connection_switch = -1
     motor_self_connection_noise = 0.05
     motor_incoming_connection_uniselector = 'uniselector' 
-    sensor_incoming_connection_uniselector = 'manual'
     
     "4. Set up Homeostat"   
     

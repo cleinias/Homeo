@@ -49,6 +49,18 @@ class ClassicGASetupTest(unittest.TestCase):
             for conn in unit.inputConnections[1:]:
                 self.assertEqual(conn.state, 'uniselector', unit.name)
 
+    def testTheEyesUniselectorRedrawsItsSensorLink(self):
+        """The sensor -> eye link is adaptive like every other link between
+        units (review finding SE-11 (d)): the eye's uniselector redraws it"""
+        genome = np.random.random(4 * 4 + 4 * 6)
+        hom = initializeBraiten2_2_Full_GA(genome, backendSimulator=self.backend)
+        eye = [u for u in hom.homeoUnits if u.name == 'Left Eye'][0]
+        link = [c for c in eye.inputConnections if c.incomingUnit.name == 'Left Sensor'][0]
+        self.assertEqual(link.state, 'uniselector')
+        before = link.weight * link.switch
+        eye.operateUniselector()
+        self.assertNotEqual(link.weight * link.switch, before)
+
     def testTheUniselectorLeavesSelfConnectionsAlone(self):
         genome = np.random.random(4 * 4 + 4 * 6)
         hom = initializeBraiten2_2_Full_GA(genome, backendSimulator=self.backend)

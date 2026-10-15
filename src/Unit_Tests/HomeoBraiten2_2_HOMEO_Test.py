@@ -62,6 +62,19 @@ class Braiten2_2_HOMEO_Test(unittest.TestCase):
                     'Left Sensor', 'Right Sensor'}
         self.assertEqual(names, expected)
 
+    def test_sensor_links_are_adaptive(self):
+        """Every active link but the self-connections is under the uniselector,
+        the sensor -> eye links included (review finding SE-11 (d))"""
+        hom = initializeBraiten2_2(backendSimulator=self.backend)
+        for name in ('Left Eye', 'Right Eye', 'Left Motor', 'Right Motor'):
+            unit = [u for u in hom.homeoUnits if u.name == name][0]
+            active = [c for c in unit.inputConnections[1:] if c.status]
+            self.assertEqual(len(active), 1, name)
+            self.assertEqual(active[0].state, 'uniselector', name)
+        leftEye = [u for u in hom.homeoUnits if u.name == 'Left Eye'][0]
+        self.assertEqual([c.incomingUnit.name for c in leftEye.inputConnections[1:] if c.status],
+                         ['Left Sensor'])
+
     def test_runs_without_error(self):
         """The homeostat runs for a number of steps without raising exceptions."""
         hom = initializeBraiten2_2(backendSimulator=self.backend)
