@@ -1,10 +1,8 @@
-# File:          supervisorTrajectoryAbstract.py
+# File:          RobotTrajectoryWriter.py (first supervisorTrajectoryAbstract.py)
 # Date:          2/20/2015
-# Description:   A file writer class for the controllers recording trajectories in the 
-#                robotics simulation packages. 
-#                It basically works as a finite state machine. Webots, V-REP, etc. will use an instance as
-#                a component and add package specific mechanisms to (1) read the state transitions and
-#                (2) read the robot's position
+# Description:   Writes a robot's trajectory to a .traj file.  The Box2D simulator
+#                (KheperaSimulation) and the Webots backend (WebotsSimulation) each
+#                use an instance, and pass it the robot's position at each step.
 # Author:        Stefano Franchi
 # Modifications: 
 

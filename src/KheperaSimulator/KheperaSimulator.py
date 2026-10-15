@@ -1035,7 +1035,7 @@ class KheperaSimulation(object):
                  robotDrive = 'kinematic', synchronousStepping = True, stepsPerTick = 2,
                  robotEyeRadiusRatio = None, robotModel = 'epuck2'):
         '''
-        Default time step is 1/60 of a second, values for velocity 
+        Default time step is 0.032 s, values for velocity 
         and position iterations are those recommended by pyBox2D docs
         robotDrive: the robots' drive, 'kinematic' or 'legacy' (see KheperaRobot).
         robotModel: the robots' model, 'epuck2' (default since 14 Oct 2026) or

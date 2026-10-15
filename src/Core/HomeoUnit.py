@@ -1548,8 +1548,8 @@ class HomeoUnit(object):
         The choice between the two is determined by the value of the instance variable 
         needleCompMethod. Default (stored in the class variable) is linear.
         
-        The viscosity is between 0 and 1, with 0 being the maximum (needle unable to move) 
-        and 1 being the minimum (no effect on movement)"""
+        The viscosity runs from 0 (no effect on movement) to maxViscosity, 10
+        (the needle unable to move)."""
 
 
     def newProportionalNeedlePosition(self, aTorque):
