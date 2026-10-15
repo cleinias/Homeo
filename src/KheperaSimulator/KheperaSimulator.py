@@ -1052,6 +1052,12 @@ class KheperaWheel(object):
 #         print "Velocity changing from %s to: %s" %(self.getForwardVelocity(), newVelocity)
         
 #         print "%s wheel: FW normal: %s, right normal: %s" % (self.name, self.getForwardNormal(), self.getRightNormal())
+        # Not a ground friction: the world is seen from above and has no
+        # ground.  A fixture's friction counts only in its contacts with other
+        # bodies (walls, obstacles), and Box2D fixes a contact's friction when
+        # the contact begins, so this changes only the collisions that start
+        # after it.  Kept, like the whole 'legacy' drive, so that the runs
+        # made with it reproduce (review finding RS-14).
         if abs(desiredSpeed) <0.001:
             self.body.fixtures[0].friction = 1 
         else:
