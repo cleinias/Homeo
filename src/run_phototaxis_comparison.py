@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-"""run_phototaxis_comparison.py — Launch all 4 phototaxis experiments concurrently.
+"""run_phototaxis_comparison.py — Launch the 3 phototaxis experiments concurrently.
+
+  Exp 1: standalone Ashby (discrete uniselector)
+  Exp 2: standalone OU (continuous uniselector)
+  Exp 3: GA + OU, 16-gene genome (4 units x 4 params), the _v2 setup
+Exp 4 (GA + OU with an evolvable dt_fast) was retired on 15 Oct 2026: dt_fast
+is a rescaling of mass and viscosity, which the _v2 setup evolves over the
+ranges dt_fast reached (review finding CU-11).
 
 Console shows only generation/completion summaries.
 Full verbose output is saved to per-experiment log files.
 
 Usage:
-    python run_phototaxis_comparison.py                  # orchestrate all 4
+    python run_phototaxis_comparison.py                  # orchestrate all 3
     python run_phototaxis_comparison.py --exp 1          # run experiment 1 only
     python run_phototaxis_comparison.py --exp 3 --workers 4
 """
@@ -72,17 +79,10 @@ def run_ga_experiment(exp_num, exp_name, n_workers, seed):
 
 
 def run_exp3(n_workers):
-    """Exp 3: GA + OU, fixed dt_fast=1.0, 16-gene genome."""
+    """Exp 3: GA + OU, 16-gene genome (mass and viscosity log-uniform)."""
     run_ga_experiment(3,
-        "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt",
+        "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2",
         n_workers, seed=42)
-
-
-def run_exp4(n_workers):
-    """Exp 4: GA + OU, evolvable dt_fast, 20-gene genome."""
-    run_ga_experiment(4,
-        "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed",
-        n_workers, seed=43)
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +98,6 @@ def run_single(exp_num, n_workers):
         1: lambda: run_exp1(),
         2: lambda: run_exp2(),
         3: lambda: run_exp3(n_workers),
-        4: lambda: run_exp4(n_workers),
     }
     runners[exp_num]()
 
@@ -116,12 +115,12 @@ def orchestrate():
     os.makedirs(log_dir, exist_ok=True)
 
     n_cores = os.cpu_count() or 8
-    # 2 standalone experiments are single-process and fast.
-    # Split remaining cores between 2 GA experiments.
-    workers_per_ga = max(1, (n_cores - 2) // 2)
+    # 2 standalone experiments are single-process and fast; the GA gets
+    # the remaining cores.
+    workers_per_ga = max(1, n_cores - 2)
 
     print("=" * 60)
-    print("  Phototaxis Comparison: 4 Experiments")
+    print("  Phototaxis Comparison: 3 Experiments")
     print("=" * 60)
     print("  Log directory : %s" % os.path.abspath(log_dir))
     print("  CPU cores     : %d" % n_cores)
@@ -132,13 +131,12 @@ def orchestrate():
     exp_labels = {
         1: 'Standalone Ashby',
         2: 'Standalone OU',
-        3: 'GA+OU fixed dt (16 genes)',
-        4: 'GA+OU variable dt (20 genes)',
+        3: 'GA+OU (16 genes)',
     }
 
     commands = {exp_num: [sys.executable, os.path.abspath(__file__),
                           '--exp', str(exp_num), '--workers', str(workers_per_ga)]
-                for exp_num in [1, 2, 3, 4]}
+                for exp_num in [1, 2, 3]}
     run_concurrently(commands, exp_labels, log_dir, SRC_DIR, label_width=35)
 
 

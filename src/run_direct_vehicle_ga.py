@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 """run_direct_vehicle_ga.py — GA experiments for the simplified 2+2 direct vehicle.
 
-Runs 2 GA experiments concurrently using the 4-unit Braitenberg-2 vehicle
-(2 sensors + 2 motors, no eye intermediaries):
+Runs a GA experiment on the 4-unit Braitenberg-2 vehicle (2 sensors + 2
+motors, no eye intermediaries):
 
-  Exp 1: GA + OU, fixed dt_fast=1.0, 8-gene genome (2 units x 4 params)
-  Exp 2: GA + OU, evolvable dt_fast, 10-gene genome (2 units x 5 params)
+  Exp 1: GA + OU, 8-gene genome (2 units x 4 params), the _v2 setup: mass and
+         viscosity log-uniform
 
-Both use fixed Braitenberg cross-wiring (Left Sensor -> Right Motor,
-Right Sensor -> Left Motor) with negative motor self-connections.
+with fixed Braitenberg cross-wiring (Left Sensor -> Right Motor, Right
+Sensor -> Left Motor) and negative motor self-connections.  Exp 2 (an
+evolvable dt_fast, 10 genes) was retired on 15 Oct 2026: dt_fast is a
+rescaling of mass and viscosity, which the _v2 setup evolves over the ranges
+dt_fast reached (review finding CU-11).
 
 Usage:
-    python run_direct_vehicle_ga.py                  # orchestrate both
-    python run_direct_vehicle_ga.py --exp 1          # run experiment 1 only
-    python run_direct_vehicle_ga.py --exp 2 --workers 4
+    python run_direct_vehicle_ga.py                  # orchestrate (all cores)
+    python run_direct_vehicle_ga.py --exp 1 --workers 4
     python run_direct_vehicle_ga.py --pop 150 --gen 50   # override defaults
     python run_direct_vehicle_ga.py --noise-scheme genome
                                     # how evaluations get their noise: individual
@@ -72,19 +74,10 @@ def run_ga_experiment(exp_num, exp_name, n_workers, seed,
 
 def run_exp1(n_workers, pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
              steps=DEFAULT_STEPS, noise_scheme=DEFAULT_NOISE_SCHEME):
-    """Exp 1: Direct 2+2, GA + OU, fixed dt_fast=1.0, 8-gene genome."""
+    """Exp 1: Direct 2+2, GA + OU, 8-gene genome (mass and viscosity log-uniform)."""
     run_ga_experiment(1,
-        "initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt",
+        "initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2",
         n_workers, seed=44, pop_size=pop_size, generations=generations,
-        steps=steps, noise_scheme=noise_scheme)
-
-
-def run_exp2(n_workers, pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
-             steps=DEFAULT_STEPS, noise_scheme=DEFAULT_NOISE_SCHEME):
-    """Exp 2: Direct 2+2, GA + OU, evolvable dt_fast, 10-gene genome."""
-    run_ga_experiment(2,
-        "initializeBraiten2_direct_GA_continuous_weightfree_fixed",
-        n_workers, seed=45, pop_size=pop_size, generations=generations,
         steps=steps, noise_scheme=noise_scheme)
 
 
@@ -100,7 +93,6 @@ def run_single(exp_num, n_workers, pop_size, generations, steps,
 
     runners = {
         1: run_exp1,
-        2: run_exp2,
     }
     runners[exp_num](n_workers, pop_size=pop_size, generations=generations,
                      steps=steps, noise_scheme=noise_scheme)
@@ -118,8 +110,7 @@ def orchestrate(pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
     os.makedirs(log_dir, exist_ok=True)
 
     n_cores = os.cpu_count() or 8
-    # Split cores between 2 GA experiments
-    workers_per_ga = max(1, n_cores // 2)
+    workers_per_ga = n_cores
 
     print("=" * 60)
     print("  Direct 2+2 Vehicle: GA Experiments")
@@ -135,8 +126,7 @@ def orchestrate(pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
     print()
 
     exp_labels = {
-        1: 'GA+OU fixed dt (8 genes)',
-        2: 'GA+OU variable dt (10 genes)',
+        1: 'GA+OU (8 genes)',
     }
 
     commands = {exp_num: [sys.executable, os.path.abspath(__file__),
@@ -146,7 +136,7 @@ def orchestrate(pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
                           '--gen', str(generations),
                           '--steps', str(steps),
                           '--noise-scheme', noise_scheme]
-                for exp_num in [1, 2]}
+                for exp_num in [1]}
     run_concurrently(commands, exp_labels, log_dir, SRC_DIR, label_width=35)
 
 
