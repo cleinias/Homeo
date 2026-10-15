@@ -952,8 +952,12 @@ class HomeoGASimulation(object):
         return fitness,                                       # Return a tuple, as required by DEAP
         
     def cleanUpTrajFiles(self):
-        "Remove all files not related to specific homeostat models from dataDir"
-        unspecificFileList = glob(self.dataDir+"/*-Unspecified.traj")
+        """Remove all files not related to specific homeostat models from
+           dataDir: the trajectories of the robot before it has a model name,
+           which the writer names trajData-ID-Unspecified-<time>[<tag>][-n].traj
+           (the old pattern, *-Unspecified.traj, matched none of them: review
+           finding HV-10)."""
+        unspecificFileList = glob(os.path.join(self.dataDir, "trajData-ID-Unspecified-*.traj"))
         for f in unspecificFileList:
             os.remove(f)
     

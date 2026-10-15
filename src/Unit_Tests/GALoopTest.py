@@ -22,6 +22,7 @@ import unittest
 import numpy as np
 from deap import tools
 
+from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from Simulator.HomeoGenAlg import HomeoGASimulation
 
 EXP = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt'
@@ -181,11 +182,22 @@ class VariationOperatorsTest(GALoopTestCase):
 class TrajectoryCleanUpTest(GALoopTestCase):
 
     def testOnlyTheUnspecifiedRobotsTrajectoriesGo(self):
+        """The files the trajectory writer names for the robot without a model
+        name go (review finding HV-10: the old pattern matched none of them);
+        the individuals' trajectories and other files stay."""
         ga = self.ga()
-        for name in ('x-Unspecified.traj', '001-002.traj', 'Unspecified-notes.txt'):
+        writer = RobotTrajectoryWriter('Unspecified', (0, 0, 0), [], dataDir=ga.dataDir,
+                                       enabled=False)
+        unspecified = [os.path.basename(writer.buildTrajFilename('Unspecified'))]
+        open(os.path.join(ga.dataDir, unspecified[0]), 'w').close()
+        unspecified.append(os.path.basename(writer.buildTrajFilename('Unspecified')))  # -2
+        kept = [os.path.basename(writer.buildTrajFilename('001-002')),
+                'Unspecified-notes.txt']
+        for name in unspecified[1:] + kept:
             open(os.path.join(ga.dataDir, name), 'w').close()
+        self.assertEqual(len(os.listdir(ga.dataDir)), 4)
         ga.cleanUpTrajFiles()
-        self.assertEqual(sorted(os.listdir(ga.dataDir)), ['001-002.traj', 'Unspecified-notes.txt'])
+        self.assertEqual(sorted(os.listdir(ga.dataDir)), sorted(kept))
 
 
 if __name__ == '__main__':
