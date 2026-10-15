@@ -761,13 +761,13 @@ def run_visualized(setup, caption, light_intensity=100, stable_draws=False,
 
     Press Q or Escape to close the window.
     Up/Down arrows adjust simulation speed (steps per frame).
+    Mouse wheel, drag, F, C and V change the view (see KheperaRobotView).
     '''
     import pyglet
-    from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
+    from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor,
                            GL_BLEND, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
-                           GL_LINE_SMOOTH, GL_LINE_SMOOTH_HINT, GL_NICEST,
-                           GL_COLOR_BUFFER_BIT)
-    from KheperaSimulator.KheperaSimulator import KheperaCamera
+                           GL_LINE_SMOOTH, GL_LINE_SMOOTH_HINT, GL_NICEST)
+    from KheperaSimulator.KheperaSimulator import KheperaRobotView
 
     window = pyglet.window.Window(width=800, height=600, resizable=True, caption=caption)
 
@@ -789,50 +789,19 @@ def run_visualized(setup, caption, light_intensity=100, stable_draws=False,
     log_path, json_path, _ = _start_logs(
         hom, backend, seed, run_settings(backend, light_intensity, stable_draws, env_seed))
 
-    from KheperaSimulator.KheperaSimulator import _get_shape_program
-    from pyglet.gl import GL_LINES
-
-    camera = KheperaCamera(position=(5.5, 5.5), zoom=8.0)
+    view = KheperaRobotView(window, sim)
+    print('Q/Esc: quit   Up/Down: speed   ' + view.HELP)
     state = [0, 5]
-    trail_vlists = []  # list of vertex lists for trail segments
-    trail_last = [None] # last recorded (x, y)
-    TRAIL_MIN_DIST = 0.05  # minimum distance before adding a trail segment
 
     @window.event
     def on_draw():
-        glClear(GL_COLOR_BUFFER_BIT)
-        camera.focus(window)
-        sim.pygletDraw()
-        # Draw trail using the same shader (respects camera projection)
-        program = _get_shape_program()
-        program.use()
-        for vl in trail_vlists:
-            vl.draw(GL_LINES)
-        program.stop()
+        view.draw()
 
     def update(dt):
         state[0] += state[1]
         hom.runFor(state[0])
+        view.extendTrail()
         rx, ry = robot.body.position[0], robot.body.position[1]
-
-        # Only add a trail segment when the robot has moved enough
-        if trail_last[0] is not None:
-            px, py = trail_last[0]
-            if sqrt((rx - px)**2 + (ry - py)**2) >= TRAIL_MIN_DIST:
-                program = _get_shape_program()
-                vl = program.vertex_list(
-                    2, GL_LINES,
-                    position=('f', [px, py, rx, ry]),
-                    colors=('f', [0.8, 0.2, 0.2, 0.7] * 2),
-                    translation=('f', [0.0, 0.0] * 2),
-                    rotation=('f', [0.0] * 2),
-                    zposition=('f', [0.0] * 2),
-                )
-                trail_vlists.append(vl)
-                trail_last[0] = (rx, ry)
-        else:
-            trail_last[0] = (rx, ry)
-
         dist = sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
         window.set_caption(
             f'{caption} - seed {seed}/{env_seed}  t={state[0]}  speed={state[1]}  '
@@ -846,6 +815,11 @@ def run_visualized(setup, caption, light_intensity=100, stable_draws=False,
             state[1] = min(state[1] * 2, 200)
         elif symbol == pyglet.window.key.DOWN:
             state[1] = max(state[1] // 2, 1)
+        else:
+            view.on_key_press(symbol, modifiers)
+
+    window.push_handlers(on_mouse_scroll=view.on_mouse_scroll,
+                         on_mouse_drag=view.on_mouse_drag)
 
     @window.event
     def on_close():
@@ -872,7 +846,9 @@ Options both experiments take
                         (default), homeostat (one environment throughout) or
                         env (one homeostat throughout)
    --run-tag NN         a serial appended to every output file name
-   --visualize          the pyglet visualizer, with the same options
+   --visualize          the pyglet visualizer, with the same options; keys:
+                        Q quit, Up/Down speed, C close-up/arena, F follow,
+                        V eye fields; mouse wheel zoom, drag pan
    --random-topology    every connection between the adaptive units on
    --continuous         the continuous (OU) uniselector instead of Ashby's
    --dark               light intensity -100 (a "darkness source"); with it,

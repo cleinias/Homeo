@@ -39,7 +39,7 @@ from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
                        GL_BLEND, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
                        GL_LINE_SMOOTH, GL_LINE_SMOOTH_HINT, GL_NICEST,
                        GL_COLOR_BUFFER_BIT,
-                       GL_LINES, GL_LINE_STRIP, GL_TRIANGLE_FAN)
+                       GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP, GL_TRIANGLE_FAN)
 from pyglet.window import mouse, key
 from pyglet.math import Mat4, Vec3
 import numpy as np
@@ -143,6 +143,31 @@ def makePygletBox(width, height, orientation=0, draw_mode=GL_TRIANGLE_FAN):
 
     return _make_vlist(count, draw_mode, vertices)
 
+def makePygletReceptor(r, tick, facing=0, numPoints=24):
+    """Create a vertex list for a light receptor: a circle of radius r
+       centred at 0,0 and a tick of length tick out of it along facing
+       (degrees), the direction the receptor faces."""
+    f = radians(facing)
+    vertices = []
+    for i in range(numPoints + 1):
+        angle = f + 2 * pi * i / numPoints
+        vertices += [r * cos(angle), r * sin(angle)]
+    vertices += [(r + tick) * cos(f), (r + tick) * sin(f)]
+    return _make_vlist(numPoints + 2, GL_LINE_STRIP, vertices)
+
+def makePygletRing(r, numPoints=48):
+    "Create a vertex list for a circle of radius r centred at 0,0, outline only"
+    vertices = []
+    for i in range(numPoints):
+        angle = 2 * pi * i / numPoints
+        vertices += [r * cos(angle), r * sin(angle)]
+    return _make_vlist(numPoints, GL_LINE_LOOP, vertices)
+
+# The radius of the eyes' field arcs in the visualizer, in metres: rendering
+# only (an eye has no maximum distance).  10 before 15 Oct 2026, which drew
+# each arc across the whole arena.
+FIELD_RENDER_RANGE = 0.15
+
 """Add drawing pyglet-specific drawing functions
    to the box2D bodies used in Khepera world"""
 
@@ -177,52 +202,54 @@ def makePygletGrid(size, spacing=1, color=(1,1,1,1)):
     vlist._draw_mode = GL_LINES
     return vlist
 
-def b2PygletFixtureDraw(self, body):
-    """A fixture draws itself by setting translation, rotation, and color
-       attributes on its vertex list, then calling draw()."""
-    try:
-        if self.userData is None:
-            return
-        vlist = self.userData['pygletShape']
-        if vlist is None:
-            return
-        color = self.userData['color']
-
-        rotMat = b2Rot(body.angle)
-        rotatedPose = rotMat * self.shape.pos
-        worldPose = rotatedPose + body.position
-
+def _drawShapes(userData, position, angle, fields=False):
+    """Draw the shapes in a body's or a fixture's userData at position, turned
+       by angle (radians, counterclockwise): userData['pygletShape'], a vertex
+       list or a list of them, in userData['color'] or, for a list, the
+       matching userData['colors']; and, when fields is true,
+       userData['pygletField'] in userData['fieldColor'].
+       The shape shader turns its rotation attribute clockwise, so it gets
+       -angle in degrees.  Before 15 Oct 2026 it got +angle, and every shape
+       was drawn turned the wrong way: a robot heading at 30 degrees was drawn
+       heading at -30, its eyes' arcs facing likewise (where the shapes were
+       placed was right)."""
+    shapes = userData['pygletShape']
+    if shapes is None:
+        return
+    if isinstance(shapes, list):
+        drawn = list(zip(shapes, userData['colors']))
+    else:
+        drawn = [(shapes, userData['color'])]
+    if fields and userData.get('pygletField') is not None:
+        drawn.append((userData['pygletField'], userData['fieldColor']))
+    for vlist, color in drawn:
         count = vlist.count
-        vlist.translation[:] = [worldPose[0], worldPose[1]] * count
-        vlist.rotation[:] = [degrees(body.angle)] * count
+        vlist.translation[:] = [position[0], position[1]] * count
+        vlist.rotation[:] = [-degrees(angle)] * count
         vlist.colors[:] = list(color) * count
         vlist.draw(vlist._draw_mode)
+
+def b2PygletFixtureDraw(self, body, fields=False):
+    """A fixture draws itself at its place on its body (see _drawShapes);
+       fields: draw its field of view too, if it has one."""
+    if self.userData is None:
+        return
+    try:
+        rotMat = b2Rot(body.angle)
+        worldPose = rotMat * self.shape.pos + body.position
+        _drawShapes(self.userData, worldPose, body.angle, fields)
     except KeyError as e:
         print("Fixture does not know how to draw itself. Skipping it")
         print(e)
 
 
 def b2PygletBodyDraw(self):
-    """Each b2Body draws itself by setting translation, rotation, and color
-       attributes on its vertex list, then calling draw()."""
+    "Each b2Body draws itself at its position and angle (see _drawShapes)"
     try:
-        vlist = self.userData['pygletShape']
-        if vlist is None:
-            return
-        color = self.userData['color']
+        _drawShapes(self.userData, self.position, self.angle)
     except KeyError as e:
         print("Body does not know how to draw itself. Skipping it")
         print(e)
-        return
-
-    forwardNormal = self.GetWorldVector((1, 0))
-    forwardDirectionAngle = degrees(atan2(forwardNormal[1], forwardNormal[0]))
-
-    count = vlist.count
-    vlist.translation[:] = [self.position[0], self.position[1]] * count
-    vlist.rotation[:] = [forwardDirectionAngle] * count
-    vlist.colors[:] = list(color) * count
-    vlist.draw(vlist._draw_mode)
 
 def b2BodyDefaultUpdate(self, dt=None):
     "Default update function for Box2D body: do nothing"
@@ -479,7 +506,7 @@ class KheperaRobot(object):
         self.eyePoses = {'leftEye': khepheraLeftEyeDefaultPose, 'rightEye': khepheraRightEyeDefaultPose}
         kheperaCenterEyeDefaultPose = (0,0.063)           # Straight center
         kheperaEyeDefaultMaxValue   = 100                 # Default saturation irradiance of eye sensors, same as in V_REP
-        kheperaEyeDefaultMaxRange   =  10                 # Radius of the eyes' field-of-view arc in the visualizer (rendering only)
+        kheperaEyeDefaultMaxRange   = FIELD_RENDER_RANGE  # Radius of the eyes' field-of-view arc in the visualizer (rendering only)
         kheperaEyeDefaultAngleRange =  90                 # Default angle range for eye sensors, in degrees, same as in V_REP
         kheperaEyeDefaultDiameterRatio = 0.04             # Default size of the sensor radius as ratio of robot's size. For rendering only 
         kheperaEyeDefaultDiameterRatio = 0.1              # Default size of the sensor radius as ratio of robot's size. For rendering only 
@@ -514,14 +541,17 @@ class KheperaRobot(object):
         self.detectableSources = {}   # quality -> [body, ...]
 
     def addEye(self, eyeName, receptors, fieldOfView, threshold=0, saturation=100,
-               response='linear', renderRange=10):
+               response='linear', renderRange=FIELD_RENDER_RANGE):
         """Add an eye: one or more light receptors, each a ((x, y), facing) --
         a position in the robot's frame (x forward, y left) and a facing in
         degrees (> 0 left) -- each with the field fieldOfView (degrees, centred
         on its facing).  The eye's irradiance is the mean of its receptors'
         (irradAtSensor); its sensitivity (threshold, saturation, response) is
         the eye's (see eyeResponse).  renderRange: the radius of the receptors'
-        field arcs in the visualizer, rendering only."""
+        field arcs in the visualizer, rendering only.
+        Drawn: each receptor as a small circle with a tick along its facing,
+        and, when the visualizer shows the fields, its field as an arc; a
+        left eye in blue, a right eye in orange."""
         receptors = [((float(p[0]), float(p[1])), float(f)) for p, f in receptors]
         cx = sum(p[0] for p, _ in receptors) / len(receptors)
         cy = sum(p[1] for p, _ in receptors) / len(receptors)
@@ -538,14 +568,29 @@ class KheperaRobot(object):
         self.eyeReceptors[eyeName] = receptors
         self.eyeFieldOfView = fieldOfView
         # One small fixture per receptor, for rendering only
+        color = self._eyeColor(eyeName)
         for (x, y), facing in receptors:
             receptorDef = b2FixtureDef()
             receptorDef.shape = b2CircleShape(radius=self.diameter * 0.05, pos=(x, y))
             receptor = self.body.CreateFixture(receptorDef)
-            receptor.userData = {'color': (0., 0.8, 0., 0.5), 'position': receptor.shape.pos,
-                                 'pygletShape': (makePygletArc(r=renderRange, span=radians(fieldOfView),
-                                                               orientation=facing, draw_mode=GL_LINE_STRIP)
-                                                 if _has_gl_context() else None)}
+            receptor.userData = {'color': color, 'fieldColor': color[:3] + (0.4,),
+                                 'position': receptor.shape.pos}
+            self._receptorShapes(receptor.userData, facing, fieldOfView, renderRange)
+
+    @staticmethod
+    def _eyeColor(eyeName):
+        "A left eye's colour (blue) or a right eye's (orange), for rendering"
+        return (0., 0.35, 1., 1.) if 'left' in eyeName.lower() else (1., 0.45, 0., 1.)
+
+    def _receptorShapes(self, userData, facing, fieldOfView, renderRange):
+        "Set a receptor's shapes in userData: a marker facing `facing` and its field arc"
+        if _has_gl_context():
+            userData['pygletShape'] = makePygletReceptor(self.diameter * 0.04, self.diameter * 0.25, facing)
+            userData['pygletField'] = makePygletArc(r=renderRange, span=radians(fieldOfView),
+                                                    orientation=facing, draw_mode=GL_LINE_STRIP)
+        else:
+            userData['pygletShape'] = None
+            userData['pygletField'] = None
 
     def setModelName(self,ID_String):
         "Resets the ID, or modelName, of the robot"
@@ -554,7 +599,7 @@ class KheperaRobot(object):
     def getModelName(self):
         return self.body.userData['ID']
         
-    def addSensor(self, position, sensorName, diameter = 5, orientation = 0, maxRange = 10, angleRange = 90,
+    def addSensor(self, position, sensorName, diameter = 5, orientation = 0, maxRange = FIELD_RENDER_RANGE, angleRange = 90,
                   maxValue = None, saturation = 100, threshold = 0, response = 'linear'):
         """Adds a Khepera-like object light sensor.
            Sensors are implemented as 5mm radius circle Box2D *fixture*  upon a KheperaRobotBody at
@@ -610,12 +655,11 @@ class KheperaRobot(object):
         self.sensors[sensorName] = sensorFixture
 #         print "At time %s I added fixture %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'),id(sensorFixture), id(self), sensorName)
         
-        "For openGL rendering: cache vertices for a blue arc"
-        if _has_gl_context():
-            sensorFixture.userData['pygletShape'] = makePygletArc(r=maxRange, span=radians(angleRange), orientation=sensorAngle, draw_mode=GL_LINE_STRIP)
-        else:
-            sensorFixture.userData['pygletShape'] = None
-        sensorFixture.userData['color'] = (0., 0.8, 0., 0.5)
+        "For openGL rendering: a marker and a field arc, as an eye's receptors (see addEye)"
+        color = self._eyeColor(sensorName)
+        sensorFixture.userData['color'] = color
+        sensorFixture.userData['fieldColor'] = color[:3] + (0.4,)
+        self._receptorShapes(sensorFixture.userData, sensorAngle, angleRange, maxRange)
         sensorFixture.userData['position'] = circleShape.pos
 
     def irradAtSensor(self, sensorName, lightsList):
@@ -686,12 +730,17 @@ class KheperaRobot(object):
         return sensorIrrad
 
     def setRenderingParameters(self, color = (1.,0.,0.,0.5)):
-        "default rendering: circle of partially transparent red color"
+        """Default rendering: a disc of `color`, faint, inside an outline of
+           the same colour, darker, with a radius drawn along the heading"""
         if _has_gl_context():
-            self.body.userData['pygletShape'] = makePygletCircle(r=self.diameter / 2, draw_mode=GL_LINE_STRIP)
+            self.body.userData['pygletShape'] = [
+                makePygletCircle(r=self.diameter / 2, draw_mode=GL_TRIANGLE_FAN),
+                makePygletCircle(r=self.diameter / 2, draw_mode=GL_LINE_STRIP)]
         else:
             self.body.userData['pygletShape'] = None
         self.body.userData['color'] = color
+        self.body.userData['colors'] = [tuple(color[:3]) + (0.35,),
+                                        tuple(0.7 * c for c in color[:3]) + (1.,)]
 
         
     def update(self, dt=None):
@@ -1076,6 +1125,7 @@ class KheperaSimulation(object):
         self.gridDefaultSize = 40
         self.gridDefaultSpacing = 0.5
         self._grid = None
+        self.showFields = False    # the visualizer draws the eyes' field arcs
 
 #         self.setupWorld(self.dataDir)                    #  The called function will set up the class's Trajectory writer as well                
 
@@ -1461,7 +1511,8 @@ class KheperaSimulation(object):
         return (fixtureDef1, fixtureDef2)
 
     def pygletDraw(self):
-        """Ask all the bodies in the world and their fixtures to draw themselves.
+        """Ask all the bodies in the world and their fixtures to draw themselves,
+        with the eyes' fields if self.showFields.
         The shape shader program must be active for translation/rotation
         attributes to take effect."""
         program = _get_shape_program()
@@ -1472,7 +1523,7 @@ class KheperaSimulation(object):
             for body in self.world.bodies:
                 body.draw()
                 for fixture in body.fixtures:
-                    fixture.draw(body)
+                    fixture.draw(body, self.showFields)
         finally:
             program.stop()
                 
@@ -1535,6 +1586,119 @@ class KheperaCamera(object):
         rotation = Mat4.from_rotation(self.angle, Vec3(0.0, 0.0, 1.0))
         window.view = translation @ rotation
                             
+class KheperaRobotView(object):
+    """What a window shows of a robot's run in a KheperaSimulation, and the
+       mouse and keys that change it; used by the phototaxis experiments'
+       --visualize (phototaxis_common.run_visualized) and the GA replay.
+       Drawn: the world (KheperaSimulation.pygletDraw), the robot's trail
+       and, while the robot is drawn smaller than LOCATOR_PIXELS across, a
+       ring of that radius around it, to find it by.
+       - mouse wheel: zoom (about the pointer, or the robot when following);
+       - drag: pan (and stop following);
+       - F: follow the robot, or stop;
+       - C: a close-up following the robot, or the whole arena;
+       - V: the eyes' field arcs, or not.
+       The window first shows the whole arena."""
+
+    OVERVIEW_CENTRE = (5.5, 5.5)
+    OVERVIEW_ZOOM = 8.0         # half the window's height, in metres
+    CLOSE_UP_ZOOM = 0.25
+    MIN_ZOOM, MAX_ZOOM = 0.03, 20.0
+    ZOOM_STEP = 1.15            # per notch of the mouse wheel
+    LOCATOR_PIXELS = 12
+    TRAIL_MIN_DIST = 0.05       # metres moved before the trail grows
+    TRAIL_COLOR = (0.8, 0.2, 0.2, 0.7)
+    LOCATOR_COLOR = (0.8, 0., 0., 0.8)
+    HELP = 'mouse wheel: zoom   drag: pan   F: follow   C: close-up/arena   V: eye fields'
+
+    def __init__(self, window, sim, robotName='Khepera'):
+        self.window = window
+        self.sim = sim
+        self.robot = sim.allBodies[robotName]
+        self.camera = KheperaCamera(self.OVERVIEW_CENTRE, zoom=self.OVERVIEW_ZOOM)
+        self.follow = False
+        self.trail = []             # vertex lists, one per segment
+        self._trailLast = None
+        self._locator = None
+        self._locatorRadius = None
+
+    def metresPerPixel(self):
+        return 2 * self.camera.zoom / self.window.height
+
+    def draw(self):
+        "Draw a frame"
+        glClear(GL_COLOR_BUFFER_BIT)
+        x, y = self.robot.body.position
+        if self.follow:
+            self.camera.x, self.camera.y = x, y
+        self.camera.focus(self.window)
+        self.sim.pygletDraw()
+        program = _get_shape_program()
+        program.use()
+        try:
+            for segment in self.trail:
+                segment.draw(GL_LINES)
+            radius = self.LOCATOR_PIXELS * self.metresPerPixel()
+            if self.robot.diameter < radius:
+                if radius != self._locatorRadius:
+                    if self._locator is not None:
+                        self._locator.delete()
+                    self._locator = makePygletRing(radius)
+                    self._locatorRadius = radius
+                count = self._locator.count
+                self._locator.translation[:] = [x, y] * count
+                self._locator.colors[:] = list(self.LOCATOR_COLOR) * count
+                self._locator.draw(self._locator._draw_mode)
+        finally:
+            program.stop()
+
+    def extendTrail(self):
+        "Add a segment to the trail if the robot has moved far enough since the last"
+        x, y = self.robot.body.position
+        if self._trailLast is None:
+            self._trailLast = (x, y)
+            return
+        px, py = self._trailLast
+        if sqrt((x - px)**2 + (y - py)**2) >= self.TRAIL_MIN_DIST:
+            self.trail.append(_make_vlist(2, GL_LINES, [px, py, x, y]))
+            self.trail[-1].colors[:] = list(self.TRAIL_COLOR) * 2
+            self._trailLast = (x, y)
+
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+        before = self.metresPerPixel()
+        self.camera.zoom = min(self.MAX_ZOOM, max(self.MIN_ZOOM,
+                               self.camera.zoom * self.ZOOM_STEP ** -scroll_y))
+        if not self.follow:
+            # Keep the point under the pointer where it is
+            change = before - self.metresPerPixel()
+            self.camera.x += (x - self.window.width / 2) * change
+            self.camera.y += (y - self.window.height / 2) * change
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if buttons & mouse.LEFT:
+            self.follow = False
+            self.camera.x -= dx * self.metresPerPixel()
+            self.camera.y -= dy * self.metresPerPixel()
+
+    def on_key_press(self, symbol, modifiers):
+        "Handle F, C and V; return True for those, False for any other key"
+        if symbol == key.F:
+            self.follow = not self.follow
+        elif symbol == key.C:
+            if self.follow and self.camera.zoom <= self.CLOSE_UP_ZOOM:
+                self.follow = False
+                self.camera.x, self.camera.y = self.OVERVIEW_CENTRE
+                self.camera.zoom = self.OVERVIEW_ZOOM
+            else:
+                self.follow = True
+                self.camera.zoom = self.CLOSE_UP_ZOOM
+        elif symbol == key.V:
+            self.sim.showFields = not self.sim.showFields
+        else:
+            return False
+        return True
+
+
 class KheperaSimulationVisualizer(pyglet.window.Window):
     """Visualizer class for KheperaSimulation. Uses pyglet backend"""
     
@@ -1633,6 +1797,8 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
             nudgeWheels(self.sim, 0, -1)
         elif symbol == key.F1:
             self.step()
+        elif symbol == key.V:
+            self.sim.showFields = not self.sim.showFields
         elif symbol == key.ESCAPE:
             pyglet.app.exit()
             pass

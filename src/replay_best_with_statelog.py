@@ -318,11 +318,10 @@ def replay_visualized(genome, experiment_func, seed, data_dir,
     Press Q or Escape to close.  Up/Down arrows adjust simulation speed.
     """
     import pyglet
-    from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor, glClear,
+    from pyglet.gl import (glEnable, glBlendFunc, glHint, glClearColor,
                            GL_BLEND, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
-                           GL_LINE_SMOOTH, GL_LINE_SMOOTH_HINT, GL_NICEST,
-                           GL_COLOR_BUFFER_BIT, GL_LINES)
-    from KheperaSimulator.KheperaSimulator import KheperaCamera, _get_shape_program
+                           GL_LINE_SMOOTH, GL_LINE_SMOOTH_HINT, GL_NICEST)
+    from KheperaSimulator.KheperaSimulator import KheperaRobotView
 
     unisel_tag = 'Ashby' if use_ashby else 'OU'
     caption_prefix = 'Replay %s (%s)' % (model_name or '', unisel_tag)
@@ -356,46 +355,19 @@ def replay_visualized(genome, experiment_func, seed, data_dir,
     robot = sim.allBodies['Khepera']
     target_pos = sim.allBodies['TARGET'].position
 
-    camera = KheperaCamera(position=(5.5, 5.5), zoom=8.0)
+    view = KheperaRobotView(window, sim)
+    print('Q/Esc: quit   Up/Down: speed   ' + view.HELP)
     state = [0, 5]             # [cumulative_tick, ticks_per_frame]
-    trail_vlists = []
-    trail_last = [None]
-    TRAIL_MIN_DIST = 0.05
 
     @window.event
     def on_draw():
-        glClear(GL_COLOR_BUFFER_BIT)
-        camera.focus(window)
-        sim.pygletDraw()
-        program = _get_shape_program()
-        program.use()
-        for vl in trail_vlists:
-            vl.draw(GL_LINES)
-        program.stop()
+        view.draw()
 
     def update(dt):
         state[0] += state[1]
         hom.runFor(state[0])
+        view.extendTrail()
         rx, ry = robot.body.position[0], robot.body.position[1]
-
-        # Trail segment
-        if trail_last[0] is not None:
-            px, py = trail_last[0]
-            if sqrt((rx - px)**2 + (ry - py)**2) >= TRAIL_MIN_DIST:
-                program = _get_shape_program()
-                vl = program.vertex_list(
-                    2, GL_LINES,
-                    position=('f', [px, py, rx, ry]),
-                    colors=('f', [0.8, 0.2, 0.2, 0.7] * 2),
-                    translation=('f', [0.0, 0.0] * 2),
-                    rotation=('f', [0.0] * 2),
-                    zposition=('f', [0.0] * 2),
-                )
-                trail_vlists.append(vl)
-                trail_last[0] = (rx, ry)
-        else:
-            trail_last[0] = (rx, ry)
-
         dist = sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
         window.set_caption(
             '%s - t=%d  speed=%d  dist=%.2f  [%.0f fps]'
@@ -409,6 +381,11 @@ def replay_visualized(genome, experiment_func, seed, data_dir,
             state[1] = min(state[1] * 2, 200)
         elif symbol == pyglet.window.key.DOWN:
             state[1] = max(state[1] // 2, 1)
+        else:
+            view.on_key_press(symbol, modifiers)
+
+    window.push_handlers(on_mouse_scroll=view.on_mouse_scroll,
+                         on_mouse_drag=view.on_mouse_drag)
 
     @window.event
     def on_close():
