@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-170 -160 340 420" font-family="Helvetica, Arial, sans-serif">
+  <!-- Geometry from Webots' E-puck.proto (Homeo: KheperaRobot.EPUCK2): sensor mounts
+       31.6 mm (IR0, IR7) and 33.3 mm (IR1, IR6) from the centre, inside the shell.
+       Units mm; x right, y forward (SVG y down). Each sensor's field is 180 degrees,
+       drawn out to 55 mm. -->
+  <!-- Grid -->
+  <g stroke="#e0e0e0" stroke-width="0.5">
+    <line x1="-170" y1="0" x2="170" y2="0"/>
+    <line x1="0" y1="-160" x2="0" y2="100"/>
+  </g>
+
+  <!-- Each eye's coverage seen from afar (directions where one of its sensors
+       has the light within its 180 degrees): left (IR6 + IR7) from -135.8 to +72.9 deg,
+       right (IR0 + IR1) from -72.8 to +135.9 deg (heading, right positive).
+       Near the robot the sensors' offsets shift these edges (see Epuck-field-of-view.svg). -->
+  <path d="M 0 0 L -38.35 39.42 A 55 55 0 1 1 52.56 -16.21 Z"
+        fill="#4da6ff" fill-opacity="0.30" stroke="#1f7ae0" stroke-width="1.2" stroke-dasharray="3 2"/>
+  <path d="M 0 0 L -52.53 -16.30 A 55 55 0 1 1 38.29 39.48 Z"
+        fill="#ff6b6b" fill-opacity="0.30" stroke="#e03131" stroke-width="1.2" stroke-dasharray="3 2"/>
+
+  <!-- Robot body: shell, 70 mm diameter (r = 35 mm) -->
+  <circle cx="0" cy="0" r="35" fill="#f5f5f5" fill-opacity="0.6" stroke="#333" stroke-width="2"/>
+  <circle cx="0" cy="0" r="2" fill="#333"/>
+
+  <!-- Heading reference (0 deg) -->
+  <line x1="0" y1="-35" x2="0" y2="-95" stroke="#333" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <text x="4" y="-100" font-size="9" fill="#333">0&#176; heading</text>
+
+  <!-- Left: position rays, facing arrows, mount points -->
+  <line x1="0" y1="0" x2="-25.00" y2="-22.00" stroke="#1f7ae0" stroke-width="0.8" stroke-dasharray="2 2"/>
+  <line x1="0" y1="0" x2="-10.00" y2="-30.00" stroke="#1f7ae0" stroke-width="0.8" stroke-dasharray="2 2"/>
+  <line x1="-25.00" y1="-22.00" x2="-37.90" y2="-34.55" stroke="#1f7ae0" stroke-width="1.4" marker-end="url(#arrowB)"/>
+  <line x1="-10.00" y1="-30.00" x2="-15.31" y2="-47.20" stroke="#1f7ae0" stroke-width="1.4" marker-end="url(#arrowB)"/>
+  <circle cx="-25.00" cy="-22.00" r="2.5" fill="#1f7ae0"/>
+  <circle cx="-10.00" cy="-30.00" r="2.5" fill="#1f7ae0"/>
+
+  <!-- Right: position rays, facing arrows, mount points -->
+  <line x1="0" y1="0" x2="25.00" y2="-22.00" stroke="#e03131" stroke-width="0.8" stroke-dasharray="2 2"/>
+  <line x1="0" y1="0" x2="10.00" y2="-30.00" stroke="#e03131" stroke-width="0.8" stroke-dasharray="2 2"/>
+  <line x1="25.00" y1="-22.00" x2="37.92" y2="-34.53" stroke="#e03131" stroke-width="1.4" marker-end="url(#arrowR)"/>
+  <line x1="10.00" y1="-30.00" x2="15.33" y2="-47.19" stroke="#e03131" stroke-width="1.4" marker-end="url(#arrowR)"/>
+  <circle cx="25.00" cy="-22.00" r="2.5" fill="#e03131"/>
+  <circle cx="10.00" cy="-30.00" r="2.5" fill="#e03131"/>
+
+  <!-- Legend: left side (below diagram) -->
+  <text x="-140" y="150" font-size="10" fill="#1f7ae0" font-weight="bold">IR6</text>
+  <text x="-140" y="161" font-size="7.5" fill="#1f7ae0">pos &#8722;48.7&#176;</text>
+  <text x="-140" y="170" font-size="7.5" fill="#1f7ae0">faces &#8722;45.8&#176;</text>
+
+  <text x="-140" y="190" font-size="10" fill="#1f7ae0" font-weight="bold">IR7</text>
+  <text x="-140" y="201" font-size="7.5" fill="#1f7ae0">pos &#8722;18.4&#176;</text>
+  <text x="-140" y="210" font-size="7.5" fill="#1f7ae0">faces &#8722;17.1&#176;</text>
+
+  <text x="-140" y="230" font-size="8" fill="#555">FOV = 180&#176; each, body &#8709; 70 mm</text>
+  <text x="-140" y="242" font-size="9" fill="#333" font-weight="bold">Left side: IR6 + IR7 combined</text>
+  <text x="-140" y="253" font-size="8" fill="#555">sees &#8722;135.8&#176; to +72.9&#176;</text>
+
+  <!-- Legend: right side (below diagram) -->
+  <text x="140" y="150" font-size="10" fill="#e03131" font-weight="bold" text-anchor="end">IR1</text>
+  <text x="140" y="161" font-size="7.5" fill="#e03131" text-anchor="end">pos +48.7&#176;</text>
+  <text x="140" y="170" font-size="7.5" fill="#e03131" text-anchor="end">faces +45.9&#176;</text>
+
+  <text x="140" y="190" font-size="10" fill="#e03131" font-weight="bold" text-anchor="end">IR0</text>
+  <text x="140" y="201" font-size="7.5" fill="#e03131" text-anchor="end">pos +18.4&#176;</text>
+  <text x="140" y="210" font-size="7.5" fill="#e03131" text-anchor="end">faces +17.2&#176;</text>
+
+  <text x="140" y="230" font-size="8" fill="#555" text-anchor="end">FOV = 180&#176; each</text>
+  <text x="140" y="242" font-size="9" fill="#333" font-weight="bold" text-anchor="end">Right side: IR0 + IR1 combined</text>
+  <text x="140" y="253" font-size="8" fill="#555" text-anchor="end">sees &#8722;72.8&#176; to +135.9&#176;</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#333"/>
+    </marker>
+    <marker id="arrowB" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#1f7ae0"/>
+    </marker>
+    <marker id="arrowR" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#e03131"/>
+    </marker>
+  </defs>
+</svg>
