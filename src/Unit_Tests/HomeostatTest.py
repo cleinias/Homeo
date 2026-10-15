@@ -8,13 +8,16 @@ from   Core.HomeoUniselector import *
 from   Core.Homeostat import *
 from   Helpers.General_Helper_Functions import *
 
-import unittest, pickle, os, time
+import unittest, pickle, os, time, tempfile
 from copy import copy, deepcopy
 
 class HomeostatTest(unittest.TestCase):
 
 
     def setUp(self):
+        "the pickles go to a temporary directory, not into the checkout (review finding TS-14)"
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmpdir.cleanup)
         self.homeostat = Homeostat()
         "set up a 4 units fully connected Homeostat"
         unit1 = HomeoUnit()
@@ -78,7 +81,7 @@ class HomeostatTest(unittest.TestCase):
         it is the same as the original according to protocol specified in
         Homeostat>>sameAs 
         """
-        filename = 'pickled_homeostat_test'
+        filename = os.path.join(self.tmpdir.name, 'pickled_homeostat_test')
         
         "pickle out the empty homeostat and read it back"
         fileOut = open(filename, 'wb')
@@ -120,7 +123,7 @@ class HomeostatTest(unittest.TestCase):
         and reading it back produces an homeostat identical to the original as specified
         in the protocol Homeostat>>sameAs
         """        
-        filename = 'pickled_homeostat_test'
+        filename = os.path.join(self.tmpdir.name, 'pickled_homeostat_test')
         fileOut = open(filename, 'wb')
         pickler = pickle.Pickler(fileOut)
 
