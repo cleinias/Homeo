@@ -1591,7 +1591,7 @@ class HomeoUnit(object):
 
     def updateDeviationWithNoise(self):
         '''Apply the unit's internal noise to the critical deviation and update accordingly.
-           Computation of noise uses the utility HomeoNoise class'''
+           The noise is HomeoNoise.unitNoise (_jit_unit_noise headless).'''
 
         if self._headless:
             # Clipped at the stops, as the Python path's setter does (review

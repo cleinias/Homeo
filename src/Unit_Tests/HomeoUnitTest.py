@@ -353,7 +353,7 @@ class HomeoUnitTest(unittest.TestCase):
          3. clipping, which limits the maximum/minimum values of critDeviation
          4. The unit's mass (in Newtonian units)
         
-         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
+         Viscosity and clipping have their own tests, see HomeoProductionNoiseTest for noise testing.'''
         
         testRuns = 1000
         self.unit.needleCompMethod = 'linear'
@@ -390,7 +390,7 @@ class HomeoUnitTest(unittest.TestCase):
          3. clipping, which limits the maximum/minimum values of critDeviation
          4. The unit's mass (in Newtonian units)
         
-         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
+         Viscosity and clipping have their own tests, see HomeoProductionNoiseTest for noise testing.'''
         
         testRuns = 1000
         self.unit.needleCompMethod = 'proportional'
@@ -429,7 +429,7 @@ class HomeoUnitTest(unittest.TestCase):
          3. clipping, which limits the maximum/minimum values of critDeviation
          4. The unit's mass (in Newtonian units)
         
-         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
+         Viscosity and clipping have their own tests, see HomeoProductionNoiseTest for noise testing.'''
         
         testRuns = 100
         anotherUnit = HomeoUnit()
@@ -497,7 +497,7 @@ class HomeoUnitTest(unittest.TestCase):
          3. clipping, which limits the maximum/minimum values of critDeviation
          4. The unit's mass (in Newtonian units)
         
-         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
+         Viscosity and clipping have their own tests, see HomeoProductionNoiseTest for noise testing.'''
         
         testRuns = 100
         anotherUnit = HomeoUnit()
@@ -560,7 +560,7 @@ class HomeoUnitTest(unittest.TestCase):
         # 3. clipping, which limits the maximum/minimum values of critDeviation
         # 4. The unit's mass (in Newtonian units)
         #------------------------------------------------------------------------------ 
-        # Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing."
+        # Viscosity and clipping have their own tests, see HomeoProductionNoiseTest for noise testing."
         # We also set the needleUnit mass to 1 simplify the computation"
 
         errorTolerance = pow(10,-14)             #Cannot get a result better than 10^-14. Consistently fails on smaller values"
@@ -627,7 +627,7 @@ class HomeoUnitTest(unittest.TestCase):
         # 3. clipping, which limits the maximum/minimum values of critDeviation
         # 4. The unit's mass (in Newtonian units)
         #------------------------------------------------------------------------------ 
-        # Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing."
+        # Viscosity and clipping have their own tests, see HomeoProductionNoiseTest for noise testing."
         # We also set the needleUnit mass to 1 simplify the computation"
 
         errorTolerance = pow(10,-14)             #Cannot get a result better than 10^-14. Consistently fails on smaller values"
@@ -701,7 +701,7 @@ class HomeoUnitTest(unittest.TestCase):
          3. clipping, which limits the maximum/minimum values of critDeviation
          4. The unit's mass (in Newtonian units)
         
-         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
+         Viscosity and clipping have their own tests, see HomeoProductionNoiseTest for noise testing.'''
         
         self.unit = HomeoUnit()
         "testing on simple values "
@@ -755,7 +755,7 @@ class HomeoUnitTest(unittest.TestCase):
          3. clipping, which limits the maximum/minimum values of critDeviation
          4. The unit's mass (in Newtonian units)
         
-         Viscosity and clipping have their own tests, see the HomeoNoise class for noise testing.'''
+         Viscosity and clipping have their own tests, see HomeoProductionNoiseTest for noise testing.'''
         
         self.unit = HomeoUnit()
         "testing on simple values "

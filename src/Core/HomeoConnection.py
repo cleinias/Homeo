@@ -20,7 +20,7 @@
 
 
 
-from Helpers.HomeoNoise import *
+from Helpers.HomeoNoise import HomeoNoise
 import numpy as np
 from Helpers.QObjectProxyEmitter import emitter
 import sys
@@ -302,8 +302,7 @@ class HomeoConnection(object):
     
     def output(self):
         ''''Return the value of the connection times the weight, possibly switched,  and  include  the noise. 
-            The noise  is computed with the help of the HomeoNoise utility class. 
-            Several different algorithms are available, see the instance methods of HomeoNoise for details'''
+            The noise is HomeoNoise.connNoise: proportional to the current.'''
         
         incoming = self._incomingUnit.outputSeenByOthers()
         connNoise = HomeoNoise.connNoise(incoming, self._noise)

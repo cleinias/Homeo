@@ -1,8 +1,7 @@
 '''
 Tests of the noise the simulation actually uses.
 
-HomeoNoiseTest exercises the HomeoNoise.getNoise* algorithms, which no
-production code calls.  Units and connections draw their noise from
+Units and connections draw their noise from
 HomeoNoise.unitNoise and HomeoNoise.connNoise (Python path) and from their
 copies _jit_unit_noise and _jit_conn_noise in Core/HomeoJIT.py (headless path).
 All four are "distorting normal" noise: a Gaussian with standard deviation
