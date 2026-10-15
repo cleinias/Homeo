@@ -121,5 +121,30 @@ class RefusedEyeSettingsTest(_WorldTest):
         self.assertEqual(robot.eyeSettings()['leftEye'], (2.0, 26.0, 'linear'))
 
 
+class VisualizerWheelKeysTest(_WorldTest):
+    '''RS-09: the visualizer's O/L and Q/A keys indexed getSpeed()'s dict by
+    position and used a robotName the visualizer does not have.'''
+
+    def testTheKeysNudgeEachWheelByOneRadianPerSecond(self):
+        from KheperaSimulator.KheperaSimulator import nudgeWheels
+        sim = self.world()
+        robot = sim.allBodies['Khepera']
+        robot.setSpeed(0.5, 0.25)
+        nudgeWheels(sim, 1, 0)                                   # O
+        self.assertAlmostEqual(robot.getSpeed()['right'], 1.5 * robot.wheelRadius)
+        self.assertAlmostEqual(robot.getSpeed()['left'], 0.25 * robot.wheelRadius)
+        nudgeWheels(sim, 0, -1)                                  # A
+        self.assertAlmostEqual(robot.getSpeed()['left'], -0.75 * robot.wheelRadius)
+        self.assertAlmostEqual(robot.getSpeed()['right'], 1.5 * robot.wheelRadius)
+
+    def testTheVisualizerKeysCallIt(self):
+        "The key handler calls nudgeWheels with the visualizer's own simulation"
+        import inspect
+        from KheperaSimulator.KheperaSimulator import KheperaSimulationVisualizer
+        source = inspect.getsource(KheperaSimulationVisualizer.on_key_press)
+        self.assertNotIn('self.robotName', source)
+        self.assertEqual(source.count('nudgeWheels(self.sim'), 4)
+
+
 if __name__ == '__main__':
     unittest.main()

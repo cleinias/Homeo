@@ -1667,17 +1667,13 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
             self.sim.gridDefaultSpacing /= 0.75           
             self.sim.grid = makePygletGrid(self.sim.gridDefaultSize, self.sim.gridDefaultSpacing)
         elif symbol == key.O:     # increase right wheel speed
-            currentSpeeds = self.sim.allBodies[self.robotName].getSpeed()
-            self.sim.allBodies[self.robotName].setSpeed(currentSpeeds[0], currentSpeeds[1]+1)
-        elif symbol == key.L:     # decrease left wheel speed
-            currentSpeeds = self.sim.allBodies[self.robotName].getSpeed()
-            self.sim.allBodies[self.robotName].setSpeed(currentSpeeds[0], currentSpeeds[1]-1)
+            nudgeWheels(self.sim, 1, 0)
+        elif symbol == key.L:     # decrease right wheel speed
+            nudgeWheels(self.sim, -1, 0)
         elif symbol == key.Q:    # increase left wheel speed
-            currentSpeeds = self.sim.allBodies[self.robotName].getSpeed()
-            self.sim.allBodies[self.robotName].setSpeed(currentSpeeds[0]+1, currentSpeeds[1])
+            nudgeWheels(self.sim, 0, 1)
         elif symbol == key.A:    # decrease left wheel speed
-            currentSpeeds = self.sim.allBodies[self.robotName].getSpeed()
-            self.sim.allBodies[self.robotName].setSpeed(currentSpeeds[0]-1, currentSpeeds[1])
+            nudgeWheels(self.sim, 0, -1)
         elif symbol == key.F1:
             self.step()
         elif symbol == key.ESCAPE:
@@ -1709,6 +1705,17 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
             self.sim.advanceSim()
         self.sim.pygletDraw()
 
+def nudgeWheels(sim, dRight, dLeft):
+    """Change the speeds of sim's robot's wheels by dRight and dLeft rad/s
+    (the visualizer's O/L and Q/A keys).  The keys used to index getSpeed()'s
+    dict by position, and a robotName the visualizer does not have, and
+    crashed (review finding RS-09)."""
+    robot = sim.allBodies[sim.robotName]
+    speeds = robot.getSpeed()                 # m/s at the rim
+    robot.setSpeed(speeds['right'] / robot.wheelRadius + dRight,
+                   speeds['left'] / robot.wheelRadius + dLeft)
+
+
 def runKheperaSimulator(headless = False, dataDir = None, HomeoWorld = None, Box2D_timeStep = 0.032, Box2D_vel_iter = 6, Box2D_pos_iter = 2, window_width = 800, window_height = 400, window_initialZoom = 0.2):
     """Runs the Khepera simulator either in headless mode (no graphics, for fast simulations) or with the openGl visualization class"""
     
@@ -1736,18 +1743,18 @@ if __name__=="__main__":
 
     "Testing the deterministic features of the  simulator in headless mode"
 
-#     a = runKheperaSimulator(headless=True, HomeoWorld = "kheperaBraitenberg2_HOMEO_World")      
-    a = runKheperaSimulator(headless=False,HomeoWorld = "kheperaBraitenberg2_HOMEO_World")  
+    a = runKheperaSimulator(headless=True, HomeoWorld = "kheperaBraitenberg2_HOMEO_World")
+#     a = runKheperaSimulator(headless=False,HomeoWorld = "kheperaBraitenberg2_HOMEO_World")  
  
     steps = 10
     runs = 1
     for run in range(runs):
         timeNow  = time()
-        dis = a.getDistance(self.robotName, 'TARGET')
+        dis = a.getDistance(a.robotName, 'TARGET')
         print("%d Initial distance to target is %.3f  " % (run+1, dis), end=' ')
         for k in range(steps):
             a.advanceSim()
-            dis = a.getDistance(self.robotName, 'TARGET')
+            dis = a.getDistance(a.robotName, 'TARGET')
 #             print("sim's current step is", a.currentStep)
         print("%d: Final distance to target is %.3f, time elapsed is %f" % (run+1, dis, time()- timeNow))
         print("resetting simulation...")
