@@ -73,12 +73,28 @@ class TrajectoryRoundTripTest(_DataDirTest):
                 self.assertAlmostEqual(xy[-1][1], r['final_y'], delta=1e-6)
                 # a decimated file's last row is the final pose, whatever its step
                 self.assertLessEqual(abs(TG.ticksFromRows(header, nRows) - 500), interval / perTick)
+                # exactly, from the step count the closed file ends with
+                steps = TG.readStepsRecorded(path)
+                self.assertEqual(steps, 500 * perTick)
+                self.assertEqual(TG.ticksFromRows(header, nRows, steps), 500)
                 self.assertEqual(TG.readLightsFromHeader(header)['TARGET'][:3], [7.0, 7.0, 100.0])
                 x, y, heading = map(float, TG.readInitPosFromHeader(header))
                 self.assertAlmostEqual(x, r['start_x'], places=5)
                 self.assertAlmostEqual(y, r['start_y'], places=5)
                 self.assertAlmostEqual(heading, 15.0, places=1)
                 self.assertAlmostEqual(xy[0][0], r['start_x'], delta=0.01)
+
+    def testFilesWithoutAStepCount(self):
+        "Older files, and those of runs killed before closing, have no step count"
+        _, path = self.run_vehicle(3)
+        with open(path) as f:
+            lines = f.readlines()
+        self.assertTrue(lines[-1].startswith('# Steps recorded\t'))
+        with open(path, 'w') as f:
+            f.writelines(lines[:-1])
+        self.assertIsNone(TG.readStepsRecorded(path))
+        header, xy, nRows = TG.loadTrajectory(path)
+        self.assertEqual(TG.ticksFromRows(header, nRows, None), 501)   # 334 rows x 3 / 2
 
     def testThinningKeepsTheEndsWhateverTheChunks(self):
         _, path = self.run_vehicle(1)

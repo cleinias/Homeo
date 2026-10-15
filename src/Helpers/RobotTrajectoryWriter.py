@@ -102,16 +102,14 @@ class RobotTrajectoryWriter(object):
                 self.writePosition(position)
             elif self._state == self.State.CLOSEFILE:
 #                print "I am in state CLOSE"
-                self.writeHeaderNow()
-                self._flushPendingRow()
+                self._finishFile()
                 if self.posFile is not None:
                     self.posFile.close()
                 self._state = self.State.DONOTHING
 #                print "I am in state DONOTHING"
             elif self._state == self.State.NEWFILE:
 #                print "I am in state NEWFILE"
-                self.writeHeaderNow()
-                self._flushPendingRow()
+                self._finishFile()
                 try:
                     if self.posFile is not None:
                         self.posFile.close()
@@ -157,6 +155,18 @@ class RobotTrajectoryWriter(object):
             return
         self._pendingRow = None
         self.posFile.write(row)
+
+    def _finishFile(self):
+        '''Complete the file before closing it: the header (if no step was
+           recorded), the last skipped row, and a last comment line with the
+           number of steps recorded, "# Steps recorded<TAB>S".  A decimated
+           file's rows give the run's length only to within a sampling
+           interval; this line gives it exactly (since 15 Oct 2026; a file
+           whose run was killed before closing has none).'''
+        self.writeHeaderNow()
+        self._flushPendingRow()
+        if self.posFile is not None and not self.posFile.closed:
+            self.posFile.write("# Steps recorded\t%d\n" % self._rowCount)
 
     def _flushPendingRow(self):
         "Write the last skipped row, if any, so the file ends at the true final pose."

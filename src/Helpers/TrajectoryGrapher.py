@@ -106,7 +106,7 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MA
 
     'Read header and (thinned) trajectory data'
     dataFileHeader, trajData, nRows = loadTrajectory(trajDataFilename, maxPoints)
-    ticks = ticksFromRows(dataFileHeader, nRows)
+    ticks = ticksFromRows(dataFileHeader, nRows, readStepsRecorded(trajDataFilename))
     lightsOnDic = readLightsFromHeader(dataFileHeader)
     dark = dark or _hasDarknessSource(lightsOnDic)
     if sensorRange is None:
@@ -169,7 +169,7 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     for filename, label in zip(trajDataFilenames, labels):
         print("Reading %s ..." % os.path.basename(filename), file=sys.stderr, flush=True)
         header, trajData, nRows = loadTrajectory(filename, maxPoints)
-        ticks = ticksFromRows(header, nRows)
+        ticks = ticksFromRows(header, nRows, readStepsRecorded(filename))
         lights = readLightsFromHeader(header)
         for name, light in lights.items():
             lightsOnDic.setdefault(name, light)
@@ -374,8 +374,10 @@ def loadTrajectory(trajDataFilename, maxPoints=MAX_PLOT_POINTS):
         nRows += len(xy)
 
     try:
+        # comment='#': the last line of a closed file is "# Steps recorded"
         reader = pd.read_csv(trajDataFilename, sep=r'\s+', header=None, usecols=[0, 1],
-                             skiprows=len(header), dtype=np.float64, chunksize=1_000_000)
+                             skiprows=len(header), dtype=np.float64, chunksize=1_000_000,
+                             comment='#')
         pending = None          # one chunk behind, so the file's last row can be dropped
         for chunk in reader:
             if pending is not None:
@@ -639,7 +641,19 @@ def readLightsFromHeader(dataFileHeader):
                 continue
     return lightsOnDic
 
-def ticksFromRows(dataFileHeader, nRows):
+def readStepsRecorded(trajDataFilename):
+    '''The number of simulator steps a .traj file recorded, from its last
+    line, "# Steps recorded<TAB>S" (written on closing since 15 Oct 2026);
+    None for older files and for runs killed before the file was closed.'''
+    with open(trajDataFilename, 'rb') as f:
+        f.seek(0, os.SEEK_END)
+        f.seek(max(0, f.tell() - 256))
+        tail = f.read().decode('ascii', 'replace')
+    m = re.search(r'#\s*Steps recorded\s+(\d+)\s*$', tail)
+    return int(m.group(1)) if m else None
+
+
+def ticksFromRows(dataFileHeader, nRows, stepsRecorded=None):
     '''Homeostat ticks covered by nRows data rows of a .traj file.
 
     A row is one simulator step, or one every N steps when the file was
@@ -648,10 +662,12 @@ def ticksFromRows(dataFileHeader, nRows):
     tick".  Older ones said "# Sampled every N ticks" when decimated, meaning
     steps, and nothing otherwise; every run then had 2 steps per tick.
 
-    Exact for an undecimated file.  A decimated file ends on the final pose,
-    written wherever the run stopped, so its rows give the run's length only
-    to within a sampling interval: the result may exceed the true count by
-    less than N/M ticks (e.g. 501 for 500 at N = 3, M = 2).'''
+    Exact with stepsRecorded, the count a closed file ends with (see
+    readStepsRecorded), and for an undecimated file.  Otherwise a decimated
+    file ends on the final pose, written wherever the run stopped, so its
+    rows give the run's length only to within a sampling interval: the
+    result may exceed the true count by less than N/M ticks (e.g. 501 for
+    500 at N = 3, M = 2).'''
     every, perTick = 1, 2
     for line in dataFileHeader:
         m = re.match(r'#\s*Sampled every (\d+) simulator steps, (\d+) steps per homeostat tick',
@@ -663,6 +679,8 @@ def ticksFromRows(dataFileHeader, nRows):
         if m:
             every = int(m.group(1))
             break
+    if stepsRecorded is not None:
+        return int(round(stepsRecorded / perTick))
     return int(round(nRows * every / perTick))
 
 
