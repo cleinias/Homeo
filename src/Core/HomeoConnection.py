@@ -125,8 +125,9 @@ class HomeoConnection(object):
     incomingUnit = property(fget = lambda self: self.getIncomingUnit(),
                           fset = lambda self, value: self.setIncomingUnit(value))   
     def getOutgoingUnit(self):
-        return self._outgoingUnit
-    
+        "None until a unit is set (a connection being built)"
+        return getattr(self, '_outgoingUnit', None)
+
     def setOutgoingUnit(self, aHomeoUnit):
         "Set outgoing unit"
         self._outgoingUnit = aHomeoUnit
@@ -190,10 +191,7 @@ class HomeoConnection(object):
         marked dirty.  The connection's own flag stops the rebuild from first
         writing the arrays' (older) values back over this change.'''
         self._jitStale = True
-        # outgoingUnit is stored in the instance dictionary (the method named
-        # outgoingUnit below shadows the property), and is absent while the
-        # connection is being built.
-        owner = self.__dict__.get('outgoingUnit')
+        owner = self.outgoingUnit           # None while the connection is being built
         if owner is not None:
             owner._jit_dirty = True
 
@@ -294,12 +292,14 @@ class HomeoConnection(object):
         
         
     
-    def outgoingUnit(self):
-        ''' the "outgoingUnit" is the unit the signal is going *to*. 
-            It is typically the HomeoUnit holding on to the connection''' 
-        
-        return self._outgoingUnit
-    
+    def __setstate__(self, state):
+        '''Connections pickled before 14 Oct 2026 hold their outgoing unit
+           as 'outgoingUnit': a method of that name shadowed the property, so
+           assignments went to the instance dictionary (review finding CU-20).'''
+        if 'outgoingUnit' in state:
+            state['_outgoingUnit'] = state.pop('outgoingUnit')
+        self.__dict__.update(state)
+
     def output(self):
         ''''Return the value of the connection times the weight, possibly switched,  and  include  the noise. 
             The noise is HomeoNoise.connNoise: proportional to the current.'''

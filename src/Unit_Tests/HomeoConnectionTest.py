@@ -24,6 +24,36 @@ class HomeoConnectionTest(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def testOutgoingUnitIsAProperty(self):
+        '''outgoingUnit is the property, not a method that shadowed it and
+           sent assignments to the instance dictionary (CU-20): it reads the
+           unit set, None before one is set, and a change of weight marks the
+           holding unit's headless arrays stale.'''
+        self.assertIsInstance(HomeoConnection.__dict__['outgoingUnit'], property)
+        self.assertIsNone(self.connection.outgoingUnit)
+        holder = HomeoUnit()
+        self.connection.outgoingUnit = holder
+        self.assertIs(self.connection.outgoingUnit, holder)
+        self.assertIs(self.connection._outgoingUnit, holder)
+        self.assertNotIn('outgoingUnit', self.connection.__dict__)
+        holder._jit_dirty = False
+        self.connection.newWeight(0.3)
+        self.assertTrue(holder._jit_dirty)
+
+    def testConnectionsPickledWithTheOldLayoutLoad(self):
+        '''A connection pickled before the fix kept its outgoing unit under
+           'outgoingUnit' in its dictionary; it loads with the unit in place.'''
+        import pickle
+        holder = HomeoUnit()
+        self.connection.outgoingUnit = holder
+        state = dict(self.connection.__dict__)
+        state['outgoingUnit'] = state.pop('_outgoingUnit')
+        old = HomeoConnection.__new__(HomeoConnection)
+        old.__dict__.update(state)
+        loaded = pickle.loads(pickle.dumps(old))
+        self.assertEqual(loaded.outgoingUnit.name, holder.name)
+        self.assertNotIn('outgoingUnit', loaded.__dict__)
+
 
     def testAddConnection(self):
         "Test the unit we setup is properly connected to itself"
