@@ -41,7 +41,7 @@ def _seed_rngs(seed):
     np.random.seed(seed)
     random.seed(seed)
     seed_jit_rng(seed)          # numba's own stream, used by headless runs
-    HomeoUnit.allNames.clear()
+    HomeoUnit.clearNames()
     return seed
 
 

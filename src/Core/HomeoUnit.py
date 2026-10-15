@@ -124,10 +124,13 @@ class HomeoUnit(object):
     precision = 10**5  
     
     allNames = set()        # set of units' unique names
-    # name -> the live unit registered under it.  A name may only be released
-    # by its owner: a dead unit from before clearNames(), or a copy, can carry
-    # the same name as a live unit and must not free it when it is collected.
-    _nameOwners = weakref.WeakValueDictionary()
+    # name -> the live units that carry it.  A name is released only when the
+    # last of them dies: a copy, or a unit unpickled while the original lives,
+    # carries its original's name, and a dead unit from before clearNames()
+    # one a live unit has since taken; none of them may free it.  (Until
+    # 15 Oct 2026 the registry kept one owner per name, and a copy took the
+    # ownership over: deleting the copy freed the name of its live original.)
+    _nameHolders = {}
         
     #===========================================================================
     #  END OF CLASS CONSTANTS 
@@ -147,18 +150,25 @@ class HomeoUnit(object):
     def clearNames(cls):
         '''Clear the set of HomeoUnits' names'''
         HomeoUnit.allNames = set()
-        HomeoUnit._nameOwners = weakref.WeakValueDictionary()
+        HomeoUnit._nameHolders = {}
+
+    @classmethod
+    def _holdName(cls, name, unit):
+        "Register unit as carrying name"
+        HomeoUnit.allNames.add(name)
+        HomeoUnit._nameHolders.setdefault(name, weakref.WeakSet()).add(unit)
 
     @classmethod
     def _releaseName(cls, name, unit):
-        '''Release name unless a live unit other than unit owns it.
-        Called from __del__, unit's weak reference is already gone by then,
-        so an owner that is still found is someone else.'''
-        owner = HomeoUnit._nameOwners.get(name)
-        if owner is None or owner is unit:
-            HomeoUnit.allNames.discard(name)
-            if owner is unit:
-                del HomeoUnit._nameOwners[name]
+        '''unit no longer carries name: release it unless another live unit
+        does.  Called from __del__, unit's weak reference is gone by then.'''
+        holders = HomeoUnit._nameHolders.get(name)
+        if holders is not None:
+            holders.discard(unit)
+            if len(holders) > 0:
+                return
+            del HomeoUnit._nameHolders[name]
+        HomeoUnit.allNames.discard(name)
     
     @classmethod
     def uniselectorTimeIntervalFromWeight(cls,uniselParam):
@@ -901,8 +911,7 @@ class HomeoUnit(object):
         if aString not in HomeoUnit.allNames: 
             HomeoUnit._releaseName(self._name, self)
             self._name = aString
-            HomeoUnit.allNames.add(aString)
-            HomeoUnit._nameOwners[aString] = self
+            HomeoUnit._holdName(aString, self)
             emitter(self).nameChanged.emit(self._name)
         else:
             raise HomeoUnitError("The name %s exists already" % aString)
@@ -1712,8 +1721,7 @@ class HomeoUnit(object):
         self.__dict__.update(state)
         name = state.get('_name')
         if name is not None:
-            HomeoUnit.allNames.add(name)
-            HomeoUnit._nameOwners[name] = self
+            HomeoUnit._holdName(name, self)
 
     def __del__(self):
         ''''Remove a HomeoUnit's name from the set of used names.

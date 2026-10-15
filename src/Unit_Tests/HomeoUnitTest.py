@@ -161,6 +161,21 @@ class HomeoUnitTest(unittest.TestCase):
         gc.collect()
         self.assertNotEqual(HomeoUnit().name, live.name)
                 
+    def testACopysDeathLeavesItsOriginalsName(self):
+        """A copy takes its original's name; when the copy dies the original
+        still has it, so no new unit gets it (until 15 Oct 2026 the copy took
+        the name's ownership over and freed it, which surfaced as the test
+        above failing after some Ashby experiment tests)"""
+        import gc
+        HomeoUnit.clearNames()
+        original = HomeoUnit()
+        duplicate = copy(original)
+        self.assertEqual(duplicate.name, original.name)
+        del duplicate
+        gc.collect()
+        self.assertNotEqual(HomeoUnit().name, original.name)
+        self.assertIn(original.name, HomeoUnit.allNames)
+
     def testApplicationInternalNoise(self):
         "Check that in presence of noise the unit's critical deviation is changed  and not changed when noise = 0."
         # FIXIT A more comprehensive test could p/h check that the noise value applied is uniformly distributing, proportional, and distorting."
