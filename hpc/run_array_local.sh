@@ -72,9 +72,10 @@
 # run; 4 concurrent runs slow each other by ~1.25x, giving ~45 min per run and
 # ~3.7 h for the full 20. Re-measure with `-n 1 -s 200000` on other hardware.
 #
-# Re-runnable: a task whose own batch CSV (batch_*-<NN>.csv) already exists is
-# skipped, so an interrupted batch can be resumed by invoking the same command
-# with -o pointing at the existing run directory.
+# Re-runnable: a task whose own batch CSV (batch_*-<NN>.csv) already exists, in
+# any of the run's SimsData-<date>/ directories, is skipped, so an interrupted
+# batch can be resumed, on any later day, by invoking the same command with -o
+# pointing at the existing run directory.
 #
 # SPLITTING ACROSS TWO MACHINES.  The tasks are independent and seeded purely by
 # index, so a split is exact -- provided both machines have numba, or both lack
@@ -342,10 +343,14 @@ echo
 
 task_done() {   # a task counts as finished once its own batch CSV exists
     # The CSV is named ...-<serial>.csv, so a task is identified by its serial
-    # rather than by a directory.  The legacy per-task path is still accepted so
-    # that an array started under the old layout can be resumed with -o.
+    # rather than by a directory.  It is looked for in every dated directory of
+    # the run, not only today's: an array resumed with -o on a later day, or
+    # one straddling midnight, has finished tasks under an earlier date (review
+    # finding SH-05: they were run again, and aggregation then found two CSVs
+    # for one task).  The legacy per-task path is still accepted so that an
+    # array started under the old layout can be resumed with -o.
     local s; s=$(printf '%02d' "$1")
-    compgen -G "$DATADIR/batch_*-$s.csv" >/dev/null 2>&1 ||
+    compgen -G "$RUNDIR/SimsData-*/batch_*-$s.csv" >/dev/null 2>&1 ||
         compgen -G "$RUNDIR/task_$1/*/batch_*.csv" >/dev/null 2>&1
 }
 
@@ -479,7 +484,11 @@ echo
 printf '== finished: %d started, %d skipped, %dh%02dm elapsed\n' \
        "$started" "$skipped" $(( elapsed / 3600 )) $(( elapsed % 3600 / 60 ))
 
-ok=$(find "$RUNDIR" -name 'batch_*.csv' 2>/dev/null | wc -l)   # one per task
+# Finished tasks of THIS invocation's range, by the same test that skips them:
+# counting every batch CSV under the run directory also counted other ranges'
+# and other invocations' tasks (SH-05).
+ok=0
+for i in $(seq "$FIRST" "$LAST"); do task_done "$i" && ok=$(( ok + 1 )); done
 echo "   tasks with results: $ok/$n_tasks"
 if [ "$ok" -lt "$n_tasks" ]; then
     echo "   !! missing results -- check $DATADIR/run_task-*.out"
