@@ -383,6 +383,26 @@ class GAGuiSeedTest(unittest.TestCase):
         self.assertEqual(self._guiRun(7), first)
         self.assertNotEqual(self._guiRun(8), first)
 
+    def testClonesNeedAGenome(self):
+        """Clones without a genome to clone: a warning, and no population (it
+        used to be a random one, silently: SR-17); no worker pool is left by
+        initializing again."""
+        from Simulator.HomeoGenAlgGui import HomeoGASimulGUI
+        gui = HomeoGASimulGUI()
+        gui.workersSpinBox.setValue(2)
+        gui.popTypeComboBox.setCurrentText("Clones")
+        with self.mock.patch.object(self.QMessageBox, 'warning') as warned:
+            gui._initializePopulation()
+        warned.assert_called_once()
+        self.assertIsNone(gui.gaSimulation)
+        self.assertFalse(gui.startPushButton.isEnabled())
+        gui.popTypeComboBox.setCurrentText("Random")
+        gui._initializePopulation()
+        first = gui.gaSimulation
+        gui._initializePopulation()
+        self.assertIsNone(first._pool)
+        self.assertIsNone(gui.gaSimulation._pool)
+
     def testSeedFieldDefaultsTo64(self):
         "the field starts at 64, the seed GUI runs always used"
         from Simulator.HomeoGenAlgGui import HomeoGASimulGUI

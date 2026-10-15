@@ -241,7 +241,18 @@ class HomeoGASimulGUI(QWidget):
     # --- Slot implementations ---
 
     def _initializePopulation(self):
-        """Create a HomeoGASimulation with current parameter values and generate a population."""
+        """Create a HomeoGASimulation with current parameter values and generate a population.
+
+        A population of clones needs a genome to clone: without one the GUI
+        says so and initializes nothing (it used to make a random population
+        instead, silently: review finding SR-17).  The worker pool is made by
+        each run and closed at its end (SG-10), so re-initializing, or closing
+        the window without a run, leaves no pool behind."""
+
+        if self.popTypeComboBox.currentText() == "Clones" and self._clonableGenome is None:
+            QMessageBox.warning(self, "No genome to clone",
+                                "Choose a logbook and an individual to clone first.")
+            return
 
         popSize = self.noIndividualsSpinBox.value()
         useDummy = self.useDummyFitnessCheckBox.isChecked()
@@ -268,7 +279,7 @@ class HomeoGASimulGUI(QWidget):
                 self.gaSimulation.evaluateGenomeFitnessSUPER_DUMMY)
 
         popType = self.popTypeComboBox.currentText()
-        if popType == "Clones" and self._clonableGenome is not None:
+        if popType == "Clones":
             self._population = self.gaSimulation.generatePopOfClones(
                 cloneName=self._clonableGenome.get('indivId', 'clone'),
                 randomSeed=self.seedSpinBox.value())
