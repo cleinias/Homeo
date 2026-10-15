@@ -32,19 +32,14 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
         Initialize according to superclass
         '''
         super(HomeoUnitNewtonianActuator, self).__init__()
+        # The max speed; None: the transducer's top speed times
+        # _maxSpeedFraction, computed at the first update, so that a fraction
+        # set after construction counts.  Computing it here never worked: it
+        # read _maxSpeedFraction before it was set (review finding RS-08).
         self._maxSpeed = maxSpeed
-        'Initialize actuator, if passed'
-        if transducer is not None:
-            self._transducer = transducer
-            #self.rightSpeed = 0
-            #self.leftSpeed = 0
-            self.maxDelta = 0
-            try:
-                self._maxSpeed = self._transducer.range()[1]* self._maxSpeedFraction
-            except: 
-                hDebug('unit network', "Transducer still unconnected to network or socket stale")
-        
-            
+        self._transducer = transducer
+        self.maxDelta = 0
+
         '''Initialize default parameters for sigmoid function used to convert
            unit's deviation to motor commands'''
         self._maxSpeedFraction = 0.2   # The maximum speed of a motor as a fraction of the actuator speed
@@ -65,7 +60,7 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
     def getTransducer(self):
         return self._transducer
     transducer = property(fget = lambda self: self.getTransducer(),
-                          fset = lambda self, aValue: self.setActuator(aValue))
+                          fset = lambda self, aValue: self.setTransducer(aValue))
     
     def selfUpdate(self):
         '''First run the self-update function of superclass, 
@@ -104,8 +99,8 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
         if self._maxSpeed is None:
             try:
                 self._maxSpeed = self._transducer.range()[1]* self._maxSpeedFraction
-            except:
-                raise HomeoUnitError("Cannot get max speed from Transducer")
+            except Exception as e:
+                raise HomeoUnitError("Cannot get max speed from Transducer: %r" % (e,))
         hDebug('unit', ("critDev for unit: %s is %.3f" % (self.name, self.criticalDeviation)))                  
         setSpeed = float(-self._maxSpeed) + ((2 * self._maxSpeed)/ (1+np_exp(- self._switchingRate * self.criticalDeviation)))
         if self._speedBias:
@@ -136,10 +131,7 @@ class HomeoUnitAristotelianActuator(HomeoUnitAristotelian):
         Initialize according to superclass
         '''
         super(HomeoUnitAristotelianActuator, self).__init__()
-        
-        'Initialize actuator, if passed'
-        if transducer is not None:
-            self.transducer = transducer
+        self._transducer = transducer
 
         '''The max speed as a fraction of the actuator's range, and a constant
            speed offset as a fraction of that max speed: the same two settings,
@@ -154,8 +146,9 @@ class HomeoUnitAristotelianActuator(HomeoUnitAristotelian):
         self._transducer = aTransducer
     def getTransducer(self):
         return self._transducer
-    actuator = property(fget = lambda self: self.getTransducer(),
+    transducer = property(fget = lambda self: self.getTransducer(),
                           fset = lambda self, aValue: self.setTransducer(aValue))
+    actuator = transducer          # its old name ('transducer' was a plain attribute: RS-08)
     
     def selfUpdate(self):
         '''First run the self-update function of superclass, 
@@ -197,14 +190,13 @@ class HomeoUnitInput(HomeoUnit):
         '''
         super(HomeoUnitInput, self).__init__()
         'Initialize transducer and always_pos, if passed'
-        if transducer is not None:
-            self._transducer = transducer
+        self._transducer = transducer
         if always_pos == False:
              self.always_pos = False
         else: self.always_pos = True   
     
     def setTransducer(self, aTransducer):
-        self._Transducer = aTransducer
+        self._transducer = aTransducer
     def getTransducer(self):
         return self._transducer
     transducer = property(fget = lambda self: self.getTransducer(),

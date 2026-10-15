@@ -226,5 +226,58 @@ class SensorsAcrossAResetTest(unittest.TestCase):
         self.assertEqual(eye.read(), robot.getSensorRead('leftEye'))
 
 
+class _FakeTransducer(object):
+    def __init__(self, value=0.5, top=2.0):
+        self.value, self.top, self.acted = value, top, []
+    def read(self):
+        return self.value
+    def range(self):
+        return (-self.top, self.top) if self.top else (0, 1)
+    def act(self):
+        self.acted.append(self.funcParameters)
+
+
+class TransducerPropertiesTest(unittest.TestCase):
+    '''RS-08: HomeoUnitInput's transducer setter wrote _Transducer (the unit
+    kept reading the old sensor), HomeoUnitNewtonianActuator's called a
+    missing setActuator, and HomeoUnitAristotelianActuator's property was
+    named 'actuator' while its code used a plain 'transducer' attribute.'''
+
+    def testAnInputUnitReadsTheTransducerItIsGiven(self):
+        from RobotSimulator.HomeoUnitNewtonianTransduc import HomeoUnitInput
+        unit = HomeoUnitInput(transducer=_FakeTransducer(0.25, top=0))
+        unit.transducer = _FakeTransducer(0.75, top=0)
+        unit.selfUpdate()
+        self.assertAlmostEqual(unit.criticalDeviation, 0.75 * unit.maxDeviation)
+
+    def testANewtonianActuatorTakesANewTransducer(self):
+        from RobotSimulator.HomeoUnitNewtonianTransduc import HomeoUnitNewtonianActuator
+        unit = HomeoUnitNewtonianActuator(transducer=_FakeTransducer())
+        new = _FakeTransducer(top=4.0)
+        unit.transducer = new
+        self.assertIs(unit.transducer, new)
+        unit._maxSpeedFraction = 0.5            # set after construction, as the setups do
+        unit.selfUpdate()
+        self.assertEqual(unit._maxSpeed, 2.0)  # 4.0 x 0.5, computed at the first update
+        self.assertEqual(len(new.acted), 1)
+
+    def testAGivenMaxSpeedIsKept(self):
+        from RobotSimulator.HomeoUnitNewtonianTransduc import HomeoUnitNewtonianActuator
+        unit = HomeoUnitNewtonianActuator(transducer=_FakeTransducer(), maxSpeed=0.3)
+        unit.selfUpdate()
+        self.assertEqual(unit._maxSpeed, 0.3)
+
+    def testAnAristotelianActuatorsTransducerAndActuatorAreOne(self):
+        from RobotSimulator.HomeoUnitNewtonianTransduc import HomeoUnitAristotelianActuator
+        first, second = _FakeTransducer(), _FakeTransducer()
+        unit = HomeoUnitAristotelianActuator(transducer=first)
+        self.assertIs(unit.actuator, first)
+        unit.actuator = second
+        self.assertIs(unit.transducer, second)
+        unit.selfUpdate()
+        self.assertEqual(len(second.acted), 1)
+        self.assertEqual(first.acted, [])
+
+
 if __name__ == '__main__':
     unittest.main()
