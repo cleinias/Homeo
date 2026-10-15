@@ -201,7 +201,7 @@ def initialize_1minus_2xExperiment(params=None):
     
     for connection in homeo2_unit2x.inputConnections:
         if connection.incomingUnit.name == 'H2_Agent':
-            connection.newWeight(env_incoming_connection_weight * agent_incoming_connection_polarity)
+            connection.newWeight(env_incoming_connection_weight * env_incoming_connection_polarity)
             connection.noise = env_incoming_connection_noise
             connection.state = env_incoming_connection_uniselector
             connection.status = True      
@@ -486,7 +486,7 @@ def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir
     
     'Activate self-connection'
     leftEye.inputConnections[0].status = True
-    rightEye.uniselectorActive = True
+    rightEye.inputConnections[0].status = True
 
     '4.3 SensorOnly units parameters setting'
     leftEyeSensorOnly.name = 'Left Sensor'
@@ -722,7 +722,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     
     'Activate self-connection'
     leftEye.inputConnections[0].status = True
-    rightEye.uniselectorActive = True
+    rightEye.inputConnections[0].status = True
 
     '4.3 SensorOnly units parameters setting'
     leftEyeSensorOnly.name = 'Left Sensor'
