@@ -646,7 +646,12 @@ def ticksFromRows(dataFileHeader, nRows):
     decimated, and a tick is two steps (stepsPerTick).  Files since 13 Oct
     2026 say both: "# Sampled every N simulator steps, M steps per homeostat
     tick".  Older ones said "# Sampled every N ticks" when decimated, meaning
-    steps, and nothing otherwise; every run then had 2 steps per tick.'''
+    steps, and nothing otherwise; every run then had 2 steps per tick.
+
+    Exact for an undecimated file.  A decimated file ends on the final pose,
+    written wherever the run stopped, so its rows give the run's length only
+    to within a sampling interval: the result may exceed the true count by
+    less than N/M ticks (e.g. 501 for 500 at N = 3, M = 2).'''
     every, perTick = 1, 2
     for line in dataFileHeader:
         m = re.match(r'#\s*Sampled every (\d+) simulator steps, (\d+) steps per homeostat tick',
