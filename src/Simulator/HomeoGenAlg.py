@@ -29,7 +29,6 @@ from operator import attrgetter
 import multiprocessing
 import os
 from time import time, strftime, localtime
-from tabulate import tabulate
 from Helpers.ExceptionAndDebugClasses import HomeoDebug, hDebug
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO
 from threading import Lock
@@ -770,52 +769,6 @@ class HomeoGASimulation(object):
          
       
                    
-    def runOneGenSimulation(self):
-        """Manually run a one generation of a GA experiment .
-           Record fitness and genome for each individual to file"""
-        
-        fullPathstatsFilename = self.getTimeFormattedCompleteFilename(time(), 'Ga_Statistics', 'txt')       
-        statsFile = open(fullPathstatsFilename,'w')
-        self.results = [] 
-        population = []
-        for i in range(self.popSize):
-            population.append(self.createRandomHomeostatGenome(self.genomeSize))  
-        timeGen = time()               
-        for runNumber, indiv in enumerate(population):
-            timeInd = time()
-            runResults = []
-            runResults.append(str(runNumber+1))
-            runResults.append(round((self.evaluateGenomeFitness(genome = indiv)[0]),4))
-            runResults.append(str(round((time() - timeInd),2)))
-            for gene in indiv:
-                runResults.append(gene)
-            for i in runResults:
-                statsFile.write(str(i)+'\t')
-            self.results.append(runResults)
-            statsFile.write('\n')
-            statsFile.flush()
-            os.fsync(statsFile)
-            self.simulatorBackend.quit()
-        statsFile.close()
-        headers = ['Run', 'Final distance','Time in secs']
-        for i in range(len(population[0])):
-            headers.append('Gene'+str(i+1))
-        hDebug('eval',(tabulate(self.results, headers, tablefmt='orgtbl')))
-        hDebug('eval',( "Total time for generation was: "+ str(round((time() - timeGen),2))))
-        
-        
-            
-        #=======================================================================
-        # "debugging code"
-        # print "Simulation starting....."
-        # result = self.finalDisFromTarget(simTarget)
-        # print "Final distance from target was: %f" % result
-        # print "......simulation over."
-        # 
-        # "end debugging code"
-        #=======================================================================
-        
-
     def createRandomHomeostatGenome(self,genomeSize):
         '''Create a list containing the essential parameters for every
            units in a fully  connected Homeostat and the weights of
@@ -833,26 +786,6 @@ class HomeoGASimulation(object):
         return np.random.uniform(size=genomeSize)
     
         
-    def evaluateGenomeFitnessDUMMY(self,genome=None):
-        """For GA testing purposes: initialize experiments and homeostats,
-           but do not run a simulation, return a normally distributed 
-           random fitness instead"""         
-                     
-        if genome is None:
-            genome=self.createRandomHomeostatGenome(self.genomeSize)
-        params = {'homeoGenome':genome, 'dataDir' : self.dataDir}
-        self._simulation.initializeExperSetup(**params)
-        self.simulatorBackend.connect()
-        self.simulatorBackend.reset()
-        self.simulatorBackend.close()
-        self.simulatorBackend.connect()
-        self._simulation.maxRuns = self.stepsSize
-        "Initialize live data recording and display "
-        self._simulation.initializeLiveData()
-        #self._simulThread.start()
-        finalDis =self.finalDisFromTarget()
-        return finalDis,                   # Return a tuple, as required by DEAP
-
     def evaluateGenomeFitnessSUPER_DUMMY(self,genome=None):
         """For GA testing purposes: do not initialize experiments and homeostats,
            and do NOT run a simulation: 
