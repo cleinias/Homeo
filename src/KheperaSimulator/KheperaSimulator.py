@@ -756,23 +756,22 @@ class KheperaRobot(object):
     def setEyeSensitivity(self, sensorName, threshold=None, saturation=None, response=None,
                           fixture=None):
         '''Set the named eye's threshold, saturation (both irradiances) and
-        response shape; None leaves a value as it is.  See eyeResponse.'''
+        response shape; None leaves a value as it is.  See eyeResponse.  The
+        new settings are checked before any is stored, so a refused call
+        leaves the eye as it was (review finding RS-12).'''
         userData = (fixture if fixture is not None else self.sensors[sensorName]).userData
-        if threshold is not None:
-            userData[sensorName + 'Threshold'] = float(threshold)
-        if saturation is not None:
-            userData[sensorName + 'Saturation'] = float(saturation)
-        if response is not None:
-            userData[sensorName + 'Response'] = response
-        I0 = userData[sensorName + 'Threshold']
-        Isat = userData[sensorName + 'Saturation']
-        shape = userData[sensorName + 'Response']
+        I0 = float(threshold) if threshold is not None else userData[sensorName + 'Threshold']
+        Isat = float(saturation) if saturation is not None else userData[sensorName + 'Saturation']
+        shape = response if response is not None else userData[sensorName + 'Response']
         if shape not in self.EYE_RESPONSES:
             raise ValueError("eye response must be one of %s, got %r" % (self.EYE_RESPONSES, shape))
         if not 0 <= I0 < Isat:
             raise ValueError("eye %s needs 0 <= threshold < saturation, got %g, %g" % (sensorName, I0, Isat))
         if shape == 'log' and I0 <= 0:
             raise ValueError("a logarithmic eye needs a threshold > 0, got %g" % I0)
+        userData[sensorName + 'Threshold'] = I0
+        userData[sensorName + 'Saturation'] = Isat
+        userData[sensorName + 'Response'] = shape
 
     def eyeSettings(self):
         """Every eye's (threshold, saturation, response), by sensor name: what

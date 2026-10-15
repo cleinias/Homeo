@@ -101,5 +101,25 @@ class SensorFacingTest(_WorldTest):
                 self.assertAlmostEqual(robot.sensors[eye].userData[eye + 'Angle'], sign * 21.8858, 4)
 
 
+class RefusedEyeSettingsTest(_WorldTest):
+    '''RS-12: setEyeSensitivity stored the new settings before checking
+    them, so a refused call left the eye in the refused state.'''
+
+    def testARefusedCallLeavesTheEyeAsItWas(self):
+        sim = self.world()
+        robot = sim.allBodies['Khepera']
+        robot.setEyeSensitivity('leftEye', threshold=2, saturation=50, response='linear')
+        before = robot.eyeSettings()['leftEye']
+        response = robot.eyeResponse('leftEye', 26)
+        for bad in (dict(threshold=200), dict(threshold=0, response='log'),
+                    dict(response='cubic'), dict(saturation=1)):
+            with self.assertRaises(ValueError):
+                robot.setEyeSensitivity('leftEye', **bad)
+            self.assertEqual(robot.eyeSettings()['leftEye'], before, bad)
+            self.assertEqual(robot.eyeResponse('leftEye', 26), response)
+        robot.setEyeSensitivity('leftEye', saturation=26)          # an accepted call still works
+        self.assertEqual(robot.eyeSettings()['leftEye'], (2.0, 26.0, 'linear'))
+
+
 if __name__ == '__main__':
     unittest.main()
