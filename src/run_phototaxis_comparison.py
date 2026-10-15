@@ -12,10 +12,7 @@ Usage:
 
 import sys
 import os
-import subprocess
-import threading
 import time
-import datetime
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -113,6 +110,7 @@ def run_single(exp_num, n_workers):
 def orchestrate():
     timestamp = time.strftime('%Y-%m-%d-%H-%M-%S')
     from Helpers.General_Helper_Functions import simulations_data_dir
+    from Helpers.ExperimentOrchestrator import run_concurrently
     log_dir = os.path.join(simulations_data_dir(),
                            'phototaxis-comparison-' + timestamp)
     os.makedirs(log_dir, exist_ok=True)
@@ -138,52 +136,10 @@ def orchestrate():
         4: 'GA+OU variable dt (20 genes)',
     }
 
-    # Launch all 4 as subprocesses
-    procs = {}
-    for exp_num in [1, 2, 3, 4]:
-        cmd = [sys.executable, os.path.abspath(__file__),
-               '--exp', str(exp_num), '--workers', str(workers_per_ga)]
-        log_path = os.path.join(log_dir, 'exp%d.log' % exp_num)
-        log_file = open(log_path, 'w', buffering=1)
-        proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            bufsize=1, text=True, cwd=SRC_DIR)
-        procs[exp_num] = (proc, log_file, log_path)
-
-    # Reader threads: save all output to log, print only PROGRESS: lines
-    def reader(exp_num, proc, log_file):
-        for line in proc.stdout:
-            line = line.rstrip('\n')
-            log_file.write(line + '\n')
-            if line.startswith("PROGRESS:"):
-                ts = datetime.datetime.now().strftime("%H:%M:%S")
-                msg = line[len("PROGRESS:"):].strip()
-                print("[%s] %s" % (ts, msg), flush=True)
-        proc.wait()
-        log_file.close()
-
-    threads = []
-    for exp_num, (proc, log_file, _) in procs.items():
-        t = threading.Thread(target=reader, args=(exp_num, proc, log_file),
-                             daemon=True)
-        t.start()
-        threads.append(t)
-
-    # Wait for all experiments to finish
-    for t in threads:
-        t.join()
-
-    # Report exit codes
-    print()
-    print("=" * 60)
-    print("  All experiments complete")
-    print("=" * 60)
-    for exp_num, (proc, _, log_path) in procs.items():
-        status = "OK" if proc.returncode == 0 else "FAILED (exit %d)" % proc.returncode
-        print("  Exp %d %-35s %s" % (exp_num, exp_labels[exp_num], status))
-    print()
-    print("  Detailed logs: %s" % os.path.abspath(log_dir))
-    print("=" * 60)
+    commands = {exp_num: [sys.executable, os.path.abspath(__file__),
+                          '--exp', str(exp_num), '--workers', str(workers_per_ga)]
+                for exp_num in [1, 2, 3, 4]}
+    run_concurrently(commands, exp_labels, log_dir, SRC_DIR, label_width=35)
 
 
 # ---------------------------------------------------------------------------

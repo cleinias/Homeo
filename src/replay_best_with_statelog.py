@@ -176,14 +176,7 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
 
     # (optional) Swap OU uniselectors for Ashby discrete ones
     if use_ashby:
-        from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
-        from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
-        for u in hom.homeoUnits:
-            if isinstance(getattr(u, 'uniselector', None),
-                          HomeoUniselectorContinuous):
-                unis = HomeoUniselectorAshby()
-                u.uniselector = unis
-                print("  Swapped %s uniselector -> Ashby discrete" % u.name)
+        _swap_to_ashby(hom)
 
     return hom
 

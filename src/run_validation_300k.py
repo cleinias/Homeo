@@ -19,10 +19,7 @@ Usage:
 from Helpers.General_Helper_Functions import unique_stem, run_tag, RUN_LOG_EXTENSIONS, report_ticks
 import sys
 import os
-import subprocess
-import threading
 import time
-import datetime
 import json
 import math
 import numpy as np
@@ -30,6 +27,7 @@ import numpy as np
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SRC_DIR)
 from Helpers.General_Helper_Functions import simulations_data_dir
+from Helpers.ExperimentOrchestrator import run_concurrently
 SIMS_DATA = simulations_data_dir()
 
 # Saved JSON condition files from the original 60k runs
@@ -357,8 +355,7 @@ def orchestrate(total_steps, state_log=False, state_log_interval=100, seed=None)
         4: 'GA+OU variable dt, genome 013-039',
     }
 
-    # Launch all 4 as subprocesses
-    procs = {}
+    commands = {}
     for exp_num in [1, 2, 3, 4]:
         cmd = [sys.executable, os.path.abspath(__file__),
                '--exp', str(exp_num), '--steps', str(total_steps)]
@@ -366,45 +363,8 @@ def orchestrate(total_steps, state_log=False, state_log_interval=100, seed=None)
             cmd += ['--state-log', '--log-interval', str(state_log_interval)]
         if seed is not None:
             cmd += ['--seed', str(seed)]
-        log_path = os.path.join(log_dir, 'exp%d.log' % exp_num)
-        log_file = open(log_path, 'w', buffering=1)
-        proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            bufsize=1, text=True, cwd=SRC_DIR)
-        procs[exp_num] = (proc, log_file, log_path)
-
-    # Reader threads: save all output to log, print only PROGRESS: lines
-    def reader(exp_num, proc, log_file):
-        for line in proc.stdout:
-            line = line.rstrip('\n')
-            log_file.write(line + '\n')
-            if line.startswith("PROGRESS:"):
-                ts = datetime.datetime.now().strftime("%H:%M:%S")
-                msg = line[len("PROGRESS:"):].strip()
-                print("[%s] %s" % (ts, msg), flush=True)
-        proc.wait()
-        log_file.close()
-
-    threads = []
-    for exp_num, (proc, log_file, _) in procs.items():
-        t = threading.Thread(target=reader, args=(exp_num, proc, log_file),
-                             daemon=True)
-        t.start()
-        threads.append(t)
-
-    for t in threads:
-        t.join()
-
-    print()
-    print("=" * 60)
-    print("  All experiments complete")
-    print("=" * 60)
-    for exp_num, (proc, _, log_path) in procs.items():
-        status = "OK" if proc.returncode == 0 else "FAILED (exit %d)" % proc.returncode
-        print("  Exp %d %-40s %s" % (exp_num, exp_labels[exp_num], status))
-    print()
-    print("  Detailed logs: %s" % os.path.abspath(log_dir))
-    print("=" * 60)
+        commands[exp_num] = cmd
+    run_concurrently(commands, exp_labels, log_dir, SRC_DIR, label_width=40)
 
 
 # ---------------------------------------------------------------------------
