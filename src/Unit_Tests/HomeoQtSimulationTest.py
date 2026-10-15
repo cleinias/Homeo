@@ -148,29 +148,40 @@ class HomeoQtSimulationTest(unittest.TestCase):
 
     def testPause(self):
         """
-        Start a simulation in a thread and pause it: 
-        test that it has not run its maximum number of cycles
+        A simulation running in its thread, started as the GUI starts it,
+        stops advancing when paused, part way through its runs, and resume
+        carries on from where it stopped.  (Review findings SR-11, TS-11: the
+        test never connected the thread to go(), so the simulation never ran
+        and the test could not fail.)
         """
-        
-        "Create a 4-unit full connected homeostat"
         self.simulation = HomeoQtSimulation()
-
         for unit in range(4):
             self.simulation.homeostat.addFullyConnectedUnit(HomeoUnit())
-            
-        simulationCycles = 100
+        simulationCycles = 100000
         self.simulation.maxRuns = simulationCycles
+        self.simulation.simulDelay = 1
 
-        
         self.simulation.moveToThread(self.thr)
+        self.thr.started.connect(self.simulation.go)
         self.thr.start()
-        
-        "wait half a second"
-        sleep(0.5)
-        
-        self.simulation.pause()
-        self.assertFalse(simulationCycles == self.simulation.homeostat.time)
-        
+        try:
+            sleep(0.5)
+            self.simulation.pause()
+            sleep(0.2)                              # let the loop see the flag
+            pausedAt = self.simulation.homeostat.time
+            sleep(0.3)
+            self.assertEqual(self.simulation.homeostat.time, pausedAt)
+            self.assertGreater(pausedAt, 0)
+            self.assertLess(pausedAt, simulationCycles)
+        finally:
+            self.simulation.pause()
+            self.thr.quit()
+            self.assertTrue(self.thr.wait(5000))
+
+        self.simulation.maxRuns = pausedAt + 7
+        self.simulation.resume()                    # runs here, to maxRuns
+        self.assertEqual(self.simulation.homeostat.time, pausedAt + 7)
+
     def testDataFileIsPresent(self):
         """
         A simulation must always have a data file
