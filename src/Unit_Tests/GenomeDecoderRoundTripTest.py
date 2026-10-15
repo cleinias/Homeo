@@ -83,16 +83,21 @@ class GenomeDecoderRoundTripTest(unittest.TestCase):
                         dataDir=self.dataDir)
             self.assertEqual(getattr(setup, 'noUnits', 6), len(hom.homeoUnits), name)
 
+    def testNoSetupTakesTransducers(self):
+        "Each GA setup builds its own transducers: none takes them as an argument"
+        import inspect
+        for name in dir(HomeoExperiments):
+            setup = getattr(HomeoExperiments, name)
+            if name.startswith('initialize') and hasattr(setup, 'noEvolvedUnits'):
+                self.assertNotIn('transducers', inspect.signature(setup).parameters, name)
+
     def testClassicDecoderMatchesTheSetups(self):
         "The uniselector interval is decoded as the whole number of ticks the unit uses"
         for name in CLASSIC_SETUPS:
             setup = getattr(HomeoExperiments, name)
             genome = np.random.uniform(0, 1, CLASSIC_GENOME_SIZE)
             backend = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera')
-            transducers = HomeoExperiments.basicBraiten2Tranducers(
-                backend, 'kheperaBraitenberg2_HOMEO_World')
-            hom = setup(genome, backendSimulator=backend, dataDir=self.dataDir,
-                        transducers=transducers)
+            hom = setup(genome, backendSimulator=backend, dataDir=self.dataDir)
             evolved = setup.noEvolvedUnits
             decoded = genomeDecoder(len(hom.homeoUnits), genome, noEvolvedUnits=evolved,
                                     layout='classic')
