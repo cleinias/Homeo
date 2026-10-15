@@ -1290,7 +1290,7 @@ class HomeoUnit(object):
         "Testing"
         if self._debugMode:
             sys.stderr.write('Current Deviat. at time: %s for unit %s is %f'
-                             % self.name, str(self.time), str(self.criticalDeviation))
+                             % (self.time, self.name, self.criticalDeviation))
             sys.stderr.write('\n')
 
         self.computeNextDeviation()
@@ -1464,9 +1464,7 @@ class HomeoUnit(object):
         "Testing"
         if self._debugMode:
             sys.stderr.write('new position at time: %s for unit %s will be %f ' %
-                             str(self.time + 1),
-                             self.name,
-                             self.criticalDeviation + newVelocity)
+                             (self.time + 1, self.name, self.criticalDeviation + newVelocity))
             sys.stderr.write('\n')
     
         return self.criticalDeviation + newVelocity    
@@ -1590,11 +1588,8 @@ class HomeoUnit(object):
         if self._showUniselectorAction:
             for connChange in weightChanges:
                 sys.stderr.write('At time: %i, %s activated uniselector for unit %s switching weight from: %f to: %f \n' %
-                                 (self.time) + 1,
-                                 self.name,
-                                 connChange[0],
-                                 connChange[1],
-                                 connChange[2])
+                                 (self.time + 1, self.name, connChange[0],
+                                  connChange[1], connChange[2]))
 
     def physicalVelocity(self):
         '''Convert the velocity of the unit into a value expressed in 

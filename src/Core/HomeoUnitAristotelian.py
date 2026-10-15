@@ -60,12 +60,9 @@ class HomeoUnitAristotelian(HomeoUnit):
         
         "Testing"
         if self.debugMode:
-            outputString = ''
-            outputString.append('New position at time: %u for unit %s will be %.3f ' %
-                                self.time + 1,
-                                self.name,
-                                self.criticalDeviation + (aTorqueValue * self.viscosity))
-            
+            sys.stderr.write('New position at time: %u for unit %s will be %.3f \n' %
+                             (self.time + 1, self.name, self.criticalDeviation + newVelocity))
+
         '''In an Aristotelian model, new displacement is 
            old displacement plus velocity: x = x0 + vt, with t obviously = 1.'''
         return self.criticalDeviation + newVelocity                                                               
