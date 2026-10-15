@@ -128,8 +128,8 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         """
         The implementation of dragEquationDrag simplifies the full drag equation
         by absorbing all constants (area, drag coefficient, 1/2) into the viscosity
-        parameter: Drag = - viscosity * velocity^2.
-        Sign is negative because drag opposes velocity.
+        parameter: Drag = - viscosity * velocity * |velocity|: it opposes the
+        velocity, whichever its sign (review finding CU-12).
         """
         errorTolerance = 0.000000001
         testRuns = 1000
@@ -141,16 +141,18 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
             dragForce = self.unit.dragEquationDrag()
             self.assertEqual(dragForce, 0)
 
-        '''When Velocity is not zero, Drag = -viscosity * velocity^2'''
+        '''When Velocity is not zero, Drag = -viscosity * velocity * |velocity|'''
 
         for index in range(testRuns):
             self.unit.currentVelocity = numpy.random.uniform(-10, 10)
             self.unit.viscosity = numpy.random.uniform(0, 10)
 
             dragForce = self.unit.dragEquationDrag()
-            expectedDrag = -self.unit.viscosity * pow(self.unit.currentVelocity, 2)
+            expectedDrag = -self.unit.viscosity * self.unit.currentVelocity * abs(self.unit.currentVelocity)
             delta = abs(dragForce - expectedDrag)
             self.assertTrue(delta < errorTolerance)
+            if self.unit.viscosity > 0:
+                self.assertEqual(numpy.sign(dragForce), -numpy.sign(self.unit.currentVelocity))
             
     def testStokesDrag(self):
         """

@@ -96,13 +96,16 @@ class HomeoUnitNewtonian(HomeoUnit):
            density parameters and simply return a force equal to the density times the square of velocity. We also
            use viscosity instead of density, since the physical difference between the two is irrelevant in the context
            of our model.
-           Output is negated, since Drag's sign is always opposite  to velocity.
+           Drag's sign is always opposite to velocity: -viscosity * v * |v|
+           (it was -viscosity * v^2, which pushed a needle moving backwards
+           further back: review finding CU-12).  Unused by the dynamics,
+           whose step uses Stokes drag (drag()).
         '''
 
         if self.debugMode == True:
             print("Computing drag's equation drag")
 
-        return  - self.viscosity * pow(self.currentVelocity,2)
+        return - self.viscosity * self.currentVelocity * abs(self.currentVelocity)
 
 
     def stokesLawDrag(self):
@@ -237,13 +240,6 @@ class HomeoUnitNewtonian(HomeoUnit):
             return self.newLinearNeedlePosition(aTorqueValue)
         else:
             return self.newRandomNeedlePosition       # defaults to a random computation method if the method is not specified
-
-    def physicalForce(self, aTorqueValue):
-        '''Converts the torque coming into a unit into 
-           a force expressed in real physical units n (i.e. Newtons)'''
-
-        return aTorqueValue * (self.physicalParameters['massEquivalent'] * 
-                               self.physicalParameters['lengthEquivalent']) / (pow(self.physicalParameters['timeEquivalent'],2))
 
     def selfUpdate(self):
         '''This is the master loop for the unit. It goes through the following sequence:
