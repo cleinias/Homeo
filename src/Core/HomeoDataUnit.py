@@ -140,12 +140,16 @@ class HomeoDataUnit(object):
 
     def sameValuesAs(self, aDataUnit):
         '''Answer true if the values in the two data units are the same. 
-           Do  not check the values of the connections'''
+           Do  not check the values of the connections.  Since 14 Oct 2026 it
+           compares the critical deviation and whether the uniselector was
+           active, which it ignored (review finding CD-10).'''
 
         return (self.name == aDataUnit.name and
+                self.criticalDeviation == aDataUnit.criticalDeviation and
                 self.output == aDataUnit.output and
                 self.maxDeviation == aDataUnit.maxDeviation and
-                self.uniselectorState == aDataUnit.uniselectorState)
+                self.uniselectorState == aDataUnit.uniselectorState and
+                self.uniselectorActive == aDataUnit.uniselectorActive)
 
 #===============================================================================
 # Printing methods

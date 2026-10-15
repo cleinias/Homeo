@@ -10,7 +10,7 @@ from   Core.Homeostat import *
 from   Helpers.General_Helper_Functions import *
 
 import unittest, numpy, string, random
-from copy import deepcopy
+from copy import copy, deepcopy
 
 
 
@@ -132,18 +132,40 @@ class HomeoDataUnitTest(unittest.TestCase):
 
     def testSameValuesAs(self):
         """
-        Test if two data units are the same according to the protocol
-        specified in HomeoDataUnit>>sameValuesAs
-
+        Two data units read from the same unit state have the same values,
+        and so do their copies; a difference in any recorded value -- the
+        critical deviation included, which sameValuesAs used to ignore --
+        makes them different.  (Review finding CD-10: the test compared
+        empty data units.)
         """
-        
-        anotherDataUnit = copy(self.dataUnit)
-        aDeepcopyDataUnit = deepcopy(self.dataUnit)
-        
-        self.assertTrue(self.dataUnit.sameValuesAs(anotherDataUnit))
-        self.assertTrue(self.dataUnit.sameValuesAs(aDeepcopyDataUnit))
+        numpy.random.seed(3)
+        self.unit.setRandomValues()
+        other = HomeoUnit()
+        self.unit.addConnectionWithRandomValues(other)
+        for i in range(50):
+            self.unit.selfUpdate()
+        self.dataUnit.readStateFrom(self.unit)
+        self.assertIsNotNone(self.dataUnit.criticalDeviation)
+        sameState = HomeoDataUnit()
+        sameState.readStateFrom(self.unit)
+        self.assertTrue(self.dataUnit.sameValuesAs(sameState))
+        self.assertTrue(self.dataUnit.sameValuesAs(copy(self.dataUnit)))
+        self.assertTrue(self.dataUnit.sameValuesAs(deepcopy(self.dataUnit)))
 
-        
+        changes = {'criticalDeviation': self.dataUnit.criticalDeviation + 0.1,
+                   'output': self.dataUnit.output + 0.1,
+                   'maxDeviation': self.dataUnit.maxDeviation + 1,
+                   'name': self.dataUnit.name + 'x',
+                   'uniselectorState': ('manual' if self.dataUnit.uniselectorState != 'manual'
+                                        else 'uniselector'),
+                   'uniselectorActive': not self.dataUnit.uniselectorActive}
+        for attribute, value in changes.items():
+            with self.subTest(attribute):
+                changed = deepcopy(self.dataUnit)
+                setattr(changed, attribute, value)
+                self.assertFalse(self.dataUnit.sameValuesAs(changed))
+
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
