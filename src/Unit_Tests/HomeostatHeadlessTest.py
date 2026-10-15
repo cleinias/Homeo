@@ -20,9 +20,9 @@ from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 from Core.HomeoJIT import seed_jit_rng
 
 
-def ouHomeostat(seed, headless, noise=True, units=2, inactive=()):
-    """Fully connected Newtonian units (two by default) with OU uniselectors;
-    the units numbered in inactive are switched off."""
+def ouHomeostat(seed, headless, noise=True, units=2, inactive=(), unitClass=HomeoUnitNewtonian):
+    """Fully connected units (two Newtonian ones by default) with OU
+    uniselectors; the units numbered in inactive are switched off."""
     np.random.seed(seed)
     random.seed(seed)
     seed_jit_rng(seed)
@@ -31,7 +31,7 @@ def ouHomeostat(seed, headless, noise=True, units=2, inactive=()):
     hom.slowingFactor = 0
     hom.collectsData = False
     for i in range(units):
-        unit = HomeoUnitNewtonian()
+        unit = unitClass()
         unit.setRandomValues()
         unit.uniselector = HomeoUniselectorContinuous()
         unit.uniselectorActive = True
@@ -116,5 +116,24 @@ class HomeostatHeadlessTest(unittest.TestCase):
         for unit in headless.homeoUnits:
             unit.flushJitArrays()
         for a, b in zip(python.homeoUnits, headless.homeoUnits):
+            self.assertAlmostEqual(a.criticalDeviation, b.criticalDeviation, delta=1e-9)
+            np.testing.assert_allclose(signedWeights(a), signedWeights(b), atol=1e-9)
+
+    def testHeadlessMatchesPythonPathForAshbysUnits(self):
+        """The same for Ashby's own (Aristotelian) units, HomeoUnit, whose
+        selfUpdate has its own headless OU branch: no test ran it (review
+        finding TS-08).  The weights drift, through the JIT arrays."""
+        ticks = 600
+        python = ouHomeostat(9, headless=False, noise=False, unitClass=HomeoUnit)
+        start = [signedWeights(unit) for unit in python.homeoUnits]
+        python.runFor(ticks)
+        headless = ouHomeostat(9, headless=True, noise=False, unitClass=HomeoUnit)
+        headless.runFor(ticks)
+        for unit in headless.homeoUnits:
+            self.assertIs(type(unit), HomeoUnit)
+            self.assertTrue(hasattr(unit, '_jit_weights'))       # the headless path ran
+            unit.flushJitArrays()
+        for a, b, w0 in zip(python.homeoUnits, headless.homeoUnits, start):
+            self.assertGreater(np.abs(signedWeights(b) - w0).max(), 1e-3)
             self.assertAlmostEqual(a.criticalDeviation, b.criticalDeviation, delta=1e-9)
             np.testing.assert_allclose(signedWeights(a), signedWeights(b), atol=1e-9)
