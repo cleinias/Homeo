@@ -131,23 +131,42 @@ class HomeoDataCollectorTest(unittest.TestCase):
    
     def testExtractCriticalDevAsCollectionForAllUnit(self):
         """
-        Test that the critical deviation data extracted by the DataCollector is identical to the original
+        criticalDevAsCollectionOfArraysForAllUnits gives one row per recorded
+        tick: for each unit, in the homeostat's order, its critical deviation
+        and 1 if its uniselector was active, else 0.  The rows match the data
+        units recorded at that tick.  (Review findings CD-10, TS-12: this test
+        was a copy of the per-unit test and never called the all-units method.)
         """
+        np.random.seed(4)
+        self.homeostat.runFor(300)
+        collector = self.homeostat.dataCollector
+        names = [unit.name for unit in self.homeostat.homeoUnits]
+        rows = collector.criticalDevAsCollectionOfArraysForAllUnits()
+        self.assertEqual(len(rows), len(collector.states))
+        activeSeen = set()
+        for row, tick in zip(rows, collector.states):
+            self.assertEqual(len(row), 2 * len(names))
+            for i, name in enumerate(names):
+                dataUnit = collector.states[tick][name]
+                self.assertEqual(row[2 * i], dataUnit.criticalDeviation)
+                self.assertEqual(row[2 * i + 1], 1 if dataUnit.uniselectorActive else 0)
+                activeSeen.add(row[2 * i + 1])
+        self.assertEqual(activeSeen, {0, 1})        # the uniselectors did fire
 
-        "initializing and setting up the homeostat run  and the data collections"
-        testResultCollection = []
-        originalData = []
-        extractedData = []
-        self.homeostat.runFor(1000)
-
-        "extracting data and comparing to the original" 
-        for unit in self.homeostat.homeoUnits: 
-            extractedData = self.homeostat.dataCollector.criticalDevAsCollectionForUnit(unit)
-            originalData = [self.homeostat.dataCollector.states[tick][unit.name].criticalDeviation for tick in self.homeostat.dataCollector.states]
-            self.assertTrue(len(extractedData) == len(originalData))
-            for orig, extracted in zip(originalData,extractedData) :
-                testResultCollection.append(orig != extracted)    #collecting all instances in which the data differ"
-            self.assertFalse(True in testResultCollection)
+    def testSaveEssentialDataOnFile(self):
+        """saveEssentialDataOnFile writes the R exporter's table."""
+        import tempfile
+        self.homeostat.runFor(20)
+        collector = self.homeostat.dataCollector
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, 'essential.txt')
+            collector.saveEssentialDataOnFile(path)
+            with open(path) as f:
+                written = f.read()
+        def table(text):                    # without the header's time stamp
+            return [line for line in text.splitlines() if not line.startswith('#')]
+        self.assertGreater(len(table(written)), 20)
+        self.assertEqual(table(written), table(collector.printPlottingDataForROnAString('')))
 
     def testSaveCompleteDataOnFile(self):
         """
