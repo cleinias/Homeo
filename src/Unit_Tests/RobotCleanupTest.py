@@ -146,5 +146,32 @@ class VisualizerWheelKeysTest(_WorldTest):
         self.assertEqual(source.count('nudgeWheels(self.sim'), 4)
 
 
+class WorldSetupErrorsTest(_WorldTest):
+    '''RS-14: setupWorld turned any TypeError or AttributeError raised inside
+    a world builder into "Cannot run simulation without an experiment" or
+    "Cannot find ... among my experiment setup methods".'''
+
+    def testABuildersOwnErrorComesThrough(self):
+        class Broken(KheperaSimulation):
+            def brokenWorld(self):
+                raise AttributeError('the real problem')
+        sim = Broken()
+        with self.assertRaisesRegex(AttributeError, 'the real problem'):
+            sim.setupWorld('brokenWorld', self.dataDir)
+
+    def testNoWorldAndAnUnknownWorldAreReported(self):
+        with self.assertRaisesRegex(Exception, 'without an experiment'):
+            KheperaSimulation().setupWorld(None, self.dataDir)
+        with self.assertRaisesRegex(Exception, 'Cannot find \\*\\* noSuchWorld \\*\\*'):
+            KheperaSimulation().setupWorld('noSuchWorld', self.dataDir)
+
+    def testTheLegacyWheelsHaveNoDeadImpulseCode(self):
+        "The wheel's unused impulse drive printed a line per impulse; it is gone"
+        sim = self.world(robotModel='kjunior', robotDrive='legacy')
+        wheel = sim.allBodies['Khepera'].wheels['right']
+        self.assertFalse(hasattr(wheel, 'updateDriveImpulse'))
+        self.assertFalse(hasattr(wheel, 'getCurrentSpeed'))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -863,7 +863,6 @@ class KheperaWheel(object):
        - self.maxForwardSpeed (default 10)   
        - self.maxBackwardSpeed (default -10)
        - self.density (the mass-controlling parameter, default 1)
-       - self.tireFriction (controlling how fast the tire slows down, default -2)
        
        
        IMPORTANT: at creation, the default orientation of a wheel is 0,
@@ -874,7 +873,7 @@ class KheperaWheel(object):
        
     def __init__(self, world, thickness = 2, diameter = 31.2, 
                  killAngVelParam = 0.1, maxForwardSpeed=1, 
-                tireFriction= -0.18, density = 1, name = None, follower = False):
+                density = 1, name = None, follower = False):
         
         """A wheel for the Khepera robot. Creates a rectangular body 
            of diameter X thickness size (i.e. its vertical projection).
@@ -883,7 +882,6 @@ class KheperaWheel(object):
         self.maxForwardSpeed =   maxForwardSpeed
         self.maxBackwardSpeed =  -maxForwardSpeed
         self.killAngVelParam = killAngVelParam
-        self.tireFriction = tireFriction
                  
         bodyDef = b2BodyDef()
         bodyDef.type = b2_kinematicBody if follower else b2_dynamicBody
@@ -905,9 +903,6 @@ class KheperaWheel(object):
         
         if name is not None:
             self.name = name
-        
-        "for testing: an impulse counter"
-        self.impulseCounter = 0
             
     def setRenderingParameters(self, thickness, diameter, color = (0.,0.,0.,1)):
         "default openGL rendering: box in black color"
@@ -945,11 +940,6 @@ class KheperaWheel(object):
         
         return b2Dot(self.getForwardNormal(),self.body.linearVelocity) * self.getForwardNormal()
     
-    def getCurrentSpeed(self):
-        "Current speed (norm of forward velocity) * sign"
-#         print "FW vel vector %s and sign %f" % (self.getForwardVelocity(), np.sign(self.getForwardVelocity()[0])) 
-        return self.getForwardVelocity().Normalize() 
-        
     def updateFriction(self):
         """Cancels all of lateral velocity and part of the angular velocity,
            to make wheel's body behave more like a tire.
@@ -962,30 +952,6 @@ class KheperaWheel(object):
                 
         "kill part of angular velocity" 
         self.body.ApplyAngularImpulse(self.killAngVelParam * self.body.inertia * - self.body.angularVelocity, True)
-        
-#         "Apply a drag force to simulate ground friction"
-#         dragForceMagnitude = self.tireFriction*0.8* self.getCurrentSpeed()
-#         self.body.ApplyForce(dragForceMagnitude * self.getForwardNormal(), bodyOrig,True)           
-
-    def updateDriveImpulse(self, desiredSpeed):
-        "Apply impulse to self.body to ramp up to desiredSpeed (almost) immediately"
-        
-        if desiredSpeed > self.maxForwardSpeed:
-            desiredSpeed = self.maxForwardSpeed
-        elif desiredSpeed < self.maxBackwardSpeed:
-            desiredSpeed = self.maxBackwardSpeed
-            
-        velChange = desiredSpeed - self.getCurrentSpeed()
-        impulse = self.body.mass * velChange
-        impulseVec = impulse * self.getForwardNormal()
-        if self.name == 'right':
-            self.impulseCounter += 1
-            print("Applying impulse # %d to wheel: %s, currently going at: %.3f " % (self.impulseCounter, self.name, self.getCurrentSpeed()))
-        self.body.ApplyLinearImpulse(impulseVec, self.body.GetWorldPoint((0,0)),True)
-        
-#         print "%s wheel: FW normal: %s, right normal: %s" % (self.name, self.getForwardNormal(), self.getRightNormal())
-        if abs(desiredSpeed) <0.001:
-            self.body.fixtures[0].friction = 1 
 
     def updateDriveVelocity(self, desiredSpeed):
         "Apply impulse to self.body to ramp up to desiredSpeed (almost) immediately"
@@ -1008,7 +974,6 @@ class KheperaWheel(object):
     
     def update(self, desiredSpeed):
         self.updateFriction()
-#         self.updateDriveImpulse(desiredSpeed)
         self.updateDriveVelocity(desiredSpeed)
         
         
@@ -1148,12 +1113,14 @@ class KheperaSimulation(object):
 #         if len(self.allBodies)>0:
 #             print "Robot is currently at: ", self.allBodies[self.robotName].body.position
         
-        try:
-            self.world = self.__getattribute__(self.homeoWorldToRun)()
-        except TypeError:
+        # Look the builder up, then call it outside the try: an error inside a
+        # builder used to come out as one of these two messages (RS-14)
+        if not isinstance(getattr(self, 'homeoWorldToRun', None), str):
             raise Exception("Cannot run simulation without an experiment to run")
-        except AttributeError:
+        builder = getattr(self, self.homeoWorldToRun, None)
+        if builder is None:
             raise Exception("Cannot find ** %s ** among my experiment setup methods" % self.homeoWorldToRun)
+        self.world = builder()
         self.currentStep = 0
 #         sleep(1.5)
 #         print "Now leaving setupWorld. Robot is at: ", self.allBodies[self.robotName].body.position
@@ -1198,16 +1165,6 @@ class KheperaSimulation(object):
         self.currentStep += 1
         
         self.trajectoryWriter.runOnce(position=self.allBodies[self.robotName].body)
-        "for testing irradiance function"
-#         print self.allBodies["kheperaRobot"].irradAtSensor('CenterEye', [self.allBodies['TARGET']])
-#         print "kheperaRobot vels: %.5f , %.5f  FW_speeds: %.3f, %.3f location: %s  angle: %.3f. LeftWheel W-FW-vector:%s RightWheel W-FW-vector:%s " % (self.allBodies['kheperaRobot'].wheels['left'].getCurrentSpeed(),
-#                                                                                                         self.allBodies['kheperaRobot'].wheels['right'].getCurrentSpeed(),
-#                                                                                                         self.allBodies['kheperaRobot'].leftSpeed,
-#                                                                                                         self.allBodies['kheperaRobot'].rightSpeed,
-#                                                                                                         self.allBodies['kheperaRobot'].body.position, 
-#                                                                                                         self.allBodies['kheperaRobot'].body.angle,
-#                                                                                                         self.allBodies['kheperaRobot'].wheels['left'].getForwardNormal(),
-#                                                                                                         self.allBodies['kheperaRobot'].wheels['right'].getForwardNormal())
     
     def tickAdvance(self):
         '''Advance the world by one homeostat tick (stepsPerTick steps), once
