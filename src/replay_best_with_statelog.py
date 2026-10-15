@@ -165,11 +165,15 @@ def find_best_individual(logbook, indiv_id=None):
     return best
 
 
-def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby):
+def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby,
+                     light_intensity=None):
     """Build the homeostat from a genome, mirroring the GA evaluation sequence.
+    light_intensity: the TARGET's, for setups that take it (see
+    HomeoExperiments.loggedLightIntensity).
 
     Returns the configured Homeostat instance.
     """
+    extra = {} if light_intensity is None else {'lightIntensity': light_intensity}
     # Build homeostat (first pass — pre-reset).  Every stream, numba's
     # included, as a GA evaluation seeds them (SH-03).
     from Simulator.HomeoGenAlg import seed_evaluation
@@ -177,7 +181,7 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
     hom = experiment_func(
         homeoGenome=genome,
         backendSimulator=backend,
-        dataDir=data_dir)
+        dataDir=data_dir, **extra)
 
     # Reset world
     backend.reset()
@@ -187,7 +191,7 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
     hom = experiment_func(
         homeoGenome=genome,
         backendSimulator=backend,
-        dataDir=data_dir)
+        dataDir=data_dir, **extra)
 
     # (optional) Swap OU uniselectors for Ashby discrete ones
     if use_ashby:
@@ -197,7 +201,7 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
 
 
 def replay(genome, steps, experiment_func, seed, output_path, log_interval=1,
-           use_ashby=False, model_name=None):
+           use_ashby=False, model_name=None, light_intensity=None):
     """Replay a genome headless and write a .statelog file."""
 
     data_dir = os.path.dirname(output_path)
@@ -209,7 +213,8 @@ def replay(genome, steps, experiment_func, seed, output_path, log_interval=1,
     backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera', dataDir=data_dir)
     backend.start('kheperaBraitenberg2_HOMEO_World')
 
-    hom = _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby)
+    hom = _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby,
+                           light_intensity)
 
     # Label the robot model so .traj files get a meaningful name
     if model_name:
@@ -280,7 +285,8 @@ def _swap_to_ashby(hom):
 
 
 def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, output_path,
-                        log_interval=1, use_ashby=False, model_name=None):
+                        log_interval=1, use_ashby=False, model_name=None,
+                        light_intensity=None):
     """Replay a genome headless exactly as the GA evaluated it, writing a
        .statelog: the GA's own setup (prepare_genome_evaluation), seeded with
        eval_seed, advanced with the same sim.step() calls.  Returns the final
@@ -291,6 +297,8 @@ def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, outp
     params = {'dataDir': data_dir,
               'noNoise': meta.get('noNoise', False),
               'noUnisel': meta.get('noUnisel', False)}
+    if light_intensity is not None:
+        params['lightIntensity'] = light_intensity
     with seeded_evaluation(eval_seed):
         sim, backend = prepare_genome_evaluation(
             _Genome(genome, indiv_id), exp_name, params, steps, data_dir,
@@ -327,7 +335,7 @@ def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, outp
 
 
 def replay_visualized(genome, experiment_func, seed, data_dir,
-                      use_ashby=False, model_name=None):
+                      use_ashby=False, model_name=None, light_intensity=None):
     """Replay a genome with the pyglet visualizer.
 
     Press Q or Escape to close.  Up/Down arrows adjust simulation speed.
@@ -355,7 +363,8 @@ def replay_visualized(genome, experiment_func, seed, data_dir,
     backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera', dataDir=data_dir)
     backend.start('kheperaBraitenberg2_HOMEO_World')
 
-    hom = _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby)
+    hom = _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby,
+                           light_intensity)
 
     if model_name:
         backend.setRobotModel(model_name)
@@ -452,6 +461,14 @@ def main():
     else:
         print("  Experiment: %s  (no metadata, using --exp override)" % exp_name)
 
+    # The TARGET's intensity the run evaluated with: the GA phototaxis
+    # setups' was -100 until 15 Oct 2026, +100 since
+    import Simulator.HomeoExperiments as HE
+    light_intensity = None
+    if hasattr(exp_func, 'lightIntensity'):
+        light_intensity = HE.loggedLightIntensity(exp_name, meta)
+        print("  Light intensity: %g" % light_intensity)
+
     # Find individual
     rec = find_best_individual(logbook, args.indiv)
     genome = rec['genome']
@@ -486,7 +503,8 @@ def main():
                                 'replay-%s' % timestamp)
         os.makedirs(data_dir, exist_ok=True)
         replay_visualized(genome, exp_func, seed, data_dir,
-                          use_ashby=args.ashby, model_name=model_name)
+                          use_ashby=args.ashby, model_name=model_name,
+                          light_intensity=light_intensity)
     else:
         # Output path for statelog
         if args.output:
@@ -503,13 +521,13 @@ def main():
         if not as_evaluated:
             replay(genome, steps, exp_func, seed, output_path,
                    log_interval=args.log_interval, use_ashby=args.ashby,
-                   model_name=model_name)
+                   model_name=model_name, light_intensity=light_intensity)
             return
 
         final_dist = replay_as_evaluated(
             genome, indiv_id, exp_name, meta or {}, steps, seed, output_path,
             log_interval=args.log_interval, use_ashby=args.ashby,
-            model_name=model_name)
+            model_name=model_name, light_intensity=light_intensity)
         if seed == logged_seed and steps == (meta or {}).get('length') and not args.ashby:
             replayed = (meta or {}).get('fitnessSign', 1) * final_dist
             if replayed == fitness:

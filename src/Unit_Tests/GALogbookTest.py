@@ -43,6 +43,7 @@ class GALogbookTest(unittest.TestCase):
             # how the genes decode: 'weightfree' and 'weightfree_v2' have
             # the same size (CU-11)
             self.assertEqual(summaries[0]['genomeLayout'], 'weightfree')
+            self.assertEqual(summaries[0]['lightIntensity'], 100)    # a light
 
 
 if __name__ == '__main__':

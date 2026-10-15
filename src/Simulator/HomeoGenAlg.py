@@ -334,6 +334,9 @@ class HomeoGASimulation(object):
         # How the genes decode (Helpers.GenomeDecoder): recorded in the logbook,
         # since two layouts can have the same size (CU-11); None for classic
         self.genomeLayout = getattr(exp_func, 'genomeLayout', None)
+        # The TARGET's intensity the setup gives (GA_LIGHT_INTENSITY), recorded
+        # so that a replay rebuilds the same world
+        self.lightIntensity = getattr(exp_func, 'lightIntensity', None)
         self.stepsSize = stepsSize
         self.generSize = generSize
         self.experiment = exp
@@ -462,6 +465,7 @@ class HomeoGASimulation(object):
                             generations=self.generSize,
                             genomeSize=self.genomeSize,
                             genomeLayout=self.genomeLayout,
+                            lightIntensity=self.lightIntensity,
                             noEvolvedUnits=self.noEvolvedUnits,
                             noUnits=self.noUnits,
                             length=self.stepsSize,

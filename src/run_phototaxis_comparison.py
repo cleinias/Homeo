@@ -34,7 +34,7 @@ def run_exp1():
     print("PROGRESS: Exp 1 started — Standalone Ashby, 60k steps", flush=True)
     result = run_headless(
         topology='fixed', total_steps=60000, report_interval=500,
-        light_intensity=-100, quiet=True, uniselector_type='ashby')
+        light_intensity=100, quiet=True, uniselector_type='ashby')
     print("PROGRESS: Exp 1 concluded — final_dist=%.4f, min_dist=%.4f (t=%d)" % (
         result['final_dist'], result['min_dist'], result['min_t']), flush=True)
 
@@ -46,7 +46,7 @@ def run_exp2():
     print("PROGRESS: Exp 2 started — Standalone OU, 60k steps", flush=True)
     result = run_headless(
         topology='fixed', total_steps=60000, report_interval=500,
-        light_intensity=-100, quiet=True, uniselector_type='continuous')
+        light_intensity=100, quiet=True, uniselector_type='continuous')
     print("PROGRESS: Exp 2 concluded — final_dist=%.4f, min_dist=%.4f (t=%d)" % (
         result['final_dist'], result['min_dist'], result['min_t']), flush=True)
 

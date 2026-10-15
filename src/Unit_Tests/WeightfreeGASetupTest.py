@@ -110,5 +110,50 @@ class WeightfreeV2GenesTest(unittest.TestCase):
         return backend
 
 
+class GALightTest(unittest.TestCase):
+    """The GA phototaxis setups' TARGET is a light, +100, as their names say
+    and the phototaxis CLIs use; it was a darkness source, -100, until 15 Oct
+    2026, which replays of genomes evolved then restore"""
+
+    SETUPS = ['initializeBraiten2_2_Full_GA_phototaxis',
+              'initializeBraiten2_2_Full_GA_phototaxis_continuous'] + V2 + [
+              'initializeBraiten2_direct_GA_continuous_weightfree_fixed',
+              'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
+              'initializeBraiten3c_GA_continuous_weightfree_open']
+
+    def _backend(self):
+        return WeightfreeV2GenesTest._backend(self)
+
+    def _target(self, name, **kwargs):
+        f = getattr(HE, name)
+        backend = self._backend()
+        f(np.full(getattr(f, 'genomeSize', 40), 0.5), backendSimulator=backend, **kwargs)
+        return backend.kheperaSimulation.allBodies['TARGET'].userData
+
+    def testTheTargetIsALight(self):
+        for name in self.SETUPS:
+            with self.subTest(name):
+                target = self._target(name)
+                self.assertEqual(target['intensity'], 100)
+                self.assertEqual(getattr(HE, name).lightIntensity, 100)
+
+    def testADarknessSourceOnRequest(self):
+        for name in ('initializeBraiten2_2_Full_GA_phototaxis',
+                     'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
+                     'initializeBraiten3c_GA_continuous_weightfree_fixed'):
+            with self.subTest(name):
+                self.assertEqual(self._target(name, lightIntensity=-100)['intensity'], -100)
+
+    def testReplaysOfOldRunsUseTheDarknessSource(self):
+        logged = HE.loggedLightIntensity
+        self.assertEqual(logged('initializeBraiten2_direct_GA_continuous_weightfree_fixed',
+                                {'exp': 'x'}), -100)
+        self.assertEqual(logged('initializeBraiten2_2_Full_GA_phototaxis', None), -100)
+        self.assertEqual(logged('initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
+                                {}), 100)
+        self.assertEqual(logged('initializeBraiten2_direct_GA_continuous_weightfree_fixed',
+                                {'lightIntensity': 100}), 100)
+
+
 if __name__ == '__main__':
     unittest.main()

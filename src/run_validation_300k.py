@@ -205,9 +205,13 @@ def run_ga_replay(exp_num, experiment_name, genome_raw, genome_id, total_steps,
     sim = HomeoQtSimulation(experiment=experiment_name, dataDir=log_dir)
     sim.maxRuns = total_steps
 
+    # These genomes were evolved with the TARGET a darkness source, -100:
+    # the setups' default since 15 Oct 2026 is a light, +100
+    import Simulator.HomeoExperiments as HE
     params = {
         'homeoGenome': genome,
         'backendSimulator': backend,
+        'lightIntensity': HE.DARK_BEFORE_2026_10_15,
     }
 
     sim.initializeExperSetup(
