@@ -347,20 +347,22 @@ class HomeoQtSimulation(QObject):
 #===============================================================================
 
     def createDefaultDataFilename(self):
-        '''Create a default string corresponding to the dataFilename. 
-           Check that no file with the same name exists in current directory'''
+        '''Create a default string corresponding to the dataFilename: a stem,
+           HomeoSimulationData-<date>-<n>, with no extension -- the GUI saves
+           the complete data under it and the plot data under
+           <stem>-essential.txt.  n is the first for which none of these files
+           exists in the current directory.  (The first name used to have no
+           extension and the next ones '.txt', and only the bare name was
+           checked: review finding SR-16.)'''
         
-        dateString = ''
-        now_ = datetime.now()
-        dateString += now_.strftime("%Y%m%d%H%M%S")
+        dateString = datetime.now().strftime("%Y%m%d%H%M%S")
         name = 'HomeoSimulationData'
     
         number = 1
-        completeName = name + '-' + dateString + '-' + '1'
-    
-        while os.path.exists(completeName):
+        completeName = name + '-' + dateString + '-' + str(number)
+        while any(os.path.exists(completeName + ext) for ext in ('', '.txt', '-essential.txt')):
             number += 1
-            completeName = name + '-' + dateString  + '-' + str(number)+'.txt'
+            completeName = name + '-' + dateString + '-' + str(number)
     
         return completeName
 

@@ -188,7 +188,28 @@ class HomeoQtSimulationTest(unittest.TestCase):
         """
 
         self.assertTrue(self.simulation.dataFilename is not None)
- 
+
+    def testDefaultDataFilenames(self):
+        """Every default data filename is an extension-less stem, and skips the
+        names whose files exist: the complete data under the stem, the plot data
+        under <stem>-essential.txt (review finding SR-16)."""
+        import tempfile
+        from datetime import datetime as realDatetime
+        from unittest import mock
+        import Simulator.HomeoQtSimulation as module
+        fixed = mock.Mock(wraps=realDatetime)
+        fixed.now.return_value = realDatetime(2026, 10, 14, 12, 0, 0)
+        stem = 'HomeoSimulationData-20261014120000-'
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(module, 'datetime', fixed):
+            here = os.getcwd()
+            os.chdir(tmp)
+            self.addCleanup(os.chdir, here)
+            names = [self.simulation.createDefaultDataFilename()]
+            for written in ('', '-essential.txt', '.txt'):
+                open(names[-1] + written, 'w').close()
+                names.append(self.simulation.createDefaultDataFilename())
+        self.assertEqual(names, [stem + str(n) for n in (1, 2, 3, 4)])
+
     def testDataFile(self):
         """
         Test that either the data file exists and it is writable or the data file does not exist  yet
