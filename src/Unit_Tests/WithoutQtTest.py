@@ -167,5 +167,18 @@ class GARunWithoutQtTest(unittest.TestCase):
         self._runGA(workers=2)
 
 
+class NoQtSuiteTest(unittest.TestCase):
+    """pytest --no-qt collects the whole suite: every test module that needs
+    PyQt5 at import is in conftest's _QT_GUI_TEST_MODULES (AshbyExperimentGuiTest
+    was missing, so --no-qt stopped at collection)."""
+
+    def testTheSuiteCollectsWithoutQt(self):
+        src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        result = subprocess.run([sys.executable, '-m', 'pytest', '--no-qt', '--collect-only',
+                                 '-q', '-p', 'no:cacheprovider', 'Unit_Tests'],
+                                cwd=src_dir, capture_output=True, text=True, timeout=600)
+        self.assertEqual(result.returncode, 0, result.stdout[-3000:] + result.stderr[-2000:])
+
+
 if __name__ == "__main__":
     unittest.main()
