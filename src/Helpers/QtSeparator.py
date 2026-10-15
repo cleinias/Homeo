@@ -16,33 +16,27 @@ class Separator(QFrame):
     Line objects provided in QtDesigner.
     """
     def __init__(self, *args, **kwargs):
-        """
-        \brief Constructor.
-        \param args tuple: [finish me]
-        \param kwargs dict: Property keyword arguments
-        """
+        """Separator(), Separator(parent), Separator(orientation, parent), or
+        the keywords orientation and parent; other keywords go to QFrame.
+        (The positional forms used to fail: one argument read args[1], two
+        skipped QFrame's constructor: review finding HV-13.)"""
+        orient = kwargs.pop('orientation', Qt.Horizontal)
+        parent = kwargs.pop('parent', None)
         if len(args) == 2:
-            assert(isinstance(args[0], Qt.Orientation))
-            assert(isinstance(args[1], QObject))
-            orient = args[0]
-            parent = args[1]
+            orient, parent = args
         elif len(args) == 1:
-            assert(isinstance(args[1], QObject))
-            parent = args[1]
-            orient = kwargs.pop('orientation', Qt.Horizontal)
-        else:
-            parent = kwargs.pop('parent', None)
-            orient = kwargs.pop('orientation', Qt.Horizontal)
-            super(Separator,self).__init__(parent, **kwargs)
-        
+            parent = args[0]
+        elif args:
+            raise TypeError('Separator takes at most 2 positional arguments')
+        assert isinstance(orient, Qt.Orientation)
+        assert parent is None or isinstance(parent, QObject)
+        super(Separator, self).__init__(parent, **kwargs)
+
         self.__orient = None
         self.orientation = orient
-    
+
     def paintEvent(self, ev):
-        """
-        Reimplemented from parent class.
-        \protected
-        """
+        "Reimplemented from QFrame: draws a toolbar separator."
         p = QPainter(self)
         opt = QStyleOption()
         opt.initFrom(self)
@@ -50,19 +44,11 @@ class Separator(QFrame):
         opt, p, self)
     
     def getOrientation(self):
-        """
-        \brief Returns the orientation property.
-        \returns \var Qt.Orientation
-        \getter orientation
-        """
+        "The orientation property: a Qt.Orientation."
         return self.__orient
     
     def setOrientation(self, orient):
-        """
-        \brief Sets the orientation property.
-        \param orient Qt.Orientation
-        \setter orientation
-        """
+        "Set the orientation property (a Qt.Orientation)."
         assert(isinstance(orient, Qt.Orientation))
         if orient == self.__orient:
             return
