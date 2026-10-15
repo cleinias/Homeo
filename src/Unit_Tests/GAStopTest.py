@@ -32,7 +32,7 @@ class GAStopTest(unittest.TestCase):
     def ga(self, onCall):
         "A small serial GA whose k-th evaluation calls onCall(ga, k) first."
         with contextlib.redirect_stdout(io.StringIO()):
-            ga = HomeoGASimulation(stepsSize=20, popSize=6, generSize=3, exp=EXP,
+            ga = HomeoGASimulation(postEvalTop=0, stepsSize=20, popSize=6, generSize=3, exp=EXP,
                                    simulatorBackend='HOMEO')
         evaluate, calls = ga.toolbox.evaluate, [0]
 
@@ -99,7 +99,7 @@ class GAReuseTest(unittest.TestCase):
         for workers in (1, 2):
             with self.subTest(workers=workers):
                 with contextlib.redirect_stdout(io.StringIO()):
-                    ga = HomeoGASimulation(stepsSize=20, popSize=4, generSize=1, exp=EXP,
+                    ga = HomeoGASimulation(postEvalTop=0, stepsSize=20, popSize=4, generSize=1, exp=EXP,
                                            simulatorBackend='HOMEO', nWorkers=workers)
                     for seed in (1, 2):
                         pop = ga.generateRandomPop(randomSeed=seed)

@@ -28,7 +28,7 @@ class GALogbookTest(unittest.TestCase):
             HomeoGASimulation.dataDirRoot = tmp
             self.addCleanup(setattr, HomeoGASimulation, 'dataDirRoot', root)
             with contextlib.redirect_stdout(io.StringIO()):
-                ga = HomeoGASimulation(stepsSize=20, popSize=4, generSize=3,
+                ga = HomeoGASimulation(postEvalTop=0, stepsSize=20, popSize=4, generSize=3,
                                        exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
                                        simulatorBackend='HOMEO')
                 ga.runGaSimulation(ga.generateRandomPop(randomSeed=1))

@@ -13,9 +13,9 @@ Algorithms in Python).  Evaluations run on the internal Box2D simulator
 re-testing selected results, one Webots per process, not for the GA; the
 V-REP/CoppeliaSim backend and the old Webots bridge were deleted on 14 Oct 2026.
 
-*Brought up to date on 14 Oct 2026 (review finding SG-12).  Two behaviours
-described here are open decisions: elitism under noisy evaluation (SG-06,
-section 4.1) and the re-evaluation of pre-scored clones (SG-09, section 6).*
+*Brought up to date on 14 Oct 2026 (review finding SG-12); noisy evaluation
+(SG-06) decided on 15 Oct 2026 (section 4.1).  One behaviour described here
+is an open decision: the re-evaluation of pre-scored clones (SG-09, section 6).*
 
 **Key files:**
 
@@ -181,12 +181,38 @@ inhibitory; above 0.5 it is excitatory.
 ### 4.1 Algorithm type
 
 Generational GA with **elitist replacement**: each generation, the
-population is replaced by selected-and-varied offspring; if the best
-individual so far (the Hall of Fame's first, by its *recorded* fitness) is no
-longer among them, a copy of it replaces the worst offspring (k=1 elitism).
-With noisy evaluations the recorded fitness can be a lucky draw that the
-individual would not repeat, so the survivor is the luckiest, not necessarily
-the best; whether to re-evaluate it is an open decision (SG-06).
+population is replaced by selected-and-varied offspring; if the previous
+generation's best genome is no longer among them, a copy of it is evaluated
+with them and replaces the worst offspring (k=1 elitism).
+
+**Noisy evaluation** (review finding SG-06, decided 15 Oct 2026).  An
+evaluation is noisy: in the direct 2+2 vehicle the same genome's final
+distance over ten seeds had a standard deviation of 1-4, larger than the
+differences between genomes' means.  So:
+- under the 'individual' and 'generation' noise schemes **every individual is
+  evaluated afresh each generation**, survivors and the elite included, with a
+  new ID and so new noise: no score is carried over from an earlier
+  generation, where it would be one old, possibly lucky, draw ('generation' is
+  then common random numbers for the whole generation).  Under 'genome' a
+  genome always scores the same, so only changed genomes are evaluated.
+  (Until 15 Oct 2026 only the individuals crossover or mutation touched were
+  evaluated -- most "mutants" are unchanged, since a gene mutates with
+  probability 0.05 -- the rest kept their old score, and the elite was the
+  Hall of Fame's best, put back only when no individual had its genome.)
+- `evalsPerIndividual` (k, default 1): an evaluation is the mean of k runs,
+  with the seeds `repeat_seeds` derives from the individual's `evalSeed` (the
+  first is `evalSeed` itself, so a replay with the logged seed repeats run 1);
+  the logbook records the runs' scores.  The noise's spread falls as 1/sqrt(k).
+- **Post-evaluation**: at the end of a run the Hall of Fame's best
+  `postEvalTop` (10) are re-evaluated on `postEvalSeeds` (20) fresh seeds each
+  and ranked by their mean (`postEvaluate`, recorded in the logbook's summary
+  as `postEvaluation`).  The Hall of Fame keeps the lowest score ever seen,
+  mostly the luckiest evaluation; the post-evaluation says which genome is
+  best on average.
+
+Cost: about 1/0.6 = 1.7 times the evaluations per generation of the old loop
+(which evaluated about 60% of each generation), times k, plus postEvalTop x
+postEvalSeeds at the end.
 
 ### 4.2 Default parameters
 
@@ -253,16 +279,19 @@ and propagated through the worker configuration for parallel evaluation.
       → invalidate fitness of crossed-over children
    d. MUTATE individuals with probability mutationProb
       → invalidate fitness of mutants
-   e. Assign new IDs to invalidated individuals
-   f. RE-EVALUATE only individuals with invalid fitness
-   g. REPLACE population entirely with offspring
-   h. ELITISM: re-insert best individual if lost (k=1)
+   e. ELITE: copy the previous generation's best; if no offspring has its
+      genome, it is evaluated with them
+   f. Invalidate every fitness (not under the 'genome' noise scheme)
+   g. Assign new IDs and evaluation seeds; EVALUATE (each the mean of
+      evalsPerIndividual runs)
+   h. REPLACE population with offspring; the elite, if lost, replaces the worst
    i. Compute and record generation statistics
    j. Update Hall of Fame
    k. Save logbook and history (checkpoint after each generation)
-6. Clean up trajectory files
-7. Save final logbook and history
-8. Quit simulator backend
+6. POST-EVALUATE the Hall of Fame's best on fresh seeds (unless stopped)
+7. Clean up trajectory files
+8. Save final logbook and history
+9. Quit simulator backend
 ```
 
 ---
@@ -333,7 +362,8 @@ Whether pre-scored clones should skip it is an open decision (SG-09).
 Pickled DEAP `Logbook` containing three types of records:
 
 1. **Per-individual:** `{indivId, fitness, genome, evalSeed}` — recorded each
-   time an individual is evaluated; `evalSeed` seeds its evaluation
+   time an individual is evaluated; `evalSeed` seeds its evaluation; with
+   evalsPerIndividual > 1, `scores`, the runs' scores (fitness is their mean)
 2. **Per-generation:** `{gen, evaluations, avg, std, min, max}` — population
    statistics, generation 0 included (since 14 Oct 2026, SG-08: it used to be
    recorded only when a progress callback was given)
@@ -342,7 +372,8 @@ Pickled DEAP `Logbook` containing three types of records:
    population size, generations, genome size, evolved and total units, run
    length, operator probabilities, fitness sign, elapsed time, final
    population with fitnesses, population type and clone name, random seed,
-   noise scheme, noNoise and noUnisel
+   noise scheme, noNoise and noUnisel, evalsPerIndividual, the genome
+   layout and the post-evaluation (section 4.1)
 
 ### History (`.hist` files)
 
@@ -353,7 +384,8 @@ all generations. Can be visualised as a genealogy tree via
 ### Hall of Fame
 
 Top 10 individuals across all generations, using genome equality for
-deduplication.
+deduplication, by their score when evaluated: under noise, mostly the luckiest
+evaluations.  See the post-evaluation (section 4.1) for the best on average.
 
 ### Statistics
 
@@ -444,10 +476,10 @@ The alternatives were rejected for the following reasons:
    `multiprocessing.Pool` with configurable `nWorkers`. Numba JIT
    compilation accelerates headless simulation arithmetic.
 
-4. ~~**No elitism:**~~ **Resolved.** The best individual from the Hall of
-   Fame is re-inserted into the offspring (replacing the worst) when it
-   would otherwise be lost (k=1 elitism).  "Best" is by recorded fitness,
-   which under noise can be a lucky draw: open decision SG-06 (section 4.1).
+4. ~~**No elitism:**~~ **Resolved.** The previous generation's best genome
+   is re-inserted into the offspring (replacing the worst) when it would
+   otherwise be lost (k=1 elitism); under noise everyone, the elite included,
+   is evaluated afresh each generation (SG-06, section 4.1).
 
 5. **Clone fitness:** cloned individuals carry the source individual's
    fitness via `ind.fitness.values`, but generation 0 still evaluates them

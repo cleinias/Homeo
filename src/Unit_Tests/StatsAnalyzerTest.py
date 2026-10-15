@@ -50,7 +50,7 @@ class LogbookLayoutTest(unittest.TestCase):
         HomeoGASimulation.dataDirRoot = tmp.name
         self.addCleanup(setattr, HomeoGASimulation, 'dataDirRoot', root)
         with contextlib.redirect_stdout(io.StringIO()):
-            ga = HomeoGASimulation(stepsSize=5, popSize=4, generSize=1, exp=exp,
+            ga = HomeoGASimulation(postEvalTop=0, stepsSize=5, popSize=4, generSize=1, exp=exp,
                                    simulatorBackend='HOMEO')
             ga.toolbox.register('evaluate', lambda ind: (float(sum(ind)),))
             ga.runGaSimulation(ga.generateRandomPop(randomSeed=1))

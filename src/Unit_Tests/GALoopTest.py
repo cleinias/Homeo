@@ -9,8 +9,11 @@ populations, the variation operators' bounds and the clean-up of
 trajectory files.  Stopping and crashing are in GAStopTest, the
 evaluation's length in GAEvaluationLengthTest.
 
-What the elitism tests assert holds for a deterministic fitness only: how
-elitism should treat noisy evaluations is an open decision (SG-06).
+Noisy evaluation (review finding SG-06, decided 15 Oct 2026): everyone is
+evaluated afresh each generation (unless the noise scheme is 'genome'), the
+previous generation's best genome survives, an evaluation can average
+several runs, and the hall of fame's best are re-evaluated at the end
+(NoisyEvaluationTest).
 '''
 import contextlib
 import io
@@ -44,7 +47,8 @@ class GALoopTestCase(unittest.TestCase):
 
     def ga(self, **kw):
         "A GA whose evaluations are fitnessOf, recorded in self.evaluated"
-        params = dict(stepsSize=20, popSize=8, generSize=4, exp=EXP, simulatorBackend='HOMEO')
+        params = dict(stepsSize=20, popSize=8, generSize=4, exp=EXP, simulatorBackend='HOMEO',
+                      postEvalTop=0)
         params.update(kw)
         with contextlib.redirect_stdout(io.StringIO()):
             ga = HomeoGASimulation(**params)
@@ -87,19 +91,94 @@ class ElitismTest(GALoopTestCase):
         self.assertIn(list(self.ga_.hof[0]), [list(ind) for ind in self.pop])
 
     def testTheElitistReplacesTheWorstOffspring(self):
-        '''In a generation where no offspring matches the best so far, the
-        population is the offspring with its worst swapped for the best.'''
+        '''In a generation where no offspring has the previous generation's
+        best genome, that genome is evaluated with them (a ninth evaluation)
+        and the population is the offspring with its worst swapped for it.'''
         replaced = 0
         for before, after in zip(self.generations, self.generations[1:]):
-            offspring = sorted(f for _, f in after['evaluated'][len(before['evaluated']):])
-            self.assertEqual(len(offspring), 8)            # all crossed and mutated
-            if offspring[0] <= before['best']:
+            evaluated = [f for _, f in after['evaluated'][len(before['evaluated']):]]
+            bestBefore = min(f for _, f, _ in before['pop'])
+            if len(evaluated) == 8:                        # all crossed and mutated
                 continue
+            self.assertEqual(len(evaluated), 9)
+            offspring, elite = sorted(evaluated[:8]), evaluated[8]
+            self.assertEqual(elite, bestBefore)            # a deterministic fitness
             replaced += 1
             self.assertEqual(sorted(f for _, f, _ in after['pop']),
-                             sorted([before['best']] + offspring[:-1]))
-            self.assertIn(before['best'], [f for _, f, _ in after['pop']])
+                             sorted([elite] + offspring[:-1]))
         self.assertGreater(replaced, 0)
+
+
+class NoisyEvaluationTest(GALoopTestCase):
+    '''Noisy evaluation (SG-06): an evaluate whose score is drawn from the
+    evaluation's seeded numpy stream, so every evaluation differs and a seed
+    repeats it.'''
+
+    def noisyGA(self, **kw):
+        ga = self.ga(**kw)
+        self.evaluated = []
+
+        def run(genome):
+            score = fitnessOf(genome) + np.random.normal()
+            self.evaluated.append((genome.ID, score))
+            return score,
+        ga.evaluateGenomeFitness = run
+        ga.toolbox.register('evaluate', ga.evaluateGenomeFitnessSeeded)
+        return ga
+
+    def testSurvivorsAreEvaluatedAfresh(self):
+        "nothing changes the genomes, yet every generation evaluates all eight"
+        ga = self.noisyGA(cxProb=0.0, mutationProb=0.0, generSize=3)
+        self.runGA(ga, ga.generateRandomPop(randomSeed=4))
+        self.assertEqual([r['evaluations'] for r in ga.logbook if 'gen' in r], [8, 8, 8, 8])
+        IDs = [ID for ID, _ in self.evaluated]
+        self.assertEqual(len(set(IDs)), len(IDs))          # a new ID, so new noise
+
+    def testUnderTheGenomeSchemeUnchangedGenomesKeepTheirScore(self):
+        ga = self.noisyGA(cxProb=0.0, mutationProb=0.0, generSize=3, noiseScheme='genome')
+        self.runGA(ga, ga.generateRandomPop(randomSeed=4))
+        self.assertEqual([r['evaluations'] for r in ga.logbook if 'gen' in r], [8, 0, 0, 0])
+
+    def testTheBestGenomeSurvives(self):
+        ga = self.noisyGA(cxProb=1.0, mutationProb=1.0, indivProb=1.0, generSize=4)
+        pop = ga.generateRandomPop(randomSeed=3)
+        bests = []
+        self.runGA(ga, pop, lambda g, record, best: bests.append(
+            list(min(pop, key=lambda ind: ind.fitness.values[0]))))
+        populations = []
+        for gen, best in enumerate(bests[:-1]):
+            genomes = [list(r['genome']) for r in ga.logbook
+                       if 'genome' in r and r['indivId'].startswith('%03d-' % (gen + 1))]
+            self.assertIn(best, genomes)
+
+    def testAnEvaluationAveragesItsRuns(self):
+        ga = self.noisyGA(generSize=1, evalsPerIndividual=3)
+        self.runGA(ga, ga.generateRandomPop(randomSeed=6))
+        records = [r for r in ga.logbook if 'genome' in r]
+        self.assertEqual(len(self.evaluated), 3 * len(records))
+        from Simulator.HomeoGenAlg import repeat_seeds
+        for r in records:
+            self.assertEqual(len(r['scores']), 3)
+            self.assertAlmostEqual(r['fitness'][0], np.mean(r['scores']))
+            # the first run is the one the logged evalSeed repeats
+            np.random.seed(r['evalSeed'])
+            self.assertAlmostEqual(r['scores'][0], fitnessOf(r['genome']) + np.random.normal())
+        self.assertEqual(repeat_seeds(17, 1), [17])
+        self.assertEqual(len(set(repeat_seeds(17, 4))), 4)
+        self.assertEqual(repeat_seeds(None, 2), [None, None])
+
+    def testTheHallOfFameIsReEvaluated(self):
+        ga = self.noisyGA(generSize=2, postEvalTop=3, postEvalSeeds=5)
+        self.runGA(ga, ga.generateRandomPop(randomSeed=7))
+        post = ga.postEvaluation
+        self.assertEqual([e['indivId'] for e in sorted(post, key=lambda e: e['indivId'])],
+                         sorted(ind.ID for ind in list(ga.hof)[:3]))
+        self.assertEqual([e['mean'] for e in post], sorted(e['mean'] for e in post))
+        for e in post:
+            self.assertEqual(len(e['scores']), 5)
+            self.assertAlmostEqual(e['mean'], np.mean(e['scores']))
+        [summary] = [r for r in ga.logbook if 'finalIndivs' in r]
+        self.assertEqual(summary['postEvaluation'], post)
 
 
 class GenerationZeroTest(GALoopTestCase):

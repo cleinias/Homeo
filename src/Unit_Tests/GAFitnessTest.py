@@ -42,7 +42,7 @@ class GATestCase(unittest.TestCase):
 
     def ga(self, exp, **kw):
         with contextlib.redirect_stdout(io.StringIO()):
-            return HomeoGASimulation(stepsSize=5, popSize=4, exp=exp, simulatorBackend='HOMEO', **kw)
+            return HomeoGASimulation(postEvalTop=0, stepsSize=5, popSize=4, exp=exp, simulatorBackend='HOMEO', **kw)
 
 
 class FitnessSignTest(GATestCase):

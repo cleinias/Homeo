@@ -121,7 +121,7 @@ sys.path.insert(0, {src!r})
 if __name__ == '__main__':
     from Simulator.HomeoGenAlg import HomeoGASimulation
     HomeoGASimulation.dataDirRoot = {out!r}
-    ga = HomeoGASimulation(stepsSize=100, popSize=4, generSize=1,
+    ga = HomeoGASimulation(postEvalTop=0, stepsSize=100, popSize=4, generSize=1,
                            exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
                            simulatorBackend='HOMEO', nWorkers={workers})
     pop = ga.generateRandomPop(randomSeed=1)

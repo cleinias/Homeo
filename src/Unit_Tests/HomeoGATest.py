@@ -207,6 +207,7 @@ class HomeoGASimulationTest(unittest.TestCase):
         """Create a HomeoGASimulation with HOMEO backend and small parameters"""
         from Simulator.HomeoGenAlg import HomeoGASimulation
         cls.ga = HomeoGASimulation(
+            postEvalTop=0,
             popSize=4,
             stepsSize=10,
             generSize=1,
@@ -304,6 +305,7 @@ class HomeoGASimulationTrimmedGenomeTest(unittest.TestCase):
     def setUpClass(cls):
         from Simulator.HomeoGenAlg import HomeoGASimulation
         cls.ga = HomeoGASimulation(
+            postEvalTop=0,
             popSize=4,
             stepsSize=10,
             generSize=1,
@@ -384,6 +386,7 @@ class GAGuiSeedTest(unittest.TestCase):
         gui.seedSpinBox.setValue(seed)
         gui._initializePopulation()
         self.assertEqual(gui.gaSimulation.randomSeed, seed)
+        gui.gaSimulation.postEvalTop = 0      # not what is tested; 200 evaluations
 
         def fail(*args):                  # an error dialog would block the test
             raise RuntimeError(args[2])

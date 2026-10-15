@@ -85,6 +85,25 @@ def evaluation_seed(gaSeed, noiseScheme, ind, generation):
     return int(np.random.SeedSequence([int(gaSeed)] + key).generate_state(1)[0])
 
 
+def repeat_seeds(evalSeed, k):
+    """The seeds of an individual's k evaluations: its evalSeed (so that one
+       evaluation is the one a replay with the logged evalSeed repeats), then
+       seeds derived from it.  None (no seed) k times for an unseeded one."""
+    if evalSeed is None:
+        return [None] * k
+    return [int(evalSeed)] + [int(np.random.SeedSequence([int(evalSeed), j]).generate_state(1)[0])
+                              for j in range(1, k)]
+
+
+def averaged_fitness(scores):
+    """What an evaluation of k runs returns: (mean score, score of run 1, ...).
+       The GA takes the first value as the fitness and logs the others; a
+       single run returns (score,)."""
+    if len(scores) == 1:
+        return (scores[0],)
+    return (float(np.mean(scores)),) + tuple(scores)
+
+
 def seed_evaluation(seed):
     """Seed every random stream a fitness evaluation draws from."""
     np.random.seed(seed)       # numpy at Python level: building the homeostat
@@ -137,9 +156,15 @@ def _init_worker(config):
 
 
 def _evaluate_genome_worker(genome):
-    """Pool entry point: evaluate `genome` from its evalSeed (see seeded_evaluation)."""
-    with seeded_evaluation(getattr(genome, 'evalSeed', None)):
-        return _run_genome_evaluation(genome)
+    """Pool entry point: evaluate `genome` from its evalSeed (see
+       seeded_evaluation), as the mean of evalsPerIndividual runs (see
+       repeat_seeds, averaged_fitness)."""
+    scores = []
+    for seed in repeat_seeds(getattr(genome, 'evalSeed', None),
+                             _worker_config.get('evalsPerIndividual', 1)):
+        with seeded_evaluation(seed):
+            scores.append(_run_genome_evaluation(genome)[0])
+    return averaged_fitness(scores)
 
 
 def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, dataDir,
@@ -249,11 +274,26 @@ class HomeoGASimulation(object):
                                    debugging = None,
                                    simulatorBackend = "HOMEO",
                                    nWorkers = 1,
-                                   noiseScheme = 'individual'):
+                                   noiseScheme = 'individual',
+                                   evalsPerIndividual = 1,
+                                   postEvalTop = 10,
+                                   postEvalSeeds = 20):
+        """Noisy evaluation (review finding SG-06, 15 Oct 2026):
+           evalsPerIndividual  runs per evaluation, the fitness their mean
+           postEvalTop, postEvalSeeds  at the end of a run, the hall of fame's
+                       best postEvalTop are re-evaluated on postEvalSeeds fresh
+                       seeds each and ranked by their mean (0: none); see
+                       postEvaluate"""
         
         if noiseScheme not in NOISE_SCHEMES:
             raise ValueError("noiseScheme must be one of %s, got %r" % (NOISE_SCHEMES, noiseScheme))
+        if int(evalsPerIndividual) < 1:
+            raise ValueError("evalsPerIndividual must be at least 1, got %r" % evalsPerIndividual)
         self.noiseScheme = noiseScheme
+        self.evalsPerIndividual = int(evalsPerIndividual)
+        self.postEvalTop = int(postEvalTop)
+        self.postEvalSeeds = int(postEvalSeeds)
+        self.postEvaluation = None      # set by postEvaluate
         self.randomSeed = None          # set by generateRandomPop / generatePopOfClones
         self.worldBeingResetLock = Lock()
         self._stopRequested = False
@@ -370,6 +410,7 @@ class HomeoGASimulation(object):
                 'stepsSize': stepsSize,
                 'dataDir': self.dataDir,
                 'fitnessSign': self.fitnessSign,
+                'evalsPerIndividual': self.evalsPerIndividual,
             }
             # The pool itself is made by each run (_startPool), which closes it
             print("Using %d worker processes for parallel evaluation" % nWorkers)
@@ -433,6 +474,8 @@ class HomeoGASimulation(object):
                             cloneName = clone,
                             randomSeed = self.randomSeed,
                             noiseScheme = self.noiseScheme,
+                            evalsPerIndividual = self.evalsPerIndividual,
+                            postEvaluation = self.postEvaluation,
                             noNoise = self.experimentParams['noNoise'],
                             noUnisel = self.experimentParams['noUnisel']) 
 
@@ -560,10 +603,7 @@ class HomeoGASimulation(object):
             print("-- Generation 0 --")
             fitnesses = list(self.toolbox.map(self.toolbox.evaluate, pop))
             for ind, fit in zip(pop, fitnesses):
-                ind.fitness.values = fit
-                "record the data about the newly evaluated individual's genome in the logbook"
-                self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind),
-                                    evalSeed = ind.evalSeed)
+                self._storeEvaluation(ind, fit)
             self.hof.update(pop)
             self.hist.update(pop)
             print("  Evaluated %i individuals" % len(pop))
@@ -627,10 +667,31 @@ class HomeoGASimulation(object):
                         mutants += 1
                 hDebug('eval ga', str(mutants)+ "  mutants generated")
 
-                # Evaluate the individuals with an invalid fitness
-                # (Fitnesses have become invalid for all mutated and crossed-over individuals)
+                # Elitism: the previous generation's best genome survives.  If
+                # selection and variation lost it, a copy is evaluated with
+                # the offspring and replaces the worst of them.
+                elite = self.toolbox.clone(min(pop, key=lambda ind: ind.fitness.values[0]))
+                eliteLost = not any(self.indEq(ind, elite) for ind in offspring)
+
+                # Under noise ('individual' and 'generation' schemes) everyone
+                # is evaluated afresh, survivors and the elite included: a
+                # score kept from an earlier generation is one old noisy
+                # draw, and selection would favour the lucky ones.  Under
+                # 'genome' a genome always scores the same, so only changed
+                # ones are evaluated.  Until 15 Oct 2026 only the individuals
+                # crossover or mutation touched were evaluated (most of the
+                # "mutants" unchanged), the rest kept their old score, and the
+                # elite, the hall of fame's best, was put back only when no
+                # individual had its genome (review finding SG-06).
+                if self.noiseScheme != 'genome':
+                    for ind in offspring + [elite]:
+                        if ind.fitness.valid:
+                            del ind.fitness.values
+
                 hDebug('eval', "Evaluating individual with invalid fitness")
                 invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+                if eliteLost and not elite.fitness.valid:
+                    invalid_ind.append(elite)
 
                 "Change the ID's of the invalid ind's"
                 for i, ind in enumerate(invalid_ind):
@@ -643,11 +704,7 @@ class HomeoGASimulation(object):
                 fitnesses = self.toolbox.map(self.toolbox.evaluate, invalid_ind)
                 stopped = False
                 for ind, fit in zip(invalid_ind, fitnesses):
-                    ind.fitness.values = fit
-
-                    "record the data about the newly evaluated individual's genome in the logbook"
-                    self.logbook.record(indivId = ind.ID, fitness = fit, genome = list(ind),
-                                        evalSeed = ind.evalSeed)
+                    self._storeEvaluation(ind, fit)
                     #print "direct ind's name is %s and fitness is: %.2f" %(ind.ID, ind.fitness.values[0])
                     # Stop asked during the generation (serial evaluation is
                     # lazy, so the GUI's Stop lands here): keep what was
@@ -667,12 +724,9 @@ class HomeoGASimulation(object):
 
                 # The population is entirely replaced by the offspring
                 pop[:] = offspring
-
-                # Elitism: re-insert the best individual from the previous
-                # generation if it was lost during selection/variation.
-                if self.hof and not any(self.indEq(ind, self.hof[0]) for ind in pop):
+                if eliteLost:
                     worst = max(range(len(pop)), key=lambda i: pop[i].fitness.values[0])
-                    pop[worst] = self.toolbox.clone(self.hof[0])
+                    pop[worst] = elite
                 print("  Pop now includes: ", end="")
                 for ind in pop:
                     print(ind.ID+", ", end="")
@@ -696,6 +750,8 @@ class HomeoGASimulation(object):
 
             #print genomeDecoder(4, tools.selBest(pop,10)[0])
             #self.simulationEnvironQuit()
+            if not self._stopRequested and self.postEvalTop > 0:
+                self.postEvaluate()
             timeElapsed = time() - timeStarted
             print("-- End of (successful) evolution --")
             print("Total time elapsed: ", str(datetime.timedelta(seconds=timeElapsed)))
@@ -818,9 +874,59 @@ class HomeoGASimulation(object):
 
     def evaluateGenomeFitnessSeeded(self, genome):
         """Serial-path evaluation: evaluateGenomeFitness from the genome's
-           evalSeed, leaving the GA's own random streams as they were."""
-        with seeded_evaluation(getattr(genome, 'evalSeed', None)):
-            return self.evaluateGenomeFitness(genome)
+           evalSeed, leaving the GA's own random streams as they were; the
+           mean of evalsPerIndividual runs (see _evaluate_genome_worker)."""
+        scores = []
+        for seed in repeat_seeds(getattr(genome, 'evalSeed', None), self.evalsPerIndividual):
+            with seeded_evaluation(seed):
+                scores.append(self.evaluateGenomeFitness(genome)[0])
+        return averaged_fitness(scores)
+
+    def _storeEvaluation(self, ind, result):
+        """Give ind the fitness an evaluation returned (its first value: see
+           averaged_fitness) and log the evaluation, with the runs' scores
+           when there were several."""
+        ind.fitness.values = tuple(result[:1])
+        extra = {'scores': list(result[1:])} if len(result) > 1 else {}
+        self.logbook.record(indivId = ind.ID, fitness = ind.fitness.values, genome = list(ind),
+                            evalSeed = ind.evalSeed, **extra)
+
+    def postEvaluate(self):
+        """Re-evaluate the hall of fame's best postEvalTop individuals on
+           postEvalSeeds fresh seeds each, and rank them by their mean score
+           (SG-06).  The hall of fame keeps the lowest score ever seen, which,
+           with noise, is mostly the luckiest evaluation: the mean says which
+           genome is best.  Kept in self.postEvaluation and the logbook's
+           summary: a list, best mean first, of dicts with indivId, genome,
+           mean, sd and scores.  The seeds are derived from the GA's seed, so a
+           rerun repeats them."""
+        top = list(self.hof)[:self.postEvalTop]
+        if not top or self.postEvalSeeds < 1:
+            return None
+        jobs = []
+        for i, ind in enumerate(top):
+            for j in range(self.postEvalSeeds):
+                job = self.toolbox.clone(ind)
+                job.ID = 'post-%s-%d' % (ind.ID, j + 1)
+                job.evalSeed = int(np.random.SeedSequence(
+                    [int(self.randomSeed), 3, i, j]).generate_state(1)[0])
+                jobs.append((i, job))
+        print("-- Post-evaluation: the best %d of the hall of fame, %d seeds each --"
+              % (len(top), self.postEvalSeeds))
+        results = list(self.toolbox.map(self.toolbox.evaluate, [job for _, job in jobs]))
+        scores = [[] for _ in top]
+        for (i, _), result in zip(jobs, results):
+            scores[i].append(float(result[0]))
+        self.postEvaluation = sorted(
+            ({'indivId': ind.ID, 'genome': list(ind), 'hofFitness': ind.fitness.values[0],
+              'mean': float(np.mean(s)), 'sd': float(np.std(s)), 'scores': s}
+             for ind, s in zip(top, scores)),
+            key=lambda entry: entry['mean'])
+        for entry in self.postEvaluation:
+            print("  %s: mean %.4f (sd %.4f) over %d seeds; hall of fame %.4f"
+                  % (entry['indivId'], entry['mean'], entry['sd'], len(entry['scores']),
+                     entry['hofFitness']))
+        return self.postEvaluation
 
     def evaluateGenomeFitness(self,genome=None):
         """Run a simulation for a given number of steps on the given genome.
