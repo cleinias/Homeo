@@ -51,14 +51,13 @@ class HomeoDataCollector(object):
 #===============================================================================
     @classmethod
     def readFrom(self, aFilename):
-        '''Create a new DataCollector instance from a file containing 
-           a saved instance object'''
+        '''Create a new DataCollector instance from a file containing
+           a saved instance object.  The file is a pickle, and unpickling
+           can run arbitrary code: read only files you saved yourself (review
+           finding CD-18).'''
 
-        fileIn = open(aFilename, 'rb')
-        unpickler = pickle.Unpickler(fileIn)
-        newDataCollector = unpickler.load()
-        fileIn.close()
-        return newDataCollector
+        with open(aFilename, 'rb') as fileIn:
+            return pickle.Unpickler(fileIn).load()
         
 #===============================================================================
 # Saving methods

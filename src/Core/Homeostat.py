@@ -44,14 +44,14 @@ class Homeostat(object):
 
     @classmethod    
     def readFrom(self,filename):
-        '''This is a class method that create a new Homeostat instance from filename'''
-        fileIn = open(filename, 'rb')
-        unpickler = pickle.Unpickler(fileIn, encoding='latin-1')
-        try:
-            newHomeostat = unpickler.load()
-        except Exception as e:
-            raise HomeostatError("The file is not a pickled Homeostat: %s" % e)
-        fileIn.close()
+        '''This is a class method that create a new Homeostat instance from
+           filename.  The file is a pickle, and unpickling can run arbitrary
+           code: load only files you trust (review finding CD-18).'''
+        with open(filename, 'rb') as fileIn:
+            try:
+                newHomeostat = pickle.Unpickler(fileIn, encoding='latin-1').load()
+            except Exception as e:
+                raise HomeostatError("The file is not a pickled Homeostat: %s" % e)
         if newHomeostat.isReadyToGo():
             return newHomeostat
         else:
@@ -408,10 +408,8 @@ class Homeostat(object):
         '''Pickle yourself to filename.
            It will erase the old content of aFilename.'''
 
-        fileOut = open(filename, 'wb')
-        pickler = pickle.Pickler(fileOut)
-        pickler.dump(self)
-        fileOut.close()
+        with open(filename, 'wb') as fileOut:
+            pickle.Pickler(fileOut).dump(self)
 
     def flushData(self):
         "Clear all data from aDataCollector"
