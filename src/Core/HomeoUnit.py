@@ -1328,6 +1328,9 @@ class HomeoUnit(object):
         if self.uniselectorActive:
             if isinstance(self.uniselector, HomeoUniselectorContinuous):
                 "Continuous mode: evolve weights at every timestep"
+                # An OU uniselector never fires: the flag stays 0, even after
+                # a discrete uniselector left it at 1 (review finding CD-12)
+                self.uniselectorActivated = 0
                 stress = self.stressLevel()
                 if self._headless:
                     if self._jit_dirty:

@@ -26,9 +26,12 @@ class HomeoDataUnit(object):
                                                  unit's state at time t before the unit's update of tick t,
                                                  so the state, the flag and the weights in connectedTo are
                                                  all the ones left by the update of tick t-1: a firing shows
-                                                 in the same row as the weights it drew.  The continuous (OU)
-                                                 uniselector, whose weights drift every tick, never sets
-                                                 the flag (review finding CD-12).
+                                                 in the same row as the deviation that triggered it (the
+                                                 update checks the deviation it has just computed) and the
+                                                 weights it drew.  Every per-tick record follows this
+                                                 convention: row t is the state after t updates.
+                                                 The continuous (OU) uniselector, whose weights drift every
+                                                 tick, never fires: its flag is always 0 (review finding CD-12).
     '''
 
 #===============================================================================

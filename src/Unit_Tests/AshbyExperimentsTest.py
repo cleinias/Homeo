@@ -79,6 +79,41 @@ class AshbyHelpersTest(unittest.TestCase):
         self.assertEqual(tracker.total_uniselector_firings, u1.uniselectorActivationCount)
 
 
+class UniselectorFlagRowTest(unittest.TestCase):
+    """Per-tick records (review finding CD-12): row t is the state after t
+    updates, and the firing flag is in the same row as the deviation that
+    triggered it and the weights it drew"""
+
+    def testAFiringSharesItsRowWithItsTriggerAndItsWeights(self):
+        import csv, os, tempfile
+        from Simulator.AshbyOriginalExperiments import AshbyStateLogger
+        hom, seed, meta = setup_exp1_basic_ultrastability(1)
+        quiet(hom)
+        u1 = hom.homeoUnits[0]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, 'flag.statelog')
+            logger = AshbyStateLogger(hom, path)
+            run_with_events(hom, 400, events=[(50, lambda h: inject_stimulus(h, 1, 10))],
+                            state_logger=logger)
+            logger.close()
+            with open(path) as f:
+                rows = [r for r in csv.reader((l for l in f if not l.startswith('#')),
+                                              delimiter='\t')]
+        header, rows = rows[0], rows[1:]
+        col = {name: i for i, name in enumerate(header)}
+        fired = col['%s_unisel_fired' % u1.name]
+        dev = col['%s_critDev' % u1.name]
+        weights = [i for c, i in col.items() if c.startswith('w_%s<-' % u1.name)
+                   and not c.endswith('<-%s' % u1.name)]
+        firings = [k for k, r in enumerate(rows) if r[fired] == '1']
+        self.assertGreater(len(firings), 0)
+        threshold = u1.critThreshold * u1.maxDeviation
+        for k in firings:
+            self.assertGreaterEqual(abs(float(rows[k][dev])), threshold - 1e-6, rows[k])
+            self.assertNotEqual([rows[k][i] for i in weights],
+                                [rows[k - 1][i] for i in weights])
+
+
 class StabilityTrackerTest(unittest.TestCase):
     """Stable stretches and their onsets (review finding SR-14), on a stand-in
     homeostat whose one unit is critical at the ticks given"""

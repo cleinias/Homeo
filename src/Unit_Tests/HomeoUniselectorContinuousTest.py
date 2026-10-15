@@ -251,6 +251,28 @@ class HomeoUniselectorContinuousModelsTest(unittest.TestCase):
             HomeoUniselectorContinuous().model = 'brownian'
 
 
+class ContinuousUniselectorFlagTest(unittest.TestCase):
+    """An OU uniselector never fires: its unit's uniselectorActivated is 0,
+    even if a discrete uniselector had left it at 1 (review finding CD-12)"""
+
+    def testTheFlagIsCleared(self):
+        from Core.HomeoUnit import HomeoUnit
+        for cls in (HomeoUnit, HomeoUnitNewtonian):
+            for headless in (False, True):
+                with self.subTest(cls=cls.__name__, headless=headless):
+                    unit = cls()
+                    other = cls()
+                    unit.addConnectionWithRandomValues(other)
+                    unit.inputConnections[-1].state = 'uniselector'
+                    unit.uniselector = HomeoUniselectorContinuous()
+                    unit.uniselectorActive = True
+                    unit._headless = headless
+                    unit._jit_dirty = True
+                    unit.uniselectorActivated = 1
+                    unit.selfUpdate()
+                    self.assertEqual(unit.uniselectorActivated, 0)
+
+
 class HomeoUnitStressLevelTest(unittest.TestCase):
     '''Test the stressLevel method on HomeoUnit'''
 
