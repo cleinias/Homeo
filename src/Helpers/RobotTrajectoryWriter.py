@@ -229,39 +229,6 @@ class RobotTrajectoryWriter(object):
             self.posFile.write("# Eye\t%s\tthreshold\t%f\tsaturation\t%f\tresponse\t%s\n"
                                % (name, threshold, saturation, response))
 
-    def trajFileRename(self, trajFileHandle, oldFileName, modelName):
-        "rename trajectory file to include robot's model, if needed"
-
-        newTrajFileHandle = trajFileHandle
-        if modelName != "Unspecified":
-            trajFileHandle.close()
-            newFileName = self.buildTrajFilename(modelName)
-            os.rename(oldFileName, newFileName)
-            newTrajFileHandle = open(newFileName, 'a')
-            #print "Traj data file renamed to: ", newFileName
-        return newTrajFileHandle
-
-    def buildTrajFilenamefromFile(self, modelName=None):
-        '''FIXME: reads dataDirectory from a file called .SimDataDir.txt
-           stored in parent/parent (../..) directory 
-           Should really get the dataDir from the simulation supervisor. 
-           Save file with filename equal to resulting path + an identifier '''
-        
-        if modelName == None:
-            modelName = ''
-        try:
-            dataDirName = os.path.dirname(os.path.dirname(os.getcwd()))
-            dataDirSource = open(os.path.join(dataDirName, '.SimDataDir.txt'),'r')
-            dataDir = dataDirSource.read()
-            dataDirSource.close()
-        except IOError:
-            dataDir = dated_data_dir()
-        
-        curDateTime = time.strftime("%Y-%m-%d-%H-%M-%S")
-        trajFilename = 'trajData-ID-'+modelName+'-'+curDateTime+'.traj'
-        print("Saving data to: ", os.path.join(dataDir,trajFilename))                 
-        return  os.path.join(dataDir, trajFilename)
-    
     def buildTrajFilename(self, modelName=None):
         '''Reads dataDir from internal ivar and builds a
            filename equal to resulting path + an identifier '''

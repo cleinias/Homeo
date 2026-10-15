@@ -84,6 +84,8 @@ class TrajectoryViewer(QWidget):
         self.allIndivsPB = QPushButton("All individs")
         self.avgFitnessPB = QPushButton("Average Fitness")
         self.genealogyPB = QPushButton("Genealogy")
+        self.genealogyPB.setEnabled(False)          # not implemented yet
+        self.genealogyPB.setToolTip("Not implemented yet")
         self.trajLabel = QLabel("Curr. Trajectory:   ")
         self.logLabel = QLabel("Curr. Logbook:     ")
         self.genInfoTextW = QTextEdit()
@@ -144,7 +146,6 @@ class TrajectoryViewer(QWidget):
         self.hallOfFamePB.clicked.connect(self.visualizeHOF)
         self.allIndivsPB.clicked.connect(self.visualizeFullIndsData)
         self.genealogyPB.clicked.connect(self.visualizeGen)
-        self.hofWidget.cellDoubleClicked.connect(self.onCellDoubleClicked)
         self.hofWidget.cellPressed.connect(self.onCellPressed)
         #self.quitPB.clicked.connect(self.appRef.exit)
         self.refreshTimer.timeout.connect(self._populate)
@@ -162,12 +163,6 @@ class TrajectoryViewer(QWidget):
         """Allow only selection of whole rows"""
         self.hofWidget.selectRow(row)
         
-    def onCellDoubleClicked(self,row,column):
-        """ Select the file corresponding to the double-clicked row and visualize 
-            the corresponding trajectory"""
-        "TO DO"
-        pass
-    
     def visualize(self):
         if len(self.currentTrajEntry.text()) == 0:
             return
@@ -204,8 +199,7 @@ class TrajectoryViewer(QWidget):
         self.logViewer.show()
     
     def visualizeGen(self):
-        "visualize the individuals' genealogy"
-        #showGenealogyTree(history)
+        "visualize the individuals' genealogy: not implemented, the button is disabled"
         self.warningBox('Sorry, feature not implemented yet')
         
     def warningBox(self, aMessage):

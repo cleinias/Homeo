@@ -10,7 +10,6 @@ Usage as CLI:
 """
 
 import math
-import re
 import argparse
 
 
@@ -349,11 +348,8 @@ def _build_tikz(units_data, conns_data, title, show_inactive,
     # Connections
     parts.append(r'  % Connections')
 
-    # Build index for unit ordering (to determine bend direction)
+    # Build index for unit ordering (to place the self-loops)
     unit_index = {u['name']: i for i, u in enumerate(units_data)}
-
-    # Track pairs to alternate bend direction for bidirectional connections
-    seen_pairs = set()
 
     for conn in conns_data:
         from_id = _sanitize_node_id(conn['from'])
@@ -376,18 +372,10 @@ def _build_tikz(units_data, conns_data, title, show_inactive,
                 f'node[{loop_dir}, font=\\footnotesize] {{{weight_label}}} ({to_id});'
             )
         else:
-            # Inter-unit connection
-            pair = (conn['from'], conn['to'])
-            reverse_pair = (conn['to'], conn['from'])
-
-            if reverse_pair in seen_pairs:
-                bend = 'bend left=15'
-            else:
-                bend = 'bend left=15'
-            seen_pairs.add(pair)
-
+            # Inter-unit connection.  'bend left' is relative to the arrow's
+            # direction, so A->B and B->A bend to opposite sides and never overlap.
             parts.append(
-                f'  \\draw[{style}] ({from_id}) to[{bend}] '
+                f'  \\draw[{style}] ({from_id}) to[bend left=15] '
                 f'node[font=\\footnotesize, auto] {{{weight_label}}} ({to_id});'
             )
 
