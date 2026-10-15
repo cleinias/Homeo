@@ -155,7 +155,7 @@ START_RANGE=""
 SPIN=""
 MOTOR=""
 EYE_ARGS=()
-UNISELECTOR=continuous""
+UNISELECTOR=continuous
 
 
 # Print the whole leading comment block, rather than a hardcoded line range:
@@ -467,7 +467,7 @@ for i in $(seq "$FIRST" "$LAST"); do
     while [ "$(jobs -rp | wc -l)" -ge "$WORKERS" ]; do wait -n 2>/dev/null || break; done
     ( run_task "$i" \
         && echo "   task $i done   ($(date +%H:%M:%S))" \
-        || echo "   task $i FAILED -- see $RUNDIR/logs/task_$i.out" ) &
+        || echo "   task $i FAILED -- see $DATADIR/run_task-$(printf '%02d' "$i").out" ) &
     started=$(( started + 1 ))
 done
 
