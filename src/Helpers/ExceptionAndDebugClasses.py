@@ -34,7 +34,7 @@ class HomeoDebug(object):
            printing of some classes of error messages.
            Codes is a space-separated string of allowed error classes codes, 
            or the string 'all' """
-        if 'all' in codes:
+        if 'all' in codes.split():
             HomeoDebug.debugCodes = set(HomeoDebug.allowableCodes)
         else:
             for code in codes.split():
@@ -45,13 +45,15 @@ class HomeoDebug(object):
     
     
     @classmethod
-    def printDebugMesg(cls,codes,debugString):
-        "Method to be used by all classes wishing to print error messages"
+    def printDebugMesg(cls,codes,debugString,*args):
+        """Method to be used by all classes wishing to print error messages.
+           With args, debugString is a %-format, filled in only when the
+           message is printed: hot paths pay nothing when debugging is off."""
         if not cls.debugCodes:
             return
         if set(codes.split()) <= HomeoDebug.debugCodes:
-            stderr.write(debugString+"\n")
+            stderr.write((debugString % args if args else debugString)+"\n")
 
 "Alias to bypass Python's inability to import class methods"
-def hDebug(a,b):
-    HomeoDebug.printDebugMesg(a, b)      
+def hDebug(a, b, *args):
+    HomeoDebug.printDebugMesg(a, b, *args)      

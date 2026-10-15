@@ -306,7 +306,7 @@ class HomeoConnection(object):
         
         incoming = self._incomingUnit.outputSeenByOthers()
         connNoise = HomeoNoise.connNoise(incoming, self._noise)
-        hDebug('conn', ("The noise on the connection is %f" % connNoise))
+        hDebug('conn', "The noise on the connection is %f", connNoise)
         return (incoming * self.switch * self.weight) + connNoise
     
     def isActive(self):
