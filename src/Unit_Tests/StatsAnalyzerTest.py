@@ -36,6 +36,58 @@ class HallOfFameTest(unittest.TestCase):
         self.assertEqual([r[1] for r in rows], ['001-001', '001-002'])
 
 
+class LogbookLayoutTest(unittest.TestCase):
+    """The layout StatsAnalyzer reads from a GA run's own logbook (HN-08): the
+    classic, weight-free and weight-free-with-dt_fast genomes, each decoded
+    and labelled as its setup builds it."""
+
+    def logbook(self, exp):
+        import contextlib, io, tempfile
+        from Simulator.HomeoGenAlg import HomeoGASimulation
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = HomeoGASimulation.dataDirRoot
+        HomeoGASimulation.dataDirRoot = tmp.name
+        self.addCleanup(setattr, HomeoGASimulation, 'dataDirRoot', root)
+        with contextlib.redirect_stdout(io.StringIO()):
+            ga = HomeoGASimulation(stepsSize=5, popSize=4, generSize=1, exp=exp,
+                                   simulatorBackend='HOMEO')
+            ga.toolbox.register('evaluate', lambda ind: (float(sum(ind)),))
+            ga.runGaSimulation(ga.generateRandomPop(randomSeed=1))
+        return ga.logbook
+
+    def testEachLayoutIsDecodedAndLabelledAsItsSetupBuildsIt(self):
+        import contextlib, io
+        from Helpers.GenomeDecoder import genomeDecoder
+        for exp, genes, layout in (('initializeBraiten2_2_Full_GA', 40, None),
+                                   ('initializeBraiten2_direct_GA_continuous_weightfree_fixed', 10,
+                                    'weightfree_dt'),
+                                   ('initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt', 8,
+                                    'weightfree')):
+            with self.subTest(exp):
+                logbook = self.logbook(exp)
+                noUnits, noEvolved, found = SA._logbook_layout(logbook)
+                self.assertEqual(found, layout)
+                with contextlib.redirect_stdout(io.StringIO()):
+                    indivs, _ = SA.indivsDecodedFromLogbook(logbook)
+                records = [r for r in logbook if 'genome' in r]
+                self.assertEqual(len(indivs), len(records))
+                headers = SA._genome_headers(noUnits, noEvolved, found)
+                for (decoded, fitness, name), record in zip(indivs, records):
+                    self.assertEqual(len(record['genome']), genes)
+                    self.assertEqual((fitness, name), (record['fitness'], record['indivId']))
+                    self.assertEqual(decoded, genomeDecoder(noUnits, record['genome'],
+                                                            noEvolvedUnits=noEvolved, layout=found))
+                    self.assertEqual(len(headers), 2 + len(decoded))
+                if layout == 'weightfree_dt':
+                    self.assertEqual(headers[2:7], ['U1-mass', 'U1-visc', 'U1-tau_a',
+                                                    'U1-maxDev', 'U1-dt_fast'])
+                with contextlib.redirect_stdout(io.StringIO()):
+                    table = SA.hallOfFame(logbook, num=1).splitlines()
+                best = min(records, key=lambda r: r['fitness'][0])
+                self.assertEqual(table[2].strip('|').split('|')[1].strip(), best['indivId'])
+
+
 class ValueFilesTest(unittest.TestCase):
     '''The comparison of input and output value files fails on a missing or
     unreadable file and on files of different lengths, and checks the right

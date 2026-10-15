@@ -4,9 +4,9 @@ Created on Feb 2026
 Tests for the GA simulation infrastructure:
 - GenomeDecoder: encoding/decoding of homeostat genomes
 - HomeoGASimulation: basic GA operations (population creation, individual init, bounds checking)
-- StatsAnalyzer: utility functions for GA analysis
 
-These tests do not require external robotic simulators (Webots, V-REP).
+(StatsAnalyzer's tests are in StatsAnalyzerTest.)  These tests need no
+external robot simulator.
 HomeoGASimulation tests require Box2D (for the internal HOMEO simulator) and are
 skipped if Box2D is not installed.
 
