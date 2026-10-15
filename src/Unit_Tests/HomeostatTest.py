@@ -114,9 +114,22 @@ class HomeostatTest(unittest.TestCase):
         self.homeostat.addFullyConnectedUnit(unit2)
         self.homeostat.addFullyConnectedUnit(unit3)
         self.homeostat.addFullyConnectedUnit(unit4)
-    
-        self.assertTrue(self.homeostat.isReadyToGo())
-        
+
+        self.assertIs(self.homeostat.isReadyToGo(), True)
+
+    def testHomeostatWithAnUnreadyUnitIsNotReady(self):
+        '''A unit missing an essential parameter makes the homeostat not
+           ready, and runFor does not run it (CU-17).'''
+        units = [HomeoUnit() for i in range(2)]
+        for unit in units:
+            self.homeostat.addFullyConnectedUnit(unit)
+        self.homeostat.slowingFactor = 0
+        units[1]._viscosity = None
+        self.assertFalse(units[1].isReadyToGo())
+        self.assertIs(self.homeostat.isReadyToGo(), False)
+        self.homeostat.runFor(5)
+        self.assertEqual(self.homeostat.time, 0)
+
     def testHomeostatSaveInitialConditions(self):
         """
         Test that saving to file a full Ashby (4-unit Homeostat as setup in the setUp method)

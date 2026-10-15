@@ -160,9 +160,11 @@ class Homeostat(object):
         '''Check that the homeostat has all the needed elements to start the simulation:
            - at least 1 homeoUnit
            - the homeoUnits are not missing any essential parameter
-           - (Other conditions that are not fully clear yet to be added later)'''
+           - (Other conditions that are not fully clear yet to be added later)
+           (It used to return the method homeoUnitsAreReady uncalled, always
+           true: review finding CU-17.)'''
 
-        return self.homeoUnitsArePresent() and self.homeoUnitsAreReady
+        return self.homeoUnitsArePresent() and self.homeoUnitsAreReady()
 
     def sameAs(self,aHomeostat):
         '''Check whether two homeostats are equivalent, defined as:
