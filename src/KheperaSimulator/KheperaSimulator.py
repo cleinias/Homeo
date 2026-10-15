@@ -669,8 +669,9 @@ class KheperaRobot(object):
             lightAttenVec = targetLight.userData['attenVec']
             lightAmbRatio = targetLight.userData['ambRatio']
             cosAngleToTarget = np.dot(normalize(vecToTarget),eyeNormalVec)
-            "Is target in range?"
-            if abs(degrees(acos(cosAngleToTarget))) > eyeAngleRange / 2:
+            "Is target in range?  (The dot product of unit vectors can round"
+            "past +/-1, which acos refuses: review finding RS-06.)"
+            if degrees(acos(min(1.0, max(-1.0, cosAngleToTarget)))) > eyeAngleRange / 2:
                 continue
             directIntens = (lightIntensity * (1-lightAmbRatio)) * cosAngleToTarget
             attenuationFactor = 1/( lightAttenVec[0]+
