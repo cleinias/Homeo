@@ -431,8 +431,11 @@ class HomeoGASimulation(object):
         self.toolbox.register("select", tools.selTournament, tournsize=self.tournamentSize)
         " FIXME---> NEED TO REMOVE SELECTED INDIVIDUALS FROM ASPIRANTS POOL <-----"
         #self.toolbox.register("select", tools.selBest)
+        # Out-of-range genes: a mutation's are reflected back into [0, 1]
+        # (reflectBounds, SG-07); crossover only swaps genes, so its clip is
+        # a safety net that never acts
         self.toolbox.decorate("mate", self.checkBounds(0, 1))
-        self.toolbox.decorate("mutate", self.checkBounds(0, 1))
+        self.toolbox.decorate("mutate", self.reflectBounds(0, 1))
         
         "2.1 Define Hall of Fame and History operators"               
         'Decorate the variation operators to insert newly created individuals in the GA history'
@@ -504,16 +507,45 @@ class HomeoGASimulation(object):
         #hDebug('ga', "indB is: " + indB)
         return indA == indB
     
-    def checkBounds(self, min, max):
+    def checkBounds(self, low, high):
+        "Decorate a variation operator: its offspring's genes clipped to [low, high], as floats"
+        low, high = float(low), float(high)
         def decorator(func):
             def wrapper(*args, **kargs):
                 offspring = func(*args, **kargs)
                 for child in offspring:
                     for i in range(len(child)):
-                        if child[i] > max:
-                            child[i] = max
-                        elif child[i] < min:
-                            child[i] = min
+                        if child[i] > high:
+                            child[i] = high
+                        elif child[i] < low:
+                            child[i] = low
+                return offspring
+            return wrapper
+        return decorator
+
+    @staticmethod
+    def reflect(value, low=0.0, high=1.0):
+        """value folded back into [low, high] by its overshoot: 1.07 -> 0.93,
+           -0.05 -> 0.05 (repeatedly, for an overshoot beyond the range)."""
+        span = high - low
+        x = (value - low) % (2 * span)
+        return low + (2 * span - x if x > span else x)
+
+    def reflectBounds(self, low, high):
+        """Decorate a mutation: its out-of-range genes reflected back into
+           [low, high].  Mutation alone then keeps a uniform spread of genes
+           uniform.  Until 15 Oct 2026 they were clipped: about 16% of mutated
+           genes landed exactly on 0 or 1, the parameters' extremes, and 50
+           mutations without selection left 23% of genes there (review
+           finding SG-07)."""
+        low, high = float(low), float(high)
+        def decorator(func):
+            def wrapper(*args, **kargs):
+                offspring = func(*args, **kargs)
+                for child in offspring:
+                    for i in range(len(child)):
+                        if not low <= child[i] <= high:
+                            child[i] = self.reflect(child[i], low, high)
                 return offspring
             return wrapper
         return decorator

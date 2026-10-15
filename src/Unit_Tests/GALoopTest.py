@@ -226,14 +226,14 @@ class ClonePopulationTest(GALoopTestCase):
 
 class VariationOperatorsTest(GALoopTestCase):
     '''The toolbox's mate and mutate are DEAP's two-point crossover and
-    Gaussian mutation, kept within [0, 1]: out-of-range genes are clipped,
-    in-range ones left as the operator made them.'''
+    Gaussian mutation, kept within [0, 1]: a mutation's out-of-range genes are
+    reflected back (SG-07), in-range ones left as the operator made them.'''
 
     def setUp(self):
         super().setUp()
         self.ga_ = self.ga(indivProb=1.0)
 
-    def testMutateIsGaussianMutationClipped(self):
+    def testMutateIsGaussianMutationReflected(self):
         genome = [0.0, 0.05, 0.5, 0.95, 1.0] * 4
         raw = self.ga_.toolbox.individual()
         raw[:] = genome
@@ -242,9 +242,32 @@ class VariationOperatorsTest(GALoopTestCase):
         tools.mutGaussian(raw, mu=0, sigma=0.2, indpb=1.0)
         random.seed(11)
         self.ga_.toolbox.mutate(mutant)
-        self.assertEqual(list(mutant), [min(1.0, max(0.0, g)) for g in raw])
-        self.assertTrue(any(g < 0 or g > 1 for g in raw))       # the clipping was exercised
-        self.assertTrue(any(0 < g < 1 and g != o for g, o in zip(mutant, genome)))
+        reflected = [-g if g < 0 else 2 - g if g > 1 else g for g in raw]
+        for g, want in zip(mutant, reflected):
+            self.assertAlmostEqual(g, want, places=12)
+        self.assertTrue(any(g < 0 or g > 1 for g in raw))       # the reflection was exercised
+        self.assertTrue(all(0 < g < 1 and isinstance(g, float) for g in mutant))
+
+    def testReflect(self):
+        reflect = self.ga_.reflect
+        for value, want in ((1.07, 0.93), (-0.05, 0.05), (0.3, 0.3), (2.25, 0.25),
+                            (-1.25, 0.75), (1.0, 1.0), (0.0, 0.0)):
+            self.assertAlmostEqual(reflect(value), want, places=12)
+
+    def testMutationKeepsAUniformSpreadUniform(self):
+        '''With clipping, 50 mutations left 23% of genes exactly on 0 or 1
+        and 18% in each edge tenth (SG-07)'''
+        ind = self.ga_.toolbox.individual()
+        rng = np.random.default_rng(3)
+        ind[:] = rng.random(4000).tolist()
+        random.seed(5)
+        for _ in range(50):
+            self.ga_.toolbox.mutate(ind)
+        genes = np.array(ind)
+        self.assertFalse(np.any((genes == 0) | (genes == 1)))
+        tenths = np.histogram(genes, bins=10, range=(0, 1))[0] / genes.size
+        for share in tenths:
+            self.assertAlmostEqual(share, 0.1, delta=0.02)
 
     def testMateSwapsGenesWithoutChangingThem(self):
         a, b = self.ga_.toolbox.individual(), self.ga_.toolbox.individual()

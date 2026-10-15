@@ -233,11 +233,18 @@ postEvalSeeds at the end.
 | **Selection** | `selTournament(tournsize=3)` | Tournament selection; selects `len(pop)` individuals |
 | **Crossover** | `cxTwoPoint` | Two-point crossover on genome lists |
 | **Mutation** | `mutGaussian(mu=0, sigma=0.2, indpb=0.05)` | Gaussian noise added to each gene with 5% probability |
-| **Bounds** | `checkBounds(0, 1)` | Decorator clamping all genes to [0, 1] after crossover and mutation |
+| **Bounds** | `reflectBounds(0, 1)`, `checkBounds(0, 1)` | A mutation's out-of-range genes are reflected back into [0, 1] (1.07 -> 0.93); crossover only swaps genes, and its clip never acts |
 
-The Gaussian mutation sigma of 0.2 produces perturbations that typically
-stay within the [0, 1] gene range (~95% of draws fall within ±0.4 of the
-current value). The bounds decorator clips occasional out-of-range values.
+With sigma 0.2, about 16% of mutations of a uniformly spread gene leave
+[0, 1] (31% from a gene at 0.9).  They are reflected back by their
+overshoot, so mutation alone keeps a uniform spread of genes uniform, and no
+gene lands exactly on a bound.  Until 15 Oct 2026 they were clipped: each
+such gene landed exactly on 0 or 1, the parameters' extremes, and 50
+mutations without selection left 23% of genes there; the long 40-gene runs'
+last generations had 20-27% of genes on a bound (review finding SG-07).
+Reflection keeps sigma's meaning everywhere; DEAP's polynomial-bounded
+mutation, the alternative considered, still crowds genes toward the edges
+at comparable step sizes.
 
 ### 4.4 Fitness function
 

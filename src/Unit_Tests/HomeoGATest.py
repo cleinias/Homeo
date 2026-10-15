@@ -266,6 +266,7 @@ class HomeoGASimulationTest(unittest.TestCase):
             for val in child:
                 self.assertGreaterEqual(val, 0)
                 self.assertLessEqual(val, 1)
+                self.assertIsInstance(val, float)        # 0 and 1 were ints (SG-07)
 
     def testIndEq(self):
         """indEq returns True for identical genomes, False for different"""
