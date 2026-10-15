@@ -14,8 +14,8 @@ re-testing selected results, one Webots per process, not for the GA; the
 V-REP/CoppeliaSim backend and the old Webots bridge were deleted on 14 Oct 2026.
 
 *Brought up to date on 14 Oct 2026 (review finding SG-12); noisy evaluation
-(SG-06) decided on 15 Oct 2026 (section 4.1).  One behaviour described here
-is an open decision: the re-evaluation of pre-scored clones (SG-09, section 6).*
+(SG-06), mutation at the bounds (SG-07) and clones (SG-09) decided on
+15 Oct 2026 (sections 4.1, 4.3, 6).*
 
 **Key files:**
 
@@ -355,10 +355,11 @@ All individuals in the population start with the same genome, extracted
 from a previous GA run's logbook via `extractGenomeOfIndID()`. This
 allows re-evolving from a known good starting point.
 
-Cloned individuals carry the source individual's fitness
-(`ind.fitness.values`), but generation 0 evaluates the whole population,
-clones included, so that fitness is overwritten by a fresh evaluation.
-Whether pre-scored clones should skip it is an open decision (SG-09).
+Clones start without a fitness, and generation 0 evaluates them like any
+individual.  The source's logged fitness came from another run, often of
+another code version, so it is kept only in the logbook's summary
+(`cloneSourceFitness`).  Until 15 Oct 2026 it was copied into every clone and
+then overwritten by generation 0 (review finding SG-09).
 
 ---
 
@@ -378,7 +379,8 @@ Pickled DEAP `Logbook` containing three types of records:
    SG-08: one used to be appended at every save): date, experiment name,
    population size, generations, genome size, evolved and total units, run
    length, operator probabilities, fitness sign, elapsed time, final
-   population with fitnesses, population type and clone name, random seed,
+   population with fitnesses, population type, clone name and the clone
+   source's logged fitness, random seed,
    noise scheme, noNoise and noUnisel, evalsPerIndividual, the genome
    layout and the post-evaluation (section 4.1)
 
@@ -488,9 +490,9 @@ The alternatives were rejected for the following reasons:
    otherwise be lost (k=1 elitism); under noise everyone, the elite included,
    is evaluated afresh each generation (SG-06, section 4.1).
 
-5. **Clone fitness:** cloned individuals carry the source individual's
-   fitness via `ind.fitness.values`, but generation 0 still evaluates them
-   again (section 6): open decision SG-09.
+5. ~~**Clone fitness:**~~ **Resolved.** Clones start without a fitness and
+   are evaluated in generation 0; the source's logged fitness is recorded as
+   `cloneSourceFitness` (SG-09, section 6).
 
 6. **Fixed topology:** The GA evolves only unit parameters and connection
    weights. The network topology (which units exist, which connections are

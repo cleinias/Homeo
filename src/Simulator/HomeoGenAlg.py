@@ -475,6 +475,8 @@ class HomeoGASimulation(object):
                             finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop],
                             type = self._type,
                             cloneName = clone,
+                            cloneSourceFitness = (self.clonableGenome or {}).get('fitness')
+                                                 if self._type == 'clones' else None,
                             randomSeed = self.randomSeed,
                             noiseScheme = self.noiseScheme,
                             evalsPerIndividual = self.evalsPerIndividual,
@@ -558,11 +560,16 @@ class HomeoGASimulation(object):
     
     def initIndividualClone(self, indivClass, genome):
         """Generate an individual with given genome.
-           Assumes 'genome' is a dictionary with keys indivId, fitness, and genome"""
+           Assumes 'genome' is a dictionary with keys indivId, genome and,
+           optionally, fitness.  The clone starts without a fitness:
+           generation 0 evaluates it, like every individual.  The logged
+           fitness came from another run's evaluation (often of another code
+           version), so it is recorded in the logbook's summary as
+           cloneSourceFitness, not given to the clones.  Until 15 Oct 2026 it
+           was copied into every clone and then overwritten by generation 0
+           (review finding SG-09)."""
         ind = indivClass(genome['genome'])
         ind.ID = genome["indivId"]
-        if 'fitness' in genome and genome['fitness'] is not None:
-            ind.fitness.values = genome['fitness']
         return ind
 
     def seedGA(self, randomSeed):

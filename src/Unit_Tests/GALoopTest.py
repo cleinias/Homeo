@@ -203,9 +203,22 @@ class GenerationZeroTest(GALoopTestCase):
 
 
 class ClonePopulationTest(GALoopTestCase):
-    '''A population of clones of a logged genome.  Whether a clone keeps the
-    logged fitness or is re-evaluated is an open decision (SG-09): not
-    asserted here.'''
+    '''A population of clones of a logged genome: each clone starts without a
+    fitness and generation 0 evaluates it; the logged fitness is kept in the
+    summary as cloneSourceFitness (SG-09).'''
+
+    def testClonesAreEvaluatedNotGivenTheLoggedFitness(self):
+        genome = [0.25, 0.5, 0.75, 0.1, 0.9] * 2
+        ga = self.ga(generSize=0, popSize=4,
+                     clonableGenome={'genome': genome, 'indivId': '007-003', 'fitness': (1.5,)})
+        pop = ga.generatePopOfClones(cloneName='007-003', randomSeed=2)
+        self.assertFalse(any(ind.fitness.valid for ind in pop))
+        self.runGA(ga, pop)
+        self.assertEqual(len(self.evaluated), 4)
+        for ind in pop:
+            self.assertEqual(ind.fitness.values, (fitnessOf(genome),))
+        [summary] = [r for r in ga.logbook if 'finalIndivs' in r]
+        self.assertEqual(summary['cloneSourceFitness'], (1.5,))
 
     def testClonesShareTheGenomeAndTheRunRecordsThem(self):
         genome = [0.25, 0.5, 0.75, 0.1, 0.9] * 2
