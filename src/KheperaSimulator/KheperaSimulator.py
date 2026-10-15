@@ -561,7 +561,7 @@ class KheperaRobot(object):
            a specified position. The irradiance is measured from the center of the circle
            Main parameters are:
         - orientation   (in degrees, default is 0, i/e normal to the robot's surface
-                         through the center of sensor) 
+                         through the center of sensor; > 0 turns the sensor to the left) 
         - angleRange    (default = 90 degrees (same as in V-REP)): the field of view
         - threshold, saturation, response: the eye's sensitivity -- the
                         irradiance below which it responds 0 (default 0), the
@@ -595,8 +595,13 @@ class KheperaRobot(object):
                                response=response, fixture=sensorFixture)
         
                 
-        "Cache angles (in degrees) of eye sensors from robot's normal heading for future computation of irradiance"
-        sensorAngle = degrees(atan((rotMatrix * positionVector).A1[1]  / (rotMatrix * positionVector).A1[0]))
+        """Cache angles (in degrees) of eye sensors from robot's normal heading for future computation of irradiance:
+           the direction of the sensor's position from the centre, plus orientation.  atan2, so that an
+           eye in the rear half faces backward (atan(y/x) turned it forward), and the orientation is
+           applied (it was ignored): review finding RS-07.  For the K-Junior's eyes, in front, the
+           angle is the same as atan's to the last bit."""
+        fx, fy = (rotMatrix * positionVector).A1
+        sensorAngle = degrees(atan2(fy, fx)) + orientation
         sensorFixture.userData[sensorName + 'Angle']  = sensorAngle
         # One receptor, at the fixture, facing out along its radius
         sensorFixture.userData[sensorName + 'Receptors'] = [
