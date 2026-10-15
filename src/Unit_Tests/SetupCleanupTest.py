@@ -28,5 +28,29 @@ class LegacySetupsTwiceTest(unittest.TestCase):
             self.assertEqual([u.name for u in second.homeoUnits], units, name)
 
 
+class SetupsWithoutABackendTest(unittest.TestCase):
+    '''SE-06: the GA setups called without a backend failed with an
+    AttributeError raised from inside a bare except; they say what is
+    missing.'''
+
+    def testEachGASetupAsksForABackend(self):
+        import numpy as np
+        names = ['initializeBraiten2_2_Full_GA'] + [
+            n for n in dir(HomeoExperiments)
+            if n.startswith('initialize') and hasattr(getattr(HomeoExperiments, n), 'genomeSize')]
+        self.assertGreater(len(names), 8)
+        for name in names:
+            setup = getattr(HomeoExperiments, name)
+            genome = np.full(getattr(setup, 'genomeSize', 40), 0.5)
+            with self.assertRaisesRegex(ValueError, 'needs a backendSimulator', msg=name):
+                setup(genome, backendSimulator=None)
+
+    def testAnUnknownBackendIsRefused(self):
+        class Other(object):
+            name = 'VREP'
+        with self.assertRaisesRegex(Exception, 'cannot use backend simulator VREP'):
+            HomeoExperiments.initializeBraiten2_2_Full_GA([0.5] * 40, backendSimulator=Other())
+
+
 if __name__ == '__main__':
     unittest.main()

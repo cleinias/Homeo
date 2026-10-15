@@ -599,19 +599,10 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     on the robotic simulator backend. 
                       
 ''' 
-    worlds = {
-              'WEBOTS_World': 'kheperaBraitenberg2_HOMEO_World',
-              'HOMEO_World' : 'kheperaBraitenberg2_HOMEO_World'
-              }
-    
     """Get the simulator-specific transducer units
        The basicBraiten2 functions return a dictionary with 4 transducers: 
        rightWheelTransd, leftWheelTransd, rightEyeTransd, leftEyeTransd"""
-       
-    try:
-        world = worlds[backendSimulator.name + '_World']
-    except:
-        raise Exception("I cannot use backend simulator %s yet" % backendSimulator.name)
+    world = _backendWorld(backendSimulator, 'kheperaBraitenberg2_HOMEO_World')
 
     transducers = basicBraiten2Tranducers(backendSimulator, world) 
 
@@ -993,15 +984,7 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     '''
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
-    worlds = {
-        'WEBOTS_World': 'kheperaBraitenberg2_HOMEO_World',
-        'HOMEO_World': 'kheperaBraitenberg2_HOMEO_World'
-    }
-
-    try:
-        world = worlds[backendSimulator.name + '_World']
-    except:
-        raise Exception("I cannot use backend simulator %s yet" % backendSimulator.name)
+    world = _backendWorld(backendSimulator, 'kheperaBraitenberg2_HOMEO_World')
 
     transducers = basicBraiten2Tranducers(backendSimulator, world)
     if transducers is None:
@@ -1244,15 +1227,7 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
     '''
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
-    worlds = {
-        'WEBOTS_World': 'kheperaBraitenberg2_HOMEO_World',
-        'HOMEO_World': 'kheperaBraitenberg2_HOMEO_World'
-    }
-
-    try:
-        world = worlds[backendSimulator.name + '_World']
-    except:
-        raise Exception("I cannot use backend simulator %s yet" % backendSimulator.name)
+    world = _backendWorld(backendSimulator, 'kheperaBraitenberg2_HOMEO_World')
 
     transducers = basicBraiten2Tranducers(backendSimulator, world)
     if transducers is None:
@@ -1434,6 +1409,17 @@ initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.genomeSize = 8
 #===============================================================================
 
 
+def _backendWorld(backendSimulator, world):
+    """The world a GA setup builds on backendSimulator: the HOMEO (Box2D) world,
+    or its Webots twin.  A setup called without a backend used to fail with
+    an AttributeError from inside a bare except (review finding SE-06)."""
+    if backendSimulator is None:
+        raise ValueError("this setup needs a backendSimulator (Simulator/SimulatorBackend.py)")
+    if backendSimulator.name not in ('HOMEO', 'WEBOTS'):
+        raise Exception("I cannot use backend simulator %s yet" % backendSimulator.name)
+    return world
+
+
 def basicBraiten2Tranducers(backendSimulator, world):
     """Asks the back end simulator to return 4 
        tranducers: two wheels and two sensors"""
@@ -1516,16 +1502,7 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
     '''
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
-    worlds = {
-        'WEBOTS_World': 'kheperaBraitenberg3c_HOMEO_World',
-        'HOMEO_World': 'kheperaBraitenberg3c_HOMEO_World'
-    }
-
-    try:
-        world = worlds[backendSimulator.name + '_World']
-    except KeyError:
-        raise Exception("I cannot use backend simulator %s for Braiten3c yet"
-                        % backendSimulator.name)
+    world = _backendWorld(backendSimulator, 'kheperaBraitenberg3c_HOMEO_World')
 
     transducers = braiten3cTransducers(backendSimulator, world)
     if transducers is None:
