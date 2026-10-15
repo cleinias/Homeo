@@ -69,6 +69,10 @@ def initialize_1minus_2xExperiment(params=None):
     with fixed parameters to improve repeated runs
     '''
     hom = Homeostat()
+    # Its units' names are fixed: release the names of a homeostat built
+    # before, as the other setups do, or a second call (the GUI's New) raises
+    # 'The name H1_Agent exists already' (review finding SE-10)
+    HomeoUnit.clearNames()
     
     'Standard parameters'
     agent_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
@@ -214,6 +218,7 @@ def initialize_1minus_2_minus_3xExperiment(params=None):
        1 unconnected unit representing the environment 
     """
     hom = Homeostat()
+    HomeoUnit.clearNames()          # fixed names: see initialize_1minus_2xExperiment (SE-10)
     
     'Standard parameters'
     agent_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
