@@ -12,13 +12,12 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from Helpers.TrajectoryGrapher import graphTrajectory
-from Helpers.StatsAnalyzer import plotFitnessesFromLogBook, genomeAndFitnessList, indivsDecodedFromLogbook, showGenealogyTree, _logbook_layout
+from Helpers.StatsAnalyzer import plotFitnessesFromLogBook, genomeAndFitnessList, indivsDecodedFromLogbook, showGenealogyTree, _logbook_layout, _load_pickle
 import sys
 import numbers
 import os
 from glob import glob
 from sys import stderr
-import pickle
 import dill
 sys.modules['dill.dill'] = dill._dill  # old logbooks were pickled with dill.dill, renamed to dill._dill
 # Old logbooks were pickled under Python 2 which had types like ListType, DictType, etc.
@@ -43,6 +42,7 @@ class TrajectoryViewer(QWidget):
         super(TrajectoryViewer,self).__init__(parent)
         self.appRef = appRef
         self._dirPath = self.setOpeningPath()
+        self._logbookVersion = None      # (path, mtime, size) of the logbook loaded or refused
         self.buidGui()
         self.setDirpath(self._dirPath)
         self._currentLogbookName = self.setCurrentLogbookName()
@@ -296,20 +296,36 @@ class TrajectoryViewer(QWidget):
     
     def setCurrentLogbook(self):
         """Unpickle the logbook whose filename is in self._currentLogbookName
-           and store it in an iVar"""
-        if not self._currentLogbookName == "NO LOGBOOKS PRESENT":
-            try:
-                logbookFile = open(os.path.join(self._dirPath, self._currentLogbookName),'rb')
-                self._currentLogbook=pickle.load(logbookFile)
-                logbookFile.close()
-            except (IOError, ModuleNotFoundError) as e:
-                self._currentLogbook = None
-                msgBox = QMessageBox()
-                msgBox.setText("Cannot load logbook")
-                msgBox.setInformativeText(str(e))
-                msgBox.exec_()
-        else:
-            self._currentLogbook = None            
+           and store it in an iVar.
+
+           The refresh timer calls this every second: the file is read again
+           only when it changes (path, modification time or size), and one
+           that cannot be read -- e.g. a GA still writing it -- is reported
+           once per version, whatever the error.  It used to be unpickled
+           every second, and any error other than IOError escaped the Qt slot
+           and aborted the viewer (review finding HV-04)."""
+        if self._currentLogbookName == "NO LOGBOOKS PRESENT":
+            self._currentLogbook = None
+            self._logbookVersion = None
+            return
+        path = os.path.join(self._dirPath, self._currentLogbookName)
+        try:
+            st = os.stat(path)
+            version = (path, st.st_mtime_ns, st.st_size)
+        except OSError:
+            version = (path, None, None)
+        if version == self._logbookVersion:
+            return
+        self._logbookVersion = version
+        try:
+            with open(path, 'rb') as logbookFile:
+                self._currentLogbook = _load_pickle(logbookFile)
+        except Exception as e:
+            self._currentLogbook = None
+            msgBox = QMessageBox()
+            msgBox.setText("Cannot load logbook")
+            msgBox.setInformativeText(str(e))
+            msgBox.exec_()
     
     def refreshLogbook(self):
         self._currentLogbookName = self.setCurrentLogbookName()

@@ -139,5 +139,45 @@ class HallOfFameTableTest(unittest.TestCase):
         self.assertEqual([i.row() for i in table.selectionModel().selectedRows()], [2])
 
 
+class LogbookRefreshTest(unittest.TestCase):
+    """The viewer's 1-second refresh reads the logbook again only when the file
+    changes, and reports an unreadable one once instead of aborting (review
+    finding HV-04)."""
+
+    def testReloadOnlyOnChangeAndSurviveABadFile(self):
+        import pickle
+        from unittest import mock
+        from Helpers import TrajectoriesViewer as TV
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.dict(os.environ, {'HOMEO_DATA_DIR': tmp}), \
+                mock.patch.object(TV.QMessageBox, 'exec_') as shown:
+            path = os.path.join(tmp, 'run.lgb')
+            open(path, 'wb').close()                 # a GA has just created it
+            viewer = TV.TrajectoryViewer(appRef=app)
+            viewer.refreshTimer.stop()
+            self.addCleanup(viewer.close)
+            for i in range(3):
+                viewer.refreshLogbook()
+                viewer.visualizeGenInfo()
+            self.assertEqual(shown.call_count, 1)
+            self.assertIsNone(viewer._currentLogbook)
+
+            logbook = [{'date': 'today', 'gens': 2}]
+            with open(path, 'wb') as f:
+                pickle.dump(logbook, f)
+            with mock.patch.object(TV, '_load_pickle', wraps=TV._load_pickle) as load:
+                for i in range(3):
+                    viewer.refreshLogbook()
+                self.assertEqual(load.call_count, 1)
+                self.assertEqual(viewer._currentLogbook, logbook)
+                logbook.append({'gen': 3})
+                with open(path, 'wb') as f:
+                    pickle.dump(logbook, f)
+                viewer.refreshLogbook()
+                self.assertEqual(load.call_count, 2)
+                self.assertEqual(viewer._currentLogbook, logbook)
+            self.assertEqual(shown.call_count, 1)
+
+
 if __name__ == '__main__':
     unittest.main()
