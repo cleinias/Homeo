@@ -330,6 +330,19 @@ class HomeoGASimulationTrimmedGenomeTest(unittest.TestCase):
             self.assertEqual(len(ind), 40)
 
 
+class HomeoGASimulationUnitCountTest(unittest.TestCase):
+    "The GA takes the unit count, which its logbook records, from the setup"
+
+    def testTheDirectVehicleHasFourUnits(self):
+        from Simulator.HomeoGenAlg import HomeoGASimulation
+        ga = HomeoGASimulation(postEvalTop=0, popSize=2, stepsSize=10, generSize=1,
+                               noUnits=6, simulatorBackend=None,
+                               exp='initializeBraiten2_direct_GA_continuous_weightfree_v2')
+        self.assertEqual(ga.noUnits, 4)
+        self.assertEqual(ga.noEvolvedUnits, 2)
+        self.assertEqual(ga.genomeSize, 8)
+
+
 try:
     import PyQt5.QtWidgets
     HAS_QT_WIDGETS = True

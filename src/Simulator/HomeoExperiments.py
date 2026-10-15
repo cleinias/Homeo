@@ -1343,6 +1343,7 @@ def initializeBraiten2_direct_GA_continuous_weightfree(homeoGenome, noHomeoParam
         lightIntensity=lightIntensity)
 
 initializeBraiten2_direct_GA_continuous_weightfree.noEvolvedUnits = 2
+initializeBraiten2_direct_GA_continuous_weightfree.noUnits = 4
 initializeBraiten2_direct_GA_continuous_weightfree.fitnessSign = 1
 initializeBraiten2_direct_GA_continuous_weightfree.genomeSize = 10
 initializeBraiten2_direct_GA_continuous_weightfree.genomeLayout = 'weightfree_dt'
@@ -1364,6 +1365,7 @@ def initializeBraiten2_direct_GA_continuous_weightfree_fixed(homeoGenome, noHome
         lightIntensity=lightIntensity)
 
 initializeBraiten2_direct_GA_continuous_weightfree_fixed.noEvolvedUnits = 2
+initializeBraiten2_direct_GA_continuous_weightfree_fixed.noUnits = 4
 initializeBraiten2_direct_GA_continuous_weightfree_fixed.fitnessSign = 1
 initializeBraiten2_direct_GA_continuous_weightfree_fixed.genomeSize = 10
 initializeBraiten2_direct_GA_continuous_weightfree_fixed.genomeLayout = 'weightfree_dt'
@@ -1385,6 +1387,7 @@ def initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt(homeoGenome, noH
         lightIntensity=lightIntensity)
 
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.noEvolvedUnits = 2
+initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.noUnits = 4
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.fitnessSign = 1
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.genomeSize = 8
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.genomeLayout = 'weightfree'
@@ -1406,6 +1409,7 @@ def initializeBraiten2_direct_GA_continuous_weightfree_v2(homeoGenome, noHomeoPa
         lightIntensity=lightIntensity)
 
 initializeBraiten2_direct_GA_continuous_weightfree_v2.noEvolvedUnits = 2
+initializeBraiten2_direct_GA_continuous_weightfree_v2.noUnits = 4
 initializeBraiten2_direct_GA_continuous_weightfree_v2.fitnessSign = 1
 initializeBraiten2_direct_GA_continuous_weightfree_v2.genomeSize = 8
 initializeBraiten2_direct_GA_continuous_weightfree_v2.genomeLayout = 'weightfree_v2'
@@ -1427,6 +1431,7 @@ def initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2(homeoGenome, noH
         lightIntensity=lightIntensity)
 
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.noEvolvedUnits = 2
+initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.noUnits = 4
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.fitnessSign = 1
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.genomeSize = 8
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
@@ -1698,6 +1703,7 @@ def initializeBraiten3c_GA_continuous_weightfree_fixed(homeoGenome, noHomeoParam
         lightIntensity=lightIntensity)
 
 initializeBraiten3c_GA_continuous_weightfree_fixed.noEvolvedUnits = 2
+initializeBraiten3c_GA_continuous_weightfree_fixed.noUnits = 10
 initializeBraiten3c_GA_continuous_weightfree_fixed.fitnessSign = 1
 initializeBraiten3c_GA_continuous_weightfree_fixed.genomeSize = 10
 initializeBraiten3c_GA_continuous_weightfree_fixed.genomeLayout = 'weightfree_dt'
@@ -1718,6 +1724,7 @@ def initializeBraiten3c_GA_continuous_weightfree_open(homeoGenome, noHomeoParame
         lightIntensity=lightIntensity)
 
 initializeBraiten3c_GA_continuous_weightfree_open.noEvolvedUnits = 2
+initializeBraiten3c_GA_continuous_weightfree_open.noUnits = 10
 initializeBraiten3c_GA_continuous_weightfree_open.fitnessSign = 1
 initializeBraiten3c_GA_continuous_weightfree_open.genomeSize = 10
 initializeBraiten3c_GA_continuous_weightfree_open.genomeLayout = 'weightfree_dt'
@@ -1738,6 +1745,7 @@ def initializeBraiten3c_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoPa
         lightIntensity=lightIntensity)
 
 initializeBraiten3c_GA_continuous_weightfree_fixed_v2.noEvolvedUnits = 2
+initializeBraiten3c_GA_continuous_weightfree_fixed_v2.noUnits = 10
 initializeBraiten3c_GA_continuous_weightfree_fixed_v2.fitnessSign = 1
 initializeBraiten3c_GA_continuous_weightfree_fixed_v2.genomeSize = 8
 initializeBraiten3c_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
@@ -1758,6 +1766,7 @@ def initializeBraiten3c_GA_continuous_weightfree_open_v2(homeoGenome, noHomeoPar
         lightIntensity=lightIntensity)
 
 initializeBraiten3c_GA_continuous_weightfree_open_v2.noEvolvedUnits = 2
+initializeBraiten3c_GA_continuous_weightfree_open_v2.noUnits = 10
 initializeBraiten3c_GA_continuous_weightfree_open_v2.fitnessSign = 1
 initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeSize = 8
 initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeLayout = 'weightfree_v2'

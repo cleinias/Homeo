@@ -70,6 +70,19 @@ class GenomeDecoderRoundTripTest(unittest.TestCase):
             low, high = (0.25, 250) if layout == 'weightfree_v2' else (1, 10)
             self.assertTrue(all(low <= unit.mass <= high for unit in hom.homeoUnits[:evolved]))
 
+    def testUnitCountsMatchTheSetups(self):
+        "A GA setup's noUnits (6 when undeclared) is the number of units it builds"
+        names = [name for name in dir(HomeoExperiments) if name.startswith('initialize')
+                 and hasattr(getattr(HomeoExperiments, name), 'noEvolvedUnits')]
+        self.assertGreater(len(names), 15)
+        for name in names:
+            setup = getattr(HomeoExperiments, name)
+            size = getattr(setup, 'genomeSize', CLASSIC_GENOME_SIZE)
+            backend = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera')
+            hom = setup(np.random.uniform(0, 1, size), backendSimulator=backend,
+                        dataDir=self.dataDir)
+            self.assertEqual(getattr(setup, 'noUnits', 6), len(hom.homeoUnits), name)
+
     def testClassicDecoderMatchesTheSetups(self):
         "The uniselector interval is decoded as the whole number of ticks the unit uses"
         for name in CLASSIC_SETUPS:

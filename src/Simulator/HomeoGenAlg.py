@@ -325,12 +325,16 @@ class HomeoGASimulation(object):
             HomeoDebug.addDebugCodes(debugging)
     
         self.popSize = popSize
-        self.noUnits = noUnits
         exp_func = getattr(Simulator.HomeoExperiments, exp)
+        # The homeostat's units, sensor units included: the setup's own count
+        # where it declares one (the 2+2 direct vehicle 4, the 3c vehicle 10),
+        # else noUnits (6, the classic vehicle's).  Until 15 Oct 2026 every
+        # logbook recorded noUnits, 6 even for the 4-unit direct vehicle.
+        self.noUnits = getattr(exp_func, 'noUnits', noUnits)
         self.noEvolvedUnits = getattr(exp_func, 'noEvolvedUnits', noUnits)
         self.fitnessSign = getattr(exp_func, 'fitnessSign', 1)
         self.genomeSize = getattr(exp_func, 'genomeSize',
-                                   (self.noEvolvedUnits * essentParams) + (self.noEvolvedUnits * noUnits))
+                                   (self.noEvolvedUnits * essentParams) + (self.noEvolvedUnits * self.noUnits))
         # How the genes decode (Helpers.GenomeDecoder): recorded in the logbook,
         # since two layouts can have the same size (CU-11); None for classic
         self.genomeLayout = getattr(exp_func, 'genomeLayout', None)
