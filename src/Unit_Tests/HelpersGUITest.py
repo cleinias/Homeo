@@ -96,12 +96,19 @@ class TrajectoriesViewerImportTest(unittest.TestCase):
         from Helpers.TrajectoriesViewer import TrajectoryViewer
 
     def test_widget_instantiation(self):
-        """TrajectoryViewer widget can be instantiated."""
+        """TrajectoryViewer widget can be instantiated.  On an empty data
+        directory of its own: on the real one the result depended on the
+        developer's data, and an unreadable logbook there would open a
+        modal message box (HV-05)."""
+        from unittest import mock
         from Helpers.TrajectoriesViewer import TrajectoryViewer
 
-        viewer = TrajectoryViewer(appRef=app)
-        self.assertIsNotNone(viewer)
-        viewer.close()
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.dict(os.environ, {'HOMEO_DATA_DIR': tmp}):
+            viewer = TrajectoryViewer(appRef=app)
+            self.assertIsNotNone(viewer)
+            self.assertEqual(os.path.realpath(viewer._dirPath), os.path.realpath(tmp))
+            viewer.close()
 
 
 
