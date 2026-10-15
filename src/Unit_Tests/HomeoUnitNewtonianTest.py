@@ -36,18 +36,24 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         Test that the displacement of the needle of  Newtonian unit is computed
         according to Newtonian dynamics: s + v + 1/2ma (a free needle: without
         its self-connection, which acts as a spring; see
-        HomeoUnitNewtonianSpringTest)
+        HomeoUnitNewtonianSpringTest), without drag, from a moving needle
+        (the velocity used to stay 0: review finding CU-08).  With drag and
+        other timesteps: HomeoUnitNewtonianIntegratorTest.
         """
         self.unit.disactivateSelfConn()
-        self.unit.criticalDeviation = 0
-        for i in range(1000): 
-            torque = numpy.random.uniform(-1,1) 
+        self.unit.viscosity = 0
+        for i in range(1000):
+            torque = numpy.random.uniform(-1,1)
             self.unit.needleUnit.mass = numpy.random.uniform(1,10000)
+            self.unit.criticalDeviation = numpy.random.uniform(-5, 5)
+            self.unit.currentVelocity = numpy.random.uniform(-1, 1)
             oldDev = self.unit.criticalDeviation
             oldVelocity = self.unit.currentVelocity
-            self.unit.criticalDeviation = self.unit.newLinearNeedlePosition(torque)
+            newDev = self.unit.newLinearNeedlePosition(torque)
             "Check the computation is correct according to Newtonian dynamics"
-            self.assertTrue(self.unit.criticalDeviation == (oldDev  + oldVelocity + (1/2. * (torque/ self.unit.needleUnit.mass))))      
+            self.assertAlmostEqual(newDev, oldDev + oldVelocity + (1/2. * (torque / self.unit.needleUnit.mass)),
+                                   places=12)
+            self.assertEqual(self.unit.criticalDeviation, oldDev)
 
     def testComputeNextVelocityWithoutConnections(self):
         """
