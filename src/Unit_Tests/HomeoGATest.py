@@ -71,19 +71,35 @@ class GenomeDecoderTest(unittest.TestCase):
         """Genes 0, 0.5 and 1 decode to each parameter's documented minimum,
         midpoint and maximum: classic (mass, viscosity, uniselector interval,
         maxDeviation, then weights) and weight-free with dt_fast (mass,
-        viscosity, tau_a, maxDeviation, dt_fast)."""
+        viscosity, tau_a, maxDeviation, dt_fast, and the effective mass and
+        viscosity, mass / dt_fast**2 and viscosity / dt_fast)."""
         for gene, classic, weightfree in (
-                (0.0, [10, 0, 0, 0.1], [1, 0, 100, 0.1, 0.2]),
-                (0.5, [5005, 5, 500, 500.05], [5.5, 5, 1000, 500.05, 1.1]),
-                (1.0, [10000, 10, 1000, 1000], [10, 10, 10000, 1000, 2.0])):
+                (0.0, [10, 0, 0, 0.1], [1, 0, 100, 0.1, 0.2, 25, 0]),
+                (0.5, [5005, 5, 500, 500.05], [5.5, 5, 1000, 500.05, 1.1, 5.5 / 1.21, 5 / 1.1]),
+                (1.0, [10000, 10, 1000, 1000], [10, 10, 10000, 1000, 2.0, 2.5, 5])):
             with self.subTest(gene=gene):
                 decoded = genomeDecoder(2, [gene] * 12, layout='classic')
                 expected = classic * 2 + [2 * gene - 1] * 4
                 for value, want in zip(decoded, expected):
                     self.assertAlmostEqual(value, want, places=9)
                 decoded = genomeDecoder(2, [gene] * 10, layout='weightfree_dt')
+                self.assertEqual(len(decoded), 14)
                 for value, want in zip(decoded, weightfree * 2):
                     self.assertAlmostEqual(value, want, places=9)
+
+    def testGenomeDecoderV2Values(self):
+        """The _v2 layout: mass 0.25 -> 250 and viscosity 0.05 -> 50,
+        log-uniform; tau_a and maxDeviation as before (CU-11)"""
+        for gene, values in ((0.0, [0.25, 0.05, 100, 0.1]),
+                             (0.5, [0.25 * 1000 ** 0.5, 0.05 * 1000 ** 0.5, 1000, 500.05]),
+                             (1.0, [250, 50, 10000, 1000])):
+            with self.subTest(gene=gene):
+                decoded = genomeDecoder(2, [gene] * 8, layout='weightfree_v2')
+                for value, want in zip(decoded, values * 2):
+                    self.assertAlmostEqual(value, want, places=9)
+        # its size is the legacy 'weightfree' layout's: never guessed
+        from Helpers.GenomeDecoder import genomeLayout
+        self.assertEqual(genomeLayout(4, 8, 2), 'weightfree')
 
     def testGenomeDecoderConnectionWeights(self):
         """Decoded connection weights map (0,1) to (-1,1)"""
@@ -362,7 +378,9 @@ class GAGuiSeedTest(unittest.TestCase):
         gui.generationsSpinBox.setValue(1)
         gui.workersSpinBox.setValue(1)
         gui.experimentComboBox.setCurrentText(
-            "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt")
+            "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2")
+        self.assertEqual(gui.experimentComboBox.currentText(),
+                         "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2")
         gui.seedSpinBox.setValue(seed)
         gui._initializePopulation()
         self.assertEqual(gui.gaSimulation.randomSeed, seed)

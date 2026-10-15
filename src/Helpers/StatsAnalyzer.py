@@ -142,7 +142,9 @@ def _logbook_layout(logbook):
     """Extract genome layout info from logbook metadata record.
 
     Returns (noUnits, noEvolvedUnits, layout) where layout is one of
-    'classic', 'weightfree', or 'weightfree_dt'.
+    'classic', 'weightfree', 'weightfree_dt' or 'weightfree_v2': the one the
+    logbook records (since 15 Oct 2026), else read off the experiment's name
+    and the genome's size.
     Falls back to (6, 6, 'classic') for old logbooks without metadata.
     """
     # The metadata record is typically the last entry without a 'genome' key
@@ -160,7 +162,11 @@ def _logbook_layout(logbook):
     genomeSize = meta.get('genomeSize', None)
     exp_name = meta.get('exp', '')
 
+    if meta.get('genomeLayout'):
+        return noUnits, noEvolvedUnits, meta['genomeLayout']
     # Determine layout from experiment name or genome size
+    if exp_name.endswith('_v2'):
+        return noUnits, noEvolvedUnits, 'weightfree_v2'
     if 'weightfree' in exp_name:
         if genomeSize is not None and genomeSize == noEvolvedUnits * 4:
             return noUnits, noEvolvedUnits, 'weightfree'

@@ -945,10 +945,41 @@ initializeBraiten2_2_Full_GA_phototaxis_continuous.noEvolvedUnits = 4
 initializeBraiten2_2_Full_GA_phototaxis_continuous.fitnessSign = 1  # minimise distance
 
 
+# The genome layouts of the weight-free setups: genes per evolved unit, in
+# the order [mass, viscosity, tau_a, maxDeviation(, dt_fast)].
+#   'weightfree_v2'  the _v2 setups (since 15 Oct 2026): 4 genes; mass and
+#                    viscosity log-uniform (HomeoUnit.massFromGeneLog,
+#                    viscosityFromGeneLog), dt_fast 1
+#   'weightfree_dt'  legacy (the setups without _v2 or _fixed_dt): 5 genes;
+#                    mass in [1, 10], viscosity in [0, 10], linear, and
+#                    dt_fast in [0.2, 2] -- a rescaling of mass and
+#                    viscosity (review finding CU-11)
+#   'weightfree'     legacy (the _fixed_dt setups): 4 genes, linear, dt_fast 1
+# The legacy setups are kept to replay the genomes evolved with them.
+WEIGHTFREE_GENES_PER_UNIT = {'weightfree_v2': 4, 'weightfree_dt': 5, 'weightfree': 4}
+
+
+def _decodeWeightfreeUnits(units, homeoGenome, layout):
+    "Set the evolved units' mass, viscosity, maxDeviation (and dt_fast) from the genome"
+    perUnit = WEIGHTFREE_GENES_PER_UNIT[layout]
+    for i, unit in enumerate(units):
+        genes = homeoGenome[i * perUnit:(i + 1) * perUnit]
+        if layout == 'weightfree_v2':
+            unit.mass = HomeoUnit.massFromGeneLog(genes[0])
+            unit.viscosity = HomeoUnit.viscosityFromGeneLog(genes[1])
+        else:
+            unit.mass = HomeoUnit.massFromWeightWeightfree(genes[0])    # [1, 10]
+            unit.viscosity = HomeoUnit.viscosityfromWeight(genes[1])    # [0, 10]
+        # gene 2 = tau_a (applied after the uniselector swap)
+        unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(genes[3])
+        if layout == 'weightfree_dt':
+            unit.dt_fast = HomeoUnit.dtFastFromWeight(genes[4])
+
+
 def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
                                            dataDir=None, noNoise=False, noUnisel=False,
                                            topology='random',
-                                           evolve_dt_fast=True, eyes=True):
+                                           layout='weightfree_v2', eyes=True):
     '''Shared helper for the weight-free continuous (OU) GA experiments on a
     Braitenberg type-2 vehicle: with eyes (6 units: 2 motors, 2 eyes, 2
     sensor inputs; the _Full_GA_continuous_weightfree setups) or without
@@ -957,14 +988,10 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     the eyes.  (The two vehicles had two copies of this helper until 14 Oct
     2026: review finding SE-13.)
 
-    When evolve_dt_fast=True (default):
-        Genome: 5 genes per evolved unit (20 with eyes, 10 without).
-        Per-unit gene order: [mass, viscosity, tau_a, maxDeviation, dt_fast].
-
-    When evolve_dt_fast=False:
-        Genome: 4 genes per evolved unit (16 with eyes, 8 without).
-        Per-unit gene order: [mass, viscosity, tau_a, maxDeviation].
-        dt_fast is fixed at 1.0 for all units.
+    Genome: the genes of each evolved unit, in the layout given (see
+    WEIGHTFREE_GENES_PER_UNIT): 'weightfree_v2' (default), 4 genes per unit
+    (16 with eyes, 8 without), [mass, viscosity, tau_a, maxDeviation]; the
+    legacy 'weightfree_dt' (5 genes, with dt_fast) and 'weightfree' (4).
 
     Connection weights are NOT in the genome — they are initialised to small
     random values and evolved online by the OU process.  Without eyes the
@@ -1019,16 +1046,9 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     rightEyeSensorOnly = HomeoUnitInput(transducer=rightEyeSensorTransd)
 
     "2. Decode genome"
-    genes_per_unit = 5 if evolve_dt_fast else 4
+    genes_per_unit = WEIGHTFREE_GENES_PER_UNIT[layout]
     evolved_units = [leftMotor, rightMotor] + ([leftEye, rightEye] if eyes else [])
-    for i, unit in enumerate(evolved_units):
-        base = i * genes_per_unit
-        unit.mass = HomeoUnit.massFromWeightWeightfree(homeoGenome[base + 0])   # [1, 10]
-        unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
-        # gene 2 = tau_a (applied after uniselector swap below)
-        unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])
-        if evolve_dt_fast:
-            unit.dt_fast = HomeoUnit.dtFastFromWeight(homeoGenome[base + 4])
+    _decodeWeightfreeUnits(evolved_units, homeoGenome, layout)
 
     "3. Build fully-connected homeostat"
     hom.addFullyConnectedUnit(leftMotor)
@@ -1142,7 +1162,9 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
 def initializeBraiten2_2_Full_GA_continuous_weightfree(homeoGenome, noHomeoParameters=5,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         transducers=None):
-    '''Weight-free phototaxis GA experiment with continuous (OU) uniselectors.
+    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
+    evolved with it; new runs use initializeBraiten2_2_Full_GA_continuous_weightfree_v2.
+    Weight-free phototaxis GA experiment with continuous (OU) uniselectors.
     All connections between evolved units are active (random topology).
 
     Genome: 20 genes = 4 units x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
@@ -1151,17 +1173,20 @@ def initializeBraiten2_2_Full_GA_continuous_weightfree(homeoGenome, noHomeoParam
     '''
     return _setup_continuous_weightfree_homeostat(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='random')
+        noNoise=noNoise, noUnisel=noUnisel, topology='random', layout='weightfree_dt')
 
 initializeBraiten2_2_Full_GA_continuous_weightfree.noEvolvedUnits = 4
 initializeBraiten2_2_Full_GA_continuous_weightfree.fitnessSign = 1
 initializeBraiten2_2_Full_GA_continuous_weightfree.genomeSize = 20
+initializeBraiten2_2_Full_GA_continuous_weightfree.genomeLayout = 'weightfree_dt'
 
 
 def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed(homeoGenome, noHomeoParameters=5,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         transducers=None):
-    '''Weight-free phototaxis GA experiment with continuous (OU) uniselectors.
+    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
+    evolved with it; new runs use initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2.
+    Weight-free phototaxis GA experiment with continuous (OU) uniselectors.
     Fixed Braitenberg cross-wiring topology: Left Eye -> Right Motor,
     Right Eye -> Left Motor, Left Sensor -> Left Eye, Right Sensor -> Right Eye.
 
@@ -1171,17 +1196,20 @@ def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed(homeoGenome, noHome
     '''
     return _setup_continuous_weightfree_homeostat(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='fixed')
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_dt')
 
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.noEvolvedUnits = 4
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.fitnessSign = 1
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.genomeSize = 20
+initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.genomeLayout = 'weightfree_dt'
 
 
 def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt(homeoGenome, noHomeoParameters=4,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         transducers=None):
-    '''Weight-free phototaxis GA experiment with continuous (OU) uniselectors
+    '''Legacy (layout 'weightfree', mass and viscosity linear): kept to replay the genomes
+    evolved with it; new runs use initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2.
+    Weight-free phototaxis GA experiment with continuous (OU) uniselectors
     and fixed dt_fast = 1.0 (same integration timestep as Experiments 1-2).
     Fixed Braitenberg cross-wiring topology.
 
@@ -1192,11 +1220,52 @@ def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt(homeoGenome, noH
     '''
     return _setup_continuous_weightfree_homeostat(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', evolve_dt_fast=False)
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree')
 
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.noEvolvedUnits = 4
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.fitnessSign = 1
 initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.genomeSize = 16
+initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.genomeLayout = 'weightfree'
+
+
+def initializeBraiten2_2_Full_GA_continuous_weightfree_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Weight-free phototaxis GA experiment with continuous (OU) uniselectors
+    on the vehicle with eyes; all connections between evolved units active.
+
+    Genome: 16 genes = 4 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2': mass and viscosity log-uniform in [0.25, 250] and
+    [0.05, 50] (HomeoUnit.massFromGeneLog, viscosityFromGeneLog); dt_fast 1.
+    '''
+    return _setup_continuous_weightfree_homeostat(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='random', layout='weightfree_v2')
+
+initializeBraiten2_2_Full_GA_continuous_weightfree_v2.noEvolvedUnits = 4
+initializeBraiten2_2_Full_GA_continuous_weightfree_v2.fitnessSign = 1
+initializeBraiten2_2_Full_GA_continuous_weightfree_v2.genomeSize = 16
+initializeBraiten2_2_Full_GA_continuous_weightfree_v2.genomeLayout = 'weightfree_v2'
+
+
+def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Weight-free phototaxis GA experiment with continuous (OU) uniselectors
+    on the vehicle with eyes; fixed Braitenberg cross-wiring.
+
+    Genome: 16 genes = 4 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2': mass and viscosity log-uniform in [0.25, 250] and
+    [0.05, 50] (HomeoUnit.massFromGeneLog, viscosityFromGeneLog); dt_fast 1.
+    '''
+    return _setup_continuous_weightfree_homeostat(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_v2')
+
+initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2.noEvolvedUnits = 4
+initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2.fitnessSign = 1
+initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2.genomeSize = 16
+initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
 
 
 # ===============================================================
@@ -1210,65 +1279,114 @@ initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.genomeSize = 16
 def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
                                                   dataDir=None, noNoise=False, noUnisel=False,
                                                   topology='fixed',
-                                                  evolve_dt_fast=True):
+                                                  layout='weightfree_v2'):
     '''The weight-free continuous (OU) helper for the simplified 2+2 vehicle
     (no eye intermediaries): _setup_continuous_weightfree_homeostat with
     eyes=False.'''
     return _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
                                                   dataDir=dataDir, noNoise=noNoise,
                                                   noUnisel=noUnisel, topology=topology,
-                                                  evolve_dt_fast=evolve_dt_fast, eyes=False)
+                                                  layout=layout, eyes=False)
 
 
 def initializeBraiten2_direct_GA_continuous_weightfree(homeoGenome, noHomeoParameters=5,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         transducers=None):
-    '''Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors.
+    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
+    evolved with it; new runs use initializeBraiten2_direct_GA_continuous_weightfree_v2.
+    Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors.
     All connections on motor units are active (random topology).
 
     Genome: 10 genes = 2 units x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
     '''
     return _setup_continuous_weightfree_homeostat_direct(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='random')
+        noNoise=noNoise, noUnisel=noUnisel, topology='random', layout='weightfree_dt')
 
 initializeBraiten2_direct_GA_continuous_weightfree.noEvolvedUnits = 2
 initializeBraiten2_direct_GA_continuous_weightfree.fitnessSign = 1
 initializeBraiten2_direct_GA_continuous_weightfree.genomeSize = 10
+initializeBraiten2_direct_GA_continuous_weightfree.genomeLayout = 'weightfree_dt'
 
 
 def initializeBraiten2_direct_GA_continuous_weightfree_fixed(homeoGenome, noHomeoParameters=5,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         transducers=None):
-    '''Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors.
+    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
+    evolved with it; new runs use initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.
+    Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors.
     Fixed Braitenberg cross-wiring: Left Sensor -> Right Motor, Right Sensor -> Left Motor.
 
     Genome: 10 genes = 2 units x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
     '''
     return _setup_continuous_weightfree_homeostat_direct(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='fixed')
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_dt')
 
 initializeBraiten2_direct_GA_continuous_weightfree_fixed.noEvolvedUnits = 2
 initializeBraiten2_direct_GA_continuous_weightfree_fixed.fitnessSign = 1
 initializeBraiten2_direct_GA_continuous_weightfree_fixed.genomeSize = 10
+initializeBraiten2_direct_GA_continuous_weightfree_fixed.genomeLayout = 'weightfree_dt'
 
 
 def initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt(homeoGenome, noHomeoParameters=4,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         transducers=None):
-    '''Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors
+    '''Legacy (layout 'weightfree', mass and viscosity linear): kept to replay the genomes
+    evolved with it; new runs use initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.
+    Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors
     and fixed dt_fast = 1.0.  Fixed Braitenberg cross-wiring.
 
     Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation].
     '''
     return _setup_continuous_weightfree_homeostat_direct(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', evolve_dt_fast=False)
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree')
 
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.noEvolvedUnits = 2
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.fitnessSign = 1
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.genomeSize = 8
+initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.genomeLayout = 'weightfree'
+
+
+def initializeBraiten2_direct_GA_continuous_weightfree_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Weight-free 2+2 direct phototaxis GA experiment with continuous (OU)
+    uniselectors; all connections on the motors active.
+
+    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2': mass and viscosity log-uniform in [0.25, 250] and
+    [0.05, 50] (HomeoUnit.massFromGeneLog, viscosityFromGeneLog); dt_fast 1.
+    '''
+    return _setup_continuous_weightfree_homeostat_direct(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='random', layout='weightfree_v2')
+
+initializeBraiten2_direct_GA_continuous_weightfree_v2.noEvolvedUnits = 2
+initializeBraiten2_direct_GA_continuous_weightfree_v2.fitnessSign = 1
+initializeBraiten2_direct_GA_continuous_weightfree_v2.genomeSize = 8
+initializeBraiten2_direct_GA_continuous_weightfree_v2.genomeLayout = 'weightfree_v2'
+
+
+def initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Weight-free 2+2 direct phototaxis GA experiment with continuous (OU)
+    uniselectors; fixed Braitenberg cross-wiring.
+
+    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2': mass and viscosity log-uniform in [0.25, 250] and
+    [0.05, 50] (HomeoUnit.massFromGeneLog, viscosityFromGeneLog); dt_fast 1.
+    '''
+    return _setup_continuous_weightfree_homeostat_direct(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_v2')
+
+initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.noEvolvedUnits = 2
+initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.fitnessSign = 1
+initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.genomeSize = 8
+initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
 
 
 #===============================================================================
@@ -1346,15 +1464,14 @@ def braiten3cTransducers(backendSimulator, world):
 def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
                                     dataDir=None, noNoise=False, noUnisel=False,
                                     topology='fixed',
-                                    evolve_dt_fast=True):
+                                    layout='weightfree_v2'):
     '''Setup a 10-unit homeostat for Braitenberg Vehicle 3c (multi-quality).
 
     2 motor units (evolved via genome) + 8 sensor input units (pure transducers).
 
-    When evolve_dt_fast=True:
-        Genome: 10 genes = 2 motors x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
-    When evolve_dt_fast=False:
-        Genome: 8 genes = 2 motors x 4 params [mass, viscosity, tau_a, maxDeviation].
+    Genome: the 2 motors' genes in the layout given (see
+    WEIGHTFREE_GENES_PER_UNIT): 'weightfree_v2' (default), 8 genes = 2 x
+    [mass, viscosity, tau_a, maxDeviation]; the legacy 'weightfree_dt', 10.
 
     Connection weights are NOT in the genome — they are initialised to small
     random values and evolved online by the OU process.
@@ -1395,16 +1512,9 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
     rightOrg   = HomeoUnitInput(transducer=transducers["rightOrgTransd"])
 
     "2. Decode genome — only motor units are evolved"
-    genes_per_unit = 5 if evolve_dt_fast else 4
+    genes_per_unit = WEIGHTFREE_GENES_PER_UNIT[layout]
     evolved_units = [leftMotor, rightMotor]
-    for i, unit in enumerate(evolved_units):
-        base = i * genes_per_unit
-        unit.mass = HomeoUnit.massFromWeightWeightfree(homeoGenome[base + 0])   # [1, 10]
-        unit.viscosity = HomeoUnit.viscosityfromWeight(homeoGenome[base + 1])
-        # gene 2 = tau_a (applied after uniselector swap below)
-        unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(homeoGenome[base + 3])
-        if evolve_dt_fast:
-            unit.dt_fast = HomeoUnit.dtFastFromWeight(homeoGenome[base + 4])
+    _decodeWeightfreeUnits(evolved_units, homeoGenome, layout)
 
     "3. Build fully-connected homeostat"
     all_units = [leftMotor, rightMotor,
@@ -1535,33 +1645,77 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
 def initializeBraiten3c_GA_continuous_weightfree_fixed(homeoGenome, noHomeoParameters=5,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         transducers=None):
-    '''Braitenberg Vehicle 3c with fixed Braitenberg wiring and variable dt_fast.
+    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
+    evolved with it; new runs use initializeBraiten3c_GA_continuous_weightfree_fixed_v2.
+    Braitenberg Vehicle 3c with fixed Braitenberg wiring and variable dt_fast.
 
     Genome: 10 genes = 2 motors x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
     '''
     return _setup_braitenberg_3c_homeostat(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', evolve_dt_fast=True)
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_dt')
 
 initializeBraiten3c_GA_continuous_weightfree_fixed.noEvolvedUnits = 2
 initializeBraiten3c_GA_continuous_weightfree_fixed.fitnessSign = 1
 initializeBraiten3c_GA_continuous_weightfree_fixed.genomeSize = 10
+initializeBraiten3c_GA_continuous_weightfree_fixed.genomeLayout = 'weightfree_dt'
 
 
 def initializeBraiten3c_GA_continuous_weightfree_open(homeoGenome, noHomeoParameters=5,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         transducers=None):
-    '''Braitenberg Vehicle 3c with open topology (all 16 sensor->motor connections).
+    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
+    evolved with it; new runs use initializeBraiten3c_GA_continuous_weightfree_open_v2.
+    Braitenberg Vehicle 3c with open topology (all 16 sensor->motor connections).
 
     Genome: 10 genes = 2 motors x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
     '''
     return _setup_braitenberg_3c_homeostat(
         homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='open', evolve_dt_fast=True)
+        noNoise=noNoise, noUnisel=noUnisel, topology='open', layout='weightfree_dt')
 
 initializeBraiten3c_GA_continuous_weightfree_open.noEvolvedUnits = 2
 initializeBraiten3c_GA_continuous_weightfree_open.fitnessSign = 1
 initializeBraiten3c_GA_continuous_weightfree_open.genomeSize = 10
+initializeBraiten3c_GA_continuous_weightfree_open.genomeLayout = 'weightfree_dt'
+
+
+def initializeBraiten3c_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Braitenberg Vehicle 3c with fixed Braitenberg wiring.
+
+    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2': mass and viscosity log-uniform in [0.25, 250] and
+    [0.05, 50] (HomeoUnit.massFromGeneLog, viscosityFromGeneLog); dt_fast 1.
+    '''
+    return _setup_braitenberg_3c_homeostat(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_v2')
+
+initializeBraiten3c_GA_continuous_weightfree_fixed_v2.noEvolvedUnits = 2
+initializeBraiten3c_GA_continuous_weightfree_fixed_v2.fitnessSign = 1
+initializeBraiten3c_GA_continuous_weightfree_fixed_v2.genomeSize = 8
+initializeBraiten3c_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
+
+
+def initializeBraiten3c_GA_continuous_weightfree_open_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        transducers=None):
+    '''Braitenberg Vehicle 3c with open topology (all 16 sensor->motor connections).
+
+    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2': mass and viscosity log-uniform in [0.25, 250] and
+    [0.05, 50] (HomeoUnit.massFromGeneLog, viscosityFromGeneLog); dt_fast 1.
+    '''
+    return _setup_braitenberg_3c_homeostat(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='open', layout='weightfree_v2')
+
+initializeBraiten3c_GA_continuous_weightfree_open_v2.noEvolvedUnits = 2
+initializeBraiten3c_GA_continuous_weightfree_open_v2.fitnessSign = 1
+initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeSize = 8
+initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeLayout = 'weightfree_v2'
 
 
 # ===============================================================

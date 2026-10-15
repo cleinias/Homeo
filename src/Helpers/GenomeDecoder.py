@@ -96,23 +96,29 @@ def classicConnectionLabels(noUnits, noEvolvedUnits):
     return ['W-%d-from-%d' % pair for pair in classicConnectionSources(noUnits, noEvolvedUnits)]
 
 
-GENOME_LAYOUTS = ('classic', 'weightfree', 'weightfree_dt')
+GENOME_LAYOUTS = ('classic', 'weightfree', 'weightfree_dt', 'weightfree_v2')
+# The layouts a genome's size identifies.  'weightfree_v2' has the size of
+# 'weightfree' and must be named: GA logbooks record it ('genomeLayout').
+SIZED_LAYOUTS = ('classic', 'weightfree', 'weightfree_dt')
 
 
 def genomeSize(noUnits, noEvolvedUnits, layout):
     "The number of genes of a layout (see genomeDecoder)."
     return {'classic': noEvolvedUnits * 4 + noEvolvedUnits * noUnits,
             'weightfree': noEvolvedUnits * 4,
-            'weightfree_dt': noEvolvedUnits * 5}[layout]
+            'weightfree_dt': noEvolvedUnits * 5,
+            'weightfree_v2': noEvolvedUnits * 4}[layout]
 
 
 def genomeLayout(noUnits, length, noEvolvedUnits=None):
     """The layout of a genome of this length.  A length that matches no
     layout is an error: until 14 Oct 2026 it was read as classic, silently
-    dropping extra genes (HN-11)."""
+    dropping extra genes (HN-11).  A weight-free genome of 4 genes per unit
+    is taken as the legacy 'weightfree': a 'weightfree_v2' genome, of the
+    same size, must be decoded with its layout named."""
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
-    for layout in GENOME_LAYOUTS:
+    for layout in SIZED_LAYOUTS:
         if length == genomeSize(noUnits, noEvolvedUnits, layout):
             return layout
     raise ValueError('a genome of %d genes matches no layout for %d units, %d evolved'
@@ -122,12 +128,12 @@ def genomeLayout(noUnits, length, noEvolvedUnits=None):
 def genomeHeaders(noUnits, noEvolvedUnits, layout=None):
     "Column labels of a decoded genome in this layout (None: classic)."
     headers = []
-    if layout in ('weightfree', 'weightfree_dt'):
+    if layout in ('weightfree', 'weightfree_dt', 'weightfree_v2'):
         for unit in range(noEvolvedUnits):
             u = 'U' + str(unit + 1)
             headers += [u + '-mass', u + '-visc', u + '-tau_a', u + '-maxDev']
             if layout == 'weightfree_dt':
-                headers.append(u + '-dt_fast')
+                headers += [u + '-dt_fast', u + '-mass_eff', u + '-visc_eff']
     else:
         for unit in range(noEvolvedUnits):
             u = 'U' + str(unit + 1)
@@ -154,7 +160,11 @@ def genomeDecoder(noUnits, genome, noEvolvedUnits=None, layout=None):
         Genome layout identifier:
         - None or 'classic'  : 4 body params + connection weights (old GA)
         - 'weightfree'       : 4 body params per unit, no connection weights
-        - 'weightfree_dt'    : 5 body params per unit (incl. dt_fast), no weights
+        - 'weightfree_dt'    : 5 body params per unit (incl. dt_fast), no weights;
+                               decoded with two more values per unit, the
+                               effective mass and viscosity (see _decode_weightfree)
+        - 'weightfree_v2'    : 4 body params per unit, mass and viscosity
+                               log-uniform; never detected from the size
 
         When layout is None, the function detects it from the genome's size
         (genomeLayout); a size that matches no layout, or a genome of the
@@ -176,7 +186,7 @@ def genomeDecoder(noUnits, genome, noEvolvedUnits=None, layout=None):
 
     if layout == 'classic':
         return _decode_classic(noUnits, genome, noEvolvedUnits)
-    return _decode_weightfree(genome, noEvolvedUnits, has_dt_fast=(layout == 'weightfree_dt'))
+    return _decode_weightfree(genome, noEvolvedUnits, layout)
 
 
 def _decode_classic(noUnits, genome, noEvolvedUnits):
@@ -196,22 +206,33 @@ def _decode_classic(noUnits, genome, noEvolvedUnits):
     return decodedValues
 
 
-def _decode_weightfree(genome, noEvolvedUnits, has_dt_fast=True):
-    """Weight-free layout: body params only, no connection weights.
+def _decode_weightfree(genome, noEvolvedUnits, layout='weightfree_dt'):
+    """Weight-free layouts: body params only, no connection weights.
 
     Per-unit gene order: [mass, viscosity, tau_a, maxDeviation, (dt_fast)],
-    decoded as the weight-free setups in Simulator/HomeoExperiments.py do.
+    decoded as the weight-free setups in Simulator/HomeoExperiments.py do
+    (_decodeWeightfreeUnits).  'weightfree_dt' adds, after dt_fast, the
+    unit's effective mass and viscosity, mass / dt_fast**2 and viscosity /
+    dt_fast: a needle with dt_fast 1 and these moves exactly as the evolved
+    one (review finding CU-11), so they, not the three genes, say what was
+    evolved, and compare with the 'weightfree_v2' setups' mass and viscosity.
     """
     decodedValues = []
-    genes_per_unit = 5 if has_dt_fast else 4
+    genes_per_unit = 5 if layout == 'weightfree_dt' else 4
     for unit in range(noEvolvedUnits):
         base = unit * genes_per_unit
-        decodedValues.append(HomeoUnit.massFromWeightWeightfree(genome[base + 0]))
-        decodedValues.append(HomeoUnit.viscosityfromWeight(genome[base + 1]))
-        decodedValues.append(HomeoUnit.tauAFromWeight(genome[base + 2]))
-        decodedValues.append(HomeoUnit.maxDeviationFromWeight(genome[base + 3]))
-        if has_dt_fast:
-            decodedValues.append(HomeoUnit.dtFastFromWeight(genome[base + 4]))
+        if layout == 'weightfree_v2':
+            mass = HomeoUnit.massFromGeneLog(genome[base + 0])
+            viscosity = HomeoUnit.viscosityFromGeneLog(genome[base + 1])
+        else:
+            mass = HomeoUnit.massFromWeightWeightfree(genome[base + 0])
+            viscosity = HomeoUnit.viscosityfromWeight(genome[base + 1])
+        decodedValues += [mass, viscosity,
+                          HomeoUnit.tauAFromWeight(genome[base + 2]),
+                          HomeoUnit.maxDeviationFromWeight(genome[base + 3])]
+        if layout == 'weightfree_dt':
+            dt = HomeoUnit.dtFastFromWeight(genome[base + 4])
+            decodedValues += [dt, mass / dt ** 2, viscosity / dt]
 
     return decodedValues
 
@@ -221,7 +242,7 @@ def genomePrettyPrinter(noUnits, decodedGenome, noEvolvedUnits=None, layout=None
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
 
-    if layout in ('weightfree_dt', 'weightfree'):
+    if layout in ('weightfree_dt', 'weightfree', 'weightfree_v2'):
         return _pretty_print_weightfree(decodedGenome, noEvolvedUnits, layout)
 
     # Classic layout
@@ -249,7 +270,7 @@ def genomePrettyPrinter(noUnits, decodedGenome, noEvolvedUnits=None, layout=None
 def _pretty_print_weightfree(decodedGenome, noEvolvedUnits, layout):
     """Pretty-print a weight-free decoded genome."""
     has_dt = (layout == 'weightfree_dt')
-    ppunit = 5 if has_dt else 4
+    ppunit = 7 if has_dt else 4
     outString = ''
     for unit in range(noEvolvedUnits):
         base = unit * ppunit
@@ -259,6 +280,8 @@ def _pretty_print_weightfree(decodedGenome, noEvolvedUnits, layout):
         outString += '\tmaxDev: %s' % round(decodedGenome[base + 3], 3)
         if has_dt:
             outString += '\tdt_fast: %s' % round(decodedGenome[base + 4], 3)
+            outString += '\t(effective mass: %s' % round(decodedGenome[base + 5], 3)
+            outString += '\tvisc: %s)' % round(decodedGenome[base + 6], 3)
         outString += '\n'
     outString += '(no connection weights in genome)\n'
     return outString

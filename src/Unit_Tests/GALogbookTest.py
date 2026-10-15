@@ -40,6 +40,9 @@ class GALogbookTest(unittest.TestCase):
             summaries = [r for r in logbook if 'finalIndivs' in r]
             self.assertEqual(len(summaries), 1)
             self.assertEqual(summaries[0]['finalPop'], 4)
+            # how the genes decode: 'weightfree' and 'weightfree_v2' have
+            # the same size (CU-11)
+            self.assertEqual(summaries[0]['genomeLayout'], 'weightfree')
 
 
 if __name__ == '__main__':

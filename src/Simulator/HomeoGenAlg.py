@@ -291,6 +291,9 @@ class HomeoGASimulation(object):
         self.fitnessSign = getattr(exp_func, 'fitnessSign', 1)
         self.genomeSize = getattr(exp_func, 'genomeSize',
                                    (self.noEvolvedUnits * essentParams) + (self.noEvolvedUnits * noUnits))
+        # How the genes decode (Helpers.GenomeDecoder): recorded in the logbook,
+        # since two layouts can have the same size (CU-11); None for classic
+        self.genomeLayout = getattr(exp_func, 'genomeLayout', None)
         self.stepsSize = stepsSize
         self.generSize = generSize
         self.experiment = exp
@@ -414,6 +417,7 @@ class HomeoGASimulation(object):
                             initPop=self.popSize,
                             generations=self.generSize,
                             genomeSize=self.genomeSize,
+                            genomeLayout=self.genomeLayout,
                             noEvolvedUnits=self.noEvolvedUnits,
                             noUnits=self.noUnits,
                             length=self.stepsSize,

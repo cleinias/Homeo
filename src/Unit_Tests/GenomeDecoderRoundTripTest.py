@@ -24,7 +24,10 @@ SETUPS = ['initializeBraiten2_2_Full_GA_continuous_weightfree',
           'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt',
           'initializeBraiten2_direct_GA_continuous_weightfree',
           'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
-          'initializeBraiten3c_GA_continuous_weightfree_fixed']
+          'initializeBraiten3c_GA_continuous_weightfree_fixed',
+          'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2',
+          'initializeBraiten2_direct_GA_continuous_weightfree_v2',
+          'initializeBraiten3c_GA_continuous_weightfree_open_v2']
 
 CLASSIC_SETUPS = ['initializeBraiten2_2_Full_GA',
                   'initializeBraiten2_2_Full_GA_phototaxis',
@@ -53,16 +56,19 @@ class GenomeDecoderRoundTripTest(unittest.TestCase):
             backend = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera')
             hom = setup(genome, backendSimulator=backend, dataDir=self.dataDir)
             evolved = setup.noEvolvedUnits
-            perUnit = setup.genomeSize // evolved
+            layout = setup.genomeLayout
             decoded = genomeDecoder(len(hom.homeoUnits), genome, noEvolvedUnits=evolved,
-                                    layout='weightfree_dt' if perUnit == 5 else 'weightfree')
+                                    layout=layout)
+            perUnit = len(decoded) // evolved
             for i, unit in enumerate(hom.homeoUnits[:evolved]):
                 actual = [unit.mass, unit.viscosity, unit.uniselector.tau_a, unit.maxDeviation]
-                if perUnit == 5:
-                    actual.append(unit.dt_fast)
+                if layout == 'weightfree_dt':
+                    actual += [unit.dt_fast, unit.mass / unit.dt_fast ** 2,
+                               unit.viscosity / unit.dt_fast]
                 np.testing.assert_allclose(decoded[i * perUnit:(i + 1) * perUnit], actual,
                                            rtol=1e-12, err_msg='%s, unit %s' % (name, unit.name))
-            self.assertTrue(all(1 <= unit.mass <= 10 for unit in hom.homeoUnits[:evolved]))
+            low, high = (0.25, 250) if layout == 'weightfree_v2' else (1, 10)
+            self.assertTrue(all(low <= unit.mass <= high for unit in hom.homeoUnits[:evolved]))
 
     def testClassicDecoderMatchesTheSetups(self):
         "The uniselector interval is decoded as the whole number of ticks the unit uses"

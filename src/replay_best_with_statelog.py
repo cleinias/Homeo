@@ -87,6 +87,21 @@ _EXP_FUNC_MAP = {
         'initializeBraiten3c_GA_continuous_weightfree_fixed',
     'initializeBraiten3c_GA_continuous_weightfree_open':
         'initializeBraiten3c_GA_continuous_weightfree_open',
+
+    # The weight-free setups since 15 Oct 2026 (log-uniform mass and
+    # viscosity, no dt_fast gene: review finding CU-11)
+    'initializeBraiten2_2_Full_GA_continuous_weightfree_v2':
+        'initializeBraiten2_2_Full_GA_continuous_weightfree_v2',
+    'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2':
+        'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2',
+    'initializeBraiten2_direct_GA_continuous_weightfree_v2':
+        'initializeBraiten2_direct_GA_continuous_weightfree_v2',
+    'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2':
+        'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
+    'initializeBraiten3c_GA_continuous_weightfree_fixed_v2':
+        'initializeBraiten3c_GA_continuous_weightfree_fixed_v2',
+    'initializeBraiten3c_GA_continuous_weightfree_open_v2':
+        'initializeBraiten3c_GA_continuous_weightfree_open_v2',
 }
 
 

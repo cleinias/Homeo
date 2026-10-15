@@ -194,6 +194,28 @@ class HomeoUnit(object):
         low, high = cls.weightfreeMassRange
         return low + massParam * (high - low)
 
+    # Mass and viscosity of the weight-free GA setups since 15 Oct 2026 (the
+    # _v2 setups): log-uniform over three decades each, covering what the
+    # earlier setups reached through their dt_fast gene (effective mass
+    # m / dt_fast**2 in [0.25, 250], viscosity c / dt_fast up to 50): review
+    # finding CU-11.
+    weightfreeMassRangeV2 = (0.25, 250.0)
+    weightfreeViscosityRangeV2 = (0.05, 50.0)
+
+    @classmethod
+    def massFromGeneLog(cls, param):
+        '''Map a GA gene in [0, 1) to mass in weightfreeMassRangeV2,
+        logarithmically: 0 -> 0.25, 0.5 -> 7.9, 1 -> 250.'''
+        low, high = cls.weightfreeMassRangeV2
+        return low * (high / low) ** param
+
+    @classmethod
+    def viscosityFromGeneLog(cls, param):
+        '''Map a GA gene in [0, 1) to viscosity in weightfreeViscosityRangeV2,
+        logarithmically: 0 -> 0.05, 0.5 -> 1.58, 1 -> 50.'''
+        low, high = cls.weightfreeViscosityRangeV2
+        return low * (high / low) ** param
+
     @classmethod
     def tauAFromWeight(cls, param):
         '''Map a GA gene in [0, 1) to tau_a in [100, 10000] logarithmically.
@@ -207,7 +229,8 @@ class HomeoUnit(object):
     @classmethod
     def dtFastFromWeight(cls, param):
         '''Map a GA gene in [0, 1) to dt_fast in [0.2, 2.0] linearly.
-        Maps: 0 -> 0.2, ~0.444 -> 1.0, 1 -> 2.0.'''
+        Maps: 0 -> 0.2, ~0.444 -> 1.0, 1 -> 2.0.  Legacy: only the setups
+        before 15 Oct 2026 evolved dt_fast (see HomeoUnitNewtonian).'''
         return 0.2 + param * 1.8
 
     #===========================================================================
