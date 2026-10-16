@@ -40,12 +40,14 @@ class HomeoUniselectorAshby(HomeoUniselector):
 
     def setDefaults(self):
         '''
-        Initializes the interval and the steps to default values. 
-        Notice that the lowerBound and upperBound are always 0 and 1, as per Ashby's implementation, 
-        because they represent the fraction of the input to reach the unit. 
-        They are set in the superclass's init method.
-        (see Design for a Brain sec 8/2, p. 102 (1960 ed.))
+        Initializes the interval and the steps to default values.
+        The values the uniselector produces are signed weights in [-1, 1]:
+        the fraction of the input that reaches the unit, and its polarity
+        (see Design for a Brain sec 8/2, p. 102 (1960 ed.)).  lowerBound and
+        upperBound are -1 and 1, always.
         '''
+        self._lowerBound = -1
+        self._upperBound = 1
         self._index = 0
         self._steps = 12
         self._unitsControlled = 10
@@ -57,7 +59,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
 
         
     def setLowerBound(self,aValue):
-        '''Do nothing. The lowerBound is always 0'''
+        '''Do nothing. The lowerBound is always -1'''
         pass
     
     def setUpperBound(self,aValue):
