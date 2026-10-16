@@ -50,5 +50,38 @@ class RunConcurrentlyTest(unittest.TestCase):
             self.assertIn('Detailed logs: %s' % os.path.abspath(log_dir), shown)
 
 
+
+class OrchestratorOptionsTest(unittest.TestCase):
+    '''The orchestrators read their options with argparse: values are
+    converted and checked, and an unknown option is refused.'''
+
+    def quietly(self, parse, argv):
+        with contextlib.redirect_stderr(io.StringIO()):
+            return parse(argv)
+
+    def testTheDirectVehicleGA(self):
+        import run_direct_vehicle_ga as R
+        a = R.parse_args(['--exp', '1', '--workers', '4', '--pop', '20', '--gen', '3',
+                          '--steps', '100', '--noise-scheme', 'genome',
+                          '--evals-per-individual', '2'])
+        self.assertEqual((a.exp, a.workers, a.pop, a.gen, a.steps, a.noise_scheme, a.evals),
+                         (1, 4, 20, 3, 100, 'genome', 2))
+        self.assertIsNone(R.parse_args([]).exp)
+        for argv in (['--pops', '20'], ['--noise-scheme', 'any'], ['--exp', '2'],
+                     ['--evals-per-individual', '0'], ['--steps', 'many']):
+            with self.subTest(argv=argv):
+                with self.assertRaises(SystemExit):
+                    self.quietly(R.parse_args, argv)
+
+    def testThePhototaxisComparison(self):
+        import run_phototaxis_comparison as R
+        a = R.parse_args(['--exp', '3', '--workers', '2'])
+        self.assertEqual((a.exp, a.workers), (3, 2))
+        for argv in (['--exp', '4'], ['--seed', '1']):
+            with self.subTest(argv=argv):
+                with self.assertRaises(SystemExit):
+                    self.quietly(R.parse_args, argv)
+
+
 if __name__ == '__main__':
     unittest.main()

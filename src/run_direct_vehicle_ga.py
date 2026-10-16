@@ -153,36 +153,32 @@ def orchestrate(pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
 # Main
 # ---------------------------------------------------------------------------
 
+def parse_args(argv=None):
+    "The command line's options (see the module docstring); unknown ones are refused."
+    import argparse
+    from Simulator.HomeoGenAlg import NOISE_SCHEMES
+    parser = argparse.ArgumentParser(
+        description='GA experiments for the 2+2 direct vehicle (see the module docstring).')
+    parser.add_argument('--exp', type=int, choices=[1],
+                        help='run this experiment in this process (default: orchestrate)')
+    parser.add_argument('--workers', type=int, default=3,
+                        help='GA worker processes with --exp (default 3)')
+    parser.add_argument('--pop', type=int, default=DEFAULT_POP_SIZE)
+    parser.add_argument('--gen', type=int, default=DEFAULT_GENERATIONS)
+    parser.add_argument('--steps', type=int, default=DEFAULT_STEPS)
+    parser.add_argument('--noise-scheme', choices=NOISE_SCHEMES, default=DEFAULT_NOISE_SCHEME)
+    parser.add_argument('--evals-per-individual', type=int, default=DEFAULT_EVALS,
+                        dest='evals')
+    args = parser.parse_args(argv)
+    if args.evals < 1:
+        parser.error('--evals-per-individual must be at least 1')
+    return args
+
+
 if __name__ == '__main__':
-    pop_size = DEFAULT_POP_SIZE
-    generations = DEFAULT_GENERATIONS
-    steps = DEFAULT_STEPS
-
-    if '--pop' in sys.argv:
-        pop_size = int(sys.argv[sys.argv.index('--pop') + 1])
-    if '--gen' in sys.argv:
-        generations = int(sys.argv[sys.argv.index('--gen') + 1])
-    if '--steps' in sys.argv:
-        steps = int(sys.argv[sys.argv.index('--steps') + 1])
-    noise_scheme = DEFAULT_NOISE_SCHEME
-    if '--noise-scheme' in sys.argv:
-        noise_scheme = sys.argv[sys.argv.index('--noise-scheme') + 1]
-        from Simulator.HomeoGenAlg import NOISE_SCHEMES
-        if noise_scheme not in NOISE_SCHEMES:
-            sys.exit("--noise-scheme must be one of %s, got %r"
-                     % (', '.join(NOISE_SCHEMES), noise_scheme))
-
-    evals = DEFAULT_EVALS
-    if '--evals-per-individual' in sys.argv:
-        evals = int(sys.argv[sys.argv.index('--evals-per-individual') + 1])
-        if evals < 1:
-            sys.exit("--evals-per-individual must be at least 1")
-
-    if '--exp' in sys.argv:
-        exp_num = int(sys.argv[sys.argv.index('--exp') + 1])
-        workers = 3
-        if '--workers' in sys.argv:
-            workers = int(sys.argv[sys.argv.index('--workers') + 1])
-        run_single(exp_num, workers, pop_size, generations, steps, noise_scheme, evals)
+    args = parse_args()
+    if args.exp is not None:
+        run_single(args.exp, args.workers, args.pop, args.gen, args.steps, args.noise_scheme,
+                   args.evals)
     else:
-        orchestrate(pop_size, generations, steps, noise_scheme, evals)
+        orchestrate(args.pop, args.gen, args.steps, args.noise_scheme, args.evals)

@@ -24,7 +24,7 @@ import time
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ---------------------------------------------------------------------------
-# Single-experiment runners (called in subprocess via --exp N)no
+# Single-experiment runners (called in subprocess via --exp N)
 # ---------------------------------------------------------------------------
 
 def run_exp1():
@@ -144,12 +144,21 @@ def orchestrate():
 # Main
 # ---------------------------------------------------------------------------
 
+def parse_args(argv=None):
+    "The command line's options (see the module docstring); unknown ones are refused."
+    import argparse
+    parser = argparse.ArgumentParser(
+        description='The three phototaxis experiments (see the module docstring).')
+    parser.add_argument('--exp', type=int, choices=[1, 2, 3],
+                        help='run this experiment in this process (default: orchestrate)')
+    parser.add_argument('--workers', type=int, default=3,
+                        help='GA worker processes for experiment 3 (default 3)')
+    return parser.parse_args(argv)
+
+
 if __name__ == '__main__':
-    if '--exp' in sys.argv:
-        exp_num = int(sys.argv[sys.argv.index('--exp') + 1])
-        workers = 3
-        if '--workers' in sys.argv:
-            workers = int(sys.argv[sys.argv.index('--workers') + 1])
-        run_single(exp_num, workers)
+    args = parse_args()
+    if args.exp is not None:
+        run_single(args.exp, args.workers)
     else:
         orchestrate()
