@@ -1,8 +1,4 @@
 '''
-Created on Apr 24, 2013
-Updated for PyQt5: Feb 2026
-Headless fallback without PyQt5: Oct 2026
-
 @author: Tom Dossis (original), Stefano Franchi (PyQt5 port)
 
 Provides a SignalHub QObject that declares all signals used by non-QObject

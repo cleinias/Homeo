@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 '''
-Created on Jan 2, 2015
-
 A small GUI utilities that allows the visualization of
 trajectory files and, if present, basic GA simulation data 
 from the related DEAP logbook
@@ -19,8 +17,8 @@ import os
 from glob import glob
 from sys import stderr
 import dill
-sys.modules['dill.dill'] = dill._dill  # old logbooks were pickled with dill.dill, renamed to dill._dill
-# Old logbooks were pickled under Python 2 which had types like ListType, DictType, etc.
+sys.modules['dill.dill'] = dill._dill  # logbooks pickled with dill.dill, which dill 0.4 renamed dill._dill
+# Logbooks pickled under Python 2 refer to types like ListType, DictType, etc.
 # Register them so dill can deserialize those references.
 for _name, _type in [('ListType', list), ('DictType', dict), ('TupleType', tuple),
                      ('StringType', str), ('IntType', int), ('FloatType', float),
@@ -295,9 +293,8 @@ class TrajectoryViewer(QWidget):
            The refresh timer calls this every second: the file is read again
            only when it changes (path, modification time or size), and one
            that cannot be read -- e.g. a GA still writing it -- is reported
-           once per version, whatever the error.  It used to be unpickled
-           every second, and any error other than IOError escaped the Qt slot
-           and aborted the viewer (review finding HV-04)."""
+           once per version, whatever the error, so that no error escapes
+           the Qt slot and aborts the viewer."""
         if self._currentLogbookName == "NO LOGBOOKS PRESENT":
             self._currentLogbook = None
             self._logbookVersion = None
@@ -367,9 +364,9 @@ class TrajectoryViewer(QWidget):
                                            noUnits=meta_noUnits,
                                            noEvolvedUnits=meta_noEvolved,
                                            layout=layout)
-            # Filled in place: a new widget lost the row-selection slots
+            # Filled in place: a new widget would lose the row-selection slots
             # connectSlot made.  Numbers are stored as numbers, so the table
-            # sorts them as such; as text, 10.2 came before 2.5 (HV-03).
+            # sorts them as such; as text, 10.2 would come before 2.5.
             # Sorting is off while filling, or rows move under setItem.
             self.hofWidget.setSortingEnabled(False)
             self.hofWidget.clear()

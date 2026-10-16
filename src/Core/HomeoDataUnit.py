@@ -1,6 +1,4 @@
 '''
-Created on Mar 13, 2013
-
 @author: stefano
 '''
 
@@ -31,7 +29,7 @@ class HomeoDataUnit(object):
                                                  weights it drew.  Every per-tick record follows this
                                                  convention: row t is the state after t updates.
                                                  The continuous (OU) uniselector, whose weights drift every
-                                                 tick, never fires: its flag is always 0 (review finding CD-12).
+                                                 tick, never fires: its flag is always 0.
     '''
 
 #===============================================================================

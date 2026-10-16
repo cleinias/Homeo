@@ -1,6 +1,4 @@
 '''
-Created on Feb 21, 2013
-
 @author: stefano
 '''
 from  numpy import pi

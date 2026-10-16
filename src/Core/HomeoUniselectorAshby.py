@@ -1,6 +1,4 @@
 '''
-Created on Mar 18, 2013
-
 @author: stefano
 '''
 from Core.HomeoUniselector import  *
@@ -69,8 +67,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
     def setSteps(self, aValue):
         '''
         steps is always a positive integer > 0.  The matrix is rebuilt with
-        2 * steps + 1 rows, and the switch's position wraps into it (review
-        finding CD-16: the matrix kept its 25 rows).'''
+        2 * steps + 1 rows, and the switch's position wraps into it.'''
         if int(abs(aValue)) == 0:
             self._steps = 1
         else:
@@ -91,7 +88,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
     def setAshbyKind(self,aString):
         '''
         Set the kind of matrix by its name, through the method that
-        sets it (review finding CD-16: assignments were ignored).'''
+        sets it.'''
         if aString not in self.KINDS:
             raise HomeoUniselectorError('ashbyKind must be one of %s, not %r'
                                         % (sorted(self.KINDS), aString))
@@ -158,8 +155,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
     def produceEquallySpacedValues(self):
         ''' Produce a m x n Matrix, where m = number of equally spaced values
          (default = 25), n = maximum number of units controlled by the Uniselector.
-         Every column is a shuffle of the same equally spaced values (review
-         finding CD-11: the first column used to be the unshuffled ramp).'''
+         Every column is a shuffle of the same equally spaced values.'''
 
         base = np.linspace(-1,1,(self._steps * 2) + 1)
         return np.column_stack([np.random.permutation(base)
@@ -188,8 +184,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
         Initializing the uniselector with produceIndependentRandomized Sequence, 
         on the other hand, produces a matrix in which all columns have (a highly likelihood of being)
         completely different values.
-        One column per unit controlled, each a shuffle of the values (review
-        finding CD-11: an extra, unshuffled first column used to come first).'''
+        One column per unit controlled, each a shuffle of the values.'''
 
         base = np.random.uniform(- self._upperBound, self._upperBound,(self._steps * 2) +1)
         return np.column_stack([np.random.permutation(base)
@@ -212,8 +207,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
     def produceNewValue(self):
         '''Return the weight, at the switch's current position, for the next
         connection and advance the unitIndex.  The position is the matrix's
-        row _index, counted from 0 (review finding CD-02: the Smalltalk
-        original counts from 1, and the port read row _index - 1).'''
+        row _index, counted from 0 (the Smalltalk original counts from 1).'''
         if self._unitIndex < self._matrix.shape[1]:
             if self._beeps:
                 # FIXME will need to put a beep here

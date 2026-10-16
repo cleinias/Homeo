@@ -1,6 +1,4 @@
 '''
-Created on Mar 13, 2013
-
 @author: stefano
 '''
 import pickle, sys, datetime
@@ -53,8 +51,7 @@ class HomeoDataCollector(object):
     def readFrom(self, aFilename):
         '''Create a new DataCollector instance from a file containing
            a saved instance object.  The file is a pickle, and unpickling
-           can run arbitrary code: read only files you saved yourself (review
-           finding CD-18).'''
+           can run arbitrary code: read only files you saved yourself.'''
 
         with open(aFilename, 'rb') as fileIn:
             return pickle.Unpickler(fileIn).load()
@@ -126,8 +123,8 @@ class HomeoDataCollector(object):
 
     def printEssentialDataOnAString(self, aString):
         '''Append to aString a brief representation of its data: one line
-           per tick and unit, labelled with the tick (until 14 Oct 2026 with a
-           count from 0, wrong when collection began later; CD-15)'''
+           per tick and unit, labelled with the tick, which need not start
+           at 0'''
         for state in self.states:
             if self.states[state] is not None:
                 for key,value in self.states[state].items():
@@ -156,8 +153,8 @@ class HomeoDataCollector(object):
         if len(self.states) == 0:
             sys.stderr.write("DataCollector: There are no data to save\n")
             return aString
-        # The first recorded tick, which need not be 0 (CD-15: collection
-        # started after a flushData raised KeyError here)
+        # The first recorded tick, which need not be 0 (collection may start
+        # after a flushData)
         for index, dataUnit in self.states[min(self.states)].items():
             unitNames.append(dataUnit.name)
         
@@ -232,10 +229,9 @@ class HomeoDataCollector(object):
     def criticalDevAsNPArrayForAllUnits(self):
         '''The critical deviations of all units as a (ticks, units) NumPy
            array, one row per recorded tick and one column per unit, in the
-           order the units were recorded (the homeostat's).  Until 14 Oct 2026
-           it returned criticalDevAsCollectionOfArraysForAllUnits as an array,
-           each deviation column followed by a 0/1 uniselector column, although
-           CODE_OVERVIEW called it the deviation history (CD-14).'''
+           order the units were recorded (the homeostat's).  For the
+           deviations interleaved with 0/1 uniselector columns, see
+           criticalDevAsCollectionOfArraysForAllUnits.'''
 
         return np.array([[dataUnit.criticalDeviation for dataUnit in data.values()]
                          for data in self.states.values() if data is not None])

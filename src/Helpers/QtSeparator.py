@@ -1,6 +1,4 @@
 '''
-Created on May 5, 2013
-
 @author: mnijph
 from http://code.google.com/p/kyui/source/browse/trunk/src/Widgets/separator.pyw?r=182
 '''
@@ -17,9 +15,7 @@ class Separator(QFrame):
     """
     def __init__(self, *args, **kwargs):
         """Separator(), Separator(parent), Separator(orientation, parent), or
-        the keywords orientation and parent; other keywords go to QFrame.
-        (The positional forms used to fail: one argument read args[1], two
-        skipped QFrame's constructor: review finding HV-13.)"""
+        the keywords orientation and parent; other keywords go to QFrame."""
         orient = kwargs.pop('orientation', Qt.Horizontal)
         parent = kwargs.pop('parent', None)
         if len(args) == 2:

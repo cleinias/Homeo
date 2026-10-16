@@ -1,6 +1,4 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
 Run several experiments as concurrent subprocesses, each logging to its own

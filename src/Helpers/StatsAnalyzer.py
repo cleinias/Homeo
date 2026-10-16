@@ -1,6 +1,4 @@
 '''
-Created on Jan 4, 2015
-
 Functions that read the logbook produced by a DEAP GA simulation
 and provide info, stats, and charts about the GA run
 
@@ -14,10 +12,10 @@ import os
 
 from Helpers.General_Helper_Functions import simulations_data_dir
 
-# Old logbook/history files were pickled with Python 2 + dill <= 0.3.x.
-# Two compatibility shims are needed:
+# Logbook/history files pickled with Python 2 + dill <= 0.3.x need two
+# compatibility shims:
 #   1. dill 0.4.x renamed 'dill.dill' to 'dill._dill'
-#   2. Python 2 type names (ListType, DictType, etc.) no longer exist
+#   2. Python 2 type names (ListType, DictType, etc.) do not exist in Python 3
 try:
     import dill
     import dill._dill
@@ -144,9 +142,9 @@ def _logbook_layout(logbook):
 
     Returns (noUnits, noEvolvedUnits, layout) where layout is one of
     'classic', 'weightfree', 'weightfree_dt' or 'weightfree_v2': the one the
-    logbook records (since 15 Oct 2026), else read off the experiment's name
-    and the genome's size.
-    Falls back to (6, 6, 'classic') for old logbooks without metadata.
+    logbook records, else read off the experiment's name and the genome's
+    size.
+    Falls back to (6, 6, 'classic') for a logbook without metadata.
     """
     # The metadata record is typically the last entry without a 'genome' key
     meta = None
@@ -156,7 +154,7 @@ def _logbook_layout(logbook):
             break
 
     if meta is None:
-        return 6, 6, None   # old logbook, classic layout
+        return 6, 6, None   # no metadata: classic layout
 
     noUnits = meta.get('noUnits', 6)
     noEvolvedUnits = meta.get('noEvolvedUnits', noUnits)
@@ -182,7 +180,8 @@ def indivsDecodedFromLogbook(logbook, noUnits=None, noEvolvedUnits=None):
     with associated fitnesses and individual's name of form #gen-#.
 
     Automatically detects the genome layout from logbook metadata.
-    noUnits and noEvolvedUnits can be overridden for old logbooks."""
+    noUnits and noEvolvedUnits can be overridden for a logbook without
+    metadata."""
     meta_noUnits, meta_noEvolved, layout = _logbook_layout(logbook)
     if noUnits is None:
         noUnits = meta_noUnits
@@ -285,7 +284,7 @@ def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6, noEvolvedUnits=None,
        a sorted list (by fitness)
        of decoded individual genomes passed as a list of
        tuples with genome at [0], fitness at [1], and name at [2].
-       noEvolvedUnits defaults to noUnits for backward compatibility."""
+       noEvolvedUnits defaults to noUnits (every unit evolved)."""
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
 
@@ -301,7 +300,7 @@ def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6, noEvolvedUnits=None,
 def genomeAndFitnessPrettyPrinter(individuals, noUnits=6, noEvolvedUnits=None,
                                   layout=None):
     """Tabulate individuals with their headers.
-       noEvolvedUnits defaults to noUnits for backward compatibility."""
+       noEvolvedUnits defaults to noUnits (every unit evolved)."""
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
 
@@ -378,9 +377,7 @@ def saveGenomeToCSV(genome, filename):
 def areValueFilesIdentical(fileN1,fileN2):
     """Compare two files,  each containing a single
        column of floats. Return true iff all values are identical: an
-       unreadable file or files of different lengths are not identical.
-       (Until 14 Oct 2026 an unreadable file gave None, which the caller
-       counted as identical, and different lengths raised; HN-13.)"""
+       unreadable file or files of different lengths are not identical."""
     try:
         a = np.loadtxt(fileN1,  delimiter=',')
         b = np.loadtxt(fileN2,  delimiter=',')

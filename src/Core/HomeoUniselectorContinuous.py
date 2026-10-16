@@ -1,6 +1,4 @@
 '''
-Created on Feb 26, 2026
-
 @author: stefano
 
 Continuous stochastic uniselector: replaces Ashby's discrete stepping switch
@@ -102,8 +100,7 @@ class HomeoUniselectorContinuous(HomeoUniselector):
 
     def setLowerBound(self, value):
         '''The weights' range is symmetric about 0: a negative lower bound
-           sets the upper one to its opposite (review finding CD-16: any
-           bound was taken, upperBound = 5 gave (-1, 5)).'''
+           sets the upper one to its opposite.'''
         if not value < 0:
             raise HomeoUniselectorError('lowerBound must be negative, not %r' % value)
         self._lowerBound = value

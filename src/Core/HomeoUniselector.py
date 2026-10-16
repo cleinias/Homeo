@@ -1,6 +1,4 @@
 '''
-Created on Feb 19, 2013
-
 @author: stefano
 '''
 
@@ -73,9 +71,7 @@ class HomeoUniselector(object):
 
     def setBeeps(self, aBoolean):
         '''Whether the uniselector beeps when it fires.  Emits
-           uniselSoundChanged, the signal the GUI's checkbox listens to
-           (review finding CD-16: the setter raised, and toggling emitted
-           another signal).'''
+           uniselSoundChanged, the signal the GUI's checkbox listens to.'''
         self._beeps = bool(aBoolean)
         emitter(self).uniselSoundChanged.emit(self._beeps)
 

@@ -308,9 +308,9 @@ class HomeoConnection(object):
         
     
     def __setstate__(self, state):
-        '''Connections pickled before 14 Oct 2026 hold their outgoing unit
-           as 'outgoingUnit': a method of that name shadowed the property, so
-           assignments went to the instance dictionary (review finding CU-20).'''
+        '''A connection pickled with its outgoing unit under 'outgoingUnit',
+           in the instance dictionary, gets it moved to '_outgoingUnit', where
+           the property keeps it.'''
         if 'outgoingUnit' in state:
             state['_outgoingUnit'] = state.pop('outgoingUnit')
         self.__dict__.update(state)

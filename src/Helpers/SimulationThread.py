@@ -1,6 +1,4 @@
 '''
-Created on Apr 30, 2013
-
 @author: stefano
 '''
 

@@ -21,8 +21,6 @@ class HomeoUnitError(Exception):
 
 class HomeoUnit(object):
     '''
-    Created on Feb 19, 2013
-
     @author: stefano
 
     Homeo Unit is the fundamental element of a Homeostat.
@@ -129,9 +127,7 @@ class HomeoUnit(object):
     # name -> the live units that carry it.  A name is released only when the
     # last of them dies: a copy, or a unit unpickled while the original lives,
     # carries its original's name, and a dead unit from before clearNames()
-    # one a live unit has since taken; none of them may free it.  (Until
-    # 15 Oct 2026 the registry kept one owner per name, and a copy took the
-    # ownership over: deleting the copy freed the name of its live original.)
+    # one a live unit has since taken; none of them may free it.
     _nameHolders = {}
         
     #===========================================================================
@@ -206,11 +202,8 @@ class HomeoUnit(object):
         low, high = cls.weightfreeMassRange
         return low + massParam * (high - low)
 
-    # Mass and viscosity of the weight-free GA setups since 15 Oct 2026 (the
-    # _v2 setups): log-uniform over three decades each, covering what the
-    # earlier setups reached through their dt_fast gene (effective mass
-    # m / dt_fast**2 in [0.25, 250], viscosity c / dt_fast up to 50): review
-    # finding CU-11.
+    # Mass and viscosity of the weight-free GA setups (the _v2 setups):
+    # log-uniform over three decades each.
     weightfreeMassRangeV2 = (0.25, 250.0)
     weightfreeViscosityRangeV2 = (0.05, 50.0)
 
@@ -234,15 +227,15 @@ class HomeoUnit(object):
         tau_a = 100 * (100 ** param)
         Maps: 0 -> 100, 0.5 -> 1000, 1 -> 10000.
         tau_a is the timescale of the continuous uniselector's search (see
-        HomeoUniselectorContinuous); in its 'legacy' model, which all runs
-        before 12 Oct 2026 used, it had no effect on a stressed unit.'''
+        HomeoUniselectorContinuous).'''
         return 100.0 * (100.0 ** param)
 
     @classmethod
     def dtFastFromWeight(cls, param):
         '''Map a GA gene in [0, 1) to dt_fast in [0.2, 2.0] linearly.
-        Maps: 0 -> 0.2, ~0.444 -> 1.0, 1 -> 2.0.  Legacy: only the setups
-        before 15 Oct 2026 evolved dt_fast (see HomeoUnitNewtonian).'''
+        Maps: 0 -> 0.2, ~0.444 -> 1.0, 1 -> 2.0.  GenomeDecoder uses it to
+        decode the 'weightfree_dt' layout, which has a dt_fast gene (see
+        HomeoUnitNewtonian).'''
         return 0.2 + param * 1.8
 
     #===========================================================================
@@ -270,14 +263,13 @@ class HomeoUnit(object):
         (an instance of HomeoQtSimulation or by the graphic interface)
         '''
         self._showUniselectorAction = False
-        # A reset keeps the unit's mode (review finding CU-06)
+        # A reset keeps the unit's mode
         self._headless = getattr(self, '_headless', False)
         self._jit_dirty = True
         self._viscosity = HomeoUnit.DefaultParameters['viscosity']
         self._maxDeviation = HomeoUnit.DefaultParameters['maxDeviation']     #set the critical deviation at time 0 to 0."
-        # A unit's own copy: the class default was shared by every unit, so
-        # setting one unit's highRange or lowRange changed them all (review
-        # finding CU-15)
+        # A unit's own copy: were the class default shared by every unit,
+        # setting one unit's highRange or lowRange would change them all
         self._outputRange = dict(HomeoUnit.DefaultParameters['outputRange'])
         self._noise = HomeoUnit.DefaultParameters['noise']
         self._potentiometer = HomeoUnit.DefaultParameters['potentiometer']
@@ -320,8 +312,7 @@ class HomeoUnit(object):
         if getattr(self, '_inputConnections', None):
             self.potentiometer = HomeoUnit.DefaultParameters['potentiometer']
 
-        '''give a new unit a default name; a reset keeps the unit's name
-           (review finding CU-06: it renamed every unit)'''
+        '''give a new unit a default name; a reset keeps the unit's name'''
         if getattr(self, '_name', None) is None:
             self._name = None
             self.setDefaultName()
@@ -625,8 +616,7 @@ class HomeoUnit(object):
     NEEDLE_COMP_METHODS = ('linear', 'proportional', 'random')
 
     def setNeedleCompMethod(self, aString):
-        '''One of NEEDLE_COMP_METHODS.  Anything else used to switch the unit
-           silently to random needle positions (review finding CU-16).'''
+        '''One of NEEDLE_COMP_METHODS; anything else is refused.'''
         if aString not in self.NEEDLE_COMP_METHODS:
             raise ValueError('needleCompMethod must be one of %s, not %r'
                              % (self.NEEDLE_COMP_METHODS, aString))
@@ -739,7 +729,7 @@ class HomeoUnit(object):
     '''The output the other units read.  During a tick it is the output the
        unit had when the tick began (latchOutput, called by the Homeostat on
        every unit before any updates), so all the units advance together and
-       the order of homeoUnits does not matter (review finding CU-03).
+       the order of homeoUnits does not matter.
        Outside a tick (_latchedOutput None) it is the current output.'''
     _latchedOutput = None
 
@@ -1017,8 +1007,7 @@ class HomeoUnit(object):
         '''Reset the weight, switch, and noise of the connections from other
            units to random values (see HomeoConnection for details).
            The self connection, at position 0, is left alone: it stays manual,
-           with the weight the potentiometer and switch give it (review finding
-           CU-06: randomizing it put it under the uniselector).
+           with the weight the potentiometer and switch give it.
            Reset Input Torque to 0'''
 
         for conn in self._inputConnections[1:]:
@@ -1175,10 +1164,8 @@ class HomeoUnit(object):
         self.inputConnections.append(aNewConnection)
 
     def removeConnectionFromUnit(self, aHomeoUnit): 
-        '''Remove the connection(s) to self and originating from aHomeoUnit.
-           (Removing them while iterating over the list skipped the one after
-           each removed, leaving duplicates behind; and the headless arrays
-           were not rebuilt: review finding CU-18.)'''
+        '''Remove every connection to self originating from aHomeoUnit, and
+           mark the headless arrays for a rebuild.'''
 
         self._inputConnections[:] = [conn for conn in self._inputConnections
                                      if conn.incomingUnit != aHomeoUnit]
@@ -1221,9 +1208,7 @@ class HomeoUnit(object):
         self.switch = switchSign 
 
         '''The needle at a random deviation over its whole range, and the
-           output that deviation gives (review finding CU-04: the deviation
-           came from the output range, (-1, 1), and the output was a separate
-           draw from (0, 1)).'''
+           output that deviation gives.'''
         self._criticalDeviation = np.random.uniform(self.minDeviation, self.maxDeviation)
         self.computeOutput()
    
@@ -1292,9 +1277,7 @@ class HomeoUnit(object):
     def clearFutureValues(self):
         '''Set to 0 the internal values used for computing future states,
            set the output from the present deviation, and start the
-           uniselector afresh (review finding CU-06: the output was zeroed,
-           against the deviation, and the uniselector's timer and count
-           carried over)'''
+           uniselector afresh (its timer, flag and count at 0)'''
 
         self.nextDeviation = 0
         self.inputTorque = 0
@@ -1342,7 +1325,7 @@ class HomeoUnit(object):
             if isinstance(self.uniselector, HomeoUniselectorContinuous):
                 "Continuous mode: evolve weights at every timestep"
                 # An OU uniselector never fires: the flag stays 0, even after
-                # a discrete uniselector left it at 1 (review finding CD-12)
+                # a discrete uniselector left it at 1
                 self.uniselectorActivated = 0
                 stress = self.stressLevel()
                 if self._headless:
@@ -1644,8 +1627,7 @@ class HomeoUnit(object):
            The noise is HomeoNoise.unitNoise (_jit_unit_noise headless).'''
 
         if self._headless:
-            # Clipped at the stops, as the Python path's setter does (review
-            # finding CU-09).
+            # Clipped at the stops, as the Python path's setter does.
             self._criticalDeviation = min(max(self._criticalDeviation + _jit_unit_noise(self._noise),
                                               -self._maxDeviation), self._maxDeviation)
             return
@@ -1668,9 +1650,9 @@ class HomeoUnit(object):
         relay of Ashby's homeostat: as soon as the essential variable is
         critical, then at most once every uniselectorTimeInterval ticks while
         it stays critical.  uniselectorTime counts the ticks since the last
-        firing; a uniselector that has never fired is ready at once.  (Review
-        finding CU-10: the unit used to look once per interval, at one tick,
-        so a needle critical at every tick but that one never fired.)'''
+        firing; a uniselector that has never fired is ready at once.  (A
+        unit that looked once per interval, at one tick, would never fire for
+        a needle critical at every tick but that one.)'''
         self.updateUniselectorTime()
         if (self.essentialVariableIsCritical() and
                 (self.uniselectorActivationCount == 0 or
@@ -1724,7 +1706,7 @@ class HomeoUnit(object):
            data collector, keyed by name, does not mix them up.  It takes the
            name over from a live unit that has it (a homeostat loaded while
            the old one is alive): the old unit's death then leaves it
-           registered (review finding CU-14).'''
+           registered.'''
         self.__dict__.update(state)
         name = state.get('_name')
         if name is not None:

@@ -1,6 +1,4 @@
 '''
-Created on Mar 13, 2013
-
 @author: stefano
 '''
 from Core.HomeoDataCollector import  *
@@ -33,9 +31,8 @@ class Homeostat(object):
         collectsData         <aBoolean>       whether or not the homeostat collects data about its run
         slowingFactor:       <milliseconds>   it slows down the simulation by inserting a slowingFactor wait after each cycle
                                               (default 10; headless runs set it to 0).
-    Whether a simulation is running is HomeoQtSimulation's business: the
-    homeostat's own isRunning and microTime, which nothing used (microTime's
-    getter raised), were deleted on 14 Oct 2026 (review finding CU-21).
+    Whether a simulation is running is HomeoQtSimulation's business, not the
+    homeostat's.
     '''
 
 #===============================================================================
@@ -46,7 +43,7 @@ class Homeostat(object):
     def readFrom(self,filename):
         '''This is a class method that create a new Homeostat instance from
            filename.  The file is a pickle, and unpickling can run arbitrary
-           code: load only files you trust (review finding CD-18).'''
+           code: load only files you trust.'''
         with open(filename, 'rb') as fileIn:
             try:
                 newHomeostat = pickle.Unpickler(fileIn, encoding='latin-1').load()
@@ -144,9 +141,7 @@ class Homeostat(object):
         '''Check that the homeostat has all the needed elements to start the simulation:
            - at least 1 homeoUnit
            - the homeoUnits are not missing any essential parameter
-           - (Other conditions that are not fully clear yet to be added later)
-           (It used to return the method homeoUnitsAreReady uncalled, always
-           true: review finding CU-17.)'''
+           - (Other conditions that are not fully clear yet to be added later)'''
 
         return self.homeoUnitsArePresent() and self.homeoUnitsAreReady()
 
@@ -251,7 +246,7 @@ class Homeostat(object):
     def updateUnits(self):
         '''Advance every active unit by one tick, all together: each unit
         reads the outputs the others had at the start of the tick, so the
-        order of homeoUnits does not matter (review finding CU-03).  The
+        order of homeoUnits does not matter.  The
         sensors' outputs, too, are the readings taken at the previous tick.
         Each unit's data are recorded before it updates.'''
         headless = getattr(self, '_headless', False)
@@ -323,9 +318,9 @@ class Homeostat(object):
            and from the exiting one to the new unit.'''
 
         # Each unit can have one input connection from every unit, itself
-        # included.  The old units' uniselectors are told only when they must
-        # grow (review finding CD-05), which leaves their weights, and the
-        # random draws, as they were in homeostats of up to 10 units.
+        # included.  The existing units' uniselectors are told only when they
+        # must grow, so that in homeostats of up to 10 units their weights,
+        # and the random draws, are not disturbed.
         connections = len(self.homeoUnits) + 1
         for unit in self.homeoUnits: 
             unit.addConnectionWithRandomValues(aHomeoUnit)

@@ -257,8 +257,8 @@ def restore_homeostat_conditions(homeostat, snapshot):
     logged weight whatever the potentiometer did to it.  The unit's switch is
     the sign of its self-connection, so it is restored with the connection.
 
-    Also the dynamic state the snapshot logs (since 13 Oct 2026; older
-    snapshots lack it): dt_fast, the needle's velocity, the uniselector's
+    Also the dynamic state the snapshot logs (a snapshot may lack it):
+    dt_fast, the needle's velocity, the uniselector's
     timer and, if it is of the logged kind (else ValueError), the continuous
     uniselector's parameters or the Ashby uniselector's position.  Not
     logged, so not restored: the random generators' states, the Ashby
@@ -285,7 +285,7 @@ def restore_homeostat_conditions(homeostat, snapshot):
         u.status = row['status']
         u.criticalDeviation = row['criticalDeviation']
         u.currentOutput = row['currentOutput']
-        # Logged since 13 Oct 2026; older snapshots lack them
+        # A snapshot may lack them
         if 'dt_fast' in row and hasattr(u, '_dt_fast'):
             u.dt_fast = row['dt_fast']
         if 'currentVelocity' in row and hasattr(u, '_currentVelocity'):
@@ -304,8 +304,8 @@ def restore_homeostat_conditions(homeostat, snapshot):
                 if key in unis:
                     setattr(u.uniselector, '_' + key, unis[key])
             if 'index' in unis:
-                # Snapshots made before CD-02 (13 Oct 2026) can hold 25, one
-                # past the last row: the old switch had 26 positions.
+                # A snapshot can hold an index past the last row (25 for a
+                # 25-row matrix, from a switch of 26 positions): it wraps.
                 u.uniselector._index = unis['index'] % u.uniselector.matrix().shape[0]
         if 'switchingRate' in row:
             u._switchingRate = row['switchingRate']
