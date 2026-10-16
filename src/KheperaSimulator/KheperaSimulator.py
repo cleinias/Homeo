@@ -955,7 +955,7 @@ class KheperaSimulation(object):
     """
     
     def __init__(self, timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False,
-                 synchronousStepping = True, stepsPerTick = 2,
+                 stepsPerTick = 2,
                  robotEyeRadiusRatio = None, robotModel = 'epuck2'):
         '''
         Default time step is 0.032 s, values for velocity 
@@ -965,15 +965,10 @@ class KheperaSimulation(object):
         robotEyeRadiusRatio: for the K-Junior only, where its eyes sit along
             their radii, 0.5 (half way in, no blind wedge between them; the
             default) or 1.0 (on the rim, as in every run before 13 Oct 2026).
-        synchronousStepping: if True (default), the motors only set their wheel
-            speeds and the world advances by stepsPerTick steps once per
-            homeostat tick, after every unit has updated (tickAdvance, called by
-            Homeostat.runFor).  If False (the stepping of every run before
-            13 Oct 2026, kept to reproduce them), each motor's act() advances
-            the world one step: with two motors a tick is two steps, the left
-            wheel's command acting one step before the right one's.
-            stepsPerTick = 2 keeps a tick at 2 x timeStep, as before, and two
-            trajectory rows per tick.
+        Stepping: the motors only set their wheel speeds, and the world
+            advances by stepsPerTick steps once per homeostat tick, after every
+            unit has updated (tickAdvance, called by Homeostat.runFor).
+            stepsPerTick = 2: a tick is 2 x timeStep, with two trajectory rows.
         
         The experimental world to simulate is passed in HomeoWorld as the name of the initializing
         method.'''
@@ -981,7 +976,6 @@ class KheperaSimulation(object):
         self.running = running
         self.robotEyeRadiusRatio = robotEyeRadiusRatio
         self.robotModel = robotModel
-        self.synchronousStepping = synchronousStepping
         self.stepsPerTick = stepsPerTick
         self.timeStep = timeStep
         self.vel_iters = vel_iters
@@ -1090,11 +1084,9 @@ class KheperaSimulation(object):
     
     def tickAdvance(self):
         '''Advance the world by one homeostat tick (stepsPerTick steps), once
-        every unit has updated.  Only with synchronousStepping: otherwise the
-        motors step the world themselves.'''
-        if self.synchronousStepping:
-            for i in range(self.stepsPerTick):
-                self.advanceSim()
+        every unit has updated.'''
+        for i in range(self.stepsPerTick):
+            self.advanceSim()
 
     def saveTrajectory(self):
         "Asks the TrajectorytWriter to save the robot's trajectory"

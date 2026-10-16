@@ -122,13 +122,11 @@ class HOMEO_DiffMotor(Transducer):
     def act(self):
         '''Activates the wheel motor by calling the actuator function (transdFunction) with 
            HOMEO client (stored in self.robot) and the needed parameters (stored in funcParameters).
-           Without synchronous stepping the motor also advances the world one step;
-           with it, the world advances once per tick (KheperaSimulation.tickAdvance).'''
+           The motor only sets its wheel's speed: the world advances once per
+           tick, after every unit has updated (KheperaSimulation.tickAdvance).'''
         
         try:         
             getattr(self.simul.allBodies[self.robot], self._transdFunction)(self.funcParameters)
-            if not getattr(self.simul, 'synchronousStepping', False):
-                self.simul.advanceSim()
         except:
             stderr.write("Motor command to HOMEO motor:%sWheel failed " % self._wheel)
             raise #TransducerException("Motor command to HOMEO motor:%sWheel failed " % self._wheel)

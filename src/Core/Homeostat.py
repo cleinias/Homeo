@@ -223,7 +223,7 @@ class Homeostat(object):
                 for unit in self.homeoUnits:
                     if unit.isActive():
                         unit._sync_jit_arrays()
-            worlds = self._synchronousWorlds()
+            worlds = self._robotWorlds()
 
             while self.time < ticks:
                 self.updateUnits()
@@ -272,16 +272,16 @@ class Homeostat(object):
             for unit in self.homeoUnits:
                 unit.releaseOutput()
 
-    def _synchronousWorlds(self):
-        '''The robot simulations, reached through the units' transducers, that
-        step synchronously: each advances once per tick, after every unit has
-        updated (see KheperaSimulation.synchronousStepping).  Several
+    def _robotWorlds(self):
+        '''The robot simulations reached through the units' transducers: each
+        advances once per tick, after every unit has updated
+        (KheperaSimulation.tickAdvance).  Several
         homeostats sharing one world would each advance it; a shared world
         needs a scheduler above the homeostats.'''
         worlds = []
         for unit in self.homeoUnits:
             simulation = getattr(getattr(unit, 'transducer', None), 'simul', None)
-            if (getattr(simulation, 'synchronousStepping', False)
+            if (hasattr(simulation, 'tickAdvance')
                     and not any(simulation is w for w in worlds)):
                 worlds.append(simulation)
         return worlds

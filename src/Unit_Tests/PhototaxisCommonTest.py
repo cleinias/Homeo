@@ -69,13 +69,10 @@ class PhototaxisCommonTest(unittest.TestCase):
         for name, M in EXPERIMENTS.items():
             with self.subTest(name):
                 r = self.quietly(M.run_headless, total_steps=20, seed=3, quiet=True,
-                                 synchronous_stepping=False, stable_draws=True,
-                                 eye_response='log')
-                self.assertFalse(r['synchronous_stepping'])
+                                 stable_draws=True, eye_response='log')
                 self.assertTrue(r['stable_draws'])
                 self.assertEqual(r['eye_threshold'], 1.0)
                 text = json.dumps(json.load(open(r['json_path'])))
-                self.assertIn('"synchronous_stepping": false', text)
                 self.assertIn('"eye_response": "log"', text)
 
     def testTheRobot(self):
@@ -220,8 +217,8 @@ class PhototaxisCommonTest(unittest.TestCase):
 
     def testVisualizeTakesEveryOption(self):
         argv = ['x', '--visualize', '--dark', '--seed', '3', '--heading', '45',
-                '--eye-response', 'log', '--spin', '0.05', '--async-stepping',
-                '--stable-draws', '--continuous']
+                '--eye-response', 'log', '--spin', '0.05', '--stable-draws',
+                '--continuous']
         for name, M in EXPERIMENTS.items():
             with self.subTest(name):
                 with mock.patch.object(M.common, 'run_visualized') as visualize, \
@@ -235,7 +232,6 @@ class PhototaxisCommonTest(unittest.TestCase):
                 self.assertEqual(kwargs['heading'], 45)
                 self.assertEqual(kwargs['eye_response'], 'log')
                 self.assertEqual(kwargs['spin'], 0.05)
-                self.assertFalse(kwargs['synchronous_stepping'])
                 self.assertTrue(kwargs['stable_draws'])
                 self.assertEqual(kwargs['uniselector_type'], 'continuous')
 

@@ -327,7 +327,6 @@ class WebotsSimulation(object):
         self.mode = mode
         self.stepsPerTick = stepsPerTick
         self.timeStep = timeStep
-        self.synchronousStepping = True
         self.robotModel = 'epuck2'
         self.robotEyeRadiusRatio = None
         self.robotName = 'Khepera'

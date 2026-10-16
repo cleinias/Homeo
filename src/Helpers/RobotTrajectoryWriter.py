@@ -65,7 +65,7 @@ class RobotTrajectoryWriter(object):
         self._rowCount = 0
         self._pendingRow = None          # last skipped row, written on close
         # Simulator steps per homeostat tick, for the header (2: the
-        # KheperaSimulation default, one per wheel before synchronous stepping)
+        # KheperaSimulation default)
         self.stepsPerTick = 2
         # The eyes as configured, {name: (threshold, saturation, response)},
         # and where they sit along the robot's radii; set by KheperaSimulation

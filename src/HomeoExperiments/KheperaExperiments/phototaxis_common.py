@@ -102,13 +102,10 @@ def env_rng(env_seed):
     return np.random.default_rng(env_seed)
 
 
-def prepare_backend(backendSimulator, experiment_name, synchronous_stepping=True,
-                    robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
-    '''The run's backend (a new SimulatorBackendHOMEO if None), stepping as
-    asked, writing to today's SimsData directory under experiment_name.
-    synchronous_stepping: advance the world once per tick, after all units
-    have updated (default), or, if False, once per motor command, as runs
-    before 13 Oct 2026 did (see KheperaSimulation).
+def prepare_backend(backendSimulator, experiment_name, robot=DEFAULT_ROBOT,
+                    simulator='box2d', rendering=False):
+    '''The run's backend (a new SimulatorBackendHOMEO if None), writing to
+    today's SimsData directory under experiment_name.
     robot: the robot, a name in ROBOTS; it takes effect when the setup
     builds the world.
     simulator: 'box2d' or 'webots' (SIMULATORS); rendering: for Webots, show
@@ -125,15 +122,12 @@ def prepare_backend(backendSimulator, experiment_name, synchronous_stepping=True
         from Simulator.SimulatorBackend import SimulatorBackendWEBOTS
         backendSimulator = SimulatorBackendWEBOTS(lock=threading.Lock(), robotName='Khepera',
                                                   rendering=rendering, robotModel=model,
-                                                  eyeRadiusRatio=eye_radius_ratio,
-                                                  synchronousStepping=synchronous_stepping)
+                                                  eyeRadiusRatio=eye_radius_ratio)
     elif backendSimulator is None:
         backendSimulator = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera',
-                                                 synchronousStepping=synchronous_stepping,
                                                  eyeRadiusRatio=eye_radius_ratio,
                                                  robotModel=model)
     else:
-        backendSimulator.kheperaSimulation.synchronousStepping = synchronous_stepping
         backendSimulator.kheperaSimulation.robotEyeRadiusRatio = eye_radius_ratio
         backendSimulator.kheperaSimulation.robotModel = model
 
@@ -441,7 +435,6 @@ def run_settings(backend, light_intensity, stable_draws, env_seed, early_stop_di
                 early_stop_distance=early_stop_distance,
                 simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
                 stable_draws=stable_draws,
-                synchronous_stepping=backend.kheperaSimulation.synchronousStepping,
                 light_intensity=light_intensity,
                 robot=robot_name(backend.kheperaSimulation.allBodies['Khepera'].model,
                                  backend.kheperaSimulation.allBodies['Khepera'].eyeRadiusRatio),
@@ -475,8 +468,8 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
     seed, env_seed, start_x, start_y, start_heading, start_dist, start_sees_light (did
     either eye see the light at the start), first_acq (the first report tick
     within ACQUISITION_RADIUS of the light, or None), acquired, final_speed,
-    final_bearing, the eyes as configured, spin, synchronous_stepping,
-    stable_draws, and the extra fields.
+    final_bearing, the eyes as configured, spin, stable_draws, and the
+    extra fields.
     '''
     hom, backend, seed = setup()
     if env_seed is None:
@@ -615,7 +608,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                   simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
                   eye_radius_ratio='' if robot.eyeRadiusRatio is None else robot.eyeRadiusRatio,
                   final_speed=final_speed, final_bearing=final_bearing,
-                  spin=spin, synchronous_stepping=sim.synchronousStepping,
+                  spin=spin,
                   stable_draws=stable_draws)
     result.update(extra or {})
     return result
@@ -628,20 +621,17 @@ BATCH_FIELDS = ['run', 'seed', 'env_seed', 'motor', 'wiring', 'signs', 'spin', '
                 'start_sees_light', 'acquired', 'first_acq',
                 'final_dist', 'min_dist', 'min_t', 'steps_run',
                 'final_speed', 'final_bearing',
-                'early_stopped', 'final_x', 'final_y', 'wall_time', 'synchronous_stepping',
-                'stable_draws',
+                'early_stopped', 'final_x', 'final_y', 'wall_time', 'stable_draws',
                 'log_path', 'json_path', 'state_log_path']
 
 
 def batch_kind(variant, spin=0.0, eye_saturation=None, eye_threshold=None,
-               eye_response=None, synchronous_stepping=True, stable_draws=False,
+               eye_response=None, stable_draws=False,
                robot=DEFAULT_ROBOT, simulator='box2d'):
     '''The batch file's tag: the variant (the uniselector, or the fixed-weight
-    vehicle), then spin, eyes, '_async', '_stabledraws' and '_webots'.'''
+    vehicle), then spin, eyes, '_stabledraws' and '_webots'.'''
     kind = variant + spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response,
                                               robot)
-    if not synchronous_stepping:
-        kind += '_async'
     if stable_draws:
         kind += '_stabledraws'
     if simulator == 'webots':
@@ -864,9 +854,6 @@ Options both experiments take
                         before 13 Oct 2026 did, to reproduce them; batch files
                         get "_stabledraws"
    --start-at-rest      the adaptive units start centred and motionless
-   --async-stepping     one world step per motor command instead of one per
-                        tick, as runs before 13 Oct 2026 did; batch files get
-                        "_async"
 
    Start pose: default (4, 4), heading 0, the light at (7, 7) in view.
    --random-heading     random heading (from the environment's seed), default
@@ -914,7 +901,7 @@ def _value(argv, flag, convert, message):
 
 # The options of COMMON_OPTIONS_HELP: those that stand alone, and those
 # followed by values (how many)
-COMMON_FLAGS = ('--async-stepping', '--continuous', '--dark', '--no-traj', '--random-heading',
+COMMON_FLAGS = ('--continuous', '--dark', '--no-traj', '--random-heading',
                 '--random-start', '--random-topology', '--render', '--rim-eyes',
                 '--stable-draws', '--start-at-rest', '--state-log', '--visualize')
 COMMON_VALUED = {'--batch': 1, '--batch-vary': 1, '--early-stop': 1, '--env-seed': 1,
@@ -990,7 +977,6 @@ def parse_common_args(argv, flags=(), valued=None):
     o['start_at_rest'] = '--start-at-rest' in argv
     o['random_start'] = '--random-start' in argv
     o['random_heading'] = '--random-heading' in argv
-    o['synchronous_stepping'] = '--async-stepping' not in argv
     o['visualize'] = '--visualize' in argv
     o['simulator'] = 'box2d'
     if '--simulator' in argv:
@@ -1062,8 +1048,6 @@ def parse_common_args(argv, flags=(), valued=None):
 
     if o['simulator'] == 'webots' and o['robot'] != 'epuck2':
         raise SystemExit('Webots runs the e-puck2 only (--robot epuck2)')
-    if o['simulator'] == 'webots' and not o['synchronous_stepping']:
-        raise SystemExit('Webots is stepped once per tick: no --async-stepping')
 
     '''Trajectory volume.  Two rows are recorded per homeostat tick at ~50 bytes
        each, so a 6M-step run writes ~600 MB and a batch of 20 wrote 11.5 GB on
@@ -1089,7 +1073,7 @@ def parse_common_args(argv, flags=(), valued=None):
 # the runners
 SETUP_OPTIONS = ('topology', 'light_intensity', 'uniselector_type', 'seed', 'stable_draws',
                  'start_at_rest', 'spin', 'eye_saturation', 'eye_threshold', 'eye_response',
-                 'robot', 'simulator', 'rendering', 'synchronous_stepping')
+                 'robot', 'simulator', 'rendering')
 RUN_OPTIONS = ('total_steps', 'light_intensity', 'early_stop_distance', 'state_log',
                'state_log_interval', 'heading', 'random_heading', 'random_start',
                'start_range', 'stable_draws', 'eye_saturation', 'spin', 'env_seed')

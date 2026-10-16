@@ -118,8 +118,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      stable_draws=False, start_at_rest=False,
                      wiring='crossed', signs='++', spin=0.0, motor='newtonian',
                      eye_saturation=None, eye_threshold=None, eye_response=None,
-                     robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
-                     synchronous_stepping=True):
+                     robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -162,10 +161,6 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             viscosity*dt/mass >= STABILITY_MARGIN, as runs
                             before 13 Oct 2026 did; default False, the full
                             distribution (see phototaxis_common.randomize_unit).
-        synchronous_stepping: advance the world once per tick, after all units
-                            have updated (default), or, if False, once per
-                            motor command, as runs before 13 Oct 2026 did
-                            (see KheperaSimulation).
 
     Returns:
         (hom, backend, seed)
@@ -194,8 +189,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     exp_name += experiment_suffix(light_intensity, uniselector_type, not fixed_weights,
                                   spin, eye_saturation, eye_threshold, eye_response,
                                   robot, simulator)
-    backendSimulator = prepare_backend(backendSimulator, exp_name, synchronous_stepping,
-                                       robot, simulator, rendering)
+    backendSimulator = prepare_backend(backendSimulator, exp_name, robot, simulator,
+                                       rendering)
 
     # --- Build the 4-unit homeostat ---
     world = 'kheperaBraitenberg2_HOMEO_World'
@@ -547,8 +542,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  stable_draws=False, start_at_rest=False,
                  wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
                  spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
-                 eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
-                 synchronous_stepping=True):
+                 eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
     '''Run the simplified 2+2 phototaxis experiment headless
     (phototaxis_common.run_headless, which describes the result).
 
@@ -576,8 +570,7 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         seed=seed, fixed_weights=fixed_weights, stable_draws=stable_draws,
         start_at_rest=start_at_rest, wiring=wiring, signs=signs, spin=spin,
         motor=motor, eye_saturation=eye_saturation, eye_threshold=eye_threshold,
-        eye_response=eye_response, robot=robot, simulator=simulator, rendering=rendering,
-        synchronous_stepping=synchronous_stepping)
+        eye_response=eye_response, robot=robot, simulator=simulator, rendering=rendering)
     return common.run_headless(
         setup, title, total_steps=total_steps, report_interval=report_interval,
         light_intensity=light_intensity, early_stop_distance=early_stop_distance,
@@ -597,8 +590,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               state_log=False, state_log_interval=1, heading=None,
               wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
               spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
-              eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
-              synchronous_stepping=True):
+              eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
     '''Run a batch of experiments and print a summary table
     (phototaxis_common.run_batch).
 
@@ -610,8 +602,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     else:
         variant = uniselector_tag(uniselector_type)
     kind = common.batch_kind(variant, spin, eye_saturation, eye_threshold, eye_response,
-                             synchronous_stepping, stable_draws and not fixed_weights,
-                             robot, simulator)
+                             stable_draws and not fixed_weights, robot, simulator)
 
     def run_one(run_seed, run_env_seed):
         return run_headless(topology=topology, total_steps=total_steps,
@@ -633,7 +624,6 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                             spin=spin, motor=motor, eye_saturation=eye_saturation,
                             eye_threshold=eye_threshold, eye_response=eye_response,
                             robot=robot, simulator=simulator, rendering=rendering,
-                            synchronous_stepping=synchronous_stepping,
                             seed=run_seed, env_seed=run_env_seed)
     return common.run_batch(run_one, n_runs, 'direct', kind,
                             light_intensity=light_intensity, total_steps=total_steps,
@@ -647,8 +637,7 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
                    start_range=DEFAULT_START_RANGE, stable_draws=False,
                    start_at_rest=False, wiring='crossed', signs='++',
                    eye_saturation=None, eye_threshold=None, eye_response=None,
-                   robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
-                   synchronous_stepping=True, continuous_params=None):
+                   robot=DEFAULT_ROBOT, simulator='box2d', rendering=False, continuous_params=None):
     '''Run the simplified 2+2 phototaxis experiment with the pyglet
     visualizer, with the same options as run_headless.'''
     setup, title, _ = _setup(
@@ -657,8 +646,7 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
         seed=seed, fixed_weights=fixed_weights, stable_draws=stable_draws,
         start_at_rest=start_at_rest, wiring=wiring, signs=signs, spin=spin,
         motor=motor, eye_saturation=eye_saturation, eye_threshold=eye_threshold,
-        eye_response=eye_response, robot=robot, simulator=simulator, rendering=rendering,
-        synchronous_stepping=synchronous_stepping)
+        eye_response=eye_response, robot=robot, simulator=simulator, rendering=rendering)
     common.run_visualized(setup, 'Phototaxis ' + title, light_intensity=light_intensity,
                           stable_draws=stable_draws, random_heading=random_heading,
                           random_start=random_start, heading=heading,
