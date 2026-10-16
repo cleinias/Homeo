@@ -413,6 +413,12 @@ class WebotsSimulation(object):
             self.dataDir = dataDir
         fileName, sources = WORLDS[HomeoWorld]
         worldFile = os.path.join(WEBOTS_PROJECT, 'worlds', fileName)
+        # Close the previous run's file, as KheperaSimulation does: left open
+        # it lacked its "# Steps recorded" line and, decimated, its final row
+        # (R2-WEBOTS-4)
+        previousWriter = getattr(self, 'trajectoryWriter', None)
+        if previousWriter is not None:
+            previousWriter.runOnce(transitionMessage="CLOSEFILE")
         if self._supervisor is None:
             self._launch(worldFile)
             # The lights as the world file has them, to put back on each reset

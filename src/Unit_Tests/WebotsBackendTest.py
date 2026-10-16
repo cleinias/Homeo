@@ -121,6 +121,32 @@ box2d.saveTrajectory()
 print('RELIT ' + json.dumps(out))
 '''
 
+# A decimated run of 5 ticks (10 steps) ended by a new setup, not a save:
+# its file's last lines, and the robot's pose after its last step
+_RESETUP = r'''
+import glob, json, os, sys
+sys.path.insert(0, {src!r})
+from Helpers.RobotTrajectoryWriter import configureTrajectoryDefaults
+from WebotsSimulator.WebotsSimulation import WebotsSimulation
+
+configureTrajectoryDefaults(interval=3)
+world = 'kheperaBraitenberg2_HOMEO_World'
+webots = WebotsSimulation.shared()
+webots.setupWorld(world, {data!r})
+robot = webots.allBodies['Khepera']
+robot.setSpeed(2.0, 1.0)
+for i in range(5):
+    webots.tickAdvance()
+p = robot.body.position
+final = '%f\t%f' % (p[0], p[1])
+first = webots.trajectoryWriter.posFile.name
+webots.setupWorld(world, {data!r})
+webots.saveTrajectory()
+with open(first) as f:
+    last = f.read().splitlines()[-2:]
+print('RESETUP ' + json.dumps(dict(final=final, last=last)))
+'''
+
 
 @unittest.skipUnless(available(), 'Webots cannot run here (not installed, or no display/xvfb-run)')
 class WebotsBackendTest(unittest.TestCase):
@@ -287,6 +313,23 @@ class WebotsBackendTest(unittest.TestCase):
         self.assertEqual(out['userData'], 100)
         self.assertGreater(out['box2dEye'], 0)
         self.assertAlmostEqual(out['eye'], out['box2dEye'], delta=0.005 * out['box2dEye'])
+
+    def testANewSetupClosesTheRunsFile(self):
+        '''A run ended by a new setup, not a save, still gets a complete
+        .traj: its true final row (held back by decimation) and the closing
+        "# Steps recorded" line.  (Until 16 Oct 2026 Webots left the file
+        open: R2-WEBOTS-4.)'''
+        with tempfile.TemporaryDirectory() as tmp:
+            script = os.path.join(tmp, 'resetup.py')
+            with open(script, 'w') as f:
+                f.write(_RESETUP.format(src=SRC, data=tmp))
+            r = subprocess.run([sys.executable, script], capture_output=True, text=True,
+                               timeout=300, env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+        lines = [l for l in r.stdout.splitlines() if l.startswith('RESETUP ')]
+        self.assertTrue(lines, r.stdout[-2000:] + r.stderr[-2000:])
+        out = json.loads(lines[0][len('RESETUP '):])
+        self.assertEqual(out['last'][1], '# Steps recorded\t10')
+        self.assertTrue(out['last'][0].startswith(out['final']), out)
 
 
 if __name__ == '__main__':
