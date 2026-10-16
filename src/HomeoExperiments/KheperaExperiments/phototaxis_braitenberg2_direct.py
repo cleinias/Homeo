@@ -666,7 +666,8 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
 
 
 def main(argv):
-    o = common.parse_common_args(argv)
+    o = common.parse_common_args(argv, flags=('--fixed-weights', '--uncrossed'),
+                                 valued={'--signs': 1, '--motor': 1})
     fixed_weights = '--fixed-weights' in argv
     if fixed_weights and ('--continuous' in argv or '--random-topology' in argv):
         print('Note: --fixed-weights ignores --continuous and --random-topology')

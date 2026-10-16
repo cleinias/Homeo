@@ -912,11 +912,41 @@ def _value(argv, flag, convert, message):
         raise SystemExit(message)
 
 
-def parse_common_args(argv):
+# The options of COMMON_OPTIONS_HELP: those that stand alone, and those
+# followed by values (how many)
+COMMON_FLAGS = ('--async-stepping', '--continuous', '--dark', '--no-traj', '--random-heading',
+                '--random-start', '--random-topology', '--render', '--rim-eyes',
+                '--stable-draws', '--start-at-rest', '--state-log', '--visualize')
+COMMON_VALUED = {'--batch': 1, '--batch-vary': 1, '--early-stop': 1, '--env-seed': 1,
+                 '--eye-response': 1, '--eye-saturation': 1, '--eye-threshold': 1,
+                 '--heading': 1, '--log-interval': 1, '--robot': 1, '--run-tag': 1,
+                 '--seed': 1, '--simulator': 1, '--spin': 1, '--start-range': 2,
+                 '--steps': 1, '--traj-interval': 1}
+
+
+def check_options(argv, flags=(), valued=None):
+    '''SystemExit naming the first option in argv[1:] that is neither one of
+    COMMON_OPTIONS_HELP nor one of the script's own (flags, and valued:
+    {option: number of values}); the values after an option are skipped.'''
+    valued = dict(COMMON_VALUED, **(valued or {}))
+    known = set(COMMON_FLAGS) | set(flags) | set(valued)
+    i = 1
+    while i < len(argv):
+        token = argv[i]
+        if token not in known:
+            raise SystemExit('Unknown option %r (see the options in the script\'s docstring)'
+                             % token)
+        i += 1 + valued.get(token, 0)
+
+
+def parse_common_args(argv, flags=(), valued=None):
     '''Parse the options in COMMON_OPTIONS_HELP from argv; returns a dict.
+    flags and valued are the script's own options (see check_options): any
+    other option is refused.
     Also sets HOMEO_RUN_TAG from --run-tag (exported rather than threaded
     through: the file names are built where argv is not seen) and the
     trajectory recording.'''
+    check_options(argv, flags, valued)
     if '--run-tag' in argv:
         idx = argv.index('--run-tag')
         if idx + 1 < len(argv):

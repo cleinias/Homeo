@@ -183,6 +183,23 @@ class PhototaxisCommonTest(unittest.TestCase):
         self.assertEqual(results[0]['seed'], results[1]['seed'])
         self.assertEqual(results[1]['env_seed'], results[0]['env_seed'] + 1)
 
+    def testAnUnknownOptionIsRefused(self):
+        "A misspelt or unknown option stops the run instead of being ignored"
+        for M in EXPERIMENTS.values():
+            for argv in (['x', '--stable-draw'], ['x', '--steps', '10', '--frobnicate']):
+                with mock.patch.object(D.common, 'run_headless') as run:
+                    with self.assertRaisesRegex(SystemExit, 'Unknown option'):
+                        self.quietly(M.main, argv)
+                run.assert_not_called()
+        with mock.patch.object(D.common, 'run_headless') as run:
+            self.quietly(D.main, ['x', '--fixed-weights', '--signs', '--', '--motor',
+                                  'aristotelian', '--start-range', '1', '2', '--random-start',
+                                  '--steps', '10'])
+        run.assert_called_once()
+        with mock.patch.object(D.common, 'run_headless'):
+            with self.assertRaisesRegex(SystemExit, 'Unknown option'):
+                self.quietly(A.main, ['x', '--fixed-weights'])
+
     def testSeedOptions(self):
         parse = D.common.parse_common_args
         o = parse(['x', '--env-seed', '7', '--batch', '2', '--batch-vary', 'env'])
