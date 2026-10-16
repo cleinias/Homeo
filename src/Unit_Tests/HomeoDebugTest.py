@@ -48,6 +48,20 @@ class HomeoDebugTest(unittest.TestCase):
             hDebug('conn', 'plain message')
         self.assertEqual(out.getvalue(), 'The noise on the connection is 0.250000\nplain message\n')
 
+    def testTheSimulationsHotPathsDeferTheirFormatting(self):
+        "The units' and the motors' per-tick messages are formats with arguments"
+        import os
+        import re
+        src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        eager = re.compile(r"hDebug\([^\n]*\"\s*%\s*\(")
+        for path in ('Core/HomeoUnit.py', 'Core/HomeoUnitNewtonian.py',
+                     'Core/HomeoConnection.py', 'RobotSimulator/HomeoUnitNewtonianTransduc.py'):
+            with open(os.path.join(src, path)) as f:
+                lines = [line for line in f if not line.lstrip().startswith('#')]
+            with self.subTest(path=path):
+                self.assertEqual([l.strip() for l in lines if eager.search(l)], [])
+
 
 if __name__ == '__main__':
     unittest.main()
+

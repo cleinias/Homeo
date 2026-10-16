@@ -253,7 +253,8 @@ class HomeoUnit(object):
         self._inputConnections = []
         self.setDefaultSelfConnection()
         self.unit_essential_parameters = 4
-        hDebug('unit', ("At time: %d unit: %s dev: %f output: %f" %(self.time, self.name, self.criticalDeviation, self._currentOutput)))
+        hDebug('unit', "At time: %d unit: %s dev: %f output: %f",
+               self.time, self.name, self.criticalDeviation, self._currentOutput)
 
 
         
@@ -1645,7 +1646,7 @@ class HomeoUnit(object):
             return
 
         addedNoise = HomeoNoise.unitNoise(self.noise)
-        hDebug('unit', ("Noise for unit %s is: %f" % (self.name, addedNoise)))
+        hDebug('unit', "Noise for unit %s is: %f", self.name, addedNoise)
 #        sys.stderr.write("New noise is %f at time: %u\n" % (addedNoise, self.time))
 #        self.criticalDeviation = np.clip((self.criticalDeviation + addedNoise), self.minDeviation, self.maxDeviation)    # apply the noise to the critical deviation value"
         self.criticalDeviation = self.criticalDeviation + addedNoise    # apply the noise to the critical deviation value"

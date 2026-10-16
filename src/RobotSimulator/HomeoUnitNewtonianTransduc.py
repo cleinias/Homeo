@@ -101,14 +101,15 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
                 self._maxSpeed = self._transducer.range()[1]* self._maxSpeedFraction
             except Exception as e:
                 raise HomeoUnitError("Cannot get max speed from Transducer: %r" % (e,))
-        hDebug('unit', ("critDev for unit: %s is %.3f" % (self.name, self.criticalDeviation)))                  
+        hDebug('unit', "critDev for unit: %s is %.3f", self.name, self.criticalDeviation)
         setSpeed = float(-self._maxSpeed) + ((2 * self._maxSpeed)/ (1+np_exp(- self._switchingRate * self.criticalDeviation)))
         if self._speedBias:
             # Clipped, so the bias cannot drive a wheel past the motor's limit.
             setSpeed = min(self._maxSpeed, max(-self._maxSpeed,
                                                setSpeed + self._speedBias * self._maxSpeed))
         setSpeed = round(setSpeed,3)
-        hDebug('unit', ("Speed set by %s is %f with critDev: %.3f " % (self.name, setSpeed, self.criticalDeviation)))
+        hDebug('unit', "Speed set by %s is %f with critDev: %.3f ", self.name, setSpeed,
+               self.criticalDeviation)
         self.transducer.funcParameters = setSpeed
         self.transducer.act()
     
