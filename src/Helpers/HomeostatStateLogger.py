@@ -150,7 +150,6 @@ class HomeostatStateLogger:
                 unis = unit.uniselector
                 f.write('%s_ou_model\t%s\n' % (prefix, unis._model))
                 f.write('%s_tau_a\t%.6f\n' % (prefix, unis._tau_a))
-                f.write('%s_theta\t%.6f\n' % (prefix, unis._theta))
                 f.write('%s_sigma_base\t%.6f\n' % (prefix, unis._sigma_base))
                 f.write('%s_sigma_crit\t%.6f\n' % (prefix, unis._sigma_crit))
                 f.write('%s_stress_exponent\t%.6f\n' % (

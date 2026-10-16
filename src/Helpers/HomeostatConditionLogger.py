@@ -39,7 +39,7 @@ except ImportError:
     _has_transducer_classes = False
 
 
-_CONTINUOUS_FIELDS = ('model', 'tau_a', 'theta', 'sigma_base', 'sigma_crit', 'dt',
+_CONTINUOUS_FIELDS = ('model', 'tau_a', 'sigma_base', 'sigma_crit', 'dt',
                       'stress_exponent')
 
 
@@ -303,6 +303,9 @@ def restore_homeostat_conditions(homeostat, snapshot):
             if unis['type'] != type(u.uniselector).__name__:
                 raise ValueError('unit %s has a %s, the snapshot a %s' % (
                     u.name, type(u.uniselector).__name__, unis['type']))
+            if 'model' in unis and unis['model'] not in u.uniselector.MODELS:
+                raise ValueError('unit %s: the snapshot\'s uniselector model %r is not one of %s'
+                                 % (u.name, unis['model'], u.uniselector.MODELS))
             for key in _CONTINUOUS_FIELDS:
                 if key in unis:
                     setattr(u.uniselector, '_' + key, unis[key])

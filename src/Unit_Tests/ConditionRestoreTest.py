@@ -40,6 +40,15 @@ class ConditionRestoreTest(unittest.TestCase):
                 self.assertEqual(restore_homeostat_conditions(other, original), [])
                 self.assertEqual(_snapshot(other), original)
 
+    def testAnUnknownUniselectorModelIsRefused(self):
+        "A snapshot whose continuous uniselector has another model is not restored"
+        snapshot = _snapshot(self.build(1, 'continuous'))
+        for row in snapshot['units']:
+            if 'model' in row['uniselector']:
+                row['uniselector']['model'] = 'legacy'
+        with self.assertRaisesRegex(ValueError, "model 'legacy'"):
+            restore_homeostat_conditions(self.build(2, 'continuous'), snapshot)
+
     def testDynamicStateRoundTrip(self):
         "After a run: velocities, uniselector timers and positions come back too"
         for kind in ('ashby', 'continuous'):

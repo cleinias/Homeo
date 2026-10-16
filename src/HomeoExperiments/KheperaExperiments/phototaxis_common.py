@@ -200,8 +200,8 @@ def configure_eyes(backend, saturation=None, threshold=None, response=None):
 def set_uniselector_type(unit, uniselector_type, continuous_params=None):
     '''Set the uniselector on a unit: 'ashby' (the stepping switch, already
     every new unit's), 'random' (uniform random) or 'continuous' (the OU
-    process; continuous_params overrides its parameters).  Any other type is
-    an error: it used to leave the Ashby uniselector in place silently.'''
+    process; continuous_params overrides its parameters, and a name that is
+    not one of them is an error).  Any other type is an error.'''
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
     from Core.HomeoUniselectorUniformRandom import HomeoUniselectorUniformRandom
 
@@ -209,6 +209,9 @@ def set_uniselector_type(unit, uniselector_type, continuous_params=None):
         unis = HomeoUniselectorContinuous()
         if continuous_params:
             for key, val in continuous_params.items():
+                if not isinstance(getattr(type(unis), key, None), property):
+                    raise ValueError('%r is not a parameter of the continuous uniselector'
+                                     % key)
                 setattr(unis, key, val)
         unit.uniselector = unis
     elif uniselector_type == 'random':

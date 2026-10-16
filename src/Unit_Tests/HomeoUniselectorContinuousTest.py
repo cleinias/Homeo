@@ -34,16 +34,21 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
         '''Check that default parameters are set correctly'''
         self.assertEqual(self.unis.model, 'diffusion')
         self.assertEqual(self.unis.tau_a, 1000.0)
-        self.assertEqual(self.unis.theta, 0.01)
         self.assertEqual(self.unis.sigma_base, 0.0)
         self.assertEqual(self.unis.sigma_crit, 1.0)
         self.assertAlmostEqual(self.unis.stress_exponent, 2.0)
 
-    def testLegacyParameters(self):
-        '''useLegacyParameters restores the pre-12 Oct 2026 process'''
-        self.unis.useLegacyParameters()
-        self.assertEqual((self.unis.model, self.unis.sigma_base, self.unis.sigma_crit),
-                         ('legacy', 0.001, 0.1))
+    def testTwoModels(self):
+        '''The models are 'diffusion' and 'ou'; any other is refused, and so is
+        a parameter they do not have, through the phototaxis setups too'''
+        self.assertEqual(HomeoUniselectorContinuous.MODELS, ('diffusion', 'ou'))
+        with self.assertRaises(ValueError):
+            self.unis.model = 'legacy'
+        self.assertFalse(hasattr(self.unis, 'theta'))
+        from HomeoExperiments.KheperaExperiments.phototaxis_common import set_uniselector_type
+        from Core.HomeoUnit import HomeoUnit
+        with self.assertRaises(ValueError):
+            set_uniselector_type(HomeoUnit(), 'continuous', {'theta': 0.5})
 
     def testSigmaAtZeroStress(self):
         '''At zero stress, sigma should equal sigma_base'''
@@ -74,24 +79,6 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
             w_new = self.unis.evolve_weight(w, stress)
             self.assertGreaterEqual(w_new, -1.0)
             self.assertLessEqual(w_new, 1.0)
-
-    def testEvolveWeightMeanReverts(self):
-        '''Legacy model: over many steps at zero stress, weights should drift
-        toward 0 (mean reversion due to theta term)'''
-        # Use aggressive parameters so decay is visible:
-        # drift per step = -(theta/tau_a) * w = -1.0 * w * dt
-        # decay factor per step = (1 - 1.0) would be too much; use theta/tau_a = 0.01
-        # so after 500 steps: (1-0.01)^500 ≈ exp(-5) ≈ 0.007
-        unis = HomeoUniselectorContinuous()
-        unis.model = 'legacy'
-        unis.sigma_base = 0.0  # no noise, pure drift
-        unis.sigma_crit = 0.0
-        unis.theta = 1.0       # strong mean reversion
-        unis.tau_a = 100.0     # theta/tau_a = 0.01 per step
-        w = 0.9
-        for _ in range(500):
-            w = unis.evolve_weight(w, 0.0)
-        self.assertAlmostEqual(w, 0.0, places=1)
 
     def testEvolveWeightHighStressIncreasesVariance(self):
         '''At high stress, weight changes should be larger on average'''
@@ -144,11 +131,6 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
         self.unis.tau_a = -1.0  # should be ignored
         self.assertEqual(self.unis.tau_a, 500.0)
 
-        self.unis.theta = 0.05
-        self.assertEqual(self.unis.theta, 0.05)
-        self.unis.theta = -0.1  # should be ignored
-        self.assertEqual(self.unis.theta, 0.05)
-
         self.unis.sigma_base = 0.01
         self.assertEqual(self.unis.sigma_base, 0.01)
 
@@ -162,20 +144,17 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
 
 
 class HomeoUniselectorContinuousModelsTest(unittest.TestCase):
-    """The statistics of the three models (see HomeoUniselectorContinuous).
+    """The statistics of the two models (see HomeoUniselectorContinuous).
 
-    'diffusion' and 'ou' have tau_a as their timescale and reflect at +-1;
-    'legacy' is the clipped process whose statistics under stress do not
-    depend on tau_a.  Many weights are stepped at once through step(); the
-    tolerances are several standard errors wide.
+    'diffusion' and 'ou' have tau_a as their timescale and reflect at +-1.
+    Many weights are stepped at once through step(); the tolerances are
+    several standard errors wide.
     """
 
     WEIGHTS = 20000
 
     def walk(self, model, tau_a, stress, steps, w0=0.0, sigma_crit=None):
         unis = HomeoUniselectorContinuous()
-        if model == 'legacy':
-            unis.useLegacyParameters()
         unis.model = model
         unis.tau_a = tau_a
         if sigma_crit is not None:
@@ -225,13 +204,6 @@ class HomeoUniselectorContinuousModelsTest(unittest.TestCase):
         for i in range(int(tau_a)):
             w = unis.step(w, 1.0, np.random.randn(self.WEIGHTS))
         self.assertAlmostEqual(np.corrcoef(w0, w)[0, 1], np.exp(-1), delta=0.03)
-
-    def testLegacyIgnoresTauAUnderStress(self):
-        "The old process: same spread for tau_a 100 and 10000, mass at exactly +-1"
-        short = self.walk('legacy', 100.0, 1.0, 2000, w0=0.5)
-        long = self.walk('legacy', 10000.0, 1.0, 2000, w0=0.5)
-        self.assertAlmostEqual(short.std(), long.std(), delta=0.02)
-        self.assertGreater(np.mean(np.abs(long) == 1.0), 0.03)
 
     def testJitPathFollowsThePythonPath(self):
         "evolve_weights_jit and evolve_weight draw the same noise in the same order"
