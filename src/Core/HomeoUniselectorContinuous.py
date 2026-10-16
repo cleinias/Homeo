@@ -85,6 +85,10 @@ class HomeoUniselectorContinuous(HomeoUniselector):
 
     def __init__(self):
         super(HomeoUniselectorContinuous, self).__init__()
+        self.setDefaults()
+
+    def setDefaults(self):
+        "The default weights' range, [-1, 1], and the default parameters (DefaultParameters)"
         self._lowerBound = -1
         self._upperBound = 1
         self._model = self.DefaultParameters['model']

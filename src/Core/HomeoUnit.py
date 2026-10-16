@@ -282,7 +282,9 @@ class HomeoUnit(object):
         self._uniselectorTime = HomeoUnit.DefaultParameters['uniselectorTime']
         self._uniselectorTimeInterval = HomeoUnit.DefaultParameters['uniselectorTimeInterval']
         self._needleCompMethod = HomeoUnit.DefaultParameters['needleCompMethod']
-        self._uniselectorActive = HomeoUnit.DefaultParameters['uniselectorActive']
+        # A reset keeps the uniselector on or off, as it was
+        self._uniselectorActive = getattr(self, '_uniselectorActive',
+                                          HomeoUnit.DefaultParameters['uniselectorActive'])
         self._uniselectorActivated = HomeoUnit.DefaultParameters['uniselectorActivated']
         '''How many times this unit's uniselector has actually fired, cumulative
            over the run.  uniselectorActivated is a per-tick flag, cleared on the
@@ -988,14 +990,13 @@ class HomeoUnit(object):
 #===============================================================================
 
     def setDefaultUniselectorSettings(self):
-        "set default uniselector settings"
-
-        try:
-            self.uniselector.setDefaults()
-        except AttributeError:
+        '''The uniselector's default settings: a new unit gets an Ashby
+        uniselector; a unit that has one keeps it, of its kind, with its
+        defaults (each kind's setDefaults).'''
+        if getattr(self, '_uniselector', None) is None:
             self.uniselector = HomeoUniselectorAshby()
-        finally:
-            self.uniselectorActive = True
+        else:
+            self.uniselector.setDefaults()
     
     def setDefaultName(self):
         '''Assign a default unique name to the unit with the help of an auxiliary method'''
