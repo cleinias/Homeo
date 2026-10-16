@@ -160,13 +160,19 @@ def _init_worker(config):
         pass
 
 
+def evaluation_runs(genome, evalsPerIndividual):
+    """How many runs an evaluation of genome averages: its own evalRuns if
+       it has one (the post-evaluation's jobs: 1), else evalsPerIndividual."""
+    return getattr(genome, 'evalRuns', evalsPerIndividual)
+
+
 def _evaluate_genome_worker(genome):
     """Pool entry point: evaluate `genome` from its evalSeed (see
        seeded_evaluation), as the mean of evalsPerIndividual runs (see
-       repeat_seeds, averaged_fitness)."""
+       evaluation_runs, repeat_seeds, averaged_fitness)."""
     scores = []
     for seed in repeat_seeds(getattr(genome, 'evalSeed', None),
-                             _worker_config.get('evalsPerIndividual', 1)):
+                             evaluation_runs(genome, _worker_config.get('evalsPerIndividual', 1))):
         with seeded_evaluation(seed):
             scores.append(_run_genome_evaluation(genome)[0])
     return averaged_fitness(scores)
@@ -961,7 +967,8 @@ class HomeoGASimulation(object):
            evalSeed, leaving the GA's own random streams as they were; the
            mean of evalsPerIndividual runs (see _evaluate_genome_worker)."""
         scores = []
-        for seed in repeat_seeds(getattr(genome, 'evalSeed', None), self.evalsPerIndividual):
+        for seed in repeat_seeds(getattr(genome, 'evalSeed', None),
+                                 evaluation_runs(genome, self.evalsPerIndividual)):
             with seeded_evaluation(seed):
                 scores.append(self.evaluateGenomeFitness(genome)[0])
         return averaged_fitness(scores)
@@ -977,13 +984,19 @@ class HomeoGASimulation(object):
 
     def postEvaluate(self):
         """Re-evaluate the hall of fame's best postEvalTop individuals on
-           postEvalSeeds fresh seeds each, and rank them by their mean score
-           (SG-06).  The hall of fame keeps the lowest score ever seen, which,
-           with noise, is mostly the luckiest evaluation: the mean says which
-           genome is best.  Kept in self.postEvaluation and the logbook's
-           summary: a list, best mean first, of dicts with indivId, genome,
-           mean, sd and scores.  The seeds are derived from the GA's seed, so a
-           rerun repeats them."""
+           postEvalSeeds fresh seeds each, one run per seed whatever
+           evalsPerIndividual, and rank them by their mean score.  The hall of
+           fame keeps each genome with the score it entered with, which, with
+           noise, is mostly a lucky evaluation: the mean says which genome is
+           best.  Kept in self.postEvaluation and the logbook's summary: a
+           list, best mean first, of dicts with
+               indivId, genome   the hall of fame's individual
+               mean, sd, scores  over the seeds, single runs
+               hofFitness        the score it entered the hall of fame with
+               evaluations, loggedBest, loggedMean
+                                 how often the run's logbook records the
+                                 genome, its lowest and its mean fitness there
+           The seeds are derived from the GA's seed, so a rerun repeats them."""
         top = list(self.hof)[:self.postEvalTop]
         if not top or self.postEvalSeeds < 1:
             return None
@@ -994,6 +1007,7 @@ class HomeoGASimulation(object):
                 job.ID = 'post-%s-%d' % (ind.ID, j + 1)
                 job.evalSeed = int(np.random.SeedSequence(
                     [int(self.randomSeed), 3, i, j]).generate_state(1)[0])
+                job.evalRuns = 1
                 jobs.append((i, job))
         print("-- Post-evaluation: the best %d of the hall of fame, %d seeds each --"
               % (len(top), self.postEvalSeeds))
@@ -1001,9 +1015,15 @@ class HomeoGASimulation(object):
         scores = [[] for _ in top]
         for (i, _), result in zip(jobs, results):
             scores[i].append(float(result[0]))
+        def logged(ind):
+            fitnesses = [r['fitness'][0] for r in self.logbook
+                         if 'genome' in r and list(r['genome']) == list(ind)]
+            return {'evaluations': len(fitnesses), 'loggedBest': float(min(fitnesses)),
+                    'loggedMean': float(np.mean(fitnesses))}
         self.postEvaluation = sorted(
-            ({'indivId': ind.ID, 'genome': list(ind), 'hofFitness': ind.fitness.values[0],
-              'mean': float(np.mean(s)), 'sd': float(np.std(s)), 'scores': s}
+            (dict({'indivId': ind.ID, 'genome': list(ind), 'hofFitness': ind.fitness.values[0],
+                   'mean': float(np.mean(s)), 'sd': float(np.std(s)), 'scores': s},
+                  **logged(ind))
              for ind, s in zip(top, scores)),
             key=lambda entry: entry['mean'])
         for entry in self.postEvaluation:

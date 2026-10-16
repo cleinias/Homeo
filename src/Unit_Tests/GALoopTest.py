@@ -180,6 +180,20 @@ class NoisyEvaluationTest(GALoopTestCase):
         [summary] = [r for r in ga.logbook if 'finalIndivs' in r]
         self.assertEqual(summary['postEvaluation'], post)
 
+    def testThePostEvaluationRunsOncePerSeed(self):
+        "with k runs per evaluation, the post-evaluation still runs each seed once"
+        ga = self.noisyGA(generSize=1, evalsPerIndividual=3, postEvalTop=2, postEvalSeeds=4)
+        self.runGA(ga, ga.generateRandomPop(randomSeed=7))
+        post = [ID for ID, _ in self.evaluated if ID.startswith('post-')]
+        self.assertEqual(len(post), 2 * 4)
+        for e in ga.postEvaluation:
+            self.assertEqual(len(e['scores']), 4)
+            fitnesses = [r['fitness'][0] for r in ga.logbook
+                         if 'genome' in r and r['genome'] == e['genome']]
+            self.assertEqual(e['evaluations'], len(fitnesses))
+            self.assertEqual(e['loggedBest'], min(fitnesses))
+            self.assertAlmostEqual(e['loggedMean'], np.mean(fitnesses))
+
 
 class SecondRunTest(GALoopTestCase):
 
