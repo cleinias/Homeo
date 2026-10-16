@@ -147,6 +147,28 @@ with open(first) as f:
 print('RESETUP ' + json.dumps(dict(final=final, last=last)))
 '''
 
+# A GA evaluation's step: the backend starts the genome's own .traj
+# (setRobotModel); the files it leaves
+_MODEL = r'''
+import json, os, sys
+sys.path.insert(0, {src!r})
+from Simulator.SimulatorBackend import SimulatorBackendWEBOTS
+
+backend = SimulatorBackendWEBOTS(dataDir={data!r})
+backend.start('kheperaBraitenberg2_HOMEO_World')
+sim = backend.kheperaSimulation
+backend.setRobotModel('001-002')
+for i in range(3):
+    sim.tickAdvance()
+sim.saveTrajectory()
+files = {{}}
+for f in sorted(os.listdir({data!r})):
+    if f.endswith('.traj'):
+        with open(os.path.join({data!r}, f)) as g:
+            files[f] = g.read().splitlines()
+print('MODEL ' + json.dumps(files))
+'''
+
 
 @unittest.skipUnless(available(), 'Webots cannot run here (not installed, or no display/xvfb-run)')
 class WebotsBackendTest(unittest.TestCase):
@@ -330,6 +352,25 @@ class WebotsBackendTest(unittest.TestCase):
         out = json.loads(lines[0][len('RESETUP '):])
         self.assertEqual(out['last'][1], '# Steps recorded\t10')
         self.assertTrue(out['last'][0].startswith(out['final']), out)
+
+    def testAGenomesOwnTrajectoryFile(self):
+        '''setRobotModel, as a GA evaluation or a replay calls it, starts a
+        .traj named after the genome, complete.  (Until 16 Oct 2026 it raised
+        TypeError on Webots: R2-WEBOTS-5.)'''
+        with tempfile.TemporaryDirectory() as tmp:
+            script = os.path.join(tmp, 'model.py')
+            with open(script, 'w') as f:
+                f.write(_MODEL.format(src=SRC, data=tmp))
+            r = subprocess.run([sys.executable, script], capture_output=True, text=True,
+                               timeout=300, env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+        lines = [l for l in r.stdout.splitlines() if l.startswith('MODEL ')]
+        self.assertTrue(lines, r.stdout[-2000:] + r.stderr[-2000:])
+        files = json.loads(lines[0][len('MODEL '):])
+        [genome] = [lines for name, lines in files.items() if '001-002' in name]
+        self.assertIn("# Vehicle's initial position at:", genome)
+        self.assertEqual(sum(1 for l in genome if l and not l.startswith('#')
+                             and len(l.split()) > 5), 6)
+        self.assertEqual(genome[-1], '# Steps recorded\t6')
 
 
 if __name__ == '__main__':

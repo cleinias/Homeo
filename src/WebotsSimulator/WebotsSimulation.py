@@ -499,9 +499,15 @@ class WebotsSimulation(object):
         self.trajectoryWriter.runOnce(transitionMessage="CLOSEFILE")
 
     def newTrajectoryFile(self):
+        '''A new .traj for the robot, under its model name (setRobotModel: GA
+        evaluations, replays).  The start position as Box2D gives it, an
+        (x, 0, y) snapshot: the robot's body here is a live _Pose, which the
+        writer could not index (R2-WEBOTS-5).  The lights stay the world's.'''
+        robot = self.allBodies[self.robotName]
+        position = robot.body.position
         self.trajectoryWriter.runOnce(transitionMessage="NEWFILE",
-                                      modelName=self.allBodies[self.robotName].getModelName(),
-                                      position=self.allBodies[self.robotName].body)
+                                      modelName=robot.getModelName(),
+                                      position=(position[0], 0, position[1]))
 
     def setRobotModelName(self, robotName, newID):
         self.allBodies[self.robotName].setModelName(newID)
