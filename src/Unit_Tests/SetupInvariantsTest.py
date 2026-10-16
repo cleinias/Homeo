@@ -57,7 +57,9 @@ class SetupInvariantsTest(unittest.TestCase):
         backend = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera')
         backend.kheperaSimulation.dataDir = self.tmp
         self.addCleanup(backend.kheperaSimulation.saveTrajectory)
-        size = getattr(f, 'genomeSize', f.noEvolvedUnits * 4 + f.noEvolvedUnits * 6)
+        # a classic genome: 4 genes per evolved unit, and a weight per connection
+        size = getattr(f, 'genomeSize',
+                       f.noEvolvedUnits * 4 + f.noEvolvedUnits * getattr(f, 'noUnits', 6))
         return f(np.random.default_rng(1).uniform(0, 1, size), backendSimulator=backend, **kw)
 
     def buildPhototaxis(self, mod, topology, unisel):
@@ -94,7 +96,7 @@ class SetupInvariantsTest(unittest.TestCase):
                     self.assertTrue(units[unit].uniselectorActive, (unit, source))
 
     def testManualConnectionsKeepTheirSignedWeights(self):
-        adapted = []
+        adapted = {False: [], True: []}
         for label, build in self.setups():
             for headless in (False, True):
                 with self.subTest(label, headless=headless):
@@ -103,8 +105,10 @@ class SetupInvariantsTest(unittest.TestCase):
                     self.assertTrue(manual)
                     self.runHomeostat(hom, headless)
                     self.assertEqual(signed(hom, 'manual'), manual)
-                    adapted.append(signed(hom, 'uniselector') != controlled)
-        self.assertGreater(sum(adapted), len(adapted) // 4)     # the runs did adapt
+                    adapted[headless].append(signed(hom, 'uniselector') != controlled)
+        for headless, runs in adapted.items():         # the runs did adapt, on each path
+            with self.subTest(headless=headless):
+                self.assertGreater(sum(runs), len(runs) // 4)
 
     def testClassicGASetupsHonourNoUnisel(self):
         for name in CLASSIC_GA_SETUPS:
