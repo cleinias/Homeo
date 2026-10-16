@@ -76,38 +76,31 @@ class PhototaxisCommonTest(unittest.TestCase):
                 self.assertIn('"eye_response": "log"', text)
 
     def testTheRobot(self):
-        '''The robot is the e-puck2 by default; --robot kjunior and
-        kjunior-rim (= --rim-eyes) give the K-Junior of earlier runs, its eyes
-        half way in or on the rim.  Runs record the robot and, for the
-        K-Junior, where its eyes sat.'''
+        '''The robot is the e-puck2 by default; --robot kjunior gives the
+        K-Junior.  Runs record the robot.'''
         import json
         parse = D.common.parse_common_args
         self.assertEqual(parse(['x'])['robot'], 'epuck2')
         self.assertEqual(parse(['x', '--robot', 'kjunior'])['robot'], 'kjunior')
-        self.assertEqual(parse(['x', '--rim-eyes'])['robot'], 'kjunior-rim')
-        for argv in (['x', '--robot', 'khepera'], ['x', '--robot', 'epuck2', '--rim-eyes']):
+        for argv in (['x', '--robot', 'khepera'], ['x', '--robot', 'kjunior-rim'],
+                     ['x', '--rim-eyes']):
             with self.assertRaises(SystemExit):
                 self.quietly(parse, argv)
         for name, M in EXPERIMENTS.items():
-            for robot, model, ratio, tag in (('epuck2', 'epuck2', None, ''),
-                                             ('kjunior', 'kjunior', 0.5, '_kjunior'),
-                                             ('kjunior-rim', 'kjunior', 1.0, '_kjunior_rimeyes')):
+            for robot, ratio, tag in (('epuck2', None, ''), ('kjunior', 0.5, '_kjunior')):
                 with self.subTest(name, robot=robot):
                     r = self.quietly(M.run_headless, total_steps=20, seed=3, quiet=True,
                                      robot=robot)
                     body = r['backend'].kheperaSimulation.allBodies['Khepera']
-                    self.assertEqual((body.model, body.eyeRadiusRatio), (model, ratio))
+                    self.assertEqual((body.model, body.eyeRadiusRatio), (robot, ratio))
                     self.assertEqual(r['robot'], robot)
-                    self.assertEqual(r['eye_radius_ratio'], '' if ratio is None else ratio)
                     stem = os.path.basename(r['log_path'])
                     self.assertEqual('_kjunior' in stem, bool(tag))
-                    self.assertEqual('_rimeyes' in stem, robot == 'kjunior-rim')
                     settings = json.load(open(r['json_path']))['settings']
-                    self.assertEqual((settings['robot'], settings['eye_radius_ratio']),
-                                     (robot, ratio))
+                    self.assertEqual(settings['robot'], robot)
         with mock.patch.object(D, 'run_headless') as run:
-            self.quietly(D.main, ['x', '--rim-eyes'])
-        self.assertEqual(run.call_args.kwargs['robot'], 'kjunior-rim')
+            self.quietly(D.main, ['x', '--robot', 'kjunior'])
+        self.assertEqual(run.call_args.kwargs['robot'], 'kjunior')
 
     @staticmethod
     def homeostat(r):

@@ -39,25 +39,15 @@ DEFAULT_START_RANGE = (2.0, 6.0)
 
 UNISELECTOR_TYPES = ('ashby', 'random', 'continuous')
 
-# The robot (KheperaRobot): the e-puck2 since 14 Oct 2026, both simulators'
-# model; the K-Junior of every run before, with its eyes half way in along
-# their radii (13-14 Oct 2026, Homeo cda7a08: no blind wedge between them) or
-# on the rim (every run before 13 Oct), to reproduce those runs.  Each name is
-# (KheperaRobot's model, its eyeRadiusRatio).
-ROBOTS = {'epuck2': ('epuck2', None),
-          'kjunior': ('kjunior', 0.5),
-          'kjunior-rim': ('kjunior', 1.0)}
+# The robot, a KheperaRobot model: the e-puck2 (the default, both
+# simulators' robot) or the K-Junior (Box2D only).
+ROBOTS = ('epuck2', 'kjunior')
 DEFAULT_ROBOT = 'epuck2'
 
 # The robot simulator: Box2D (KheperaSimulation, the default: the GA and the
 # batch arrays) or Webots (SimulatorBackendWEBOTS: re-testing selected
 # results, figures).  Webots runs the e-puck2 only.
 SIMULATORS = ('box2d', 'webots')
-
-
-def robot_name(model, eye_radius_ratio):
-    "The ROBOTS name of a robot model and eye radius ratio"
-    return next(name for name, spec in ROBOTS.items() if spec == (model, eye_radius_ratio))
 
 
 # --- Seeding and the world ----------------------------------------------------
@@ -115,21 +105,17 @@ def prepare_backend(backendSimulator, experiment_name, robot=DEFAULT_ROBOT,
 
     if robot not in ROBOTS:
         raise ValueError('robot must be one of %s, got %r' % (tuple(ROBOTS), robot))
-    model, eye_radius_ratio = ROBOTS[robot]
     if simulator not in SIMULATORS:
         raise ValueError('simulator must be one of %s, got %r' % (SIMULATORS, simulator))
     if backendSimulator is None and simulator == 'webots':
         from Simulator.SimulatorBackend import SimulatorBackendWEBOTS
         backendSimulator = SimulatorBackendWEBOTS(lock=threading.Lock(), robotName='Khepera',
-                                                  rendering=rendering, robotModel=model,
-                                                  eyeRadiusRatio=eye_radius_ratio)
+                                                  rendering=rendering, robotModel=robot)
     elif backendSimulator is None:
         backendSimulator = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera',
-                                                 eyeRadiusRatio=eye_radius_ratio,
-                                                 robotModel=model)
+                                                 robotModel=robot)
     else:
-        backendSimulator.kheperaSimulation.robotEyeRadiusRatio = eye_radius_ratio
-        backendSimulator.kheperaSimulation.robotModel = model
+        backendSimulator.kheperaSimulation.robotModel = robot
 
     log_dir = os.path.join(simulations_data_dir(), 'SimsData-' + time.strftime("%Y-%m-%d"))
     os.makedirs(log_dir, exist_ok=True)
@@ -168,8 +154,8 @@ def set_light(backend, light_intensity, eye_saturation=None, eye_threshold=None,
 
 def eye_tag(saturation=None, threshold=None, response=None, robot=DEFAULT_ROBOT):
     """Filename tag for a robot other than the e-puck2 and for non-default eyes,
-    e.g. '_kjunior_rimeyes_log_sat0.5'; '' for the e-puck2's default eyes."""
-    tag = {'epuck2': '', 'kjunior': '_kjunior', 'kjunior-rim': '_kjunior_rimeyes'}[robot]
+    e.g. '_kjunior_log_sat0.5'; '' for the e-puck2's default eyes."""
+    tag = {'epuck2': '', 'kjunior': '_kjunior'}[robot]
     tag += '_log' if response == 'log' else ''
     if saturation is not None:
         tag += '_sat%g' % saturation
@@ -436,9 +422,7 @@ def run_settings(backend, light_intensity, stable_draws, env_seed, early_stop_di
                 simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
                 stable_draws=stable_draws,
                 light_intensity=light_intensity,
-                robot=robot_name(backend.kheperaSimulation.allBodies['Khepera'].model,
-                                 backend.kheperaSimulation.allBodies['Khepera'].eyeRadiusRatio),
-                eye_radius_ratio=backend.kheperaSimulation.allBodies['Khepera'].eyeRadiusRatio,
+                robot=backend.kheperaSimulation.allBodies['Khepera'].model,
                 eye_threshold=eye_config[0],
                 eye_saturation_irradiance=eye_config[1],
                 eye_response=eye_config[2])
@@ -604,9 +588,8 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                   eye_threshold=eye_config[0],
                   eye_saturation='' if eye_saturation is None else eye_saturation,
                   eye_saturation_irradiance=eye_config[1],
-                  robot=robot_name(robot.model, robot.eyeRadiusRatio),
+                  robot=robot.model,
                   simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
-                  eye_radius_ratio='' if robot.eyeRadiusRatio is None else robot.eyeRadiusRatio,
                   final_speed=final_speed, final_bearing=final_bearing,
                   spin=spin,
                   stable_draws=stable_draws)
@@ -616,7 +599,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
 
 BATCH_FIELDS = ['run', 'seed', 'env_seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response',
                 'eye_threshold', 'eye_saturation', 'eye_saturation_irradiance',
-                'simulator', 'robot', 'eye_radius_ratio',
+                'simulator', 'robot',
                 'start_x', 'start_y', 'start_heading', 'start_dist',
                 'start_sees_light', 'acquired', 'first_acq',
                 'final_dist', 'min_dist', 'min_t', 'steps_run',
@@ -872,12 +855,8 @@ Options both experiments take
    --eye-saturation D   saturate at distance D: Isat = intensity / D^2
    --eye-threshold I0   the threshold, an irradiance (1 for a log eye)
    --eye-response log   logarithmic response (default linear)
-   --robot R            the robot: epuck2 (default since 14 Oct 2026), kjunior
-                        (the K-Junior of earlier runs, eyes half way in along
-                        their radii, as 13-14 Oct 2026) or kjunior-rim (its
-                        eyes on the rim, as every run before 13 Oct 2026);
-                        files get "_kjunior" or "_kjunior_rimeyes"
-   --rim-eyes           the same as --robot kjunior-rim
+   --robot R            the robot: epuck2 (default) or kjunior (the K-Junior,
+                        Box2D only); files get "_kjunior"
    --simulator S        the robot simulator: box2d (default) or webots (the
                         e-puck2 only; Webots must be installed: WEBOTS_HOME
                         or webots on the PATH); files get "_webots"
@@ -902,7 +881,7 @@ def _value(argv, flag, convert, message):
 # The options of COMMON_OPTIONS_HELP: those that stand alone, and those
 # followed by values (how many)
 COMMON_FLAGS = ('--continuous', '--dark', '--no-traj', '--random-heading',
-                '--random-start', '--random-topology', '--render', '--rim-eyes',
+                '--random-start', '--random-topology', '--render',
                 '--stable-draws', '--start-at-rest', '--state-log', '--visualize')
 COMMON_VALUED = {'--batch': 1, '--batch-vary': 1, '--early-stop': 1, '--env-seed': 1,
                  '--eye-response': 1, '--eye-saturation': 1, '--eye-threshold': 1,
@@ -1034,11 +1013,6 @@ def parse_common_args(argv, flags=(), valued=None):
         o['robot'] = argv[idx + 1] if idx + 1 < len(argv) else ''
         if o['robot'] not in ROBOTS:
             raise SystemExit('--robot must be one of %s, got %r' % (' '.join(ROBOTS), o['robot']))
-    if '--rim-eyes' in argv:
-        if '--robot' in argv and o['robot'] != 'kjunior-rim':
-            raise SystemExit('--rim-eyes is --robot kjunior-rim; it cannot go with --robot %s'
-                             % o['robot'])
-        o['robot'] = 'kjunior-rim'
     o['eye_saturation'] = None
     if '--eye-saturation' in argv:
         o['eye_saturation'] = _value(argv, '--eye-saturation', float,

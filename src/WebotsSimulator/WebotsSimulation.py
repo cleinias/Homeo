@@ -328,7 +328,6 @@ class WebotsSimulation(object):
         self.stepsPerTick = stepsPerTick
         self.timeStep = timeStep
         self.robotModel = 'epuck2'
-        self.robotEyeRadiusRatio = None
         self.robotName = 'Khepera'
         self.allBodies = {}
         self.experimentName = None

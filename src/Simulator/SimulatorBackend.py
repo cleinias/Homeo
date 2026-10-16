@@ -110,18 +110,13 @@ class SimulatorBackendAbstract(object, metaclass=ABCMeta):
 class SimulatorBackendHOMEO(SimulatorBackendAbstract):
     "Interface to the internal HOMEO Khepera-like robotic simulator" 
 
-    def __init__(self, lock = None, robotName='', dataDir = None,
-                 eyeRadiusRatio = None, robotModel = 'epuck2'):
-        '''robotModel: 'epuck2' (default since 14 Oct 2026) or 'kjunior' (every run
-        before); eyeRadiusRatio: for the K-Junior only, where its eyes sit along
-        their radii, 0.5 (no blind wedge between them, the default) or 1.0 (on
-        the rim, as all runs before 13 Oct 2026); see KheperaRobot.'''
+    def __init__(self, lock = None, robotName='', dataDir = None, robotModel = 'epuck2'):
+        '''robotModel: 'epuck2' (default) or 'kjunior'; see KheperaRobot.'''
         self._robotName = robotName
         self.lock = lock
         if KheperaSimulation is None:
             raise ImportError("KheperaSimulator requires Box2D. Install with: pip install box2d-py")
-        self.kheperaSimulation = KheperaSimulation(robotEyeRadiusRatio=eyeRadiusRatio,
-                                                   robotModel=robotModel)
+        self.kheperaSimulation = KheperaSimulation(robotModel=robotModel)
         if dataDir is not None:
             self.kheperaSimulation.setDataDir(dataDir)
         self.host = None
@@ -230,8 +225,8 @@ class SimulatorBackendWEBOTS(SimulatorBackendHOMEO):
     rendering: show Webots' window and render (figures), or not (batch).'''
 
     def __init__(self, lock = None, robotName='Khepera', dataDir = None, rendering = False,
-                 robotModel = 'epuck2', eyeRadiusRatio = None):
-        if robotModel != 'epuck2' or eyeRadiusRatio is not None:
+                 robotModel = 'epuck2'):
+        if robotModel != 'epuck2':
             raise ValueError("the Webots robot is the e-puck2 (robot 'epuck2')")
         from WebotsSimulator.WebotsSimulation import WebotsSimulation
         self._robotName = robotName

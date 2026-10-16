@@ -91,14 +91,13 @@ class SensorFacingTest(_WorldTest):
 
     def testTheKJuniorEyesAreUnchanged(self):
         "Its eyes, in front at +/-21.9 degrees, keep their facings to the last bit"
-        for ratio in (0.5, 1.0):
-            sim = self.world(robotModel='kjunior', robotEyeRadiusRatio=ratio)
-            robot = sim.allBodies['Khepera']
-            for eye, sign in (('leftEye', 1), ('rightEye', -1)):
-                px, py = robot.eyePoses[eye]                 # (right, forward)
-                self.assertEqual(robot.sensors[eye].userData[eye + 'Angle'],
-                                 math.degrees(math.atan(-px / py)))       # the old formula
-                self.assertAlmostEqual(robot.sensors[eye].userData[eye + 'Angle'], sign * 21.8858, 4)
+        sim = self.world(robotModel='kjunior')
+        robot = sim.allBodies['Khepera']
+        for eye, sign in (('leftEye', 1), ('rightEye', -1)):
+            px, py = robot.eyePoses[eye]                 # (right, forward)
+            self.assertEqual(robot.sensors[eye].userData[eye + 'Angle'],
+                             math.degrees(math.atan(-px / py)))
+            self.assertAlmostEqual(robot.sensors[eye].userData[eye + 'Angle'], sign * 21.8858, 4)
 
 
 class RefusedEyeSettingsTest(_WorldTest):

@@ -71,7 +71,7 @@ KheperaSimulator (in `KheperaSimulator/KheperaSimulator.py`) is a lightweight 2D
 
 Each eye is a pair of the e-puck's light sensors at their real positions and facing their real directions: ls0 and ls1 (facing -17.2 and -45.9 degrees) on the right, ls7 and ls6 (17.1 and 45.8 degrees) on the left. An eye's irradiance is the mean of its two sensors', and each sensor has a Webots `LightSensor`'s field: the cosine law, nothing from behind (180 degrees, no hoods). Together the eyes see the front 146 degrees; an 88-degree sector straight behind is unseen.
 
-The robot of every run before 14 Oct 2026 is kept as `model='kjunior'` (`KheperaSimulation(robotModel='kjunior')`, `--robot kjunior` in the phototaxis scripts): a K-Junior, 126 mm across, inherited from V-REP's model in 2015, with one 90-degree eye each side at +/- 22 degrees, half way in along its radius (`eyeRadiusRatio` 0.5) or on the rim (1.0, `--robot kjunior-rim` or `--rim-eyes`), as before 13 Oct 2026, when the rim eyes left a blind wedge straight ahead.
+The other robot is a K-Junior, `model='kjunior'` (`KheperaSimulation(robotModel='kjunior')`, `--robot kjunior` in the phototaxis scripts): 126 mm across, with one 90-degree eye each side at +/- 22 degrees, half way out along its radius (`eyeRadiusRatio` 0.5), so that the two fields' inner edges cross inside the body and nothing straight ahead goes unseen.
 
 Each sensor computes irradiance from every detectable light source according to the formula
 
