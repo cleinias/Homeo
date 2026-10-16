@@ -2,7 +2,7 @@
 
 Ashby conceived the Homeostat as a model of adaptive behaviour: a system that, without being told what to do, finds and maintains stable configurations in the face of disturbance. The robotic component of Homeo applies this idea to mobile robot control. Instead of hand-coding a controller that maps sensor readings to motor commands, a homeostat network is placed between the robot's sensors and its wheels. The units treat sensor input as a perturbation to be absorbed and motor output as the means to do so. Because the uniselector mechanism randomly reassigns connection weights whenever a unit's essential variable leaves its viable range, the network explores the space of possible sensorimotor couplings until it discovers one that keeps every unit within bounds -- which, given the right wiring, corresponds to a robot that tracks a light source or avoids obstacles without any explicit goal representation.
 
-The simulators sit behind a uniform backend interface, so the same homeostat configuration can drive a robot in either of them: KheperaSimulator, a lightweight Box2D simulator in the same process (the GA and the batch arrays), and Webots, run by Homeo as its robot's extern controller (re-testing selected results, figures).  Both model the same robot, an e-puck2.  The V-REP backend and the old Webots TCP bridge were deleted on 14 Oct 2026.
+The simulators sit behind a uniform backend interface, so the same homeostat configuration can drive a robot in either of them: KheperaSimulator, a lightweight Box2D simulator in the same process (the GA and the batch arrays), and Webots, run by Homeo as its robot's extern controller (re-testing selected results, figures).  Both model the same robot, an e-puck2. 
 
 ## Architecture
 
@@ -71,7 +71,7 @@ KheperaSimulator (in `KheperaSimulator/KheperaSimulator.py`) is a lightweight 2D
 
 Each eye is a pair of the e-puck's light sensors at their real positions and facing their real directions: ls0 and ls1 (facing -17.2 and -45.9 degrees) on the right, ls7 and ls6 (17.1 and 45.8 degrees) on the left. An eye's irradiance is the mean of its two sensors', and each sensor has a Webots `LightSensor`'s field: the cosine law, nothing from behind (180 degrees, no hoods). Together the eyes see the front 146 degrees; an 88-degree sector straight behind is unseen.
 
-The robot of every run before 14 Oct 2026 is kept as `model='kjunior'` (`KheperaSimulation(robotModel='kjunior')`, `--robot kjunior` in the phototaxis scripts): a K-Junior, 126 mm across, inherited from V-REP's model in 2015, with one 90-degree eye each side at +/- 22 degrees, half way in along its radius (`eyeRadiusRatio` 0.5) or on the rim (1.0, `--robot kjunior-rim` or `--rim-eyes`), as before 13 Oct 2026, when the rim eyes left a blind wedge straight ahead. Runs made before 13 Oct 2026 also used jointed dynamic wheels whose velocity was overwritten each step, which moved the robot at about 14% of the commanded speed at low speeds and 82% above a threshold; that model is kept as `drive='legacy'` (K-Junior only) to reproduce them.
+The KheperaSimulator models also a Khepera Junior robot  (`KheperaSimulation(robotModel='kjunior')`, `--robot kjunior` in the phototaxis scripts): the K-Junior is 126 mm across  with one 90-degree eye each side at +/- 22 degrees, half way in along its radius (`eyeRadiusRatio` 0.5) or on the rim (1.0, `--robot kjunior-rim` or `--rim-eyes`).
 
 Each sensor computes irradiance from every detectable light source according to the formula
 
@@ -107,8 +107,7 @@ Both take the options listed in `phototaxis_common`'s docstring: the run length,
 For the genetic algorithm (`Simulator/HomeoGenAlg.py`), each setup builds a homeostat from a genome of values in [0, 1]:
 
 - `initializeBraiten2_2_Full_GA()` -- the six-unit vehicle, the genome (40 genes) encoding the four adaptive units' parameters and their connection weights; `_phototaxis` and `_scototaxis` variants set the fitness's sign.
-- `initializeBraiten2_2_Full_GA_continuous_weightfree...`, `initializeBraiten2_direct_GA_continuous_weightfree...`, `initializeBraiten3c_GA_continuous_weightfree...` -- "weight-free" setups: the genome holds only the evolved units' parameters (mass, viscosity, the continuous uniselector's `tau_a`, `maxDeviation`), the weights start small and random and adapt during the run through the continuous uniselector. New runs use the `_v2` setups (since 15 Oct 2026): mass and viscosity log-uniform in [0.25, 250] and [0.05, 50]. The others are kept to replay old genomes: mass in [1, 10] and viscosity in [0, 10], linear, and, except the `_fixed_dt` ones, a `dt_fast` gene, which rescales mass and viscosity (review finding CU-11; the GA logbooks record each genome's layout, and GenomeDecoder adds the effective mass and viscosity).
-
+- `initializeBraiten2_2_Full_GA_continuous_weightfree...`, `initializeBraiten2_direct_GA_continuous_weightfree...`, `initializeBraiten3c_GA_continuous_weightfree...` -- "weight-free" setups: the genome holds only the evolved units' parameters (mass, viscosity, the continuous uniselector's `tau_a`, `maxDeviation`), the weights start small and random and adapt during the run through the continuous uniselector.  Mass and viscosity log-uniform in [0.25, 250] and [0.05, 50]. 
 Each function takes the backend instance (`backendSimulator`), plus optional flags like `noNoise` and `noUnisel` for ablation studies.
 
 ## Trajectory logging
