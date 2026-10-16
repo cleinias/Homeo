@@ -181,6 +181,28 @@ class NoisyEvaluationTest(GALoopTestCase):
         self.assertEqual(summary['postEvaluation'], post)
 
 
+class SecondRunTest(GALoopTestCase):
+
+    def testASecondRunRecordsOnlyItself(self):
+        "run 2 on the same object: its logbook, hall of fame and history are its own"
+        ga = self.ga(generSize=1, postEvalTop=2, postEvalSeeds=1)
+        self.runGA(ga, ga.generateRandomPop(randomSeed=7))
+        first = {tuple(r['genome']) for r in ga.logbook if 'genome' in r}
+        self.runGA(ga, ga.generateRandomPop(randomSeed=8))
+        second = [r for r in ga.logbook if 'genome' in r]
+        IDs = [r['indivId'] for r in second]
+        self.assertEqual(len(IDs), len(set(IDs)))
+        self.assertEqual([r['gen'] for r in ga.logbook if 'gen' in r], [0, 1])
+        self.assertFalse(first & {tuple(r['genome']) for r in second})
+        genomes = {tuple(r['genome']) for r in second}
+        self.assertTrue(all(tuple(ind) in genomes for ind in ga.hof))
+        self.assertTrue(all(tuple(e['genome']) in genomes for e in ga.postEvaluation))
+        self.assertTrue(all(tuple(g) in genomes or tuple(g) not in first
+                            for g in ga.hist.genealogy_history.values()))
+        [summary] = [r for r in ga.logbook if 'finalIndivs' in r]
+        self.assertEqual(summary['randomSeed'], 8)
+
+
 class GenerationZeroTest(GALoopTestCase):
 
     def testGenerationZeroStatisticsAreItsEvaluations(self):

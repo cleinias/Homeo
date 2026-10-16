@@ -644,6 +644,13 @@ class HomeoGASimulation(object):
 
         'Record time for naming logbook pickled object and computing time statistics'
         self._stopRequested = False
+        # A run's records are its own: a fresh logbook, hall of fame and
+        # history (cleared in place: the variation operators are decorated
+        # with this history), and no post-evaluation yet
+        self.logbook = tools.Logbook()
+        self.hof.clear()
+        self.hist.__init__()
+        self.postEvaluation = None
         self._startPool()
         timeStarted = time()
         timeElapsed = None
