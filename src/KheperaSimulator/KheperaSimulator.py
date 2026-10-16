@@ -1080,11 +1080,12 @@ class KheperaSimulation(object):
         self.trajectoryWriter.runOnce(transitionMessage = "CLOSEFILE")
 
     def newTrajectoryFile(self):
-        "Asks the trajectoryWriter to open a new trajectory file for the robot"
-        self.trajectoryWriter.runOnce(transitionMessage = "NEWFILE", 
-                                      modelName = self.allBodies[self.robotName].body.userData['ID'], 
-                                      position = (self.allBodies[self.robotName].body.position[0],0,self.allBodies[self.robotName].body.position[1]),
-                                      lights = self.allBodies[self.robotName].detectableLights)
+        """Asks the trajectoryWriter to open a new trajectory file for the
+        robot.  The file lists the world's sources, as the world's first file
+        does (in the 3c world, all five, not only the light ones)."""
+        self.trajectoryWriter.runOnce(transitionMessage = "NEWFILE",
+                                      modelName = self.allBodies[self.robotName].body.userData['ID'],
+                                      position = (self.allBodies[self.robotName].body.position[0],0,self.allBodies[self.robotName].body.position[1]))
         
     #===============================================================================
     #                             EXPERIMENTAL WORLDS

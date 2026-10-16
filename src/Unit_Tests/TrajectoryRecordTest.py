@@ -82,6 +82,29 @@ class TrajectoryRecordTest(unittest.TestCase):
         self.assertGreater(len(sim.trajectoryWriter.lights), 1)
         self.assertEqual(len(columns), len(rows.split('\t')))
 
+    def testAGenomesFileListsEverySource(self):
+        "setRobotModel (every GA evaluation and replay) opens a file with all five 3c sources"
+        import threading
+        import numpy as np
+        import Simulator.HomeoExperiments as HE
+        from Simulator.SimulatorBackend import SimulatorBackendHOMEO
+        backend = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera')
+        backend.kheperaSimulation.dataDir = self.tmp.name
+        setup = HE.initializeBraiten3c_GA_continuous_weightfree_fixed_v2
+        setup(np.full(setup.genomeSize, 0.5), backendSimulator=backend)
+        sim = backend.kheperaSimulation
+        backend.setRobotModel('001-001')
+        for _ in range(3):
+            sim.advanceSim()
+        sim.saveTrajectory()
+        header = readDataFileHeader(sim.trajectoryWriter.posFile.name)
+        self.assertIn('001-001', sim.trajectoryWriter.posFile.name)
+        self.assertEqual(sorted(readLightsFromHeader(header)),
+                         ['LIGHT1', 'ORG1', 'OXY1', 'TEMP1', 'TEMP2'])
+        lines = open(sim.trajectoryWriter.posFile.name).read().splitlines()
+        columns = [l for l in lines if l.startswith('# robot_x')][0][2:].split('\t')
+        self.assertEqual(len(columns), 3 + 3 * 5)
+
 
 if __name__ == '__main__':
     unittest.main()
