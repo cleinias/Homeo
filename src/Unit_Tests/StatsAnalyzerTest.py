@@ -30,10 +30,46 @@ class HallOfFameTest(unittest.TestCase):
         table = SA.hallOfFame(logbook, num=2).splitlines()
         headers = [h.strip() for h in table[0].strip('|').split('|')]
         rows = [[c.strip() for c in line.strip('|').split('|')] for line in table[2:]]
-        self.assertEqual(headers[:3], ['Fitness', 'IndivID', 'U1-mass'])
+        self.assertEqual(headers[:5], ['Fitness', 'IndivID', 'Evals', 'MeanFit', 'U1-mass'])
         self.assertEqual([len(r) for r in rows], [len(headers)] * 2)
         self.assertEqual([float(r[0]) for r in rows], [1.0, 2.0])
         self.assertEqual([r[1] for r in rows], ['001-001', '001-002'])
+
+    def testOneRowPerGenomeThePostEvaluationFirst(self):
+        '''A genome evaluated several times is one row, with its best and mean;
+        with a post-evaluation its genomes come first, by their mean.'''
+        logbook = _logbook([3.0, 1.0, 2.0])
+        again = dict(logbook[0], fitness=(0.5,), indivId='002-001')    # genome 0, luckier
+        logbook.append(again)
+        table = SA.hallOfFame(logbook, num=3).splitlines()
+        rows = [[c.strip() for c in line.strip('|').split('|')] for line in table[2:]]
+        self.assertEqual([(r[1], float(r[0]), int(r[2]), float(r[3])) for r in rows],
+                         [('001-000', 0.5, 2, 1.75), ('001-001', 1.0, 1, 1.0),
+                          ('001-002', 2.0, 1, 2.0)])
+        post = [{'indivId': '001-002', 'genome': logbook[2]['genome'], 'mean': 1.2, 'sd': 0.1,
+                 'scores': [1.1, 1.3]},
+                {'indivId': '002-001', 'genome': logbook[0]['genome'], 'mean': 2.5, 'sd': 0.2,
+                 'scores': [2.3, 2.7]}]
+        logbook.append({'finalIndivs': [], 'postEvaluation': post})
+        table = SA.hallOfFame(logbook, num=3).splitlines()
+        headers = [h.strip() for h in table[0].strip('|').split('|')]
+        self.assertEqual(headers[:6], ['Fitness', 'IndivID', 'Evals', 'MeanFit',
+                                       'PostMean', 'PostSD'])
+        rows = [[c.strip() for c in line.strip('|').split('|')] for line in table[2:]]
+        self.assertEqual([(r[1], r[4]) for r in rows],
+                         [('001-002', '1.2'), ('001-000', '2.5'), ('001-001', '')])
+
+    def testTheReplaysBestIsThePostEvaluationsBest(self):
+        import contextlib, io, sys
+        sys.argv = sys.argv[:1]
+        import replay_best_with_statelog as R
+        logbook = _logbook([3.0, 1.0, 2.0])
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(R.find_best_individual(logbook)['indivId'], '001-001')
+            logbook.append({'finalIndivs': [], 'postEvaluation': [
+                {'indivId': '001-002', 'genome': logbook[2]['genome'], 'mean': 1.2, 'sd': 0.1,
+                 'scores': [1.1, 1.3]}]})
+            self.assertEqual(R.find_best_individual(logbook)['indivId'], '001-002')
 
 
 class LogbookLayoutTest(unittest.TestCase):

@@ -7,6 +7,7 @@ and provide info, stats, and charts about the GA run
 @author: stefano
 '''
 from deap import tools
+import builtins
 import pickle
 import sys
 import os
@@ -207,18 +208,65 @@ def hallOfFameInds(indivs, num, max=False):
     a =  sorted(indivs,key=itemgetter(1), reverse = max)
     return a[:num]
 
+def postEvaluationOf(logbook):
+    "The post-evaluation the logbook's summary records (best mean first), or None"
+    for rec in reversed(logbook):
+        if 'finalIndivs' in rec:
+            return rec.get('postEvaluation') or None
+    return None
+
+
+def genomeRanking(logbook, max=False):
+    """The genomes the logbook evaluated, each once: a list of dicts with
+       genome, indivId (its first evaluation's), evaluations (how many the
+       logbook records), best and mean (their lowest, or with max=True
+       highest, and mean fitness), and post (its entry in the post-evaluation,
+       or None).  Under noise one genome is evaluated many times, and its best
+       score is its luckiest: when the logbook has a post-evaluation, its
+       genomes come first, by their post-evaluation mean, the others after,
+       by best."""
+    genomes = {}
+    for rec in logbook:
+        if 'genome' not in rec:
+            continue
+        entry = genomes.setdefault(tuple(rec['genome']),
+                                   {'genome': list(rec['genome']), 'indivId': rec['indivId'],
+                                    'fitnesses': []})
+        entry['fitnesses'].append(rec['fitness'][0])
+    post = {tuple(e['genome']): e for e in (postEvaluationOf(logbook) or [])}
+    ranking = []
+    for key, entry in genomes.items():
+        fitnesses = entry.pop('fitnesses')
+        entry.update(evaluations=len(fitnesses),
+                     best=(builtins.max if max else min)(fitnesses),
+                     mean=float(np.mean(fitnesses)), post=post.get(key))
+        ranking.append(entry)
+    sign = -1 if max else 1
+    ranking.sort(key=lambda e: (e['post'] is None,
+                                e['post']['mean'] if e['post'] is not None else 0,
+                                sign * e['best']))
+    return ranking
+
+
 def hallOfFame(logbook, num=10, max=False):
-    """Return a string containing a formatted and sorted hall of fame list
-       of individuals extracted from the logbook"""
-    indivs, layout = indivsDecodedFromLogbook(logbook)
-    meta_noUnits, meta_noEvolved, _ = _logbook_layout(logbook)
-    # Flattened into rows, as the headers expect: until 14 Oct 2026 the
-    # (genome, fitness, name) tuples went to the table as they were, the whole
-    # genome under "Fitness" (HN-12)
-    return genomeAndFitnessPrettyPrinter(_flattenIndivs(hallOfFameInds(indivs, num, max=max)),
-                                         noUnits=meta_noUnits,
-                                         noEvolvedUnits=meta_noEvolved,
-                                         layout=layout)
+    """Return a string containing a formatted hall of fame table of the
+       logbook's best num genomes (genomeRanking): one row per genome, its
+       best and mean fitness, its number of evaluations and, when the
+       logbook has a post-evaluation, its post-evaluation mean and sd, then
+       the decoded genome."""
+    noUnits, noEvolved, layout = _logbook_layout(logbook)
+    ranking = genomeRanking(logbook, max=max)[:num]
+    withPost = postEvaluationOf(logbook) is not None
+    headers = ['Fitness', 'IndivID', 'Evals', 'MeanFit'] + (
+        ['PostMean', 'PostSD'] if withPost else []) + genomeHeaders(noUnits, noEvolved, layout)
+    rows = []
+    for e in ranking:
+        post = ([e['post']['mean'], e['post']['sd']] if e['post'] is not None else ['', '']
+                ) if withPost else []
+        rows.append([e['best'], e['indivId'], e['evaluations'], e['mean']] + post
+                    + genomeDecoder(noUnits, e['genome'], noEvolvedUnits=noEvolved,
+                                    layout=layout))
+    return tabulate(rows, headers, tablefmt='orgtbl')
                                                          
 
 def _genome_headers(noUnits, noEvolvedUnits, layout=None):

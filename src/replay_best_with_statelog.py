@@ -110,12 +110,22 @@ def resolve_experiment_func(logbook):
 
 
 def find_best_individual(logbook, indiv_id=None):
-    """Find the best (or a specific) individual in a DEAP logbook."""
+    """Find a specific individual in a DEAP logbook, or the best: the
+    post-evaluation's best when the logbook has a post-evaluation (under
+    noise the lowest logged score is mostly a lucky draw), else the
+    individual with the lowest logged fitness."""
     if indiv_id:
         for rec in logbook:
             if rec.get('indivId') == indiv_id:
                 return rec
         raise ValueError("Individual %s not found in logbook" % indiv_id)
+
+    from Helpers.StatsAnalyzer import postEvaluationOf
+    post = postEvaluationOf(logbook)
+    if post:
+        print("  The post-evaluation's best: %s, mean %.5f over %d seeds"
+              % (post[0]['indivId'], post[0]['mean'], len(post[0]['scores'])))
+        return find_best_individual(logbook, post[0]['indivId'])
 
     best = None
     for rec in logbook:
