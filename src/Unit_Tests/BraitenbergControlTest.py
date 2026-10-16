@@ -233,6 +233,7 @@ class SpinTest(unittest.TestCase):
         from math import degrees, hypot
         with tempfile.TemporaryDirectory() as tmp:
             os.environ['HOMEO_DATA_DIR'] = tmp
+            backend = None              # unbound if the setup raises
             try:
                 hom, backend, _ = D.setup_phototaxis(seed=7, fixed_weights=True, spin=spin)
                 robot = backend.kheperaSimulation.allBodies['Khepera']
@@ -250,7 +251,8 @@ class SpinTest(unittest.TestCase):
                         hypot(robot.body.position[0] - x0, robot.body.position[1] - y0))
             finally:
                 os.environ.pop('HOMEO_DATA_DIR', None)
-                backend.kheperaSimulation.saveTrajectory()
+                if backend is not None:
+                    backend.kheperaSimulation.saveTrajectory()
 
     def testSpinTurnsInPlaceInTheRequestedDirection(self):
         "positive spin turns clockwise (heading decreases), negative counter-clockwise, in place"
@@ -287,6 +289,7 @@ class SpinTest(unittest.TestCase):
         "the bias is clipped: a wheel never exceeds the motor's max speed"
         with tempfile.TemporaryDirectory() as tmp:
             os.environ['HOMEO_DATA_DIR'] = tmp
+            backend = None              # unbound if the setup raises
             try:
                 hom, backend, _ = D.setup_phototaxis(seed=7, fixed_weights=True, spin=0.9)
                 hom.slowingFactor = 0
@@ -303,7 +306,8 @@ class SpinTest(unittest.TestCase):
                                              m._maxSpeed + 0.0005)
             finally:
                 os.environ.pop('HOMEO_DATA_DIR', None)
-                backend.kheperaSimulation.saveTrajectory()
+                if backend is not None:
+                    backend.kheperaSimulation.saveTrajectory()
 
     def testSameSeedSamePoseWithOrWithoutSpin(self):
         "the spin draws nothing, so a spinning batch pairs with a non-spinning one"
@@ -323,10 +327,11 @@ class SpinTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed — KheperaSimulator unavailable")
-class VehicleBehaviourTest(unittest.TestCase):
-    """Braitenberg's two excitatory vehicles do what he says (TS-09): with the
-       light 30 degrees to one side, 2b (crossed) turns toward it, 2a
-       (uncrossed) away from it, on either side and with either motor."""
+class AristotelianVehiclesTurnTest(unittest.TestCase):
+    """Braitenberg's two excitatory vehicles with his memoryless motors do
+       what he says: with the light 30 degrees to one side, 2b (crossed)
+       turns toward it, 2a (uncrossed) away from it, on either side.  (The
+       Newtonian vehicles' runs are PhototaxisBehaviourTest's.)"""
 
     def _bearings(self, wiring, motor, heading, ticks=1500):
         "The light's bearing from the robot's heading (deg, left > 0), before and after"
@@ -336,6 +341,7 @@ class VehicleBehaviourTest(unittest.TestCase):
             return degrees((to - body.angle + pi) % (2 * pi) - pi)
         with tempfile.TemporaryDirectory() as tmp:
             os.environ['HOMEO_DATA_DIR'] = tmp
+            backend = None              # unbound if the setup raises
             try:
                 hom, backend, _ = D.setup_phototaxis(seed=7, fixed_weights=True, wiring=wiring,
                                                      signs='++', motor=motor)
@@ -351,10 +357,11 @@ class VehicleBehaviourTest(unittest.TestCase):
                 return before, bearing(robot.body)
             finally:
                 os.environ.pop('HOMEO_DATA_DIR', None)
-                backend.kheperaSimulation.saveTrajectory()
+                if backend is not None:
+                    backend.kheperaSimulation.saveTrajectory()
 
     def testTwoBTurnsTowardTheLightAndTwoAAway(self):
-        for motor in ('aristotelian', 'newtonian'):
+        for motor in ('aristotelian',):
             for heading in (15, 75):            # the light 30 degrees left, then right
                 with self.subTest(motor=motor, heading=heading):
                     before, after = self._bearings('crossed', motor, heading)
@@ -380,6 +387,7 @@ class AristotelianMotorTest(unittest.TestCase):
         rows = []
         with tempfile.TemporaryDirectory() as tmp:
             os.environ['HOMEO_DATA_DIR'] = tmp
+            backend = None              # unbound if the setup raises
             try:
                 hom, backend, _ = D.setup_phototaxis(seed=7, fixed_weights=True, wiring=wiring,
                                                      signs=signs, spin=spin, motor='aristotelian')
@@ -406,7 +414,8 @@ class AristotelianMotorTest(unittest.TestCase):
                                  units))
             finally:
                 os.environ.pop('HOMEO_DATA_DIR', None)
-                backend.kheperaSimulation.saveTrajectory()
+                if backend is not None:
+                    backend.kheperaSimulation.saveTrajectory()
         return rows
 
     def testMotorOutputIsThePreviousSensorReading(self):
