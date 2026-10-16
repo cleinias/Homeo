@@ -8,13 +8,12 @@
 #SBATCH --output=logs/%x-%A_%a.out
 #SBATCH --error=logs/%x-%A_%a.err
 #
-# Replication of the 2026-09-30 overnight batch with the three defects fixed:
-#   - the OU uniselector now actually runs in headless mode
-#   - numerically unstable (mass, viscosity) draws are rejected
-#   - vehicles start at rest instead of mid-manoeuvre
-#
-# 20 independent runs, 6M steps each, one core per run.  Sequentially this took
-# 12.5 hours; as an array it is one run's wall time.
+# 20 independent runs of the direct phototaxis experiment
+# (phototaxis_braitenberg2_direct) with the continuous uniselector, 6M steps
+# each, one core per run: the robot (the e-puck2) starts at rest at the default
+# pose, and each motor's (mass, viscosity) is drawn from the full distribution.
+# Sequentially the array takes about 12.5 hours; on Grace, one run's wall time.
+# hpc/run_array_local.sh runs the same array on a workstation.
 #
 # The project account is deliberately not in this file (public repo).  Either
 # export it once on Grace --- Slurm honours it as a default:
@@ -23,7 +22,11 @@
 #     sbatch --account=<your project account> grace_ou_6M.slurm
 #
 # Submit from the directory containing this file:
-#     mkdir -p logs && sbatch grace_ou_6M.slurm [--env-seed E | --seed S]
+#     mkdir -p logs && sbatch grace_ou_6M.slurm [--env-seed E | --seed S] [-- OPTIONS]
+#
+# OPTIONS, after --, go to the experiment as they are, e.g.
+#     sbatch grace_ou_6M.slurm -- --stable-draws      # redraw unstable (mass, viscosity)
+#     sbatch grace_ou_6M.slurm -- --robot kjunior --dark
 #
 # The task's seed seeds both the homeostat and the environment (the start
 # pose; the default pose draws nothing).  For the environment x seed design:
@@ -36,11 +39,13 @@
 
 set -euo pipefail
 
-FIXED_ENV_SEED=""; FIXED_SEED=""
+FIXED_ENV_SEED=""; FIXED_SEED=""; EXTRA_ARGS=()
+INVOCATION=("$@")
 while [ $# -gt 0 ]; do
     case "$1" in
         --env-seed) FIXED_ENV_SEED="$2"; shift 2;;
         --seed)     FIXED_SEED="$2"; shift 2;;
+        --)         shift; EXTRA_ARGS=("$@"); break;;
         *) echo "unknown option: $1" >&2; exit 2;;
     esac
 done
@@ -63,11 +68,7 @@ source "$VENV/bin/activate"
 
 # Output to scratch, ONE directory shared by every array task.  Each task's
 # filenames carry its array index (--run-tag below), so a shared directory
-# cannot collide -- and the array needs no merging step afterwards.  Until
-# 2026-10-01 each task wrote to task_$SLURM_ARRAY_TASK_ID/ and filenames were
-# distinguished only by a whole-second timestamp, so merging the directories by
-# hand silently overwrote the files of any two tasks that started in the same
-# second.
+# cannot collide -- and the array needs no merging step afterwards.
 # HOMEO_DATA_DIR is the data ROOT: the experiment appends "SimsData-<date>".
 export HOMEO_DATA_DIR="$SCRATCH/homeo/ou6M${seed_tag}-$SLURM_ARRAY_JOB_ID"
 mkdir -p "$HOMEO_DATA_DIR"
@@ -87,8 +88,9 @@ ENV_SEED=$SEED
 SERIAL=$(printf '%02d' "$SLURM_ARRAY_TASK_ID")
 
 echo "task $SLURM_ARRAY_TASK_ID  seed $SEED  env seed $ENV_SEED  out $HOMEO_DATA_DIR"
-# Provenance: which commit produced these results.
-echo "code $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned checkout')"
+# Provenance: the command and the commit ("-dirty" with uncommitted changes)
+echo "command grace_ou_6M.slurm ${INVOCATION[*]}"
+echo "code $(git -C "$HOMEO_SRC" describe --always --dirty 2>/dev/null || echo 'unversioned checkout') $(git -C "$HOMEO_SRC" log -1 --format=%s 2>/dev/null || true)"
 # numba draws its noise from its own generator: a seed gives a different run
 # with and without it, so record which.
 echo "python $(python -c 'import platform; print(platform.python_version())' 2>/dev/null), numba $(python -c 'import numba; print(numba.__version__)' 2>/dev/null || echo absent)"
@@ -108,5 +110,6 @@ srun python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direc
      --env-seed "$ENV_SEED" \
      --start-at-rest \
      --traj-interval 200 \
-     --run-tag "$SERIAL"
+     --run-tag "$SERIAL" \
+     "${EXTRA_ARGS[@]}"
 echo "task $SLURM_ARRAY_TASK_ID done"

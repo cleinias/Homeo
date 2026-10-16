@@ -146,7 +146,7 @@ mkdir -p "$HOMEO_DATA_DIR"
 export NUMBA_CACHE_DIR="${TMPDIR:-/tmp}/numba-$SLURM_ARRAY_TASK_ID"
 mkdir -p "$NUMBA_CACHE_DIR"
 
-CODE="$(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned checkout')"
+CODE="$(git -C "$HOMEO_SRC" describe --always --dirty 2>/dev/null || echo 'unversioned checkout') $(git -C "$HOMEO_SRC" log -1 --format=%s 2>/dev/null || true)"
 # numba draws its noise from its own generator: a seed gives a different run
 # with and without it, so record which (compare before pairing with other machines)
 PYENV="python $(python -c 'import platform; print(platform.python_version())' 2>/dev/null), numba $(python -c 'import numba; print(numba.__version__)' 2>/dev/null || echo absent)"
