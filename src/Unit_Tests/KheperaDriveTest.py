@@ -56,7 +56,36 @@ class KheperaDriveTest(unittest.TestCase):
         scale = max(math.hypot(ex, ey), 1e-3)
         self.assertAlmostEqual(moved[0], ex, delta=0.01 * scale, msg='x, commands %s, %s' % (right, left))
         self.assertAlmostEqual(moved[1], ey, delta=0.01 * scale, msg='y, commands %s, %s' % (right, left))
-        self.assertAlmostEqual(turned, eturn, delta=0.01 * max(abs(eturn), 0.01))
+        # the heading is kept in (-pi, pi]: compare turns modulo a full turn
+        self.assertAlmostEqual(math.remainder(turned - eturn, 2 * math.pi), 0,
+                               delta=0.01 * max(abs(eturn), 0.01))
+
+    def testSlowMotionAndLongTurnsAreExact(self):
+        '''The pose is kept in double precision: slow motion far from the
+        origin and turns at a large heading follow the arc exactly (Box2D's
+        float32 state rounded them by several per cent).'''
+        for right, left, heading in ((0.002, 0.002, 0.0), (0.01, 0.01, 0.3),
+                                     (0.03, 0.01, 1000.0), (0.11, 0.01, 3000.0)):
+            with self.subTest(right=right, left=left, heading=heading):
+                sim, robot = self.simulation()
+                robot.moveTo((7.0, 7.0))
+                robot.rotateTo(heading)
+                x0, y0, h0 = robot.pose
+                self.assertTrue(-math.pi < h0 <= math.pi)
+                self.assertAlmostEqual(h0, math.remainder(heading, 2 * math.pi), places=12)
+                robot.setSpeed(right, left)
+                steps = 2000
+                for i in range(steps):
+                    sim.advanceSim()
+                sim.saveTrajectory()
+                ex, ey, eturn = self.expected(robot, right, left, steps * 0.032, h0)
+                x, y, h = robot.pose
+                self.assertAlmostEqual(x - x0, ex, delta=1e-9 * max(abs(ex), 1e-3))
+                self.assertAlmostEqual(y - y0, ey, delta=1e-9 * max(abs(ey), 1e-3))
+                self.assertAlmostEqual(math.remainder(h - h0 - eturn, 2 * math.pi), 0, delta=1e-9)
+                # the body is the pose, rounded to float32 once
+                self.assertAlmostEqual(robot.body.position[0], x, delta=1e-6)
+                self.assertAlmostEqual(robot.body.position[1], y, delta=1e-6)
 
     def testStraight(self):
         for command in (0.05, 0.3, 1.0, 1.5):

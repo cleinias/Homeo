@@ -44,7 +44,7 @@ from pyglet.window import mouse, key
 from pyglet.math import Mat4, Vec3
 import numpy as np
 
-from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2, log
+from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2, log, remainder
 from Helpers.General_Helper_Functions import normalize, dated_data_dir
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from time import sleep, time, strftime, localtime
@@ -347,8 +347,12 @@ class KheperaRobot(object):
         (setRightSpeed/setLeftSpeed take rad/s; times the wheel radius, m/s)
         and wheel separation L, the body moves forward at v = (vR + vL)/2 and
         turns at omega = (vR - vL)/L (counterclockwise when the right wheel is
-        faster), integrated exactly over each simulation step.  The wheels are
-        bodies that follow the chassis, for rendering only.
+        faster), integrated exactly over each simulation step.  The robot
+        keeps its pose in double precision, the heading in (-pi, pi], and
+        places its Box2D body on it each step: Box2D's float32 state never
+        accumulates the motion, so slow motion and long turns are as exact
+        as fast ones.  The wheels are bodies that follow the chassis, for
+        rendering only.
 
         Speed units: maxWheelSpeed is in rad/s, the unit of setRightSpeed and
         setLeftSpeed, and getMaxSpeed returns it.  Its default, 1.55988 rad/s
@@ -417,6 +421,8 @@ class KheperaRobot(object):
         bodyDef.type = b2_dynamicBody
         self.body = world.CreateBody(bodyDef)
         self.body.position = initialPose
+        # The pose, in double precision: x, y, heading (see update)
+        self._pose = (float(initialPose[0]), float(initialPose[1]), 0.0)
         circleShape = b2CircleShape(radius=self.diameter/2.0)
         bodyFixtureDef = b2FixtureDef()
         bodyFixtureDef.density = self.density
@@ -720,30 +726,34 @@ class KheperaRobot(object):
 
         
     def update(self, dt=None):
-        '''Update physical state before a simulation step of dt seconds.
+        '''Move the robot by a simulation step of dt seconds, before the
+        world steps.
 
-        Set the chassis' velocities so that the step moves it exactly along
-        the differential-drive arc (the wheel speeds are held over the step):
-        heading theta -> theta + omega dt, and the position along the arc of
-        radius v / omega.'''
+        The pose moves exactly along the differential-drive arc (the wheel
+        speeds are held over the step): heading theta -> theta + omega dt,
+        and the position along the arc of radius v / omega, in double
+        precision.  The body is put at the new pose, still, so that the
+        world's step leaves it there.  No dt: no motion.'''
+        if not dt:
+            return
         vR = max(-self.maxSpeed, min(self.maxSpeed, self.rightSpeed))
         vL = max(-self.maxSpeed, min(self.maxSpeed, self.leftSpeed))
         v = (vR + vL) / 2.0
         omega = (vR - vL) / self.wheelSeparation
-        theta = self.body.angle
-        if dt:
-            turn = omega * dt
-            if abs(turn) > 1e-9:
-                dx = v / omega * (sin(theta + turn) - sin(theta))
-                dy = -v / omega * (cos(theta + turn) - cos(theta))
-            else:
-                dx = v * dt * cos(theta + turn / 2.0)
-                dy = v * dt * sin(theta + turn / 2.0)
-            self.body.linearVelocity = (dx / dt, dy / dt)
-            self._placeWheels(self.body.position + b2Vec2(dx, dy), theta + turn)
+        x, y, theta = self._pose
+        turn = omega * dt
+        if abs(turn) > 1e-9:
+            dx = v / omega * (sin(theta + turn) - sin(theta))
+            dy = -v / omega * (cos(theta + turn) - cos(theta))
         else:
-            self.body.linearVelocity = (v * cos(theta), v * sin(theta))
-        self.body.angularVelocity = omega
+            dx = v * dt * cos(theta + turn / 2.0)
+            dy = v * dt * sin(theta + turn / 2.0)
+        self._setPose((x + dx, y + dy), theta + turn)
+
+    @property
+    def pose(self):
+        "The robot's pose in double precision: (x, y, heading in radians, in (-pi, pi])"
+        return self._pose
 
     def setSpeed(self, newRightSpeed, newLeftSpeed):
         "Set both wheel speeds, in rad/s"
@@ -846,16 +856,29 @@ class KheperaRobot(object):
 
     def rotateTo(self, angleRad):
         """Rotate robot and its wheels, about the robot's centre, to angleRad."""
-        self._setPose(self.body.position, angleRad)
+        self._setPose(self._pose[:2], angleRad)
 
     def moveTo(self, posVec):
         """Move robot and its wheels to posVec."""
-        self._setPose(b2Vec2(posVec[0], posVec[1]), self.body.angle)
+        self._setPose(posVec, self._pose[2])
+
+    def setPose(self, x=None, y=None, heading=None):
+        '''Put the robot at (x, y), facing heading (degrees, as the .traj
+        heading); None keeps a value.'''
+        px, py, angle = self._pose
+        self._setPose((px if x is None else x, py if y is None else y),
+                      angle if heading is None else radians(heading))
 
     def _setPose(self, position, angle):
-        "Put the chassis at (position, angle), the wheels with it"
-        self.body.transform = (position, angle)
-        self._placeWheels(position, angle)
+        "Put the robot at (position, angle), the heading wrapped to (-pi, pi], the wheels with it"
+        angle = remainder(float(angle), 2 * pi)
+        if angle == -pi:
+            angle = pi
+        self._pose = (float(position[0]), float(position[1]), angle)
+        self.body.transform = (b2Vec2(self._pose[0], self._pose[1]), angle)
+        self.body.linearVelocity = (0, 0)
+        self.body.angularVelocity = 0
+        self._placeWheels(self._pose[:2], angle)
               
 class KheperaWheel(object):
     """A wheel of a Khepera-like robot, seen from above: a box of

@@ -336,30 +336,10 @@ def apply_spin(hom, spin):
 def set_start_pose(robot, x=None, y=None, heading=None):
     '''Place the robot at (x, y) with the given heading (degrees, same
     convention as the .traj "heading" column); None keeps the current value.
-
-    Moves the wheel bodies with the chassis, rotating them about its centre,
-    so the wheel joints stay intact (KheperaRobot.rotateTo/moveTo do not).
-    A Webots robot places itself (WebotsRobot.setPose).
+    Both robots place themselves (KheperaRobot.setPose, WebotsRobot.setPose).
     Call before the first simulation step.
     '''
-    if hasattr(robot, 'setPose'):
-        robot.setPose(x, y, heading)
-        return
-    from math import radians, cos, sin
-    from Box2D import b2Vec2
-
-    body = robot.body
-    ox, oy = body.position[0], body.position[1]
-    nx = ox if x is None else x
-    ny = oy if y is None else y
-    delta = 0.0 if heading is None else radians(heading) - body.angle
-    c, s = cos(delta), sin(delta)
-    for wheel in robot.wheels.values():
-        rx, ry = wheel.body.position[0] - ox, wheel.body.position[1] - oy
-        wheel.body.position = b2Vec2(nx + c * rx - s * ry, ny + s * rx + c * ry)
-        wheel.body.angle += delta
-    body.position = b2Vec2(nx, ny)
-    body.angle += delta
+    robot.setPose(x, y, heading)
 
 
 def random_start_pose(target_pos, random_position, start_range=DEFAULT_START_RANGE, *, rng):
