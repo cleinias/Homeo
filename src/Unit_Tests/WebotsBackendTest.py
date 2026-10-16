@@ -11,6 +11,7 @@ the same virtual quality sensors, and a phototaxis run through the
 experiments' own scripts.  Skipped where Webots cannot run (not installed,
 or neither a display nor xvfb-run).
 '''
+import csv
 import json
 import os
 import subprocess
@@ -63,6 +64,34 @@ out['maxSpeed'] = wr.maxSpeed
 webots.saveTrajectory()
 box2d.saveTrajectory()
 print('MEASURES ' + json.dumps(out))
+'''
+
+# Places the robot in Webots and Box2D and, with no step in between, prints
+# the pose and the eyes' irradiance each reports
+_PLACE = r'''
+import json, math, sys
+sys.path.insert(0, {src!r})
+from KheperaSimulator.KheperaSimulator import KheperaSimulation
+from WebotsSimulator.WebotsSimulation import WebotsSimulation
+from HomeoExperiments.KheperaExperiments.phototaxis_common import set_start_pose
+
+world = 'kheperaBraitenberg2_HOMEO_World'
+webots = WebotsSimulation.shared()
+webots.setupWorld(world, {data!r})
+box2d = KheperaSimulation()
+box2d.setupWorld(world, {data!r})
+wr, br = webots.allBodies['Khepera'], box2d.allBodies['Khepera']
+out = []
+for x, y, h in [(5.5, 3.0, 120), (6.0, 6.0, 45)]:
+    set_start_pose(wr, x, y, h)
+    set_start_pose(br, x, y, h)
+    p = wr.body.position
+    out.append(dict(pose=(x, y, h), webots=(p[0], p[1], math.degrees(wr.body.angle) % 360),
+                    eyes=[(wr.lightIrradiance(e), br.irradAtSensor(e, br.detectableLights))
+                          for e in ('leftEye', 'rightEye')]))
+webots.saveTrajectory()
+box2d.saveTrajectory()
+print('PLACED ' + json.dumps(out))
 '''
 
 
@@ -166,6 +195,53 @@ class WebotsBackendTest(unittest.TestCase):
         first, last = rows['batch'][0].split(), rows['batch'][-1].split()
         self.assertGreater(abs(float(last[0]) - float(first[0])) + abs(float(last[1]) - float(first[1])), 0.05)
         self.assertEqual(rows['batch'], rows['alone'])
+
+    def testAPlacedRobotIsWhereItWasPut(self):
+        '''set_start_pose takes effect at once, as in Box2D: the pose and the
+        eyes are the new ones before any step, and a run records the start it
+        had.  (Until 15 Oct 2026 Webots applied the pose only at the next
+        step, and runs recorded the world's default, (4, 4) heading 0:
+        R2-WEBOTS-2.)'''
+        with tempfile.TemporaryDirectory() as tmp:
+            script = os.path.join(tmp, 'place.py')
+            with open(script, 'w') as f:
+                f.write(_PLACE.format(src=SRC, data=tmp))
+            r = subprocess.run([sys.executable, script], capture_output=True, text=True,
+                               timeout=300, env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+        lines = [l for l in r.stdout.splitlines() if l.startswith('PLACED ')]
+        self.assertTrue(lines, r.stdout[-2000:] + r.stderr[-2000:])
+        for placed in json.loads(lines[0][len('PLACED '):]):
+            for got, wanted in zip(placed['webots'], placed['pose']):
+                self.assertAlmostEqual(got, wanted, delta=1e-3)
+            for webots, box2d in placed['eyes']:
+                self.assertAlmostEqual(webots, box2d, delta=0.005 * box2d + 1e-6)
+        self.assertTrue(any(box2d > 0 for p in json.loads(lines[0][len('PLACED '):])
+                            for _, box2d in p['eyes']))
+
+        # a run's recorded start: the batch CSV, the .traj header, the first row
+        with tempfile.TemporaryDirectory() as tmp:
+            command = [sys.executable, '-m', 'HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct',
+                       '--steps', '100', '--seed', '4', '--random-start', '--batch', '1',
+                       '--simulator', 'webots']
+            r = subprocess.run(command, cwd=SRC, capture_output=True, text=True, timeout=300,
+                               env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+            self.assertEqual(r.returncode, 0, r.stdout[-2000:] + r.stderr[-2000:])
+            data = os.path.join(tmp, os.listdir(tmp)[0])
+            files = os.listdir(data)
+            [summary] = [f for f in files if f.startswith('batch_')]
+            [traj] = [f for f in files if f.endswith('.traj')]
+            with open(os.path.join(data, summary)) as f:
+                run = next(csv.DictReader(f))
+            with open(os.path.join(data, traj)) as f:
+                lines = f.read().splitlines()
+        header = lines[lines.index("# Vehicle's initial position at:") + 1].split()
+        first = [l for l in lines if not l.startswith('#') and len(l.split()) > 5][0].split()
+        start = [float(run[k]) for k in ('start_x', 'start_y', 'start_heading')]
+        self.assertNotAlmostEqual(start[0], 4.0, delta=1e-3)    # not the world's default
+        for i, delta in enumerate((1e-3, 1e-3, 0.06)):          # the header's heading: 1 decimal
+            self.assertAlmostEqual(start[i], float(header[i]), delta=delta)
+        for i in range(2):                                      # one step's motion away
+            self.assertAlmostEqual(start[i], float(first[i]), delta=0.01)
 
 
 if __name__ == '__main__':

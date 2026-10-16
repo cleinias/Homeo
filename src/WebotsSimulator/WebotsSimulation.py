@@ -202,6 +202,7 @@ class WebotsRobot(object):
         self.maxWheelSpeed = KheperaRobot.EPUCK2_CAPPED_WHEEL_SPEED
         self.maxSpeed = self.maxWheelSpeed * self.wheelRadius
         self.eyeFieldOfView = geometry['fieldOfView']
+        self._supervisor, self._timeStep = supervisor, timeStep
         self._node = supervisor.getSelf()
         self.body = _Pose(self._node)
         self.wheels = {}
@@ -284,7 +285,12 @@ class WebotsRobot(object):
 
     def setPose(self, x=None, y=None, heading=None):
         '''Put the robot at (x, y), facing heading (degrees, as the .traj
-        heading); None keeps a value.  Call before the run's first step.'''
+        heading); None keeps a value.  Call before the run's first step.
+
+        Webots applies the new fields only at the next step, so this takes
+        one step, the robot still: on return the pose and the eyes are the
+        new ones, as with Box2D.  (Until 15 Oct 2026 it did not, and runs
+        recorded the world's default pose as their start, R2-WEBOTS-2.)'''
         position = self._node.getPosition()
         nx = position[0] if x is None else x
         ny = position[1] if y is None else y
@@ -292,6 +298,11 @@ class WebotsRobot(object):
         self._node.getField('translation').setSFVec3f([nx, ny, position[2]])
         self._node.getField('rotation').setSFRotation([0, 0, 1, angle])
         self._node.resetPhysics()
+        for motor in self._motors.values():
+            motor.setVelocity(0.0)
+        self.rightSpeed = self.leftSpeed = 0
+        if self._supervisor.step(self._timeStep) == -1:
+            raise RuntimeError('Webots has stopped')
 
     def setModelName(self, ID_String):
         self._modelName = ID_String
