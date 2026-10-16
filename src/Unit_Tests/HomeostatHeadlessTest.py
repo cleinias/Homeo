@@ -177,3 +177,55 @@ class ConnectionChangesBetweenRunsTest(unittest.TestCase):
                 if change == 'state':                  # frozen: the weights stay
                     for unit, w in zip(python.homeoUnits, evolved):
                         np.testing.assert_allclose(signedWeights(unit), w, atol=1e-12)
+
+
+def ashbyHomeostat(seed, headless, unitClass):
+    """Three fully connected units with Ashby's discrete uniselector, firing
+    often (critThreshold 0.05, interval 20), noise off."""
+    np.random.seed(seed)
+    random.seed(seed)
+    seed_jit_rng(seed)
+    HomeoUnit.clearNames()
+    hom = Homeostat()
+    hom.slowingFactor = 0
+    hom.collectsData = False
+    for i in range(3):
+        unit = unitClass()
+        unit.setRandomValues()
+        unit.uniselectorActive = True
+        unit.uniselectorTimeInterval = 20
+        unit.critThreshold = 0.05
+        hom.addFullyConnectedUnit(unit)
+    for unit in hom.homeoUnits:
+        unit.noise = 0
+        for conn in unit.inputConnections:
+            conn.noise = 0
+    hom._headless = headless
+    for unit in hom.homeoUnits:
+        unit._headless = headless
+    return hom
+
+
+class DiscreteUniselectorParityTest(unittest.TestCase):
+    '''With Ashby's discrete uniselector too, a headless run and a Python
+    run of one seed fire at the same ticks and follow the same trajectory,
+    for both unit classes.'''
+
+    def testHeadlessMatchesPythonPath(self):
+        for unitClass in (HomeoUnit, HomeoUnitNewtonian):
+            with self.subTest(unitClass=unitClass.__name__):
+                runs = []
+                for headless in (False, True):
+                    hom = ashbyHomeostat(4, headless, unitClass)
+                    hom.runFor(2000)
+                    for unit in hom.homeoUnits:
+                        unit.flushJitArrays()
+                    runs.append(hom)
+                python, headless = runs
+                counts = [u.uniselectorActivationCount for u in python.homeoUnits]
+                self.assertGreater(min(counts), 5)                  # it does fire
+                self.assertEqual([u.uniselectorActivationCount for u in headless.homeoUnits],
+                                 counts)
+                for a, b in zip(python.homeoUnits, headless.homeoUnits):
+                    self.assertAlmostEqual(a.criticalDeviation, b.criticalDeviation, delta=1e-9)
+                    np.testing.assert_allclose(signedWeights(a), signedWeights(b), atol=1e-9)
