@@ -27,7 +27,11 @@ module is collected, and the two modules that test Qt GUI code are not
 collected at all.  Without it, nothing here changes.
 
 Finally, every test runs on its own fixed random stream (_isolated_random_state
-below), so no test's outcome depends on which tests ran before it.
+below), so no test's outcome depends on which tests ran before it, and with
+the run environment (HOMEO_DATA_DIR, HOMEO_RUN_TAG) restored after every test
+and every test class (_restored_run_environment): many tests point the data
+directory at a temporary one and pop it after, which on a machine that sets
+it (Grace) sent every later test's files to the default directory.
 """
 import os
 import random
@@ -132,3 +136,33 @@ def pytest_report_header(config):
         return ('--no-qt: PyQt5 imports blocked; not collecting %s'
                 % ', '.join(_QT_GUI_TEST_MODULES))
     return None
+
+
+# The run environment ---------------------------------------------------------
+
+_RUN_ENVIRONMENT = ('HOMEO_DATA_DIR', 'HOMEO_RUN_TAG')
+
+
+def _restore_run_environment(saved):
+    for key, value in saved.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
+
+
+@pytest.fixture(autouse=True, scope='class')
+def _restored_run_environment_per_class():
+    "The run environment as it was before the class (its setUpClass/tearDownClass)"
+    saved = {key: os.environ.get(key) for key in _RUN_ENVIRONMENT}
+    yield
+    _restore_run_environment(saved)
+
+
+@pytest.fixture(autouse=True)
+def _restored_run_environment():
+    "The run environment as it was before the test"
+    saved = {key: os.environ.get(key) for key in _RUN_ENVIRONMENT}
+    yield
+    _restore_run_environment(saved)
+
