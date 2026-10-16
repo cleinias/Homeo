@@ -4,8 +4,7 @@ Created on Oct 14, 2026
 @author: stefano
 
 Helpers.ExperimentOrchestrator.run_concurrently, the loop the orchestrator
-scripts (run_validation_300k, run_direct_vehicle_ga,
-run_phototaxis_comparison) share since review finding SH-14: every
+scripts (run_direct_vehicle_ga, run_phototaxis_comparison) share: every
 experiment's output in its own log, only its PROGRESS lines on the console,
 and the exit codes reported.  The experiments here are tiny Python
 one-liners.

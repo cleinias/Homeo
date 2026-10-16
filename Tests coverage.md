@@ -86,7 +86,6 @@ CLIs, the Webots runs, the replay). The GUI tests run offscreen.
 | `Helpers/StatelogAnalyzer.py` | 411 | 28% |
 | **Entry-point scripts** | | |
 | `replay_best_with_statelog.py` | 257 | 62% |
-| `run_validation_300k.py` | 200 | 18% |
 | `run_ashby_gui.py` | 17 | 0% |
 | `run_ashby_original_experiments.py` | 200 | 0% |
 | `run_direct_vehicle_ga.py` | 76 | 0% |
@@ -102,7 +101,7 @@ CLIs, the Webots runs, the replay). The GUI tests run offscreen.
 - **The `run_*.py` entry points** are thin command-line wrappers. What they run is tested
   (the Ashby experiments in `AshbyExperimentsTest`, the GA in the GA tests, the orchestration
   loop in `ExperimentOrchestratorTest`); the scripts themselves, which launch long runs, are
-  not. `run_validation_300k.py` is covered only for the condition restore it uses.
+  not.
 - **`Helpers/StatelogAnalyzer.py` (28%)** and **`Helpers/StatsAnalyzer.py` (52%)**: the parsing,
   enrichment and logbook decoding are tested; the plotting functions (`plot_*`), the printed
   summary and the command line are not.

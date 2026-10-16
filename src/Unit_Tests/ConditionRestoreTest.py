@@ -2,8 +2,8 @@
 Restoring a homeostat from a logged snapshot (HomeostatConditionLogger).
 
 A snapshot restored into a homeostat built from another seed must give the
-same snapshot back: every unit and connection field the log records.  The
-300k validation (run_validation_300k.restore_from_json) relies on it.
+same snapshot back: every unit and connection field the log records, also
+when the snapshot is read back from a run's JSON.
 '''
 import json
 import os
@@ -75,16 +75,17 @@ class ConditionRestoreTest(unittest.TestCase):
         except ImportError:
             self.assertEqual(env['numba'], 'absent')
 
-    def testValidationRestoresTheSavedRun(self):
-        import run_validation_300k as rv
+    def testARunsJsonRestoresItsFinalConditions(self):
         saved = self.build(1)
         path = os.path.join(self.tmp.name, 'run.json')
         log_homeostat_conditions_json(saved, path, 'INITIAL CONDITIONS', 'run', seed=1)
         log_homeostat_conditions_json(saved, path, 'FINAL CONDITIONS')
         other = self.build(2)
-        self.assertEqual(rv.restore_from_json(other, path), 1)
         with open(path) as f:
-            self.assertEqual(_snapshot(other), json.load(f)['FINAL CONDITIONS'])
+            data = json.load(f)
+        self.assertEqual(data['seed'], 1)
+        self.assertEqual(restore_homeostat_conditions(other, data['FINAL CONDITIONS']), [])
+        self.assertEqual(_snapshot(other), data['FINAL CONDITIONS'])
 
 
 if __name__ == '__main__':
