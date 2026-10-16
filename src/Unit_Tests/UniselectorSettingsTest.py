@@ -10,7 +10,7 @@ upperBound = 5.
 from Core.HomeoUniselector import HomeoUniselector, HomeoUniselectorError
 from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
 from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
-from Helpers.QObjectProxyEmitter import emitter
+from Helpers.QObjectProxyEmitter import emitter, QT_AVAILABLE
 
 import unittest
 
@@ -19,14 +19,20 @@ import numpy as np
 
 class UniselectorSettingsTest(unittest.TestCase):
 
-    def testBeepsCanBeSetAndSignalTheGui(self):
+    def testBeepsCanBeSet(self):
         uniselector = HomeoUniselectorAshby()
-        heard = []
-        emitter(uniselector).uniselSoundChanged.connect(heard.append)
         uniselector.beeps = True
         self.assertTrue(uniselector.beeps)
         uniselector.toggleBeeping()
         self.assertFalse(uniselector.beeps)
+
+    @unittest.skipUnless(QT_AVAILABLE, 'PyQt5 is not available')
+    def testBeepsSignalTheGui(self):
+        uniselector = HomeoUniselectorAshby()
+        heard = []
+        emitter(uniselector).uniselSoundChanged.connect(heard.append)
+        uniselector.beeps = True
+        uniselector.toggleBeeping()
         self.assertEqual(heard, [True, False])
 
     def testStepsRebuildTheMatrix(self):
