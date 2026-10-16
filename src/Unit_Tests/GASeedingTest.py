@@ -220,7 +220,7 @@ if __name__ == '__main__':
     from Simulator.HomeoGenAlg import HomeoGASimulation
     HomeoGASimulation.dataDirRoot = {out!r}
     ga = HomeoGASimulation(postEvalTop=0, stepsSize=100, popSize={pop}, generSize=1,
-                           exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
+                           exp={exp!r},
                            simulatorBackend='HOMEO', nWorkers=2, evalsPerIndividual={k})
     ga.runGaSimulation(ga.generateRandomPop(randomSeed=3))
     print('LOGBOOK ' + sorted(glob.glob(ga.dataDir + '/Logbook-*.lgb'))[-1])
@@ -239,14 +239,19 @@ class ReplayReproducesEvaluationTest(unittest.TestCase):
         cls.env = dict(os.environ, NUMBA_CACHE_DIR=os.path.join(cls.tmp.name, 'numba'))
         cls.logbook = cls._runGA(pop=6, k=1)
         cls.logbookOfPairs = cls._runGA(pop=2, k=2)     # evaluations of 2 runs
+        # the other vehicles: with eyes, the 3c vehicle, the classic genome
+        cls.otherLogbooks = {exp: cls._runGA(pop=2, k=1, exp=exp) for exp in (
+            'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2',
+            'initializeBraiten3c_GA_continuous_weightfree_fixed_v2',
+            'initializeBraiten2_2_Full_GA_phototaxis')}
 
     @classmethod
-    def _runGA(cls, pop, k):
-        out = os.path.join(cls.tmp.name, 'ga-%d' % k)
+    def _runGA(cls, pop, k, exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2'):
+        out = os.path.join(cls.tmp.name, 'ga-%d-%s' % (k, exp))
         os.makedirs(out)
         script = os.path.join(out, 'ga.py')
         with open(script, 'w') as f:
-            f.write(_GA_FOR_REPLAY.format(src=cls.src, out=out, pop=pop, k=k))
+            f.write(_GA_FOR_REPLAY.format(src=cls.src, out=out, pop=pop, k=k, exp=exp))
         result = subprocess.run([sys.executable, script], cwd=cls.src, env=cls.env,
                                 capture_output=True, text=True, timeout=900)
         assert result.returncode == 0, result.stdout[-2000:] + result.stderr[-2000:]
@@ -274,6 +279,16 @@ class ReplayReproducesEvaluationTest(unittest.TestCase):
             r = self._replay(self.logbook, '--indiv', rec['indivId'])
             self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
             self.assertIn('Reproduced the logged fitness exactly', r.stdout, rec['indivId'])
+
+    def testTheOtherVehiclesAreReproduced(self):
+        "the vehicle with eyes, the 3c vehicle (its five sources) and a classic genome replay exactly"
+        for exp, logbook in self.otherLogbooks.items():
+            for rec in self._individuals(logbook):
+                with self.subTest(exp=exp, indiv=rec['indivId']):
+                    r = self._replay(logbook, '--indiv', rec['indivId'])
+                    self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
+                    self.assertIn('Reproduced the logged fitness exactly', r.stdout)
+                    self.assertIn('Light intensity: 100', r.stdout)
 
     def testAnEvaluationOfSeveralRunsIsReplayedWhole(self):
         "with 2 runs per evaluation each run is replayed and compared; --run picks the statelog"
