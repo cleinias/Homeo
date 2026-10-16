@@ -20,21 +20,19 @@ every series of a file in one strip instead.  Several files are drawn as
 separate strips (or, with --overlay, one strip per file).
 
 SMOOTHING, AND WHY YOU USUALLY WANT IT.  The log samples every --log-interval
-ticks, which can be far coarser than the process being logged.  In the
-'legacy' continuous uniselector (all runs before 12 Oct 2026) a connection
-weight evolves by sigma*sqrt(dt) per tick: at the stock
-sigma_crit = 0.1 and an interval of 200 ticks, a stressed weight moves
-0.1*sqrt(200) = 1.41 between consecutive samples -- more than the whole [-1, 1]
-range it is clipped to.  Samples inside such a burst are therefore independent
-draws, and the raw trace is aliased noise that straddles zero no matter what the
-weight is really doing: in the 2026-10-01 6M array the raw cross-weight traces
-cross zero 123,717 times, while the same data smoothed over the OU's own
-correlation time (tau_a/theta = 100,000 ticks) crosses 292 times, with 34 of the
-40 traces never crossing at all.  --smooth-ticks takes that timescale directly;
---smooth takes it in samples.  The raw trace stays visible underneath so the
-smoothing never hides what it was computed from.  In the current models
-('diffusion', 'ou') a stressed weight moves sigma*sqrt(2*dt/tau_a) per tick,
-and tau_a is the timescale to smooth over.
+ticks, which can be far coarser than the process being logged.  In a statelog
+of the 'legacy' continuous uniselector a connection weight evolves by
+sigma*sqrt(dt) per tick: at sigma_crit = 0.1 and an interval of 200 ticks, a
+stressed weight moves 0.1*sqrt(200) = 1.41 between consecutive samples -- more
+than the whole [-1, 1] range it is clipped to.  Samples inside such a burst are
+therefore independent draws, and the raw trace is aliased noise that straddles
+zero no matter what the weight is really doing; smoothed over the process's own
+correlation time (tau_a/theta for 'legacy'), the same data show it.
+--smooth-ticks takes that timescale directly; --smooth takes it in samples.
+The raw trace stays visible underneath so the smoothing never hides what it was
+computed from.  In the models of HomeoUniselectorContinuous ('diffusion', 'ou')
+a stressed weight moves sigma*sqrt(2*dt/tau_a) per tick, and tau_a is the
+timescale to smooth over.
 
 @author: stefano
 '''
@@ -67,7 +65,7 @@ def readStatelog(path):
     data    -- float64 array, one row per sample, one column per name
 
     A row that is not a full row of numbers -- the last line of a log still
-    being written -- is skipped (until 14 Oct 2026 it raised: HV-12).
+    being written -- is skipped.
     """
     meta, columns, rows = {}, None, []
     with open(path) as f:
@@ -149,9 +147,9 @@ def resolveSeries(columns, units, values, crossOnly, explicit):
     for value in values:
         # A full column name given to --value is accepted as itself.  --column is
         # the documented flag for that, but typing the name you can see in --list
-        # is the obvious move, and refusing it taught nothing: the old failure
-        # went looking for 'Left Motor_Left Motor_critDev', found nothing, and
-        # reported "nothing to draw: give --value", which the user just had.
+        # is the obvious move, and refusing it would teach nothing: the lookup
+        # would go looking for 'Left Motor_Left Motor_critDev', find nothing,
+        # and report "nothing to draw: give --value", which the user just gave.
         if value in columns:
             chosen.append((value, value))
             continue
@@ -231,9 +229,9 @@ def isSigned(column):
 
 def _running(v, w):
     '''The running mean of v over w samples, one value per full window.
-    Plot it against _running(tick, w), the windows' centres: until 14 Oct 2026
-    it was drawn at each window's last tick, so every smoothed feature, zero
-    crossing and ribbon was late by half the window (HV-07).'''
+    Plot it against _running(tick, w), the windows' centres: drawn at each
+    window's last tick, every smoothed feature, zero crossing and ribbon would
+    be late by half the window.'''
     if w <= 1:
         return v
     return np.convolve(v, np.ones(w) / w, mode='valid')
@@ -329,8 +327,8 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
         if smoothTicks:
             interval = float(meta.get('log_interval', 1)) or 1.0
             w = max(1, int(round(smoothTicks / interval)))
-        # A window longer than the log smooths over all of it (it used to
-        # make np.convolve swap its arguments and draw garbage: HV-12)
+        # A window longer than the log smooths over all of it (else
+        # np.convolve would swap its arguments and draw garbage)
         w = min(w, len(data))
         picked = resolveSeries(cols, list(units), list(values), crossOnly, list(columns))
         loaded.append((p, meta, cols, data, picked, w))
@@ -359,8 +357,8 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
         heights.extend([1] * (extra - 1))
     nSeries = len({lab for s_ in strips for _, lab, _ in s_[2]})
     # Reserve room for the legend's ACTUAL number of rows: a fixed allowance
-    # fitted one row, and a seven-series chart wrapped onto two and sat on the
-    # first strip's upper bound rule.
+    # fits one row, and a seven-series legend wraps onto two and would sit on
+    # the first strip's upper bound rule.
     legendCols = min(5, max(1, nSeries))
     legendRows = -(-nSeries // legendCols) if nSeries > 1 else 0
     titleIn, legendIn, bottomIn = 0.52, 0.26 * legendRows, 0.55
@@ -373,7 +371,7 @@ def graphStripcharts(paths, units=(), values=(), columns=(), crossOnly=False,
                   top=1 - (titleIn + legendIn) / figH, bottom=bottomIn / figH)
 
     # The shared symmetric range spans the signed strips only, the ones it is
-    # applied to (an unsigned series used to set it too: HV-12)
+    # applied to
     ylim = None
     signedStrips = [s for s in strips if s[4]]
     if symmetric and signedStrips:

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 '''
-Created on Dec 28, 2014
 Self-standing script that chart trajectories produced by the Homeo simulation package
 
 Usage:
@@ -40,17 +39,15 @@ MAX_PLOT_POINTS = 50000
 # equilibrium analysis calls an attractor; a run ending outside it has reached
 # it.
 #
-# Since the eye redesign of 2026-10-03 an eye stops seeing a source of
-# intensity I where the irradiance on its axis falls to its threshold I0, at
-# sqrt(I / I0) (KheperaRobot.eyeResponse) -- never for the default eye (I0 = 0),
-# 10 units from an intensity-100 light for a log eye with I0 = 1.  The chart
-# takes I0 from the trajectory's header (since 14 Oct 2026) or the run's JSON
-# beside it, and draws no ring when neither says (noInputRadius); --sensor-range
-# overrides it.  Until 14 Oct 2026 the ring was always drawn at 10 (HV-11).
+# An eye stops seeing a source of intensity I where the irradiance on its axis
+# falls to its threshold I0, at sqrt(I / I0) (KheperaRobot.eyeResponse) --
+# never for the default eye (I0 = 0), 10 units from an intensity-100 light for
+# a log eye with I0 = 1.  The chart takes I0 from the trajectory's header or
+# the run's JSON beside it, and draws no ring when neither says
+# (noInputRadius); --sensor-range overrides it.
 #
-# Before 2026-10-03 the eyes had a hard cut-off at 10 units (measured over the
-# 600,020 samples of the 2026-10-01 6M array, the largest reading beyond 10 is
-# exactly 0, against 1.0141 at 10.0): chart those runs with --sensor-range 10.
+# Eyes with a hard cut-off at 10 units see nothing beyond it: chart their runs
+# with --sensor-range 10.
 OLD_SENSOR_MAX_RANGE = 10.0
 
 
@@ -65,16 +62,16 @@ def main(argv=None):
                         help='Save figure to file (PDF, PNG, etc.) instead of displaying')
     parser.add_argument('--dark', action='store_true',
                         help='Treat the light source as a darkness source '
-                             '(reverses the irradiance gradient).  Since 13 Oct 2026 '
-                             'a file says so itself (negative intensity in its '
-                             'header); needed only for older --dark runs')
+                             '(reverses the irradiance gradient).  A file that '
+                             'records a negative intensity in its header says so '
+                             'itself; needed only for a file that does not')
     parser.add_argument('--sensor-range', type=float, default=None,
                         help='Radius of the no-input ring drawn around the target, '
                              'the distance beyond which the eyes see nothing of it '
                              '(default: sqrt(intensity / eye threshold), from the '
                              "file's header or the run's JSON; no ring for eyes with "
                              'threshold 0 or when neither records it).  0 omits the '
-                             'ring; 10 for runs made before 3 Oct 2026.')
+                             'ring; 10 for eyes with a hard cut-off at 10 units.')
     parser.add_argument('--max-points', type=int, default=MAX_PLOT_POINTS,
                         help='Thin each trajectory to at most this many plotted points '
                              '(default %(default)s)')
@@ -256,7 +253,7 @@ def _makeScrollable(fig):
     The figure is sized for its legend, 0.25 in per row, so with many runs it is
     taller than the screen.  Qt then fits the window to the screen and the
     constrained layout, which must keep the whole legend visible, takes the
-    difference out of the plot: at 200 runs the plot was a thumbnail.  Here the
+    difference out of the plot: at 200 runs the plot would be a thumbnail.  Here the
     canvas can grow with the window but never shrinks below the figure's size;
     a smaller window scrolls instead.  The mouse wheel scrolls the window too.
 
@@ -353,8 +350,7 @@ def loadTrajectory(trajDataFilename, maxPoints=MAX_PLOT_POINTS):
     Reads in chunks, so very large files never have to fit in memory whole.
     Incomplete rows (e.g. the last line of a run still being written) are
     skipped: rows with a missing field, and a last line with no newline, which
-    may be cut in the middle of a number (until 14 Oct 2026 it was kept, and
-    became the final position; HV-08).
+    may be cut in the middle of a number.
     """
     header = readDataFileHeader(trajDataFilename)
     step = max(1, ceil(_countLines(trajDataFilename) / max(1, maxPoints)))
@@ -479,9 +475,8 @@ def noInputRadius(dataFileHeader, lightsOnDic, trajDataFilename=None):
     """The distance beyond which the eyes see nothing of the main source,
     sqrt(|intensity| / I0) for the least threshold I0 of the light eyes
     (leftEye, rightEye; else of any eye), on the eyes' axis.  I0 comes from
-    the header's eye lines (since 14 Oct 2026) or else from the run's JSON
-    beside the file (same name, eye_threshold in its settings; runs since 13
-    Oct 2026).  0 -- no ring -- for eyes with threshold 0, which see any
+    the header's eye lines or else from the run's JSON beside the file (same
+    name, eye_threshold in its settings).  0 -- no ring -- for eyes with threshold 0, which see any
     source at any distance, or when neither records the threshold."""
     target = _mainTarget(lightsOnDic)
     if target is None:
@@ -643,8 +638,8 @@ def readLightsFromHeader(dataFileHeader):
 
 def readStepsRecorded(trajDataFilename):
     '''The number of simulator steps a .traj file recorded, from its last
-    line, "# Steps recorded<TAB>S" (written on closing since 15 Oct 2026);
-    None for older files and for runs killed before the file was closed.'''
+    line, "# Steps recorded<TAB>S" (written on closing); None for a file
+    without that line, as for runs killed before the file was closed.'''
     with open(trajDataFilename, 'rb') as f:
         f.seek(0, os.SEEK_END)
         f.seek(max(0, f.tell() - 256))
@@ -657,10 +652,10 @@ def ticksFromRows(dataFileHeader, nRows, stepsRecorded=None):
     '''Homeostat ticks covered by nRows data rows of a .traj file.
 
     A row is one simulator step, or one every N steps when the file was
-    decimated, and a tick is two steps (stepsPerTick).  Files since 13 Oct
-    2026 say both: "# Sampled every N simulator steps, M steps per homeostat
-    tick".  Older ones said "# Sampled every N ticks" when decimated, meaning
-    steps, and nothing otherwise; every run then had 2 steps per tick.
+    decimated, and a tick is two steps (stepsPerTick).  A file's header says
+    both: "# Sampled every N simulator steps, M steps per homeostat tick".  A
+    header with "# Sampled every N ticks" means N steps, at 2 steps per tick;
+    a header with no sampling line is undecimated, at 2 steps per tick.
 
     Exact with stepsRecorded, the count a closed file ends with (see
     readStepsRecorded), and for an undecimated file.  Otherwise a decimated

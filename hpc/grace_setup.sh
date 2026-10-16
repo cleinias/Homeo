@@ -37,8 +37,8 @@ source "$VENV/bin/activate"
 python -m pip install --upgrade pip setuptools wheel
 
 # ---------------------------------------------------------------------------
-# box2d-py has NO wheel on PyPI for any current CPython (checked 2026-10-01:
-# none for cp311/312/313/314), so pip always builds it from source, and the
+# box2d-py has NO wheel on PyPI for any current CPython (none for
+# cp311/312/313/314), so pip always builds it from source, and the
 # build runs swig.  Without swig it dies with
 #     error: command 'swig' failed: No such file or directory
 #
@@ -62,7 +62,7 @@ python -m pip install --no-build-isolation box2d-py
 # GA evaluation runs through, falls back to a plain object; and the GA engine is
 # Simulator/HomeoGenAlg.py, apart from its GUI.
 #
-# pyglet is still needed, and it is not just a pip wheel: importing it loads the
+# pyglet is needed, and it is not just a pip wheel: importing it loads the
 # system libGL and libX11, which must be present on the compute nodes.
 python -m pip install \
     numpy scipy pandas matplotlib \
@@ -71,8 +71,10 @@ python -m pip install \
     pytest
 
 # numba is optional (HomeoJIT degrades silently to a no-op decorator) but gives
-# a real speedup on the inner loops, and is NOT in requirements.txt.
-python -m pip install numba || echo "!! numba unavailable for this Python; continuing without JIT"
+# a real speedup on the inner loops.  The version requirements.txt pins: numba
+# draws the headless runs' noise from its own generator, so runs on Grace and
+# on a workstation agree only with the same numba.
+python -m pip install "numba==0.68.*" || echo "!! numba 0.68 unavailable for this Python; continuing without JIT"
 
 python -c "import Box2D; print('box2d-py OK:', Box2D.__version__)"
 

@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-What the GA optimises (review finding TS-09): an evaluation's fitness is
+What the GA optimises: an evaluation's fitness is
 the experiment's fitnessSign times the final distance from the light, on
 the serial and the parallel path; DEAP's FitnessMin makes lower better, so
 phototaxis selects the nearer vehicle and scototaxis the farther; and
@@ -55,21 +53,34 @@ class FitnessSignTest(GATestCase):
                 self.assertEqual(ga.fitnessSign, sign)
                 ind = ga.toolbox.individual()
                 ind.ID = '000-001'
-                with mock.patch.object(ga.simulatorBackend, 'finalDisFromTarget', return_value=2.5), \
+                with mock.patch.object(SimulatorBackendHOMEO, 'finalDisFromTarget', return_value=2.5), \
                         contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(ga.evaluateGenomeFitness(ind), (sign * 2.5,))
+
+    def testSerialAndWorkersEvaluateAlike(self):
+        "The serial path evaluates through evaluate_genome, as the workers do"
+        ga = self.ga('initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2')
+        ind = ga.toolbox.individual()
+        ind.ID = '000-001'
+        with mock.patch.object(HomeoGenAlg, 'evaluate_genome', return_value=(1.5,)) as evaluate:
+            self.assertEqual(ga.evaluateGenomeFitness(ind), (1.5,))
+        evaluate.assert_called_once_with(
+            ind, 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
+            {'dataDir': ga.dataDir, 'noNoise': False, 'noUnisel': False}, 5, ga.dataDir, 1)
+        with self.assertRaisesRegex(ValueError, 'needs a genome'):
+            ga.evaluateGenomeFitness(None)
 
     def testParallelEvaluationIsSignTimesDistance(self):
         for sign in (1, -1):
             with self.subTest(sign=sign):
-                config = {'experiment': 'initializeBraiten2_direct_GA_continuous_weightfree_fixed',
+                config = {'experiment': 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
                           'experimentParams': {'dataDir': self.tmp, 'noNoise': False,
                                                'noUnisel': False},
                           'stepsSize': 5, 'dataDir': self.tmp, 'fitnessSign': sign}
                 with mock.patch.dict(HomeoGenAlg._worker_config, config, clear=True), \
                         mock.patch.object(SimulatorBackendHOMEO, 'finalDisFromTarget', return_value=2.5), \
                         contextlib.redirect_stdout(io.StringIO()):
-                    self.assertEqual(_run_genome_evaluation(Ind([0.5] * 10, '000-001')), (sign * 2.5,))
+                    self.assertEqual(_run_genome_evaluation(Ind([0.5] * 8, '000-001')), (sign * 2.5,))
 
     def testLowerIsBetter(self):
         '''With every vehicle in one tournament, phototaxis selects the

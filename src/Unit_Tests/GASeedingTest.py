@@ -1,6 +1,4 @@
 '''
-Created on Oct 2, 2026
-
 @author: stefano
 
 Reproducible GA runs: every fitness evaluation is seeded from the GA's seed by
@@ -135,7 +133,7 @@ def run(seed, workers):
     from Simulator.HomeoGenAlg import HomeoGASimulation
     HomeoGASimulation.dataDirRoot = {out!r}
     ga = HomeoGASimulation(postEvalTop=0, stepsSize=100, popSize=4, generSize=1,
-                           exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
+                           exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
                            simulatorBackend='HOMEO', nWorkers=workers,
                            noiseScheme={scheme!r})
     pop = ga.generateRandomPop(randomSeed=seed)
@@ -212,17 +210,16 @@ class SeededGARunTest(unittest.TestCase):
         self.assertEqual(len(set.union(*by_generation.values())), 2)
 
 
-# A small GA (experiment 2: evolvable dt_fast, so some evaluations stop at
-# maxRuns before their planned tick count) whose logbook the replay reads.
+# A small GA whose logbook the replay reads.
 _GA_FOR_REPLAY = '''
 import sys, glob
 sys.path.insert(0, {src!r})
 if __name__ == '__main__':
     from Simulator.HomeoGenAlg import HomeoGASimulation
     HomeoGASimulation.dataDirRoot = {out!r}
-    ga = HomeoGASimulation(postEvalTop=0, stepsSize=100, popSize=6, generSize=1,
-                           exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed',
-                           simulatorBackend='HOMEO', nWorkers=2)
+    ga = HomeoGASimulation(postEvalTop=0, stepsSize=100, popSize={pop}, generSize=1,
+                           exp={exp!r},
+                           simulatorBackend='HOMEO', nWorkers=2, evalsPerIndividual={k})
     ga.runGaSimulation(ga.generateRandomPop(randomSeed=3))
     print('LOGBOOK ' + sorted(glob.glob(ga.dataDir + '/Logbook-*.lgb'))[-1])
 '''
@@ -238,13 +235,25 @@ class ReplayReproducesEvaluationTest(unittest.TestCase):
         cls.src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         cls.tmp = tempfile.TemporaryDirectory()
         cls.env = dict(os.environ, NUMBA_CACHE_DIR=os.path.join(cls.tmp.name, 'numba'))
-        script = os.path.join(cls.tmp.name, 'ga.py')
+        cls.logbook = cls._runGA(pop=6, k=1)
+        cls.logbookOfPairs = cls._runGA(pop=2, k=2)     # evaluations of 2 runs
+        # the other vehicles: with eyes, the 3c vehicle, the classic genome
+        cls.otherLogbooks = {exp: cls._runGA(pop=2, k=1, exp=exp) for exp in (
+            'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2',
+            'initializeBraiten3c_GA_continuous_weightfree_fixed_v2',
+            'initializeBraiten2_2_Full_GA_phototaxis')}
+
+    @classmethod
+    def _runGA(cls, pop, k, exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2'):
+        out = os.path.join(cls.tmp.name, 'ga-%d-%s' % (k, exp))
+        os.makedirs(out)
+        script = os.path.join(out, 'ga.py')
         with open(script, 'w') as f:
-            f.write(_GA_FOR_REPLAY.format(src=cls.src, out=cls.tmp.name))
+            f.write(_GA_FOR_REPLAY.format(src=cls.src, out=out, pop=pop, k=k, exp=exp))
         result = subprocess.run([sys.executable, script], cwd=cls.src, env=cls.env,
                                 capture_output=True, text=True, timeout=900)
         assert result.returncode == 0, result.stdout[-2000:] + result.stderr[-2000:]
-        cls.logbook = result.stdout.split('LOGBOOK ', 1)[1].splitlines()[0]
+        return result.stdout.split('LOGBOOK ', 1)[1].splitlines()[0]
 
     @classmethod
     def tearDownClass(cls):
@@ -269,35 +278,76 @@ class ReplayReproducesEvaluationTest(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
             self.assertIn('Reproduced the logged fitness exactly', r.stdout, rec['indivId'])
 
+    def testTheOtherVehiclesAreReproduced(self):
+        "the vehicle with eyes, the 3c vehicle (its five sources) and a classic genome replay exactly"
+        for exp, logbook in self.otherLogbooks.items():
+            for rec in self._individuals(logbook):
+                with self.subTest(exp=exp, indiv=rec['indivId']):
+                    r = self._replay(logbook, '--indiv', rec['indivId'])
+                    self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
+                    self.assertIn('Reproduced the logged fitness exactly', r.stdout)
+                    self.assertIn('Light intensity: 100', r.stdout)
+
+    def testAnEvaluationOfSeveralRunsIsReplayedWhole(self):
+        "with 2 runs per evaluation each run is replayed and compared; --run picks the statelog"
+        from Simulator.HomeoGenAlg import repeat_seeds
+        for rec in self._individuals(self.logbookOfPairs):
+            self.assertEqual(len(rec['scores']), 2)
+            r = self._replay(self.logbookOfPairs, '--indiv', rec['indivId'], '--run', '2')
+            self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
+            self.assertIn('Reproduced the logged fitness exactly', r.stdout, rec['indivId'])
+            [statelog] = [line.split(': ', 1)[1] for line in r.stdout.splitlines()
+                          if line.startswith('Statelog written to: ')]
+            with open(statelog) as f:
+                seed = [line.split('\t')[1].strip() for line in f if line.startswith('# seed')]
+            self.assertEqual(seed, [str(repeat_seeds(rec['evalSeed'], 2)[1])])
+        r = self._replay(self.logbookOfPairs, '--run', '3')
+        self.assertNotEqual(r.returncode, 0)
+
     def testAnotherSeedIsNotPassedOffAsAReproduction(self):
         "--seed replays the genome under other noise, and says so"
         r = self._replay(self.logbook, '--seed', '123')
         self.assertEqual(r.returncode, 0, r.stderr[-1500:])
         self.assertIn('Not a reproduction of the GA evaluation', r.stdout)
 
-    def testOldLogbookKeepsTheOldReplay(self):
-        "without evalSeeds the replay works as before and says it cannot reproduce"
+    def testALogbookOfAnotherRobotIsNotReplayed(self):
+        "a logbook that records no robot, or another one, is refused"
+        import pickle
+        for robot in (None, 'kjunior'):
+            with open(self.logbook, 'rb') as f:
+                logbook = pickle.load(f)
+            for rec in logbook:
+                if 'exp' in rec and 'genome' not in rec:
+                    rec.pop('robot')
+                    if robot:
+                        rec['robot'] = robot
+            other = os.path.join(self.tmp.name, 'robot-%s.lgb' % robot)
+            with open(other, 'wb') as f:
+                pickle.dump(logbook, f)
+            r = self._replay(other, '--steps', '100')
+            self.assertNotEqual(r.returncode, 0, robot)
+            self.assertIn('Cannot replay', r.stderr)
+
+    def testALogbookWithoutEvalSeedsNeedsASeed(self):
+        "without evalSeeds the replay asks for --seed, and with it repeats itself"
         import pickle
         with open(self.logbook, 'rb') as f:
             logbook = pickle.load(f)
         for rec in logbook:
             rec.pop('evalSeed', None)
-        old = os.path.join(self.tmp.name, 'old.lgb')
-        with open(old, 'wb') as f:
+        unseeded = os.path.join(self.tmp.name, 'unseeded.lgb')
+        with open(unseeded, 'wb') as f:
             pickle.dump(logbook, f)
-        r = self._replay(old, '--steps', '100')
-        self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
-        self.assertIn('predates seeded GA evaluations', r.stdout)
-        self.assertIn('Seed: 45', r.stdout)
-        # ... and, seeded with 45, it repeats itself (review finding SH-06:
-        # the test checked only the printed seed)
-        again = self._replay(old, '--steps', '100')
-        self.assertEqual(again.returncode, 0, again.stdout[-1500:] + again.stderr[-1500:])
+        r = self._replay(unseeded, '--steps', '100')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('records no evalSeed', r.stderr)
+        runs = [self._replay(unseeded, '--steps', '100', '--seed', '45') for i in range(2)]
+        for run in runs:
+            self.assertEqual(run.returncode, 0, run.stdout[-1500:] + run.stderr[-1500:])
         distances = [[line for line in run.stdout.splitlines() if 'Final distance:' in line]
-                     for run in (r, again)]
-        self.assertTrue(distances[0], r.stdout[-1500:])
-        self.assertEqual(distances[0][0].split('Final distance:')[1],
-                         distances[1][0].split('Final distance:')[1])
+                     for run in runs]
+        self.assertTrue(distances[0], runs[0].stdout[-1500:])
+        self.assertEqual(distances[0], distances[1])
 
 
 if __name__ == "__main__":

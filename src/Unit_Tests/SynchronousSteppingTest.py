@@ -1,9 +1,7 @@
 '''
-Synchronous world stepping (KheperaSimulation.synchronousStepping).
-
-With it, the motors only set their wheel speeds and the world advances once
-per homeostat tick, after every unit has updated, by stepsPerTick steps; the
-tick's duration and the number of trajectory rows stay as without it.
+World stepping: the motors only set their wheel speeds and the world
+advances once per homeostat tick, after every unit has updated, by
+stepsPerTick steps.
 '''
 import os
 import tempfile
@@ -22,9 +20,8 @@ class SynchronousSteppingTest(unittest.TestCase):
         os.environ.pop('HOMEO_DATA_DIR', None)
         self.tmp.cleanup()
 
-    def vehicle(self, synchronous, spin=0.0):
-        hom, backend, seed = D.setup_phototaxis(seed=3, fixed_weights=True, spin=spin,
-                                                synchronous_stepping=synchronous)
+    def vehicle(self, spin=0.0):
+        hom, backend, seed = D.setup_phototaxis(seed=3, fixed_weights=True, spin=spin)
         hom.slowingFactor = 0
         hom.collectsData = False
         hom._headless = True
@@ -34,9 +31,9 @@ class SynchronousSteppingTest(unittest.TestCase):
         return hom, backend.kheperaSimulation
 
     def testMotorsOnlySetSpeeds(self):
-        "With synchronous stepping a motor command does not advance the world"
+        "A motor command does not advance the world"
         from RobotSimulator.Transducer import HOMEO_DiffMotor
-        hom, sim = self.vehicle(True)
+        hom, sim = self.vehicle()
         motors = [u for u in hom.homeoUnits if isinstance(getattr(u, 'transducer', None), HOMEO_DiffMotor)]
         self.assertEqual(len(motors), 2)
         for unit in motors:
@@ -45,29 +42,28 @@ class SynchronousSteppingTest(unittest.TestCase):
         self.assertEqual(sim.currentStep, 0)
 
     def testOneTickIsStepsPerTickSteps(self):
-        "Both ways, a tick is two physics steps; synchronously both after all units"
-        for synchronous in (False, True):
-            hom, sim = self.vehicle(synchronous)
-            hom.runFor(100)
-            self.assertEqual(sim.currentStep, 200)
+        "A tick is two physics steps, both after all units have updated"
+        hom, sim = self.vehicle()
+        hom.runFor(100)
+        self.assertEqual(sim.currentStep, 200)
 
     def testBothWheelsActOnTheSameSteps(self):
         "A pure spin turns in place exactly: no step sees one wheel's new command alone"
-        for synchronous in (False, True):
-            hom, sim = self.vehicle(synchronous, spin=0.05)
-            robot = sim.allBodies['Khepera']
-            D.set_start_pose(robot, heading=225)       # facing away from the light
-            start = robot.body.position.copy()
-            hom.runFor(200)
-            drift = (robot.body.position - start).length
-            if synchronous:
-                self.assertLess(drift, 1e-6)
-            self.assertNotEqual(robot.body.angle, 0)
+        hom, sim = self.vehicle(spin=0.05)
+        robot = sim.allBodies['Khepera']
+        D.set_start_pose(robot, heading=225)       # facing away from the light
+        start = robot.body.position.copy()
+        hom.runFor(200)
+        self.assertLess((robot.body.position - start).length, 1e-6)
+        self.assertNotEqual(robot.body.angle, 0)
 
-    def testSynchronousIsTheDefault(self):
+    def testThereIsOneStepping(self):
+        "No choice of stepping: neither the simulation nor the scripts take one"
         from KheperaSimulator.KheperaSimulator import KheperaSimulation
         from Simulator.SimulatorBackend import SimulatorBackendHOMEO
-        self.assertTrue(KheperaSimulation().synchronousStepping)
-        self.assertTrue(SimulatorBackendHOMEO(robotName='Khepera').kheperaSimulation.synchronousStepping)
-        hom, sim = self.vehicle(False)
-        self.assertFalse(sim.synchronousStepping)
+        with self.assertRaises(TypeError):
+            KheperaSimulation(synchronousStepping=False)
+        with self.assertRaises(TypeError):
+            SimulatorBackendHOMEO(robotName='Khepera', synchronousStepping=False)
+        with self.assertRaisesRegex(SystemExit, 'Unknown option'):
+            D.common.parse_common_args(['x', '--async-stepping'])

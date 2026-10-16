@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-TrajectoryGrapher's chart options (review findings HV-02, HV-11).
+TrajectoryGrapher's chart options.
 '''
 import os
 import tempfile
@@ -47,8 +45,7 @@ class TrajectoryGrapherTest(unittest.TestCase):
         return ring.call_args.args[2]
 
     def testOneFileHonoursTheSensorRange(self):
-        '''--sensor-range reaches the chart of a single file too: until 14 Oct
-        2026 it fell back to 10 there (HV-02).'''
+        '''--sensor-range reaches the chart of a single file too.'''
         writeTraj(self.path('a.traj'))
         writeTraj(self.path('b.traj'))
         self.assertEqual(self.ringRadius(self.path('a.traj'), '--sensor-range', '0'), 0)
@@ -65,8 +62,7 @@ class TrajectoryGrapherTest(unittest.TestCase):
     def testTheRingIsWhereTheEyesStopSeeing(self):
         '''By default the ring is drawn where the eyes stop seeing the light,
         sqrt(intensity / threshold), from the header or the run's JSON; no ring
-        for eyes with threshold 0 or when nothing records it.  Until 14 Oct
-        2026 it was always at 10 (HV-11).'''
+        for eyes with threshold 0 or when nothing records it.'''
         import json
         writeTraj(self.path('log.traj'), eyeLines=self.eyeLines(1.0, 400.0, 'log'))
         writeTraj(self.path('thr4.traj'), eyeLines=self.eyeLines(4.0))
@@ -104,7 +100,7 @@ class TrajectoryGrapherTest(unittest.TestCase):
 
     def testATruncatedLastRowIsDropped(self):
         '''A last line with no newline -- a run still being written -- may be cut
-        mid-number: it is not the final position (HV-08).'''
+        mid-number: it is not the final position.'''
         path = self.path('live.traj')
         writeTraj(path, rows=((4.0, 4.0), (6.5, 6.987654)))
         _, xy, nRows = TG.loadTrajectory(path)

@@ -1,19 +1,15 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The GA's own loop, run in-process with a fake, deterministic evaluate
-(review finding SG-05): elitism, generation 0's statistics, clone
-populations, the variation operators' bounds and the clean-up of
-trajectory files.  Stopping and crashing are in GAStopTest, the
+The GA's own loop, run in-process with a fake, deterministic evaluate:
+elitism, generation 0's statistics, clone populations, the variation
+operators' bounds and the clean-up of trajectory files.  Stopping and crashing are in GAStopTest, the
 evaluation's length in GAEvaluationLengthTest.
 
-Noisy evaluation (review finding SG-06, decided 15 Oct 2026): everyone is
-evaluated afresh each generation (unless the noise scheme is 'genome'), the
-previous generation's best genome survives, an evaluation can average
-several runs, and the hall of fame's best are re-evaluated at the end
-(NoisyEvaluationTest).
+Noisy evaluation: everyone is evaluated afresh each generation (unless the
+noise scheme is 'genome'), the previous generation's best genome survives,
+an evaluation can average several runs, and the hall of fame's best are
+re-evaluated at the end (NoisyEvaluationTest).
 '''
 import contextlib
 import io
@@ -28,7 +24,7 @@ from deap import tools
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from Simulator.HomeoGenAlg import HomeoGASimulation
 
-EXP = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt'
+EXP = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2'
 
 
 def fitnessOf(genome):
@@ -110,7 +106,7 @@ class ElitismTest(GALoopTestCase):
 
 
 class NoisyEvaluationTest(GALoopTestCase):
-    '''Noisy evaluation (SG-06): an evaluate whose score is drawn from the
+    '''Noisy evaluation: an evaluate whose score is drawn from the
     evaluation's seeded numpy stream, so every evaluation differs and a seed
     repeats it.'''
 
@@ -180,6 +176,42 @@ class NoisyEvaluationTest(GALoopTestCase):
         [summary] = [r for r in ga.logbook if 'finalIndivs' in r]
         self.assertEqual(summary['postEvaluation'], post)
 
+    def testThePostEvaluationRunsOncePerSeed(self):
+        "with k runs per evaluation, the post-evaluation still runs each seed once"
+        ga = self.noisyGA(generSize=1, evalsPerIndividual=3, postEvalTop=2, postEvalSeeds=4)
+        self.runGA(ga, ga.generateRandomPop(randomSeed=7))
+        post = [ID for ID, _ in self.evaluated if ID.startswith('post-')]
+        self.assertEqual(len(post), 2 * 4)
+        for e in ga.postEvaluation:
+            self.assertEqual(len(e['scores']), 4)
+            fitnesses = [r['fitness'][0] for r in ga.logbook
+                         if 'genome' in r and r['genome'] == e['genome']]
+            self.assertEqual(e['evaluations'], len(fitnesses))
+            self.assertEqual(e['loggedBest'], min(fitnesses))
+            self.assertAlmostEqual(e['loggedMean'], np.mean(fitnesses))
+
+
+class SecondRunTest(GALoopTestCase):
+
+    def testASecondRunRecordsOnlyItself(self):
+        "run 2 on the same object: its logbook, hall of fame and history are its own"
+        ga = self.ga(generSize=1, postEvalTop=2, postEvalSeeds=1)
+        self.runGA(ga, ga.generateRandomPop(randomSeed=7))
+        first = {tuple(r['genome']) for r in ga.logbook if 'genome' in r}
+        self.runGA(ga, ga.generateRandomPop(randomSeed=8))
+        second = [r for r in ga.logbook if 'genome' in r]
+        IDs = [r['indivId'] for r in second]
+        self.assertEqual(len(IDs), len(set(IDs)))
+        self.assertEqual([r['gen'] for r in ga.logbook if 'gen' in r], [0, 1])
+        self.assertFalse(first & {tuple(r['genome']) for r in second})
+        genomes = {tuple(r['genome']) for r in second}
+        self.assertTrue(all(tuple(ind) in genomes for ind in ga.hof))
+        self.assertTrue(all(tuple(e['genome']) in genomes for e in ga.postEvaluation))
+        self.assertTrue(all(tuple(g) in genomes or tuple(g) not in first
+                            for g in ga.hist.genealogy_history.values()))
+        [summary] = [r for r in ga.logbook if 'finalIndivs' in r]
+        self.assertEqual(summary['randomSeed'], 8)
+
 
 class GenerationZeroTest(GALoopTestCase):
 
@@ -205,12 +237,13 @@ class GenerationZeroTest(GALoopTestCase):
 class ClonePopulationTest(GALoopTestCase):
     '''A population of clones of a logged genome: each clone starts without a
     fitness and generation 0 evaluates it; the logged fitness is kept in the
-    summary as cloneSourceFitness (SG-09).'''
+    summary as cloneSourceFitness.'''
 
     def testClonesAreEvaluatedNotGivenTheLoggedFitness(self):
-        genome = [0.25, 0.5, 0.75, 0.1, 0.9] * 2
+        genome = [0.25, 0.5, 0.75, 0.1] * 2
         ga = self.ga(generSize=0, popSize=4,
-                     clonableGenome={'genome': genome, 'indivId': '007-003', 'fitness': (1.5,)})
+                     clonableGenome={'genome': genome, 'indivId': '007-003', 'fitness': (1.5,),
+                                     'genomeLayout': 'weightfree_v2'})
         pop = ga.generatePopOfClones(cloneName='007-003', randomSeed=2)
         self.assertFalse(any(ind.fitness.valid for ind in pop))
         self.runGA(ga, pop)
@@ -221,9 +254,10 @@ class ClonePopulationTest(GALoopTestCase):
         self.assertEqual(summary['cloneSourceFitness'], (1.5,))
 
     def testClonesShareTheGenomeAndTheRunRecordsThem(self):
-        genome = [0.25, 0.5, 0.75, 0.1, 0.9] * 2
+        genome = [0.25, 0.5, 0.75, 0.1] * 2
         ga = self.ga(generSize=1, popSize=6,
-                     clonableGenome={'genome': genome, 'indivId': '007-003', 'fitness': (1.5,)})
+                     clonableGenome={'genome': genome, 'indivId': '007-003', 'fitness': (1.5,),
+                                     'genomeLayout': 'weightfree_v2'})
         pop = ga.generatePopOfClones(cloneName='007-003', randomSeed=2)
         self.assertEqual(len(pop), 6)
         for ind in pop:
@@ -236,11 +270,34 @@ class ClonePopulationTest(GALoopTestCase):
         self.assertEqual(summary['cloneName'], '007-003')
         self.assertEqual(summary['randomSeed'], 2)
 
+    def testAGenomeThatDoesNotFitTheSetupIsRefused(self):
+        "a clone needs the setup's layout, named, and its number of genes"
+        clone = {'indivId': '007-003', 'fitness': (1.5,)}
+        for genome, layout, message in (([0.5] * 10, 'weightfree_v2', '10 genes'),
+                                        ([0.5] * 8, 'weightfree', "layout 'weightfree'"),
+                                        ([0.5] * 8, None, "layout None")):
+            with self.subTest(message):
+                with self.assertRaisesRegex(ValueError, message):
+                    self.ga(clonableGenome=dict(clone, genome=genome, genomeLayout=layout))
+        with self.assertRaisesRegex(ValueError, 'does not say its layout'):
+            self.ga(clonableGenome=dict(clone, genome=[0.5] * 8))
+
+    def testTheLogbooksGenomeCarriesItsLayout(self):
+        import glob
+        from Helpers.StatsAnalyzer import extractGenomeOfIndID
+        ga = self.ga(generSize=0, popSize=2)
+        self.runGA(ga, ga.generateRandomPop(randomSeed=1))
+        [logbook] = glob.glob(os.path.join(ga.dataDir, 'Logbook-*.lgb'))
+        genome = extractGenomeOfIndID('000-002', logbook)
+        self.assertEqual(genome['genomeLayout'], 'weightfree_v2')
+        self.assertEqual(len(genome['genome']), 8)
+        self.ga(clonableGenome=genome)                 # fits
+
 
 class VariationOperatorsTest(GALoopTestCase):
     '''The toolbox's mate and mutate are DEAP's two-point crossover and
     Gaussian mutation, kept within [0, 1]: a mutation's out-of-range genes are
-    reflected back (SG-07), in-range ones left as the operator made them.'''
+    reflected back, in-range ones left as the operator made them.'''
 
     def setUp(self):
         super().setUp()
@@ -268,8 +325,9 @@ class VariationOperatorsTest(GALoopTestCase):
             self.assertAlmostEqual(reflect(value), want, places=12)
 
     def testMutationKeepsAUniformSpreadUniform(self):
-        '''With clipping, 50 mutations left 23% of genes exactly on 0 or 1
-        and 18% in each edge tenth (SG-07)'''
+        '''After 50 reflected mutations no gene is exactly 0 or 1 and each
+        tenth holds about 10% (clipping would leave 23% of genes exactly on 0
+        or 1 and 18% in each edge tenth)'''
         ind = self.ga_.toolbox.individual()
         rng = np.random.default_rng(3)
         ind[:] = rng.random(4000).tolist()
@@ -298,7 +356,7 @@ class TrajectoryCleanUpTest(GALoopTestCase):
 
     def testOnlyTheUnspecifiedRobotsTrajectoriesGo(self):
         """The files the trajectory writer names for the robot without a model
-        name go (review finding HV-10: the old pattern matched none of them);
+        name go;
         the individuals' trajectories and other files stay."""
         ga = self.ga()
         writer = RobotTrajectoryWriter('Unspecified', (0, 0, 0), [], dataDir=ga.dataDir,

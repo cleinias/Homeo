@@ -1,6 +1,6 @@
 '''
 A recorded seed must reproduce the run: every random stream is seeded from
-it, numba's included (review findings SH-03, RE-05).
+it, numba's included.
 
 Numba keeps its own random state, which np.random.seed() does not reach, and
 the headless unit and connection noise draws from it.  Here a run is repeated

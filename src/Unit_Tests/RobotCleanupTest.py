@@ -1,11 +1,11 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The robot simulator's small defects (review findings RS-06 to RS-14, Phase H
-of the 7 Oct 2026 review plan).  None of the fixes changes a run that used to
-complete: each test pins the behaviour that used to crash or go wrong.
+The robot simulator's corner cases: a light on a receptor's axis, a sensor
+behind the centre, a refused eye setting, the visualizer's wheel keys, an
+error inside a world builder, sensors across a reset, and the robot units'
+transducer properties.  Each test pins a behaviour that could crash a run or
+go wrong silently.
 '''
 import math
 import shutil
@@ -34,9 +34,9 @@ class _WorldTest(unittest.TestCase):
 
 
 class LightOnTheEyeAxisTest(_WorldTest):
-    '''RS-06: with the light straight along a receptor's facing, the cosine
-    of the angle to it can round to 1.0000000000000002, which acos refused
-    (a ValueError ended the run).'''
+    '''With the light straight along a receptor's facing, the cosine of the
+    angle to it can round to 1.0000000000000002, which acos refuses with a
+    ValueError: the eye still sees the light.'''
 
     def testALightOnTheAxisIsSeen(self):
         sim = self.world()
@@ -63,9 +63,9 @@ class LightOnTheEyeAxisTest(_WorldTest):
 
 
 class SensorFacingTest(_WorldTest):
-    '''RS-07: addSensor (the K-Junior's eyes) faced every sensor forward --
-    atan(y/x) cannot tell a rear position from a front one -- and ignored its
-    orientation.'''
+    '''addSensor (the K-Junior's eyes) faces a sensor behind the centre
+    backward -- atan(y/x) alone cannot tell a rear position from a front
+    one -- and turns it by its orientation.'''
 
     def robot(self):
         self.sim = self.world(robotModel='kjunior')      # kept: the robot's Box2D world is the sim's
@@ -91,19 +91,18 @@ class SensorFacingTest(_WorldTest):
 
     def testTheKJuniorEyesAreUnchanged(self):
         "Its eyes, in front at +/-21.9 degrees, keep their facings to the last bit"
-        for ratio in (0.5, 1.0):
-            sim = self.world(robotModel='kjunior', robotEyeRadiusRatio=ratio)
-            robot = sim.allBodies['Khepera']
-            for eye, sign in (('leftEye', 1), ('rightEye', -1)):
-                px, py = robot.eyePoses[eye]                 # (right, forward)
-                self.assertEqual(robot.sensors[eye].userData[eye + 'Angle'],
-                                 math.degrees(math.atan(-px / py)))       # the old formula
-                self.assertAlmostEqual(robot.sensors[eye].userData[eye + 'Angle'], sign * 21.8858, 4)
+        sim = self.world(robotModel='kjunior')
+        robot = sim.allBodies['Khepera']
+        for eye, sign in (('leftEye', 1), ('rightEye', -1)):
+            px, py = robot.eyePoses[eye]                 # (right, forward)
+            self.assertEqual(robot.sensors[eye].userData[eye + 'Angle'],
+                             math.degrees(math.atan(-px / py)))
+            self.assertAlmostEqual(robot.sensors[eye].userData[eye + 'Angle'], sign * 21.8858, 4)
 
 
 class RefusedEyeSettingsTest(_WorldTest):
-    '''RS-12: setEyeSensitivity stored the new settings before checking
-    them, so a refused call left the eye in the refused state.'''
+    '''setEyeSensitivity checks the new settings before storing them: a
+    refused call leaves the eye as it was.'''
 
     def testARefusedCallLeavesTheEyeAsItWas(self):
         sim = self.world()
@@ -122,8 +121,8 @@ class RefusedEyeSettingsTest(_WorldTest):
 
 
 class VisualizerWheelKeysTest(_WorldTest):
-    '''RS-09: the visualizer's O/L and Q/A keys indexed getSpeed()'s dict by
-    position and used a robotName the visualizer does not have.'''
+    '''The visualizer's O/L and Q/A keys read getSpeed()'s dict by wheel
+    name and drive the visualizer's own simulation (it has no robotName).'''
 
     def testTheKeysNudgeEachWheelByOneRadianPerSecond(self):
         from KheperaSimulator.KheperaSimulator import nudgeWheels
@@ -147,9 +146,9 @@ class VisualizerWheelKeysTest(_WorldTest):
 
 
 class WorldSetupErrorsTest(_WorldTest):
-    '''RS-14: setupWorld turned any TypeError or AttributeError raised inside
-    a world builder into "Cannot run simulation without an experiment" or
-    "Cannot find ... among my experiment setup methods".'''
+    '''A TypeError or AttributeError raised inside a world builder comes
+    through setupWorld as it is, not as "Cannot run simulation without an
+    experiment" or "Cannot find ... among my experiment setup methods".'''
 
     def testABuildersOwnErrorComesThrough(self):
         class Broken(KheperaSimulation):
@@ -165,18 +164,10 @@ class WorldSetupErrorsTest(_WorldTest):
         with self.assertRaisesRegex(Exception, 'Cannot find \\*\\* noSuchWorld \\*\\*'):
             KheperaSimulation().setupWorld('noSuchWorld', self.dataDir)
 
-    def testTheLegacyWheelsHaveNoDeadImpulseCode(self):
-        "The wheel's unused impulse drive printed a line per impulse; it is gone"
-        sim = self.world(robotModel='kjunior', robotDrive='legacy')
-        wheel = sim.allBodies['Khepera'].wheels['right']
-        self.assertFalse(hasattr(wheel, 'updateDriveImpulse'))
-        self.assertFalse(hasattr(wheel, 'getCurrentSpeed'))
-
 
 class SensorsAcrossAResetTest(unittest.TestCase):
-    '''RS-11: the light and quality sensors held the robot object, so a
-    sensor made before backend.reset() kept reading the old robot (the
-    motors find the robot by name and drove the new one).'''
+    '''A light or quality sensor made before backend.reset() reads the new
+    robot, as the motors, which find the robot by name, drive it.'''
 
     def setUp(self):
         import os
@@ -238,10 +229,9 @@ class _FakeTransducer(object):
 
 
 class TransducerPropertiesTest(unittest.TestCase):
-    '''RS-08: HomeoUnitInput's transducer setter wrote _Transducer (the unit
-    kept reading the old sensor), HomeoUnitNewtonianActuator's called a
-    missing setActuator, and HomeoUnitAristotelianActuator's property was
-    named 'actuator' while its code used a plain 'transducer' attribute.'''
+    '''The robot units' transducer properties: HomeoUnitInput reads the
+    transducer it is given, HomeoUnitNewtonianActuator takes a new one, and
+    HomeoUnitAristotelianActuator's 'actuator' and 'transducer' are one.'''
 
     def testAnInputUnitReadsTheTransducerItIsGiven(self):
         from RobotSimulator.HomeoUnitNewtonianTransduc import HomeoUnitInput

@@ -1,6 +1,4 @@
 '''
-Created on Sep 3, 2013
-
 @author: stefano
 '''
 from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
@@ -34,8 +32,8 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
         super(HomeoUnitNewtonianActuator, self).__init__()
         # The max speed; None: the transducer's top speed times
         # _maxSpeedFraction, computed at the first update, so that a fraction
-        # set after construction counts.  Computing it here never worked: it
-        # read _maxSpeedFraction before it was set (review finding RS-08).
+        # set after construction counts.  It cannot be computed here: it
+        # needs _maxSpeedFraction, which is not set yet.
         self._maxSpeed = maxSpeed
         self._transducer = transducer
         self.maxDelta = 0
@@ -101,14 +99,15 @@ class HomeoUnitNewtonianActuator(HomeoUnitNewtonian):
                 self._maxSpeed = self._transducer.range()[1]* self._maxSpeedFraction
             except Exception as e:
                 raise HomeoUnitError("Cannot get max speed from Transducer: %r" % (e,))
-        hDebug('unit', ("critDev for unit: %s is %.3f" % (self.name, self.criticalDeviation)))                  
+        hDebug('unit', "critDev for unit: %s is %.3f", self.name, self.criticalDeviation)
         setSpeed = float(-self._maxSpeed) + ((2 * self._maxSpeed)/ (1+np_exp(- self._switchingRate * self.criticalDeviation)))
         if self._speedBias:
             # Clipped, so the bias cannot drive a wheel past the motor's limit.
             setSpeed = min(self._maxSpeed, max(-self._maxSpeed,
                                                setSpeed + self._speedBias * self._maxSpeed))
         setSpeed = round(setSpeed,3)
-        hDebug('unit', ("Speed set by %s is %f with critDev: %.3f " % (self.name, setSpeed, self.criticalDeviation)))
+        hDebug('unit', "Speed set by %s is %f with critDev: %.3f ", self.name, setSpeed,
+               self.criticalDeviation)
         self.transducer.funcParameters = setSpeed
         self.transducer.act()
     
@@ -148,7 +147,7 @@ class HomeoUnitAristotelianActuator(HomeoUnitAristotelian):
         return self._transducer
     transducer = property(fget = lambda self: self.getTransducer(),
                           fset = lambda self, aValue: self.setTransducer(aValue))
-    actuator = transducer          # its old name ('transducer' was a plain attribute: RS-08)
+    actuator = transducer          # another name for transducer
     
     def selfUpdate(self):
         '''First run the self-update function of superclass, 

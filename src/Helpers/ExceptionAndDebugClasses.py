@@ -1,5 +1,4 @@
 '''
-Created on Dec 31, 2014
 Exception and debug classes shared by all modules
 @author: stefano
 '''

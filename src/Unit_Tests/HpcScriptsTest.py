@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The array scripts in hpc/ (review findings SH-05, SH-06, SH-07, SH-10):
+The array scripts in hpc/:
 run_array_local.sh's dry run -- which tasks it would run, with which seeds,
 and which it skips as finished -- aggregate_array.py, which joins the
 tasks' batch CSVs, and grace_fixedB2.slurm's task set-up, with srun, the
@@ -45,19 +43,39 @@ class RunArrayLocalDryRunTest(unittest.TestCase):
 
     def testSeedsByTaskIndexOrByList(self):
         '''Task i runs seed 20260930 + i, as on Grace, or the i-th entry of
-        --seeds and --env-seeds, counting from the first task of the range.'''
+        --seeds and --env-seeds, whatever the range: two ranges given the
+        same lists take different entries.'''
         with tempfile.TemporaryDirectory() as rundir:
             out = self.dryRun(rundir, '-a', '3-4')
             self.assertIn('task 3: would run with seed 20260933\n', out)
             self.assertIn('task 4: would run with seed 20260934\n', out)
-            out = self.dryRun(rundir, '-a', '3-4', '--seeds', '5,5', '--env-seeds', '7,8')
+            lists = ('--seeds', '1,2,5,6', '--env-seeds', '11,12,7,8')
+            out = self.dryRun(rundir, '-a', '3-4', *lists)
             self.assertIn('task 3: would run with seed 5, env seed 7\n', out)
-            self.assertIn('task 4: would run with seed 5, env seed 8\n', out)
+            self.assertIn('task 4: would run with seed 6, env seed 8\n', out)
+            out = self.dryRun(rundir, '-a', '1-2', *lists)
+            self.assertIn('task 1: would run with seed 1, env seed 11\n', out)
+            self.assertIn('task 2: would run with seed 2, env seed 12\n', out)
+
+    def testOptionsAfterTwoDashesGoToTheExperiment(self):
+        '''Anything after -- goes to the experiment as it is, and the run
+        directory's PROVENANCE.txt records the command and the commit.'''
+        with tempfile.TemporaryDirectory() as rundir:
+            out = self.dryRun(rundir, '-a', '1-1', '--', '--stable-draws', '--dark')
+            self.assertIn('task 1: would run with seed 20260931\n     and --stable-draws --dark\n',
+                          out)
+            provenance = open(os.path.join(rundir, 'PROVENANCE.txt')).read()
+            self.assertIn('command hpc/run_array_local.sh --dry-run -n 1 -o %s -a 1-1 -- '
+                          '--stable-draws --dark\n' % rundir, provenance)
+            self.assertIn('experiment options --stable-draws --dark\n', provenance)
+            version = subprocess.run(['git', '-C', SRC, 'describe', '--always', '--dirty'],
+                                     capture_output=True, text=True).stdout.strip()
+            self.assertIn('code %s ' % version, provenance)
 
     def testFinishedTasksOfAnEarlierDayAreSkipped(self):
         '''A task whose batch CSV is in an earlier day's SimsData-<date>/ is
-        finished: resuming the array on a later day must not run it again
-        (SH-05: it was run again, and the run then had two CSVs for it).'''
+        finished: resuming the array on a later day must not run it again,
+        which would leave the run two CSVs for it.'''
         with tempfile.TemporaryDirectory() as rundir:
             write_batch_csv(os.path.join(rundir, 'SimsData-2020-01-01'), 2)
             write_batch_csv(os.path.join(rundir, 'SimsData-2020-01-02'), 12)
@@ -74,10 +92,10 @@ class AggregateArrayTest(unittest.TestCase):
         return subprocess.run([sys.executable, os.path.join(HPC, 'aggregate_array.py'), rundir]
                               + list(options), capture_output=True, text=True, timeout=120)
 
-    def testTasksFromSerialsAndLegacyDirectories(self):
+    def testTasksFromSerialsAndTaskDirectories(self):
         '''The task index comes from the serial after the timestamp, or, for
-        the old layout, from the task_<i>/ directory; a combined table
-        written before is not an input.'''
+        a run laid out in task_<i>/ directories, from the directory; a
+        combined table written before is not an input.'''
         with tempfile.TemporaryDirectory() as rundir:
             write_batch_csv(os.path.join(rundir, 'SimsData-2026-10-01'), 7, seed=107)
             write_batch_csv(os.path.join(rundir, 'SimsData-2026-10-02'), 12, seed=112)
@@ -119,6 +137,8 @@ class GraceFixedB2Test(unittest.TestCase):
     '''The slurm script up to its srun, which a stub replaces: it prints the
     arguments the task would run the experiment with.'''
 
+    SCRIPT = 'grace_fixedB2.slurm'
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         root = self.tmp.name
@@ -144,7 +164,7 @@ class GraceFixedB2Test(unittest.TestCase):
         env = dict(os.environ, HOMEO_SRC=self.src, VENV=self.venv, SCRATCH=self.scratch,
                    SLURM_ARRAY_TASK_ID=str(task_id), SLURM_ARRAY_JOB_ID="999", TMPDIR=self.tmp.name,
                    PATH=self.bin + os.pathsep + os.environ['PATH'])
-        return subprocess.Popen(['bash', os.path.join(HPC, 'grace_fixedB2.slurm')] + list(arguments),
+        return subprocess.Popen(['bash', os.path.join(HPC, self.SCRIPT)] + list(arguments),
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)
 
     def run_task(self, task_id, *arguments):
@@ -154,7 +174,7 @@ class GraceFixedB2Test(unittest.TestCase):
         return out
 
     def testSpinIsComparedAsANumber(self):
-        '''SPIN 0.0 is no spin, as 0 is (it was compared as a string, SH-10).'''
+        '''SPIN 0.0 is no spin, as 0 is: it is compared as a number, not a string.'''
         for spin in ('0', '0.0', '0.00'):
             out = self.run_task(1, '4', '8', spin)
             self.assertNotIn('--spin', out, spin)
@@ -170,7 +190,7 @@ class GraceFixedB2Test(unittest.TestCase):
 
     def testOneProvenanceAmongConcurrentTasks(self):
         '''Tasks starting together leave exactly one, whole PROVENANCE.txt
-        and no temporary copies (SH-10: they checked, then wrote).'''
+        and no temporary copies.'''
         tasks = [self.task(i, '2', '6') for i in range(1, 17)]
         for p in tasks:
             out, err = p.communicate(timeout=120)
@@ -181,6 +201,28 @@ class GraceFixedB2Test(unittest.TestCase):
             lines = f.read().splitlines()
         self.assertEqual(sum(l.startswith('generated by') for l in lines), 1)
         self.assertTrue(lines[-1].startswith('python '), lines)
+
+
+
+class GraceOu6MTest(GraceFixedB2Test):
+    '''grace_ou_6M.slurm up to its srun, as GraceFixedB2Test.'''
+
+    SCRIPT = 'grace_ou_6M.slurm'
+
+    def testOptionsAfterTwoDashesGoToTheExperiment(self):
+        out = self.run_task(3, '--', '--stable-draws', '--robot', 'kjunior')
+        srun = [l for l in out.splitlines() if l.startswith('SRUN ')][0]
+        self.assertIn('--seed 20260933', srun)
+        self.assertTrue(srun.endswith('--run-tag 03 --stable-draws --robot kjunior'), srun)
+        self.assertIn('command grace_ou_6M.slurm -- --stable-draws --robot kjunior\n', out)
+        self.assertIn('\ncode ', out)
+        p = self.task(3, '--stable-draws')
+        p.communicate(timeout=120)
+        self.assertNotEqual(p.returncode, 0)
+
+    # the fixed-weight array's own tests do not apply
+    testSpinIsComparedAsANumber = None
+    testOneProvenanceAmongConcurrentTasks = None
 
 
 if __name__ == '__main__':

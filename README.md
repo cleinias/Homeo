@@ -31,9 +31,17 @@ the controllers of simulated robots (Braitenberg vehicles).
 ## Getting started
 
 ```bash
+pip install swig && pip install --no-build-isolation box2d-py
+                                        # Box2D, the Box2D simulator's physics
+                                        # (or a distribution's python-box2d)
 pip install -r requirements.txt
 pip install -e .                        # Homeo itself, editable
 ```
+
+Box2D has no wheel for current Pythons under either of its names: pip
+builds `box2d-py` from source, with swig.  numba is pinned (0.68): it draws
+the headless runs' noise from its own generator, so a seed gives the same
+run only with the same numba.
 
 The editable install (`pyproject.toml`) puts `src/` on Python's path, so the
 modules, which import each other as top-level packages (`from Helpers.X import
@@ -100,8 +108,8 @@ next to the checkout (see `simulations_data_dir` in
 `Helpers/General_Helper_Functions.py`).
 
 The robot is an e-puck2 (both simulators; the dimensions of Webots'
-`E-puck.proto`, each eye a pair of its light sensors).  The K-Junior of the
-runs made before 14 Oct 2026 is kept as `--robot kjunior` to reproduce them.
+`E-puck.proto`, each eye a pair of its light sensors).  The Box2D simulator
+also has a K-Junior, `--robot kjunior`.
 See [ROBOTIC_OVERVIEW.md](ROBOTIC_OVERVIEW.md).
 
 ## Analysis
@@ -133,7 +141,7 @@ src/
   Helpers/           # Loggers, noise, analysis and graphing tools
   Simulator/         # Simulation engine, GUIs, Ashby's experiments, GA, simulator backends
   HomeoExperiments/  # Experiment setups (KheperaExperiments: the phototaxis scripts)
-  KheperaSimulator/  # The Box2D robot simulator (an e-puck2; the K-Junior of older runs)
+  KheperaSimulator/  # The Box2D simulator of a Khepera-like robot (an e-puck2, or a K-Junior)
   WebotsSimulator/   # Webots as the robot simulator (Homeo as extern controller)
   Webots/            # The Webots project: HomeoEpuck.proto and the worlds
   RobotSimulator/    # Transducers and transducer-equipped units

@@ -1,6 +1,4 @@
 '''
-Created on Mar 18, 2013
-
 @author: stefano
 '''
 from   Core.HomeoUnit import *
@@ -39,46 +37,36 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
 
     def testIntervalBounds(self):
         '''
-        A Uniselector's intervals are always 0 and 1, 
-        no matter which computation method is used
+        The uniselector's values are signed weights in [-1, 1], its bounds,
+        which do not change, whichever way its values are produced
         '''
+        for kind in ('equallySpaced', 'independentlyRandomized', 'randomized'):
+            with self.subTest(kind=kind):
+                getattr(self.uniselector, kind)()
+                for index in range(20):
+                    self.uniselector.lowerBound = numpy.random.uniform(-10, 10)
+                    self.uniselector.upperBound = numpy.random.uniform(-10, 10)
+                    self.assertEqual((self.uniselector.lowerBound, self.uniselector.upperBound),
+                                     (-1, 1))
+                values = self.uniselector.matrix()
+                self.assertTrue((values >= self.uniselector.lowerBound).all())
+                self.assertTrue((values <= self.uniselector.upperBound).all())
+                self.assertLess(values.min(), 0)            # both polarities
 
-        self.uniselector.equallySpaced()
-        for index in range(100):
-            self.uniselector.lowerBound = numpy.random.uniform(-10,10)
-            self.assertTrue(self.uniselector.lowerBound == 0)
-            self.uniselector.upperBound = numpy.random.uniform(-10,10)
-            self.assertTrue(self.uniselector.upperBound == 1)
-
-        self.uniselector.independentlyRandomized()
-        for index in range(100):
-            self.uniselector.lowerBound = numpy.random.uniform(-10,10)
-            self.assertTrue(self.uniselector.lowerBound == 0)
-            self.uniselector.upperBound = numpy.random.uniform(-10,10)
-            self.assertTrue(self.uniselector.upperBound == 1)
-
-        self.uniselector.randomized()        
-        for index in range(100):
-            self.uniselector.lowerBound = numpy.random.uniform(-10,10)
-            self.assertTrue(self.uniselector.lowerBound == 0)
-            self.uniselector.upperBound = numpy.random.uniform(-10,10)
-            self.assertTrue(self.uniselector.upperBound == 1)
-
-
-    def testProduceSound(self):
+    def testBeeping(self):
         '''
-        Uniselector produces a sound when toggleBeeping is toggled.
-        Not really an automated unit test --- needs someone to hear it
-        Will change to a more refined test when sound component (Osc/SuperCollider) is added
+        toggleBeeping turns the uniselector's sound on and off, and it goes on
+        producing values either way (the sound itself needs someone to hear it)
         '''
-        for index in range(2):
-            self.uniselector.produceNewValue()
-            self.uniselector.advance()
-
+        self.assertFalse(self.uniselector.beeps)
+        before = [self.uniselector.produceNewValue() for index in range(2)]
         self.uniselector.toggleBeeping()
-        for index in range(2):
-            self.uniselector.produceNewValue()
-            self.uniselector.advance()
+        self.assertTrue(self.uniselector.beeps)
+        self.uniselector.advance()
+        after = [self.uniselector.produceNewValue() for index in range(2)]
+        self.assertTrue(all(-1 <= v <= 1 for v in before + after))
+        self.uniselector.toggleBeeping()
+        self.assertFalse(self.uniselector.beeps)
 
     def testEquallySpacedValuesMatrix(self):
         '''
@@ -229,8 +217,8 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         True if they are of same class, have same ashbyKind, and have the same
         transition matrix.  A deep copy is the same, for every kind of matrix;
         changing one weight of the copy, or making a fresh matrix of the same
-        kind, makes it different (review finding CD-09: the test used shallow
-        copies, which share the matrix, and only one kind).
+        kind, makes it different.  The copies are deep: a shallow copy
+        shares the matrix.
         '''
         for kind in ('equallySpaced', 'independentlyRandomized', 'randomized'):
             with self.subTest(kind):

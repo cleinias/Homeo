@@ -1,16 +1,14 @@
 '''
 SimulatorBackend is a small utility package that provides a common interface 
 to the various robotic simulation backends that the Homeo package can use.
-Currently the internal HOMEO simulator (Box2D) is supported; the V-REP
-backend and the old Webots TCP bridge were deleted on 14 Oct 2026.
+Two backends are supported: the internal HOMEO simulator (Box2D) and
+Webots, run by Homeo as its robot's extern controller.
 Each backend subclasses the SimulatorBackend class and implements the necessary
 methods.
 
 The Homeo simulation classes can thus abstract from backends' specific functions
 and operate uniformly.
  
-Created on Apr 13, 2015
-
 @author: stefano
 '''
 
@@ -110,22 +108,13 @@ class SimulatorBackendAbstract(object, metaclass=ABCMeta):
 class SimulatorBackendHOMEO(SimulatorBackendAbstract):
     "Interface to the internal HOMEO Khepera-like robotic simulator" 
 
-    def __init__(self, lock = None, robotName='', dataDir = None, synchronousStepping = True,
-                 eyeRadiusRatio = None, robotModel = 'epuck2'):
-        '''synchronousStepping: advance the world once per homeostat tick, after
-        all units have updated (default), or, if False, once per motor command,
-        as all runs before 13 Oct 2026 did (see KheperaSimulation).
-        robotModel: 'epuck2' (default since 14 Oct 2026) or 'kjunior' (every run
-        before); eyeRadiusRatio: for the K-Junior only, where its eyes sit along
-        their radii, 0.5 (no blind wedge between them, the default) or 1.0 (on
-        the rim, as all runs before 13 Oct 2026); see KheperaRobot.'''
+    def __init__(self, lock = None, robotName='', dataDir = None, robotModel = 'epuck2'):
+        '''robotModel: 'epuck2' (default) or 'kjunior'; see KheperaRobot.'''
         self._robotName = robotName
         self.lock = lock
         if KheperaSimulation is None:
             raise ImportError("KheperaSimulator requires Box2D. Install with: pip install box2d-py")
-        self.kheperaSimulation = KheperaSimulation(synchronousStepping=synchronousStepping,
-                                                   robotEyeRadiusRatio=eyeRadiusRatio,
-                                                   robotModel=robotModel)
+        self.kheperaSimulation = KheperaSimulation(robotModel=robotModel)
         if dataDir is not None:
             self.kheperaSimulation.setDataDir(dataDir)
         self.host = None
@@ -234,11 +223,9 @@ class SimulatorBackendWEBOTS(SimulatorBackendHOMEO):
     rendering: show Webots' window and render (figures), or not (batch).'''
 
     def __init__(self, lock = None, robotName='Khepera', dataDir = None, rendering = False,
-                 robotModel = 'epuck2', eyeRadiusRatio = None, synchronousStepping = True):
-        if robotModel != 'epuck2' or eyeRadiusRatio is not None:
+                 robotModel = 'epuck2'):
+        if robotModel != 'epuck2':
             raise ValueError("the Webots robot is the e-puck2 (robot 'epuck2')")
-        if not synchronousStepping:
-            raise ValueError('Webots is stepped once per tick: no asynchronous stepping')
         from WebotsSimulator.WebotsSimulation import WebotsSimulation
         self._robotName = robotName
         self.lock = lock

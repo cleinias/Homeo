@@ -1,6 +1,4 @@
 '''
-Created on Mar 17, 2013
-
 @author: stefano
 '''
 from  Core.HomeoUnit import *
@@ -45,10 +43,9 @@ class HomeoUnitNewtonian(HomeoUnit):
     # world advance once per tick whatever its value.  It is no time step but
     # a rescaling of the needle: (mass m, viscosity c, dt_fast dt) moves
     # exactly as (m / dt**2, c / dt, 1) -- the spring of the self-connection
-    # and the stops are unchanged (HomeoUnitNewtonianTest).  Kept, at 1 by
-    # default, only to replay the genomes of the GA setups that evolved it,
-    # before 15 Oct 2026; the setups since evolve mass and viscosity over
-    # ranges that cover what it reached (review finding CU-11).
+    # and the stops are unchanged (HomeoUnitNewtonianTest).  At 1 by default,
+    # and in every setup: the weight-free GA setups evolve mass and viscosity
+    # (HomeoUnit.weightfreeMassRangeV2).
     def getDtFast(self):
         return self._dt_fast
 
@@ -63,8 +60,8 @@ class HomeoUnitNewtonian(HomeoUnit):
         '''The needle's drag coefficient (Stokes drag, -viscosity * v): any
         value >= 0.  HomeoUnit's ceiling, maxViscosity, belongs to its own
         model, where viscosity is the fraction viscosity / maxViscosity of the
-        torque cancelled; a drag coefficient has none, and the GA setups since
-        15 Oct 2026 draw it up to 50 (review finding CU-11).'''
+        torque cancelled; a drag coefficient has none, and the weight-free GA
+        setups draw it up to 50.'''
         try:
             aValue = float(aValue)
         except ValueError:
@@ -123,8 +120,8 @@ class HomeoUnitNewtonian(HomeoUnit):
            use viscosity instead of density, since the physical difference between the two is irrelevant in the context
            of our model.
            Drag's sign is always opposite to velocity: -viscosity * v * |v|
-           (it was -viscosity * v^2, which pushed a needle moving backwards
-           further back: review finding CU-12).  Unused by the dynamics,
+           (-viscosity * v^2 would push a needle moving backwards further
+           back).  Unused by the dynamics,
            whose step uses Stokes drag (drag()).
         '''
 
@@ -265,8 +262,7 @@ class HomeoUnitNewtonian(HomeoUnit):
     def newNeedlePosition(self, aTorqueValue):
         '''Compute the new needle position on the basis of aTorqueValue, 
            which represents the torque applied to the unit's needle.  Only
-           'linear' (setNeedleCompMethod refuses the others: they crashed here,
-           review finding CU-16).'''
+           'linear' (setNeedleCompMethod refuses the others).'''
     
         return self.newLinearNeedlePosition(aTorqueValue)
 
@@ -294,7 +290,7 @@ class HomeoUnitNewtonian(HomeoUnit):
             if isinstance(self.uniselector, HomeoUniselectorContinuous):
                 "Continuous mode: evolve weights at every timestep"
                 # An OU uniselector never fires: the flag stays 0, even after
-                # a discrete uniselector left it at 1 (review finding CD-12)
+                # a discrete uniselector left it at 1
                 self.uniselectorActivated = 0
                 stress = self.stressLevel()
                 if self._headless:

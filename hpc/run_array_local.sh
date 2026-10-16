@@ -35,18 +35,22 @@
 #     bash hpc/run_array_local.sh ... --eye-response log --eye-saturation 0.5
 #                                  # the eyes' sensitivity: response linear|log,
 #                                  # saturation distance, --eye-threshold I0
-#     bash hpc/run_array_local.sh ... --robot kjunior|kjunior-rim
-#                                  # the K-Junior of runs before 14 Oct 2026
-#                                  # (default: the e-puck2); --rim-eyes is
-#                                  # --robot kjunior-rim (runs before 13 Oct)
+#     bash hpc/run_array_local.sh ... --robot kjunior
+#                                  # the K-Junior (default: the e-puck2)
+#     bash hpc/run_array_local.sh ... -- --stable-draws --dark
+#                                  # anything after -- goes to the experiment
+#                                  # as it is (see the options of
+#                                  # phototaxis_braitenberg2_direct)
 #
-# Mirrors grace_ou_6M.slurm exactly -- same seeds (20260930 + task), same flags
-# (--continuous --batch 1 --start-at-rest --traj-interval 200 --run-tag <NN>),
-# same shared HOMEO_DATA_DIR and per-task NUMBA_CACHE_DIR -- so the output is
-# directly comparable with a Grace array and `aggregate_array.py` reads it
-# unchanged -- run for run only if both have numba, or both lack it: numba draws
-# its noise from its own generator, so the same seed gives a different run with
-# and without it.  PROVENANCE.txt records the numba version (or "absent").
+# Runs the array grace_ou_6M.slurm runs -- the same seeds (20260930 + task),
+# the same options (--continuous --batch 1 --start-at-rest --traj-interval 200
+# --run-tag <NN>, then the options after --), the same shared HOMEO_DATA_DIR
+# and per-task NUMBA_CACHE_DIR -- so that `aggregate_array.py` reads either.
+# The two give the same runs, run for run, when they run the same Homeo commit
+# with the same options and both have numba, or both lack it: numba draws its
+# noise from its own generator, so the same seed gives a different run with and
+# without it.  PROVENANCE.txt records the command, the commit and the numba
+# version (or "absent").
 #
 # LAYOUT.  All tasks write into ONE directory, <rundir>/SimsData-<date>/, and
 # every filename ends with the task serial before its extension:
@@ -55,13 +59,10 @@
 #     batch_direct_continuous_light_<timestamp>-07.csv
 #     run_task-07.out
 #
-# Until 2026-10-01 each task got its own task_<i>/ directory and filenames were
-# distinguished only by a "%Y-%m-%d-%H-%M-%S" timestamp.  Both halves of that
-# were a mistake: the per-task directories had to be merged by hand before the
-# results could be used, and the merge silently overwrote files, because tasks
-# that started within the same second produced byte-identical names.  In the
-# 2026-10-01 20-run array, tasks 2 and 3 both stamped 13-23-38.  The serial
-# makes names unique by construction instead of by luck of the clock.
+# One directory, so the results need no merging, and a serial, because a
+# "%Y-%m-%d-%H-%M-%S" timestamp alone does not tell tasks apart: tasks that
+# start within the same second get byte-identical names.  The serial makes
+# names unique by construction instead of by luck of the clock.
 #
 # Why this exists: an expired allocation, or anything else that makes Grace
 # unavailable. Grace is still the better venue -- there all 20 tasks run on 20
@@ -88,7 +89,7 @@
 # nothing.  Example with a 4-core workstation (~45 min/task when 4 run at once)
 # and a slower 4-core server (~53 min/task):
 #
-#     RUN=.../SimulationsData/ou6M-2026-10-01
+#     RUN=.../SimulationsData/ou6M-<date>
 #     # the faster machine takes 12, i.e. 3 waves:
 #     bash hpc/run_array_local.sh -a 1-12 -o "$RUN"
 #     # the slower one takes 8, i.e. 2 waves (PYTHON= if its venv is elsewhere):
@@ -156,11 +157,12 @@ START_RANGE=""
 SPIN=""
 MOTOR=""
 EYE_ARGS=()
+EXTRA_ARGS=()
 UNISELECTOR=continuous
 
 
 # Print the whole leading comment block, rather than a hardcoded line range:
-# the range silently went stale every time the header was edited.
+# a range silently goes stale every time the header is edited.
 usage() {
     awk 'NR == 1 { next }
          /^#/    { sub(/^# ?/, ""); print; next }
@@ -168,6 +170,7 @@ usage() {
     exit 0
 }
 
+INVOCATION=("$@")
 while [ $# -gt 0 ]; do
     case "$1" in
         -n|--workers)  WORKERS="$2"; shift 2;;
@@ -191,10 +194,10 @@ while [ $# -gt 0 ]; do
         --motor)         MOTOR="$2"; shift 2;;
         --eye-response|--eye-threshold|--eye-saturation)
                          EYE_ARGS+=("$1" "$2"); shift 2;;
-        --rim-eyes)      EYE_ARGS+=("$1"); shift;;
         --robot)         EYE_ARGS+=("$1" "$2"); shift 2;;
         --uniselector)   UNISELECTOR="$2"; shift 2;;
         --dry-run)     DRY_RUN=1; shift;;
+        --)            shift; EXTRA_ARGS=("$@"); break;;
         -h|--help)     usage;;
         *) echo "unknown option: $1" >&2; exit 2;;
     esac
@@ -289,6 +292,16 @@ fi
 
 spin_dir() { case "$SPIN" in -*) echo counter-clockwise;; *) echo clockwise;; esac; }
 
+# The Homeo code the tasks run: the commit ("-dirty" with uncommitted changes)
+# and its subject line
+homeo_code() {
+    local version subject
+    version=$(git -C "$HOMEO_SRC" describe --always --dirty 2>/dev/null) || {
+        echo 'unversioned checkout'; return; }
+    subject=$(git -C "$HOMEO_SRC" log -1 --format=%s 2>/dev/null)
+    echo "$version $subject"
+}
+
 echo "== local array run"
 echo "   tasks      : $FIRST-$LAST  ($n_tasks tasks)"
 echo "   workers    : $WORKERS concurrent  ->  $waves waves"
@@ -309,18 +322,20 @@ fi
 if [ "$STATE_LOG" -eq 1 ]; then
     echo "   state log  : on, every $LOG_INTERVAL ticks (weights, stress, sigma)"
 fi
+[ ${#EXTRA_ARGS[@]} -gt 0 ] && echo "   options    : ${EXTRA_ARGS[*]} (to the experiment)"
 echo "   output     : $DATADIR"
 echo "                (one directory for all tasks; filenames carry the serial)"
-echo "   code       : $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned checkout')"
+echo "   code       : $(homeo_code)"
 echo
 
 # Provenance alongside the results, so the directory is self-describing.
 # Appended, not overwritten: a design run as several invocations into one
-# directory (e.g. one per wiring, as the 2026-10-03 fixed-weight baseline was)
+# directory (e.g. one per wiring of the fixed-weight design)
 # would otherwise keep only the last invocation's record.
 {
     echo "----"
     echo "generated by hpc/run_array_local.sh on $(date -Is) on $(hostname)"
+    echo "command hpc/run_array_local.sh ${INVOCATION[*]}"
     echo "tasks $FIRST-$LAST, $WORKERS workers, $STEPS steps, traj-interval $TRAJ_INTERVAL"
     [ "$STATE_LOG" -eq 1 ] && echo "state log every $LOG_INTERVAL ticks"
     if [ "$FIXED_WEIGHTS" -eq 1 ]; then
@@ -336,7 +351,8 @@ echo
     [ -n "$SEEDS" ] && echo "seeds $SEEDS"
     [ -n "$ENV_SEED" ] && echo "env seed $ENV_SEED for every task"
     [ -n "$ENV_SEEDS" ] && echo "env seeds $ENV_SEEDS"
-    echo "code $(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned')"
+    [ ${#EXTRA_ARGS[@]} -gt 0 ] && echo "experiment options ${EXTRA_ARGS[*]}"
+    echo "code $(homeo_code)"
     echo "cpu  $(lscpu 2>/dev/null | sed -n 's/^Model name: *//p' | head -1)"
     echo "python $("$PYTHON" -c 'import platform; print(platform.python_version())' 2>/dev/null), numba $("$PYTHON" -c 'import numba; print(numba.__version__)' 2>/dev/null || echo absent)"
 } >> "$RUNDIR/PROVENANCE.txt"
@@ -345,21 +361,23 @@ task_done() {   # a task counts as finished once its own batch CSV exists
     # The CSV is named ...-<serial>.csv, so a task is identified by its serial
     # rather than by a directory.  It is looked for in every dated directory of
     # the run, not only today's: an array resumed with -o on a later day, or
-    # one straddling midnight, has finished tasks under an earlier date (review
-    # finding SH-05: they were run again, and aggregation then found two CSVs
-    # for one task).  The legacy per-task path is still accepted so that an
-    # array started under the old layout can be resumed with -o.
+    # one straddling midnight, has finished tasks under an earlier date (run
+    # again, they would leave two CSVs for one task).  A per-task task_<i>/
+    # directory is accepted too, so that an array written in that layout can
+    # be resumed with -o.
     local s; s=$(printf '%02d' "$1")
     compgen -G "$RUNDIR/SimsData-*/batch_*-$s.csv" >/dev/null 2>&1 ||
         compgen -G "$RUNDIR/task_$1/*/batch_*.csv" >/dev/null 2>&1
 }
 
-# Task i's entry in a comma-separated list, counting from FIRST.
+# Task i's entry in a comma-separated list: the i-th, whatever the range, so
+# that a range split across machines, or a narrowed resume, takes each task's
+# own entry from the same list.
 list_entry() {   # list_entry <list> <option name> <task>
-    local pos=$(( $3 - FIRST + 1 )) value
-    value=$(echo "$1" | cut -d, -f"$pos")
+    local value
+    value=$(echo "$1" | cut -d, -f"$3")
     if [ -z "$value" ]; then
-        echo "   task $3: no $pos-th entry in $2" >&2
+        echo "   task $3: no $3-th entry in $2" >&2
         return 1
     fi
     echo "$value"
@@ -426,11 +444,9 @@ run_task() {
         state_log_args="--state-log --log-interval $LOG_INTERVAL"
     fi
     mkdir -p "$DATADIR" "$RUNDIR/.numba/task_$i"
-    # ALL tasks write into one directory.  They used to get one directory each,
-    # which meant the results had to be merged by hand afterwards -- and that
-    # merge was lossy, because filenames were distinguished only by a
-    # whole-second timestamp and tasks starting in the same second produced
-    # identical names.  --run-tag makes every filename carry the task serial, so
+    # ALL tasks write into one directory, so the results need no merging.
+    # A whole-second timestamp alone does not tell apart tasks that start in
+    # the same second; --run-tag makes every filename carry the task serial, so
     # a shared directory is collision-free by construction.
     # NB: HOMEO_DATA_DIR is the data ROOT, not the final directory -- the
     # experiment appends "SimsData-<date>" to it itself.  Pointing it at
@@ -452,6 +468,7 @@ run_task() {
         $state_log_args \
         $heading_args \
         "${vehicle_args[@]}" \
+        "${EXTRA_ARGS[@]}" \
         > "$DATADIR/run_task-$serial.out" 2>&1
 }
 
@@ -466,6 +483,7 @@ for i in $(seq "$FIRST" "$LAST"); do
     fi
     if [ "$DRY_RUN" -eq 1 ]; then
         echo "   task $i: would run with seed $(task_seed "$i")$(e=$(task_env_seed "$i") && [ -n "$e" ] && echo ", env seed $e")"
+        [ ${#EXTRA_ARGS[@]} -gt 0 ] && echo "     and ${EXTRA_ARGS[*]}"
         continue
     fi
     # Block until a worker slot frees up.
@@ -485,8 +503,8 @@ printf '== finished: %d started, %d skipped, %dh%02dm elapsed\n' \
        "$started" "$skipped" $(( elapsed / 3600 )) $(( elapsed % 3600 / 60 ))
 
 # Finished tasks of THIS invocation's range, by the same test that skips them:
-# counting every batch CSV under the run directory also counted other ranges'
-# and other invocations' tasks (SH-05).
+# counting every batch CSV under the run directory would also count other
+# ranges' and other invocations' tasks.
 ok=0
 for i in $(seq "$FIRST" "$LAST"); do task_done "$i" && ok=$(( ok + 1 )); done
 echo "   tasks with results: $ok/$n_tasks"

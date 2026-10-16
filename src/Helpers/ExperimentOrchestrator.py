@@ -1,12 +1,9 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
 Run several experiments as concurrent subprocesses, each logging to its own
-file, and show only their progress.  run_validation_300k.py,
-run_direct_vehicle_ga.py and run_phototaxis_comparison.py each had a copy of
-this loop (review finding SH-14).
+file, and show only their progress: the loop of run_direct_vehicle_ga.py
+and run_phototaxis_comparison.py.
 '''
 import datetime
 import os

@@ -1,13 +1,11 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
-The uniselectors' settings do what they say (review finding CD-16).  They
-used to be traps for scripts: setting beeps raised, the sound signal the GUI
-listens for was never sent, setting an Ashby uniselector's steps left its
-matrix at 25 rows, setting its kind was ignored, and the continuous
-uniselector took any bounds, (-1, 5) for upperBound = 5.
+The uniselectors' settings do what they say, for scripts too: beeps can be
+set and send the sound signal the GUI listens for, setting an Ashby
+uniselector's steps rebuilds its matrix, its kind can be set by name, and
+the continuous uniselector's bounds stay symmetric, (-5, 5) for
+upperBound = 5.
 '''
 from Core.HomeoUniselector import HomeoUniselector, HomeoUniselectorError
 from Core.HomeoUniselectorAshby import HomeoUniselectorAshby

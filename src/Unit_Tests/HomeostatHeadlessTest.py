@@ -121,8 +121,8 @@ class HomeostatHeadlessTest(unittest.TestCase):
 
     def testHeadlessMatchesPythonPathForAshbysUnits(self):
         """The same for Ashby's own (Aristotelian) units, HomeoUnit, whose
-        selfUpdate has its own headless OU branch: no test ran it (review
-        finding TS-08).  The weights drift, through the JIT arrays."""
+        selfUpdate has its own headless OU branch.  The weights drift,
+        through the JIT arrays."""
         ticks = 600
         python = ouHomeostat(9, headless=False, noise=False, unitClass=HomeoUnit)
         start = [signedWeights(unit) for unit in python.homeoUnits]
@@ -137,3 +137,95 @@ class HomeostatHeadlessTest(unittest.TestCase):
             self.assertGreater(np.abs(signedWeights(b) - w0).max(), 1e-3)
             self.assertAlmostEqual(a.criticalDeviation, b.criticalDeviation, delta=1e-9)
             np.testing.assert_allclose(signedWeights(a), signedWeights(b), atol=1e-9)
+
+
+class ConnectionChangesBetweenRunsTest(unittest.TestCase):
+    '''Changing a connection's state, noise or status between headless
+    runFor() calls keeps the weights the uniselector evolved, as the Python
+    path does; setAbsoluteWeight keeps the sign the run has now.  Noise off:
+    the two paths of one seed follow the same trajectory.'''
+
+    def changed(self, headless, change):
+        "300 ticks, the change on every connection but the self-connections, one more tick"
+        hom = ouHomeostat(3, headless, noise=False, units=3)
+        hom.runFor(300)
+        # (no flushJitArrays here: a script changes the connections as they are)
+        evolved = [signedWeights(u) for u in hom.homeoUnits] if not headless else None
+        for unit in hom.homeoUnits:
+            for conn in unit.inputConnections[1:]:
+                if change == 'state':
+                    conn.state = 'manual'
+                elif change == 'noise':
+                    conn.noise = 0.0
+                elif change == 'status':
+                    conn.status = True
+                else:
+                    conn.setAbsoluteWeight(0.5)
+        hom.runFor(301)
+        for unit in hom.homeoUnits:
+            unit.flushJitArrays()
+        return hom, evolved
+
+    def testTheEvolvedWeightsAreKept(self):
+        for change in ('state', 'noise', 'status', 'absolute weight'):
+            with self.subTest(change=change):
+                python, _ = self.changed(False, change)
+                headless, evolved = self.changed(True, change)
+                for a, b in zip(python.homeoUnits, headless.homeoUnits):
+                    np.testing.assert_allclose(signedWeights(a), signedWeights(b), atol=1e-9)
+                python, evolved = self.changed(False, change)
+                if change == 'state':                  # frozen: the weights stay
+                    for unit, w in zip(python.homeoUnits, evolved):
+                        np.testing.assert_allclose(signedWeights(unit), w, atol=1e-12)
+
+
+def ashbyHomeostat(seed, headless, unitClass):
+    """Three fully connected units with Ashby's discrete uniselector, firing
+    often (critThreshold 0.05, interval 20), noise off."""
+    np.random.seed(seed)
+    random.seed(seed)
+    seed_jit_rng(seed)
+    HomeoUnit.clearNames()
+    hom = Homeostat()
+    hom.slowingFactor = 0
+    hom.collectsData = False
+    for i in range(3):
+        unit = unitClass()
+        unit.setRandomValues()
+        unit.uniselectorActive = True
+        unit.uniselectorTimeInterval = 20
+        unit.critThreshold = 0.05
+        hom.addFullyConnectedUnit(unit)
+    for unit in hom.homeoUnits:
+        unit.noise = 0
+        for conn in unit.inputConnections:
+            conn.noise = 0
+    hom._headless = headless
+    for unit in hom.homeoUnits:
+        unit._headless = headless
+    return hom
+
+
+class DiscreteUniselectorParityTest(unittest.TestCase):
+    '''With Ashby's discrete uniselector too, a headless run and a Python
+    run of one seed fire at the same ticks and follow the same trajectory,
+    for both unit classes.'''
+
+    def testHeadlessMatchesPythonPath(self):
+        for unitClass in (HomeoUnit, HomeoUnitNewtonian):
+            with self.subTest(unitClass=unitClass.__name__):
+                runs = []
+                for headless in (False, True):
+                    hom = ashbyHomeostat(4, headless, unitClass)
+                    hom.runFor(2000)
+                    for unit in hom.homeoUnits:
+                        unit.flushJitArrays()
+                    runs.append(hom)
+                python, headless = runs
+                counts = [u.uniselectorActivationCount for u in python.homeoUnits]
+                self.assertGreater(min(counts), 5)                  # it does fire
+                self.assertEqual([u.uniselectorActivationCount for u in headless.homeoUnits],
+                                 counts)
+                for a, b in zip(python.homeoUnits, headless.homeoUnits):
+                    self.assertAlmostEqual(a.criticalDeviation, b.criticalDeviation, delta=1e-9)
+                    np.testing.assert_allclose(signedWeights(a), signedWeights(b), atol=1e-9)

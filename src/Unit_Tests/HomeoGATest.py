@@ -1,6 +1,4 @@
 '''
-Created on Feb 2026
-
 Tests for the GA simulation infrastructure:
 - GenomeDecoder: encoding/decoding of homeostat genomes
 - HomeoGASimulation: basic GA operations (population creation, individual init, bounds checking)
@@ -89,7 +87,7 @@ class GenomeDecoderTest(unittest.TestCase):
 
     def testGenomeDecoderV2Values(self):
         """The _v2 layout: mass 0.25 -> 250 and viscosity 0.05 -> 50,
-        log-uniform; tau_a and maxDeviation as before (CU-11)"""
+        log-uniform; tau_a and maxDeviation as in the other weight-free layouts"""
         for gene, values in ((0.0, [0.25, 0.05, 100, 0.1]),
                              (0.5, [0.25 * 1000 ** 0.5, 0.05 * 1000 ** 0.5, 1000, 500.05]),
                              (1.0, [250, 50, 10000, 1000])):
@@ -97,7 +95,7 @@ class GenomeDecoderTest(unittest.TestCase):
                 decoded = genomeDecoder(2, [gene] * 8, layout='weightfree_v2')
                 for value, want in zip(decoded, values * 2):
                     self.assertAlmostEqual(value, want, places=9)
-        # its size is the legacy 'weightfree' layout's: never guessed
+        # its size is the 'weightfree' layout's: never guessed
         from Helpers.GenomeDecoder import genomeLayout
         self.assertEqual(genomeLayout(4, 8, 2), 'weightfree')
 
@@ -266,7 +264,7 @@ class HomeoGASimulationTest(unittest.TestCase):
             for val in child:
                 self.assertGreaterEqual(val, 0)
                 self.assertLessEqual(val, 1)
-                self.assertIsInstance(val, float)        # 0 and 1 were ints (SG-07)
+                self.assertIsInstance(val, float)        # 0 and 1 too, not ints
 
     def testIndEq(self):
         """indEq returns True for identical genomes, False for different"""
@@ -419,9 +417,9 @@ class GAGuiSeedTest(unittest.TestCase):
         self.assertNotEqual(self._guiRun(8), first)
 
     def testClonesNeedAGenome(self):
-        """Clones without a genome to clone: a warning, and no population (it
-        used to be a random one, silently: SR-17); no worker pool is left by
-        initializing again."""
+        """Clones without a genome to clone: a warning, and no population (not
+        a random one, silently); no worker pool is left by initializing
+        again."""
         from Simulator.HomeoGenAlgGui import HomeoGASimulGUI
         gui = HomeoGASimulGUI()
         gui.workersSpinBox.setValue(2)
@@ -439,7 +437,7 @@ class GAGuiSeedTest(unittest.TestCase):
         self.assertIsNone(gui.gaSimulation._pool)
 
     def testSeedFieldDefaultsTo64(self):
-        "the field starts at 64, the seed GUI runs always used"
+        "the field starts at 64, the default seed of GUI runs"
         from Simulator.HomeoGenAlgGui import HomeoGASimulGUI
         gui = HomeoGASimulGUI()           # keep a reference: Qt deletes an unreferenced widget
         self.assertEqual(gui.seedSpinBox.value(), 64)
@@ -473,7 +471,7 @@ class StatFileDecoderTest(unittest.TestCase):
 
     def testWeightFreeLinesGetTheirOwnHeaders(self):
         """A weight-free genome is decoded under weight-free headers, one per
-        value; until 14 Oct 2026 the headers were always classic (HN-11)"""
+        value, not under classic ones"""
         with tempfile.TemporaryDirectory() as tmp:
             inFile, outFile = os.path.join(tmp, 'in.txt'), os.path.join(tmp, 'out.txt')
             with open(inFile, 'w') as f:
@@ -487,7 +485,7 @@ class StatFileDecoderTest(unittest.TestCase):
 
     def testAGenomeOfNoLayoutIsAnError(self):
         """A genome size that matches no layout raises instead of being read
-        as classic and silently truncated (HN-11)"""
+        as classic and silently truncated"""
         with self.assertRaises(ValueError):
             genomeDecoder(6, [0.5] * 61)
         with self.assertRaises(ValueError):

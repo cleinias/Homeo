@@ -1,14 +1,11 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
 The two phototaxis experiments share their seeding, uniselectors, runners,
-records and options (phototaxis_common; review findings RE-06, RE-09): the
-Ashby experiment had no seeds in its batches, no run tag in its file names,
-no stepping, stability or eye options, and an unknown uniselector type, or
-'random' in a batch's name, passed as Ashby's.  --visualize dropped most
-options.
+records and options (phototaxis_common): both experiments' batches are
+seeded and their file names carry a run tag, both take the stepping,
+stability and eye options, an unknown uniselector type is an error, and
+--visualize takes every option.
 '''
 import contextlib
 import csv
@@ -69,48 +66,38 @@ class PhototaxisCommonTest(unittest.TestCase):
         for name, M in EXPERIMENTS.items():
             with self.subTest(name):
                 r = self.quietly(M.run_headless, total_steps=20, seed=3, quiet=True,
-                                 synchronous_stepping=False, stable_draws=True,
-                                 eye_response='log')
-                self.assertFalse(r['synchronous_stepping'])
+                                 stable_draws=True, eye_response='log')
                 self.assertTrue(r['stable_draws'])
                 self.assertEqual(r['eye_threshold'], 1.0)
                 text = json.dumps(json.load(open(r['json_path'])))
-                self.assertIn('"synchronous_stepping": false', text)
                 self.assertIn('"eye_response": "log"', text)
 
     def testTheRobot(self):
-        '''The robot is the e-puck2 by default; --robot kjunior and
-        kjunior-rim (= --rim-eyes) give the K-Junior of earlier runs, its eyes
-        half way in or on the rim.  Runs record the robot and, for the
-        K-Junior, where its eyes sat.'''
+        '''The robot is the e-puck2 by default; --robot kjunior gives the
+        K-Junior.  Runs record the robot.'''
         import json
         parse = D.common.parse_common_args
         self.assertEqual(parse(['x'])['robot'], 'epuck2')
         self.assertEqual(parse(['x', '--robot', 'kjunior'])['robot'], 'kjunior')
-        self.assertEqual(parse(['x', '--rim-eyes'])['robot'], 'kjunior-rim')
-        for argv in (['x', '--robot', 'khepera'], ['x', '--robot', 'epuck2', '--rim-eyes']):
+        for argv in (['x', '--robot', 'khepera'], ['x', '--robot', 'kjunior-rim'],
+                     ['x', '--rim-eyes']):
             with self.assertRaises(SystemExit):
                 self.quietly(parse, argv)
         for name, M in EXPERIMENTS.items():
-            for robot, model, ratio, tag in (('epuck2', 'epuck2', None, ''),
-                                             ('kjunior', 'kjunior', 0.5, '_kjunior'),
-                                             ('kjunior-rim', 'kjunior', 1.0, '_kjunior_rimeyes')):
+            for robot, ratio, tag in (('epuck2', None, ''), ('kjunior', 0.5, '_kjunior')):
                 with self.subTest(name, robot=robot):
                     r = self.quietly(M.run_headless, total_steps=20, seed=3, quiet=True,
                                      robot=robot)
                     body = r['backend'].kheperaSimulation.allBodies['Khepera']
-                    self.assertEqual((body.model, body.eyeRadiusRatio), (model, ratio))
+                    self.assertEqual((body.model, body.eyeRadiusRatio), (robot, ratio))
                     self.assertEqual(r['robot'], robot)
-                    self.assertEqual(r['eye_radius_ratio'], '' if ratio is None else ratio)
                     stem = os.path.basename(r['log_path'])
                     self.assertEqual('_kjunior' in stem, bool(tag))
-                    self.assertEqual('_rimeyes' in stem, robot == 'kjunior-rim')
                     settings = json.load(open(r['json_path']))['settings']
-                    self.assertEqual((settings['robot'], settings['eye_radius_ratio']),
-                                     (robot, ratio))
+                    self.assertEqual(settings['robot'], robot)
         with mock.patch.object(D, 'run_headless') as run:
-            self.quietly(D.main, ['x', '--rim-eyes'])
-        self.assertEqual(run.call_args.kwargs['robot'], 'kjunior-rim')
+            self.quietly(D.main, ['x', '--robot', 'kjunior'])
+        self.assertEqual(run.call_args.kwargs['robot'], 'kjunior')
 
     @staticmethod
     def homeostat(r):
@@ -125,9 +112,8 @@ class PhototaxisCommonTest(unittest.TestCase):
 
     def testTheStartPoseHasItsOwnStream(self):
         '''The environment's stream (--env-seed) draws the start pose; the
-        homeostat's (--seed) everything else.  Until 14 Oct 2026 the pose
-        came from the homeostat's stream, after the units: one seed drove
-        both, and the pose depended on the vehicle's setup.'''
+        homeostat's (--seed) everything else, so the pose does not depend on
+        the vehicle's setup.'''
         import numpy as np
         for name, M in EXPERIMENTS.items():
             with self.subTest(name):
@@ -183,6 +169,23 @@ class PhototaxisCommonTest(unittest.TestCase):
         self.assertEqual(results[0]['seed'], results[1]['seed'])
         self.assertEqual(results[1]['env_seed'], results[0]['env_seed'] + 1)
 
+    def testAnUnknownOptionIsRefused(self):
+        "A misspelt or unknown option stops the run instead of being ignored"
+        for M in EXPERIMENTS.values():
+            for argv in (['x', '--stable-draw'], ['x', '--steps', '10', '--frobnicate']):
+                with mock.patch.object(D.common, 'run_headless') as run:
+                    with self.assertRaisesRegex(SystemExit, 'Unknown option'):
+                        self.quietly(M.main, argv)
+                run.assert_not_called()
+        with mock.patch.object(D.common, 'run_headless') as run:
+            self.quietly(D.main, ['x', '--fixed-weights', '--signs', '--', '--motor',
+                                  'aristotelian', '--start-range', '1', '2', '--random-start',
+                                  '--steps', '10'])
+        run.assert_called_once()
+        with mock.patch.object(D.common, 'run_headless'):
+            with self.assertRaisesRegex(SystemExit, 'Unknown option'):
+                self.quietly(A.main, ['x', '--fixed-weights'])
+
     def testSeedOptions(self):
         parse = D.common.parse_common_args
         o = parse(['x', '--env-seed', '7', '--batch', '2', '--batch-vary', 'env'])
@@ -203,8 +206,8 @@ class PhototaxisCommonTest(unittest.TestCase):
 
     def testVisualizeTakesEveryOption(self):
         argv = ['x', '--visualize', '--dark', '--seed', '3', '--heading', '45',
-                '--eye-response', 'log', '--spin', '0.05', '--async-stepping',
-                '--stable-draws', '--continuous']
+                '--eye-response', 'log', '--spin', '0.05', '--stable-draws',
+                '--continuous']
         for name, M in EXPERIMENTS.items():
             with self.subTest(name):
                 with mock.patch.object(M.common, 'run_visualized') as visualize, \
@@ -218,7 +221,6 @@ class PhototaxisCommonTest(unittest.TestCase):
                 self.assertEqual(kwargs['heading'], 45)
                 self.assertEqual(kwargs['eye_response'], 'log')
                 self.assertEqual(kwargs['spin'], 0.05)
-                self.assertFalse(kwargs['synchronous_stepping'])
                 self.assertTrue(kwargs['stable_draws'])
                 self.assertEqual(kwargs['uniselector_type'], 'continuous')
 

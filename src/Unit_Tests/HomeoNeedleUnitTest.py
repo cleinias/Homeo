@@ -1,6 +1,4 @@
 '''
-Created on Mar 11, 2013
-
 @author: stefano
 '''
 from  Core.HomeoNeedleUnit import *

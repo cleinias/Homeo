@@ -1,5 +1,4 @@
 '''
-Created on Dec 30, 2014
 Utilities to interpret the genome of a Homeostat for further analysis
 @author: stefano
 '''
@@ -30,12 +29,11 @@ def statFileDecoder(statFileIn,statFileOut, noUnits=6, rounding=2, noEvolvedUnit
        genome for each unit (essentParam each for each evolved unit)
        connection weights   (noEvolvedUnits * noUnits)
 
-       noEvolvedUnits defaults to noUnits for backward compatibility
-       with old 60-gene logbooks.
+       noEvolvedUnits defaults to noUnits: every unit evolved (a 60-gene
+       logbook of 6 units).
        layout: see genomeDecoder; None detects it from the first line's
        genome, and every line must have the same.  The headers are the
-       layout's: until 14 Oct 2026 they were always the classic ones, so a
-       weight-free genome was written under them (HN-11).
+       layout's.
        """
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
@@ -80,10 +78,7 @@ def classicConnectionSources(noUnits, noEvolvedUnits):
     The classic GA setup (initializeBraiten2_2_Full_GA) writes each evolved
     unit's genes over its inputConnections, which addFullyConnectedUnit orders
     as the self-connection first, then the other units in the order they were
-    added: unit k's genes are its inputs from k, 1, ..., k-1, k+1, ..., N.
-    Until 14 Oct 2026 the labels read gene k*N+j as the connection from unit
-    k to unit j+1 (review finding HN-03): reversed, and, for every unit but
-    the first, rotated -- the self-connection was labelled k-to-1."""
+    added: unit k's genes are its inputs from k, 1, ..., k-1, k+1, ..., N."""
     pairs = []
     for unit in range(1, noEvolvedUnits + 1):
         pairs.append((unit, unit))
@@ -112,10 +107,9 @@ def genomeSize(noUnits, noEvolvedUnits, layout):
 
 def genomeLayout(noUnits, length, noEvolvedUnits=None):
     """The layout of a genome of this length.  A length that matches no
-    layout is an error: until 14 Oct 2026 it was read as classic, silently
-    dropping extra genes (HN-11).  A weight-free genome of 4 genes per unit
-    is taken as the legacy 'weightfree': a 'weightfree_v2' genome, of the
-    same size, must be decoded with its layout named."""
+    layout is an error.  A weight-free genome of 4 genes per unit is taken
+    as 'weightfree': a 'weightfree_v2' genome, of the same size, must be
+    decoded with its layout named."""
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
     for layout in SIZED_LAYOUTS:
@@ -155,10 +149,10 @@ def genomeDecoder(noUnits, genome, noEvolvedUnits=None, layout=None):
         Raw genome values in [0, 1).
     noEvolvedUnits : int, optional
         Number of units whose body params are evolved.
-        Defaults to noUnits for backward compatibility.
+        Defaults to noUnits (every unit evolved).
     layout : str, optional
         Genome layout identifier:
-        - None or 'classic'  : 4 body params + connection weights (old GA)
+        - None or 'classic'  : 4 body params + connection weights
         - 'weightfree'       : 4 body params per unit, no connection weights
         - 'weightfree_dt'    : 5 body params per unit (incl. dt_fast), no weights;
                                decoded with two more values per unit, the
@@ -214,7 +208,7 @@ def _decode_weightfree(genome, noEvolvedUnits, layout='weightfree_dt'):
     (_decodeWeightfreeUnits).  'weightfree_dt' adds, after dt_fast, the
     unit's effective mass and viscosity, mass / dt_fast**2 and viscosity /
     dt_fast: a needle with dt_fast 1 and these moves exactly as the evolved
-    one (review finding CU-11), so they, not the three genes, say what was
+    one, so they, not the three genes, say what was
     evolved, and compare with the 'weightfree_v2' setups' mass and viscosity.
     """
     decodedValues = []
@@ -238,7 +232,7 @@ def _decode_weightfree(genome, noEvolvedUnits, layout='weightfree_dt'):
 
 def genomePrettyPrinter(noUnits, decodedGenome, noEvolvedUnits=None, layout=None):
     """Return a string with all decoded values preceded by labels.
-       noEvolvedUnits defaults to noUnits for backward compatibility."""
+       noEvolvedUnits defaults to noUnits (every unit evolved)."""
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
 

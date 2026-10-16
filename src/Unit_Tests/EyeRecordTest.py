@@ -1,6 +1,6 @@
 '''
-The eyes of the direct phototaxis experiment, as configured and as recorded
-(review finding RE-11): the saturation distance is computed against the
+The eyes of the direct phototaxis experiment, as configured and as recorded:
+the saturation distance is computed against the
 light's actual intensity, and runs record the eyes' actual threshold and
 saturation, not the options as given.
 '''

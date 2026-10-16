@@ -1,7 +1,6 @@
 '''
 Provides a general interface to control a Homeostat simulation including an unlimited number of units.
 It can start and stop a simulation from a GUI, as well as save and graph the simulation's data. 
-Created on May 5, 2013
 @author: stefano
 '''
 
@@ -21,6 +20,48 @@ import pyqtgraph as pg
 from math import floor
 from itertools import cycle
 from time import strftime, localtime, time
+
+
+class _SliderFollower(QObject):
+    """Sets a slider's value, minimum and maximum with the slider's signals
+    blocked: a slider that follows a unit's value does not send it back.  A
+    critical-deviation slider, whose valueChanged sets the unit's deviation,
+    would otherwise write every needle position back into the unit, floored
+    to the slider's integer steps (HomeoUnit.precision), and a GUI run would
+    not be the headless run of its seed.  A QObject child of the slider, so
+    that a unit's signal from the simulation thread reaches it queued, in the
+    GUI thread."""
+
+    def __init__(self, slider):
+        super().__init__(slider)
+        self._slider = slider
+
+    def _quietly(self, setter, value):
+        blocked = self._slider.blockSignals(True)
+        try:
+            setter(value)
+        finally:
+            self._slider.blockSignals(blocked)
+
+    @pyqtSlot(int)
+    def setValue(self, value):
+        self._quietly(self._slider.setValue, value)
+
+    @pyqtSlot(int)
+    def setMinimum(self, value):
+        self._quietly(self._slider.setMinimum, value)
+
+    @pyqtSlot(int)
+    def setMaximum(self, value):
+        self._quietly(self._slider.setMaximum, value)
+
+
+def _followUnit(slider, unit):
+    "Make slider follow unit's critical deviation and its range (see _SliderFollower)"
+    follower = _SliderFollower(slider)
+    emitter(unit).criticalDeviationScaledChanged.connect(follower.setValue)
+    emitter(unit).minDeviationScaledChanged.connect(follower.setMinimum)
+    emitter(unit).maxDeviationScaledChanged.connect(follower.setMaximum)
 
 class HomeoSimulationControllerGui(QDialog):
     # Resume, delivered to the simulation in its own thread (a queued
@@ -195,9 +236,8 @@ class HomeoSimulationControllerGui(QDialog):
         self.currentTimeSpinBox.setValue(self._simulation.homeostat.time)
         # The one delay per tick: the simulation's (simulDelay), shown and set
         # here; the homeostat's own pause (slowingFactor, 10 ms by default) is
-        # off in the GUI (_paceHomeostat).  Until 14 Oct 2026 the box showed
-        # slowingFactor but set simulDelay, and both applied: never under
-        # 10 ms a tick, whatever it showed (SR-08).
+        # off in the GUI (_paceHomeostat), so the box's value is the delay a
+        # tick gets.
         self.slowingFactorSpinBox.setValue(self._simulation.simulDelay)
 
         "Connections"
@@ -599,10 +639,10 @@ class HomeoSimulationControllerGui(QDialog):
 
             widget.valueChanged.connect(slot)
            
-            'The value passed back to the slider are scaled by the Unit'
-            emitter(self._simulation.homeostat.homeoUnits[i]).criticalDeviationScaledChanged.connect(widget.setValue)
-            emitter(self._simulation.homeostat.homeoUnits[i]).minDeviationScaledChanged.connect(widget.setMinimum)
-            emitter(self._simulation.homeostat.homeoUnits[i]).maxDeviationScaledChanged.connect(widget.setMaximum)
+            '''The values passed back to the slider are scaled by the Unit; the
+               slider follows them without sending them back (_SliderFollower):
+               only a move of the slider sets the unit's deviation'''
+            _followUnit(widget, self._simulation.homeostat.homeoUnits[i])
 
             "add newly created combo box to widget dictionary"
             homeostatGuiUnitWidgets[str(widget.objectName())] = widget          
@@ -887,10 +927,9 @@ class HomeoSimulationControllerGui(QDialog):
         self.pauseButton.setEnabled(True)
         self.resumeButton.setEnabled(False)
         self.stepButton.setEnabled(False)
-        # In the simulation's thread, as Start runs it: until 14 Oct 2026
-        # Resume called it directly, so every run after the first (and every
-        # run after New or Load, where Resume is the only way) ran on the GUI
-        # thread, nested in the button's handler (SR-10)
+        # In the simulation's thread, as Start runs it, not on the GUI thread
+        # nested in the button's handler: Resume runs every run after the
+        # first, and every run after New or Load, where it is the only way
         if self._simulThread.isRunning():
             self.resumeRequested.emit()
         else:
@@ -942,8 +981,6 @@ class HomeoSimulationControllerGui(QDialog):
     
     def saveHomeostat(self):
         # PyQt5's dialog returns (filename, filter), and '' on Cancel.
-        # Until 14 Oct 2026 every save slot took the tuple for the
-        # filename, so none of them could save, and Cancel saved (SR-02).
         filename, _ = QFileDialog.getSaveFileName(parent = self,
                                                   caption = 'Choose the file to save the Homeostat to',
                                                   directory = self._simulation.homeostatFilename)
@@ -965,7 +1002,7 @@ class HomeoSimulationControllerGui(QDialog):
         self._reconnectAfterHomeostatChange()
 
     def _paceHomeostat(self):
-        "The GUI paces the run with its delay per tick alone (SR-08)"
+        "The GUI paces the run with its delay per tick alone"
         self._simulation.homeostat.slowingFactor = 0
 
     def _reconnectAfterHomeostatChange(self):
@@ -1059,9 +1096,7 @@ class HomeoSimulationControllerGui(QDialog):
                     widget.valueChanged.disconnect()
                 except TypeError:
                     pass
-                emitter(unit).criticalDeviationScaledChanged.connect(widget.setValue)
-                emitter(unit).minDeviationScaledChanged.connect(widget.setMinimum)
-                emitter(unit).maxDeviationScaledChanged.connect(widget.setMaximum)
+                _followUnit(widget, unit)
                 deferredConns.append((widget.valueChanged, unit.setCriticalDeviationFromSlider))
 
             # --- Connection widgets ---

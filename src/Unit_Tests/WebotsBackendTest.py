@@ -1,12 +1,9 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The Webots backend (Phase F of the 7 Oct 2026 review plan): Homeo runs
-Webots as its e-puck2's extern controller.  Each test runs its Webots in a
-subprocess -- one process can control one Webots robot -- and compares it
-with the Box2D twin: the same eyes' irradiance, the same capped wheel speed,
+The Webots backend: Homeo runs Webots as its e-puck2's extern controller.
+Each test runs its Webots in a subprocess -- one process can control one
+Webots robot -- and compares it with the Box2D twin: the same eyes' irradiance, the same capped wheel speed,
 the same virtual quality sensors, and a phototaxis run through the
 experiments' own scripts.  Skipped where Webots cannot run (not installed,
 or neither a display nor xvfb-run).
@@ -251,10 +248,9 @@ class WebotsBackendTest(unittest.TestCase):
         self.assertEqual(rows[0], rows[1])
 
     def testABatchsLaterRunsAreFreshRuns(self):
-        '''A batch's runs share one Webots, reset between them.  Run 2 moves,
-        and is row for row the run its seed gives in a fresh process.  (Until
-        15 Oct 2026 the reset undid the motors' velocity control, and every
-        run after the first stood still: R2-WEBOTS-1.)'''
+        '''A batch's runs share one Webots, reset between them.  Run 2 moves
+        (the reset keeps the motors' velocity control), and is row for row the
+        run its seed gives in a fresh process.'''
         rows = {}
         for name, seed, batch in (('batch', '5', '2'), ('alone', '6', '1')):
             with tempfile.TemporaryDirectory() as tmp:
@@ -274,9 +270,7 @@ class WebotsBackendTest(unittest.TestCase):
     def testAPlacedRobotIsWhereItWasPut(self):
         '''set_start_pose takes effect at once, as in Box2D: the pose and the
         eyes are the new ones before any step, and a run records the start it
-        had.  (Until 15 Oct 2026 Webots applied the pose only at the next
-        step, and runs recorded the world's default, (4, 4) heading 0:
-        R2-WEBOTS-2.)'''
+        had, not the world's default, (4, 4) heading 0.'''
         with tempfile.TemporaryDirectory() as tmp:
             script = os.path.join(tmp, 'place.py')
             with open(script, 'w') as f:
@@ -321,7 +315,7 @@ class WebotsBackendTest(unittest.TestCase):
     def testAResetWorldHasItsOwnLight(self):
         '''A reset puts the lights back as the world file has them: a run
         after one that set the light to 50 has it at 100, in Webots and in
-        its records.  (Until 16 Oct 2026 a reset kept the 50: R2-WEBOTS-3.)'''
+        its records.'''
         with tempfile.TemporaryDirectory() as tmp:
             script = os.path.join(tmp, 'relight.py')
             with open(script, 'w') as f:
@@ -339,8 +333,7 @@ class WebotsBackendTest(unittest.TestCase):
     def testANewSetupClosesTheRunsFile(self):
         '''A run ended by a new setup, not a save, still gets a complete
         .traj: its true final row (held back by decimation) and the closing
-        "# Steps recorded" line.  (Until 16 Oct 2026 Webots left the file
-        open: R2-WEBOTS-4.)'''
+        "# Steps recorded" line.'''
         with tempfile.TemporaryDirectory() as tmp:
             script = os.path.join(tmp, 'resetup.py')
             with open(script, 'w') as f:
@@ -355,8 +348,7 @@ class WebotsBackendTest(unittest.TestCase):
 
     def testAGenomesOwnTrajectoryFile(self):
         '''setRobotModel, as a GA evaluation or a replay calls it, starts a
-        .traj named after the genome, complete.  (Until 16 Oct 2026 it raised
-        TypeError on Webots: R2-WEBOTS-5.)'''
+        .traj named after the genome, complete.'''
         with tempfile.TemporaryDirectory() as tmp:
             script = os.path.join(tmp, 'model.py')
             with open(script, 'w') as f:

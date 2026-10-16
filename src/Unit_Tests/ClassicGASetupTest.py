@@ -1,10 +1,8 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
 The classic GA setup, initializeBraiten2_2_Full_GA, builds the homeostat its
-genome describes (review findings SE-08, SE-09).  The self-connections are
+genome describes.  The self-connections are
 manual: the genome sets them and the uniselector leaves them alone.
 '''
 from Core.HomeoUnit import HomeoUnitError
@@ -28,8 +26,9 @@ class ClassicGASetupTest(unittest.TestCase):
         self.addCleanup(self.backend.quit)
 
     def testUnitGenesAreSlicedByNoHomeoParameters(self):
-        # 4 units x 5 parameters, then the connections: the connection offset
-        # used 5, the unit slices 4, so the genome was silently misread (SE-09)
+        # 4 units x 5 parameters, then the connections: the unit slices and
+        # the connection offset both use noHomeoParameters, and a unit given
+        # 5 parameters instead of its 4 refuses them: no silent misreading
         genome = np.random.random(4 * 5 + 4 * 6)
         with self.assertRaises(HomeoUnitError):
             initializeBraiten2_2_Full_GA(genome, noHomeoParameters=5,
@@ -51,7 +50,7 @@ class ClassicGASetupTest(unittest.TestCase):
 
     def testTheEyesUniselectorRedrawsItsSensorLink(self):
         """The sensor -> eye link is adaptive like every other link between
-        units (review finding SE-11 (d)): the eye's uniselector redraws it"""
+        units: the eye's uniselector redraws it"""
         genome = np.random.random(4 * 4 + 4 * 6)
         hom = initializeBraiten2_2_Full_GA(genome, backendSimulator=self.backend)
         eye = [u for u in hom.homeoUnits if u.name == 'Left Eye'][0]
@@ -73,8 +72,7 @@ class ClassicGASetupTest(unittest.TestCase):
 
 class ClassicGenomeLabelsTest(unittest.TestCase):
     '''The labels of the classic connection genes name the connection each
-    gene sets (review finding HN-03): until 14 Oct 2026 they read gene k*N+j
-    as unit k -> unit j+1, rotated and reversed.'''
+    gene sets.'''
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

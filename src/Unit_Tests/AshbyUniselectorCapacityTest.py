@@ -1,14 +1,11 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
-How many connections Ashby's uniselector can control (review finding CD-05).
-It holds weights for 10 connections and grows in steps of 10.  The growth
-never happened: setUnitsControlled set the wrong variable, and
-Homeostat.addFullyConnectedUnit replaced the existing units'
-maxConnectedUnits method with a number instead of calling it.  Fully
-connected homeostats of 12 or more units crashed at the first firing.
+How many connections Ashby's uniselector can control.  It holds weights
+for 10 connections and grows in steps of 10, as setUnitsControlled and
+Homeostat.addFullyConnectedUnit (which calls the existing units'
+maxConnectedUnits method) ask it to, so fully connected homeostats of 12 or
+more units can fire.
 '''
 from Core.Homeostat import Homeostat
 from Core.HomeoUnit import HomeoUnit

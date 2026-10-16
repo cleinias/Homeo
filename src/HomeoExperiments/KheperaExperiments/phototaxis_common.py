@@ -6,11 +6,7 @@ records and command-line options.
 
 phototaxis_braitenberg2_direct (the 2+2 vehicle) and
 phototaxis_braitenberg2_Ashby (the 6-unit vehicle) only build their
-homeostats; everything else is here, so that a fix reaches both.  Until 13
-Oct 2026 each script had its own copy, and fixes reached only the direct one
-(review finding RE-06): the Ashby runs had no seed in batches, no run tag in
-their file names, no stepping or stability options, and tagged nothing in
-their batch files.
+homeostats; everything else is here, so that a fix reaches both.
 
 The command-line options both experiments take are listed in
 COMMON_OPTIONS_HELP.
@@ -22,6 +18,7 @@ from Helpers.General_Helper_Functions import (unique_stem, run_tag, RUN_LOG_EXTE
                                               report_ticks)
 import os
 import random
+import sys
 import time
 import threading
 from math import sqrt, degrees, atan2
@@ -38,14 +35,9 @@ DEFAULT_START_RANGE = (2.0, 6.0)
 
 UNISELECTOR_TYPES = ('ashby', 'random', 'continuous')
 
-# The robot (KheperaRobot): the e-puck2 since 14 Oct 2026, both simulators'
-# model; the K-Junior of every run before, with its eyes half way in along
-# their radii (13-14 Oct 2026, Homeo cda7a08: no blind wedge between them) or
-# on the rim (every run before 13 Oct), to reproduce those runs.  Each name is
-# (KheperaRobot's model, its eyeRadiusRatio).
-ROBOTS = {'epuck2': ('epuck2', None),
-          'kjunior': ('kjunior', 0.5),
-          'kjunior-rim': ('kjunior', 1.0)}
+# The robot, a KheperaRobot model: the e-puck2 (the default, both
+# simulators' robot) or the K-Junior (Box2D only).
+ROBOTS = ('epuck2', 'kjunior')
 DEFAULT_ROBOT = 'epuck2'
 
 # The robot simulator: Box2D (KheperaSimulation, the default: the GA and the
@@ -54,24 +46,18 @@ DEFAULT_ROBOT = 'epuck2'
 SIMULATORS = ('box2d', 'webots')
 
 
-def robot_name(model, eye_radius_ratio):
-    "The ROBOTS name of a robot model and eye radius ratio"
-    return next(name for name, spec in ROBOTS.items() if spec == (model, eye_radius_ratio))
-
-
 # --- Seeding and the world ----------------------------------------------------
 
-# A run has two independently seeded random streams (since 14 Oct 2026):
+# A run has two independently seeded random streams:
 #   - the homeostat's (--seed): numpy's, Python's and numba's global generators,
 #     which draw the units' and connections' parameters, the uniselectors'
 #     choices and every noise;
 #   - the environment's (--env-seed): a generator of its own, env_rng(), which
 #     draws the start pose.
-# One seed drove both before: a start pose drawn after the units consumed the
-# homeostat's stream, so the same seed gave a different noise history at a
-# random heading than at a fixed one, and the start pose depended on how many
-# draws the vehicle's setup made.  Separate streams allow the crossed
-# environment x seed decomposition: hold one stream, vary the other.  The
+# With one stream for both, a start pose drawn after the units would make the
+# same seed give a different noise history at a random heading than at a fixed
+# one, and the start pose would depend on how many draws the vehicle's setup
+# makes.  Separate streams allow the crossed environment x seed decomposition: hold one stream, vary the other.  The
 # environment's seed defaults to the homeostat's, so --seed alone still
 # reproduces a run; the two streams use different generators (MT19937 and
 # PCG64 through SeedSequence), so equal seeds give unrelated draws.
@@ -85,8 +71,7 @@ def seed_run(seed=None):
     '''Seed the homeostat's stream: numpy's, Python's and numba's generators;
     draw a seed from os.urandom if none is given.  Numba keeps a separate
     random state that np.random.seed() does not reach: without seeding it the
-    trajectory is not reproducible from the seed (SH-03, RE-05).  Returns the
-    seed.'''
+    trajectory is not reproducible from the seed.  Returns the seed.'''
     from Core.HomeoJIT import seed_jit_rng
     if seed is None:
         seed = new_seed()
@@ -101,13 +86,10 @@ def env_rng(env_seed):
     return np.random.default_rng(env_seed)
 
 
-def prepare_backend(backendSimulator, experiment_name, synchronous_stepping=True,
-                    robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
-    '''The run's backend (a new SimulatorBackendHOMEO if None), stepping as
-    asked, writing to today's SimsData directory under experiment_name.
-    synchronous_stepping: advance the world once per tick, after all units
-    have updated (default), or, if False, once per motor command, as runs
-    before 13 Oct 2026 did (see KheperaSimulation).
+def prepare_backend(backendSimulator, experiment_name, robot=DEFAULT_ROBOT,
+                    simulator='box2d', rendering=False):
+    '''The run's backend (a new SimulatorBackendHOMEO if None), writing to
+    today's SimsData directory under experiment_name.
     robot: the robot, a name in ROBOTS; it takes effect when the setup
     builds the world.
     simulator: 'box2d' or 'webots' (SIMULATORS); rendering: for Webots, show
@@ -117,24 +99,17 @@ def prepare_backend(backendSimulator, experiment_name, synchronous_stepping=True
 
     if robot not in ROBOTS:
         raise ValueError('robot must be one of %s, got %r' % (tuple(ROBOTS), robot))
-    model, eye_radius_ratio = ROBOTS[robot]
     if simulator not in SIMULATORS:
         raise ValueError('simulator must be one of %s, got %r' % (SIMULATORS, simulator))
     if backendSimulator is None and simulator == 'webots':
         from Simulator.SimulatorBackend import SimulatorBackendWEBOTS
         backendSimulator = SimulatorBackendWEBOTS(lock=threading.Lock(), robotName='Khepera',
-                                                  rendering=rendering, robotModel=model,
-                                                  eyeRadiusRatio=eye_radius_ratio,
-                                                  synchronousStepping=synchronous_stepping)
+                                                  rendering=rendering, robotModel=robot)
     elif backendSimulator is None:
         backendSimulator = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera',
-                                                 synchronousStepping=synchronous_stepping,
-                                                 eyeRadiusRatio=eye_radius_ratio,
-                                                 robotModel=model)
+                                                 robotModel=robot)
     else:
-        backendSimulator.kheperaSimulation.synchronousStepping = synchronous_stepping
-        backendSimulator.kheperaSimulation.robotEyeRadiusRatio = eye_radius_ratio
-        backendSimulator.kheperaSimulation.robotModel = model
+        backendSimulator.kheperaSimulation.robotModel = robot
 
     log_dir = os.path.join(simulations_data_dir(), 'SimsData-' + time.strftime("%Y-%m-%d"))
     os.makedirs(log_dir, exist_ok=True)
@@ -158,10 +133,10 @@ def experiment_suffix(light_intensity=100, uniselector_type='ashby', adaptive=Tr
 def set_light(backend, light_intensity, eye_saturation=None, eye_threshold=None,
               eye_response=None):
     '''Set the light's intensity, then the eyes, whose saturation is computed
-    from it (RE-11), and keep the eyes as configured, (I0, Isat, response), in
+    from it, and keep the eyes as configured, (I0, Isat, response), in
     the simulation's eyeConfig for the run's records.  Call once the world
     exists.  Sets it even at the default 100: a Webots world reset by the
-    previous run need not have it (R2-WEBOTS-3).'''
+    previous run need not have it.'''
     target_body = backend.kheperaSimulation.allBodies['TARGET']
     target_body.userData['intensity'] = light_intensity
     target_body.userData['lightIntensity'] = light_intensity
@@ -173,8 +148,8 @@ def set_light(backend, light_intensity, eye_saturation=None, eye_threshold=None,
 
 def eye_tag(saturation=None, threshold=None, response=None, robot=DEFAULT_ROBOT):
     """Filename tag for a robot other than the e-puck2 and for non-default eyes,
-    e.g. '_kjunior_rimeyes_log_sat0.5'; '' for the e-puck2's default eyes."""
-    tag = {'epuck2': '', 'kjunior': '_kjunior', 'kjunior-rim': '_kjunior_rimeyes'}[robot]
+    e.g. '_kjunior_log_sat0.5'; '' for the e-puck2's default eyes."""
+    tag = {'epuck2': '', 'kjunior': '_kjunior'}[robot]
     tag += '_log' if response == 'log' else ''
     if saturation is not None:
         tag += '_sat%g' % saturation
@@ -192,7 +167,7 @@ def configure_eyes(backend, saturation=None, threshold=None, response=None):
                 KheperaWorldLightDef's defaults, which is checked).
     threshold:  an irradiance, I0.  A log eye needs one > 0 and gets 1 if none
                 is given, so that it stops seeing an intensity-100 light 10
-                units away -- as far as the old eyes' distance cut-off.
+                units away.
     response:   'linear' or 'log'.
     None leaves a setting at the eye's default (linear, I0 = 0, Isat = 100).
     Returns the eyes' (threshold, saturation irradiance, response)."""
@@ -219,8 +194,8 @@ def configure_eyes(backend, saturation=None, threshold=None, response=None):
 def set_uniselector_type(unit, uniselector_type, continuous_params=None):
     '''Set the uniselector on a unit: 'ashby' (the stepping switch, already
     every new unit's), 'random' (uniform random) or 'continuous' (the OU
-    process; continuous_params overrides its parameters).  Any other type is
-    an error: it used to leave the Ashby uniselector in place silently.'''
+    process; continuous_params overrides its parameters, and a name that is
+    not one of them is an error).  Any other type is an error.'''
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
     from Core.HomeoUniselectorUniformRandom import HomeoUniselectorUniformRandom
 
@@ -228,6 +203,9 @@ def set_uniselector_type(unit, uniselector_type, continuous_params=None):
         unis = HomeoUniselectorContinuous()
         if continuous_params:
             for key, val in continuous_params.items():
+                if not isinstance(getattr(type(unis), key, None), property):
+                    raise ValueError('%r is not a parameter of the continuous uniselector'
+                                     % key)
                 setattr(unis, key, val)
         unit.uniselector = unis
     elif uniselector_type == 'random':
@@ -238,7 +216,7 @@ def set_uniselector_type(unit, uniselector_type, continuous_params=None):
 
 
 def uniselector_tag(uniselector_type):
-    "The uniselector's tag in file names: its type (batch files called 'random' 'ashby')."
+    "The uniselector's tag in file names: its type."
     if uniselector_type not in UNISELECTOR_TYPES:
         raise ValueError("uniselector_type must be one of %s, got %r"
                          % (UNISELECTOR_TYPES, uniselector_type))
@@ -247,25 +225,22 @@ def uniselector_tag(uniselector_type):
 
 # --- Numerical-integration stability -----------------------------------------
 #
-# The Newtonian needle used to be integrated explicitly: with zero torque the
-# velocity recursion was
-#       v <- v * (1 - viscosity * dt_fast / mass)
-# so the step was stable only while  viscosity * dt_fast / mass < 2.  Outside
-# that bound the needle diverged to its limit within a few dozen ticks with no
-# sensory input at all, which looked like -- but was not -- a saturated unit.
-# Random (mass, viscosity) draws violated this in 9 of the 20 runs of
-# 2026-09-30; see "Bimodal acquisition in OU chemotaxis".
-# HomeoJIT._jit_needle_position_newtonian now takes the exact step, stable for
-# any ratio (Homeo 1257d58), so the guard is no longer needed for the
-# numerics, and since 13 Oct 2026 it is off: (mass, viscosity) come from
-# their full distribution, the one the Ashby experiment always used.
-# --stable-draws (stable_draws=True) restores it, to reproduce earlier runs of
-# the direct experiment; runs and batch files record which was used.
+# An explicit step of the Newtonian needle, with zero torque the velocity
+# recursion
+#       v <- v * (1 - viscosity * dt_fast / mass),
+# is stable only while  viscosity * dt_fast / mass < 2.  Outside that bound
+# the needle diverges to its limit within a few dozen ticks with no sensory
+# input at all, which looks like -- but is not -- a saturated unit.
+# HomeoJIT._jit_needle_position_newtonian takes the exact step, stable for
+# any ratio, so the numerics need no guard, and by default there is none:
+# (mass, viscosity) come from their full distribution, the one the Ashby
+# experiment uses.  --stable-draws (stable_draws=True) keeps the draws inside
+# the bound; runs and batch files record which was used.
 STABILITY_MARGIN = 1.8          # with stable_draws, keep viscosity*dt/mass below this
 
 
 def integration_ratio(unit):
-    "viscosity * dt_fast / mass (the old explicit step needed it below 2)."
+    "viscosity * dt_fast / mass (an explicit step needs it below 2)."
     dt = getattr(unit, '_dt_fast', 1.0)
     return unit.viscosity * dt / unit.mass if unit.mass else float('inf')
 
@@ -274,10 +249,9 @@ def randomize_unit(u, mass_range, stable_draws=False, start_at_rest=False, max_t
     """setRandomValues() + a mass uniform in mass_range (setRandomValues leaves
     it at the sluggish default of 100).
 
-    With stable_draws (the default of the direct experiment's runs before 13
-    Oct 2026) the (mass, viscosity) pair is resampled until
-    viscosity*dt_fast/mass < STABILITY_MARGIN, the bound the old explicit
-    integrator needed: the original joint distribution conditioned on that
+    With stable_draws the (mass, viscosity) pair is resampled until
+    viscosity*dt_fast/mass < STABILITY_MARGIN, the bound an explicit
+    integrator needs: the full joint distribution conditioned on that
     bound.  With start_at_rest the needle starts centred and motionless, so
     the vehicle begins stationary instead of mid-manoeuvre.
     """
@@ -352,30 +326,10 @@ def apply_spin(hom, spin):
 def set_start_pose(robot, x=None, y=None, heading=None):
     '''Place the robot at (x, y) with the given heading (degrees, same
     convention as the .traj "heading" column); None keeps the current value.
-
-    Moves the wheel bodies with the chassis, rotating them about its centre,
-    so the wheel joints stay intact (KheperaRobot.rotateTo/moveTo do not).
-    A Webots robot places itself (WebotsRobot.setPose).
+    Both robots place themselves (KheperaRobot.setPose, WebotsRobot.setPose).
     Call before the first simulation step.
     '''
-    if hasattr(robot, 'setPose'):
-        robot.setPose(x, y, heading)
-        return
-    from math import radians, cos, sin
-    from Box2D import b2Vec2
-
-    body = robot.body
-    ox, oy = body.position[0], body.position[1]
-    nx = ox if x is None else x
-    ny = oy if y is None else y
-    delta = 0.0 if heading is None else radians(heading) - body.angle
-    c, s = cos(delta), sin(delta)
-    for wheel in robot.wheels.values():
-        rx, ry = wheel.body.position[0] - ox, wheel.body.position[1] - oy
-        wheel.body.position = b2Vec2(nx + c * rx - s * ry, ny + s * rx + c * ry)
-        wheel.body.angle += delta
-    body.position = b2Vec2(nx, ny)
-    body.angle += delta
+    robot.setPose(x, y, heading)
 
 
 def random_start_pose(target_pos, random_position, start_range=DEFAULT_START_RANGE, *, rng):
@@ -432,17 +386,16 @@ def _end_logs(hom, log_path, json_path):
     log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
 
 
-def run_settings(backend, light_intensity, stable_draws, env_seed):
-    "The settings every run records in its JSON (the homeostat's seed is recorded apart)."
+def run_settings(backend, light_intensity, stable_draws, env_seed, early_stop_distance=None):
+    '''The settings every run records in its JSON (the homeostat's seed is
+    recorded apart).  early_stop_distance: None when the run cannot stop early.'''
     eye_config = backend.kheperaSimulation.eyeConfig
     return dict(env_seed=env_seed,
+                early_stop_distance=early_stop_distance,
                 simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
                 stable_draws=stable_draws,
-                synchronous_stepping=backend.kheperaSimulation.synchronousStepping,
                 light_intensity=light_intensity,
-                robot=robot_name(backend.kheperaSimulation.allBodies['Khepera'].model,
-                                 backend.kheperaSimulation.allBodies['Khepera'].eyeRadiusRatio),
-                eye_radius_ratio=backend.kheperaSimulation.allBodies['Khepera'].eyeRadiusRatio,
+                robot=backend.kheperaSimulation.allBodies['Khepera'].model,
                 eye_threshold=eye_config[0],
                 eye_saturation_irradiance=eye_config[1],
                 eye_response=eye_config[2])
@@ -472,8 +425,8 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
     seed, env_seed, start_x, start_y, start_heading, start_dist, start_sees_light (did
     either eye see the light at the start), first_acq (the first report tick
     within ACQUISITION_RADIUS of the light, or None), acquired, final_speed,
-    final_bearing, the eyes as configured, spin, synchronous_stepping,
-    stable_draws, and the extra fields.
+    final_bearing, the eyes as configured, spin, stable_draws, and the
+    extra fields.
     '''
     hom, backend, seed = setup()
     if env_seed is None:
@@ -498,7 +451,8 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
 
     eye_config = sim.eyeConfig
     log_path, json_path, stem = _start_logs(
-        hom, backend, seed, run_settings(backend, light_intensity, stable_draws, env_seed))
+        hom, backend, seed, run_settings(backend, light_intensity, stable_draws, env_seed,
+                                         early_stop_distance))
 
     # Optional per-tick state logger
     state_log_path = None
@@ -531,9 +485,9 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
     min_t = 0
     early_stopped = False
     '''Time of first acquisition: the tick at which the vehicle first comes
-       within ACQUISITION_RADIUS of the target.  Recorded here rather than
-       reconstructed from the .traj afterwards, which is what the 2026-09-30
-       analysis had to do.  None if it never acquires.'''
+       within ACQUISITION_RADIUS of the target.  Recorded here, so that it
+       need not be reconstructed from the .traj afterwards.  None if it never
+       acquires.'''
     first_acq = None
     rx, ry = robot.body.position[0], robot.body.position[1]
     prev_x, prev_y, prev_tick = rx, ry, 0
@@ -602,16 +556,15 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                   start_dist=start_dist, start_sees_light=start_sees_light,
                   first_acq=first_acq, acquired=first_acq is not None,
                   # The eyes as configured, not as asked: a log eye's default
-                  # threshold is 1, not 0 (RE-11)
+                  # threshold is 1, not 0
                   eye_response=eye_config[2],
                   eye_threshold=eye_config[0],
                   eye_saturation='' if eye_saturation is None else eye_saturation,
                   eye_saturation_irradiance=eye_config[1],
-                  robot=robot_name(robot.model, robot.eyeRadiusRatio),
+                  robot=robot.model,
                   simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
-                  eye_radius_ratio='' if robot.eyeRadiusRatio is None else robot.eyeRadiusRatio,
                   final_speed=final_speed, final_bearing=final_bearing,
-                  spin=spin, synchronous_stepping=sim.synchronousStepping,
+                  spin=spin,
                   stable_draws=stable_draws)
     result.update(extra or {})
     return result
@@ -619,25 +572,22 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
 
 BATCH_FIELDS = ['run', 'seed', 'env_seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response',
                 'eye_threshold', 'eye_saturation', 'eye_saturation_irradiance',
-                'simulator', 'robot', 'eye_radius_ratio',
+                'simulator', 'robot',
                 'start_x', 'start_y', 'start_heading', 'start_dist',
                 'start_sees_light', 'acquired', 'first_acq',
                 'final_dist', 'min_dist', 'min_t', 'steps_run',
                 'final_speed', 'final_bearing',
-                'early_stopped', 'final_x', 'final_y', 'wall_time', 'synchronous_stepping',
-                'stable_draws',
+                'early_stopped', 'final_x', 'final_y', 'wall_time', 'stable_draws',
                 'log_path', 'json_path', 'state_log_path']
 
 
 def batch_kind(variant, spin=0.0, eye_saturation=None, eye_threshold=None,
-               eye_response=None, synchronous_stepping=True, stable_draws=False,
+               eye_response=None, stable_draws=False,
                robot=DEFAULT_ROBOT, simulator='box2d'):
     '''The batch file's tag: the variant (the uniselector, or the fixed-weight
-    vehicle), then spin, eyes, '_async', '_stabledraws' and '_webots'.'''
+    vehicle), then spin, eyes, '_stabledraws' and '_webots'.'''
     kind = variant + spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response,
                                               robot)
-    if not synchronous_stepping:
-        kind += '_async'
     if stable_draws:
         kind += '_stabledraws'
     if simulator == 'webots':
@@ -851,18 +801,13 @@ Options both experiments take
                         V eye fields; mouse wheel zoom, drag pan
    --random-topology    every connection between the adaptive units on
    --continuous         the continuous (OU) uniselector instead of Ashby's
-   --dark               light intensity -100 (a "darkness source"); with it,
-                        --early-stop defaults to 1.5
+   --dark               light intensity -100 (a "darkness source")
    --early-stop D       stop a run once the robot is within D of the light
+                        (checked at each report; none by default)
    --state-log          a per-tick .statelog (--log-interval N: every N ticks)
    --stable-draws       redraw each unit's (mass, viscosity) while viscosity x
-                        dt / mass >= 1.8, as the direct experiment's runs
-                        before 13 Oct 2026 did, to reproduce them; batch files
-                        get "_stabledraws"
+                        dt / mass >= 1.8; batch files get "_stabledraws"
    --start-at-rest      the adaptive units start centred and motionless
-   --async-stepping     one world step per motor command instead of one per
-                        tick, as runs before 13 Oct 2026 did; batch files get
-                        "_async"
 
    Start pose: default (4, 4), heading 0, the light at (7, 7) in view.
    --random-heading     random heading (from the environment's seed), default
@@ -881,12 +826,8 @@ Options both experiments take
    --eye-saturation D   saturate at distance D: Isat = intensity / D^2
    --eye-threshold I0   the threshold, an irradiance (1 for a log eye)
    --eye-response log   logarithmic response (default linear)
-   --robot R            the robot: epuck2 (default since 14 Oct 2026), kjunior
-                        (the K-Junior of earlier runs, eyes half way in along
-                        their radii, as 13-14 Oct 2026) or kjunior-rim (its
-                        eyes on the rim, as every run before 13 Oct 2026);
-                        files get "_kjunior" or "_kjunior_rimeyes"
-   --rim-eyes           the same as --robot kjunior-rim
+   --robot R            the robot: epuck2 (default) or kjunior (the K-Junior,
+                        Box2D only); files get "_kjunior"
    --simulator S        the robot simulator: box2d (default) or webots (the
                         e-puck2 only; Webots must be installed: WEBOTS_HOME
                         or webots on the PATH); files get "_webots"
@@ -908,11 +849,41 @@ def _value(argv, flag, convert, message):
         raise SystemExit(message)
 
 
-def parse_common_args(argv):
+# The options of COMMON_OPTIONS_HELP: those that stand alone, and those
+# followed by values (how many)
+COMMON_FLAGS = ('--continuous', '--dark', '--no-traj', '--random-heading',
+                '--random-start', '--random-topology', '--render',
+                '--stable-draws', '--start-at-rest', '--state-log', '--visualize')
+COMMON_VALUED = {'--batch': 1, '--batch-vary': 1, '--early-stop': 1, '--env-seed': 1,
+                 '--eye-response': 1, '--eye-saturation': 1, '--eye-threshold': 1,
+                 '--heading': 1, '--log-interval': 1, '--robot': 1, '--run-tag': 1,
+                 '--seed': 1, '--simulator': 1, '--spin': 1, '--start-range': 2,
+                 '--steps': 1, '--traj-interval': 1}
+
+
+def check_options(argv, flags=(), valued=None):
+    '''SystemExit naming the first option in argv[1:] that is neither one of
+    COMMON_OPTIONS_HELP nor one of the script's own (flags, and valued:
+    {option: number of values}); the values after an option are skipped.'''
+    valued = dict(COMMON_VALUED, **(valued or {}))
+    known = set(COMMON_FLAGS) | set(flags) | set(valued)
+    i = 1
+    while i < len(argv):
+        token = argv[i]
+        if token not in known:
+            raise SystemExit('Unknown option %r (see the options in the script\'s docstring)'
+                             % token)
+        i += 1 + valued.get(token, 0)
+
+
+def parse_common_args(argv, flags=(), valued=None):
     '''Parse the options in COMMON_OPTIONS_HELP from argv; returns a dict.
+    flags and valued are the script's own options (see check_options): any
+    other option is refused.
     Also sets HOMEO_RUN_TAG from --run-tag (exported rather than threaded
     through: the file names are built where argv is not seen) and the
     trajectory recording.'''
+    check_options(argv, flags, valued)
     if '--run-tag' in argv:
         idx = argv.index('--run-tag')
         if idx + 1 < len(argv):
@@ -924,12 +895,17 @@ def parse_common_args(argv):
     o['total_steps'] = (_value(argv, '--steps', int, '--steps needs a number of ticks')
                         if '--steps' in argv else 60000)
     o['light_intensity'] = -100 if '--dark' in argv else 100
+    # No early stop unless asked, dark runs included.  A stop outside
+    # ACQUISITION_RADIUS can end a run that reaches the source before it
+    # counts as acquired, hence the warning.
     o['early_stop_distance'] = None
     if '--early-stop' in argv:
         o['early_stop_distance'] = _value(argv, '--early-stop', float,
                                           '--early-stop needs a distance')
-    elif '--dark' in argv:
-        o['early_stop_distance'] = 1.5   # TrajectoryGrapher's gray circle
+        if o['early_stop_distance'] > ACQUISITION_RADIUS:
+            print('Warning: --early-stop %g is outside the acquisition radius (%g): a run '
+                  'can stop before it counts as acquired'
+                  % (o['early_stop_distance'], ACQUISITION_RADIUS), file=sys.stderr)
     o['n_batch'] = (_value(argv, '--batch', int, '--batch needs a number of runs')
                     if '--batch' in argv else None)
     o['state_log'] = '--state-log' in argv
@@ -947,11 +923,10 @@ def parse_common_args(argv):
                              % (' '.join(BATCH_VARY), o['batch_vary']))
         if o['n_batch'] is None:
             raise SystemExit('--batch-vary applies only with --batch')
-    o['stable_draws'] = '--stable-draws' in argv     # off by default since 13 Oct 2026
+    o['stable_draws'] = '--stable-draws' in argv     # off by default
     o['start_at_rest'] = '--start-at-rest' in argv
     o['random_start'] = '--random-start' in argv
     o['random_heading'] = '--random-heading' in argv
-    o['synchronous_stepping'] = '--async-stepping' not in argv
     o['visualize'] = '--visualize' in argv
     o['simulator'] = 'box2d'
     if '--simulator' in argv:
@@ -1009,11 +984,6 @@ def parse_common_args(argv):
         o['robot'] = argv[idx + 1] if idx + 1 < len(argv) else ''
         if o['robot'] not in ROBOTS:
             raise SystemExit('--robot must be one of %s, got %r' % (' '.join(ROBOTS), o['robot']))
-    if '--rim-eyes' in argv:
-        if '--robot' in argv and o['robot'] != 'kjunior-rim':
-            raise SystemExit('--rim-eyes is --robot kjunior-rim; it cannot go with --robot %s'
-                             % o['robot'])
-        o['robot'] = 'kjunior-rim'
     o['eye_saturation'] = None
     if '--eye-saturation' in argv:
         o['eye_saturation'] = _value(argv, '--eye-saturation', float,
@@ -1023,12 +993,9 @@ def parse_common_args(argv):
 
     if o['simulator'] == 'webots' and o['robot'] != 'epuck2':
         raise SystemExit('Webots runs the e-puck2 only (--robot epuck2)')
-    if o['simulator'] == 'webots' and not o['synchronous_stepping']:
-        raise SystemExit('Webots is stepped once per tick: no --async-stepping')
 
     '''Trajectory volume.  Two rows are recorded per homeostat tick at ~50 bytes
-       each, so a 6M-step run writes ~600 MB and a batch of 20 wrote 11.5 GB on
-       2026-09-30.  --traj-interval decimates at write time; the final pose is
+       each, so a 6M-step run writes ~600 MB and a batch of 20 ~12 GB.  --traj-interval decimates at write time; the final pose is
        always kept, so final-distance analyses are unaffected.'''
     from Helpers.RobotTrajectoryWriter import configureTrajectoryDefaults
     traj_interval = 1
@@ -1050,7 +1017,7 @@ def parse_common_args(argv):
 # the runners
 SETUP_OPTIONS = ('topology', 'light_intensity', 'uniselector_type', 'seed', 'stable_draws',
                  'start_at_rest', 'spin', 'eye_saturation', 'eye_threshold', 'eye_response',
-                 'robot', 'simulator', 'rendering', 'synchronous_stepping')
+                 'robot', 'simulator', 'rendering')
 RUN_OPTIONS = ('total_steps', 'light_intensity', 'early_stop_distance', 'state_log',
                'state_log_interval', 'heading', 'random_heading', 'random_start',
                'start_range', 'stable_draws', 'eye_saturation', 'spin', 'env_seed')

@@ -54,7 +54,7 @@ class HomeostatStateLogger:
         # phys_time column: ticks x that minimum, the needle time of the
         # unit with the shortest step.  It is not the robot's world time,
         # which advances the same amount every tick whatever the units'
-        # dt_fast (stepsPerTick x the physics step; SG-02).
+        # dt_fast (stepsPerTick x the physics step).
         self._min_dt_fast = 1.0
         for u in homeostat.homeoUnits:
             dt = getattr(u, '_dt_fast', 1.0)
@@ -78,15 +78,15 @@ class HomeostatStateLogger:
             self._has_ou.append(has_ou)
 
             # Record BOTH ways of reaching each weight and choose between them at
-            # read time, not here.  Binding the choice at construction was a
-            # silent data loss: the JIT branch tested for _jit_incoming_units,
-            # which _sync_jit_arrays() does not create until the first tick --
-            # i.e. always after this logger is built -- so every headless run
-            # took the connection branch.  In headless mode the connection
-            # objects are NOT the live weights: evolve_weights_jit() mutates the
-            # JIT arrays in place and never writes back (only flushJitArrays()
-            # does, which is why the INITIAL/FINAL json showed drift while the
-            # whole state log sat frozen at the initial values).
+            # read time, not here.  Binding the choice at construction would
+            # lose data silently: _sync_jit_arrays() does not create
+            # _jit_incoming_units until the first tick -- i.e. always after
+            # this logger is built -- so every headless run would take the
+            # connection branch.  In headless mode the connection objects are
+            # NOT the live weights: evolve_weights_jit() mutates the JIT arrays
+            # in place and never writes back (only flushJitArrays() does, so
+            # the INITIAL/FINAL json can show drift while the connections hold
+            # the initial values).
             active = [c for c in unit.inputConnections
                       if c.isActive() and c.incomingUnit.isActive()]
             for jit_idx, conn in enumerate(active):
@@ -125,8 +125,10 @@ class HomeostatStateLogger:
     def _write_metadata_header(self):
         '''Write #-prefixed metadata lines with constant parameters.'''
         f = self._f
+        from Helpers.General_Helper_Functions import homeo_version
         f.write('# HomeostatStateLog v1\n')
         f.write('# date\t%s\n' % time.strftime('%Y-%m-%d %H:%M:%S'))
+        f.write('# homeo\t%s\n' % homeo_version())
         if self._seed is not None:
             f.write('# seed\t%d\n' % self._seed)
         f.write('# log_interval\t%d\n' % self._interval)
@@ -150,7 +152,6 @@ class HomeostatStateLogger:
                 unis = unit.uniselector
                 f.write('%s_ou_model\t%s\n' % (prefix, unis._model))
                 f.write('%s_tau_a\t%.6f\n' % (prefix, unis._tau_a))
-                f.write('%s_theta\t%.6f\n' % (prefix, unis._theta))
                 f.write('%s_sigma_base\t%.6f\n' % (prefix, unis._sigma_base))
                 f.write('%s_sigma_crit\t%.6f\n' % (prefix, unis._sigma_crit))
                 f.write('%s_stress_exponent\t%.6f\n' % (
@@ -206,8 +207,8 @@ class HomeostatStateLogger:
         # headless OU uniselector evolves only them.  But a connection changed
         # through its setters since the arrays were built (_jitStale: a
         # discrete uniselector's firing) is newer; the arrays catch up only at
-        # the next tick.  Read from the arrays, a firing's weights came one row
-        # late, and never on the last tick (R2-REC-1, CD-12).
+        # the next tick.  Read from the arrays, a firing's weights would come
+        # one row late, and never on the last tick.
         for _, unit, conn, jit_idx in self._conn_sources:
             jw = getattr(unit, '_jit_weights', None)
             if (jw is not None and jit_idx < len(jw)

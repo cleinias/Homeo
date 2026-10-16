@@ -1,21 +1,11 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
-Where the Khepera's eyes sit.  Each eye faces outward along its radius,
-21.9 degrees off the heading, and sees 45 degrees either side of that axis.
-On the rim, the two fields' inner edges crossed on the midline 0.1135 ahead
-of the centre, 0.05 beyond the rim: a light in that wedge was seen by
-neither eye, and a vehicle driving at the light stopped dead 0.11 from it
-(research journal, 2026-10-03).  The eyes now sit half way in along their
-radii (eyeRadiusRatio 0.5): same angles and fields, the wedge's tip inside
-the body, and everything outside the body within 45 degrees of the heading
-in view.  eyeRadiusRatio = 1 puts them back on the rim, for runs made
-before 13 Oct 2026.
-
-All of this is the K-Junior (model='kjunior'), the robot of every run before
-14 Oct 2026.  The e-puck2, the robot since, has the eyes of EpuckEyesTest:
+Where the robots' eyes sit.  The K-Junior's (model='kjunior'): each eye
+faces outward along its radius, 21.9 degrees off the heading, half way out
+(eyeRadiusRatio 0.5), and sees 45 degrees either side of that axis; the two
+fields' inner edges cross inside the body, so everything outside the body
+within 45 degrees of the heading is in view.  The e-puck2's (EpuckEyesTest):
 each a pair of the e-puck's light sensors, their irradiance averaged, each
 with a LightSensor's 180-degree cosine field.
 '''
@@ -73,36 +63,25 @@ class KheperaEyePlacementTest(unittest.TestCase):
             self.assertGreater(left, 0)
             self.assertAlmostEqual(left, right)
 
-    def testSameAnglesAsOnTheRim(self):
-        inside, rim = self._robot(), self._robot(eyeRadiusRatio=1.0)
-        for eye in ('leftEye', 'rightEye'):
-            self.assertAlmostEqual(inside.sensors[eye].userData[eye + 'Angle'],
-                                   rim.sensors[eye].userData[eye + 'Angle'])
-            self.assertAlmostEqual(inside.sensors[eye].userData[eye + 'AngleRange'], 90)
-        self.assertAlmostEqual(abs(inside.sensors['leftEye'].userData['leftEyeAngle']), 21.8858, places=3)
+    def testHalfWayOutAlongTheRadius(self):
+        "Each eye faces outward along its radius, half way out, 21.9 degrees off the heading"
+        robot = self._robot()
+        self.assertEqual(robot.eyeRadiusRatio, 0.5)
+        for eye, (X, Y) in (('leftEye', (-0.0235, 0.0585)), ('rightEye', (0.0235, 0.0585))):
+            self.assertEqual(robot.eyePoses[eye], (X / 2, Y / 2))
+            self.assertAlmostEqual(robot.sensors[eye].userData[eye + 'AngleRange'], 90)
+        self.assertAlmostEqual(abs(robot.sensors['leftEye'].userData['leftEyeAngle']), 21.8858, places=3)
 
-    def testHalfWayInAlongTheRadius(self):
-        inside, rim = self._robot(), self._robot(eyeRadiusRatio=1.0)
-        for eye in ('leftEye', 'rightEye'):
-            x, y = inside.sensors[eye].shape.pos
-            X, Y = rim.sensors[eye].shape.pos
-            self.assertAlmostEqual(x, X / 2)
-            self.assertAlmostEqual(y, Y / 2)
-
-    def testOnTheRimTheWedgeIsBack(self):
-        "eyeRadiusRatio = 1 reproduces the old eyes: a light 0.09 ahead is unseen"
-        rim = self._robot(eyeRadiusRatio=1.0)
-        self.assertEqual(self._seen(rim, 0, 0.09), (0, 0))
-
-    def testTheSimulationPassesThePlacementOn(self):
-        for ratio in (0.5, 1.0):
-            simulation = KheperaSimulation(robotEyeRadiusRatio=ratio, robotModel='kjunior')
-            self.assertEqual(simulation.robotEyeRadiusRatio, ratio)
+    def testThePlacementIsNotAnOption(self):
+        with self.assertRaises(TypeError):
+            self._robot(eyeRadiusRatio=1.0)
+        with self.assertRaises(TypeError):
+            KheperaSimulation(robotEyeRadiusRatio=1.0, robotModel='kjunior')
 
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed")
 class EpuckEyesTest(KheperaEyePlacementTest.__base__):
-    '''The e-puck2's eyes (the robot since 14 Oct 2026): the right eye is ls0
+    '''The e-puck2's eyes: the right eye is ls0
     and ls1, the left ls7 and ls6, at the positions and facing the
     directions of Webots' E-puck.proto; an eye's irradiance is the mean of
     its two sensors', each with the cosine law and nothing from behind.'''
@@ -164,9 +143,8 @@ class EpuckEyesTest(KheperaEyePlacementTest.__base__):
                 with self.subTest(bearing=bearing, distance=distance):
                     self.assertGreater(max(self._seen(robot, bearing, distance)), 0)
 
-    def testEyeRadiusRatioIsTheKJuniorsOnly(self):
-        with self.assertRaises(ValueError):
-            self._robot(model='epuck2', eyeRadiusRatio=0.5)
+    def testOnlyTheKJuniorHasAnEyeRadiusRatio(self):
+        self.assertIsNone(self.epuck().eyeRadiusRatio)
 
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed")

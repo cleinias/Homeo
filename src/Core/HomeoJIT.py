@@ -29,11 +29,10 @@ def seed_jit_rng(seed):
 
     Numba's nopython mode keeps its OWN random state, entirely separate from the
     one np.random.seed() touches at Python level.  Seeding only at Python level
-    therefore left every draw in _jit_unit_noise(), _jit_needle_position_base()
+    leaves every draw in _jit_unit_noise(), _jit_needle_position_base()
     and HomeoUniselectorContinuous.evolve_weights_jit() running off an unseeded
-    stream: initial conditions were reproducible (they are drawn in Python,
-    before any JIT call), but trajectories were not.  Three runs of one seed gave
-    three different trajectories, which is how this was found.
+    stream: initial conditions are reproducible (they are drawn in Python,
+    before any JIT call), but trajectories are not.
 
     The seed must be set from inside nopython mode to reach that state, which is
     what _jit_seed does.  With numba absent, njit degrades to a no-op and the
@@ -65,8 +64,7 @@ def _jit_unit_noise(noise):
 def _jit_conn_noise(current, noise):
     """Replacement for HomeoNoise.connNoise().
     Distorting-normal-proportional noise for connections: none on a
-    connection carrying no current (review finding CU-13: it used to be the
-    full noise at exactly 0)."""
+    connection carrying no current."""
     if noise == 0.0 or current == 0.0:
         return 0.0
     bound = noise * abs(current)
@@ -278,9 +276,8 @@ def warmup_jit():
     This is a one-time cost (~1s) at simulation start, so it runs once per
     process.  The dummy calls use zero noise, so they draw no random numbers:
     numba compiles a function on its first call whatever branch it takes, and
-    drawing here (as this did on every Homeostat.runFor() call) shifted the
-    random stream, so one seed gave a different run depending on how the run
-    was split into runFor() calls."""
+    drawing here would shift the random stream, so one seed would give a
+    different run depending on how the run is split into runFor() calls."""
     global _warmed_up
     if _warmed_up:
         return

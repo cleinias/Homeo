@@ -80,7 +80,7 @@ class AshbyHelpersTest(unittest.TestCase):
 
 
 class UniselectorFlagRowTest(unittest.TestCase):
-    """Per-tick records (review finding CD-12): row t is the state after t
+    """Per-tick records: row t is the state after t
     updates, and the firing flag is in the same row as the deviation that
     triggered it and the weights it drew"""
 
@@ -115,7 +115,7 @@ class UniselectorFlagRowTest(unittest.TestCase):
 
 
 class StabilityTrackerTest(unittest.TestCase):
-    """Stable stretches and their onsets (review finding SR-14), on a stand-in
+    """Stable stretches and their onsets, on a stand-in
     homeostat whose one unit is critical at the ticks given"""
 
     class Unit:
@@ -135,14 +135,14 @@ class StabilityTrackerTest(unittest.TestCase):
         return tracker
 
     def testStableFromTheStartIsOnsetOne(self):
-        "until 15 Oct 2026: 200, the burn-in"
+        "stable from tick 1, not from the end of a burn-in"
         tracker = self.track(set(), 4000)
         self.assertEqual(tracker.stability_achieved_at, 1)
         self.assertEqual(tracker.stable_since, 1)
         self.assertEqual(tracker.episodes, [[1, 4000]])
 
     def testTheOnsetIsTheStretchsFirstTick(self):
-        "critical up to tick 500: stable from 501 (until 15 Oct 2026: 500)"
+        "critical up to tick 500: stable from 501"
         tracker = self.track(set(range(1, 501)), 4000)
         self.assertEqual(tracker.stability_achieved_at, 501)
 
@@ -154,8 +154,8 @@ class StabilityTrackerTest(unittest.TestCase):
         self.assertTrue(tracker.currently_stable)
 
     def testStableSinceIsTheOnsetOfTheStretchInProgress(self):
-        """until 15 Oct 2026 the 'since' reported was the last tick minus
-        window (3800 here), and a stretch from 1 to 300 was a first stability at 100"""
+        """the 'since' is the stretch's first tick, not the last tick minus
+        window (3800 here), and a stretch from 1 to 300 is a first stability at 1"""
         tracker = self.track({301, 2000}, 4000)
         self.assertEqual(tracker.episodes, [[1, 300], [302, 1999], [2001, 4000]])
         self.assertEqual(tracker.stability_achieved_at, 1)
@@ -446,9 +446,8 @@ class AshbyExp6Test(unittest.TestCase):
 
     def testHabituation(self):
         """Fig. 14/6/1: some D's change 1->2, then one value is kept and the response is small.
-        21 of seeds 1-30 habituate, before and after CU-04 changed the units'
-        random start; seed 1 no longer does (its first 1->2 already gives a
-        small response).  Seeds that do."""
+        21 of seeds 1-30 habituate; seed 1 does not (its first 1->2 already
+        gives a small response).  Seeds that do."""
         for seed in (2, 3):
             hom, seed, meta = setup_exp6_habituation(seed)
             m = self.runStimuli(hom, make_stimulus_events(), EXP6_END)
@@ -541,8 +540,8 @@ class AshbyExp3Test(unittest.TestCase):
 
     def testTraining(self):
         """Punished, then 1->2 changed by a punishment, then the desired response.
-        Training succeeds for most seeds, not all (25 of seeds 1-40 since
-        CD-11 changed the uniselector's matrix, 19 before): seeds that do."""
+        Training succeeds for most seeds, not all (25 of seeds 1-40): seeds
+        that do."""
         for seed in (1, 3):
             hom, seed, meta = setup_exp3_training(seed)
             quiet(hom)

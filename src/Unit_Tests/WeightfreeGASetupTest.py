@@ -1,11 +1,9 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
 The weight-free GA setups (direct 2+2, 2_2_Full, 3c) honour the GA's
-"No Uniselector" option (review finding SE-05): it used to be ignored, so a
-GA run with it set still adapted every evolved unit's weights.
+"No Uniselector" option: a GA run with it set does not adapt the evolved
+units' weights.
 '''
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO
 import Simulator.HomeoExperiments as HE
@@ -16,10 +14,7 @@ import unittest
 
 import numpy as np
 
-EXPERIMENTS = ['initializeBraiten2_direct_GA_continuous_weightfree_fixed',
-               'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed',
-               'initializeBraiten3c_GA_continuous_weightfree_fixed',
-               'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
+EXPERIMENTS = ['initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
                'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2',
                'initializeBraiten3c_GA_continuous_weightfree_fixed_v2']
 
@@ -65,9 +60,8 @@ class WeightfreeNoUniselTest(unittest.TestCase):
 
 
 class WeightfreeV2GenesTest(unittest.TestCase):
-    """The _v2 setups (review finding CU-11): 4 genes per evolved unit, mass
-    and viscosity log-uniform over [0.25, 250] and [0.05, 50], no dt_fast gene;
-    the legacy setups decode as before"""
+    """The weight-free setups: 4 genes per evolved unit, mass and viscosity
+    log-uniform over [0.25, 250] and [0.05, 50], no dt_fast gene"""
 
     @staticmethod
     def evolved(hom):
@@ -89,17 +83,11 @@ class WeightfreeV2GenesTest(unittest.TestCase):
                         self.assertAlmostEqual(unit.viscosity, viscosity, delta=1e-3 * viscosity)
                         self.assertEqual(unit.dt_fast, 1.0)
 
-    def testLegacyGenesAreUnchanged(self):
-        "mass 1 + 9 g, viscosity 10 g, dt_fast 0.2 + 1.8 g"
-        for name in ('initializeBraiten2_direct_GA_continuous_weightfree_fixed',
-                     'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt'):
-            f = getattr(HE, name)
-            with self.subTest(name):
-                hom = f(np.full(f.genomeSize, 0.5), backendSimulator=self._backend())
-                for unit in self.evolved(hom):
-                    self.assertAlmostEqual(unit.mass, 5.5)
-                    self.assertAlmostEqual(unit.viscosity, 5.0)
-                    self.assertAlmostEqual(unit.dt_fast, 1.1 if f.genomeSize == 10 else 1.0)
+    def testTheWeightfreeSetupsAreTheV2Ones(self):
+        "Every weight-free GA setup has the 'weightfree_v2' layout"
+        names = [n for n in dir(HE) if n.startswith('initialize') and 'weightfree' in n]
+        self.assertEqual(sorted(names), sorted(V2))
+        self.assertEqual(HE.WEIGHTFREE_GENES_PER_UNIT, {'weightfree_v2': 4})
 
     def _backend(self):
         tmp = tempfile.TemporaryDirectory()
@@ -112,14 +100,11 @@ class WeightfreeV2GenesTest(unittest.TestCase):
 
 class GALightTest(unittest.TestCase):
     """The GA phototaxis setups' TARGET is a light, +100, as their names say
-    and the phototaxis CLIs use; it was a darkness source, -100, until 15 Oct
-    2026, which replays of genomes evolved then restore"""
+    and the phototaxis CLIs use; lightIntensity=-100 makes it a darkness
+    source, and a replay takes the intensity its logbook records"""
 
     SETUPS = ['initializeBraiten2_2_Full_GA_phototaxis',
-              'initializeBraiten2_2_Full_GA_phototaxis_continuous'] + V2 + [
-              'initializeBraiten2_direct_GA_continuous_weightfree_fixed',
-              'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
-              'initializeBraiten3c_GA_continuous_weightfree_open']
+              'initializeBraiten2_2_Full_GA_phototaxis_continuous'] + V2
 
     def _backend(self):
         return WeightfreeV2GenesTest._backend(self)
@@ -140,20 +125,20 @@ class GALightTest(unittest.TestCase):
     def testADarknessSourceOnRequest(self):
         for name in ('initializeBraiten2_2_Full_GA_phototaxis',
                      'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
-                     'initializeBraiten3c_GA_continuous_weightfree_fixed'):
+                     'initializeBraiten3c_GA_continuous_weightfree_fixed_v2'):
             with self.subTest(name):
                 self.assertEqual(self._target(name, lightIntensity=-100)['intensity'], -100)
 
-    def testReplaysOfOldRunsUseTheDarknessSource(self):
+    def testAReplayTakesTheLoggedLight(self):
         logged = HE.loggedLightIntensity
-        self.assertEqual(logged('initializeBraiten2_direct_GA_continuous_weightfree_fixed',
-                                {'exp': 'x'}), -100)
-        self.assertEqual(logged('initializeBraiten2_2_Full_GA_phototaxis', None), -100)
-        self.assertEqual(logged('initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
-                                {}), 100)
-        self.assertEqual(logged('initializeBraiten2_direct_GA_continuous_weightfree_fixed',
-                                {'lightIntensity': 100}), 100)
-
+        for name in ('initializeBraiten2_2_Full_GA_phototaxis',
+                     'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2'):
+            with self.subTest(name):
+                self.assertEqual(logged(name, {'lightIntensity': -100}), -100)
+                self.assertEqual(logged(name, {'lightIntensity': 100}), 100)
+                for meta in (None, {}, {'exp': name}):
+                    with self.assertRaisesRegex(ValueError, 'records no light intensity'):
+                        logged(name, meta)
 
 if __name__ == '__main__':
     unittest.main()

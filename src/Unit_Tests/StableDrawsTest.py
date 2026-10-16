@@ -1,9 +1,9 @@
 '''
 The direct phototaxis experiment's parameter draws (stable_draws).
 
-Since 13 Oct 2026 the motors' (mass, viscosity) come from their full
-distribution; --stable-draws restores the old filter (viscosity*dt/mass below
-STABILITY_MARGIN), which the exact drag step no longer needs.  Runs and batch
+The motors' (mass, viscosity) come from their full distribution;
+--stable-draws keeps only draws with viscosity*dt/mass below
+STABILITY_MARGIN, a filter the exact drag step does not need.  Runs and batch
 files record which was used.
 '''
 import csv
@@ -41,17 +41,16 @@ class StableDrawsTest(unittest.TestCase):
         return ratios
 
     def testFullDistributionByDefault(self):
-        "Without the filter some motors have viscosity*dt/mass above the old bound"
+        "Without the filter some motors have viscosity*dt/mass above STABILITY_MARGIN"
         self.assertTrue(any(r >= D.STABILITY_MARGIN for r in self.ratios()))
 
-    def testStableDrawsKeepTheOldBound(self):
+    def testStableDrawsKeepTheBound(self):
         self.assertTrue(all(r <= D.STABILITY_MARGIN
                             for r in self.ratios(stable_draws=True)))
 
     def testRunsRecordTheSetting(self):
         for stable in (False, True):
             # A directory per run: output names have one-second resolution
-            # (review finding HV-09)
             os.environ['HOMEO_DATA_DIR'] = os.path.join(self.tmp.name, str(stable))
             with self.subTest(stable_draws=stable):
                 results = D.run_batch(n_runs=1, total_steps=20, report_interval=10,

@@ -25,10 +25,8 @@
 #              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian
 #              sbatch grace_fixedB2.slurm 4 8 0.05 aristotelian
 # OPTIONS: the eyes, --eye-response linear|log, --eye-saturation D,
-#          --eye-threshold I0; the robot, --robot epuck2|kjunior|kjunior-rim (default
-#          e-puck2; the K-Junior of runs before 14 Oct 2026), --rim-eyes (=
-#          --robot kjunior-rim, before 13 Oct); passed to the experiment and named
-#          in the run directory, e.g.
+#          --eye-threshold I0; the robot, --robot epuck2|kjunior (default
+#          e-puck2); passed to the experiment and named in the run directory, e.g.
 #              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian --eye-response log --eye-saturation 0.5
 #          writes to fixedB2-arist-r2to6-cw0.05-log-sat0.5-traj1-<jobid>.
 #          And one of two seed options, for the environment x seed design:
@@ -38,9 +36,8 @@
 #                        varying with the task's environment seed, which
 #                        takes the per-task value below (dir "-seedS").
 #
-# Task -> run, identical to the 2026-10-03 polus baseline
-# (SimulationsData/fixedB2-r4to8-traj1-2026-10-03), so the arrays pair
-# run for run with it:
+# Task -> run, the same in every array, so that two arrays of this design
+# pair run for run:
 #     tasks   1- 25 crossed ++     101-125 uncrossed ++
 #            26- 50 crossed +-     126-150 uncrossed +-
 #            51- 75 crossed -+     151-175 uncrossed -+
@@ -49,18 +46,16 @@
 # The seed alone fixes the start pose -- it comes from the environment's
 # stream, which the seed also seeds unless --env-seed/--seed say otherwise --
 # so a seed has the same start pose in every variant, with or without a spin.
-# (Before 14 Oct 2026 the pose came from the homeostat's stream, after the
-# weights.)
 #
-# The "exploratory" arrays (2026-10-03), slow clockwise spin:
+# The "exploratory" arrays, slow clockwise spin:
 #     mkdir -p logs
 #     sbatch grace_fixedB2.slurm 2 6 0.05
 #     sbatch grace_fixedB2.slurm 4 8 0.05
 #
 # A reproduction check before trusting Grace: with SPIN 0 a task reproduces the
-# polus baseline, e.g. task 37 (crossed +-, seed 20261015):
+# same task run on another machine, e.g. task 37 (crossed +-, seed 20261015):
 #     sbatch --array=37 grace_fixedB2.slurm 4 8
-#     cmp <its .traj> <polus ...crossed_pm-...-37.traj>
+#     cmp <its .traj> <the other machine's ...crossed_pm-...-37.traj>
 #
 # Each run takes ~2 min (131 s on polus's Xeon E3-1220).  Trajectories are
 # ~30 MB per run, ~6 GB per array: hence $SCRATCH.
@@ -80,7 +75,6 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --env-seed)       FIXED_ENV_SEED="$2"; shift 2; continue;;
         --seed)           FIXED_SEED="$2"; shift 2; continue;;
-        --rim-eyes)       eye_tag+="-kjunior-rimeyes"; EYE_ARGS+=("$1"); shift; continue;;
         --robot)          [ "$2" != epuck2 ] && eye_tag+="-$2";;
         --eye-response)   [ "$2" = log ] && eye_tag+="-log";;
         --eye-saturation) eye_tag+="-sat$2";;
@@ -125,15 +119,15 @@ SEED=$(( 20261004 + i % 25 ))
 ENV_SEED=$SEED
 [ -n "$FIXED_ENV_SEED" ] && ENV_SEED=$FIXED_ENV_SEED
 [ -n "$FIXED_SEED" ] && SEED=$FIXED_SEED
-# Zero-padded to 2 digits, as run_array_local.sh did on polus.
+# Zero-padded to 2 digits, as run_array_local.sh does.
 SERIAL=$(printf '%02d' "$SLURM_ARRAY_TASK_ID")
 
 vehicle_args=(--fixed-weights --motor "$MOTOR" --signs "$SIGNS")
 [ "$WIRING" = uncrossed ] && vehicle_args+=(--uncrossed)
 spin_args=()
 spin_tag=""
-# Compared as a number: as a string, "0.0" or "0.00" was a spin (review
-# finding SH-10), passed on as --spin 0.0 and tagged "-cw0.0".
+# Compared as a number: as a string, "0.0" or "0.00" would be a spin, passed
+# on as --spin 0.0 and tagged "-cw0.0".
 if awk -v s="$SPIN" 'BEGIN { exit !(s + 0 != 0) }'; then
     spin_args=(--spin "$SPIN")
     case "$SPIN" in -*) spin_tag="-ccw${SPIN#-}";; *) spin_tag="-cw$SPIN";; esac
@@ -149,15 +143,15 @@ mkdir -p "$HOMEO_DATA_DIR"
 export NUMBA_CACHE_DIR="${TMPDIR:-/tmp}/numba-$SLURM_ARRAY_TASK_ID"
 mkdir -p "$NUMBA_CACHE_DIR"
 
-CODE="$(git -C "$HOMEO_SRC" log --oneline -1 2>/dev/null || echo 'unversioned checkout')"
+CODE="$(git -C "$HOMEO_SRC" describe --always --dirty 2>/dev/null || echo 'unversioned checkout') $(git -C "$HOMEO_SRC" log -1 --format=%s 2>/dev/null || true)"
 # numba draws its noise from its own generator: a seed gives a different run
 # with and without it, so record which (compare before pairing with other machines)
 PYENV="python $(python -c 'import platform; print(platform.python_version())' 2>/dev/null), numba $(python -c 'import numba; print(numba.__version__)' 2>/dev/null || echo absent)"
 # The first task to get here writes the directory's provenance.  Every task
 # writes its own copy and tries to hard-link it into place: ln fails if the
 # file exists, and the check and the creation are one step, so of tasks
-# starting together exactly one wins and the file is never half-written (they
-# used to check, then write, and could interleave: review finding SH-10).
+# starting together exactly one wins and the file is never half-written (a
+# check, then a write, could interleave).
 if [ ! -e "$HOMEO_DATA_DIR/PROVENANCE.txt" ]; then
     provenance_tmp="$HOMEO_DATA_DIR/.PROVENANCE.txt.$SLURM_ARRAY_TASK_ID"
     {

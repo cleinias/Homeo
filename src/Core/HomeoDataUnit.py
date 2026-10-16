@@ -1,6 +1,4 @@
 '''
-Created on Mar 13, 2013
-
 @author: stefano
 '''
 
@@ -31,7 +29,7 @@ class HomeoDataUnit(object):
                                                  weights it drew.  Every per-tick record follows this
                                                  convention: row t is the state after t updates.
                                                  The continuous (OU) uniselector, whose weights drift every
-                                                 tick, never fires: its flag is always 0 (review finding CD-12).
+                                                 tick, never fires: its flag is always 0.
     '''
 
 #===============================================================================
@@ -148,10 +146,11 @@ class HomeoDataUnit(object):
 #===============================================================================
 
     def sameValuesAs(self, aDataUnit):
-        '''Answer true if the values in the two data units are the same. 
-           Do  not check the values of the connections.  Since 14 Oct 2026 it
-           compares the critical deviation and whether the uniselector was
-           active, which it ignored (review finding CD-10).'''
+        '''Answer true if the values in the two data units are the same: the
+           name, the critical deviation, the output, maxDeviation, whether
+           the uniselector is on (uniselectorState) and whether it has just
+           fired (uniselectorActive, the unit's uniselectorActivated).  Do
+           not check the values of the connections.'''
 
         return (self.name == aDataUnit.name and
                 self.criticalDeviation == aDataUnit.criticalDeviation and

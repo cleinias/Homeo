@@ -1,22 +1,21 @@
 '''
-Created on Jan 4, 2015
-
 Functions that read the logbook produced by a DEAP GA simulation
 and provide info, stats, and charts about the GA run
 
 @author: stefano
 '''
 from deap import tools
+import builtins
 import pickle
 import sys
 import os
 
 from Helpers.General_Helper_Functions import simulations_data_dir
 
-# Old logbook/history files were pickled with Python 2 + dill <= 0.3.x.
-# Two compatibility shims are needed:
+# Logbook/history files pickled with Python 2 + dill <= 0.3.x need two
+# compatibility shims:
 #   1. dill 0.4.x renamed 'dill.dill' to 'dill._dill'
-#   2. Python 2 type names (ListType, DictType, etc.) no longer exist
+#   2. Python 2 type names (ListType, DictType, etc.) do not exist in Python 3
 try:
     import dill
     import dill._dill
@@ -143,9 +142,9 @@ def _logbook_layout(logbook):
 
     Returns (noUnits, noEvolvedUnits, layout) where layout is one of
     'classic', 'weightfree', 'weightfree_dt' or 'weightfree_v2': the one the
-    logbook records (since 15 Oct 2026), else read off the experiment's name
-    and the genome's size.
-    Falls back to (6, 6, 'classic') for old logbooks without metadata.
+    logbook records, else read off the experiment's name and the genome's
+    size.
+    Falls back to (6, 6, 'classic') for a logbook without metadata.
     """
     # The metadata record is typically the last entry without a 'genome' key
     meta = None
@@ -155,7 +154,7 @@ def _logbook_layout(logbook):
             break
 
     if meta is None:
-        return 6, 6, None   # old logbook, classic layout
+        return 6, 6, None   # no metadata: classic layout
 
     noUnits = meta.get('noUnits', 6)
     noEvolvedUnits = meta.get('noEvolvedUnits', noUnits)
@@ -181,7 +180,8 @@ def indivsDecodedFromLogbook(logbook, noUnits=None, noEvolvedUnits=None):
     with associated fitnesses and individual's name of form #gen-#.
 
     Automatically detects the genome layout from logbook metadata.
-    noUnits and noEvolvedUnits can be overridden for old logbooks."""
+    noUnits and noEvolvedUnits can be overridden for a logbook without
+    metadata."""
     meta_noUnits, meta_noEvolved, layout = _logbook_layout(logbook)
     if noUnits is None:
         noUnits = meta_noUnits
@@ -207,18 +207,65 @@ def hallOfFameInds(indivs, num, max=False):
     a =  sorted(indivs,key=itemgetter(1), reverse = max)
     return a[:num]
 
+def postEvaluationOf(logbook):
+    "The post-evaluation the logbook's summary records (best mean first), or None"
+    for rec in reversed(logbook):
+        if 'finalIndivs' in rec:
+            return rec.get('postEvaluation') or None
+    return None
+
+
+def genomeRanking(logbook, max=False):
+    """The genomes the logbook evaluated, each once: a list of dicts with
+       genome, indivId (its first evaluation's), evaluations (how many the
+       logbook records), best and mean (their lowest, or with max=True
+       highest, and mean fitness), and post (its entry in the post-evaluation,
+       or None).  Under noise one genome is evaluated many times, and its best
+       score is its luckiest: when the logbook has a post-evaluation, its
+       genomes come first, by their post-evaluation mean, the others after,
+       by best."""
+    genomes = {}
+    for rec in logbook:
+        if 'genome' not in rec:
+            continue
+        entry = genomes.setdefault(tuple(rec['genome']),
+                                   {'genome': list(rec['genome']), 'indivId': rec['indivId'],
+                                    'fitnesses': []})
+        entry['fitnesses'].append(rec['fitness'][0])
+    post = {tuple(e['genome']): e for e in (postEvaluationOf(logbook) or [])}
+    ranking = []
+    for key, entry in genomes.items():
+        fitnesses = entry.pop('fitnesses')
+        entry.update(evaluations=len(fitnesses),
+                     best=(builtins.max if max else min)(fitnesses),
+                     mean=float(np.mean(fitnesses)), post=post.get(key))
+        ranking.append(entry)
+    sign = -1 if max else 1
+    ranking.sort(key=lambda e: (e['post'] is None,
+                                e['post']['mean'] if e['post'] is not None else 0,
+                                sign * e['best']))
+    return ranking
+
+
 def hallOfFame(logbook, num=10, max=False):
-    """Return a string containing a formatted and sorted hall of fame list
-       of individuals extracted from the logbook"""
-    indivs, layout = indivsDecodedFromLogbook(logbook)
-    meta_noUnits, meta_noEvolved, _ = _logbook_layout(logbook)
-    # Flattened into rows, as the headers expect: until 14 Oct 2026 the
-    # (genome, fitness, name) tuples went to the table as they were, the whole
-    # genome under "Fitness" (HN-12)
-    return genomeAndFitnessPrettyPrinter(_flattenIndivs(hallOfFameInds(indivs, num, max=max)),
-                                         noUnits=meta_noUnits,
-                                         noEvolvedUnits=meta_noEvolved,
-                                         layout=layout)
+    """Return a string containing a formatted hall of fame table of the
+       logbook's best num genomes (genomeRanking): one row per genome, its
+       best and mean fitness, its number of evaluations and, when the
+       logbook has a post-evaluation, its post-evaluation mean and sd, then
+       the decoded genome."""
+    noUnits, noEvolved, layout = _logbook_layout(logbook)
+    ranking = genomeRanking(logbook, max=max)[:num]
+    withPost = postEvaluationOf(logbook) is not None
+    headers = ['Fitness', 'IndivID', 'Evals', 'MeanFit'] + (
+        ['PostMean', 'PostSD'] if withPost else []) + genomeHeaders(noUnits, noEvolved, layout)
+    rows = []
+    for e in ranking:
+        post = ([e['post']['mean'], e['post']['sd']] if e['post'] is not None else ['', '']
+                ) if withPost else []
+        rows.append([e['best'], e['indivId'], e['evaluations'], e['mean']] + post
+                    + genomeDecoder(noUnits, e['genome'], noEvolvedUnits=noEvolved,
+                                    layout=layout))
+    return tabulate(rows, headers, tablefmt='orgtbl')
                                                          
 
 def _genome_headers(noUnits, noEvolvedUnits, layout=None):
@@ -237,7 +284,7 @@ def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6, noEvolvedUnits=None,
        a sorted list (by fitness)
        of decoded individual genomes passed as a list of
        tuples with genome at [0], fitness at [1], and name at [2].
-       noEvolvedUnits defaults to noUnits for backward compatibility."""
+       noEvolvedUnits defaults to noUnits (every unit evolved)."""
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
 
@@ -253,7 +300,7 @@ def genomeAndFitnessList(decodedIndivs, num=10, noUnits=6, noEvolvedUnits=None,
 def genomeAndFitnessPrettyPrinter(individuals, noUnits=6, noEvolvedUnits=None,
                                   layout=None):
     """Tabulate individuals with their headers.
-       noEvolvedUnits defaults to noUnits for backward compatibility."""
+       noEvolvedUnits defaults to noUnits (every unit evolved)."""
     if noEvolvedUnits is None:
         noEvolvedUnits = noUnits
 
@@ -262,12 +309,14 @@ def genomeAndFitnessPrettyPrinter(individuals, noUnits=6, noEvolvedUnits=None,
 
 def extractGenomeOfIndID(indID, logbookFileWithPath):
     """Extract the genome of individual indID from a DEAP logbook file.
-    Return a dictionary with indivId, genome, and fitness found at respective keys,
-    returns 'Not Found' otherwise."""
+    Return a dictionary with indivId, genome, fitness and genomeLayout (the
+    logbook's, see _logbook_layout) at the respective keys; genome is
+    'Not Found' if the logbook has no such individual."""
     genome = {'indivId' : indID, 'genome': "Not Found"}
     logbookFile = open(logbookFileWithPath, 'rb')
     logbook = _load_pickle(logbookFile)
     logbookFile.close()
+    genome['genomeLayout'] = _logbook_layout(logbook)[2]
     for entry in range(len(logbook)):
         try:
             if logbook[entry]['indivId'] == indID:
@@ -328,9 +377,7 @@ def saveGenomeToCSV(genome, filename):
 def areValueFilesIdentical(fileN1,fileN2):
     """Compare two files,  each containing a single
        column of floats. Return true iff all values are identical: an
-       unreadable file or files of different lengths are not identical.
-       (Until 14 Oct 2026 an unreadable file gave None, which the caller
-       counted as identical, and different lengths raised; HN-13.)"""
+       unreadable file or files of different lengths are not identical."""
     try:
         a = np.loadtxt(fileN1,  delimiter=',')
         b = np.loadtxt(fileN2,  delimiter=',')

@@ -1,6 +1,4 @@
 '''
-Created on Mar 11, 2013
-
 @author: stefano
 '''
 from functools import reduce
@@ -23,7 +21,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
 
     def testNeedleCompMethodIsLinearOnly(self):
         '''Newton's second law is the 'linear' computation: a Newtonian unit
-           refuses the others, which used to crash its update (CU-16).'''
+           refuses the others instead of crashing in its update.'''
         self.unit.needleCompMethod = 'linear'
         for method in ('proportional', 'random', ''):
             with self.assertRaises(ValueError):
@@ -37,7 +35,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         according to Newtonian dynamics: s + v + 1/2ma (a free needle: without
         its self-connection, which acts as a spring; see
         HomeoUnitNewtonianSpringTest), without drag, from a moving needle
-        (the velocity used to stay 0: review finding CU-08).  With drag and
+        (the velocity does not stay 0).  With drag and
         other timesteps: HomeoUnitNewtonianIntegratorTest.
         """
         self.unit.disactivateSelfConn()
@@ -145,7 +143,7 @@ class HomeoUnitNewtonianTest(unittest.TestCase):
         The implementation of dragEquationDrag simplifies the full drag equation
         by absorbing all constants (area, drag coefficient, 1/2) into the viscosity
         parameter: Drag = - viscosity * velocity * |velocity|: it opposes the
-        velocity, whichever its sign (review finding CU-12).
+        velocity, whichever its sign.
         """
         errorTolerance = 0.000000001
         testRuns = 1000
@@ -370,8 +368,7 @@ if __name__ == "__main__":
     unittest.main()
 
 class HomeoUnitNewtonianTimeScaleTest(unittest.TestCase):
-    """dt_fast is a rescaling of the needle, not a time step (review finding
-    CU-11): a unit with mass m, viscosity c and dt_fast dt moves exactly as
+    """dt_fast is a rescaling of the needle, not a time step: a unit with mass m, viscosity c and dt_fast dt moves exactly as
     one with m / dt**2, c / dt and dt_fast 1 -- with noise (per tick either
     way), the self-connection's spring and the stops.  Both paths."""
 

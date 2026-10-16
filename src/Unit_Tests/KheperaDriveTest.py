@@ -24,10 +24,8 @@ class KheperaDriveTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.dataDir, ignore_errors=True)
 
-    def simulation(self, timeStep=0.032, drive='kinematic'):
-        # The legacy drive exists only for the K-Junior
-        sim = KheperaSimulation(timeStep=timeStep, robotDrive=drive,
-                                robotModel='kjunior' if drive == 'legacy' else 'epuck2')
+    def simulation(self, timeStep=0.032):
+        sim = KheperaSimulation(timeStep=timeStep)
         sim.setupWorld('kheperaBraitenberg2_HOMEO_World', self.dataDir)
         return sim, sim.allBodies['Khepera']
 
@@ -58,7 +56,36 @@ class KheperaDriveTest(unittest.TestCase):
         scale = max(math.hypot(ex, ey), 1e-3)
         self.assertAlmostEqual(moved[0], ex, delta=0.01 * scale, msg='x, commands %s, %s' % (right, left))
         self.assertAlmostEqual(moved[1], ey, delta=0.01 * scale, msg='y, commands %s, %s' % (right, left))
-        self.assertAlmostEqual(turned, eturn, delta=0.01 * max(abs(eturn), 0.01))
+        # the heading is kept in (-pi, pi]: compare turns modulo a full turn
+        self.assertAlmostEqual(math.remainder(turned - eturn, 2 * math.pi), 0,
+                               delta=0.01 * max(abs(eturn), 0.01))
+
+    def testSlowMotionAndLongTurnsAreExact(self):
+        '''The pose is kept in double precision: slow motion far from the
+        origin and turns at a large heading follow the arc exactly (Box2D's
+        float32 state would round them by several per cent).'''
+        for right, left, heading in ((0.002, 0.002, 0.0), (0.01, 0.01, 0.3),
+                                     (0.03, 0.01, 1000.0), (0.11, 0.01, 3000.0)):
+            with self.subTest(right=right, left=left, heading=heading):
+                sim, robot = self.simulation()
+                robot.moveTo((7.0, 7.0))
+                robot.rotateTo(heading)
+                x0, y0, h0 = robot.pose
+                self.assertTrue(-math.pi < h0 <= math.pi)
+                self.assertAlmostEqual(h0, math.remainder(heading, 2 * math.pi), places=12)
+                robot.setSpeed(right, left)
+                steps = 2000
+                for i in range(steps):
+                    sim.advanceSim()
+                sim.saveTrajectory()
+                ex, ey, eturn = self.expected(robot, right, left, steps * 0.032, h0)
+                x, y, h = robot.pose
+                self.assertAlmostEqual(x - x0, ex, delta=1e-9 * max(abs(ex), 1e-3))
+                self.assertAlmostEqual(y - y0, ey, delta=1e-9 * max(abs(ey), 1e-3))
+                self.assertAlmostEqual(math.remainder(h - h0 - eturn, 2 * math.pi), 0, delta=1e-9)
+                # the body is the pose, rounded to float32 once
+                self.assertAlmostEqual(robot.body.position[0], x, delta=1e-6)
+                self.assertAlmostEqual(robot.body.position[1], y, delta=1e-6)
 
     def testStraight(self):
         for command in (0.05, 0.3, 1.0, 1.5):
@@ -119,17 +146,11 @@ class KheperaDriveTest(unittest.TestCase):
         self.assertEqual(robot.getSpeed(), {'right': robot.wheelRadius, 'left': -0.5 * robot.wheelRadius})
         sim.saveTrajectory()
 
-    def testLegacyDriveIsKept(self):
-        "The old wheel physics, for reproducing earlier runs: ~14% of the speed at low speed"
-        sim, robot = self.simulation(drive='legacy')
-        robot.setSpeed(0.5, 0.5)
-        start = robot.body.position.copy()
-        for i in range(125):
-            sim.advanceSim()
+    def testTheRobotHasOneDrive(self):
+        "There is no choice of drive: the robot and the simulation take no drive argument"
+        with self.assertRaises(TypeError):
+            KheperaSimulation(robotDrive='legacy')
+        sim, robot = self.simulation()
         sim.saveTrajectory()
-        ratio = (robot.body.position - start).length / (125 * 0.032 * 0.5 * robot.wheelRadius)
-        self.assertAlmostEqual(ratio, 0.14, delta=0.03)
-
-    def testUnknownDriveIsRejected(self):
-        with self.assertRaises(ValueError):
-            self.simulation(drive='tank')
+        for wheel in robot.wheels.values():
+            self.assertFalse(hasattr(wheel, 'update'))

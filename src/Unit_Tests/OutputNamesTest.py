@@ -1,7 +1,7 @@
 '''
-Two runs started in the same second must not share output files (review
-finding HV-09): names carry a whole-second timestamp, and the second run's
-files used to overwrite, or append to, the first's.
+Two runs started in the same second must not share output files: names
+carry a whole-second timestamp, and the second run's files must neither
+overwrite nor append to the first's.
 '''
 import json
 import os

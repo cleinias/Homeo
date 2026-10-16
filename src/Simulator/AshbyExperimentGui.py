@@ -541,6 +541,14 @@ class AshbyExperimentGui(HomeoSimulationControllerGui):
     #  Per-tick data update (runs in simulation thread — NO GUI calls)
     # -----------------------------------------------------------
 
+    def timeReset(self):
+        '''Reset time, and Clear charts, which resets time too: the stability
+        tracker starts afresh with the homeostat's clock, and the indicator
+        with it.'''
+        super().timeReset()
+        self._stability_tracker = StabilityTracker(self._simulation.homeostat, window=200)
+        self._updateExperimentDisplay(None)
+
     def _stability_tick_data(self, hom, tick):
         '''Update the stability tracker data only. No widget updates here.'''
         self._stability_tracker.check(tick)

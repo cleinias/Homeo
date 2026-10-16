@@ -1,11 +1,8 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-Stopping a GA run during a generation, and a crash in one (review findings
-SG-01, SG-04): the run ends cleanly or re-raises, and what was evaluated is
-saved.
+Stopping a GA run during a generation, and a crash in one: the run ends
+cleanly or re-raises, and what was evaluated is saved.
 '''
 import contextlib
 import glob
@@ -17,7 +14,7 @@ import unittest
 
 from Simulator.HomeoGenAlg import HomeoGASimulation
 
-EXP = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt'
+EXP = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2'
 
 
 class GAStopTest(unittest.TestCase):
@@ -69,7 +66,7 @@ class GAStopTest(unittest.TestCase):
 
     def testACrashInGenerationOneKeepsGenerationZero(self):
         '''A crash during generation 1 re-raises, and the logbook saved has
-        generation 0's evaluations and statistics (SG-04).'''
+        generation 0's evaluations and statistics.'''
         def crashOnTheEighth(ga, k):
             if k == 8:
                 raise RuntimeError('simulated crash in generation 1')
@@ -85,8 +82,8 @@ class GAStopTest(unittest.TestCase):
 
 
 class GAReuseTest(unittest.TestCase):
-    """A GA object runs more than once, serial or parallel (SG-10): until 14
-    Oct 2026 the first run closed the pool and discarded the simulator."""
+    """A GA object runs more than once, serial or parallel: a run neither
+    closes the pool nor discards the simulator for the next."""
 
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()

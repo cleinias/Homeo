@@ -1,12 +1,9 @@
 '''
-Created on Oct 2, 2026
-
 @author: stefano
 
 Tests for Helpers.QObjectProxyEmitter, with and without PyQt5.
 
-With PyQt5 the emitter must behave exactly as it always has: one SignalHub
-QObject per object, delivering to connected slots.  Without PyQt5 it must hand
+With PyQt5 the emitter must give one SignalHub QObject per object, delivering to connected slots.  Without PyQt5 it must hand
 back a null hub that swallows emits, so the simulation core runs on a machine
 with no Qt.  The null path is tested here even when PyQt5 is installed, by
 loading a private copy of the module with PyQt5 hidden.

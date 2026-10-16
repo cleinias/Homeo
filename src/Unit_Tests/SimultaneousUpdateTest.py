@@ -1,14 +1,12 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
-The units of a homeostat advance together (review finding CU-03): within a
-tick every unit reads the outputs the others had at the start of the tick.
-Units used to update one after another, each committing its output at once,
-so a unit read this tick's output from the units before it in homeoUnits and
-last tick's from those after it: results depended on the order of the units,
-and two identical, symmetric units drifted apart.
+The units of a homeostat advance together: within a tick every unit reads
+the outputs the others had at the start of the tick.  Were units to update
+one after another, each committing its output at once, a unit would read this
+tick's output from the units before it in homeoUnits and last tick's from
+those after it: results would depend on the order of the units, and two
+identical, symmetric units would drift apart.
 '''
 from Core.Homeostat import Homeostat
 from Core.HomeoUnit import HomeoUnit

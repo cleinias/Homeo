@@ -1,12 +1,10 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-StripchartGrapher's smoothing (review finding HV-07): a smoothed trace is
-drawn at the centres of its windows, so a feature is not shifted in time.
-And its robustness (HV-12): a log still being written, a smoothing window
-longer than the log, --symmetric with unsigned series.
+StripchartGrapher's smoothing: a smoothed trace is drawn at the centres of
+its windows, so a feature is not shifted in time.  And its robustness: a log
+still being written, a smoothing window longer than the log, --symmetric
+with unsigned series.
 '''
 import os
 import tempfile
@@ -25,7 +23,7 @@ class SmoothingTest(unittest.TestCase):
 
     def testAStepIsSmoothedWhereItHappens(self):
         '''A weight that changes sign between ticks 98 and 100 has its smoothed
-        zero crossing at 99; until 14 Oct 2026, with a 50-tick window, at 123.'''
+        zero crossing at 99, not at the end of its smoothing window.'''
         tick = np.arange(0, 400, 2.0)                   # logged every 2 ticks
         values = np.where(tick < 100, -1.0, 1.0)
         fig, ax = plt.subplots()

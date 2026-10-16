@@ -70,7 +70,7 @@ class ClosedWindowsTest(unittest.TestCase):
             gui = None
             gc.collect()
         makeGui(self, 5)
-        gc.collect()                        # segfaulted with named plots
+        gc.collect()                        # named plots included
 
 
 class BareUnitSignalsTest(unittest.TestCase):
@@ -80,13 +80,13 @@ class BareUnitSignalsTest(unittest.TestCase):
         hom = Homeostat()
         unit = HomeoUnitNewtonian()
         hom.addFullyConnectedUnit(unit)
-        unit.allValuesChanged()                     # raised AttributeError
+        unit.allValuesChanged()                     # no AttributeError
         self.assertEqual(unit.switch, unit.inputConnections[0].switch)
 
 
 class UniselectorComboTest(unittest.TestCase):
     '''The uniselector-type combo box shows the unit's type and changes it
-    once per selection (it was connected once per uniselector class).'''
+    once per selection, not once per uniselector class.'''
 
     def testOneChangePerSelection(self):
         from Core.HomeoUnit import HomeoUnit
@@ -169,8 +169,8 @@ class AshbyGuiNewAndLoadTest(unittest.TestCase):
 
 class SaveDialogTest(unittest.TestCase):
     """The GUI's save buttons save to the file chosen, and Cancel saves
-    nothing (review finding SR-02): until 14 Oct 2026 they took PyQt5's
-    (filename, filter) tuple for the filename, so none could save."""
+    nothing: the filename is the first item of PyQt5's (filename, filter)
+    tuple."""
 
     def testSaveSlots(self):
         gui = makeGui(self, 1)
@@ -200,9 +200,7 @@ class SaveDialogTest(unittest.TestCase):
 
 class AshbyGuiSeedTest(unittest.TestCase):
     """The GUI builds an experiment's homeostat from a seed it shows and
-    pickles, the headless setup's homeostat for that seed (SR-06): until 14
-    Oct 2026 the seed was thrown away, and Exps 3-5 built a different
-    homeostat from the same seed."""
+    pickles, the headless setup's homeostat for that seed."""
 
     @staticmethod
     def describe(hom):
@@ -237,9 +235,8 @@ class AshbyGuiSeedTest(unittest.TestCase):
 
 
 class DelayPerTickTest(unittest.TestCase):
-    """The GUI's delay box sets the only delay per tick (SR-08): until 14 Oct
-    2026 it showed the homeostat's slowingFactor (10 ms) but set the
-    simulation's delay, and both applied."""
+    """The GUI's delay box sets the only delay per tick: it shows and sets
+    the simulation's delay, and the homeostat's slowingFactor stays 0."""
 
     def testTheBoxIsTheDelay(self):
         gui = makeGui(self, 1)
@@ -263,8 +260,8 @@ class DelayPerTickTest(unittest.TestCase):
 
 
 class ResumeThreadTest(unittest.TestCase):
-    """Resume runs the simulation in its own thread, as Start does (SR-10):
-    until 14 Oct 2026 it ran on the GUI thread."""
+    """Resume runs the simulation in its own thread, as Start does, not on
+    the GUI thread."""
 
     def runUntil(self, sim, ticks, timeout=20.0):
         import time
@@ -297,7 +294,7 @@ class GeneralGuiSmokeTest(unittest.TestCase):
     '''The general homeostat GUI (HomeoGeneralGUI), on its own default
     homeostat, offscreen: build it, step, reset, New, Save and Load through
     mocked dialogs, a bad file reported in a message box, and the plot data
-    saved with the weights (review finding SR-12).'''
+    saved with the weights.'''
 
     def setUp(self):
         from Simulator.HomeoGeneralGUI import HomeoSimulationControllerGui
@@ -365,6 +362,65 @@ class GeneralGuiSmokeTest(unittest.TestCase):
             columns = [line for line in f if not line.startswith('#')][0].strip().split(',')
         self.assertEqual(columns[0], 'time')
         self.assertIn(self.sim.homeostat.homeoUnits[0].name + '_weight', columns)
+
+
+
+class StabilityAfterResetTest(unittest.TestCase):
+    '''Reset time and Clear charts start the stability tracker afresh: a
+    STABLE indicator does not survive them.'''
+
+    def testResetsStartTheTrackerAfresh(self):
+        for reset in ('resetTimeButton', 'resetChartsButton'):
+            with self.subTest(reset=reset):
+                gui = makeGui(self, 1)
+                tracker = gui._stability_tracker
+                tracker.currently_stable = True
+                tracker.episodes = [[10, 400]]
+                gui._updateExperimentDisplay(None)
+                self.assertEqual(gui._stabilityLabel.text(), 'STABLE')
+                getattr(gui, reset).click()
+                self.assertIsNot(gui._stability_tracker, tracker)
+                self.assertEqual(gui._stability_tracker.episodes, [])
+                self.assertIs(gui._stability_tracker.hom, gui._simulation.homeostat)
+                self.assertEqual(gui._stabilityLabel.text(), 'UNSTABLE')
+
+
+
+class GuiRunIsTheHeadlessRunTest(unittest.TestCase):
+    '''A GUI run with a seed is the headless run with that seed: the
+    critical-deviation sliders follow the needles without writing them back
+    (they wrote back each position floored to the slider's 1e-5 steps).'''
+
+    def testExp1(self):
+        import numpy as np
+        import Simulator.AshbyOriginalExperiments as A
+        ticks = 600
+        events = dict(A.exp1_events())
+        from Simulator.AshbyExperimentGui import AshbyExperimentGui
+        gui = AshbyExperimentGui(exp_num=1, seed=11)
+        self.addCleanup(closeGui, gui)
+        sim, hom = gui._simulation, gui._simulation.homeostat
+        inGui = []
+        for t in range(ticks):
+            if hom.time in events:
+                events[hom.time](hom)
+            sim._tick()
+            inGui.append([u.criticalDeviation for u in hom.homeoUnits[:2]])
+        headless, seed, meta = A.setup_exp1_basic_ultrastability(seed=11, unused_slots=True)
+        headless.time = 0
+        alone = []
+        for t in range(ticks):
+            if headless.time in events:
+                events[headless.time](headless)
+            headless.updateUnits()
+            headless.time += 1
+            alone.append([u.criticalDeviation for u in headless.homeoUnits[:2]])
+        np.testing.assert_array_equal(np.array(inGui), np.array(alone))
+        # a move of the slider still sets the unit's deviation
+        from PyQt5.QtWidgets import QSlider
+        slider = gui._homeostat_gui.findChild(QSlider, 'unit1CritDevSlider')
+        slider.setValue(slider.value() // 2 + 1000)
+        self.assertAlmostEqual(hom.homeoUnits[0].criticalDeviation, slider.value() / 1e5)
 
 
 if __name__ == '__main__':

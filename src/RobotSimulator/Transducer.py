@@ -1,11 +1,10 @@
 '''
-Created on Sep 3, 2013
 @author: stefano
 
 The Transducer module contains the classes necessary to operate 
 a robot's actuators (motors, etc). The basic class is fairly abstract 
 and may be subclassed to operate concrete robotic simulation environments
-(the internal HOMEO simulator; formerly player/Stage, V-REP and Webots)
+(here, the HOMEO_ subclasses, for Homeo's own simulators)
 '''
 from Helpers.General_Helper_Functions import SubclassResponsibility
 from Helpers.ExceptionAndDebugClasses import hDebug
@@ -122,13 +121,11 @@ class HOMEO_DiffMotor(Transducer):
     def act(self):
         '''Activates the wheel motor by calling the actuator function (transdFunction) with 
            HOMEO client (stored in self.robot) and the needed parameters (stored in funcParameters).
-           Without synchronous stepping the motor also advances the world one step;
-           with it, the world advances once per tick (KheperaSimulation.tickAdvance).'''
+           The motor only sets its wheel's speed: the world advances once per
+           tick, after every unit has updated (KheperaSimulation.tickAdvance).'''
         
         try:         
             getattr(self.simul.allBodies[self.robot], self._transdFunction)(self.funcParameters)
-            if not getattr(self.simul, 'synchronousStepping', False):
-                self.simul.advanceSim()
         except:
             stderr.write("Motor command to HOMEO motor:%sWheel failed " % self._wheel)
             raise #TransducerException("Motor command to HOMEO motor:%sWheel failed " % self._wheel)
@@ -149,7 +146,7 @@ class _HOMEO_RobotByName(object):
     """The robot a sensor reads: looked up by name in its simulation at each
     read, as HOMEO_DiffMotor does, so that a sensor made before a world reset
     (which builds a new robot) reads the new robot.  Given a robot object
-    instead (no simul), the sensor reads that robot (review finding RS-11)."""
+    instead (no simul), the sensor reads that robot."""
 
     def getRobot(self):
         if getattr(self, 'simul', None) is not None:

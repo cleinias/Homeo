@@ -1,11 +1,9 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
 The units' debug output (debugMode) and uniselector report
-(showUniselectorAction), both GUI toggles, crashed on their format strings
-(review finding CU-19).  Each unit kind runs a few ticks with both on.
+(showUniselectorAction), both GUI toggles, print without crashing on their
+format strings.  Each unit kind runs a few ticks with both on.
 '''
 import contextlib
 import io

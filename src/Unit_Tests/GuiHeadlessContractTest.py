@@ -1,13 +1,10 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
 An Ashby experiment runs the same in the GUI's simulation loop as in the
-headless runner (review finding SR-06): the experiment's per-tick callbacks
-run before each tick's update, with the time about to run, and the record
-keepers after it.  Until 14 Oct 2026 the GUI called its callbacks after the
-update, one tick later than run_with_events.
+headless runner: the experiment's per-tick callbacks run before each
+tick's update, with the time about to run, and the record keepers after
+it, in the GUI as in run_with_events.
 '''
 import os
 import tempfile

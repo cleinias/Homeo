@@ -184,16 +184,28 @@ class HomeoConnection(object):
     def getNoise(self):
         return self._noise
     
-    def _markJitStale(self):
-        '''Tell the unit holding this connection that its JIT arrays no longer
-        match this connection.  Headless runs read a unit's connections from
-        those arrays, which the unit rebuilds from its connections when it is
-        marked dirty.  The connection's own flag stops the rebuild from first
-        writing the arrays' (older) values back over this change.'''
-        self._jitStale = True
+    def _markJitDirty(self):
+        '''Tell the unit holding this connection to rebuild its JIT arrays from
+        its connections before its next headless step (a change of noise,
+        state or status).  The rebuild first writes the arrays' weights back
+        onto the connections (HomeoUnit.flushJitArrays), so the weights a
+        headless uniselector evolved are kept.'''
         owner = self.outgoingUnit           # None while the connection is being built
         if owner is not None:
             owner._jit_dirty = True
+
+    def _markJitStale(self):
+        '''As _markJitDirty, for a change of the weight itself: the
+        connection's flag stops the rebuild from first writing the arrays'
+        (older) weight back over this one.'''
+        self._jitStale = True
+        self._markJitDirty()
+
+    def _flushOwnersJitArrays(self):
+        "Bring this connection's weight and switch up to date from its unit's JIT arrays"
+        owner = self.outgoingUnit
+        if owner is not None and not getattr(self, '_jitStale', False):
+            owner.flushJitArrays()
 
     def setNoise(self, aNoise):
         '''
@@ -201,7 +213,7 @@ class HomeoConnection(object):
         '''
         if  0 <=  aNoise <= 1:
             self._noise = aNoise
-            self._markJitStale()
+            self._markJitDirty()
         else:
             raise ConnectionError("Noise must be between 0 and 1")
         emitter(self).noiseChanged.emit(self._noise)
@@ -216,7 +228,7 @@ class HomeoConnection(object):
         '''raise an exception if the input value is neither "manual" or "uniselector"'''
         if aString in ['manual','uniselector']:                 
             self._state = aString
-            self._markJitStale()
+            self._markJitDirty()
         else:
             raise ConnectionError("The state value %s is not allowed. Only allowed values are manual and uniselector" % aString)
     
@@ -229,7 +241,7 @@ class HomeoConnection(object):
     def setStatus(self, aBoolean):
         if aBoolean in (True,False):
             self._status = aBoolean
-            self._markJitStale()
+            self._markJitDirty()
         else:
             raise ConnectionError('The status of a connection can only be a Boolean')
     
@@ -276,7 +288,10 @@ class HomeoConnection(object):
 
 
     def setAbsoluteWeight(self, aPositiveValue):
-        'Utility function that changes the weight of a connection without changing its sign (i.e. the switch)'
+        '''Utility function that changes the weight of a connection without
+        changing its sign (i.e. the switch), the sign the connection has now:
+        in a headless run, the one its unit's JIT arrays hold.'''
+        self._flushOwnersJitArrays()
         if aPositiveValue == 0:
             self._switch = 1
             self._weight = 0
@@ -293,9 +308,9 @@ class HomeoConnection(object):
         
     
     def __setstate__(self, state):
-        '''Connections pickled before 14 Oct 2026 hold their outgoing unit
-           as 'outgoingUnit': a method of that name shadowed the property, so
-           assignments went to the instance dictionary (review finding CU-20).'''
+        '''A connection pickled with its outgoing unit under 'outgoingUnit',
+           in the instance dictionary, gets it moved to '_outgoingUnit', where
+           the property keeps it.'''
         if 'outgoingUnit' in state:
             state['_outgoingUnit'] = state.pop('outgoingUnit')
         self.__dict__.update(state)

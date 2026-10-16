@@ -1,13 +1,14 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The phototaxis experiments' setups and behaviour (review finding RE-07): the
+The phototaxis experiments' setups and behaviour: the
 adaptive setups' wiring, the uniselector types, what the fixed-weight
 vehicles do (2b approaches the light, 2a turns away from it), the Newtonian
 motors staying bounded, and the run's acquisition time and early stop.
 '''
+import contextlib
+import io
+import json
 import os
 import tempfile
 import unittest
@@ -24,12 +25,14 @@ from Core.HomeoUniselectorUniformRandom import HomeoUniselectorUniformRandom
 class _DataDirTest(unittest.TestCase):
 
     def setUp(self):
+        # Cleanups run last-registered first: the directory goes after the
+        # test's own cleanups (which close its trajectory files in it)
         self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        saved = os.environ.get('HOMEO_DATA_DIR')
         os.environ['HOMEO_DATA_DIR'] = self.tmp.name
-
-    def tearDown(self):
-        os.environ.pop('HOMEO_DATA_DIR', None)
-        self.tmp.cleanup()
+        self.addCleanup(lambda: os.environ.pop('HOMEO_DATA_DIR', None) if saved is None
+                        else os.environ.__setitem__('HOMEO_DATA_DIR', saved))
 
     def setup(self, module, **kwargs):
         hom, backend, _ = module.setup_phototaxis(seed=5, **kwargs)
@@ -161,7 +164,7 @@ class VehicleBehaviourTest(_DataDirTest):
                 hom.collectsData = False
                 motors = [u for u in hom.homeoUnits if 'Motor' in u.name]
                 deviations = []
-                for tick in range(1, 3001):
+                for tick in range(5, 3001, 5):     # sampled every 5 ticks
                     hom.runFor(tick)
                     deviations.append(max(abs(u.criticalDeviation) for u in motors))
                 self.assertLess(max(deviations), 0.25 * motors[0].maxDeviation)
@@ -203,6 +206,36 @@ class AcquisitionTest(_DataDirTest):
         before = self.run_vehicle(r['steps_run'] - 100)
         self.assertGreaterEqual(before['final_dist'], 2.0)
         self.assertFalse(self.run_vehicle(500, early_stop_distance=2.0)['early_stopped'])
+
+    def testTheRunRecordsItsEarlyStop(self):
+        for distance in (2.0, None):
+            r = self.run_vehicle(500, early_stop_distance=distance)
+            with open(r['json_path']) as f:
+                self.assertEqual(json.load(f)['settings']['early_stop_distance'], distance)
+
+    def testADarkRunThatReachesTheSourceIsAcquired(self):
+        '''--dark runs as light runs do: no early stop, so a vehicle that
+        reaches the darkness source is acquired.  (With a stop at 1.5 this
+        run would end at t=2800, 1.479 from the source, not acquired.)'''
+        options = D.common.parse_common_args(['x', '--dark'])
+        self.assertIsNone(options['early_stop_distance'])
+        r = D.run_headless(fixed_weights=True, wiring='crossed', signs='--', heading=45,
+                           eye_response='log', total_steps=5000, report_interval=100,
+                           quiet=True, seed=1, light_intensity=options['light_intensity'],
+                           early_stop_distance=options['early_stop_distance'])
+        self.assertFalse(r['early_stopped'])
+        self.assertTrue(r['acquired'])
+        self.assertEqual(r['steps_run'], 5000)
+
+    def testAnEarlyStopOutsideTheAcquisitionRadiusIsWarned(self):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(D.common.parse_common_args(['x', '--early-stop', '0.5'])
+                             ['early_stop_distance'], 0.5)
+        self.assertEqual(err.getvalue(), '')
+        with contextlib.redirect_stderr(err):
+            D.common.parse_common_args(['x', '--early-stop', '1.5'])
+        self.assertIn('acquisition radius', err.getvalue())
 
 
 if __name__ == '__main__':

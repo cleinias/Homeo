@@ -1,17 +1,13 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
-The homeostat's resets, used by the GUIs' reset buttons (review finding
-CU-06).  A full reset gives the units default parameters and random values
-but leaves them the units they were: their names, their headless mode, their
-dt_fast, and a self-connection that stays manual, with the weight the
-potentiometer says.  A time reset starts the clock again from the units'
-present state: outputs that match the deviations, and a uniselector that
-starts afresh.  The full reset handed the self-connections to the
-uniselector, renamed the units and turned headless mode off; the time reset
-zeroed the outputs and kept the uniselector's timer and count.
+The homeostat's resets, used by the GUIs' reset buttons.  A full reset
+gives the units default parameters and random values but leaves them the
+units they were: their names, their headless mode, their dt_fast, and a
+self-connection that stays manual, with the weight the potentiometer says.
+A time reset starts the clock again from the units' present state: outputs
+that match the deviations, and a uniselector that starts afresh, its timer
+and count back to zero.
 '''
 from Core.Homeostat import Homeostat
 from Core.HomeoUnit import HomeoUnit
@@ -66,6 +62,26 @@ class ResetTest(unittest.TestCase):
                 self.assertEqual([u._headless for u in hom.homeoUnits], [headless] * 4)
                 self.assertEqual([u.dt_fast for u in hom.homeoUnits], [0.5] * 4)
                 hom.runFor(5)
+
+    def testFullResetKeepsTheUniselectors(self):
+        "each unit keeps its kind of uniselector, on or off, with that kind's defaults"
+        from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
+        from Core.HomeoUniselectorUniformRandom import HomeoUniselectorUniformRandom
+        from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
+        hom = _homeostat()
+        left, right, up, down = hom.homeoUnits
+        left.uniselector = HomeoUniselectorContinuous()
+        left.uniselector.tau_a = 50.0
+        right.uniselector = HomeoUniselectorUniformRandom()
+        up.uniselectorActive = False
+        hom.fullReset()
+        self.assertEqual([type(u.uniselector) for u in hom.homeoUnits],
+                         [HomeoUniselectorContinuous, HomeoUniselectorUniformRandom,
+                          HomeoUniselectorAshby, HomeoUniselectorAshby])
+        self.assertEqual(left.uniselector.tau_a,
+                         HomeoUniselectorContinuous.DefaultParameters['tau_a'])
+        self.assertEqual([u.uniselectorActive for u in hom.homeoUnits],
+                         [True, True, False, True])
 
     def testDefaultValuesKeepThePotentiometerInStep(self):
         hom = _homeostat()

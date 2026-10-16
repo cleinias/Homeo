@@ -1,6 +1,4 @@
 '''
-Created on Mar 19, 2013
-
 @author: stefano
 '''
 from Core.Homeostat import *
@@ -201,14 +199,12 @@ class HomeoQtSimulation(QObject):
         self.panningCharts = True       # default is to use panning charts. Can be changed in the Gui
         # Per-tick hooks, the contract of the headless runner
         # (AshbyOriginalExperiments.run_with_events), so that an experiment
-        # runs the same in the GUI and headless (SR-06):
+        # runs the same in the GUI and headless:
         #   tick_callbacks: called with (homeostat, tick) BEFORE each tick's
         #       update, tick being the time about to run -- the experiment's
         #       operator (trainer, constraint, bars) acting on what it sees;
         #   tick_observers: called with (homeostat, time) AFTER it, time the
         #       new time -- record keepers (the stability tracker).
-        # Until 14 Oct 2026 the GUI called its callbacks after the update with
-        # the new time, one tick later than the headless runs.
         self.tick_callbacks = []
         self.tick_observers = []
                 
@@ -222,7 +218,7 @@ class HomeoQtSimulation(QObject):
         """set up the liveData dictionary for live graphing, empty, for the
         current homeostat's units.  The containers are emptied in place (the
         GUI's charts hold them), dropping the units of a previous homeostat;
-        liveTicks holds the homeostat time of each sample (SR-15)."""
+        liveTicks holds the homeostat time of each sample."""
         self.liveData.clear()
         self.liveDataWindow.clear()
         self.unitsSelfWeights.clear()
@@ -314,7 +310,7 @@ class HomeoQtSimulation(QObject):
             self.liveData[unit].append(unit.criticalDeviation)
             # After the tick's update: the deviation and the firing flag of that
             # update (1 if the discrete uniselector fired, triggered by that
-            # deviation; always 0 for OU) (CD-12)
+            # deviation; always 0 for OU)
             self.liveData[self.uniselectorKey(unit)].append(unit.uniselectorActivated)
             self.liveDataWindow[unit].append(unit.criticalDeviation)
             self.liveDataWindow[self.uniselectorKey(unit)].append(unit.uniselectorActivated)
@@ -354,9 +350,7 @@ class HomeoQtSimulation(QObject):
            HomeoSimulationData-<date>-<n>, with no extension -- the GUI saves
            the complete data under it and the plot data under
            <stem>-essential.txt.  n is the first for which none of these files
-           exists in the current directory.  (The first name used to have no
-           extension and the next ones '.txt', and only the bare name was
-           checked: review finding SR-16.)'''
+           exists in the current directory.'''
         
         dateString = datetime.now().strftime("%Y%m%d%H%M%S")
         name = 'HomeoSimulationData'
@@ -425,10 +419,8 @@ class HomeoQtSimulation(QObject):
         headerText += ("\n")
         headerText += ('# There were exactly %u units in this simulation' % len(self.homeostat.homeoUnits))
         headerText += ("\n")
-        # The column names, one per column, time first: until 14 Oct 2026 the
-        # time column had none, and the names ran together with weights
-        # ("Unit-1_weightUnit-2") or ended in a stray comma, so a reader
-        # mapping names to columns mislabelled every one (SR-07)
+        # The column names, one per column, time first, so that a reader can
+        # map names to columns
         columns = ['time']
         npDataArray = np.array(self.liveTicks)
         listOfFormatStrings = ['%u']                    # First column: unsigned integers for the time indexes
@@ -494,8 +486,8 @@ class HomeoQtSimulation(QObject):
         """
         self._homeostat.timeReset()
         self._homeostat.flushData()
-        # The live data restart with the time: until 14 Oct 2026 they ran on,
-        # and saved plot data mixed two runs on one time axis (SR-15)
+        # The live data restart with the time, so that saved plot data never
+        # mix two runs on one time axis
         self.initializeLiveData()
         self._dataAreSaved = True
         

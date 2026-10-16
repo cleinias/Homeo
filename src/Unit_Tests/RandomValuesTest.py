@@ -1,14 +1,10 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
-The random start of a unit, setRandomValues (review finding CU-04).  The
-needle's deviation is drawn over the unit's whole range, +/-maxDeviation,
-and the output is the one that deviation gives.  The deviation used to come
-from the output range, (-1, 1), so needles started within the central tenth
-of their range, and the output was a separate draw from (0, 1): on the first
-tick every unit fed the others a positive output unrelated to its needle.
+The random start of a unit, setRandomValues.  The needle's deviation is
+drawn over the unit's whole range, +/-maxDeviation, not the output range,
+and the output is the one that deviation gives: on the first tick every unit
+feeds the others the output of its own needle.
 '''
 from Core.HomeoUnit import HomeoUnit
 from Core.HomeoUnitNewtonian import HomeoUnitNewtonian

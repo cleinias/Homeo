@@ -1,13 +1,10 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
-The weight matrices of Ashby's uniselector (review finding CD-11): one
-column per connection it controls, each a shuffle of the same 25 values.
-The equally spaced matrix's first column was the unshuffled ramp, so every
-unit's first controlled connection stepped -1 to +1 in the same order on
-every unit; the randomized matrix had an extra, unshuffled first column.
+The weight matrices of Ashby's uniselector: one column per connection it
+controls, each a shuffle of the same 25 values.  No column is the
+unshuffled ramp, so no unit's first controlled connection steps -1 to +1 in
+the same order on every unit, and the randomized matrix has no extra column.
 '''
 from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
 

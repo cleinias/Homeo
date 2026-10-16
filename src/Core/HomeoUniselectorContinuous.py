@@ -1,6 +1,4 @@
 '''
-Created on Feb 26, 2026
-
 @author: stefano
 
 Continuous stochastic uniselector: replaces Ashby's discrete stepping switch
@@ -13,7 +11,7 @@ unit's stress (0 at equilibrium, 1 at the limit of its range).  tau_a is the
 search's timescale: the weights move slowly relative to the fast needle
 dynamics when tau_a is large compared with them, the slow-fast separation of
 Research-notes/Addendum_to_the_CTRNN_Ashby_Discussion.md, Section 6
-(tau_a da/dt = f(x)).  Three models (attribute `model`):
+(tau_a da/dt = f(x)).  Two models (attribute `model`):
 
 'diffusion' (default): a stress-gated random walk with no drift,
 
@@ -33,18 +31,7 @@ Research-notes/Addendum_to_the_CTRNN_Ashby_Discussion.md, Section 6
   deviation (before the bounds).  The weights also relax towards 0, over
   tau_a ticks, when the unit is stable.
 
-'legacy': the process before 12 Oct 2026, kept to reproduce earlier runs,
-
-    dw = -(theta / tau_a) w dt + sigma(stress) * sqrt(dt) * N(0,1),
-
-  clipped to [-1, 1].  tau_a divides only the drift, so it does not set any
-  timescale of the search: under stress the process is a clipped random
-  walk whose statistics do not depend on tau_a, with probability mass piling
-  up at exactly +-1 (review finding CD-04).  sigma_base and sigma_crit are
-  per-tick step sizes here (old defaults 0.001 and 0.1).
-
-'diffusion' and 'ou' reflect the weights at +-1, so no mass piles up at the
-bounds.
+Both reflect the weights at +-1, so no mass piles up at the bounds.
 
 This preserves Ashby's core hypothesis: adaptation operates on the
 parameters (weights), not within the dynamics.  The fast ODE is untouched.
@@ -74,63 +61,46 @@ class HomeoUniselectorContinuous(HomeoUniselector):
     at the boundary of the acceptable range.
 
     Instance variables (beyond superclass):
-        model        -- 'diffusion' (default), 'ou' or 'legacy'
+        model        -- 'diffusion' (default) or 'ou'
         tau_a        -- timescale of the search, in ticks (>> the needle's)
         sigma_base   -- amplitude at zero stress (0: weights kept when stable)
         sigma_crit   -- amplitude at full stress
-        theta        -- 'legacy' only: mean-reversion rate
         dt           -- integration timestep (matches the fast dynamics)
         stress_exponent -- nonlinear shaping of stress level (1 = linear,
                           2 = quadratic, etc.)
     '''
 
-    MODELS = ('diffusion', 'ou', 'legacy')
+    MODELS = ('diffusion', 'ou')
 
     DefaultParameters = {
         'model': 'diffusion',
         'tau_a': 1000.0,
-        'theta': 0.01,
         'sigma_base': 0.0,
         'sigma_crit': 1.0,
         'dt': 1.0,
         'stress_exponent': 2.0,
     }
 
-    # The 'legacy' process's own defaults (use with model='legacy' to
-    # reproduce runs made before 12 Oct 2026)
-    LegacyParameters = {
-        'model': 'legacy',
-        'tau_a': 1000.0,
-        'theta': 0.01,
-        'sigma_base': 0.001,
-        'sigma_crit': 0.1,
-        'dt': 1.0,
-        'stress_exponent': 2.0,
-    }
-
     def __init__(self):
         super(HomeoUniselectorContinuous, self).__init__()
+        self.setDefaults()
+
+    def setDefaults(self):
+        "The default weights' range, [-1, 1], and the default parameters (DefaultParameters)"
         self._lowerBound = -1
         self._upperBound = 1
         self._model = self.DefaultParameters['model']
         self._tau_a = self.DefaultParameters['tau_a']
-        self._theta = self.DefaultParameters['theta']
         self._sigma_base = self.DefaultParameters['sigma_base']
         self._sigma_crit = self.DefaultParameters['sigma_crit']
         self._dt = self.DefaultParameters['dt']
         self._stress_exponent = self.DefaultParameters['stress_exponent']
 
-    def useLegacyParameters(self):
-        '''Switch to the pre-12 Oct 2026 process with its own defaults.'''
-        for key, value in self.LegacyParameters.items():
-            setattr(self, '_' + key, value)
-
     # --- Properties ---
 
     def setLowerBound(self, value):
         '''The weights' range is symmetric about 0: a negative lower bound
-           sets the upper one to its opposite (review finding CD-16: any
-           bound was taken, upperBound = 5 gave (-1, 5)).'''
+           sets the upper one to its opposite.'''
         if not value < 0:
             raise HomeoUniselectorError('lowerBound must be negative, not %r' % value)
         self._lowerBound = value
@@ -175,16 +145,6 @@ class HomeoUniselectorContinuous(HomeoUniselector):
 
     tau_a = property(fget=lambda self: self.getTauA(),
                      fset=lambda self, value: self.setTauA(value))
-
-    def getTheta(self):
-        return self._theta
-
-    def setTheta(self, value):
-        if value >= 0:
-            self._theta = float(value)
-
-    theta = property(fget=lambda self: self.getTheta(),
-                     fset=lambda self, value: self.setTheta(value))
 
     def getSigmaBase(self):
         return self._sigma_base
@@ -236,9 +196,6 @@ class HomeoUniselectorContinuous(HomeoUniselector):
         in [-1, 1].'''
         sig = self.sigma(stress_level)
         dt = self._dt
-        if self._model == 'legacy':
-            drift = -(self._theta / self._tau_a) * w * dt
-            return numpy.clip(w + drift + sig * numpy.sqrt(dt) * noise, -1.0, 1.0)
         diffusion = sig * numpy.sqrt(2.0 * dt / self._tau_a) * noise
         if self._model == 'ou':
             w_new = w - (w / self._tau_a) * dt + diffusion

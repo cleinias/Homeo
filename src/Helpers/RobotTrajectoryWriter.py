@@ -1,5 +1,4 @@
-# File:          RobotTrajectoryWriter.py (first supervisorTrajectoryAbstract.py)
-# Date:          2/20/2015
+# File:          RobotTrajectoryWriter.py
 # Description:   Writes a robot's trajectory to a .traj file.  The Box2D simulator
 #                (KheperaSimulation) and the Webots backend (WebotsSimulation) each
 #                use an instance, and pass it the robot's position at each step.
@@ -40,8 +39,8 @@ class RobotTrajectoryWriter(object):
     state = State.SAVE
 
     '''Run-wide defaults, set through configureTrajectoryDefaults().  A 6M-step
-       run writes ~12M rows (~600 MB); 20 of them filled 11.5 GB on 2026-09-30.
-       Decimating is lossless for every present use: the grapher thins to
+       run writes ~12M rows (~600 MB); 20 of them fill some 12 GB.
+       Decimating is lossless for every use Homeo makes of the files: the grapher thins to
        50,000 points anyway, and fitness comes from the DEAP logbook, never
        from these files.'''
     defaultInterval = 1
@@ -65,7 +64,7 @@ class RobotTrajectoryWriter(object):
         self._rowCount = 0
         self._pendingRow = None          # last skipped row, written on close
         # Simulator steps per homeostat tick, for the header (2: the
-        # KheperaSimulation default, one per wheel before synchronous stepping)
+        # KheperaSimulation default)
         self.stepsPerTick = 2
         # The eyes as configured, {name: (threshold, saturation, response)},
         # and where they sit along the robot's radii; set by KheperaSimulation
@@ -161,8 +160,8 @@ class RobotTrajectoryWriter(object):
            recorded), the last skipped row, and a last comment line with the
            number of steps recorded, "# Steps recorded<TAB>S".  A decimated
            file's rows give the run's length only to within a sampling
-           interval; this line gives it exactly (since 15 Oct 2026; a file
-           whose run was killed before closing has none).'''
+           interval; this line gives it exactly (a file whose run was
+           killed before closing has none).'''
         self.writeHeaderNow()
         self._flushPendingRow()
         if self.posFile is not None and not self.posFile.closed:
@@ -201,9 +200,8 @@ class RobotTrajectoryWriter(object):
 
         self.posFile.write("# Position data for Homeo simulation run\n#\n#\n")
         '''One row per simulator step, stepsPerTick steps per homeostat tick;
-           with decimation, one row per interval steps.  A comment line, so old
-           readers skip it.  (Until 13 Oct 2026 the line was written only when
-           decimating, and said "ticks" for steps.)'''
+           with decimation, one row per interval steps.  A comment line, so
+           readers that do not know it skip it.'''
         self.posFile.write("# Sampled every %d simulator steps, %d steps per homeostat tick\n"
                            % (self._interval, self.stepsPerTick))
         self.posFile.write("# Light sources positioned at:\n")
@@ -228,7 +226,10 @@ class RobotTrajectoryWriter(object):
     def writeEyes(self):
         '''The eyes' sensitivity, one comment line each, so that a chart can
         tell how far they see: an eye stops seeing a source of intensity I at
-        sqrt(I / threshold) (on its axis).  Since 14 Oct 2026 (HV-11).'''
+        sqrt(I / threshold) (on its axis).  With them, the Homeo code that
+        wrote the file and the robot.'''
+        from Helpers.General_Helper_Functions import homeo_version
+        self.posFile.write("# Homeo\t%s\n" % homeo_version())
         if self.robotModel is not None:
             self.posFile.write("# Robot model\t%s\n" % self.robotModel)
         if self.eyeRadiusRatio is not None:
@@ -250,7 +251,7 @@ class RobotTrajectoryWriter(object):
         else:
             stem = 'trajData-ID-' + modelName + '-' + curDateTime + run_tag()
         # Not an existing file's name: a world set up again within the same
-        # second used to reopen, and empty, the last one's file (HV-09)
+        # second would otherwise reopen, and empty, the last one's file
         return os.path.join(dataDir, unique_stem(dataDir, stem, ('.traj',)) + '.traj')
     
     def setDataDir(self, dataDir):

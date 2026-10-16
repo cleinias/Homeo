@@ -19,14 +19,15 @@ deap>=1.4
 dill>=0.3
 tabulate>=0.9
 
-# KheperaSimulator (Box2D physics + rendering).  The module Box2D also ships as
-# the distribution "Box2D" (e.g. Arch's python-box2d 2.3.10); either works.
-# box2d-py has no wheel for current CPythons: pip builds it with swig (see
-# hpc/grace_setup.sh).
-box2d-py>=2.3.8
+# KheperaSimulator's rendering.  Its physics, the module Box2D, is not listed:
+# install it first (see the README).  It ships under two distribution names,
+# "Box2D" (e.g. Arch's python-box2d 2.3.10) and "box2d-py", which has no wheel
+# for current CPythons and builds from source with swig:
+#     pip install swig && pip install --no-build-isolation box2d-py
 pyglet>=2.1
 
 # Testing.  numba is optional at run time (HomeoJIT falls back to pure Python)
-# but the tests should run with it: the HPC runs do.
+# but the tests should run with it: the HPC runs do.  Pinned: numba draws its
+# noise from its own generator, so the version is part of what a seed gives.
 pytest>=9.0
-numba
+numba==0.68.*

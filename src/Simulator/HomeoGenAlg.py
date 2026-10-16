@@ -1,7 +1,4 @@
 '''
-Created on Dec 16, 2014
-Split out of HomeoGenAlgGui.py: Oct 2026
-
 @author: stefano
 
 The GA engine for Homeo experiments, with no GUI: HomeoGASimulation and the
@@ -9,7 +6,7 @@ worker functions used for parallel evaluation.  Uses the DEAP GA framework.
 
 It lives apart from the GUI (Simulator/HomeoGenAlgGui.py) so that a headless
 GA run does not import PyQt5's widgets.  HomeoGenAlgGui re-exports the names
-defined here, so existing imports from it keep working.
+defined here, so they can also be imported from it.
 '''
 
 from deap import base
@@ -31,8 +28,13 @@ import os
 from time import time, strftime, localtime
 from Helpers.ExceptionAndDebugClasses import HomeoDebug, hDebug
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO
+from Helpers.General_Helper_Functions import homeo_version
 from threading import Lock
 from glob import glob
+
+# The robot every GA evaluation and replay builds (a KheperaRobot model); GA
+# logbooks record it, with the simulator and the Homeo code (homeo_version)
+GA_ROBOT = 'epuck2'
 
 
 # --- Reproducible evaluations ---
@@ -155,13 +157,19 @@ def _init_worker(config):
         pass
 
 
+def evaluation_runs(genome, evalsPerIndividual):
+    """How many runs an evaluation of genome averages: its own evalRuns if
+       it has one (the post-evaluation's jobs: 1), else evalsPerIndividual."""
+    return getattr(genome, 'evalRuns', evalsPerIndividual)
+
+
 def _evaluate_genome_worker(genome):
     """Pool entry point: evaluate `genome` from its evalSeed (see
        seeded_evaluation), as the mean of evalsPerIndividual runs (see
-       repeat_seeds, averaged_fitness)."""
+       evaluation_runs, repeat_seeds, averaged_fitness)."""
     scores = []
     for seed in repeat_seeds(getattr(genome, 'evalSeed', None),
-                             _worker_config.get('evalsPerIndividual', 1)):
+                             evaluation_runs(genome, _worker_config.get('evalsPerIndividual', 1))):
         with seeded_evaluation(seed):
             scores.append(_run_genome_evaluation(genome)[0])
     return averaged_fitness(scores)
@@ -174,7 +182,7 @@ def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, d
        it one tick and stops at stepsSize ticks.  stepsSize counts homeostat
        ticks, whatever the units' dt_fast: the world advances by the same
        amount every tick, so every individual gets the same time in the
-       world (SG-02).  Shared by the pool workers and replay_best_with_statelog.py,
+       world.  Shared by the pool workers and replay_best_with_statelog.py,
        so that a replay seeded with a logged evalSeed repeats the evaluation.
 
        genome          a list of genes with an ID attribute
@@ -184,7 +192,7 @@ def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, d
        adjustHomeostat called with the homeostat once it is built, before its
                        units are connected (a replay uses it to swap uniselectors)
     """
-    backend = SimulatorBackendHOMEO(robotName='Khepera', lock=None)
+    backend = SimulatorBackendHOMEO(robotName='Khepera', lock=None, robotModel=GA_ROBOT)
     backend.setDataDir(dataDir)
 
     sim = HomeoQtSimulation(experiment=experiment, dataDir=dataDir)
@@ -221,28 +229,33 @@ def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, d
     return sim, backend
 
 
-def _run_genome_evaluation(genome):
-    """Standalone fitness evaluation for use with multiprocessing.Pool.
-
-    Creates its own SimulatorBackendHOMEO and HomeoQtSimulation per call,
-    avoiding all shared state. Reads experiment parameters from the
-    module-level _worker_config dict (set by _init_worker at pool start).
-    """
-    cfg = _worker_config
-    sim, backend = prepare_genome_evaluation(
-        genome, cfg['experiment'], cfg['experimentParams'], cfg['stepsSize'], cfg['dataDir'])
-
+def evaluate_genome(genome, experiment, experimentParams, stepsSize, dataDir, fitnessSign=1):
+    """One fitness evaluation of `genome`: build it (prepare_genome_evaluation),
+       run it for stepsSize ticks, and return (fitnessSign * final distance
+       from the target,).  The serial path and the pool workers both evaluate
+       through it."""
+    if genome is None:
+        raise ValueError('a fitness evaluation needs a genome')
+    sim, backend = prepare_genome_evaluation(genome, experiment, experimentParams,
+                                             stepsSize, dataDir)
     timeNow = time()
-    for i in range(cfg['stepsSize']):
+    for i in range(stepsSize):
         sim.step()
     backend.kheperaSimulation.saveTrajectory()   # close (and flush) the .traj file
 
-    finalDis = backend.finalDisFromTarget()
-    fitness = cfg.get('fitnessSign', 1) * finalDis
+    fitness = fitnessSign * backend.finalDisFromTarget()
     print(" Evaluation for model %s (%d ticks) took time: %s with fitness %.5f" % (
-        genome.ID, cfg['stepsSize'],
-        str(datetime.timedelta(seconds=time() - timeNow)), fitness))
+        genome.ID, stepsSize, str(datetime.timedelta(seconds=time() - timeNow)), fitness))
     return fitness,
+
+
+def _run_genome_evaluation(genome):
+    """Standalone fitness evaluation for use with multiprocessing.Pool:
+    evaluate_genome with the module-level _worker_config (set by
+    _init_worker at pool start)."""
+    cfg = _worker_config
+    return evaluate_genome(genome, cfg['experiment'], cfg['experimentParams'], cfg['stepsSize'],
+                           cfg['dataDir'], cfg.get('fitnessSign', 1))
 
 
 class HomeoGASimulation(object):
@@ -278,7 +291,7 @@ class HomeoGASimulation(object):
                                    evalsPerIndividual = 1,
                                    postEvalTop = 10,
                                    postEvalSeeds = 20):
-        """Noisy evaluation (review finding SG-06, 15 Oct 2026):
+        """Noisy evaluation:
            evalsPerIndividual  runs per evaluation, the fitness their mean
            postEvalTop, postEvalSeeds  at the end of a run, the hall of fame's
                        best postEvalTop are re-evaluated on postEvalSeeds fresh
@@ -301,9 +314,9 @@ class HomeoGASimulation(object):
         self._robotName = "Khepera"
         
         # "HOMEO" (Box2D), or anything else for none (the dummy evaluators).
-        # The V-REP and old Webots backends were deleted on 14 Oct 2026.
         if simulatorBackend == "HOMEO":
-            self.simulatorBackend =  SimulatorBackendHOMEO(robotName = self._robotName, lock = self.worldBeingResetLock)
+            self.simulatorBackend =  SimulatorBackendHOMEO(robotName = self._robotName, lock = self.worldBeingResetLock,
+                                                           robotModel = GA_ROBOT)
         else:
             self.simulatorBackend = None
 
@@ -328,15 +341,14 @@ class HomeoGASimulation(object):
         exp_func = getattr(Simulator.HomeoExperiments, exp)
         # The homeostat's units, sensor units included: the setup's own count
         # where it declares one (the 2+2 direct vehicle 4, the 3c vehicle 10),
-        # else noUnits (6, the classic vehicle's).  Until 15 Oct 2026 every
-        # logbook recorded noUnits, 6 even for the 4-unit direct vehicle.
+        # else noUnits (6, the classic vehicle's).
         self.noUnits = getattr(exp_func, 'noUnits', noUnits)
         self.noEvolvedUnits = getattr(exp_func, 'noEvolvedUnits', noUnits)
         self.fitnessSign = getattr(exp_func, 'fitnessSign', 1)
         self.genomeSize = getattr(exp_func, 'genomeSize',
                                    (self.noEvolvedUnits * essentParams) + (self.noEvolvedUnits * self.noUnits))
         # How the genes decode (Helpers.GenomeDecoder): recorded in the logbook,
-        # since two layouts can have the same size (CU-11); None for classic
+        # since two layouts can have the same size; None for classic
         self.genomeLayout = getattr(exp_func, 'genomeLayout', None)
         # The TARGET's intensity the setup gives (GA_LIGHT_INTENSITY), recorded
         # so that a replay rebuilds the same world
@@ -349,6 +361,8 @@ class HomeoGASimulation(object):
         self.indivProb = indivProb 
         self.tournamentSize = tournamentSize
         self.clonableGenome = clonableGenome
+        if clonableGenome is not None:
+            self.checkClonableGenome(clonableGenome)
         self.stats = tools.Statistics(key=lambda ind: ind.fitness.values)
 
 
@@ -439,7 +453,7 @@ class HomeoGASimulation(object):
         " FIXME---> NEED TO REMOVE SELECTED INDIVIDUALS FROM ASPIRANTS POOL <-----"
         #self.toolbox.register("select", tools.selBest)
         # Out-of-range genes: a mutation's are reflected back into [0, 1]
-        # (reflectBounds, SG-07); crossover only swaps genes, so its clip is
+        # (reflectBounds); crossover only swaps genes, so its clip is
         # a safety net that never acts
         self.toolbox.decorate("mate", self.checkBounds(0, 1))
         self.toolbox.decorate("mutate", self.reflectBounds(0, 1))
@@ -451,10 +465,7 @@ class HomeoGASimulation(object):
         
     def recordGADataToLogbook(self,timeElapsed, pop):
         """Insert general GA simulation parameters into logbook, replacing
-           the previous summary: there is one, the latest.  Until 14 Oct 2026
-           every save appended one, so a run of G generations had G+1, each
-           with the whole final population, and readers disagreed on which
-           they read (SG-08)."""
+           the previous summary: there is one, the latest."""
         self.logbook[:] = [rec for rec in self.logbook if 'finalIndivs' not in rec]
 
         " for non cloned population the self._cloname attr is None"
@@ -490,7 +501,10 @@ class HomeoGASimulation(object):
                             evalsPerIndividual = self.evalsPerIndividual,
                             postEvaluation = self.postEvaluation,
                             noNoise = self.experimentParams['noNoise'],
-                            noUnisel = self.experimentParams['noUnisel']) 
+                            noUnisel = self.experimentParams['noUnisel'],
+                            homeo = homeo_version(),
+                            simulator = 'box2d',
+                            robot = GA_ROBOT) 
 
 
         #=======================================================================
@@ -544,10 +558,8 @@ class HomeoGASimulation(object):
     def reflectBounds(self, low, high):
         """Decorate a mutation: its out-of-range genes reflected back into
            [low, high].  Mutation alone then keeps a uniform spread of genes
-           uniform.  Until 15 Oct 2026 they were clipped: about 16% of mutated
-           genes landed exactly on 0 or 1, the parameters' extremes, and 50
-           mutations without selection left 23% of genes there (review
-           finding SG-07)."""
+           uniform.  Clipping them instead would put many mutated genes
+           exactly on 0 or 1, the parameters' extremes."""
         low, high = float(low), float(high)
         def decorator(func):
             def wrapper(*args, **kargs):
@@ -566,6 +578,20 @@ class HomeoGASimulation(object):
         ind.ID = ID
         return ind
     
+    def checkClonableGenome(self, genome):
+        '''ValueError unless genome (a dict as StatsAnalyzer.extractGenomeOfIndID
+           returns) fits this run's setup: its genomeLayout is the setup's, and
+           it has the setup's number of genes.  The layout must be named, since
+           two layouts can have the same size.'''
+        if 'genomeLayout' not in genome:
+            raise ValueError('the genome to clone does not say its layout (genomeLayout)')
+        if genome['genomeLayout'] != self.genomeLayout:
+            raise ValueError("the genome to clone has layout %r, %s's is %r"
+                             % (genome['genomeLayout'], self.experiment, self.genomeLayout))
+        if len(genome['genome']) != self.genomeSize:
+            raise ValueError("the genome to clone has %d genes, %s's genomes %d"
+                             % (len(genome['genome']), self.experiment, self.genomeSize))
+
     def initIndividualClone(self, indivClass, genome):
         """Generate an individual with given genome.
            Assumes 'genome' is a dictionary with keys indivId, genome and,
@@ -573,9 +599,7 @@ class HomeoGASimulation(object):
            generation 0 evaluates it, like every individual.  The logged
            fitness came from another run's evaluation (often of another code
            version), so it is recorded in the logbook's summary as
-           cloneSourceFitness, not given to the clones.  Until 15 Oct 2026 it
-           was copied into every clone and then overwritten by generation 0
-           (review finding SG-09)."""
+           cloneSourceFitness, not given to the clones."""
         ind = indivClass(genome['genome'])
         ind.ID = genome["indivId"]
         return ind
@@ -606,9 +630,9 @@ class HomeoGASimulation(object):
         return self.toolbox.population(n=self.popSize)
 
     def _startPool(self):
-        """The run's worker pool, when evaluating in parallel.  One per run:
-        until 14 Oct 2026 __init__ made it and the first run closed it, so a
-        second run on the same object failed ('Pool not running', SG-10)."""
+        """The run's worker pool, when evaluating in parallel.  One per run,
+        made at its start and closed at its end, so that the same object can
+        run more than once."""
         if self._poolConfig is None:
             return
         ctx = multiprocessing.get_context('forkserver')
@@ -630,6 +654,13 @@ class HomeoGASimulation(object):
 
         'Record time for naming logbook pickled object and computing time statistics'
         self._stopRequested = False
+        # A run's records are its own: a fresh logbook, hall of fame and
+        # history (cleared in place: the variation operators are decorated
+        # with this history), and no post-evaluation yet
+        self.logbook = tools.Logbook()
+        self.hof.clear()
+        self.hist.__init__()
+        self.postEvaluation = None
         self._startPool()
         timeStarted = time()
         timeElapsed = None
@@ -660,14 +691,13 @@ class HomeoGASimulation(object):
             print()
 
             # Generation 0's statistics, recorded whether or not anyone is
-            # told of them (until 14 Oct 2026 only with a progressCallback,
-            # so headless runs' fitness curves had no generation 0; SG-08)
+            # told of them, so headless runs' fitness curves have it too
             record0 = self.stats.compile(pop)
             self.logbook.record(gen=0, evaluations=len(pop), **record0)
             if progressCallback:
                 progressCallback(0, record0, self.hof[0].fitness.values[0])
-            # Saved now: until 14 Oct 2026 the first save came after
-            # generation 1, so a crash in it lost generation 0 too (SG-04)
+            # Saved now, so that a crash in generation 1 does not lose
+            # generation 0 too
             self.saveLogbook(pop, time() - timeStarted, timeStarted)
             self.saveHistory(timeStarted)
 
@@ -725,11 +755,7 @@ class HomeoGASimulation(object):
                 # score kept from an earlier generation is one old noisy
                 # draw, and selection would favour the lucky ones.  Under
                 # 'genome' a genome always scores the same, so only changed
-                # ones are evaluated.  Until 15 Oct 2026 only the individuals
-                # crossover or mutation touched were evaluated (most of the
-                # "mutants" unchanged), the rest kept their old score, and the
-                # elite, the hall of fame's best, was put back only when no
-                # individual had its genome (review finding SG-06).
+                # ones are evaluated.
                 if self.noiseScheme != 'genome':
                     for ind in offspring + [elite]:
                         if ind.fitness.valid:
@@ -756,10 +782,7 @@ class HomeoGASimulation(object):
                     # Stop asked during the generation (serial evaluation is
                     # lazy, so the GUI's Stop lands here): keep what was
                     # evaluated in the logbook and the previous generation as
-                    # the population, and end the run as at its end.  Until
-                    # 14 Oct 2026 this broke out leaving offspring with no
-                    # fitness, crashed in the elitism below, and, in
-                    # generation 1, saved nothing (SG-01).
+                    # the population, and end the run as at its end.
                     if self._stopRequested:
                         stopped = True
                         break
@@ -809,7 +832,7 @@ class HomeoGASimulation(object):
             self.saveHistory(timeStarted)
 
             # The built-in simulator stays, for another run on this object
-            # (quitting it discarded its simulation; SG-10); an external one
+            # (quitting it would discard its simulation); an external one
             # is shut down
             if self.simulatorBackend is not None and self.simulatorBackend.name != "HOMEO":
                 self.simulatorBackend.quit()
@@ -924,7 +947,8 @@ class HomeoGASimulation(object):
            evalSeed, leaving the GA's own random streams as they were; the
            mean of evalsPerIndividual runs (see _evaluate_genome_worker)."""
         scores = []
-        for seed in repeat_seeds(getattr(genome, 'evalSeed', None), self.evalsPerIndividual):
+        for seed in repeat_seeds(getattr(genome, 'evalSeed', None),
+                                 evaluation_runs(genome, self.evalsPerIndividual)):
             with seeded_evaluation(seed):
                 scores.append(self.evaluateGenomeFitness(genome)[0])
         return averaged_fitness(scores)
@@ -940,13 +964,19 @@ class HomeoGASimulation(object):
 
     def postEvaluate(self):
         """Re-evaluate the hall of fame's best postEvalTop individuals on
-           postEvalSeeds fresh seeds each, and rank them by their mean score
-           (SG-06).  The hall of fame keeps the lowest score ever seen, which,
-           with noise, is mostly the luckiest evaluation: the mean says which
-           genome is best.  Kept in self.postEvaluation and the logbook's
-           summary: a list, best mean first, of dicts with indivId, genome,
-           mean, sd and scores.  The seeds are derived from the GA's seed, so a
-           rerun repeats them."""
+           postEvalSeeds fresh seeds each, one run per seed whatever
+           evalsPerIndividual, and rank them by their mean score.  The hall of
+           fame keeps each genome with the score it entered with, which, with
+           noise, is mostly a lucky evaluation: the mean says which genome is
+           best.  Kept in self.postEvaluation and the logbook's summary: a
+           list, best mean first, of dicts with
+               indivId, genome   the hall of fame's individual
+               mean, sd, scores  over the seeds, single runs
+               hofFitness        the score it entered the hall of fame with
+               evaluations, loggedBest, loggedMean
+                                 how often the run's logbook records the
+                                 genome, its lowest and its mean fitness there
+           The seeds are derived from the GA's seed, so a rerun repeats them."""
         top = list(self.hof)[:self.postEvalTop]
         if not top or self.postEvalSeeds < 1:
             return None
@@ -957,6 +987,7 @@ class HomeoGASimulation(object):
                 job.ID = 'post-%s-%d' % (ind.ID, j + 1)
                 job.evalSeed = int(np.random.SeedSequence(
                     [int(self.randomSeed), 3, i, j]).generate_state(1)[0])
+                job.evalRuns = 1
                 jobs.append((i, job))
         print("-- Post-evaluation: the best %d of the hall of fame, %d seeds each --"
               % (len(top), self.postEvalSeeds))
@@ -964,9 +995,15 @@ class HomeoGASimulation(object):
         scores = [[] for _ in top]
         for (i, _), result in zip(jobs, results):
             scores[i].append(float(result[0]))
+        def logged(ind):
+            fitnesses = [r['fitness'][0] for r in self.logbook
+                         if 'genome' in r and list(r['genome']) == list(ind)]
+            return {'evaluations': len(fitnesses), 'loggedBest': float(min(fitnesses)),
+                    'loggedMean': float(np.mean(fitnesses))}
         self.postEvaluation = sorted(
-            ({'indivId': ind.ID, 'genome': list(ind), 'hofFitness': ind.fitness.values[0],
-              'mean': float(np.mean(s)), 'sd': float(np.std(s)), 'scores': s}
+            (dict({'indivId': ind.ID, 'genome': list(ind), 'hofFitness': ind.fitness.values[0],
+                   'mean': float(np.mean(s)), 'sd': float(np.std(s)), 'scores': s},
+                  **logged(ind))
              for ind, s in zip(top, scores)),
             key=lambda entry: entry['mean'])
         for entry in self.postEvaluation:
@@ -975,78 +1012,18 @@ class HomeoGASimulation(object):
                      entry['hofFitness']))
         return self.postEvaluation
 
-    def evaluateGenomeFitness(self,genome=None):
-        """Run a simulation for a given number of steps on the given genome.
-           Return final distance from target"""
-            
-        if genome is None:
-            genome=self.createRandomHomeostatGenome(self.genomeSize)
+    def evaluateGenomeFitness(self, genome):
+        """Evaluate genome as a pool worker does (evaluate_genome), with this
+           run's experiment, parameters and length.  Returns (fitness,)."""
+        params = {key: value for key, value in self.experimentParams.items()
+                  if key in ('dataDir', 'noNoise', 'noUnisel')}
+        return evaluate_genome(genome, self.experiment, params, self.stepsSize, self.dataDir,
+                               self.fitnessSign)
 
-        self.experimentParams['homeoGenome']= genome
-        self._simulation.initializeExperSetup(
-            message="Building Homeostat from genome %s" % genome.ID,
-            **self.experimentParams)
-
-        hDebug('network', "Trying to connect to supervisor")
-        self.simulatorBackend.connect()
-        hDebug('network', "Connected")
-        hDebug('network', "Resetting simulation world")
-        self.simulatorBackend.reset()
-        if self.simulatorBackend.name == "HOMEO":
-            self._simulation.initializeExperSetup(
-                message="Rebuilding world after reset",
-                **self.experimentParams)
-        hDebug('network', "Closing connection to supervisor")
-        self.simulatorBackend.close()
-#         self._supervisor.close()
-        hDebug('network', "Reconnecting to supervisor")
-#         self._supervisor.clientConnect()
-        self.simulatorBackend.connect()
-        hDebug('network', "Connecting units to network")
-        #
-        #
-        self.simulatorBackend.setRobotModel(genome.ID)
-        
-        "testing"
-#         sleep(1)
-        "end testing"
-        
-        self._simulation.maxRuns = self.stepsSize
-        "Initialize live data recording and display "
-        self._simulation.initializeLiveData()
-
-        # Enable headless/JIT optimizations for GA evaluation
-        hom = self._simulation.homeostat
-        hom._headless = True
-        hom._collectsData = False
-        hom._slowingFactor = 0
-        for u in hom.homeoUnits:
-            u._headless = True
-
-        #self._simulThread.start()
-        timeNow = time()
-        hDebug('eval' , "Simulation started at time: " +  str(timeNow))
-        hDebug('eval', ("Now computing %d ticks..." % self.stepsSize))
-        with self.worldBeingResetLock:          # released if a step raises (SG-10)
-            for i in range(self.stepsSize):
-                hDebug('eval', ("Step: "+ str(i+1)+"\n"))
-                self._simulation.step()
-        if self.simulatorBackend.name == "HOMEO":
-            self.simulatorBackend.kheperaSimulation.saveTrajectory()   # close (and flush) the .traj file
-        hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
-        finalDis =self.simulatorBackend.finalDisFromTarget()
-        fitness = self.fitnessSign * finalDis
-        hDebug('eval', ("Final distance from target was: " + str(finalDis)))
-        print(" Evaluation for model %s (%d ticks) took time: %s with fitness %.5f" %(
-            genome.ID, self.stepsSize, str(datetime.timedelta(seconds=time()- timeNow)), fitness))
-        return fitness,                                       # Return a tuple, as required by DEAP
-        
     def cleanUpTrajFiles(self):
         """Remove all files not related to specific homeostat models from
            dataDir: the trajectories of the robot before it has a model name,
-           which the writer names trajData-ID-Unspecified-<time>[<tag>][-n].traj
-           (the old pattern, *-Unspecified.traj, matched none of them: review
-           finding HV-10)."""
+           which the writer names trajData-ID-Unspecified-<time>[<tag>][-n].traj."""
         unspecificFileList = glob(os.path.join(self.dataDir, "trajData-ID-Unspecified-*.traj"))
         for f in unspecificFileList:
             os.remove(f)

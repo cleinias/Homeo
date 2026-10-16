@@ -1,22 +1,21 @@
 '''
-KheperaSimulator is a very simple robotic simulator back-end
-built with the pyBox2D physics engine and the pyglet framework. 
-It is meant to be used for fast 
-simulations of Homeo controllers in GA experimental settings.
-The basic robot is a kinematic differential drive Khepera-like vehicle (see
-KheperaRobot.update),
-equipped with directional "light" sensors that estimate the light irradiance
-at the sensor's surface on the basis on incidence angle, light intensity, 
-and an attenuation matrix.
-The only other objects in the world are lights: static objects with a color and
-an intensity. 
+KheperaSimulator is a very simple robotic simulator back-end built with the
+pyBox2D physics engine and the pyglet framework, meant for fast simulations of
+Homeo controllers, in batch runs and GA experiments.
 
-The simulator is meant to be used in headless mode (i.e. no graphics) 
-for fast performance and to be portable to parallel environments 
-(especially including remote clusters), but it includes elementary visualization
-facilities for debugging purposes.
+Its robot is a Khepera-like robot: a small differential-drive vehicle with
+infrared sensors, used here as light sensors, and similar facilities, after
+K-Team's Khepera family.  Two Khepera-like robots are implemented at present
+(KheperaRobot): the e-puck2 (the default) and the K-Junior.  Each eye
+estimates the irradiance at its surface from the light's intensity, its
+distance and its angle of incidence (KheperaRobot.irradAtSensor).  The other
+objects in the world are its sources: static bodies with an intensity, and
+for Vehicle 3c a quality (light, temperature, oxygen, organic matter).
 
-Created on Mar 13, 2015
+The simulator is meant to be run headless (no graphics), for speed and on
+remote clusters, but it has elementary visualization facilities for
+debugging and for watching a run.
+
 @author: stefano
 '''
 from Box2D import *
@@ -44,7 +43,7 @@ from pyglet.window import mouse, key
 from pyglet.math import Mat4, Vec3
 import numpy as np
 
-from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2, log
+from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2, log, remainder
 from Helpers.General_Helper_Functions import normalize, dated_data_dir
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from time import sleep, time, strftime, localtime
@@ -195,8 +194,7 @@ def makePygletRing(r, numPoints=48):
     return _make_vlist(numPoints, GL_LINE_LOOP, vertices)
 
 # The radius of the eyes' field arcs in the visualizer, in metres: rendering
-# only (an eye has no maximum distance).  10 before 15 Oct 2026, which drew
-# each arc across the whole arena.
+# only (an eye has no maximum distance).
 FIELD_RENDER_RANGE = 0.15
 
 """Add drawing pyglet-specific drawing functions
@@ -240,10 +238,8 @@ def _drawShapes(userData, position, angle, fields=False):
        matching userData['colors']; and, when fields is true,
        userData['pygletField'] in userData['fieldColor'].
        The shape shader turns its rotation attribute clockwise, so it gets
-       -angle in degrees.  Before 15 Oct 2026 it got +angle, and every shape
-       was drawn turned the wrong way: a robot heading at 30 degrees was drawn
-       heading at -30, its eyes' arcs facing likewise (where the shapes were
-       placed was right)."""
+       -angle in degrees: with +angle every shape would be drawn turned the
+       wrong way, a robot heading at 30 degrees drawn heading at -30."""
     shapes = userData['pygletShape']
     if shapes is None:
         drawn = []
@@ -294,18 +290,20 @@ b2Body.update = b2BodyDefaultUpdate
 "Khepera simulation classes"
 
 class KheperaRobot(object):
-    """The body of a small two-wheeled robot: an e-puck2 by default, or the
-       K-Junior of every run before 14 Oct 2026 (model='kjunior').
-       The body is implemented as a simple circle with two wheels and light sensors.
+    """A Khepera-like robot: a small differential-drive vehicle with infrared
+       sensors, used here as light sensors, and similar facilities.  Two are
+       implemented at present: the e-puck2 (model='epuck2', the default) and
+       the K-Junior (model='kjunior').  The body is a circle with two wheels
+       and light sensors.
 
-       model='epuck2' (default since 14 Oct 2026): the e-puck2 of Webots'
-       E-puck.proto (R2025a, version "2"), so that the Box2D and the Webots
-       vehicles are one robot (see EPUCK2):
+       model='epuck2': the e-puck2 of Webots' E-puck.proto (R2025a, version
+       "2"), so that the Box2D and the Webots vehicles are one robot (see
+       EPUCK2):
        - body 74 mm across (the PROTO's bounding cylinder; GCtronic's 70 mm
          is the shell), wheels of 20 mm radius, 52 mm apart;
-       - top wheel speed capped at the K-Junior vehicle's 24.3 mm/s (1.2166
-         rad/s), not the e-puck2's 151 mm/s, so that the homeostat's
-         timescales keep their relation to the motion (decision of 14 Oct);
+       - top wheel speed capped at 24.3 mm/s (1.2166 rad/s), not the
+         e-puck2's 151 mm/s, so that the homeostat's timescales keep their
+         relation to the motion;
        - each eye is a pair of the e-puck's light sensors, ls0+ls1 on the
          right and ls7+ls6 on the left, at their real positions and facing
          their real directions (+-17.2 and +-45.8 degrees); the eye's
@@ -314,60 +312,46 @@ class KheperaRobot(object):
          degrees).  No hoods.  A pair is one cosine eye facing about +-31.5
          degrees; together the eyes see the front 146 degrees, and neither
          sees an 88-degree sector behind.
-       The K-Junior geometry below is model='kjunior', kept to reproduce the
-       runs before 14 Oct 2026.
-       Main physical parameters affecting KheperaBody's behavior are:
-       - self.density (default is 0.7. It controls the bosy's mass, and hence the steering, since it affects the torque
-                       that the wheels are capable of transmitting to the body. 
-       
-       By default, KheperaRobot uses the geometric parameters of  a standard Khepera Junior robot, expressed
-       as ratios of the body's diameter:
+
+       model='kjunior': a K-Junior, with the geometric parameters of K-Team's
+       Khepera Junior, expressed as ratios of the body's diameter:
        - diameter = 0.126 meters (= 126 mm)
        - wheel radius = 0.0156 meters (= 15.6mm) = 0.12380 of diameter
        - wheel thickness = 0.003 meters (= 3mm)  = 0.0238 of diameter
        - wheel separation = 0.096 meters (= 96mm) = 0.7619 of diameter
-       - right eye position in degrees from y-axis  =  21.9017 
+       - right eye position in degrees from y-axis  =  21.9017
        - left eye position in degrees from y-axis   = -21.9017
-       - center eye position in degrees from y-axis = 0
-           Notice that the positions of rightEye and leftEye sensors are relative to the forward facing direction
-           and lie on the radius at the indicated angle (drawn from K-Team specs) from the y axis.
-           See addSensor function  for details on their implementation.
-       - eyeRadiusRatio = 0.5: how far out along that radius the eyes sit, as a
-           fraction of the body's radius.  Each eye faces outward along its
-           radius and sees 45 degrees either side of it, so its field ends 23.1
-           degrees inside the heading.  On the rim (1.0, every run before 13 Oct
-           2026) the two inner edges crossed on the midline 0.1135 ahead of the
-           centre, 0.05 beyond the rim: a light in that wedge was seen by
-           neither eye.  The wedge's tip lies 1.80 r ahead of the centre for
-           eyes at radius r, so half way in (r = 0.0315) puts it inside the
-           body, and everything outside the body within 45 degrees of the
-           heading is in view.  The angles and the fields are those of the rim
-           eyes; the eyes are closer together (0.0235 apart, not 0.047).
-           
-        Finally, the 'name' of the KheperaRobot is internal ref used by the simulation software to refer to the robot.
-        The 'ID', instead,  is the particular version of a robot, used by the Genetic Algorithm code to record fitnesses
+           The positions of rightEye and leftEye sensors are relative to the
+           forward facing direction and lie on the radius at the indicated
+           angle (drawn from K-Team specs) from the y axis.  See addSensor
+           for details on their implementation.
+       - eyeRadiusRatio = 0.5 (KJUNIOR_EYE_RADIUS_RATIO): the eyes sit half way
+           out along that radius.  Each eye faces outward along its radius and
+           sees 45 degrees either side of it, so its field ends 23.1 degrees
+           inside the heading.  The two fields' inner edges cross on the
+           midline 1.80 r ahead of the centre for eyes at radius r; at
+           r = 0.0315 that is inside the body, so everything outside the body
+           within 45 degrees of the heading is in view.
+       - top wheel speed 1.55988 rad/s (0.0243 m/s).
 
-        Motion (drive):
-        - 'kinematic' (default): a differential drive.  With wheel speeds vR, vL
-          (setRightSpeed/setLeftSpeed take rad/s; times the wheel radius, m/s)
-          and wheel separation L, the body moves forward at v = (vR + vL)/2 and
-          turns at omega = (vR - vL)/L (counterclockwise when the right wheel is
-          faster), integrated exactly over each simulation step.  The wheels are
-          bodies that follow the chassis, for rendering only.
-        - 'legacy': the wheels are light dynamic bodies jointed to the chassis,
-          whose velocity is overwritten each step; the joint solver decides what
-          reaches the chassis.  The robot then moved at about 14% of the commanded
-          speed at low speeds and about 82% above a threshold or when the wheels
-          turned in opposite directions (review finding RS-01).  Every run before
-          13 Oct 2026 used it; kept only to reproduce them.
+        The 'name' of the KheperaRobot is the internal reference the
+        simulation uses for the robot.  The 'ID' is the particular version of
+        a robot, which the Genetic Algorithm code uses to record fitnesses.
+
+        Motion: a differential drive.  With wheel speeds vR, vL
+        (setRightSpeed/setLeftSpeed take rad/s; times the wheel radius, m/s)
+        and wheel separation L, the body moves forward at v = (vR + vL)/2 and
+        turns at omega = (vR - vL)/L (counterclockwise when the right wheel is
+        faster), integrated exactly over each simulation step.  The robot
+        keeps its pose in double precision, the heading in (-pi, pi], and
+        places its Box2D body on it each step: Box2D's float32 state never
+        accumulates the motion, so slow motion and long turns are as exact
+        as fast ones.  The body's mass (density) plays no part in the motion.
+        The wheels are bodies that follow the chassis, for rendering only.
 
         Speed units: maxWheelSpeed is in rad/s, the unit of setRightSpeed and
-        setLeftSpeed, and getMaxSpeed returns it.  Its default, 1.55988 rad/s
-        (0.0243 m/s), is the top speed every run before 13 Oct 2026 actually had:
-        the motors' range was then reported as 100 rad/s * wheel radius = 1.55988
-        (m/s), which setRightSpeed read as rad/s (review finding RS-03)."""
+        setLeftSpeed, and getMaxSpeed returns it."""
 
-    DRIVES = ('kinematic', 'legacy')
     MODELS = ('epuck2', 'kjunior')
 
     # The e-puck2 of Webots' E-puck.proto (R2025a), in metres, in the robot's
@@ -380,16 +364,18 @@ class KheperaRobot(object):
                   eyes={'rightEye': ('ls0', 'ls1'), 'leftEye': ('ls7', 'ls6')},
                   fieldOfView=180)
     # The K-Junior vehicle's top rim speed, 0.0243322561 m/s, over the
-    # e-puck2's wheel radius: the cap of 14 Oct 2026
+    # e-puck2's wheel radius: the e-puck2's capped top wheel speed
     EPUCK2_CAPPED_WHEEL_SPEED = 0.0243322561 / 0.020         # rad/s
+
+    KJUNIOR_EYE_RADIUS_RATIO = 0.5
 
     def __init__(self, world, diameter = 126, wheelRadiusRatio = 0.12380, wheelThicknessRatio = 0.02380, wheelSepRatio = 0.76190, maxWheelSpeed = None,
                  rightEyeAngle = 21.9017, leftEyeAngle = -21.9017, centerEyeAngle = 0, density = 0.8, unit = 'mm',
                  color = (1.,0.,0.,0.5), name = "Khepera", ID = "Unspecified", initialPose = (0,0),
-                 drive = 'kinematic', eyeRadiusRatio = None, model = 'epuck2'):
-        '''model: 'epuck2' (default) or 'kjunior'.  diameter, the ratios, unit
-        and eyeRadiusRatio (default 0.5) describe the K-Junior and apply only to
-        it; maxWheelSpeed (rad/s) defaults to the model's.'''
+                 model = 'epuck2'):
+        '''model: 'epuck2' (default) or 'kjunior'.  diameter, the ratios and
+        unit describe the K-Junior and apply only to it; maxWheelSpeed (rad/s)
+        defaults to the model's.'''
 
         "create body"
         if unit == 'mm':
@@ -400,16 +386,11 @@ class KheperaRobot(object):
             factor = 0.1
         else:
             factor = 1
-        if drive not in self.DRIVES:
-            raise ValueError('drive must be one of %s, not %r' % (self.DRIVES, drive))
         if model not in self.MODELS:
             raise ValueError('model must be one of %s, not %r' % (self.MODELS, model))
-        self.drive = drive
         self.model = model
         self.density = density
         if model == 'epuck2':
-            if eyeRadiusRatio is not None:
-                raise ValueError("eyeRadiusRatio applies only to the K-Junior (model='kjunior')")
             self.eyeRadiusRatio = None
             self.diameter = self.EPUCK2['diameter']
             self.wheelRadius = self.EPUCK2['wheelRadius']
@@ -418,11 +399,7 @@ class KheperaRobot(object):
             if maxWheelSpeed is None:
                 maxWheelSpeed = self.EPUCK2_CAPPED_WHEEL_SPEED
         else:
-            if eyeRadiusRatio is None:
-                eyeRadiusRatio = 0.5
-            if not 0 < eyeRadiusRatio <= 1:
-                raise ValueError('eyeRadiusRatio must be in (0, 1], not %r' % eyeRadiusRatio)
-            self.eyeRadiusRatio = eyeRadiusRatio
+            self.eyeRadiusRatio = self.KJUNIOR_EYE_RADIUS_RATIO
             self.diameter = diameter * factor
             self.wheelRadius = self.diameter* wheelRadiusRatio
             self.wheelSeparation = self.diameter * wheelSepRatio
@@ -436,6 +413,8 @@ class KheperaRobot(object):
         bodyDef.type = b2_dynamicBody
         self.body = world.CreateBody(bodyDef)
         self.body.position = initialPose
+        # The pose, in double precision: x, y, heading (see update)
+        self._pose = (float(initialPose[0]), float(initialPose[1]), 0.0)
         circleShape = b2CircleShape(radius=self.diameter/2.0)
         bodyFixtureDef = b2FixtureDef()
         bodyFixtureDef.density = self.density
@@ -450,21 +429,10 @@ class KheperaRobot(object):
         self.leftSpeed = 0
         self.speedIncrease = 1
         
-        'Left wheel'       
-        frontLeftWheel = KheperaWheel(world, thickness = wheelThickness,  diameter = self.wheelRadius*2,
-                                        maxForwardSpeed = self.maxSpeed,  name = 'left',
-                                        follower = (drive == 'kinematic'))
-        frontLeftWheel.body.position = self.body.worldCenter + (0, self.wheelSeparation/2)
-        if drive == 'kinematic':
-            frontRightWheel = KheperaWheel(world, thickness = wheelThickness,
-                                           diameter = self.wheelRadius*2,
-                                           maxForwardSpeed = self.maxSpeed,  name = 'right', follower = True)
-            self.wheels = {'left': frontLeftWheel, 'right': frontRightWheel}
-            self._placeWheels(self.body.position, self.body.angle)
-        else:
-            if model != 'kjunior':
-                raise ValueError("the 'legacy' drive exists only for the K-Junior")
-            self._addJointedWheels(world, frontLeftWheel, wheelThicknessRatio, wheelRadiusRatio, wheelSepRatio)
+        self.wheels = {side: KheperaWheel(world, thickness=wheelThickness,
+                                          diameter=self.wheelRadius * 2, name=side)
+                       for side in ('left', 'right')}
+        self._placeWheels(self.body.position, self.body.angle)
 
         self.eyeReceptors = {}       # eye name -> [((x, y), facing in degrees), ...]
         if model == 'epuck2':
@@ -475,39 +443,8 @@ class KheperaRobot(object):
         "Add a pyglet shape to robot's body for rendering"
         self.setRenderingParameters(color = color)
 
-    def _addJointedWheels(self, world, frontLeftWheel, wheelThicknessRatio, wheelRadiusRatio, wheelSepRatio):
-        "The 'legacy' drive: dynamic wheels on locked revolute joints"
-        jointDef = b2RevoluteJointDef()
-        jointDef.bodyA = self.body
-        jointDef.enableLimit = True
-        jointDef.lowerAngle = 0
-        jointDef.upperAngle = 0
-        jointDef.localAnchorB = (0,0)
-         
-        jointDef.bodyB = frontLeftWheel.body
-        jointDef.localAnchorA = (0, self.diameter * wheelSepRatio/2)
-        world.CreateJoint(jointDef)
-        self.wheels = {'left': frontLeftWheel}
-#         print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontLeftWheel), id(self), 'left')
-
-        'Right wheel'
-        frontRightWheel = KheperaWheel(world, thickness = self.diameter * wheelThicknessRatio,  diameter = self.diameter * wheelRadiusRatio*2,
-                                        maxForwardSpeed = self.maxSpeed,  name = 'right')  
-        frontRightWheel.body.position = self.body.worldCenter + (0, -self.diameter * wheelSepRatio/2)
-        jointDef = b2RevoluteJointDef()
-        jointDef.bodyA = self.body
-        jointDef.enableLimit = True
-        jointDef.lowerAngle = 0
-        jointDef.upperAngle = 0
-        jointDef.localAnchorB = (0,0)
-        jointDef.bodyB = frontRightWheel.body
-        jointDef.localAnchorA = (0, -self.diameter * wheelSepRatio/2)
-        world.CreateJoint(jointDef)
-        self.wheels['right']= frontRightWheel
-#         print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontRightWheel), id(self), 'right')
-
     def _placeWheels(self, position, angle):
-        "Put the wheels of the 'kinematic' drive at their places on a chassis at (position, angle)"
+        "Put the wheels at their places on a chassis at (position, angle)"
         for side, offset in (('left', self.wheelSeparation / 2), ('right', -self.wheelSeparation / 2)):
             wheel = self.wheels[side].body
             wheel.transform = (b2Vec2(position[0] - offset * sin(angle),
@@ -531,7 +468,7 @@ class KheperaRobot(object):
                                     
         khepheraRightEyeDefaultPose = (0.0235,  0.0585)   # =  21.8858 degrees from the forward direction (to the *right* of y axis)
         khepheraLeftEyeDefaultPose  = (-0.0235, 0.0585)   # = -21.8858 degrees from the forward direction (to the *left* of y axis)
-        # Moved in along their radii, same angles: see eyeRadiusRatio in the class docstring
+        # Half way out along their radii: see eyeRadiusRatio in the class docstring
         khepheraRightEyeDefaultPose = tuple(c * self.eyeRadiusRatio for c in khepheraRightEyeDefaultPose)
         khepheraLeftEyeDefaultPose  = tuple(c * self.eyeRadiusRatio for c in khepheraLeftEyeDefaultPose)
         self.eyePoses = {'leftEye': khepheraLeftEyeDefaultPose, 'rightEye': khepheraRightEyeDefaultPose}
@@ -679,9 +616,9 @@ class KheperaRobot(object):
                 
         """Cache angles (in degrees) of eye sensors from robot's normal heading for future computation of irradiance:
            the direction of the sensor's position from the centre, plus orientation.  atan2, so that an
-           eye in the rear half faces backward (atan(y/x) turned it forward), and the orientation is
-           applied (it was ignored): review finding RS-07.  For the K-Junior's eyes, in front, the
-           angle is the same as atan's to the last bit."""
+           eye in the rear half faces backward (atan(y/x) would turn it forward), and the
+           orientation is applied.  For the K-Junior's eyes, in front, the angle is the same as
+           atan's to the last bit."""
         fx, fy = (rotMatrix * positionVector).A1
         sensorAngle = degrees(atan2(fy, fx)) + orientation
         sensorFixture.userData[sensorName + 'Angle']  = sensorAngle
@@ -756,7 +693,7 @@ class KheperaRobot(object):
             lightAmbRatio = targetLight.userData['ambRatio']
             cosAngleToTarget = np.dot(normalize(vecToTarget),eyeNormalVec)
             "Is target in range?  (The dot product of unit vectors can round"
-            "past +/-1, which acos refuses: review finding RS-06.)"
+            "past +/-1, which acos refuses.)"
             if degrees(acos(min(1.0, max(-1.0, cosAngleToTarget)))) > eyeAngleRange / 2:
                 continue
             directIntens = (lightIntensity * (1-lightAmbRatio)) * cosAngleToTarget
@@ -781,34 +718,34 @@ class KheperaRobot(object):
 
         
     def update(self, dt=None):
-        '''Update physical state before a simulation step of dt seconds.
+        '''Move the robot by a simulation step of dt seconds, before the
+        world steps.
 
-        'kinematic' drive: set the chassis' velocities so that the step moves
-        it exactly along the differential-drive arc (the wheel speeds are held
-        over the step): heading theta -> theta + omega dt, and the position
-        along the arc of radius v / omega.'''
-        if self.drive == 'legacy':
-            self.wheels['right'].update(self.rightSpeed)
-            self.wheels['left'].update(self.leftSpeed)
+        The pose moves exactly along the differential-drive arc (the wheel
+        speeds are held over the step): heading theta -> theta + omega dt,
+        and the position along the arc of radius v / omega, in double
+        precision.  The body is put at the new pose, still, so that the
+        world's step leaves it there.  No dt: no motion.'''
+        if not dt:
             return
         vR = max(-self.maxSpeed, min(self.maxSpeed, self.rightSpeed))
         vL = max(-self.maxSpeed, min(self.maxSpeed, self.leftSpeed))
         v = (vR + vL) / 2.0
         omega = (vR - vL) / self.wheelSeparation
-        theta = self.body.angle
-        if dt:
-            turn = omega * dt
-            if abs(turn) > 1e-9:
-                dx = v / omega * (sin(theta + turn) - sin(theta))
-                dy = -v / omega * (cos(theta + turn) - cos(theta))
-            else:
-                dx = v * dt * cos(theta + turn / 2.0)
-                dy = v * dt * sin(theta + turn / 2.0)
-            self.body.linearVelocity = (dx / dt, dy / dt)
-            self._placeWheels(self.body.position + b2Vec2(dx, dy), theta + turn)
+        x, y, theta = self._pose
+        turn = omega * dt
+        if abs(turn) > 1e-9:
+            dx = v / omega * (sin(theta + turn) - sin(theta))
+            dy = -v / omega * (cos(theta + turn) - cos(theta))
         else:
-            self.body.linearVelocity = (v * cos(theta), v * sin(theta))
-        self.body.angularVelocity = omega
+            dx = v * dt * cos(theta + turn / 2.0)
+            dy = v * dt * sin(theta + turn / 2.0)
+        self._setPose((x + dx, y + dy), theta + turn)
+
+    @property
+    def pose(self):
+        "The robot's pose in double precision: (x, y, heading in radians, in (-pi, pi])"
+        return self._pose
 
     def setSpeed(self, newRightSpeed, newLeftSpeed):
         "Set both wheel speeds, in rad/s"
@@ -844,7 +781,7 @@ class KheperaRobot(object):
         '''Set the named eye's threshold, saturation (both irradiances) and
         response shape; None leaves a value as it is.  See eyeResponse.  The
         new settings are checked before any is stored, so a refused call
-        leaves the eye as it was (review finding RS-12).'''
+        leaves the eye as it was.'''
         userData = (fixture if fixture is not None else self.sensors[sensorName]).userData
         I0 = float(threshold) if threshold is not None else userData[sensorName + 'Threshold']
         Isat = float(saturation) if saturation is not None else userData[sensorName + 'Saturation']
@@ -878,10 +815,8 @@ class KheperaRobot(object):
         A source of negative intensity (a "darkness source", --dark) gives a
         negative irradiance, and the response is signed: minus the response to
         the irradiance's magnitude, in [-1, 0].  So a darkness source is a light
-        whose stimulus has the opposite sign, as it was before the threshold and
-        saturation were introduced (7170286), when negative irradiances reached
-        the sensor units unchanged; without the sign the eye read 0 and --dark
-        runs were blind (review finding RE-01)."""
+        whose stimulus has the opposite sign; without the sign the eye would
+        read 0 and --dark runs would be blind."""
         if irradiance < 0:
             return -self.eyeResponse(sensorName, -irradiance)
         userData = self.sensors[sensorName].userData
@@ -911,85 +846,56 @@ class KheperaRobot(object):
 
     def rotateTo(self, angleRad):
         """Rotate robot and its wheels, about the robot's centre, to angleRad."""
-        self._setPose(self.body.position, angleRad)
+        self._setPose(self._pose[:2], angleRad)
 
     def moveTo(self, posVec):
         """Move robot and its wheels to posVec."""
-        self._setPose(b2Vec2(posVec[0], posVec[1]), self.body.angle)
+        self._setPose(posVec, self._pose[2])
+
+    def setPose(self, x=None, y=None, heading=None):
+        '''Put the robot at (x, y), facing heading (degrees, as the .traj
+        heading); None keeps a value.'''
+        px, py, angle = self._pose
+        self._setPose((px if x is None else x, py if y is None else y),
+                      angle if heading is None else radians(heading))
 
     def _setPose(self, position, angle):
-        "Put the chassis at (position, angle), the wheels with it"
-        if self.drive == 'kinematic':
-            self.body.transform = (position, angle)
-            self._placeWheels(position, angle)
-            return
-        ox, oy = self.body.position[0], self.body.position[1]
-        delta = angle - self.body.angle
-        c, s = cos(delta), sin(delta)
-        for wheel in self.wheels.values():
-            rx, ry = wheel.body.position[0] - ox, wheel.body.position[1] - oy
-            wheel.body.position = b2Vec2(position[0] + c * rx - s * ry, position[1] + s * rx + c * ry)
-            wheel.body.angle += delta
-        self.body.position = position
-        self.body.angle = angle
+        "Put the robot at (position, angle), the heading wrapped to (-pi, pi], the wheels with it"
+        angle = remainder(float(angle), 2 * pi)
+        if angle == -pi:
+            angle = pi
+        self._pose = (float(position[0]), float(position[1]), angle)
+        self.body.transform = (b2Vec2(self._pose[0], self._pose[1]), angle)
+        self.body.linearVelocity = (0, 0)
+        self.body.angularVelocity = 0
+        self._placeWheels(self._pose[:2], angle)
               
 class KheperaWheel(object):
-    """The Khepera-like robot's wheel-motor class. 
-       KheperaWheel implements the motorized wheel of a Khepera-like
-       differential drive robot. Geometrically, a wheel is implemented 
-       as viewed from the top down, i.e. as a box. 
-       Physically, it is a 2D block which can move forward and backward by:
-       - controlling its speed (up to the maximum); or
-       - sending it a force to propel it /forward/backward for brief periods of time.
-       The wheel implements a constant correction of its lateral velocity component 
-       to make it perform as a tire (velocity correction code 
-       borrowed from http://www.iforce2d.net/b2dtut/top-down-car).
-       The main parameters used to tune the wheel's behavior are:
-       - self.killAngVelParam which controls the forward behavior (default 0.1)
-       - self.maxForwardSpeed (default 10)   
-       - self.maxBackwardSpeed (default -10)
-       - self.density (the mass-controlling parameter, default 1)
-       
-       
-       IMPORTANT: at creation, the default orientation of a wheel is 0,
-                    i.e lying along the normal vector (1,0), or pointing to the right.
-                    THEREFORE, the forward velocity vector is to the right and side
-                    velocity is from the vector (0,-1). The methods getForwardNormal
-                    and getRightNormal behave accordingly"""
-       
-    def __init__(self, world, thickness = 2, diameter = 31.2, 
-                 killAngVelParam = 0.1, maxForwardSpeed=1, 
-                density = 1, name = None, follower = False):
-        
-        """A wheel for the Khepera robot. Creates a rectangular body 
-           of diameter X thickness size (i.e. its vertical projection).
-           follower: a kinematic body that collides with nothing, placed by the
-           robot ('kinematic' drive); otherwise a dynamic body ('legacy')."""
-        self.maxForwardSpeed =   maxForwardSpeed
-        self.maxBackwardSpeed =  -maxForwardSpeed
-        self.killAngVelParam = killAngVelParam
-                 
+    """A wheel of a Khepera-like robot, seen from above: a box of
+       diameter x thickness.  It is a kinematic body that collides with
+       nothing and follows the chassis (KheperaRobot._placeWheels): the
+       robot's motion comes from its differential drive, the wheels are
+       there to be drawn."""
+
+    def __init__(self, world, thickness = 2, diameter = 31.2, name = None):
         bodyDef = b2BodyDef()
-        bodyDef.type = b2_kinematicBody if follower else b2_dynamicBody
+        bodyDef.type = b2_kinematicBody
         self.body = world.CreateBody(bodyDef)
         polygonShape = b2PolygonShape()
         polygonShape.SetAsBox(diameter/2, thickness/2)
 
         fixtureDef = b2FixtureDef()
-        fixtureDef.density = density
         fixtureDef.shape = polygonShape
-        if follower:
-            fixtureDef.maskBits = 0
+        fixtureDef.maskBits = 0
         self.body.CreateFixture(fixtureDef)
-        self.force = 0
-        
+
         "set up pyglet shape and color for rendering"
         self.body.userData = {}
         self.setRenderingParameters(diameter,thickness)
-        
+
         if name is not None:
             self.name = name
-            
+
     def setRenderingParameters(self, thickness, diameter, color = (0.,0.,0.,1)):
         "default openGL rendering: box in black color"
         if _has_gl_context():
@@ -997,78 +903,8 @@ class KheperaWheel(object):
         else:
             self.body.userData['pygletShape'] = None
         self.body.userData['color'] = color
-        
-    def getMaxSpeed(self):
-        return self.maxForwardSpeed
-       
-    def getForwardNormal(self):
-        """Default forward velocity at creation is to the right (along (1,0) vector)"""
-        return self.body.GetWorldVector(b2Vec2(1,0))
-    
-    def getRightNormal(self):
-        """Default forward velocity at creation is to the right (along (1,0) vector),
-           hence lateral velocity *to* the right is along (0,-1) vector"""
-#         return self.body.GetWorldVector(b2Vec2(0,-1))
-        return self.body.GetWorldVector(b2Vec2(0,-1))
 
-    def getLeftNormal(self):
-        """Default forward velocity at creation is to the right (along (1,0) vector),
-           hence lateral velocity to the left is along (-1,0) vector"""
-        return self.body.GetWorldVector(b2Vec2(0,1))
 
-    def getRightLateralVelocity(self):
-        """Component of velocity (in world coords) orthogonal to wheel's forward direction."""
-        
-        return b2Dot(self.getRightNormal(),self.body.linearVelocity) * self.getRightNormal()
-    
-    def getForwardVelocity(self):
-        """Component of velocity (in world coords) in wheel's forward direction"""
-        
-        return b2Dot(self.getForwardNormal(),self.body.linearVelocity) * self.getForwardNormal()
-    
-    def updateFriction(self):
-        """Cancels all of lateral velocity and part of the angular velocity,
-           to make wheel's body behave more like a tire.
-           Progressively slow down forward speed to simulate ground friction"""
-         
-        "kill lateral velocity"
-        impulseRight = self.body.mass * -self.getRightLateralVelocity()
-        bodyOrig = self.body.GetWorldPoint((0,0))
-        self.body.ApplyLinearImpulse(impulseRight, bodyOrig, True)
-                
-        "kill part of angular velocity" 
-        self.body.ApplyAngularImpulse(self.killAngVelParam * self.body.inertia * - self.body.angularVelocity, True)
-
-    def updateDriveVelocity(self, desiredSpeed):
-        "Apply impulse to self.body to ramp up to desiredSpeed (almost) immediately"
-        
-        if desiredSpeed > self.maxForwardSpeed:
-            desiredSpeed = self.maxForwardSpeed
-        elif desiredSpeed < self.maxBackwardSpeed:
-            desiredSpeed = self.maxBackwardSpeed
-
-        newVelocity = self.getForwardNormal() * desiredSpeed
-        self.body.linearVelocity = newVelocity
-#         print "Velocity changing from %s to: %s" %(self.getForwardVelocity(), newVelocity)
-        
-#         print "%s wheel: FW normal: %s, right normal: %s" % (self.name, self.getForwardNormal(), self.getRightNormal())
-        # Not a ground friction: the world is seen from above and has no
-        # ground.  A fixture's friction counts only in its contacts with other
-        # bodies (walls, obstacles), and Box2D fixes a contact's friction when
-        # the contact begins, so this changes only the collisions that start
-        # after it.  Kept, like the whole 'legacy' drive, so that the runs
-        # made with it reproduce (review finding RS-14).
-        if abs(desiredSpeed) <0.001:
-            self.body.fixtures[0].friction = 1 
-        else:
-            self.body.fixtures[0].friction = 0.2 
-
-    
-    def update(self, desiredSpeed):
-        self.updateFriction()
-        self.updateDriveVelocity(desiredSpeed)
-        
-        
 # class KheperaSensor(object):
 #     """Implements a Khepera-like object light sensor. It knows how to return a 
 #        scalar value representing the intensity (irradiance) of light falling
@@ -1117,42 +953,30 @@ class KheperaWheel(object):
    
 class KheperaSimulation(object):
     """
-    KheperaSimulation is the overall class managing the simulation.
+    KheperaSimulation is the overall class managing the simulation of a
+    Khepera-like robot (see KheperaRobot) in its world.
     It is responsible for saving/loading of simulated worlds,
     as well for managing the simulation's operation: advancing, 
     stopping, resetting, etc.
     """
     
     def __init__(self, timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False,
-                 robotDrive = 'kinematic', synchronousStepping = True, stepsPerTick = 2,
-                 robotEyeRadiusRatio = None, robotModel = 'epuck2'):
+                 stepsPerTick = 2, robotModel = 'epuck2'):
         '''
         Default time step is 0.032 s, values for velocity 
         and position iterations are those recommended by pyBox2D docs
-        robotDrive: the robots' drive, 'kinematic' or 'legacy' (see KheperaRobot).
-        robotModel: the robots' model, 'epuck2' (default since 14 Oct 2026) or
-            'kjunior' (every run before); see KheperaRobot.
-        robotEyeRadiusRatio: for the K-Junior only, where its eyes sit along
-            their radii, 0.5 (half way in, no blind wedge between them; the
-            default) or 1.0 (on the rim, as in every run before 13 Oct 2026).
-        synchronousStepping: if True (default), the motors only set their wheel
-            speeds and the world advances by stepsPerTick steps once per
-            homeostat tick, after every unit has updated (tickAdvance, called by
-            Homeostat.runFor).  If False (the stepping of every run before
-            13 Oct 2026, kept to reproduce them), each motor's act() advances
-            the world one step: with two motors a tick is two steps, the left
-            wheel's command acting one step before the right one's.
-            stepsPerTick = 2 keeps a tick at 2 x timeStep, as before, and two
-            trajectory rows per tick.
+        robotModel: the robots' model, 'epuck2' (default) or 'kjunior'; see
+            KheperaRobot.
+        Stepping: the motors only set their wheel speeds, and the world
+            advances by stepsPerTick steps once per homeostat tick, after every
+            unit has updated (tickAdvance, called by Homeostat.runFor).
+            stepsPerTick = 2: a tick is 2 x timeStep, with two trajectory rows.
         
         The experimental world to simulate is passed in HomeoWorld as the name of the initializing
         method.'''
         
         self.running = running
-        self.robotDrive = robotDrive
-        self.robotEyeRadiusRatio = robotEyeRadiusRatio
         self.robotModel = robotModel
-        self.synchronousStepping = synchronousStepping
         self.stepsPerTick = stepsPerTick
         self.timeStep = timeStep
         self.vel_iters = vel_iters
@@ -1206,8 +1030,8 @@ class KheperaSimulation(object):
 #         if len(self.allBodies)>0:
 #             print "Robot is currently at: ", self.allBodies[self.robotName].body.position
         
-        # Look the builder up, then call it outside the try: an error inside a
-        # builder used to come out as one of these two messages (RS-14)
+        # Look the builder up, then call it outside the try, so that an error
+        # inside a builder does not come out as one of these two messages
         if not isinstance(getattr(self, 'homeoWorldToRun', None), str):
             raise Exception("Cannot run simulation without an experiment to run")
         builder = getattr(self, self.homeoWorldToRun, None)
@@ -1261,22 +1085,21 @@ class KheperaSimulation(object):
     
     def tickAdvance(self):
         '''Advance the world by one homeostat tick (stepsPerTick steps), once
-        every unit has updated.  Only with synchronousStepping: otherwise the
-        motors step the world themselves.'''
-        if self.synchronousStepping:
-            for i in range(self.stepsPerTick):
-                self.advanceSim()
+        every unit has updated.'''
+        for i in range(self.stepsPerTick):
+            self.advanceSim()
 
     def saveTrajectory(self):
         "Asks the TrajectorytWriter to save the robot's trajectory"
         self.trajectoryWriter.runOnce(transitionMessage = "CLOSEFILE")
 
     def newTrajectoryFile(self):
-        "Asks the trajectoryWriter to open a new trajectory file for the robot"
-        self.trajectoryWriter.runOnce(transitionMessage = "NEWFILE", 
-                                      modelName = self.allBodies[self.robotName].body.userData['ID'], 
-                                      position = (self.allBodies[self.robotName].body.position[0],0,self.allBodies[self.robotName].body.position[1]),
-                                      lights = self.allBodies[self.robotName].detectableLights)
+        """Asks the trajectoryWriter to open a new trajectory file for the
+        robot.  The file lists the world's sources, as the world's first file
+        does (in the 3c world, all five, not only the light ones)."""
+        self.trajectoryWriter.runOnce(transitionMessage = "NEWFILE",
+                                      modelName = self.allBodies[self.robotName].body.userData['ID'],
+                                      position = (self.allBodies[self.robotName].body.position[0],0,self.allBodies[self.robotName].body.position[1]))
         
     #===============================================================================
     #                             EXPERIMENTAL WORLDS
@@ -1313,8 +1136,6 @@ class KheperaSimulation(object):
                                                       name = kheperaRobotDefaultName, 
                                                       ID = kheperaRobotDefaultID,
                                                       initialPose = kheperaDefaultPosition,
-                                                      drive = self.robotDrive,
-                                                      eyeRadiusRatio = self.robotEyeRadiusRatio,
                                                       model = self.robotModel)
 
         'Add a light'
@@ -1383,8 +1204,6 @@ class KheperaSimulation(object):
             name=kheperaRobotDefaultName,
             ID=kheperaRobotDefaultID,
             initialPose=kheperaDefaultPosition,
-            drive=self.robotDrive,
-            eyeRadiusRatio=self.robotEyeRadiusRatio,
             model=self.robotModel)
         robot = self.allBodies[self.robotName]
 
@@ -1392,10 +1211,7 @@ class KheperaSimulation(object):
         """Each extra pair has the light eyes' receptors and field (see
         KheperaRobot): the four modalities share one geometry,
         so they differ only in how they are wired, and none has a blind wedge
-        ahead.  Before 13 Oct 2026 the pairs sat on the rim at +/-45 (temperature),
-        +/-10 (oxygen) and +/-35 degrees (organic), with wedges reaching 0.078 and
-        0.257 from the centre and, for temperature, a strip straight ahead never
-        seen.  Other layouts (direction-free sensing of heat and chemicals, more
+        ahead.  Other layouts (direction-free sensing of heat and chemicals, more
         sensors per modality): research note "Khepera sensor placement for
         Vehicle 3c"."""
         for modality in ('Temp', 'Oxy', 'Org'):
@@ -1873,9 +1689,7 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
 
 def nudgeWheels(sim, dRight, dLeft):
     """Change the speeds of sim's robot's wheels by dRight and dLeft rad/s
-    (the visualizer's O/L and Q/A keys).  The keys used to index getSpeed()'s
-    dict by position, and a robotName the visualizer does not have, and
-    crashed (review finding RS-09)."""
+    (the visualizer's O/L and Q/A keys)."""
     robot = sim.allBodies[sim.robotName]
     speeds = robot.getSpeed()                 # m/s at the rim
     robot.setSpeed(speeds['right'] / robot.wheelRadius + dRight,

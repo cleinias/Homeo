@@ -4,9 +4,8 @@
   Exp 1: standalone Ashby (discrete uniselector)
   Exp 2: standalone OU (continuous uniselector)
   Exp 3: GA + OU, 16-gene genome (4 units x 4 params), the _v2 setup
-Exp 4 (GA + OU with an evolvable dt_fast) was retired on 15 Oct 2026: dt_fast
-is a rescaling of mass and viscosity, which the _v2 setup evolves over the
-ranges dt_fast reached (review finding CU-11).
+The genome has no dt_fast gene: dt_fast is a rescaling of mass and viscosity,
+which the _v2 setup evolves.
 
 Console shows only generation/completion summaries.
 Full verbose output is saved to per-experiment log files.
@@ -24,7 +23,7 @@ import time
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ---------------------------------------------------------------------------
-# Single-experiment runners (called in subprocess via --exp N)no
+# Single-experiment runners (called in subprocess via --exp N)
 # ---------------------------------------------------------------------------
 
 def run_exp1():
@@ -144,12 +143,21 @@ def orchestrate():
 # Main
 # ---------------------------------------------------------------------------
 
+def parse_args(argv=None):
+    "The command line's options (see the module docstring); unknown ones are refused."
+    import argparse
+    parser = argparse.ArgumentParser(
+        description='The three phototaxis experiments (see the module docstring).')
+    parser.add_argument('--exp', type=int, choices=[1, 2, 3],
+                        help='run this experiment in this process (default: orchestrate)')
+    parser.add_argument('--workers', type=int, default=3,
+                        help='GA worker processes for experiment 3 (default 3)')
+    return parser.parse_args(argv)
+
+
 if __name__ == '__main__':
-    if '--exp' in sys.argv:
-        exp_num = int(sys.argv[sys.argv.index('--exp') + 1])
-        workers = 3
-        if '--workers' in sys.argv:
-            workers = int(sys.argv[sys.argv.index('--workers') + 1])
-        run_single(exp_num, workers)
+    args = parse_args()
+    if args.exp is not None:
+        run_single(args.exp, args.workers)
     else:
         orchestrate()

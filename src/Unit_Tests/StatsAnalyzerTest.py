@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-StatsAnalyzer's reports of a GA run (review findings HN-12, HN-13): the
+StatsAnalyzer's reports of a GA run: the
 hall-of-fame table and the comparison of value files.
 '''
 import unittest
@@ -14,7 +12,7 @@ from Helpers import StatsAnalyzer as SA
 
 
 def _logbook(fitnesses, noUnits=6):
-    "An old-style logbook (no metadata, classic 6-unit layout): one record per individual."
+    "A logbook with no metadata (classic 6-unit layout): one record per individual."
     rng = np.random.default_rng(1)
     return [{'genome': list(rng.random(noUnits * 4 + noUnits * noUnits)),
              'fitness': (f,), 'indivId': '%03d-%03d' % (1, i)}
@@ -24,20 +22,56 @@ def _logbook(fitnesses, noUnits=6):
 class HallOfFameTest(unittest.TestCase):
 
     def testRowsAreAlignedWithTheHeaders(self):
-        '''Each row is fitness, ID, then the genome, as long as the headers;
-        until 14 Oct 2026 the whole genome landed under "Fitness" (HN-12).'''
+        '''Each row is fitness, ID, then the genome, as long as the headers:
+        the genome does not land under "Fitness".'''
         logbook = _logbook([3.0, 1.0, 2.0])
         table = SA.hallOfFame(logbook, num=2).splitlines()
         headers = [h.strip() for h in table[0].strip('|').split('|')]
         rows = [[c.strip() for c in line.strip('|').split('|')] for line in table[2:]]
-        self.assertEqual(headers[:3], ['Fitness', 'IndivID', 'U1-mass'])
+        self.assertEqual(headers[:5], ['Fitness', 'IndivID', 'Evals', 'MeanFit', 'U1-mass'])
         self.assertEqual([len(r) for r in rows], [len(headers)] * 2)
         self.assertEqual([float(r[0]) for r in rows], [1.0, 2.0])
         self.assertEqual([r[1] for r in rows], ['001-001', '001-002'])
 
+    def testOneRowPerGenomeThePostEvaluationFirst(self):
+        '''A genome evaluated several times is one row, with its best and mean;
+        with a post-evaluation its genomes come first, by their mean.'''
+        logbook = _logbook([3.0, 1.0, 2.0])
+        again = dict(logbook[0], fitness=(0.5,), indivId='002-001')    # genome 0, luckier
+        logbook.append(again)
+        table = SA.hallOfFame(logbook, num=3).splitlines()
+        rows = [[c.strip() for c in line.strip('|').split('|')] for line in table[2:]]
+        self.assertEqual([(r[1], float(r[0]), int(r[2]), float(r[3])) for r in rows],
+                         [('001-000', 0.5, 2, 1.75), ('001-001', 1.0, 1, 1.0),
+                          ('001-002', 2.0, 1, 2.0)])
+        post = [{'indivId': '001-002', 'genome': logbook[2]['genome'], 'mean': 1.2, 'sd': 0.1,
+                 'scores': [1.1, 1.3]},
+                {'indivId': '002-001', 'genome': logbook[0]['genome'], 'mean': 2.5, 'sd': 0.2,
+                 'scores': [2.3, 2.7]}]
+        logbook.append({'finalIndivs': [], 'postEvaluation': post})
+        table = SA.hallOfFame(logbook, num=3).splitlines()
+        headers = [h.strip() for h in table[0].strip('|').split('|')]
+        self.assertEqual(headers[:6], ['Fitness', 'IndivID', 'Evals', 'MeanFit',
+                                       'PostMean', 'PostSD'])
+        rows = [[c.strip() for c in line.strip('|').split('|')] for line in table[2:]]
+        self.assertEqual([(r[1], r[4]) for r in rows],
+                         [('001-002', '1.2'), ('001-000', '2.5'), ('001-001', '')])
+
+    def testTheReplaysBestIsThePostEvaluationsBest(self):
+        import contextlib, io, sys
+        sys.argv = sys.argv[:1]
+        import replay_best_with_statelog as R
+        logbook = _logbook([3.0, 1.0, 2.0])
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(R.find_best_individual(logbook)['indivId'], '001-001')
+            logbook.append({'finalIndivs': [], 'postEvaluation': [
+                {'indivId': '001-002', 'genome': logbook[2]['genome'], 'mean': 1.2, 'sd': 0.1,
+                 'scores': [1.1, 1.3]}]})
+            self.assertEqual(R.find_best_individual(logbook)['indivId'], '001-002')
+
 
 class LogbookLayoutTest(unittest.TestCase):
-    """The layout StatsAnalyzer reads from a GA run's own logbook (HN-08): the
+    """The layout StatsAnalyzer reads from a GA run's own logbook: the
     classic, weight-free and weight-free-with-dt_fast genomes, each decoded
     and labelled as its setup builds it."""
 
@@ -60,10 +94,6 @@ class LogbookLayoutTest(unittest.TestCase):
         import contextlib, io
         from Helpers.GenomeDecoder import genomeDecoder
         for exp, genes, layout in (('initializeBraiten2_2_Full_GA', 40, None),
-                                   ('initializeBraiten2_direct_GA_continuous_weightfree_fixed', 10,
-                                    'weightfree_dt'),
-                                   ('initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt', 8,
-                                    'weightfree'),
                                    ('initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2', 8,
                                     'weightfree_v2')):
             with self.subTest(exp):
@@ -81,10 +111,6 @@ class LogbookLayoutTest(unittest.TestCase):
                     self.assertEqual(decoded, genomeDecoder(noUnits, record['genome'],
                                                             noEvolvedUnits=noEvolved, layout=found))
                     self.assertEqual(len(headers), 2 + len(decoded))
-                if layout == 'weightfree_dt':
-                    self.assertEqual(headers[2:9], ['U1-mass', 'U1-visc', 'U1-tau_a',
-                                                    'U1-maxDev', 'U1-dt_fast',
-                                                    'U1-mass_eff', 'U1-visc_eff'])
                 with contextlib.redirect_stdout(io.StringIO()):
                     table = SA.hallOfFame(logbook, num=1).splitlines()
                 best = min(records, key=lambda r: r['fitness'][0])
@@ -93,9 +119,8 @@ class LogbookLayoutTest(unittest.TestCase):
 
 class ValueFilesTest(unittest.TestCase):
     '''The comparison of input and output value files fails on a missing or
-    unreadable file and on files of different lengths, and checks the right
-    eye's dummy files too; until 14 Oct 2026 the first counted as identical,
-    the second raised and the third were skipped (HN-13).'''
+    unreadable file and on files of different lengths, without raising, and
+    checks the right eye's dummy files too.'''
 
     def setUp(self):
         import os, tempfile

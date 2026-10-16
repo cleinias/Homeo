@@ -1,6 +1,4 @@
 '''
-Created on Oct 3, 2026
-
 @author: stefano
 
 The Khepera robot's eyes.  irradAtSensor is physics -- the irradiance on the
@@ -45,7 +43,7 @@ class KheperaEyeTest(unittest.TestCase):
         D.set_start_pose(robot, x=7 - d / sqrt(2), y=7 - d / sqrt(2), heading=45)
 
     def testIrradianceIsUnclippedAndHasNoDistanceCutoff(self):
-        "irradAtSensor is physics: no clip at the old max value, no zero beyond the old 10 units"
+        "irradAtSensor is physics: no clip close to the light, no zero far from it"
         robot, _ = self._robot()
         self._face_light(robot, 0.3)
         self.assertGreater(robot.irradAtSensor('leftEye', robot.detectableLights), 100)

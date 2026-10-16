@@ -1,6 +1,4 @@
 '''
-Created on Mar 11, 2013
-
 @author: stefano
 '''
 from Core.HomeoUniselector import *
@@ -59,6 +57,10 @@ class HomeoUniselectorUniformRandom(HomeoUniselector):
         Initializes according to superclass first.
         '''
         super(HomeoUniselectorUniformRandom, self).__init__()
+        self.setDefaults()
+
+    def setDefaults(self):
+        "The default weights' range, [-1, 1], and no sound"
         self._lowerBound = -1
         self._upperBound = 1
         self._beeps = False

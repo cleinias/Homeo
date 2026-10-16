@@ -6,8 +6,7 @@ simulator, runs the simulation, and writes a .statelog file suitable for
 analysis with Helpers.StatelogAnalyzer.
 
 The experiment type (2-unit vs 4-unit, continuous vs discrete, weight-free
-vs classic) is auto-detected from the logbook metadata.  The --exp flag
-can override the auto-detection for old logbooks without metadata.
+vs classic) is read from the logbook's metadata.
 
 Usage:
     cd src
@@ -16,15 +15,17 @@ Usage:
     python replay_best_with_statelog.py --logbook path.lgb --visualize
     python replay_best_with_statelog.py --logbook path.lgb --ashby --steps 100000
 
-Reproducing a GA evaluation.  Logbooks written since GA runs became seeded
-(October 2026) record each individual's evalSeed.  For those, the replay builds
-and runs the homeostat through the GA's own code (prepare_genome_evaluation in
-Simulator/HomeoGenAlg.py), seeded with the logged evalSeed, for the logged run
-length, and reports whether it reproduced the logged fitness exactly.  --seed
-replays the same genome under other noise; --steps runs it for another length.
-Older logbooks have no evalSeed: their replay works as it always did (seed 45,
-60000 steps by default) and cannot reproduce the logged fitness.  The
-visualizer always uses the older path (it runs non-headless, unlike the GA).
+Reproducing a GA evaluation.  A GA logbook records each individual's
+evalSeed.  The replay builds and runs the homeostat through the GA's own code
+(prepare_genome_evaluation in Simulator/HomeoGenAlg.py), seeded with the
+logged evalSeed, for the logged run length, and reports whether it reproduced
+the logged fitness exactly.  An evaluation of k runs (--evals-per-individual
+k) is replayed whole: each run from its seed, compared with its logged score,
+and their mean with the logged fitness; the .statelog is run 1's, or run j's
+with --run j.  --seed replays the same genome under other noise; --steps runs
+it for another length.  A logbook without evalSeeds is
+replayed only with --seed.  The visualizer builds the homeostat the same way
+but runs it non-headless, unlike the GA, so it does not check the fitness.
 """
 
 import os
@@ -45,10 +46,6 @@ from Helpers.General_Helper_Functions import simulations_data_dir
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO
 from Helpers.HomeostatStateLogger import HomeostatStateLogger
 
-DEFAULT_LOGBOOK = os.path.join(
-    simulations_data_dir(),
-    'SimsData-2026-03-01-18-21-08',
-    'Logbook-2026-03-01-18-21-08.lgb')
 DEFAULT_STEPS = 60000
 
 # ── Map logbook metadata 'exp' strings to importable function names ──────
@@ -60,36 +57,14 @@ _EXP_FUNC_MAP = {
     'initializeBraiten2_2_Full_GA_phototaxis_continuous':
         'initializeBraiten2_2_Full_GA_phototaxis_continuous',
 
-    # Weight-free 4+2 vehicle (6 units, 4 evolved)
-    'initializeBraiten2_2_Full_GA_continuous_weightfree':
-        'initializeBraiten2_2_Full_GA_continuous_weightfree',
-    'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed':
-        'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed',
-    'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt':
-        'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt',
-
-    # Weight-free 2+2 direct vehicle (4 units, 2 evolved)
-    'initializeBraiten2_direct_GA_continuous_weightfree':
-        'initializeBraiten2_direct_GA_continuous_weightfree',
-    'initializeBraiten2_direct_GA_continuous_weightfree_fixed':
-        'initializeBraiten2_direct_GA_continuous_weightfree_fixed',
-    'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt':
-        'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
-
     # Classic full GA variants
     'initializeBraiten2_2_Full_GA':
         'initializeBraiten2_2_Full_GA',
     'initializeBraiten2_2_Full_GA_scototaxis':
         'initializeBraiten2_2_Full_GA_scototaxis',
 
-    # Braitenberg Vehicle 3c (multi-quality, 10 units, 2 evolved)
-    'initializeBraiten3c_GA_continuous_weightfree_fixed':
-        'initializeBraiten3c_GA_continuous_weightfree_fixed',
-    'initializeBraiten3c_GA_continuous_weightfree_open':
-        'initializeBraiten3c_GA_continuous_weightfree_open',
-
-    # The weight-free setups since 15 Oct 2026 (log-uniform mass and
-    # viscosity, no dt_fast gene: review finding CU-11)
+    # The weight-free setups: the 4+2 vehicle (6 units, 4 evolved), the 2+2
+    # direct vehicle (4 units, 2 evolved) and Vehicle 3c (10 units, 2 evolved)
     'initializeBraiten2_2_Full_GA_continuous_weightfree_v2':
         'initializeBraiten2_2_Full_GA_continuous_weightfree_v2',
     'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2':
@@ -113,29 +88,16 @@ def _get_logbook_metadata(logbook):
     return None
 
 
-def resolve_experiment_func(logbook, exp_override=None):
-    """Determine the experiment function from logbook metadata or --exp override.
+def resolve_experiment_func(logbook):
+    """Determine the experiment function from the logbook's metadata.
 
-    Returns (func, exp_name, metadata_dict_or_None).
+    Returns (func, exp_name, metadata_dict).
     """
     import Simulator.HomeoExperiments as HE
 
     meta = _get_logbook_metadata(logbook)
-
-    if exp_override is not None:
-        # Legacy --exp flag: 1 = fixed dt 2+2, 2 = variable dt 2+2
-        if exp_override == 1:
-            name = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt'
-        elif exp_override == 2:
-            name = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed'
-        else:
-            raise ValueError("Unknown --exp value: %d" % exp_override)
-        return getattr(HE, name), name, meta
-
     if meta is None:
-        raise RuntimeError(
-            "Logbook has no metadata record.  Use --exp to specify the "
-            "experiment type manually (1=fixed dt 2+2, 2=variable dt 2+2).")
+        raise RuntimeError("Logbook has no metadata record: its experiment is unknown.")
 
     exp_name = meta['exp']
     if exp_name not in _EXP_FUNC_MAP:
@@ -148,12 +110,22 @@ def resolve_experiment_func(logbook, exp_override=None):
 
 
 def find_best_individual(logbook, indiv_id=None):
-    """Find the best (or a specific) individual in a DEAP logbook."""
+    """Find a specific individual in a DEAP logbook, or the best: the
+    post-evaluation's best when the logbook has a post-evaluation (under
+    noise the lowest logged score is mostly a lucky draw), else the
+    individual with the lowest logged fitness."""
     if indiv_id:
         for rec in logbook:
             if rec.get('indivId') == indiv_id:
                 return rec
         raise ValueError("Individual %s not found in logbook" % indiv_id)
+
+    from Helpers.StatsAnalyzer import postEvaluationOf
+    post = postEvaluationOf(logbook)
+    if post:
+        print("  The post-evaluation's best: %s, mean %.5f over %d seeds"
+              % (post[0]['indivId'], post[0]['mean'], len(post[0]['scores'])))
+        return find_best_individual(logbook, post[0]['indivId'])
 
     best = None
     for rec in logbook:
@@ -168,14 +140,14 @@ def find_best_individual(logbook, indiv_id=None):
 def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby,
                      light_intensity=None):
     """Build the homeostat from a genome, mirroring the GA evaluation sequence.
-    light_intensity: the TARGET's, for setups that take it (see
-    HomeoExperiments.loggedLightIntensity).
+    light_intensity: the TARGET's, for setups that take it, as the logbook
+    records it (HomeoExperiments.loggedLightIntensity).
 
     Returns the configured Homeostat instance.
     """
     extra = {} if light_intensity is None else {'lightIntensity': light_intensity}
     # Build homeostat (first pass — pre-reset).  Every stream, numba's
-    # included, as a GA evaluation seeds them (SH-03).
+    # included, as a GA evaluation seeds them.
     from Simulator.HomeoGenAlg import seed_evaluation
     seed_evaluation(seed)
     hom = experiment_func(
@@ -200,73 +172,6 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
     return hom
 
 
-def replay(genome, steps, experiment_func, seed, output_path, log_interval=1,
-           use_ashby=False, model_name=None, light_intensity=None):
-    """Replay a genome headless and write a .statelog file."""
-
-    data_dir = os.path.dirname(output_path)
-
-    # Create backend and start world
-    # The data directory goes to the constructor: start() sets up the world,
-    # which opens a trajectory file at once.
-    lock = threading.Lock()
-    backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera', dataDir=data_dir)
-    backend.start('kheperaBraitenberg2_HOMEO_World')
-
-    hom = _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby,
-                           light_intensity)
-
-    # Label the robot model so .traj files get a meaningful name
-    if model_name:
-        backend.setRobotModel(model_name)
-
-    # Enable headless mode (same as GA)
-    hom._headless = True
-    hom._collectsData = False
-    hom._slowingFactor = 0
-    for u in hom.homeoUnits:
-        u._headless = True
-
-    # Connect units
-
-    # Run one tick so JIT arrays get created (headless mode initialises them
-    # lazily on the first selfUpdate).  The logger constructor inspects
-    # _jit_incoming_units to decide whether to read weights from JIT arrays
-    # vs Connection objects, so we must do this before constructing it.
-    hom.runOnce()
-
-    # Attach state logger (after JIT init)
-    logger = HomeostatStateLogger(
-        hom, backend.kheperaSimulation, output_path,
-        log_interval=log_interval,
-        target_pos=(7, 7),
-        seed=seed)
-
-    # steps counts ticks, as the GA's evaluation does (SG-02)
-    print("Running %d ticks ..." % steps)
-    t0 = time.time()
-
-    # Log tick 1 (which we already ran above)
-    logger.log_tick(1)
-
-    for tick in range(2, steps + 1):
-        hom.runOnce()
-        logger.log_tick(tick)
-        if tick % 10000 == 0:
-            elapsed = time.time() - t0
-            logger.flush()
-            print("  tick %d/%d  (%.1fs elapsed)" % (tick, steps, elapsed))
-
-    logger.close()
-    backend.kheperaSimulation.saveTrajectory()
-    elapsed = time.time() - t0
-
-    final_dist = backend.finalDisFromTarget()
-    print("Done in %.1fs.  Final distance: %.4f" % (elapsed, final_dist))
-    print("Statelog written to: %s" % output_path)
-    return final_dist
-
-
 class _Genome(list):
     "A genome as the GA evaluates it: the genes, plus the individual's ID."
     def __init__(self, genes, ID):
@@ -288,12 +193,12 @@ def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, outp
                         log_interval=1, use_ashby=False, model_name=None,
                         light_intensity=None):
     """Replay a genome headless exactly as the GA evaluated it, writing a
-       .statelog: the GA's own setup (prepare_genome_evaluation), seeded with
-       eval_seed, advanced with the same sim.step() calls.  Returns the final
-       distance from the target."""
+       .statelog (none if output_path is None): the GA's own setup
+       (prepare_genome_evaluation), seeded with eval_seed, advanced with the
+       same sim.step() calls.  Returns the final distance from the target."""
     from Simulator.HomeoGenAlg import prepare_genome_evaluation, seeded_evaluation
 
-    data_dir = os.path.dirname(output_path)
+    data_dir = os.path.dirname(output_path) if output_path else simulations_data_dir()
     params = {'dataDir': data_dir,
               'noNoise': meta.get('noNoise', False),
               'noUnisel': meta.get('noUnisel', False)}
@@ -310,27 +215,33 @@ def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, outp
         # them lazily on the first selfUpdate): the logger constructor
         # inspects _jit_incoming_units, so it must come after.
         sim.step()
-        logger = HomeostatStateLogger(
-            hom, backend.kheperaSimulation, output_path,
-            log_interval=log_interval,
-            target_pos=(7, 7),
-            seed=eval_seed)
+        logger = None
+        if output_path:
+            logger = HomeostatStateLogger(
+                hom, backend.kheperaSimulation, output_path,
+                log_interval=log_interval,
+                target_pos=(7, 7),
+                seed=eval_seed)
+            logger.log_tick(1)
 
         print("Running %d ticks ..." % steps)
         t0 = time.time()
-        logger.log_tick(1)
         for tick in range(2, steps + 1):
             sim.step()
-            logger.log_tick(tick)
+            if logger is not None:
+                logger.log_tick(tick)
             if tick % 10000 == 0:
-                logger.flush()
+                if logger is not None:
+                    logger.flush()
                 print("  tick %d/%d  (%.1fs elapsed)" % (tick, steps, time.time() - t0))
 
-        logger.close()
+        if logger is not None:
+            logger.close()
         backend.kheperaSimulation.saveTrajectory()
         final_dist = backend.finalDisFromTarget()
     print("Done in %.1fs.  Final distance: %.4f" % (time.time() - t0, final_dist))
-    print("Statelog written to: %s" % output_path)
+    if output_path:
+        print("Statelog written to: %s" % output_path)
     return final_dist
 
 
@@ -360,7 +271,9 @@ def replay_visualized(genome, experiment_func, seed, data_dir,
     glClearColor(0.55, 0.95, 1.0, 1.0)
 
     lock = threading.Lock()
-    backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera', dataDir=data_dir)
+    from Simulator.HomeoGenAlg import GA_ROBOT
+    backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera', dataDir=data_dir,
+                                    robotModel=GA_ROBOT)
     backend.start('kheperaBraitenberg2_HOMEO_World')
 
     hom = _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby,
@@ -422,24 +335,23 @@ def replay_visualized(genome, experiment_func, seed, data_dir,
 def main():
     parser = argparse.ArgumentParser(
         description='Replay a GA individual with per-tick state logging or visualization.')
-    parser.add_argument('--logbook', default=DEFAULT_LOGBOOK,
+    parser.add_argument('--logbook', required=True,
                         help='Path to DEAP logbook pickle (.lgb)')
     parser.add_argument('--indiv', default=None,
                         help='Individual ID to replay (default: best)')
     parser.add_argument('--steps', type=int, default=None,
                         help='Run length in homeostat ticks.  Default: the GA run length '
-                             'recorded in the logbook for logbooks with evalSeeds, '
-                             'else %d' % DEFAULT_STEPS)
+                             'recorded in the logbook, else %d' % DEFAULT_STEPS)
     parser.add_argument('--seed', type=int, default=None,
                         help="RNG seed.  Default: the individual's logged evalSeed, which "
-                             "reproduces its GA evaluation; 45 for older logbooks")
+                             "reproduces its GA evaluation (a logbook without one needs it)")
     parser.add_argument('--output', '-o', default=None,
                         help='Output .statelog path (default: auto-generated)')
     parser.add_argument('--log-interval', type=int, default=1,
                         help='Log every N-th tick (default: 1)')
-    parser.add_argument('--exp', type=int, default=None, choices=[1, 2],
-                        help='Override experiment type (legacy: 1=fixed dt 2+2, '
-                             '2=variable dt 2+2).  Normally auto-detected from logbook.')
+    parser.add_argument('--run', type=int, default=1,
+                        help='For an evaluation of k runs: the run whose .statelog is '
+                             'written (1..k, default 1)')
     parser.add_argument('--ashby', action='store_true',
                         help='Replace OU continuous uniselectors with Ashby discrete ones')
     parser.add_argument('--visualize', action='store_true',
@@ -452,21 +364,28 @@ def main():
         logbook = pickle.load(f)
     print("  %d records" % len(logbook))
 
-    # Resolve experiment function (auto-detect or --exp override)
-    exp_func, exp_name, meta = resolve_experiment_func(logbook, args.exp)
-    if meta:
-        print("  Experiment: %s  (%d units, %d evolved, genome size %d)"
-              % (exp_name, meta.get('noUnits', '?'), meta.get('noEvolvedUnits', '?'),
-                 meta.get('genomeSize', '?')))
-    else:
-        print("  Experiment: %s  (no metadata, using --exp override)" % exp_name)
+    # The experiment, from the logbook's metadata
+    exp_func, exp_name, meta = resolve_experiment_func(logbook)
+    print("  Experiment: %s  (%s units, %s evolved, genome size %s)"
+          % (exp_name, meta.get('noUnits', '?'), meta.get('noEvolvedUnits', '?'),
+             meta.get('genomeSize', '?')))
 
-    # The TARGET's intensity the run evaluated with: the GA phototaxis
-    # setups' was -100 until 15 Oct 2026, +100 since
+    # The robot the run evaluated with: the GA's
+    from Simulator.HomeoGenAlg import GA_ROBOT
+    if meta.get('robot') != GA_ROBOT:
+        sys.exit("Cannot replay: the logbook's robot is %r, the GA's %r (a logbook that "
+                 "records no robot is replayed by the Homeo commit that wrote it)"
+                 % (meta.get('robot'), GA_ROBOT))
+    print("  Robot: %s   Homeo: %s" % (meta['robot'], meta.get('homeo', 'unknown')))
+
+    # The TARGET's intensity the run evaluated with
     import Simulator.HomeoExperiments as HE
     light_intensity = None
     if hasattr(exp_func, 'lightIntensity'):
-        light_intensity = HE.loggedLightIntensity(exp_name, meta)
+        try:
+            light_intensity = HE.loggedLightIntensity(exp_name, meta)
+        except ValueError as e:
+            sys.exit('Cannot replay: %s' % e)
         print("  Light intensity: %g" % light_intensity)
 
     # Find individual
@@ -478,19 +397,22 @@ def main():
         indiv_id, fitness, [round(g, 4) for g in genome]))
 
     logged_seed = rec.get('evalSeed')
-    as_evaluated = logged_seed is not None and not args.visualize
-    if logged_seed is None:
-        print("  This logbook predates seeded GA evaluations (no evalSeed): the replay "
-              "cannot reproduce the logged fitness.")
-    if as_evaluated:
-        seed = logged_seed if args.seed is None else args.seed
-        steps = args.steps if args.steps is not None else (meta or {}).get('length', DEFAULT_STEPS)
-    else:
-        seed = 45 if args.seed is None and logged_seed is None else (
-            logged_seed if args.seed is None else args.seed)
-        steps = args.steps if args.steps is not None else DEFAULT_STEPS
+    if args.seed is None and logged_seed is None:
+        sys.exit("The logbook records no evalSeed for %s: give --seed" % indiv_id)
+    seed = logged_seed if args.seed is None else args.seed
+    steps = args.steps if args.steps is not None else (meta or {}).get('length', DEFAULT_STEPS)
     print("  Seed: %d%s   Steps: %d" % (
         seed, " (the logged evalSeed)" if seed == logged_seed else "", steps))
+    # The evaluation's runs: k with --evals-per-individual k, each from its
+    # seed (repeat_seeds), the logged fitness their mean
+    from Simulator.HomeoGenAlg import repeat_seeds, averaged_fitness
+    scores = rec.get('scores', [fitness])
+    run_seeds = repeat_seeds(seed, len(scores))
+    if not 1 <= args.run <= len(scores):
+        sys.exit("--run must be between 1 and %d" % len(scores))
+    if len(scores) > 1:
+        print("  An evaluation of %d runs, seeds %s; the statelog is run %d's"
+              % (len(scores), run_seeds, args.run))
 
     # Build a descriptive model name for the .traj file
     unisel_tag = 'ashby' if args.ashby else 'OU'
@@ -518,23 +440,26 @@ def main():
             output_path = os.path.join(output_dir,
                                        'replay-%s-%dk.statelog' % (indiv_id, steps // 1000))
 
-        if not as_evaluated:
-            replay(genome, steps, exp_func, seed, output_path,
-                   log_interval=args.log_interval, use_ashby=args.ashby,
-                   model_name=model_name, light_intensity=light_intensity)
-            return
-
-        final_dist = replay_as_evaluated(
-            genome, indiv_id, exp_name, meta or {}, steps, seed, output_path,
-            log_interval=args.log_interval, use_ashby=args.ashby,
-            model_name=model_name, light_intensity=light_intensity)
-        if seed == logged_seed and steps == (meta or {}).get('length') and not args.ashby:
-            replayed = (meta or {}).get('fitnessSign', 1) * final_dist
-            if replayed == fitness:
+        as_logged = seed == logged_seed and steps == meta.get('length') and not args.ashby
+        sign = meta.get('fitnessSign', 1)
+        replayed = []
+        for j, run_seed in enumerate(run_seeds, 1):
+            if j != args.run and not as_logged:
+                continue                # another seed or length: only the run asked for
+            final_dist = replay_as_evaluated(
+                genome, indiv_id, exp_name, meta, steps, run_seed,
+                output_path if j == args.run else None,
+                log_interval=args.log_interval, use_ashby=args.ashby,
+                model_name=model_name, light_intensity=light_intensity)
+            replayed.append(sign * final_dist)
+        if as_logged:
+            mean = averaged_fitness(replayed)[0]
+            if replayed == list(scores) and mean == fitness:
                 print("Reproduced the logged fitness exactly: %r" % fitness)
             else:
-                sys.exit("MISMATCH: replayed fitness %r, logged %r -- the replay does not "
-                         "repeat the GA's evaluation" % (replayed, fitness))
+                sys.exit("MISMATCH: replayed %r (mean %r), logged %r (mean %r) -- the replay "
+                         "does not repeat the GA's evaluation"
+                         % (replayed, mean, list(scores), fitness))
         else:
             print("Not a reproduction of the GA evaluation (other seed, length or "
                   "uniselector): the logged fitness was %r" % fitness)

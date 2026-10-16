@@ -1,14 +1,11 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
-When a discrete uniselector fires (review finding CU-10).  Like the relay
-of Ashby's homeostat it fires as soon as the essential variable is
-critical, then at most once every uniselectorTimeInterval ticks while it
-stays critical.  It used to look once per interval, at one tick: a needle
-critical on every tick but that one never fired, and one critical only on
-that tick did.
+When a discrete uniselector fires.  Like the relay of Ashby's homeostat it
+fires as soon as the essential variable is critical, then at most once every
+uniselectorTimeInterval ticks while it stays critical.  It watches every
+tick, not one tick per interval: a needle critical on every tick but one
+fires, and one that is not critical never does.
 '''
 from Core.HomeoUnit import HomeoUnit
 from Core.HomeoUnitNewtonian import HomeoUnitNewtonian
@@ -53,7 +50,7 @@ class UniselectorFiringTest(unittest.TestCase):
                 self.assertEqual(_firings(unitClass, lambda t: True),
                                  [0, INTERVAL, 2 * INTERVAL, 3 * INTERVAL, 4 * INTERVAL])
 
-    def testCriticalExceptAtTheOldSamplingTicksFires(self):
+    def testCriticalExceptOncePerIntervalFires(self):
         for unitClass in UNIT_CLASSES:
             with self.subTest(unitClass.__name__):
                 fired = _firings(unitClass, lambda t: (t + 1) % INTERVAL != 0)
