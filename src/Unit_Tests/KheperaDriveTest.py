@@ -24,10 +24,8 @@ class KheperaDriveTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.dataDir, ignore_errors=True)
 
-    def simulation(self, timeStep=0.032, drive='kinematic'):
-        # The legacy drive exists only for the K-Junior
-        sim = KheperaSimulation(timeStep=timeStep, robotDrive=drive,
-                                robotModel='kjunior' if drive == 'legacy' else 'epuck2')
+    def simulation(self, timeStep=0.032):
+        sim = KheperaSimulation(timeStep=timeStep)
         sim.setupWorld('kheperaBraitenberg2_HOMEO_World', self.dataDir)
         return sim, sim.allBodies['Khepera']
 
@@ -119,17 +117,11 @@ class KheperaDriveTest(unittest.TestCase):
         self.assertEqual(robot.getSpeed(), {'right': robot.wheelRadius, 'left': -0.5 * robot.wheelRadius})
         sim.saveTrajectory()
 
-    def testLegacyDriveIsKept(self):
-        "The old wheel physics, for reproducing earlier runs: ~14% of the speed at low speed"
-        sim, robot = self.simulation(drive='legacy')
-        robot.setSpeed(0.5, 0.5)
-        start = robot.body.position.copy()
-        for i in range(125):
-            sim.advanceSim()
+    def testTheRobotHasOneDrive(self):
+        "There is no choice of drive: the robot and the simulation take no drive argument"
+        with self.assertRaises(TypeError):
+            KheperaSimulation(robotDrive='legacy')
+        sim, robot = self.simulation()
         sim.saveTrajectory()
-        ratio = (robot.body.position - start).length / (125 * 0.032 * 0.5 * robot.wheelRadius)
-        self.assertAlmostEqual(ratio, 0.14, delta=0.03)
-
-    def testUnknownDriveIsRejected(self):
-        with self.assertRaises(ValueError):
-            self.simulation(drive='tank')
+        for wheel in robot.wheels.values():
+            self.assertFalse(hasattr(wheel, 'update'))

@@ -347,19 +347,12 @@ class KheperaRobot(object):
         Finally, the 'name' of the KheperaRobot is internal ref used by the simulation software to refer to the robot.
         The 'ID', instead,  is the particular version of a robot, used by the Genetic Algorithm code to record fitnesses
 
-        Motion (drive):
-        - 'kinematic' (default): a differential drive.  With wheel speeds vR, vL
-          (setRightSpeed/setLeftSpeed take rad/s; times the wheel radius, m/s)
-          and wheel separation L, the body moves forward at v = (vR + vL)/2 and
-          turns at omega = (vR - vL)/L (counterclockwise when the right wheel is
-          faster), integrated exactly over each simulation step.  The wheels are
-          bodies that follow the chassis, for rendering only.
-        - 'legacy': the wheels are light dynamic bodies jointed to the chassis,
-          whose velocity is overwritten each step; the joint solver decides what
-          reaches the chassis.  The robot then moved at about 14% of the commanded
-          speed at low speeds and about 82% above a threshold or when the wheels
-          turned in opposite directions (review finding RS-01).  Every run before
-          13 Oct 2026 used it; kept only to reproduce them.
+        Motion: a differential drive.  With wheel speeds vR, vL
+        (setRightSpeed/setLeftSpeed take rad/s; times the wheel radius, m/s)
+        and wheel separation L, the body moves forward at v = (vR + vL)/2 and
+        turns at omega = (vR - vL)/L (counterclockwise when the right wheel is
+        faster), integrated exactly over each simulation step.  The wheels are
+        bodies that follow the chassis, for rendering only.
 
         Speed units: maxWheelSpeed is in rad/s, the unit of setRightSpeed and
         setLeftSpeed, and getMaxSpeed returns it.  Its default, 1.55988 rad/s
@@ -367,7 +360,6 @@ class KheperaRobot(object):
         the motors' range was then reported as 100 rad/s * wheel radius = 1.55988
         (m/s), which setRightSpeed read as rad/s (review finding RS-03)."""
 
-    DRIVES = ('kinematic', 'legacy')
     MODELS = ('epuck2', 'kjunior')
 
     # The e-puck2 of Webots' E-puck.proto (R2025a), in metres, in the robot's
@@ -386,7 +378,7 @@ class KheperaRobot(object):
     def __init__(self, world, diameter = 126, wheelRadiusRatio = 0.12380, wheelThicknessRatio = 0.02380, wheelSepRatio = 0.76190, maxWheelSpeed = None,
                  rightEyeAngle = 21.9017, leftEyeAngle = -21.9017, centerEyeAngle = 0, density = 0.8, unit = 'mm',
                  color = (1.,0.,0.,0.5), name = "Khepera", ID = "Unspecified", initialPose = (0,0),
-                 drive = 'kinematic', eyeRadiusRatio = None, model = 'epuck2'):
+                 eyeRadiusRatio = None, model = 'epuck2'):
         '''model: 'epuck2' (default) or 'kjunior'.  diameter, the ratios, unit
         and eyeRadiusRatio (default 0.5) describe the K-Junior and apply only to
         it; maxWheelSpeed (rad/s) defaults to the model's.'''
@@ -400,11 +392,8 @@ class KheperaRobot(object):
             factor = 0.1
         else:
             factor = 1
-        if drive not in self.DRIVES:
-            raise ValueError('drive must be one of %s, not %r' % (self.DRIVES, drive))
         if model not in self.MODELS:
             raise ValueError('model must be one of %s, not %r' % (self.MODELS, model))
-        self.drive = drive
         self.model = model
         self.density = density
         if model == 'epuck2':
@@ -450,21 +439,10 @@ class KheperaRobot(object):
         self.leftSpeed = 0
         self.speedIncrease = 1
         
-        'Left wheel'       
-        frontLeftWheel = KheperaWheel(world, thickness = wheelThickness,  diameter = self.wheelRadius*2,
-                                        maxForwardSpeed = self.maxSpeed,  name = 'left',
-                                        follower = (drive == 'kinematic'))
-        frontLeftWheel.body.position = self.body.worldCenter + (0, self.wheelSeparation/2)
-        if drive == 'kinematic':
-            frontRightWheel = KheperaWheel(world, thickness = wheelThickness,
-                                           diameter = self.wheelRadius*2,
-                                           maxForwardSpeed = self.maxSpeed,  name = 'right', follower = True)
-            self.wheels = {'left': frontLeftWheel, 'right': frontRightWheel}
-            self._placeWheels(self.body.position, self.body.angle)
-        else:
-            if model != 'kjunior':
-                raise ValueError("the 'legacy' drive exists only for the K-Junior")
-            self._addJointedWheels(world, frontLeftWheel, wheelThicknessRatio, wheelRadiusRatio, wheelSepRatio)
+        self.wheels = {side: KheperaWheel(world, thickness=wheelThickness,
+                                          diameter=self.wheelRadius * 2, name=side)
+                       for side in ('left', 'right')}
+        self._placeWheels(self.body.position, self.body.angle)
 
         self.eyeReceptors = {}       # eye name -> [((x, y), facing in degrees), ...]
         if model == 'epuck2':
@@ -475,39 +453,8 @@ class KheperaRobot(object):
         "Add a pyglet shape to robot's body for rendering"
         self.setRenderingParameters(color = color)
 
-    def _addJointedWheels(self, world, frontLeftWheel, wheelThicknessRatio, wheelRadiusRatio, wheelSepRatio):
-        "The 'legacy' drive: dynamic wheels on locked revolute joints"
-        jointDef = b2RevoluteJointDef()
-        jointDef.bodyA = self.body
-        jointDef.enableLimit = True
-        jointDef.lowerAngle = 0
-        jointDef.upperAngle = 0
-        jointDef.localAnchorB = (0,0)
-         
-        jointDef.bodyB = frontLeftWheel.body
-        jointDef.localAnchorA = (0, self.diameter * wheelSepRatio/2)
-        world.CreateJoint(jointDef)
-        self.wheels = {'left': frontLeftWheel}
-#         print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontLeftWheel), id(self), 'left')
-
-        'Right wheel'
-        frontRightWheel = KheperaWheel(world, thickness = self.diameter * wheelThicknessRatio,  diameter = self.diameter * wheelRadiusRatio*2,
-                                        maxForwardSpeed = self.maxSpeed,  name = 'right')  
-        frontRightWheel.body.position = self.body.worldCenter + (0, -self.diameter * wheelSepRatio/2)
-        jointDef = b2RevoluteJointDef()
-        jointDef.bodyA = self.body
-        jointDef.enableLimit = True
-        jointDef.lowerAngle = 0
-        jointDef.upperAngle = 0
-        jointDef.localAnchorB = (0,0)
-        jointDef.bodyB = frontRightWheel.body
-        jointDef.localAnchorA = (0, -self.diameter * wheelSepRatio/2)
-        world.CreateJoint(jointDef)
-        self.wheels['right']= frontRightWheel
-#         print "At time: %s I added wheel %s to robot ID %s as %s" % (datetime.now().strftime('%Y:%m:%d:%H:%M:%S.%f'), id(frontRightWheel), id(self), 'right')
-
     def _placeWheels(self, position, angle):
-        "Put the wheels of the 'kinematic' drive at their places on a chassis at (position, angle)"
+        "Put the wheels at their places on a chassis at (position, angle)"
         for side, offset in (('left', self.wheelSeparation / 2), ('right', -self.wheelSeparation / 2)):
             wheel = self.wheels[side].body
             wheel.transform = (b2Vec2(position[0] - offset * sin(angle),
@@ -783,14 +730,10 @@ class KheperaRobot(object):
     def update(self, dt=None):
         '''Update physical state before a simulation step of dt seconds.
 
-        'kinematic' drive: set the chassis' velocities so that the step moves
-        it exactly along the differential-drive arc (the wheel speeds are held
-        over the step): heading theta -> theta + omega dt, and the position
-        along the arc of radius v / omega.'''
-        if self.drive == 'legacy':
-            self.wheels['right'].update(self.rightSpeed)
-            self.wheels['left'].update(self.leftSpeed)
-            return
+        Set the chassis' velocities so that the step moves it exactly along
+        the differential-drive arc (the wheel speeds are held over the step):
+        heading theta -> theta + omega dt, and the position along the arc of
+        radius v / omega.'''
         vR = max(-self.maxSpeed, min(self.maxSpeed, self.rightSpeed))
         vL = max(-self.maxSpeed, min(self.maxSpeed, self.leftSpeed))
         v = (vR + vL) / 2.0
@@ -919,77 +862,35 @@ class KheperaRobot(object):
 
     def _setPose(self, position, angle):
         "Put the chassis at (position, angle), the wheels with it"
-        if self.drive == 'kinematic':
-            self.body.transform = (position, angle)
-            self._placeWheels(position, angle)
-            return
-        ox, oy = self.body.position[0], self.body.position[1]
-        delta = angle - self.body.angle
-        c, s = cos(delta), sin(delta)
-        for wheel in self.wheels.values():
-            rx, ry = wheel.body.position[0] - ox, wheel.body.position[1] - oy
-            wheel.body.position = b2Vec2(position[0] + c * rx - s * ry, position[1] + s * rx + c * ry)
-            wheel.body.angle += delta
-        self.body.position = position
-        self.body.angle = angle
+        self.body.transform = (position, angle)
+        self._placeWheels(position, angle)
               
 class KheperaWheel(object):
-    """The Khepera-like robot's wheel-motor class. 
-       KheperaWheel implements the motorized wheel of a Khepera-like
-       differential drive robot. Geometrically, a wheel is implemented 
-       as viewed from the top down, i.e. as a box. 
-       Physically, it is a 2D block which can move forward and backward by:
-       - controlling its speed (up to the maximum); or
-       - sending it a force to propel it /forward/backward for brief periods of time.
-       The wheel implements a constant correction of its lateral velocity component 
-       to make it perform as a tire (velocity correction code 
-       borrowed from http://www.iforce2d.net/b2dtut/top-down-car).
-       The main parameters used to tune the wheel's behavior are:
-       - self.killAngVelParam which controls the forward behavior (default 0.1)
-       - self.maxForwardSpeed (default 10)   
-       - self.maxBackwardSpeed (default -10)
-       - self.density (the mass-controlling parameter, default 1)
-       
-       
-       IMPORTANT: at creation, the default orientation of a wheel is 0,
-                    i.e lying along the normal vector (1,0), or pointing to the right.
-                    THEREFORE, the forward velocity vector is to the right and side
-                    velocity is from the vector (0,-1). The methods getForwardNormal
-                    and getRightNormal behave accordingly"""
-       
-    def __init__(self, world, thickness = 2, diameter = 31.2, 
-                 killAngVelParam = 0.1, maxForwardSpeed=1, 
-                density = 1, name = None, follower = False):
-        
-        """A wheel for the Khepera robot. Creates a rectangular body 
-           of diameter X thickness size (i.e. its vertical projection).
-           follower: a kinematic body that collides with nothing, placed by the
-           robot ('kinematic' drive); otherwise a dynamic body ('legacy')."""
-        self.maxForwardSpeed =   maxForwardSpeed
-        self.maxBackwardSpeed =  -maxForwardSpeed
-        self.killAngVelParam = killAngVelParam
-                 
+    """A wheel of a Khepera-like robot, seen from above: a box of
+       diameter x thickness.  It is a kinematic body that collides with
+       nothing and follows the chassis (KheperaRobot._placeWheels): the
+       robot's motion comes from its differential drive, the wheels are
+       there to be drawn."""
+
+    def __init__(self, world, thickness = 2, diameter = 31.2, name = None):
         bodyDef = b2BodyDef()
-        bodyDef.type = b2_kinematicBody if follower else b2_dynamicBody
+        bodyDef.type = b2_kinematicBody
         self.body = world.CreateBody(bodyDef)
         polygonShape = b2PolygonShape()
         polygonShape.SetAsBox(diameter/2, thickness/2)
 
         fixtureDef = b2FixtureDef()
-        fixtureDef.density = density
         fixtureDef.shape = polygonShape
-        if follower:
-            fixtureDef.maskBits = 0
+        fixtureDef.maskBits = 0
         self.body.CreateFixture(fixtureDef)
-        self.force = 0
-        
+
         "set up pyglet shape and color for rendering"
         self.body.userData = {}
         self.setRenderingParameters(diameter,thickness)
-        
+
         if name is not None:
             self.name = name
-            
+
     def setRenderingParameters(self, thickness, diameter, color = (0.,0.,0.,1)):
         "default openGL rendering: box in black color"
         if _has_gl_context():
@@ -997,78 +898,8 @@ class KheperaWheel(object):
         else:
             self.body.userData['pygletShape'] = None
         self.body.userData['color'] = color
-        
-    def getMaxSpeed(self):
-        return self.maxForwardSpeed
-       
-    def getForwardNormal(self):
-        """Default forward velocity at creation is to the right (along (1,0) vector)"""
-        return self.body.GetWorldVector(b2Vec2(1,0))
-    
-    def getRightNormal(self):
-        """Default forward velocity at creation is to the right (along (1,0) vector),
-           hence lateral velocity *to* the right is along (0,-1) vector"""
-#         return self.body.GetWorldVector(b2Vec2(0,-1))
-        return self.body.GetWorldVector(b2Vec2(0,-1))
 
-    def getLeftNormal(self):
-        """Default forward velocity at creation is to the right (along (1,0) vector),
-           hence lateral velocity to the left is along (-1,0) vector"""
-        return self.body.GetWorldVector(b2Vec2(0,1))
 
-    def getRightLateralVelocity(self):
-        """Component of velocity (in world coords) orthogonal to wheel's forward direction."""
-        
-        return b2Dot(self.getRightNormal(),self.body.linearVelocity) * self.getRightNormal()
-    
-    def getForwardVelocity(self):
-        """Component of velocity (in world coords) in wheel's forward direction"""
-        
-        return b2Dot(self.getForwardNormal(),self.body.linearVelocity) * self.getForwardNormal()
-    
-    def updateFriction(self):
-        """Cancels all of lateral velocity and part of the angular velocity,
-           to make wheel's body behave more like a tire.
-           Progressively slow down forward speed to simulate ground friction"""
-         
-        "kill lateral velocity"
-        impulseRight = self.body.mass * -self.getRightLateralVelocity()
-        bodyOrig = self.body.GetWorldPoint((0,0))
-        self.body.ApplyLinearImpulse(impulseRight, bodyOrig, True)
-                
-        "kill part of angular velocity" 
-        self.body.ApplyAngularImpulse(self.killAngVelParam * self.body.inertia * - self.body.angularVelocity, True)
-
-    def updateDriveVelocity(self, desiredSpeed):
-        "Apply impulse to self.body to ramp up to desiredSpeed (almost) immediately"
-        
-        if desiredSpeed > self.maxForwardSpeed:
-            desiredSpeed = self.maxForwardSpeed
-        elif desiredSpeed < self.maxBackwardSpeed:
-            desiredSpeed = self.maxBackwardSpeed
-
-        newVelocity = self.getForwardNormal() * desiredSpeed
-        self.body.linearVelocity = newVelocity
-#         print "Velocity changing from %s to: %s" %(self.getForwardVelocity(), newVelocity)
-        
-#         print "%s wheel: FW normal: %s, right normal: %s" % (self.name, self.getForwardNormal(), self.getRightNormal())
-        # Not a ground friction: the world is seen from above and has no
-        # ground.  A fixture's friction counts only in its contacts with other
-        # bodies (walls, obstacles), and Box2D fixes a contact's friction when
-        # the contact begins, so this changes only the collisions that start
-        # after it.  Kept, like the whole 'legacy' drive, so that the runs
-        # made with it reproduce (review finding RS-14).
-        if abs(desiredSpeed) <0.001:
-            self.body.fixtures[0].friction = 1 
-        else:
-            self.body.fixtures[0].friction = 0.2 
-
-    
-    def update(self, desiredSpeed):
-        self.updateFriction()
-        self.updateDriveVelocity(desiredSpeed)
-        
-        
 # class KheperaSensor(object):
 #     """Implements a Khepera-like object light sensor. It knows how to return a 
 #        scalar value representing the intensity (irradiance) of light falling
@@ -1124,12 +955,11 @@ class KheperaSimulation(object):
     """
     
     def __init__(self, timeStep = 0.032, vel_iters = 6, pos_iters = 2, running = False,
-                 robotDrive = 'kinematic', synchronousStepping = True, stepsPerTick = 2,
+                 synchronousStepping = True, stepsPerTick = 2,
                  robotEyeRadiusRatio = None, robotModel = 'epuck2'):
         '''
         Default time step is 0.032 s, values for velocity 
         and position iterations are those recommended by pyBox2D docs
-        robotDrive: the robots' drive, 'kinematic' or 'legacy' (see KheperaRobot).
         robotModel: the robots' model, 'epuck2' (default since 14 Oct 2026) or
             'kjunior' (every run before); see KheperaRobot.
         robotEyeRadiusRatio: for the K-Junior only, where its eyes sit along
@@ -1149,7 +979,6 @@ class KheperaSimulation(object):
         method.'''
         
         self.running = running
-        self.robotDrive = robotDrive
         self.robotEyeRadiusRatio = robotEyeRadiusRatio
         self.robotModel = robotModel
         self.synchronousStepping = synchronousStepping
@@ -1313,7 +1142,6 @@ class KheperaSimulation(object):
                                                       name = kheperaRobotDefaultName, 
                                                       ID = kheperaRobotDefaultID,
                                                       initialPose = kheperaDefaultPosition,
-                                                      drive = self.robotDrive,
                                                       eyeRadiusRatio = self.robotEyeRadiusRatio,
                                                       model = self.robotModel)
 
@@ -1383,7 +1211,6 @@ class KheperaSimulation(object):
             name=kheperaRobotDefaultName,
             ID=kheperaRobotDefaultID,
             initialPose=kheperaDefaultPosition,
-            drive=self.robotDrive,
             eyeRadiusRatio=self.robotEyeRadiusRatio,
             model=self.robotModel)
         robot = self.allBodies[self.robotName]

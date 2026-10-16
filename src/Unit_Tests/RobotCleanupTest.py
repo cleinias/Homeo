@@ -165,13 +165,6 @@ class WorldSetupErrorsTest(_WorldTest):
         with self.assertRaisesRegex(Exception, 'Cannot find \\*\\* noSuchWorld \\*\\*'):
             KheperaSimulation().setupWorld('noSuchWorld', self.dataDir)
 
-    def testTheLegacyWheelsHaveNoDeadImpulseCode(self):
-        "The wheel's unused impulse drive printed a line per impulse; it is gone"
-        sim = self.world(robotModel='kjunior', robotDrive='legacy')
-        wheel = sim.allBodies['Khepera'].wheels['right']
-        self.assertFalse(hasattr(wheel, 'updateDriveImpulse'))
-        self.assertFalse(hasattr(wheel, 'getCurrentSpeed'))
-
 
 class SensorsAcrossAResetTest(unittest.TestCase):
     '''RS-11: the light and quality sensors held the robot object, so a
