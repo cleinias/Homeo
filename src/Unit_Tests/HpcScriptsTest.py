@@ -45,14 +45,19 @@ class RunArrayLocalDryRunTest(unittest.TestCase):
 
     def testSeedsByTaskIndexOrByList(self):
         '''Task i runs seed 20260930 + i, as on Grace, or the i-th entry of
-        --seeds and --env-seeds, counting from the first task of the range.'''
+        --seeds and --env-seeds, whatever the range: two ranges given the
+        same lists take different entries.'''
         with tempfile.TemporaryDirectory() as rundir:
             out = self.dryRun(rundir, '-a', '3-4')
             self.assertIn('task 3: would run with seed 20260933\n', out)
             self.assertIn('task 4: would run with seed 20260934\n', out)
-            out = self.dryRun(rundir, '-a', '3-4', '--seeds', '5,5', '--env-seeds', '7,8')
+            lists = ('--seeds', '1,2,5,6', '--env-seeds', '11,12,7,8')
+            out = self.dryRun(rundir, '-a', '3-4', *lists)
             self.assertIn('task 3: would run with seed 5, env seed 7\n', out)
-            self.assertIn('task 4: would run with seed 5, env seed 8\n', out)
+            self.assertIn('task 4: would run with seed 6, env seed 8\n', out)
+            out = self.dryRun(rundir, '-a', '1-2', *lists)
+            self.assertIn('task 1: would run with seed 1, env seed 11\n', out)
+            self.assertIn('task 2: would run with seed 2, env seed 12\n', out)
 
     def testOptionsAfterTwoDashesGoToTheExperiment(self):
         '''Anything after -- goes to the experiment as it is, and the run

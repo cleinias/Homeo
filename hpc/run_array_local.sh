@@ -373,12 +373,14 @@ task_done() {   # a task counts as finished once its own batch CSV exists
         compgen -G "$RUNDIR/task_$1/*/batch_*.csv" >/dev/null 2>&1
 }
 
-# Task i's entry in a comma-separated list, counting from FIRST.
+# Task i's entry in a comma-separated list: the i-th, whatever the range, so
+# that a range split across machines, or a narrowed resume, takes each task's
+# own entry from the same list.
 list_entry() {   # list_entry <list> <option name> <task>
-    local pos=$(( $3 - FIRST + 1 )) value
-    value=$(echo "$1" | cut -d, -f"$pos")
+    local value
+    value=$(echo "$1" | cut -d, -f"$3")
     if [ -z "$value" ]; then
-        echo "   task $3: no $pos-th entry in $2" >&2
+        echo "   task $3: no $3-th entry in $2" >&2
         return 1
     fi
     echo "$value"
