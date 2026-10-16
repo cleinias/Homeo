@@ -60,36 +60,14 @@ _EXP_FUNC_MAP = {
     'initializeBraiten2_2_Full_GA_phototaxis_continuous':
         'initializeBraiten2_2_Full_GA_phototaxis_continuous',
 
-    # Weight-free 4+2 vehicle (6 units, 4 evolved)
-    'initializeBraiten2_2_Full_GA_continuous_weightfree':
-        'initializeBraiten2_2_Full_GA_continuous_weightfree',
-    'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed':
-        'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed',
-    'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt':
-        'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt',
-
-    # Weight-free 2+2 direct vehicle (4 units, 2 evolved)
-    'initializeBraiten2_direct_GA_continuous_weightfree':
-        'initializeBraiten2_direct_GA_continuous_weightfree',
-    'initializeBraiten2_direct_GA_continuous_weightfree_fixed':
-        'initializeBraiten2_direct_GA_continuous_weightfree_fixed',
-    'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt':
-        'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
-
     # Classic full GA variants
     'initializeBraiten2_2_Full_GA':
         'initializeBraiten2_2_Full_GA',
     'initializeBraiten2_2_Full_GA_scototaxis':
         'initializeBraiten2_2_Full_GA_scototaxis',
 
-    # Braitenberg Vehicle 3c (multi-quality, 10 units, 2 evolved)
-    'initializeBraiten3c_GA_continuous_weightfree_fixed':
-        'initializeBraiten3c_GA_continuous_weightfree_fixed',
-    'initializeBraiten3c_GA_continuous_weightfree_open':
-        'initializeBraiten3c_GA_continuous_weightfree_open',
-
-    # The weight-free setups since 15 Oct 2026 (log-uniform mass and
-    # viscosity, no dt_fast gene: review finding CU-11)
+    # The weight-free setups: the 4+2 vehicle (6 units, 4 evolved), the 2+2
+    # direct vehicle (4 units, 2 evolved) and Vehicle 3c (10 units, 2 evolved)
     'initializeBraiten2_2_Full_GA_continuous_weightfree_v2':
         'initializeBraiten2_2_Full_GA_continuous_weightfree_v2',
     'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2':
@@ -113,29 +91,16 @@ def _get_logbook_metadata(logbook):
     return None
 
 
-def resolve_experiment_func(logbook, exp_override=None):
-    """Determine the experiment function from logbook metadata or --exp override.
+def resolve_experiment_func(logbook):
+    """Determine the experiment function from the logbook's metadata.
 
-    Returns (func, exp_name, metadata_dict_or_None).
+    Returns (func, exp_name, metadata_dict).
     """
     import Simulator.HomeoExperiments as HE
 
     meta = _get_logbook_metadata(logbook)
-
-    if exp_override is not None:
-        # Legacy --exp flag: 1 = fixed dt 2+2, 2 = variable dt 2+2
-        if exp_override == 1:
-            name = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt'
-        elif exp_override == 2:
-            name = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed'
-        else:
-            raise ValueError("Unknown --exp value: %d" % exp_override)
-        return getattr(HE, name), name, meta
-
     if meta is None:
-        raise RuntimeError(
-            "Logbook has no metadata record.  Use --exp to specify the "
-            "experiment type manually (1=fixed dt 2+2, 2=variable dt 2+2).")
+        raise RuntimeError("Logbook has no metadata record: its experiment is unknown.")
 
     exp_name = meta['exp']
     if exp_name not in _EXP_FUNC_MAP:
@@ -437,9 +402,6 @@ def main():
                         help='Output .statelog path (default: auto-generated)')
     parser.add_argument('--log-interval', type=int, default=1,
                         help='Log every N-th tick (default: 1)')
-    parser.add_argument('--exp', type=int, default=None, choices=[1, 2],
-                        help='Override experiment type (legacy: 1=fixed dt 2+2, '
-                             '2=variable dt 2+2).  Normally auto-detected from logbook.')
     parser.add_argument('--ashby', action='store_true',
                         help='Replace OU continuous uniselectors with Ashby discrete ones')
     parser.add_argument('--visualize', action='store_true',
@@ -453,7 +415,7 @@ def main():
     print("  %d records" % len(logbook))
 
     # Resolve experiment function (auto-detect or --exp override)
-    exp_func, exp_name, meta = resolve_experiment_func(logbook, args.exp)
+    exp_func, exp_name, meta = resolve_experiment_func(logbook)
     if meta:
         print("  Experiment: %s  (%d units, %d evolved, genome size %d)"
               % (exp_name, meta.get('noUnits', '?'), meta.get('noEvolvedUnits', '?'),

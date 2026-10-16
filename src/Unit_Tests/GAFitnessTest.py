@@ -62,14 +62,14 @@ class FitnessSignTest(GATestCase):
     def testParallelEvaluationIsSignTimesDistance(self):
         for sign in (1, -1):
             with self.subTest(sign=sign):
-                config = {'experiment': 'initializeBraiten2_direct_GA_continuous_weightfree_fixed',
+                config = {'experiment': 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
                           'experimentParams': {'dataDir': self.tmp, 'noNoise': False,
                                                'noUnisel': False},
                           'stepsSize': 5, 'dataDir': self.tmp, 'fitnessSign': sign}
                 with mock.patch.dict(HomeoGenAlg._worker_config, config, clear=True), \
                         mock.patch.object(SimulatorBackendHOMEO, 'finalDisFromTarget', return_value=2.5), \
                         contextlib.redirect_stdout(io.StringIO()):
-                    self.assertEqual(_run_genome_evaluation(Ind([0.5] * 10, '000-001')), (sign * 2.5,))
+                    self.assertEqual(_run_genome_evaluation(Ind([0.5] * 8, '000-001')), (sign * 2.5,))
 
     def testLowerIsBetter(self):
         '''With every vehicle in one tournament, phototaxis selects the

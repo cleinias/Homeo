@@ -180,9 +180,6 @@ class HomeoGASimulGUI(QWidget):
             "initializeBraiten2_2_Full_GA_phototaxis_continuous",
             "initializeBraiten2_2_Full_GA_continuous_weightfree_v2",
             "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2",
-            "initializeBraiten2_2_Full_GA_continuous_weightfree",
-            "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed",
-            "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt",
             "initializeBraiten2_2_Full_GA_scototaxis",
             "initializeBraiten2_2_Full_GA",
         ])

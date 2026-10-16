@@ -135,7 +135,7 @@ def run(seed, workers):
     from Simulator.HomeoGenAlg import HomeoGASimulation
     HomeoGASimulation.dataDirRoot = {out!r}
     ga = HomeoGASimulation(postEvalTop=0, stepsSize=100, popSize=4, generSize=1,
-                           exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
+                           exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
                            simulatorBackend='HOMEO', nWorkers=workers,
                            noiseScheme={scheme!r})
     pop = ga.generateRandomPop(randomSeed=seed)
@@ -212,8 +212,7 @@ class SeededGARunTest(unittest.TestCase):
         self.assertEqual(len(set.union(*by_generation.values())), 2)
 
 
-# A small GA (experiment 2: evolvable dt_fast, so some evaluations stop at
-# maxRuns before their planned tick count) whose logbook the replay reads.
+# A small GA whose logbook the replay reads.
 _GA_FOR_REPLAY = '''
 import sys, glob
 sys.path.insert(0, {src!r})
@@ -221,7 +220,7 @@ if __name__ == '__main__':
     from Simulator.HomeoGenAlg import HomeoGASimulation
     HomeoGASimulation.dataDirRoot = {out!r}
     ga = HomeoGASimulation(postEvalTop=0, stepsSize=100, popSize=6, generSize=1,
-                           exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed',
+                           exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
                            simulatorBackend='HOMEO', nWorkers=2)
     ga.runGaSimulation(ga.generateRandomPop(randomSeed=3))
     print('LOGBOOK ' + sorted(glob.glob(ga.dataDir + '/Logbook-*.lgb'))[-1])

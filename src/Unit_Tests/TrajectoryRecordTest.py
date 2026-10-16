@@ -66,7 +66,7 @@ class TrajectoryRecordTest(unittest.TestCase):
         from Simulator.SimulatorBackend import SimulatorBackendHOMEO
         backend = SimulatorBackendHOMEO(lock=threading.Lock(), robotName='Khepera')
         backend.kheperaSimulation.dataDir = self.tmp.name
-        setup = HE.initializeBraiten3c_GA_continuous_weightfree_fixed   # the 3c world
+        setup = HE.initializeBraiten3c_GA_continuous_weightfree_fixed_v2   # the 3c world
         setup(np.full(setup.genomeSize, 0.5), backendSimulator=backend)
         sim = backend.kheperaSimulation
         for _ in range(3):

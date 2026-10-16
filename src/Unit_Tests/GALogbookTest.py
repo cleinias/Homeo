@@ -29,7 +29,7 @@ class GALogbookTest(unittest.TestCase):
             self.addCleanup(setattr, HomeoGASimulation, 'dataDirRoot', root)
             with contextlib.redirect_stdout(io.StringIO()):
                 ga = HomeoGASimulation(postEvalTop=0, stepsSize=20, popSize=4, generSize=3,
-                                       exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
+                                       exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
                                        simulatorBackend='HOMEO')
                 ga.runGaSimulation(ga.generateRandomPop(randomSeed=1))
             [path] = glob.glob(os.path.join(ga.dataDir, 'Logbook-*.lgb'))
@@ -40,9 +40,8 @@ class GALogbookTest(unittest.TestCase):
             summaries = [r for r in logbook if 'finalIndivs' in r]
             self.assertEqual(len(summaries), 1)
             self.assertEqual(summaries[0]['finalPop'], 4)
-            # how the genes decode: 'weightfree' and 'weightfree_v2' have
-            # the same size (CU-11)
-            self.assertEqual(summaries[0]['genomeLayout'], 'weightfree')
+            # how the genes decode (a layout's size does not identify it)
+            self.assertEqual(summaries[0]['genomeLayout'], 'weightfree_v2')
             self.assertEqual(summaries[0]['lightIntensity'], 100)    # a light
 
 

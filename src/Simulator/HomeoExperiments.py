@@ -977,35 +977,22 @@ initializeBraiten2_2_Full_GA_phototaxis_continuous.noEvolvedUnits = 4
 initializeBraiten2_2_Full_GA_phototaxis_continuous.fitnessSign = 1  # minimise distance
 
 
-# The genome layouts of the weight-free setups: genes per evolved unit, in
-# the order [mass, viscosity, tau_a, maxDeviation(, dt_fast)].
-#   'weightfree_v2'  the _v2 setups (since 15 Oct 2026): 4 genes; mass and
-#                    viscosity log-uniform (HomeoUnit.massFromGeneLog,
-#                    viscosityFromGeneLog), dt_fast 1
-#   'weightfree_dt'  legacy (the setups without _v2 or _fixed_dt): 5 genes;
-#                    mass in [1, 10], viscosity in [0, 10], linear, and
-#                    dt_fast in [0.2, 2] -- a rescaling of mass and
-#                    viscosity (review finding CU-11)
-#   'weightfree'     legacy (the _fixed_dt setups): 4 genes, linear, dt_fast 1
-# The legacy setups are kept to replay the genomes evolved with them.
-WEIGHTFREE_GENES_PER_UNIT = {'weightfree_v2': 4, 'weightfree_dt': 5, 'weightfree': 4}
+# The genome layout of the weight-free setups, 'weightfree_v2': 4 genes per
+# evolved unit, [mass, viscosity, tau_a, maxDeviation]; mass and viscosity
+# log-uniform (HomeoUnit.massFromGeneLog, viscosityFromGeneLog), dt_fast 1.
+# (GenomeDecoder also reads the layouts of older logbooks.)
+WEIGHTFREE_GENES_PER_UNIT = {'weightfree_v2': 4}
 
 
 def _decodeWeightfreeUnits(units, homeoGenome, layout):
-    "Set the evolved units' mass, viscosity, maxDeviation (and dt_fast) from the genome"
+    "Set the evolved units' mass, viscosity and maxDeviation from the genome"
     perUnit = WEIGHTFREE_GENES_PER_UNIT[layout]
     for i, unit in enumerate(units):
         genes = homeoGenome[i * perUnit:(i + 1) * perUnit]
-        if layout == 'weightfree_v2':
-            unit.mass = HomeoUnit.massFromGeneLog(genes[0])
-            unit.viscosity = HomeoUnit.viscosityFromGeneLog(genes[1])
-        else:
-            unit.mass = HomeoUnit.massFromWeightWeightfree(genes[0])    # [1, 10]
-            unit.viscosity = HomeoUnit.viscosityfromWeight(genes[1])    # [0, 10]
+        unit.mass = HomeoUnit.massFromGeneLog(genes[0])
+        unit.viscosity = HomeoUnit.viscosityFromGeneLog(genes[1])
         # gene 2 = tau_a (applied after the uniselector swap)
         unit.maxDeviation = HomeoUnit.maxDeviationFromWeight(genes[3])
-        if layout == 'weightfree_dt':
-            unit.dt_fast = HomeoUnit.dtFastFromWeight(genes[4])
 
 
 def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
@@ -1022,9 +1009,8 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     2026: review finding SE-13.)
 
     Genome: the genes of each evolved unit, in the layout given (see
-    WEIGHTFREE_GENES_PER_UNIT): 'weightfree_v2' (default), 4 genes per unit
-    (16 with eyes, 8 without), [mass, viscosity, tau_a, maxDeviation]; the
-    legacy 'weightfree_dt' (5 genes, with dt_fast) and 'weightfree' (4).
+    WEIGHTFREE_GENES_PER_UNIT): 'weightfree_v2', 4 genes per unit (16 with
+    eyes, 8 without), [mass, viscosity, tau_a, maxDeviation].
 
     Connection weights are NOT in the genome — they are initialised to small
     random values and evolved online by the OU process.  Without eyes the
@@ -1189,78 +1175,6 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     return hom
 
 
-def initializeBraiten2_2_Full_GA_continuous_weightfree(homeoGenome, noHomeoParameters=5,
-        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
-        lightIntensity=GA_LIGHT_INTENSITY):
-    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
-    evolved with it; new runs use initializeBraiten2_2_Full_GA_continuous_weightfree_v2.
-    Weight-free phototaxis GA experiment with continuous (OU) uniselectors.
-    All connections between evolved units are active (random topology).
-
-    Genome: 20 genes = 4 units x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
-    Connection weights are initialised to small random values and evolved online
-    by the Ornstein-Uhlenbeck process — they are NOT in the genome.
-    '''
-    return _setup_continuous_weightfree_homeostat(
-        homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='random', layout='weightfree_dt',
-        lightIntensity=lightIntensity)
-
-initializeBraiten2_2_Full_GA_continuous_weightfree.noEvolvedUnits = 4
-initializeBraiten2_2_Full_GA_continuous_weightfree.fitnessSign = 1
-initializeBraiten2_2_Full_GA_continuous_weightfree.genomeSize = 20
-initializeBraiten2_2_Full_GA_continuous_weightfree.genomeLayout = 'weightfree_dt'
-
-
-def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed(homeoGenome, noHomeoParameters=5,
-        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
-        lightIntensity=GA_LIGHT_INTENSITY):
-    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
-    evolved with it; new runs use initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2.
-    Weight-free phototaxis GA experiment with continuous (OU) uniselectors.
-    Fixed Braitenberg cross-wiring topology: Left Eye -> Right Motor,
-    Right Eye -> Left Motor, Left Sensor -> Left Eye, Right Sensor -> Right Eye.
-
-    Genome: 20 genes = 4 units x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
-    Connection weights are initialised to small random values and evolved online
-    by the Ornstein-Uhlenbeck process — they are NOT in the genome.
-    '''
-    return _setup_continuous_weightfree_homeostat(
-        homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_dt',
-        lightIntensity=lightIntensity)
-
-initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.noEvolvedUnits = 4
-initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.fitnessSign = 1
-initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.genomeSize = 20
-initializeBraiten2_2_Full_GA_continuous_weightfree_fixed.genomeLayout = 'weightfree_dt'
-
-
-def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt(homeoGenome, noHomeoParameters=4,
-        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
-        lightIntensity=GA_LIGHT_INTENSITY):
-    '''Legacy (layout 'weightfree', mass and viscosity linear): kept to replay the genomes
-    evolved with it; new runs use initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2.
-    Weight-free phototaxis GA experiment with continuous (OU) uniselectors
-    and fixed dt_fast = 1.0 (same integration timestep as Experiments 1-2).
-    Fixed Braitenberg cross-wiring topology.
-
-    Genome: 16 genes = 4 units x 4 params [mass, viscosity, tau_a, maxDeviation].
-    dt_fast is fixed at 1.0 — not in the genome.
-    Connection weights are initialised to small random values and evolved online
-    by the Ornstein-Uhlenbeck process — they are NOT in the genome.
-    '''
-    return _setup_continuous_weightfree_homeostat(
-        homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree',
-        lightIntensity=lightIntensity)
-
-initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.noEvolvedUnits = 4
-initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.fitnessSign = 1
-initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.genomeSize = 16
-initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt.genomeLayout = 'weightfree'
-
-
 def initializeBraiten2_2_Full_GA_continuous_weightfree_v2(homeoGenome, noHomeoParameters=4,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         lightIntensity=GA_LIGHT_INTENSITY):
@@ -1324,72 +1238,6 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
                                                   noUnisel=noUnisel, topology=topology,
                                                   layout=layout, eyes=False,
                                                   lightIntensity=lightIntensity)
-
-
-def initializeBraiten2_direct_GA_continuous_weightfree(homeoGenome, noHomeoParameters=5,
-        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
-        lightIntensity=GA_LIGHT_INTENSITY):
-    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
-    evolved with it; new runs use initializeBraiten2_direct_GA_continuous_weightfree_v2.
-    Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors.
-    All connections on motor units are active (random topology).
-
-    Genome: 10 genes = 2 units x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
-    '''
-    return _setup_continuous_weightfree_homeostat_direct(
-        homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='random', layout='weightfree_dt',
-        lightIntensity=lightIntensity)
-
-initializeBraiten2_direct_GA_continuous_weightfree.noEvolvedUnits = 2
-initializeBraiten2_direct_GA_continuous_weightfree.noUnits = 4
-initializeBraiten2_direct_GA_continuous_weightfree.fitnessSign = 1
-initializeBraiten2_direct_GA_continuous_weightfree.genomeSize = 10
-initializeBraiten2_direct_GA_continuous_weightfree.genomeLayout = 'weightfree_dt'
-
-
-def initializeBraiten2_direct_GA_continuous_weightfree_fixed(homeoGenome, noHomeoParameters=5,
-        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
-        lightIntensity=GA_LIGHT_INTENSITY):
-    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
-    evolved with it; new runs use initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.
-    Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors.
-    Fixed Braitenberg cross-wiring: Left Sensor -> Right Motor, Right Sensor -> Left Motor.
-
-    Genome: 10 genes = 2 units x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
-    '''
-    return _setup_continuous_weightfree_homeostat_direct(
-        homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_dt',
-        lightIntensity=lightIntensity)
-
-initializeBraiten2_direct_GA_continuous_weightfree_fixed.noEvolvedUnits = 2
-initializeBraiten2_direct_GA_continuous_weightfree_fixed.noUnits = 4
-initializeBraiten2_direct_GA_continuous_weightfree_fixed.fitnessSign = 1
-initializeBraiten2_direct_GA_continuous_weightfree_fixed.genomeSize = 10
-initializeBraiten2_direct_GA_continuous_weightfree_fixed.genomeLayout = 'weightfree_dt'
-
-
-def initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt(homeoGenome, noHomeoParameters=4,
-        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
-        lightIntensity=GA_LIGHT_INTENSITY):
-    '''Legacy (layout 'weightfree', mass and viscosity linear): kept to replay the genomes
-    evolved with it; new runs use initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.
-    Weight-free 2+2 direct phototaxis GA experiment with continuous (OU) uniselectors
-    and fixed dt_fast = 1.0.  Fixed Braitenberg cross-wiring.
-
-    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation].
-    '''
-    return _setup_continuous_weightfree_homeostat_direct(
-        homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree',
-        lightIntensity=lightIntensity)
-
-initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.noEvolvedUnits = 2
-initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.noUnits = 4
-initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.fitnessSign = 1
-initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.genomeSize = 8
-initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt.genomeLayout = 'weightfree'
 
 
 def initializeBraiten2_direct_GA_continuous_weightfree_v2(homeoGenome, noHomeoParameters=4,
@@ -1518,8 +1366,8 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
     2 motor units (evolved via genome) + 8 sensor input units (pure transducers).
 
     Genome: the 2 motors' genes in the layout given (see
-    WEIGHTFREE_GENES_PER_UNIT): 'weightfree_v2' (default), 8 genes = 2 x
-    [mass, viscosity, tau_a, maxDeviation]; the legacy 'weightfree_dt', 10.
+    WEIGHTFREE_GENES_PER_UNIT): 'weightfree_v2', 8 genes = 2 x
+    [mass, viscosity, tau_a, maxDeviation].
 
     Connection weights are NOT in the genome — they are initialised to small
     random values and evolved online by the OU process.
@@ -1687,48 +1535,6 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
     return hom
 
 
-def initializeBraiten3c_GA_continuous_weightfree_fixed(homeoGenome, noHomeoParameters=5,
-        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
-        lightIntensity=GA_LIGHT_INTENSITY):
-    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
-    evolved with it; new runs use initializeBraiten3c_GA_continuous_weightfree_fixed_v2.
-    Braitenberg Vehicle 3c with fixed Braitenberg wiring and variable dt_fast.
-
-    Genome: 10 genes = 2 motors x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
-    '''
-    return _setup_braitenberg_3c_homeostat(
-        homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_dt',
-        lightIntensity=lightIntensity)
-
-initializeBraiten3c_GA_continuous_weightfree_fixed.noEvolvedUnits = 2
-initializeBraiten3c_GA_continuous_weightfree_fixed.noUnits = 10
-initializeBraiten3c_GA_continuous_weightfree_fixed.fitnessSign = 1
-initializeBraiten3c_GA_continuous_weightfree_fixed.genomeSize = 10
-initializeBraiten3c_GA_continuous_weightfree_fixed.genomeLayout = 'weightfree_dt'
-
-
-def initializeBraiten3c_GA_continuous_weightfree_open(homeoGenome, noHomeoParameters=5,
-        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
-        lightIntensity=GA_LIGHT_INTENSITY):
-    '''Legacy (layout 'weightfree_dt', with a dt_fast gene): kept to replay the genomes
-    evolved with it; new runs use initializeBraiten3c_GA_continuous_weightfree_open_v2.
-    Braitenberg Vehicle 3c with open topology (all 16 sensor->motor connections).
-
-    Genome: 10 genes = 2 motors x 5 params [mass, viscosity, tau_a, maxDeviation, dt_fast].
-    '''
-    return _setup_braitenberg_3c_homeostat(
-        homeoGenome, backendSimulator, dataDir=dataDir,
-        noNoise=noNoise, noUnisel=noUnisel, topology='open', layout='weightfree_dt',
-        lightIntensity=lightIntensity)
-
-initializeBraiten3c_GA_continuous_weightfree_open.noEvolvedUnits = 2
-initializeBraiten3c_GA_continuous_weightfree_open.noUnits = 10
-initializeBraiten3c_GA_continuous_weightfree_open.fitnessSign = 1
-initializeBraiten3c_GA_continuous_weightfree_open.genomeSize = 10
-initializeBraiten3c_GA_continuous_weightfree_open.genomeLayout = 'weightfree_dt'
-
-
 def initializeBraiten3c_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         lightIntensity=GA_LIGHT_INTENSITY):
@@ -1775,29 +1581,13 @@ initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeLayout = 'weightfree_
 # The setups whose TARGET was a darkness source (-100) until 15 Oct 2026, for
 # replaying the genomes evolved with them (loggedLightIntensity)
 for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA_phototaxis_continuous,
-           initializeBraiten2_2_Full_GA_continuous_weightfree,
-           initializeBraiten2_2_Full_GA_continuous_weightfree_fixed,
-           initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt,
-           initializeBraiten2_direct_GA_continuous_weightfree,
-           initializeBraiten2_direct_GA_continuous_weightfree_fixed,
-           initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt,
-           initializeBraiten3c_GA_continuous_weightfree_fixed,
-           initializeBraiten3c_GA_continuous_weightfree_open,
            ):
     _f.darkBefore20261015 = True
 for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA_phototaxis_continuous,
-           initializeBraiten2_2_Full_GA_continuous_weightfree,
-           initializeBraiten2_2_Full_GA_continuous_weightfree_fixed,
-           initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt,
            initializeBraiten2_2_Full_GA_continuous_weightfree_v2,
            initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2,
-           initializeBraiten2_direct_GA_continuous_weightfree,
-           initializeBraiten2_direct_GA_continuous_weightfree_fixed,
-           initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt,
            initializeBraiten2_direct_GA_continuous_weightfree_v2,
            initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2,
-           initializeBraiten3c_GA_continuous_weightfree_fixed,
-           initializeBraiten3c_GA_continuous_weightfree_open,
            initializeBraiten3c_GA_continuous_weightfree_fixed_v2,
            initializeBraiten3c_GA_continuous_weightfree_open_v2,
            ):

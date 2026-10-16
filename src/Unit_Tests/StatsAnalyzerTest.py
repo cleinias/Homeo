@@ -60,10 +60,6 @@ class LogbookLayoutTest(unittest.TestCase):
         import contextlib, io
         from Helpers.GenomeDecoder import genomeDecoder
         for exp, genes, layout in (('initializeBraiten2_2_Full_GA', 40, None),
-                                   ('initializeBraiten2_direct_GA_continuous_weightfree_fixed', 10,
-                                    'weightfree_dt'),
-                                   ('initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt', 8,
-                                    'weightfree'),
                                    ('initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2', 8,
                                     'weightfree_v2')):
             with self.subTest(exp):
@@ -81,10 +77,6 @@ class LogbookLayoutTest(unittest.TestCase):
                     self.assertEqual(decoded, genomeDecoder(noUnits, record['genome'],
                                                             noEvolvedUnits=noEvolved, layout=found))
                     self.assertEqual(len(headers), 2 + len(decoded))
-                if layout == 'weightfree_dt':
-                    self.assertEqual(headers[2:9], ['U1-mass', 'U1-visc', 'U1-tau_a',
-                                                    'U1-maxDev', 'U1-dt_fast',
-                                                    'U1-mass_eff', 'U1-visc_eff'])
                 with contextlib.redirect_stdout(io.StringIO()):
                     table = SA.hallOfFame(logbook, num=1).splitlines()
                 best = min(records, key=lambda r: r['fitness'][0])

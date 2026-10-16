@@ -28,7 +28,7 @@ from deap import tools
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from Simulator.HomeoGenAlg import HomeoGASimulation
 
-EXP = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt'
+EXP = 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2'
 
 
 def fitnessOf(genome):

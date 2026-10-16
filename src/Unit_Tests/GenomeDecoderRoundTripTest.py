@@ -3,8 +3,7 @@ GenomeDecoder against the GA setups it decodes.
 
 Each setup builds a homeostat from a genome; decoding the same genome must
 give the body parameters the setup gave its evolved units: masses,
-viscosities, OU timescales, maxDeviations and dt_fast for the weight-free
-layouts; masses, viscosities, uniselector intervals and maxDeviations for
+viscosities, OU timescales and maxDeviations for the weight-free layout; masses, viscosities, uniselector intervals and maxDeviations for
 the classic one.
 '''
 import os
@@ -20,13 +19,11 @@ from Simulator.SimulatorBackend import SimulatorBackendHOMEO
 from Helpers.GenomeDecoder import genomeDecoder
 
 
-SETUPS = ['initializeBraiten2_2_Full_GA_continuous_weightfree',
-          'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_dt',
-          'initializeBraiten2_direct_GA_continuous_weightfree',
-          'initializeBraiten2_direct_GA_continuous_weightfree_fixed_dt',
-          'initializeBraiten3c_GA_continuous_weightfree_fixed',
+SETUPS = ['initializeBraiten2_2_Full_GA_continuous_weightfree_v2',
           'initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2',
           'initializeBraiten2_direct_GA_continuous_weightfree_v2',
+          'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
+          'initializeBraiten3c_GA_continuous_weightfree_fixed_v2',
           'initializeBraiten3c_GA_continuous_weightfree_open_v2']
 
 CLASSIC_SETUPS = ['initializeBraiten2_2_Full_GA',
@@ -74,7 +71,7 @@ class GenomeDecoderRoundTripTest(unittest.TestCase):
         "A GA setup's noUnits (6 when undeclared) is the number of units it builds"
         names = [name for name in dir(HomeoExperiments) if name.startswith('initialize')
                  and hasattr(getattr(HomeoExperiments, name), 'noEvolvedUnits')]
-        self.assertGreater(len(names), 15)
+        self.assertEqual(len(names), 10)
         for name in names:
             setup = getattr(HomeoExperiments, name)
             size = getattr(setup, 'genomeSize', CLASSIC_GENOME_SIZE)
