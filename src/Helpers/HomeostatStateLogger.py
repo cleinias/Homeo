@@ -199,13 +199,19 @@ class HomeostatStateLogger:
             vals.append('%.6f' % unit.inputTorque)
             vals.append('%.6f' % unit.stressLevel())
 
-        # Connection weights (signed = weight * switch).  The JIT arrays are
-        # authoritative whenever they exist: jit_weights holds magnitudes and
-        # jit_switches the signs, so their product is the signed weight.  They
-        # appear on the first tick, so this resolves per sample rather than once.
+        # Connection weights (signed = weight * switch), from wherever they
+        # are newest -- the rule of HomeoUnit.flushJitArrays.  The JIT arrays
+        # (magnitudes in jit_weights, signs in jit_switches) are, once they
+        # exist (from the first tick, so this resolves per sample): the
+        # headless OU uniselector evolves only them.  But a connection changed
+        # through its setters since the arrays were built (_jitStale: a
+        # discrete uniselector's firing) is newer; the arrays catch up only at
+        # the next tick.  Read from the arrays, a firing's weights came one row
+        # late, and never on the last tick (R2-REC-1, CD-12).
         for _, unit, conn, jit_idx in self._conn_sources:
             jw = getattr(unit, '_jit_weights', None)
-            if jw is not None and jit_idx < len(jw):
+            if (jw is not None and jit_idx < len(jw)
+                    and not getattr(conn, '_jitStale', False)):
                 w = jw[jit_idx] * unit._jit_switches[jit_idx]
             else:
                 w = conn.weight * conn.switch
