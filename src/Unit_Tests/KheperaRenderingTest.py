@@ -14,6 +14,7 @@ from pyglet.window import key, mouse
 
 import json
 import os
+import site
 import subprocess
 import sys
 import tempfile
@@ -131,8 +132,11 @@ class KheperaRenderingTest(unittest.TestCase):
                 f.write(textwrap.dedent(script))
             # Without numba's compiler: numba's LLVM and the one in Mesa's
             # software renderer (llvmpipe, offscreen) abort when one process
-            # compiles with both
-            env = dict(os.environ, HOME=tmp, PYTHONPATH=SRC_DIR, NUMBA_DISABLE_JIT='1')
+            # compiles with both.  HOME is the temporary directory, so the
+            # user's site-packages (pyglet's, on a --user install) is named
+            # explicitly.
+            env = dict(os.environ, HOME=tmp, PYTHONPATH=SRC_DIR, NUMBA_DISABLE_JIT='1',
+                       PYTHONUSERBASE=site.getuserbase())
             result = subprocess.run([sys.executable, path], cwd=tmp, env=env,
                                     capture_output=True, text=True, timeout=300)
         self.assertEqual(result.returncode, 0, result.stdout[-2000:] + result.stderr[-2000:])
