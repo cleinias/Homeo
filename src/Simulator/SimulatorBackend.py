@@ -1,16 +1,14 @@
 '''
 SimulatorBackend is a small utility package that provides a common interface 
 to the various robotic simulation backends that the Homeo package can use.
-Currently the internal HOMEO simulator (Box2D) is supported; the V-REP
-backend and the old Webots TCP bridge were deleted on 14 Oct 2026.
+Two backends are supported: the internal HOMEO simulator (Box2D) and
+Webots, run by Homeo as its robot's extern controller.
 Each backend subclasses the SimulatorBackend class and implements the necessary
 methods.
 
 The Homeo simulation classes can thus abstract from backends' specific functions
 and operate uniformly.
  
-Created on Apr 13, 2015
-
 @author: stefano
 '''
 

@@ -62,10 +62,6 @@ class StabilityTracker:
     - stable_since: the onset of the stretch in progress, None if not
       currently stable;
     - restabilisation(t, until): what a disturbance at t did (see there).
-    Until 15 Oct 2026 (review finding SR-14) onsets were recorded one tick
-    early and never before a burn-in of 200 ticks (a stretch from tick 1
-    came out as 200), and the "last stability" reported was the latest
-    tick minus window, not the onset of the stretch in progress.
     total_uniselector_firings counts only the firings of units that have an
     input their uniselector can re-draw; the others change nothing.
     '''
@@ -142,7 +138,7 @@ class AshbyStateLogger:
     in that update, so it shows in the same row as the deviation that
     triggered it (the update checks the deviation it has just computed) and
     the weights it drew.  A continuous (OU)
-    uniselector never fires: 0 (review finding CD-12).
+    uniselector never fires: 0.
     '''
 
     def __init__(self, homeostat, filepath, seed=None, log_interval=1):
@@ -368,8 +364,7 @@ def _add_unused_slots(hom, n_slots=4):
     Creating units and connections draws from the random generators, so
     their state is saved and restored: the setup's later draws are the
     same with the slots as without, and a seed builds the GUI's homeostat
-    exactly as the headless run's (until 14 Oct 2026 Exps 3, 4 and 5
-    differed; SR-06).'''
+    exactly as the headless run's.'''
     np_state, py_state = np.random.get_state(), random.getstate()
     try:
         for i in range(len(hom.homeoUnits), n_slots):

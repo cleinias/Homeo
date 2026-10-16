@@ -4,9 +4,8 @@
   Exp 1: standalone Ashby (discrete uniselector)
   Exp 2: standalone OU (continuous uniselector)
   Exp 3: GA + OU, 16-gene genome (4 units x 4 params), the _v2 setup
-Exp 4 (GA + OU with an evolvable dt_fast) was retired on 15 Oct 2026: dt_fast
-is a rescaling of mass and viscosity, which the _v2 setup evolves over the
-ranges dt_fast reached (review finding CU-11).
+The genome has no dt_fast gene: dt_fast is a rescaling of mass and viscosity,
+which the _v2 setup evolves.
 
 Console shows only generation/completion summaries.
 Full verbose output is saved to per-experiment log files.

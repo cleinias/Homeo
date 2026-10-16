@@ -147,7 +147,7 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
     """
     extra = {} if light_intensity is None else {'lightIntensity': light_intensity}
     # Build homeostat (first pass — pre-reset).  Every stream, numba's
-    # included, as a GA evaluation seeds them (SH-03).
+    # included, as a GA evaluation seeds them.
     from Simulator.HomeoGenAlg import seed_evaluation
     seed_evaluation(seed)
     hom = experiment_func(

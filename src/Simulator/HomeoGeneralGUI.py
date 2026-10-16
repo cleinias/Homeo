@@ -1,7 +1,6 @@
 '''
 Provides a general interface to control a Homeostat simulation including an unlimited number of units.
 It can start and stop a simulation from a GUI, as well as save and graph the simulation's data. 
-Created on May 5, 2013
 @author: stefano
 '''
 
@@ -237,9 +236,8 @@ class HomeoSimulationControllerGui(QDialog):
         self.currentTimeSpinBox.setValue(self._simulation.homeostat.time)
         # The one delay per tick: the simulation's (simulDelay), shown and set
         # here; the homeostat's own pause (slowingFactor, 10 ms by default) is
-        # off in the GUI (_paceHomeostat).  Until 14 Oct 2026 the box showed
-        # slowingFactor but set simulDelay, and both applied: never under
-        # 10 ms a tick, whatever it showed (SR-08).
+        # off in the GUI (_paceHomeostat), so the box's value is the delay a
+        # tick gets.
         self.slowingFactorSpinBox.setValue(self._simulation.simulDelay)
 
         "Connections"
@@ -929,10 +927,9 @@ class HomeoSimulationControllerGui(QDialog):
         self.pauseButton.setEnabled(True)
         self.resumeButton.setEnabled(False)
         self.stepButton.setEnabled(False)
-        # In the simulation's thread, as Start runs it: until 14 Oct 2026
-        # Resume called it directly, so every run after the first (and every
-        # run after New or Load, where Resume is the only way) ran on the GUI
-        # thread, nested in the button's handler (SR-10)
+        # In the simulation's thread, as Start runs it, not on the GUI thread
+        # nested in the button's handler: Resume runs every run after the
+        # first, and every run after New or Load, where it is the only way
         if self._simulThread.isRunning():
             self.resumeRequested.emit()
         else:
@@ -984,8 +981,6 @@ class HomeoSimulationControllerGui(QDialog):
     
     def saveHomeostat(self):
         # PyQt5's dialog returns (filename, filter), and '' on Cancel.
-        # Until 14 Oct 2026 every save slot took the tuple for the
-        # filename, so none of them could save, and Cancel saved (SR-02).
         filename, _ = QFileDialog.getSaveFileName(parent = self,
                                                   caption = 'Choose the file to save the Homeostat to',
                                                   directory = self._simulation.homeostatFilename)
@@ -1007,7 +1002,7 @@ class HomeoSimulationControllerGui(QDialog):
         self._reconnectAfterHomeostatChange()
 
     def _paceHomeostat(self):
-        "The GUI paces the run with its delay per tick alone (SR-08)"
+        "The GUI paces the run with its delay per tick alone"
         self._simulation.homeostat.slowingFactor = 0
 
     def _reconnectAfterHomeostatChange(self):

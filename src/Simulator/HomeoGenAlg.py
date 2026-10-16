@@ -1,7 +1,4 @@
 '''
-Created on Dec 16, 2014
-Split out of HomeoGenAlgGui.py: Oct 2026
-
 @author: stefano
 
 The GA engine for Homeo experiments, with no GUI: HomeoGASimulation and the
@@ -9,7 +6,7 @@ worker functions used for parallel evaluation.  Uses the DEAP GA framework.
 
 It lives apart from the GUI (Simulator/HomeoGenAlgGui.py) so that a headless
 GA run does not import PyQt5's widgets.  HomeoGenAlgGui re-exports the names
-defined here, so existing imports from it keep working.
+defined here, so they can also be imported from it.
 '''
 
 from deap import base
@@ -185,7 +182,7 @@ def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, d
        it one tick and stops at stepsSize ticks.  stepsSize counts homeostat
        ticks, whatever the units' dt_fast: the world advances by the same
        amount every tick, so every individual gets the same time in the
-       world (SG-02).  Shared by the pool workers and replay_best_with_statelog.py,
+       world.  Shared by the pool workers and replay_best_with_statelog.py,
        so that a replay seeded with a logged evalSeed repeats the evaluation.
 
        genome          a list of genes with an ID attribute
@@ -294,7 +291,7 @@ class HomeoGASimulation(object):
                                    evalsPerIndividual = 1,
                                    postEvalTop = 10,
                                    postEvalSeeds = 20):
-        """Noisy evaluation (review finding SG-06, 15 Oct 2026):
+        """Noisy evaluation:
            evalsPerIndividual  runs per evaluation, the fitness their mean
            postEvalTop, postEvalSeeds  at the end of a run, the hall of fame's
                        best postEvalTop are re-evaluated on postEvalSeeds fresh
@@ -317,7 +314,6 @@ class HomeoGASimulation(object):
         self._robotName = "Khepera"
         
         # "HOMEO" (Box2D), or anything else for none (the dummy evaluators).
-        # The V-REP and old Webots backends were deleted on 14 Oct 2026.
         if simulatorBackend == "HOMEO":
             self.simulatorBackend =  SimulatorBackendHOMEO(robotName = self._robotName, lock = self.worldBeingResetLock,
                                                            robotModel = GA_ROBOT)
@@ -345,15 +341,14 @@ class HomeoGASimulation(object):
         exp_func = getattr(Simulator.HomeoExperiments, exp)
         # The homeostat's units, sensor units included: the setup's own count
         # where it declares one (the 2+2 direct vehicle 4, the 3c vehicle 10),
-        # else noUnits (6, the classic vehicle's).  Until 15 Oct 2026 every
-        # logbook recorded noUnits, 6 even for the 4-unit direct vehicle.
+        # else noUnits (6, the classic vehicle's).
         self.noUnits = getattr(exp_func, 'noUnits', noUnits)
         self.noEvolvedUnits = getattr(exp_func, 'noEvolvedUnits', noUnits)
         self.fitnessSign = getattr(exp_func, 'fitnessSign', 1)
         self.genomeSize = getattr(exp_func, 'genomeSize',
                                    (self.noEvolvedUnits * essentParams) + (self.noEvolvedUnits * self.noUnits))
         # How the genes decode (Helpers.GenomeDecoder): recorded in the logbook,
-        # since two layouts can have the same size (CU-11); None for classic
+        # since two layouts can have the same size; None for classic
         self.genomeLayout = getattr(exp_func, 'genomeLayout', None)
         # The TARGET's intensity the setup gives (GA_LIGHT_INTENSITY), recorded
         # so that a replay rebuilds the same world
@@ -458,7 +453,7 @@ class HomeoGASimulation(object):
         " FIXME---> NEED TO REMOVE SELECTED INDIVIDUALS FROM ASPIRANTS POOL <-----"
         #self.toolbox.register("select", tools.selBest)
         # Out-of-range genes: a mutation's are reflected back into [0, 1]
-        # (reflectBounds, SG-07); crossover only swaps genes, so its clip is
+        # (reflectBounds); crossover only swaps genes, so its clip is
         # a safety net that never acts
         self.toolbox.decorate("mate", self.checkBounds(0, 1))
         self.toolbox.decorate("mutate", self.reflectBounds(0, 1))
@@ -470,10 +465,7 @@ class HomeoGASimulation(object):
         
     def recordGADataToLogbook(self,timeElapsed, pop):
         """Insert general GA simulation parameters into logbook, replacing
-           the previous summary: there is one, the latest.  Until 14 Oct 2026
-           every save appended one, so a run of G generations had G+1, each
-           with the whole final population, and readers disagreed on which
-           they read (SG-08)."""
+           the previous summary: there is one, the latest."""
         self.logbook[:] = [rec for rec in self.logbook if 'finalIndivs' not in rec]
 
         " for non cloned population the self._cloname attr is None"
@@ -566,10 +558,8 @@ class HomeoGASimulation(object):
     def reflectBounds(self, low, high):
         """Decorate a mutation: its out-of-range genes reflected back into
            [low, high].  Mutation alone then keeps a uniform spread of genes
-           uniform.  Until 15 Oct 2026 they were clipped: about 16% of mutated
-           genes landed exactly on 0 or 1, the parameters' extremes, and 50
-           mutations without selection left 23% of genes there (review
-           finding SG-07)."""
+           uniform.  Clipping them instead would put many mutated genes
+           exactly on 0 or 1, the parameters' extremes."""
         low, high = float(low), float(high)
         def decorator(func):
             def wrapper(*args, **kargs):
@@ -609,9 +599,7 @@ class HomeoGASimulation(object):
            generation 0 evaluates it, like every individual.  The logged
            fitness came from another run's evaluation (often of another code
            version), so it is recorded in the logbook's summary as
-           cloneSourceFitness, not given to the clones.  Until 15 Oct 2026 it
-           was copied into every clone and then overwritten by generation 0
-           (review finding SG-09)."""
+           cloneSourceFitness, not given to the clones."""
         ind = indivClass(genome['genome'])
         ind.ID = genome["indivId"]
         return ind
@@ -642,9 +630,9 @@ class HomeoGASimulation(object):
         return self.toolbox.population(n=self.popSize)
 
     def _startPool(self):
-        """The run's worker pool, when evaluating in parallel.  One per run:
-        until 14 Oct 2026 __init__ made it and the first run closed it, so a
-        second run on the same object failed ('Pool not running', SG-10)."""
+        """The run's worker pool, when evaluating in parallel.  One per run,
+        made at its start and closed at its end, so that the same object can
+        run more than once."""
         if self._poolConfig is None:
             return
         ctx = multiprocessing.get_context('forkserver')
@@ -703,14 +691,13 @@ class HomeoGASimulation(object):
             print()
 
             # Generation 0's statistics, recorded whether or not anyone is
-            # told of them (until 14 Oct 2026 only with a progressCallback,
-            # so headless runs' fitness curves had no generation 0; SG-08)
+            # told of them, so headless runs' fitness curves have it too
             record0 = self.stats.compile(pop)
             self.logbook.record(gen=0, evaluations=len(pop), **record0)
             if progressCallback:
                 progressCallback(0, record0, self.hof[0].fitness.values[0])
-            # Saved now: until 14 Oct 2026 the first save came after
-            # generation 1, so a crash in it lost generation 0 too (SG-04)
+            # Saved now, so that a crash in generation 1 does not lose
+            # generation 0 too
             self.saveLogbook(pop, time() - timeStarted, timeStarted)
             self.saveHistory(timeStarted)
 
@@ -768,11 +755,7 @@ class HomeoGASimulation(object):
                 # score kept from an earlier generation is one old noisy
                 # draw, and selection would favour the lucky ones.  Under
                 # 'genome' a genome always scores the same, so only changed
-                # ones are evaluated.  Until 15 Oct 2026 only the individuals
-                # crossover or mutation touched were evaluated (most of the
-                # "mutants" unchanged), the rest kept their old score, and the
-                # elite, the hall of fame's best, was put back only when no
-                # individual had its genome (review finding SG-06).
+                # ones are evaluated.
                 if self.noiseScheme != 'genome':
                     for ind in offspring + [elite]:
                         if ind.fitness.valid:
@@ -799,10 +782,7 @@ class HomeoGASimulation(object):
                     # Stop asked during the generation (serial evaluation is
                     # lazy, so the GUI's Stop lands here): keep what was
                     # evaluated in the logbook and the previous generation as
-                    # the population, and end the run as at its end.  Until
-                    # 14 Oct 2026 this broke out leaving offspring with no
-                    # fitness, crashed in the elitism below, and, in
-                    # generation 1, saved nothing (SG-01).
+                    # the population, and end the run as at its end.
                     if self._stopRequested:
                         stopped = True
                         break
@@ -852,7 +832,7 @@ class HomeoGASimulation(object):
             self.saveHistory(timeStarted)
 
             # The built-in simulator stays, for another run on this object
-            # (quitting it discarded its simulation; SG-10); an external one
+            # (quitting it would discard its simulation); an external one
             # is shut down
             if self.simulatorBackend is not None and self.simulatorBackend.name != "HOMEO":
                 self.simulatorBackend.quit()
@@ -1043,9 +1023,7 @@ class HomeoGASimulation(object):
     def cleanUpTrajFiles(self):
         """Remove all files not related to specific homeostat models from
            dataDir: the trajectories of the robot before it has a model name,
-           which the writer names trajData-ID-Unspecified-<time>[<tag>][-n].traj
-           (the old pattern, *-Unspecified.traj, matched none of them: review
-           finding HV-10)."""
+           which the writer names trajData-ID-Unspecified-<time>[<tag>][-n].traj."""
         unspecificFileList = glob(os.path.join(self.dataDir, "trajData-ID-Unspecified-*.traj"))
         for f in unspecificFileList:
             os.remove(f)

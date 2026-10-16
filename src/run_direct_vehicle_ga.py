@@ -8,10 +8,9 @@ motors, no eye intermediaries):
          viscosity log-uniform
 
 with fixed Braitenberg cross-wiring (Left Sensor -> Right Motor, Right
-Sensor -> Left Motor) and negative motor self-connections.  Exp 2 (an
-evolvable dt_fast, 10 genes) was retired on 15 Oct 2026: dt_fast is a
-rescaling of mass and viscosity, which the _v2 setup evolves over the ranges
-dt_fast reached (review finding CU-11).
+Sensor -> Left Motor) and negative motor self-connections.  The genome has
+no dt_fast gene: dt_fast is a rescaling of mass and viscosity, which the
+_v2 setup evolves.
 
 Usage:
     python run_direct_vehicle_ga.py                  # orchestrate (all cores)
@@ -24,7 +23,7 @@ Usage:
     python run_direct_vehicle_ga.py --evals-per-individual 3
                                     # each evaluation the mean of 3 runs (default 1);
                                     # the best 10 of the hall of fame are always
-                                    # re-evaluated on 20 seeds at the end (SG-06)
+                                    # re-evaluated on 20 seeds at the end
 """
 
 import sys

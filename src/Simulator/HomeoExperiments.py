@@ -1,6 +1,4 @@
 '''
-Created on Sep 4, 2013
-
 @author: stefano
 '''
 from Core.Homeostat import *
@@ -71,7 +69,7 @@ def initialize_1minus_2xExperiment(params=None):
     hom = Homeostat()
     # Its units' names are fixed: release the names of a homeostat built
     # before, as the other setups do, or a second call (the GUI's New) raises
-    # 'The name H1_Agent exists already' (review finding SE-10)
+    # 'The name H1_Agent exists already'
     HomeoUnit.clearNames()
     
     'Standard parameters'
@@ -218,7 +216,7 @@ def initialize_1minus_2_minus_3xExperiment(params=None):
        1 unconnected unit representing the environment 
     """
     hom = Homeostat()
-    HomeoUnit.clearNames()          # fixed names: see initialize_1minus_2xExperiment (SE-10)
+    HomeoUnit.clearNames()          # fixed names: see initialize_1minus_2xExperiment
     
     'Standard parameters'
     agent_visc = 0.9 * HomeoUnit.DefaultParameters['maxViscosity']
@@ -340,22 +338,17 @@ def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir
     to interface to the outside world, on the robot of backendSimulator (a
     SimulatorBackend instance, e.g. SimulatorBackendHOMEO).
 
-    raw=True asked the old Webots bridge for its inverted readings (high for
-    a weak stimulus); the backends have only the standard polarity, so it
-    raises a ValueError (SE-04).  The V-REP and old Webots paths, chosen by a
-    `simulator` string, were deleted on 14 Oct 2026.
+    raw=True asks for inverted readings (high for a weak stimulus); the
+    backends have only the standard polarity, so it raises a ValueError.
 
     Every active link between units is under the uniselector, the sensor ->
     eye links included: as in every adaptive vehicle (and Ashby's homeostat),
-    only the self-connections are manual.  Unused 'sensor_incoming_*'
-    parameters declared those links manual until 15 Oct 2026; nothing read
-    them (review finding SE-11 (d), decided to keep the links adaptive).
+    only the self-connections are manual.
 '''
     if backendSimulator is None:
         raise ValueError("initializeBraiten2_2 needs a backendSimulator")
     if raw:
-        # The backends' sensors have no raw (inverted) reading: raw=True used
-        # to build the same vehicle as raw=False (SE-04)
+        # The backends' sensors have no raw (inverted) reading
         raise ValueError("initializeBraiten2_2: raw=True is not supported with a "
                          "backendSimulator; its sensors have only the standard polarity")
     worlds = {'HOMEO': 'kheperaBraitenberg2_HOMEO_World',
@@ -596,8 +589,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
 
     The genome sets every link's starting weight; every link but the
     self-connections is then under the uniselector, the sensor -> eye links
-    included, as in every adaptive vehicle (review finding SE-11 (d): an
-    unused 'manual' setting for those links was removed on 15 Oct 2026).
+    included, as in every adaptive vehicle.
     
     Initialize the homeostat to be **fully connected** (real units only)
     
@@ -645,7 +637,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
     
     '3.3 initialize units essential parameters according to slices of input list'
     # Sliced by noHomeoParameters, as the connection genes' offset is below:
-    # initialize_GA raises unless it is the units' number of parameters (SE-09)
+    # initialize_GA raises unless it is the units' number of parameters
     n = noHomeoParameters
     leftMotor.initialize_GA(homeoGenome[0:n])
     rightMotor.initialize_GA(homeoGenome[n:2 * n])
@@ -777,8 +769,7 @@ def initializeBraiten2_2_Full_GA(homeoGenome, noHomeoParameters=4, backendSimula
         offset += 1
 
     '''Self-connections stay manual: the genome sets them, the uniselector
-       leaves them alone, as in the weight-free setups.  The loops above used
-       to put them under the uniselector too (SE-08).'''
+       leaves them alone, as in the weight-free setups.'''
     for unit in (leftMotor, rightMotor, leftEye, rightEye):
         unit.inputConnections[0].state = motor_self_connection_uniselector
             
@@ -900,8 +891,8 @@ def initializeBraiten2_2_Full_GA_phototaxis(homeoGenome, noHomeoParameters=4,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         lightIntensity=GA_LIGHT_INTENSITY):
     '''Phototaxis GA experiment: the robot seeks the light source, the
-    TARGET, of intensity lightIntensity (+100; -100 until 15 Oct 2026, see
-    GA_LIGHT_INTENSITY).  Fitness = distance (minimised).'''
+    TARGET, of intensity lightIntensity (+100, see GA_LIGHT_INTENSITY).
+    Fitness = distance (minimised).'''
     hom = initializeBraiten2_2_Full_GA(
         homeoGenome=homeoGenome, noHomeoParameters=noHomeoParameters,
         backendSimulator=backendSimulator, dataDir=dataDir,
@@ -970,7 +961,7 @@ initializeBraiten2_2_Full_GA_phototaxis_continuous.fitnessSign = 1  # minimise d
 # The genome layout of the weight-free setups, 'weightfree_v2': 4 genes per
 # evolved unit, [mass, viscosity, tau_a, maxDeviation]; mass and viscosity
 # log-uniform (HomeoUnit.massFromGeneLog, viscosityFromGeneLog), dt_fast 1.
-# (GenomeDecoder also reads the layouts of older logbooks.)
+# (GenomeDecoder also reads logbooks recorded with other layouts.)
 WEIGHTFREE_GENES_PER_UNIT = {'weightfree_v2': 4}
 
 
@@ -995,8 +986,7 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     sensor inputs; the _Full_GA_continuous_weightfree setups) or without
     (eyes=False: the 2+2 direct vehicle, the sensors feeding the motors; the
     _direct_GA_ setups).  The evolved units are the motors and, with eyes,
-    the eyes.  (The two vehicles had two copies of this helper until 14 Oct
-    2026: review finding SE-13.)
+    the eyes.
 
     Genome: the genes of each evolved unit, in the layout given (see
     WEIGHTFREE_GENES_PER_UNIT): 'weightfree_v2', 4 genes per unit (16 with
@@ -1150,7 +1140,7 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     "7. Swap uniselectors to continuous (OU) and set tau_a from genome"
     for i, unit in enumerate(evolved_units):
         # noUnisel: the OU process stays installed (it records tau_a) but
-        # never runs, so the weights keep their initial values (SE-05)
+        # never runs, so the weights keep their initial values
         unit.uniselectorActive = not noUnisel
         unis = HomeoUniselectorContinuous()
         unis.tau_a = HomeoUnit.tauAFromWeight(homeoGenome[i * genes_per_unit + 2])
@@ -1281,8 +1271,7 @@ initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weig
 
 def _backendWorld(backendSimulator, world):
     """The world a GA setup builds on backendSimulator: the HOMEO (Box2D) world,
-    or its Webots twin.  A setup called without a backend used to fail with
-    an AttributeError from inside a bare except (review finding SE-06)."""
+    or its Webots twin.  A setup called without a backend raises a ValueError."""
     if backendSimulator is None:
         raise ValueError("this setup needs a backendSimulator (Simulator/SimulatorBackend.py)")
     if backendSimulator.name not in ('HOMEO', 'WEBOTS'):
@@ -1511,7 +1500,7 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
     "7. Swap uniselectors to continuous (OU) and set tau_a from genome"
     for i, unit in enumerate(evolved_units):
         # noUnisel: the OU process stays installed (it records tau_a) but
-        # never runs, so the weights keep their initial values (SE-05)
+        # never runs, so the weights keep their initial values
         unit.uniselectorActive = not noUnisel
         unis = HomeoUniselectorContinuous()
         unis.tau_a = HomeoUnit.tauAFromWeight(homeoGenome[i * genes_per_unit + 2])
@@ -1592,7 +1581,7 @@ for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA
 # setups (AshbyOriginalExperiments.setup_expN), seeded with params['seed']
 # (drawn if absent) and the seed kept as hom.seed: a GUI run's homeostat is
 # the headless run's with the same seed (the unused slots draw nothing, see
-# _add_unused_slots).  Until 14 Oct 2026 the seed was thrown away (SR-06).
+# _add_unused_slots).
 
 def initializeAshbyExp1BasicUltrastability(**params):
     '''Exp 1: Basic Ultrastability (DftB 8/4, Fig. 8/4/1).

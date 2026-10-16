@@ -3,26 +3,22 @@
 ## Overview
 
 The GA module evolves the parameters of an Ashby-style Homeostat controlling
-a simulated Khepera robot in a Braitenberg vehicle type-2 phototaxis task.
+a simulated Khepera-like robot (an e-puck2) in a Braitenberg vehicle type-2
+phototaxis task.
 The fitness function measures how close the robot ends up to a light target
 after a fixed number of simulation steps. The GA minimises this distance.
 
 The implementation uses the **DEAP** framework (Distributed Evolutionary
 Algorithms in Python).  Evaluations run on the internal Box2D simulator
-(the HOMEO backend, an e-puck2 since 14 Oct 2026).  The Webots backend is for
-re-testing selected results, one Webots per process, not for the GA; the
-V-REP/CoppeliaSim backend and the old Webots bridge were deleted on 14 Oct 2026.
-
-*Brought up to date on 14 Oct 2026 (review finding SG-12); noisy evaluation
-(SG-06), mutation at the bounds (SG-07) and clones (SG-09) decided on
-15 Oct 2026 (sections 4.1, 4.3, 6).*
+(the HOMEO backend, whose robot is an e-puck2).  The Webots backend is for
+re-testing selected results, one Webots per process, not for the GA.
 
 **Key files:**
 
 | File | Role |
 |------|------|
 | `Simulator/HomeoGenAlg.py` | GA simulation class (`HomeoGASimulation`) and parallel-evaluation workers; no GUI, no PyQt5 |
-| `Simulator/HomeoGenAlgGui.py` | GA GUI; re-exports the engine for existing imports |
+| `Simulator/HomeoGenAlgGui.py` | GA GUI; re-exports the engine |
 | `Simulator/HomeoExperiments.py` | Experiment initialisation functions |
 | `Simulator/SimulatorBackend.py` | Abstraction over robotic simulators |
 | `Helpers/GenomeDecoder.py` | Genome decoding and pretty-printing |
@@ -133,8 +129,8 @@ the evolved units:
 - 24 connection weights (4 evolved units x 6 connections)
 
 The `GenomeDecoder` and `StatsAnalyzer` functions accept a `noEvolvedUnits`
-parameter (defaulting to `noUnits`) for backward compatibility when
-decoding old 60-gene logbooks from earlier runs.
+parameter (defaulting to `noUnits`), so that they also decode 60-gene
+logbooks, whose genomes have genes for every unit.
 
 ---
 
@@ -185,8 +181,7 @@ population is replaced by selected-and-varied offspring; if the previous
 generation's best genome is no longer among them, a copy of it is evaluated
 with them and replaces the worst offspring (k=1 elitism).
 
-**Noisy evaluation** (review finding SG-06, decided 15 Oct 2026).  An
-evaluation is noisy: in the direct 2+2 vehicle the same genome's final
+**Noisy evaluation**.  An evaluation is noisy: in the direct 2+2 vehicle the same genome's final
 distance over ten seeds had a standard deviation of 1-4, larger than the
 differences between genomes' means.  So:
 - under the 'individual' and 'generation' noise schemes **every individual is
@@ -195,10 +190,6 @@ differences between genomes' means.  So:
   generation, where it would be one old, possibly lucky, draw ('generation' is
   then common random numbers for the whole generation).  Under 'genome' a
   genome always scores the same, so only changed genomes are evaluated.
-  (Until 15 Oct 2026 only the individuals crossover or mutation touched were
-  evaluated -- most "mutants" are unchanged, since a gene mutates with
-  probability 0.05 -- the rest kept their old score, and the elite was the
-  Hall of Fame's best, put back only when no individual had its genome.)
 - `evalsPerIndividual` (k, default 1): an evaluation is the mean of k runs,
   with the seeds `repeat_seeds` derives from the individual's `evalSeed` (the
   first is `evalSeed` itself, so a replay with the logged seed repeats run 1);
@@ -210,9 +201,9 @@ differences between genomes' means.  So:
   mostly the luckiest evaluation; the post-evaluation says which genome is
   best on average.
 
-Cost: about 1/0.6 = 1.7 times the evaluations per generation of the old loop
-(which evaluated about 60% of each generation), times k, plus postEvalTop x
-postEvalSeeds at the end.
+Cost: under the 'individual' and 'generation' schemes, the whole population
+(and the elite, if lost) is evaluated every generation, times k, plus
+postEvalTop x postEvalSeeds at the end.
 
 ### 4.2 Default parameters
 
@@ -238,13 +229,11 @@ postEvalSeeds at the end.
 With sigma 0.2, about 16% of mutations of a uniformly spread gene leave
 [0, 1] (31% from a gene at 0.9).  They are reflected back by their
 overshoot, so mutation alone keeps a uniform spread of genes uniform, and no
-gene lands exactly on a bound.  Until 15 Oct 2026 they were clipped: each
-such gene landed exactly on 0 or 1, the parameters' extremes, and 50
-mutations without selection left 23% of genes there; the long 40-gene runs'
-last generations had 20-27% of genes on a bound (review finding SG-07).
-Reflection keeps sigma's meaning everywhere; DEAP's polynomial-bounded
-mutation, the alternative considered, still crowds genes toward the edges
-at comparable step sizes.
+gene lands exactly on a bound.  Clipping would put each such gene exactly
+on 0 or 1, the parameters' extremes, and repeated mutation would pile genes
+up there.  Reflection keeps sigma's meaning everywhere; DEAP's
+polynomial-bounded mutation still crowds genes toward the edges at
+comparable step sizes.
 
 ### 4.4 Fitness function
 
@@ -260,7 +249,7 @@ direction:
 |------------|---------------|-----------------|-----------|--------|
 | `initializeBraiten2_2_Full_GA_phototaxis` (and `_continuous`, the weight-free and 3c setups) | +1 | +100 (`lightIntensity`) | Robot seeks light source | Minimise distance directly |
 | `initializeBraiten2_2_Full_GA_scototaxis` | −1 | +100 (positive, default) | Robot avoids light source | Negate distance: minimising = maximising distance |
-| `initializeBraiten2_2_Full_GA` | +1 | +100 (positive, default) | Original experiment | Minimise distance directly |
+| `initializeBraiten2_2_Full_GA` | +1 | +100 (positive, default) | Base experiment | Minimise distance directly |
 
 For **phototaxis**, the robot should approach the light source, so
 `fitnessSign = 1` and DEAP minimises the raw distance.  The TARGET is a
@@ -325,9 +314,9 @@ Each call to `evaluateGenomeFitness(genome)` performs:
    - Wires transducers (wheels and sensors) to the appropriate units
 4. Connect to the simulator backend and reset the world
 5. Set the robot model name (for trajectory file naming)
-6. Run `stepsSize` homeostat ticks, whatever the units' `dt_fast` (since
-   13 Oct 2026, SG-02: the world advances the same amount every tick, so every
-   individual gets the same time in the world):
+6. Run `stepsSize` homeostat ticks, whatever the units' `dt_fast` (the world
+   advances the same amount every tick, so every individual gets the same time
+   in the world):
    ```python
    for i in range(stepsSize):
        simulation.step()
@@ -365,8 +354,7 @@ allows re-evolving from a known good starting point.
 Clones start without a fitness, and generation 0 evaluates them like any
 individual.  The source's logged fitness came from another run, often of
 another code version, so it is kept only in the logbook's summary
-(`cloneSourceFitness`).  Until 15 Oct 2026 it was copied into every clone and
-then overwritten by generation 0 (review finding SG-09).
+(`cloneSourceFitness`).
 
 ---
 
@@ -380,10 +368,8 @@ Pickled DEAP `Logbook` containing three types of records:
    time an individual is evaluated; `evalSeed` seeds its evaluation; with
    evalsPerIndividual > 1, `scores`, the runs' scores (fitness is their mean)
 2. **Per-generation:** `{gen, evaluations, avg, std, min, max}` — population
-   statistics, generation 0 included (since 14 Oct 2026, SG-08: it used to be
-   recorded only when a progress callback was given)
-3. **Summary record**, one, rewritten at every save (since 14 Oct 2026,
-   SG-08: one used to be appended at every save): date, experiment name,
+   statistics, generation 0 included, with or without a progress callback
+3. **Summary record**, one, rewritten at every save: date, experiment name,
    population size, generations, genome size, evolved and total units, run
    length, operator probabilities, fitness sign, elapsed time, final
    population with fitnesses, population type, clone name and the clone
@@ -416,7 +402,7 @@ Fitness evaluation is parallelised using `multiprocessing.Pool` (the
 simulator instance and evaluates a single genome. The number of workers is
 configurable via the `nWorkers` parameter (defaults to 1 for serial
 evaluation).  Each run starts its own pool and closes it at its end, so a
-`HomeoGASimulation` can run more than once (SG-10).
+`HomeoGASimulation` can run more than once.
 
 | Strategy | Status | Notes |
 |----------|--------|-------|
@@ -429,13 +415,12 @@ in headless mode, which is automatically enabled during GA evaluation.
 
 ### 8.1 Rationale for `multiprocessing.Pool`
 
-Several parallelisation libraries were considered. `multiprocessing.Pool`
-was chosen because it has no external dependencies, works when launched
+`multiprocessing.Pool` has no external dependencies, works when launched
 from the PyQt GUI, and is well suited to the workload: each fitness
 evaluation is CPU-bound and embarrassingly parallel, with each genome
 getting an independent simulator instance and no shared state.
 
-The alternatives were rejected for the following reasons:
+The alternatives are not used, for the following reasons:
 
 - **`scoop`** (Scalable COncurrent Operations in Python) distributes work
   across multiple machines over a network, but requires launching the
@@ -445,8 +430,7 @@ The alternatives were rejected for the following reasons:
 
 - **`pathos.ProcessingPool`** works like `multiprocessing` but uses `dill`
   instead of `pickle` for serialisation, which can handle lambdas, closures,
-  and nested functions. This was relevant when the fitness function used
-  closures, but the current worker function (`_evaluate_genome_worker`) is
+  and nested functions. The worker function (`_evaluate_genome_worker`) is
   a plain top-level function that serialises correctly with standard
   `pickle`. The extra dependency is unnecessary.
 
@@ -472,34 +456,33 @@ The alternatives were rejected for the following reasons:
 
 | Function | Purpose |
 |----------|---------|
-| `genomeDecoder(noUnits, genome, noEvolvedUnits=None)` | Convert [0,1] genome to actual parameter values |
-| `genomePrettyPrinter(noUnits, decoded, noEvolvedUnits=None)` | Formatted string of all decoded parameters |
-| `statFileDecoder(fileIn, fileOut, noUnits=6, rounding=2, noEvolvedUnits=None)` | Batch-decode a GA statistics file |
+| `genomeDecoder(noUnits, genome, noEvolvedUnits=None, layout=None)` | Convert [0,1] genome to actual parameter values |
+| `genomePrettyPrinter(noUnits, decoded, noEvolvedUnits=None, layout=None)` | Formatted string of all decoded parameters |
+| `statFileDecoder(fileIn, fileOut, noUnits=6, rounding=2, noEvolvedUnits=None, layout=None)` | Batch-decode a GA statistics file |
 
 ---
 
 ## 10. Known Limitations and Design Notes
 
-1. ~~**Wasted genes:**~~ **Resolved.** The genome now contains only genes
-   for evolved units (40 genes instead of 60). Each experiment function
-   declares a `noEvolvedUnits` attribute; sensor-only units are excluded.
+1. **Genes for evolved units only:** The genome contains only genes for
+   evolved units (40 genes, not 60). Each experiment function declares a
+   `noEvolvedUnits` attribute; sensor-only units are excluded.
 
-2. ~~**Large mutation sigma:**~~ **Resolved.** Sigma reduced from 2 to 0.2,
-   keeping most mutations within the [0, 1] gene range for proper
-   neighbourhood exploration.
+2. **Mutation sigma:** Sigma is 0.2, keeping most mutations within the
+   [0, 1] gene range for neighbourhood exploration.
 
-3. ~~**Serial evaluation only:**~~ **Resolved.** Parallel evaluation via
-   `multiprocessing.Pool` with configurable `nWorkers`. Numba JIT
-   compilation accelerates headless simulation arithmetic.
+3. **Parallel evaluation:** `multiprocessing.Pool` with configurable
+   `nWorkers`. Numba JIT compilation accelerates headless simulation
+   arithmetic (section 8).
 
-4. ~~**No elitism:**~~ **Resolved.** The previous generation's best genome
-   is re-inserted into the offspring (replacing the worst) when it would
-   otherwise be lost (k=1 elitism); under noise everyone, the elite included,
-   is evaluated afresh each generation (SG-06, section 4.1).
+4. **Elitism:** The previous generation's best genome is re-inserted into
+   the offspring (replacing the worst) when it would otherwise be lost (k=1
+   elitism); under noise everyone, the elite included, is evaluated afresh
+   each generation (section 4.1).
 
-5. ~~**Clone fitness:**~~ **Resolved.** Clones start without a fitness and
-   are evaluated in generation 0; the source's logged fitness is recorded as
-   `cloneSourceFitness` (SG-09, section 6).
+5. **Clone fitness:** Clones start without a fitness and are evaluated in
+   generation 0; the source's logged fitness is recorded as
+   `cloneSourceFitness` (section 6).
 
 6. **Fixed topology:** The GA evolves only unit parameters and connection
    weights. The network topology (which units exist, which connections are

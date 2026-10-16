@@ -1,11 +1,9 @@
 '''
-Created on Dec 16, 2014
-
 @author: stefano
 
 The GUI for GA simulations of Homeo experiments.  The engine itself --
 HomeoGASimulation and the worker functions -- is in Simulator/HomeoGenAlg.py and
-is re-exported here, so existing imports from this module keep working.
+is re-exported here, so it can also be imported from this module.
 '''
 
 from deap import base
@@ -52,7 +50,7 @@ from glob import glob
 
 
 
-# The GA engine, re-exported so that existing imports from this module keep working.
+# The GA engine, re-exported so that it can also be imported from this module.
 from Simulator.HomeoGenAlg import (HomeoGASimulation, selTournamentRemove,
                                    _init_worker, _evaluate_genome_worker)
 
@@ -244,9 +242,8 @@ class HomeoGASimulGUI(QWidget):
         """Create a HomeoGASimulation with current parameter values and generate a population.
 
         A population of clones needs a genome to clone: without one the GUI
-        says so and initializes nothing (it used to make a random population
-        instead, silently: review finding SR-17).  The worker pool is made by
-        each run and closed at its end (SG-10), so re-initializing, or closing
+        says so and initializes nothing.  The worker pool is made by
+        each run and closed at its end, so re-initializing, or closing
         the window without a run, leaves no pool behind."""
 
         if self.popTypeComboBox.currentText() == "Clones" and self._clonableGenome is None:
