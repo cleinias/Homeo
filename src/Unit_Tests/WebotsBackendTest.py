@@ -146,6 +146,27 @@ class WebotsBackendTest(unittest.TestCase):
         self.assertGreater(len(rows[0]), 800)
         self.assertEqual(rows[0], rows[1])
 
+    def testABatchsLaterRunsAreFreshRuns(self):
+        '''A batch's runs share one Webots, reset between them.  Run 2 moves,
+        and is row for row the run its seed gives in a fresh process.  (Until
+        15 Oct 2026 the reset undid the motors' velocity control, and every
+        run after the first stood still: R2-WEBOTS-1.)'''
+        rows = {}
+        for name, seed, batch in (('batch', '5', '2'), ('alone', '6', '1')):
+            with tempfile.TemporaryDirectory() as tmp:
+                command = [sys.executable, '-m', 'HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct',
+                           '--steps', '300', '--seed', seed, '--batch', batch, '--simulator', 'webots']
+                r = subprocess.run(command, cwd=SRC, capture_output=True, text=True, timeout=300,
+                                   env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+                self.assertEqual(r.returncode, 0, r.stdout[-2000:] + r.stderr[-2000:])
+                data = os.path.join(tmp, os.listdir(tmp)[0])
+                trajs = sorted(f for f in os.listdir(data) if f.endswith('.traj'))
+                with open(os.path.join(data, trajs[-1])) as f:
+                    rows[name] = [line for line in f if not line.startswith('#') and len(line.split()) > 5]
+        first, last = rows['batch'][0].split(), rows['batch'][-1].split()
+        self.assertGreater(abs(float(last[0]) - float(first[0])) + abs(float(last[1]) - float(first[1])), 0.05)
+        self.assertEqual(rows['batch'], rows['alone'])
+
 
 if __name__ == '__main__':
     unittest.main()

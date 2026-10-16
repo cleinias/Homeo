@@ -408,7 +408,12 @@ class WebotsSimulation(object):
             raise RuntimeError('this process runs %s; one process runs one Webots world'
                                % self._worldFile)
         else:
+            # A reset takes effect at the next step; until 15 Oct 2026 that was
+            # after WebotsRobot had set the motors, and the reset put them back
+            # in position control: from a process's second run on, the robot
+            # never moved (R2-WEBOTS-1).  So step once now, robot still.
             self._supervisor.simulationReset()
+            self._supervisor.step(int(self._supervisor.getBasicTimeStep()))
         self.homeoWorldToRun = HomeoWorld
         sup = self._supervisor
         self._timeStepMs = int(sup.getBasicTimeStep())
