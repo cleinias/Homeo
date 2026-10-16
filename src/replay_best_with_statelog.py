@@ -6,8 +6,7 @@ simulator, runs the simulation, and writes a .statelog file suitable for
 analysis with Helpers.StatelogAnalyzer.
 
 The experiment type (2-unit vs 4-unit, continuous vs discrete, weight-free
-vs classic) is auto-detected from the logbook metadata.  The --exp flag
-can override the auto-detection for old logbooks without metadata.
+vs classic) is read from the logbook's metadata.
 
 Usage:
     cd src
@@ -16,15 +15,14 @@ Usage:
     python replay_best_with_statelog.py --logbook path.lgb --visualize
     python replay_best_with_statelog.py --logbook path.lgb --ashby --steps 100000
 
-Reproducing a GA evaluation.  Logbooks written since GA runs became seeded
-(October 2026) record each individual's evalSeed.  For those, the replay builds
-and runs the homeostat through the GA's own code (prepare_genome_evaluation in
-Simulator/HomeoGenAlg.py), seeded with the logged evalSeed, for the logged run
-length, and reports whether it reproduced the logged fitness exactly.  --seed
-replays the same genome under other noise; --steps runs it for another length.
-Older logbooks have no evalSeed: their replay works as it always did (seed 45,
-60000 steps by default) and cannot reproduce the logged fitness.  The
-visualizer always uses the older path (it runs non-headless, unlike the GA).
+Reproducing a GA evaluation.  A GA logbook records each individual's
+evalSeed.  The replay builds and runs the homeostat through the GA's own code
+(prepare_genome_evaluation in Simulator/HomeoGenAlg.py), seeded with the
+logged evalSeed, for the logged run length, and reports whether it reproduced
+the logged fitness exactly.  --seed replays the same genome under other
+noise; --steps runs it for another length.  A logbook without evalSeeds is
+replayed only with --seed.  The visualizer builds the homeostat the same way
+but runs it non-headless, unlike the GA, so it does not check the fitness.
 """
 
 import os
@@ -45,10 +43,6 @@ from Helpers.General_Helper_Functions import simulations_data_dir
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO
 from Helpers.HomeostatStateLogger import HomeostatStateLogger
 
-DEFAULT_LOGBOOK = os.path.join(
-    simulations_data_dir(),
-    'SimsData-2026-03-01-18-21-08',
-    'Logbook-2026-03-01-18-21-08.lgb')
 DEFAULT_STEPS = 60000
 
 # ── Map logbook metadata 'exp' strings to importable function names ──────
@@ -163,73 +157,6 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
         _swap_to_ashby(hom)
 
     return hom
-
-
-def replay(genome, steps, experiment_func, seed, output_path, log_interval=1,
-           use_ashby=False, model_name=None, light_intensity=None):
-    """Replay a genome headless and write a .statelog file."""
-
-    data_dir = os.path.dirname(output_path)
-
-    # Create backend and start world
-    # The data directory goes to the constructor: start() sets up the world,
-    # which opens a trajectory file at once.
-    lock = threading.Lock()
-    backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera', dataDir=data_dir)
-    backend.start('kheperaBraitenberg2_HOMEO_World')
-
-    hom = _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby,
-                           light_intensity)
-
-    # Label the robot model so .traj files get a meaningful name
-    if model_name:
-        backend.setRobotModel(model_name)
-
-    # Enable headless mode (same as GA)
-    hom._headless = True
-    hom._collectsData = False
-    hom._slowingFactor = 0
-    for u in hom.homeoUnits:
-        u._headless = True
-
-    # Connect units
-
-    # Run one tick so JIT arrays get created (headless mode initialises them
-    # lazily on the first selfUpdate).  The logger constructor inspects
-    # _jit_incoming_units to decide whether to read weights from JIT arrays
-    # vs Connection objects, so we must do this before constructing it.
-    hom.runOnce()
-
-    # Attach state logger (after JIT init)
-    logger = HomeostatStateLogger(
-        hom, backend.kheperaSimulation, output_path,
-        log_interval=log_interval,
-        target_pos=(7, 7),
-        seed=seed)
-
-    # steps counts ticks, as the GA's evaluation does (SG-02)
-    print("Running %d ticks ..." % steps)
-    t0 = time.time()
-
-    # Log tick 1 (which we already ran above)
-    logger.log_tick(1)
-
-    for tick in range(2, steps + 1):
-        hom.runOnce()
-        logger.log_tick(tick)
-        if tick % 10000 == 0:
-            elapsed = time.time() - t0
-            logger.flush()
-            print("  tick %d/%d  (%.1fs elapsed)" % (tick, steps, elapsed))
-
-    logger.close()
-    backend.kheperaSimulation.saveTrajectory()
-    elapsed = time.time() - t0
-
-    final_dist = backend.finalDisFromTarget()
-    print("Done in %.1fs.  Final distance: %.4f" % (elapsed, final_dist))
-    print("Statelog written to: %s" % output_path)
-    return final_dist
 
 
 class _Genome(list):
@@ -387,17 +314,16 @@ def replay_visualized(genome, experiment_func, seed, data_dir,
 def main():
     parser = argparse.ArgumentParser(
         description='Replay a GA individual with per-tick state logging or visualization.')
-    parser.add_argument('--logbook', default=DEFAULT_LOGBOOK,
+    parser.add_argument('--logbook', required=True,
                         help='Path to DEAP logbook pickle (.lgb)')
     parser.add_argument('--indiv', default=None,
                         help='Individual ID to replay (default: best)')
     parser.add_argument('--steps', type=int, default=None,
                         help='Run length in homeostat ticks.  Default: the GA run length '
-                             'recorded in the logbook for logbooks with evalSeeds, '
-                             'else %d' % DEFAULT_STEPS)
+                             'recorded in the logbook, else %d' % DEFAULT_STEPS)
     parser.add_argument('--seed', type=int, default=None,
                         help="RNG seed.  Default: the individual's logged evalSeed, which "
-                             "reproduces its GA evaluation; 45 for older logbooks")
+                             "reproduces its GA evaluation (a logbook without one needs it)")
     parser.add_argument('--output', '-o', default=None,
                         help='Output .statelog path (default: auto-generated)')
     parser.add_argument('--log-interval', type=int, default=1,
@@ -414,14 +340,11 @@ def main():
         logbook = pickle.load(f)
     print("  %d records" % len(logbook))
 
-    # Resolve experiment function (auto-detect or --exp override)
+    # The experiment, from the logbook's metadata
     exp_func, exp_name, meta = resolve_experiment_func(logbook)
-    if meta:
-        print("  Experiment: %s  (%d units, %d evolved, genome size %d)"
-              % (exp_name, meta.get('noUnits', '?'), meta.get('noEvolvedUnits', '?'),
-                 meta.get('genomeSize', '?')))
-    else:
-        print("  Experiment: %s  (no metadata, using --exp override)" % exp_name)
+    print("  Experiment: %s  (%s units, %s evolved, genome size %s)"
+          % (exp_name, meta.get('noUnits', '?'), meta.get('noEvolvedUnits', '?'),
+             meta.get('genomeSize', '?')))
 
     # The TARGET's intensity the run evaluated with
     import Simulator.HomeoExperiments as HE
@@ -442,17 +365,10 @@ def main():
         indiv_id, fitness, [round(g, 4) for g in genome]))
 
     logged_seed = rec.get('evalSeed')
-    as_evaluated = logged_seed is not None and not args.visualize
-    if logged_seed is None:
-        print("  This logbook predates seeded GA evaluations (no evalSeed): the replay "
-              "cannot reproduce the logged fitness.")
-    if as_evaluated:
-        seed = logged_seed if args.seed is None else args.seed
-        steps = args.steps if args.steps is not None else (meta or {}).get('length', DEFAULT_STEPS)
-    else:
-        seed = 45 if args.seed is None and logged_seed is None else (
-            logged_seed if args.seed is None else args.seed)
-        steps = args.steps if args.steps is not None else DEFAULT_STEPS
+    if args.seed is None and logged_seed is None:
+        sys.exit("The logbook records no evalSeed for %s: give --seed" % indiv_id)
+    seed = logged_seed if args.seed is None else args.seed
+    steps = args.steps if args.steps is not None else (meta or {}).get('length', DEFAULT_STEPS)
     print("  Seed: %d%s   Steps: %d" % (
         seed, " (the logged evalSeed)" if seed == logged_seed else "", steps))
 
@@ -481,12 +397,6 @@ def main():
             os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir,
                                        'replay-%s-%dk.statelog' % (indiv_id, steps // 1000))
-
-        if not as_evaluated:
-            replay(genome, steps, exp_func, seed, output_path,
-                   log_interval=args.log_interval, use_ashby=args.ashby,
-                   model_name=model_name, light_intensity=light_intensity)
-            return
 
         final_dist = replay_as_evaluated(
             genome, indiv_id, exp_name, meta or {}, steps, seed, output_path,
