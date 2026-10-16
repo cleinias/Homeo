@@ -48,7 +48,9 @@ class HomeoUnit(object):
                                                     (i.e. maxDeviation negated < nextDeviation < maxDeviation)
     outputRange              <Dict>                 The range of the output current, keyed as low and high. Default is -1 to 1.
     viscosity                <Float>                The viscosity of the medium in which the metallic needle of the original Ashbian unit is free to move. 
-                                                    It acts as a dampening agent on the change of output. Min is 0 (no effect), max is 1 (no movement)
+                                                    It acts as a dampening agent on the change of output. Min is 0 (no effect),
+                                                    max is maxViscosity (10: no movement); the force is scaled by
+                                                    1 - viscosity / maxViscosity
     noise                    <Float>                Represents the **internal** noise of the  unit affecting the value of its critical deviation.
                                                     The default value is np.random.uniform(0, 0.1): a uniformly distributed value between 0 and 0.1
                                                     The actual noise on each iteration is a *normally distributed value* centered around 0,  with 
@@ -1590,8 +1592,11 @@ class HomeoUnit(object):
 
 
     def newProportionalNeedlePosition(self, aTorque):
-        '''See method newNeedlePosition for an extended comment on how 
-        to compute the displacement of the needle'''
+        '''As newLinearNeedlePosition, with the torque first divided by
+        2 x maxDeviation, the needle's whole range: a scaling of the force,
+        not a normalisation by the number of connections.  See method
+        newNeedlePosition for an extended comment on how to compute the
+        displacement of the needle'''
 
         normalizedViscosity = self.viscosity / HomeoUnit.DefaultParameters['maxViscosity']
         
