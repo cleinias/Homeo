@@ -873,16 +873,10 @@ initializeBraiten2_2_Full_GA.fitnessSign = 1
 
 
 # The GA phototaxis setups' TARGET: a light of intensity +100, the world's
-# default and the phototaxis CLIs' (whose --dark gives -100).  Until 15 Oct
-# 2026 these setups made it a darkness source, -100, under comments saying
-# the robot seeks the light.  The GA's task is the same either way -- the eye
-# response, the sensor scaling and the motor speed are odd functions, noise is
-# symmetric and every weight's sign is free, so -100 is +100 with some weights
-# flipped -- but the setups now mean what they say and match the CLIs.  Each
-# takes lightIntensity, to replay genomes evolved before (see
-# loggedLightIntensity).
+# default and the phototaxis CLIs' (whose --dark gives -100).  Each setup
+# takes lightIntensity (-100: a darkness source), and GA logbooks record it
+# (see loggedLightIntensity).
 GA_LIGHT_INTENSITY = 100
-DARK_BEFORE_2026_10_15 = -100
 
 
 def setTargetIntensity(backendSimulator, intensity):
@@ -894,16 +888,12 @@ def setTargetIntensity(backendSimulator, intensity):
 
 
 def loggedLightIntensity(experimentName, logbookMeta):
-    """The TARGET intensity a GA run evaluated its genomes with: the one its
-       logbook records (since 15 Oct 2026), else -100 for the setups that
-       then used a darkness source, else the setup's own."""
+    """The TARGET intensity a GA run evaluated its genomes with, as its
+       logbook records it; ValueError if the logbook records none."""
     meta = logbookMeta or {}
-    if meta.get('lightIntensity') is not None:
-        return meta['lightIntensity']
-    func = globals().get(experimentName)
-    if getattr(func, 'darkBefore20261015', False):
-        return DARK_BEFORE_2026_10_15
-    return getattr(func, 'lightIntensity', GA_LIGHT_INTENSITY)
+    if meta.get('lightIntensity') is None:
+        raise ValueError('the logbook of %s records no light intensity' % experimentName)
+    return meta['lightIntensity']
 
 
 def initializeBraiten2_2_Full_GA_phototaxis(homeoGenome, noHomeoParameters=4,
@@ -1577,12 +1567,7 @@ initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeSize = 8
 initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeLayout = 'weightfree_v2'
 
 
-
-# The setups whose TARGET was a darkness source (-100) until 15 Oct 2026, for
-# replaying the genomes evolved with them (loggedLightIntensity)
-for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA_phototaxis_continuous,
-           ):
-    _f.darkBefore20261015 = True
+# The GA phototaxis setups, which take lightIntensity (see GA_LIGHT_INTENSITY)
 for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA_phototaxis_continuous,
            initializeBraiten2_2_Full_GA_continuous_weightfree_v2,
            initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2,

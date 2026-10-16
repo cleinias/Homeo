@@ -258,21 +258,19 @@ direction:
 
 | Experiment | `fitnessSign` | Light intensity | Behaviour | Effect |
 |------------|---------------|-----------------|-----------|--------|
-| `initializeBraiten2_2_Full_GA_phototaxis` (and `_continuous`, the weight-free and 3c setups) | +1 | +100 (`lightIntensity`; −100 until 15 Oct 2026) | Robot seeks light source | Minimise distance directly |
+| `initializeBraiten2_2_Full_GA_phototaxis` (and `_continuous`, the weight-free and 3c setups) | +1 | +100 (`lightIntensity`) | Robot seeks light source | Minimise distance directly |
 | `initializeBraiten2_2_Full_GA_scototaxis` | −1 | +100 (positive, default) | Robot avoids light source | Negate distance: minimising = maximising distance |
 | `initializeBraiten2_2_Full_GA` | +1 | +100 (positive, default) | Original experiment | Minimise distance directly |
 
 For **phototaxis**, the robot should approach the light source, so
-`fitnessSign = 1` and DEAP minimises the raw distance.  Until 15 Oct 2026
-these setups made the TARGET a darkness source (intensity −100), under
-comments saying the robot seeks the light.  The GA's task is the same either
-way: the eye's response, the sensor's scaling and the motor's speed are odd
+`fitnessSign = 1` and DEAP minimises the raw distance.  The TARGET is a
+light (+100), as the names say and as the phototaxis CLIs use; each setup
+takes `lightIntensity` (−100 makes it a darkness source), the GA logbook
+records it, and a replay uses the recorded one
+(`HomeoExperiments.loggedLightIntensity`).  A darkness source poses the same
+task: the eye's response, the sensor's scaling and the motor's speed are odd
 functions, noise is symmetric and every weight's sign is free, so −100 is
-+100 with some weights flipped.  Now the TARGET is a light (+100), as the
-names say and as the phototaxis CLIs use; each setup takes `lightIntensity`,
-the GA logbook records it, and a replay of a logbook without it rebuilds the
-darkness source for the setups that had it
-(`HomeoExperiments.loggedLightIntensity`).
++100 with some weights flipped.
 
 For **scototaxis** (positive light intensity), the robot should flee the
 light source, so `fitnessSign = -1` negates the distance before DEAP

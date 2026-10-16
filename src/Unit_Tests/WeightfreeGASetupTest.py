@@ -102,8 +102,8 @@ class WeightfreeV2GenesTest(unittest.TestCase):
 
 class GALightTest(unittest.TestCase):
     """The GA phototaxis setups' TARGET is a light, +100, as their names say
-    and the phototaxis CLIs use; it was a darkness source, -100, until 15 Oct
-    2026, which replays of genomes evolved then restore"""
+    and the phototaxis CLIs use; lightIntensity=-100 makes it a darkness
+    source, and a replay takes the intensity its logbook records"""
 
     SETUPS = ['initializeBraiten2_2_Full_GA_phototaxis',
               'initializeBraiten2_2_Full_GA_phototaxis_continuous'] + V2
@@ -131,14 +131,17 @@ class GALightTest(unittest.TestCase):
             with self.subTest(name):
                 self.assertEqual(self._target(name, lightIntensity=-100)['intensity'], -100)
 
-    def testReplaysOfOldRunsUseTheDarknessSource(self):
+    def testAReplayTakesTheLoggedLight(self):
         logged = HE.loggedLightIntensity
-        self.assertEqual(logged('initializeBraiten2_2_Full_GA_phototaxis', None), -100)
-        self.assertEqual(logged('initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
-                                {}), 100)
-        self.assertEqual(logged('initializeBraiten2_2_Full_GA_phototaxis',
-                                {'lightIntensity': 100}), 100)
-
+        for name in ('initializeBraiten2_2_Full_GA_phototaxis',
+                     'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2'):
+            with self.subTest(name):
+                self.assertEqual(logged(name, {'lightIntensity': -100}), -100)
+                self.assertEqual(logged(name, {'lightIntensity': 100}), 100)
+                for meta in (None, {}, {'exp': name}):
+                    with self.assertRaisesRegex(ValueError, 'records no light intensity'):
+                        logged(name, meta)
+        self.assertFalse(any(hasattr(getattr(HE, n), 'darkBefore20261015') for n in dir(HE)))
 
 if __name__ == '__main__':
     unittest.main()

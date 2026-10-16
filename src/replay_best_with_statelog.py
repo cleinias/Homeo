@@ -133,8 +133,8 @@ def find_best_individual(logbook, indiv_id=None):
 def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby,
                      light_intensity=None):
     """Build the homeostat from a genome, mirroring the GA evaluation sequence.
-    light_intensity: the TARGET's, for setups that take it (see
-    HomeoExperiments.loggedLightIntensity).
+    light_intensity: the TARGET's, for setups that take it, as the logbook
+    records it (HomeoExperiments.loggedLightIntensity).
 
     Returns the configured Homeostat instance.
     """
@@ -423,12 +423,14 @@ def main():
     else:
         print("  Experiment: %s  (no metadata, using --exp override)" % exp_name)
 
-    # The TARGET's intensity the run evaluated with: the GA phototaxis
-    # setups' was -100 until 15 Oct 2026, +100 since
+    # The TARGET's intensity the run evaluated with
     import Simulator.HomeoExperiments as HE
     light_intensity = None
     if hasattr(exp_func, 'lightIntensity'):
-        light_intensity = HE.loggedLightIntensity(exp_name, meta)
+        try:
+            light_intensity = HE.loggedLightIntensity(exp_name, meta)
+        except ValueError as e:
+            sys.exit('Cannot replay: %s' % e)
         print("  Light intensity: %g" % light_intensity)
 
     # Find individual
