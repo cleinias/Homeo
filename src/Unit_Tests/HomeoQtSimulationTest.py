@@ -9,7 +9,7 @@ from   Core.HomeoUniselectorUniformRandom import *
 from   Core.Homeostat import *
 from   Simulator.HomeoQtSimulation import *
 import unittest, numpy, os, sys
-from time import sleep
+from time import sleep, monotonic
 from  Helpers.SimulationThread import SimulationThread
 from PyQt5.QtWidgets import QApplication
 
@@ -163,20 +163,35 @@ class HomeoQtSimulationTest(unittest.TestCase):
 
         self.simulation.moveToThread(self.thr)
         self.thr.started.connect(self.simulation.go)
+        def waitFor(condition, seconds):
+            "Poll condition until it holds, for at most seconds; whether it held"
+            deadline = monotonic() + seconds
+            while not condition():
+                if monotonic() > deadline:
+                    return False
+                sleep(0.01)
+            return True
+
+        def stopped():
+            "the clock has not moved for 0.1 s"
+            before = self.simulation.homeostat.time
+            sleep(0.1)
+            return self.simulation.homeostat.time == before
+
         self.thr.start()
         try:
-            sleep(0.5)
+            self.assertTrue(waitFor(lambda: self.simulation.homeostat.time > 0, 10))
             self.simulation.pause()
-            sleep(0.2)                              # let the loop see the flag
+            self.assertTrue(waitFor(stopped, 5))     # the loop has seen the flag
             pausedAt = self.simulation.homeostat.time
             sleep(0.3)
             self.assertEqual(self.simulation.homeostat.time, pausedAt)
-            self.assertGreater(pausedAt, 0)
             self.assertLess(pausedAt, simulationCycles)
         finally:
             self.simulation.pause()
             self.thr.quit()
-            self.assertTrue(self.thr.wait(5000))
+            finished = self.thr.wait(5000)
+        self.assertTrue(finished)
 
         self.simulation.maxRuns = pausedAt + 7
         self.simulation.resume()                    # runs here, to maxRuns
