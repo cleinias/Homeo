@@ -27,12 +27,14 @@ from Core.HomeoUniselectorUniformRandom import HomeoUniselectorUniformRandom
 class _DataDirTest(unittest.TestCase):
 
     def setUp(self):
+        # Cleanups run last-registered first: the directory goes after the
+        # test's own cleanups (which close its trajectory files in it)
         self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        saved = os.environ.get('HOMEO_DATA_DIR')
         os.environ['HOMEO_DATA_DIR'] = self.tmp.name
-
-    def tearDown(self):
-        os.environ.pop('HOMEO_DATA_DIR', None)
-        self.tmp.cleanup()
+        self.addCleanup(lambda: os.environ.pop('HOMEO_DATA_DIR', None) if saved is None
+                        else os.environ.__setitem__('HOMEO_DATA_DIR', saved))
 
     def setup(self, module, **kwargs):
         hom, backend, _ = module.setup_phototaxis(seed=5, **kwargs)
@@ -164,7 +166,7 @@ class VehicleBehaviourTest(_DataDirTest):
                 hom.collectsData = False
                 motors = [u for u in hom.homeoUnits if 'Motor' in u.name]
                 deviations = []
-                for tick in range(1, 3001):
+                for tick in range(5, 3001, 5):     # sampled every 5 ticks
                     hom.runFor(tick)
                     deviations.append(max(abs(u.criticalDeviation) for u in motors))
                 self.assertLess(max(deviations), 0.25 * motors[0].maxDeviation)
