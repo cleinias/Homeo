@@ -1,22 +1,21 @@
 '''
-KheperaSimulator is a very simple robotic simulator back-end
-built with the pyBox2D physics engine and the pyglet framework. 
-It is meant to be used for fast 
-simulations of Homeo controllers in GA experimental settings.
-The basic robot is a kinematic differential drive Khepera-like vehicle (see
-KheperaRobot.update),
-equipped with directional "light" sensors that estimate the light irradiance
-at the sensor's surface on the basis on incidence angle, light intensity, 
-and an attenuation matrix.
-The only other objects in the world are lights: static objects with a color and
-an intensity. 
+KheperaSimulator is a very simple robotic simulator back-end built with the
+pyBox2D physics engine and the pyglet framework, meant for fast simulations of
+Homeo controllers, in batch runs and GA experiments.
 
-The simulator is meant to be used in headless mode (i.e. no graphics) 
-for fast performance and to be portable to parallel environments 
-(especially including remote clusters), but it includes elementary visualization
-facilities for debugging purposes.
+Its robot is a Khepera-like robot: a small differential-drive vehicle with
+infrared sensors, used here as light sensors, and similar facilities, after
+K-Team's Khepera family.  Two Khepera-like robots are implemented at present
+(KheperaRobot): the e-puck2 (the default) and the K-Junior.  Each eye
+estimates the irradiance at its surface from the light's intensity, its
+distance and its angle of incidence (KheperaRobot.irradAtSensor).  The other
+objects in the world are its sources: static bodies with an intensity, and
+for Vehicle 3c a quality (light, temperature, oxygen, organic matter).
 
-Created on Mar 13, 2015
+The simulator is meant to be run headless (no graphics), for speed and on
+remote clusters, but it has elementary visualization facilities for
+debugging and for watching a run.
+
 @author: stefano
 '''
 from Box2D import *
@@ -294,18 +293,20 @@ b2Body.update = b2BodyDefaultUpdate
 "Khepera simulation classes"
 
 class KheperaRobot(object):
-    """The body of a small two-wheeled robot: an e-puck2 by default, or the
-       K-Junior of every run before 14 Oct 2026 (model='kjunior').
-       The body is implemented as a simple circle with two wheels and light sensors.
+    """A Khepera-like robot: a small differential-drive vehicle with infrared
+       sensors, used here as light sensors, and similar facilities.  Two are
+       implemented at present: the e-puck2 (model='epuck2', the default) and
+       the K-Junior (model='kjunior').  The body is a circle with two wheels
+       and light sensors.
 
-       model='epuck2' (default since 14 Oct 2026): the e-puck2 of Webots'
-       E-puck.proto (R2025a, version "2"), so that the Box2D and the Webots
-       vehicles are one robot (see EPUCK2):
+       model='epuck2': the e-puck2 of Webots' E-puck.proto (R2025a, version
+       "2"), so that the Box2D and the Webots vehicles are one robot (see
+       EPUCK2):
        - body 74 mm across (the PROTO's bounding cylinder; GCtronic's 70 mm
          is the shell), wheels of 20 mm radius, 52 mm apart;
-       - top wheel speed capped at the K-Junior vehicle's 24.3 mm/s (1.2166
-         rad/s), not the e-puck2's 151 mm/s, so that the homeostat's
-         timescales keep their relation to the motion (decision of 14 Oct);
+       - top wheel speed capped at 24.3 mm/s (1.2166 rad/s), not the
+         e-puck2's 151 mm/s, so that the homeostat's timescales keep their
+         relation to the motion;
        - each eye is a pair of the e-puck's light sensors, ls0+ls1 on the
          right and ls7+ls6 on the left, at their real positions and facing
          their real directions (+-17.2 and +-45.8 degrees); the eye's
@@ -314,24 +315,19 @@ class KheperaRobot(object):
          degrees).  No hoods.  A pair is one cosine eye facing about +-31.5
          degrees; together the eyes see the front 146 degrees, and neither
          sees an 88-degree sector behind.
-       The K-Junior geometry below is model='kjunior', kept to reproduce the
-       runs before 14 Oct 2026.
-       Main physical parameters affecting KheperaBody's behavior are:
-       - self.density (default is 0.7. It controls the bosy's mass, and hence the steering, since it affects the torque
-                       that the wheels are capable of transmitting to the body. 
-       
-       By default, KheperaRobot uses the geometric parameters of  a standard Khepera Junior robot, expressed
-       as ratios of the body's diameter:
+
+       model='kjunior': a K-Junior, with the geometric parameters of K-Team's
+       Khepera Junior, expressed as ratios of the body's diameter:
        - diameter = 0.126 meters (= 126 mm)
        - wheel radius = 0.0156 meters (= 15.6mm) = 0.12380 of diameter
        - wheel thickness = 0.003 meters (= 3mm)  = 0.0238 of diameter
        - wheel separation = 0.096 meters (= 96mm) = 0.7619 of diameter
-       - right eye position in degrees from y-axis  =  21.9017 
+       - right eye position in degrees from y-axis  =  21.9017
        - left eye position in degrees from y-axis   = -21.9017
-       - center eye position in degrees from y-axis = 0
-           Notice that the positions of rightEye and leftEye sensors are relative to the forward facing direction
-           and lie on the radius at the indicated angle (drawn from K-Team specs) from the y axis.
-           See addSensor function  for details on their implementation.
+           The positions of rightEye and leftEye sensors are relative to the
+           forward facing direction and lie on the radius at the indicated
+           angle (drawn from K-Team specs) from the y axis.  See addSensor
+           for details on their implementation.
        - eyeRadiusRatio = 0.5 (KJUNIOR_EYE_RADIUS_RATIO): the eyes sit half way
            out along that radius.  Each eye faces outward along its radius and
            sees 45 degrees either side of it, so its field ends 23.1 degrees
@@ -339,9 +335,11 @@ class KheperaRobot(object):
            midline 1.80 r ahead of the centre for eyes at radius r; at
            r = 0.0315 that is inside the body, so everything outside the body
            within 45 degrees of the heading is in view.
-           
-        Finally, the 'name' of the KheperaRobot is internal ref used by the simulation software to refer to the robot.
-        The 'ID', instead,  is the particular version of a robot, used by the Genetic Algorithm code to record fitnesses
+       - top wheel speed 1.55988 rad/s (0.0243 m/s).
+
+        The 'name' of the KheperaRobot is the internal reference the
+        simulation uses for the robot.  The 'ID' is the particular version of
+        a robot, which the Genetic Algorithm code uses to record fitnesses.
 
         Motion: a differential drive.  With wheel speeds vR, vL
         (setRightSpeed/setLeftSpeed take rad/s; times the wheel radius, m/s)
@@ -351,14 +349,11 @@ class KheperaRobot(object):
         keeps its pose in double precision, the heading in (-pi, pi], and
         places its Box2D body on it each step: Box2D's float32 state never
         accumulates the motion, so slow motion and long turns are as exact
-        as fast ones.  The wheels are bodies that follow the chassis, for
-        rendering only.
+        as fast ones.  The body's mass (density) plays no part in the motion.
+        The wheels are bodies that follow the chassis, for rendering only.
 
         Speed units: maxWheelSpeed is in rad/s, the unit of setRightSpeed and
-        setLeftSpeed, and getMaxSpeed returns it.  Its default, 1.55988 rad/s
-        (0.0243 m/s), is the top speed every run before 13 Oct 2026 actually had:
-        the motors' range was then reported as 100 rad/s * wheel radius = 1.55988
-        (m/s), which setRightSpeed read as rad/s (review finding RS-03)."""
+        setLeftSpeed, and getMaxSpeed returns it."""
 
     MODELS = ('epuck2', 'kjunior')
 
@@ -963,7 +958,8 @@ class KheperaWheel(object):
    
 class KheperaSimulation(object):
     """
-    KheperaSimulation is the overall class managing the simulation.
+    KheperaSimulation is the overall class managing the simulation of a
+    Khepera-like robot (see KheperaRobot) in its world.
     It is responsible for saving/loading of simulated worlds,
     as well for managing the simulation's operation: advancing, 
     stopping, resetting, etc.

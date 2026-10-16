@@ -141,7 +141,7 @@ src/
   Helpers/           # Loggers, noise, analysis and graphing tools
   Simulator/         # Simulation engine, GUIs, Ashby's experiments, GA, simulator backends
   HomeoExperiments/  # Experiment setups (KheperaExperiments: the phototaxis scripts)
-  KheperaSimulator/  # The Box2D robot simulator (an e-puck2; the K-Junior of older runs)
+  KheperaSimulator/  # The Box2D simulator of a Khepera-like robot (an e-puck2, or a K-Junior)
   WebotsSimulator/   # Webots as the robot simulator (Homeo as extern controller)
   Webots/            # The Webots project: HomeoEpuck.proto and the worlds
   RobotSimulator/    # Transducers and transducer-equipped units
