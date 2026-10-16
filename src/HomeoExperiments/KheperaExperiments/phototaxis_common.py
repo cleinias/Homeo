@@ -22,6 +22,7 @@ from Helpers.General_Helper_Functions import (unique_stem, run_tag, RUN_LOG_EXTE
                                               report_ticks)
 import os
 import random
+import sys
 import time
 import threading
 from math import sqrt, degrees, atan2
@@ -432,10 +433,12 @@ def _end_logs(hom, log_path, json_path):
     log_homeostat_conditions_json(hom, json_path, 'FINAL CONDITIONS')
 
 
-def run_settings(backend, light_intensity, stable_draws, env_seed):
-    "The settings every run records in its JSON (the homeostat's seed is recorded apart)."
+def run_settings(backend, light_intensity, stable_draws, env_seed, early_stop_distance=None):
+    '''The settings every run records in its JSON (the homeostat's seed is
+    recorded apart).  early_stop_distance: None when the run cannot stop early.'''
     eye_config = backend.kheperaSimulation.eyeConfig
     return dict(env_seed=env_seed,
+                early_stop_distance=early_stop_distance,
                 simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
                 stable_draws=stable_draws,
                 synchronous_stepping=backend.kheperaSimulation.synchronousStepping,
@@ -498,7 +501,8 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
 
     eye_config = sim.eyeConfig
     log_path, json_path, stem = _start_logs(
-        hom, backend, seed, run_settings(backend, light_intensity, stable_draws, env_seed))
+        hom, backend, seed, run_settings(backend, light_intensity, stable_draws, env_seed,
+                                         early_stop_distance))
 
     # Optional per-tick state logger
     state_log_path = None
@@ -851,9 +855,9 @@ Options both experiments take
                         V eye fields; mouse wheel zoom, drag pan
    --random-topology    every connection between the adaptive units on
    --continuous         the continuous (OU) uniselector instead of Ashby's
-   --dark               light intensity -100 (a "darkness source"); with it,
-                        --early-stop defaults to 1.5
+   --dark               light intensity -100 (a "darkness source")
    --early-stop D       stop a run once the robot is within D of the light
+                        (checked at each report; none by default)
    --state-log          a per-tick .statelog (--log-interval N: every N ticks)
    --stable-draws       redraw each unit's (mass, viscosity) while viscosity x
                         dt / mass >= 1.8, as the direct experiment's runs
@@ -924,12 +928,17 @@ def parse_common_args(argv):
     o['total_steps'] = (_value(argv, '--steps', int, '--steps needs a number of ticks')
                         if '--steps' in argv else 60000)
     o['light_intensity'] = -100 if '--dark' in argv else 100
+    # No early stop unless asked, dark runs included.  A stop outside
+    # ACQUISITION_RADIUS can end a run that reaches the source before it
+    # counts as acquired, hence the warning.
     o['early_stop_distance'] = None
     if '--early-stop' in argv:
         o['early_stop_distance'] = _value(argv, '--early-stop', float,
                                           '--early-stop needs a distance')
-    elif '--dark' in argv:
-        o['early_stop_distance'] = 1.5   # TrajectoryGrapher's gray circle
+        if o['early_stop_distance'] > ACQUISITION_RADIUS:
+            print('Warning: --early-stop %g is outside the acquisition radius (%g): a run '
+                  'can stop before it counts as acquired'
+                  % (o['early_stop_distance'], ACQUISITION_RADIUS), file=sys.stderr)
     o['n_batch'] = (_value(argv, '--batch', int, '--batch needs a number of runs')
                     if '--batch' in argv else None)
     o['state_log'] = '--state-log' in argv
