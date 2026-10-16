@@ -38,9 +38,9 @@ dependencies = [
 # `Box2D`, shipped under two distribution names, and Homeo works with either.
 # PyPI's `box2d-py` (no wheel for current CPythons: built from source with
 # swig, as hpc/grace_setup.sh does) or `Box2D` (e.g. Arch's python-box2d,
-# 2.3.10).  Requiring one name made `pip check` fail wherever the other was
-# installed (review finding SH-08).  Install it first, or with the extra
-# below, which names box2d-py:  pip install -e ".[box2d]"
+# 2.3.10).  Requiring one name would make `pip check` fail wherever the other
+# is installed.  Install it first, or with the extra below, which names
+# box2d-py:  pip install -e ".[box2d]"
 
 [project.optional-dependencies]
 gui = ["PyQt5>=5.15", "pyqtgraph>=0.14"]

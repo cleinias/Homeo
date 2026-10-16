@@ -108,8 +108,8 @@ next to the checkout (see `simulations_data_dir` in
 `Helpers/General_Helper_Functions.py`).
 
 The robot is an e-puck2 (both simulators; the dimensions of Webots'
-`E-puck.proto`, each eye a pair of its light sensors).  The K-Junior of the
-runs made before 14 Oct 2026 is kept as `--robot kjunior` to reproduce them.
+`E-puck.proto`, each eye a pair of its light sensors).  The Box2D simulator
+also has a K-Junior, `--robot kjunior`.
 See [ROBOTIC_OVERVIEW.md](ROBOTIC_OVERVIEW.md).
 
 ## Analysis
