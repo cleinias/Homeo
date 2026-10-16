@@ -6,7 +6,7 @@ in Homeo's own process, through Webots' Python controller library -- and a
 supervisor, which reads the poses it records.  The world advances only when
 Homeo steps it: once per homeostat tick (tickAdvance), after every unit has
 updated, as KheperaSimulation's synchronous stepping does.  Nothing goes
-over a socket of Homeo's own: the TCP bridge of 2013-2026 is gone.
+over a socket of Homeo's own.
 
 WebotsSimulation offers the parts of KheperaSimulation's interface that
 the experiments use -- allBodies (the robot and the lights), setupWorld,
@@ -25,8 +25,8 @@ same robot as KheperaRobot's model 'epuck2':
 - the other qualities of the Vehicle 3c world (temperature, oxygen,
   organic) have no Webots physics: they are computed here, from the
   sensors' and the sources' poses, with exactly the Box2D formula
-  (KheperaRobot.irradAtSensor) -- "virtual sensors" (decision of 14 Oct
-  2026).  Real gradients (diffusion) are a TODO of the research journal.
+  (KheperaRobot.irradAtSensor) -- "virtual sensors".  Real gradients
+  (diffusion) are a TODO.
 
 One process can control one Webots robot (the controller library allows
 one), so the simulation is shared: a second setupWorld in the same process
@@ -289,8 +289,8 @@ class WebotsRobot(object):
 
         Webots applies the new fields only at the next step, so this takes
         one step, the robot still: on return the pose and the eyes are the
-        new ones, as with Box2D.  (Until 15 Oct 2026 it did not, and runs
-        recorded the world's default pose as their start, R2-WEBOTS-2.)'''
+        new ones, as with Box2D, and a run records the pose set as its
+        start, not the world's default one.'''
         position = self._node.getPosition()
         nx = position[0] if x is None else x
         ny = position[1] if y is None else y
@@ -412,8 +412,8 @@ class WebotsSimulation(object):
         fileName, sources = WORLDS[HomeoWorld]
         worldFile = os.path.join(WEBOTS_PROJECT, 'worlds', fileName)
         # Close the previous run's file, as KheperaSimulation does: left open
-        # it lacked its "# Steps recorded" line and, decimated, its final row
-        # (R2-WEBOTS-4)
+        # it would lack its "# Steps recorded" line and, decimated, its final
+        # row
         previousWriter = getattr(self, 'trajectoryWriter', None)
         if previousWriter is not None:
             previousWriter.runOnce(transitionMessage="CLOSEFILE")
@@ -427,14 +427,14 @@ class WebotsSimulation(object):
             raise RuntimeError('this process runs %s; one process runs one Webots world'
                                % self._worldFile)
         else:
-            # A reset takes effect at the next step; until 15 Oct 2026 that was
-            # after WebotsRobot had set the motors, and the reset put them back
-            # in position control: from a process's second run on, the robot
-            # never moved (R2-WEBOTS-1).  So step once now, robot still.
+            # A reset takes effect at the next step; were that after
+            # WebotsRobot sets the motors, the reset would put them back in
+            # position control, and from a process's second run on the robot
+            # would never move.  So step once now, robot still.
             self._supervisor.simulationReset()
             self._supervisor.step(int(self._supervisor.getBasicTimeStep()))
             # A reset keeps a field the supervisor changed: a light set to 50
-            # stayed at 50 for the next run (R2-WEBOTS-3).  Put them back.
+            # stays at 50 for the next run.  Put them back.
             for name, intensity in self._worldLightIntensities.items():
                 self._supervisor.getFromDef(name).getField('intensity').setSFFloat(intensity)
         self.homeoWorldToRun = HomeoWorld
@@ -500,7 +500,7 @@ class WebotsSimulation(object):
         '''A new .traj for the robot, under its model name (setRobotModel: GA
         evaluations, replays).  The start position as Box2D gives it, an
         (x, 0, y) snapshot: the robot's body here is a live _Pose, which the
-        writer could not index (R2-WEBOTS-5).  The lights stay the world's.'''
+        writer cannot index.  The lights stay the world's.'''
         robot = self.allBodies[self.robotName]
         position = robot.body.position
         self.trajectoryWriter.runOnce(transitionMessage="NEWFILE",

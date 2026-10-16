@@ -15,17 +15,17 @@ a = ap.parse_args()
 def task_of(path):
     r"""Recover the array index of a per-task batch CSV.
 
-    Two layouts, because the array's output moved into a single directory on
-    2026-10-01.  Current: the index is a serial appended after the timestamp,
+    Two layouts.  All tasks in one directory: the index is a serial appended
+    after the timestamp,
 
         batch_direct_continuous_light_2026-10-01-13-58-11-07.csv
                                       \_____ timestamp ____/ \/ serial
 
-    Legacy: the filename ended at the timestamp and the index came from the
-    enclosing task_<i>/ directory.
+    One task_<i>/ directory per task: the filename ends at the timestamp and
+    the index comes from the enclosing directory.
 
-    The two cannot be told apart by "is there a trailing -NN", because a legacy
-    name ends with the timestamp's own seconds field, which looks identical.
+    The two cannot be told apart by "is there a trailing -NN", because a
+    per-directory name ends with the timestamp's own seconds field, which looks identical.
     So the whole %Y-%m-%d-%H-%M-%S shape is matched and the index is taken only
     from a group FOLLOWING it.  A non-numeric tag (--run-tag accepts any word)
     carries no index, so that falls back to the directory too.

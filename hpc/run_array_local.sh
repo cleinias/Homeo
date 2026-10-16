@@ -59,13 +59,10 @@
 #     batch_direct_continuous_light_<timestamp>-07.csv
 #     run_task-07.out
 #
-# Until 2026-10-01 each task got its own task_<i>/ directory and filenames were
-# distinguished only by a "%Y-%m-%d-%H-%M-%S" timestamp.  Both halves of that
-# were a mistake: the per-task directories had to be merged by hand before the
-# results could be used, and the merge silently overwrote files, because tasks
-# that started within the same second produced byte-identical names.  In the
-# 2026-10-01 20-run array, tasks 2 and 3 both stamped 13-23-38.  The serial
-# makes names unique by construction instead of by luck of the clock.
+# One directory, so the results need no merging, and a serial, because a
+# "%Y-%m-%d-%H-%M-%S" timestamp alone does not tell tasks apart: tasks that
+# start within the same second get byte-identical names.  The serial makes
+# names unique by construction instead of by luck of the clock.
 #
 # Why this exists: an expired allocation, or anything else that makes Grace
 # unavailable. Grace is still the better venue -- there all 20 tasks run on 20
@@ -92,7 +89,7 @@
 # nothing.  Example with a 4-core workstation (~45 min/task when 4 run at once)
 # and a slower 4-core server (~53 min/task):
 #
-#     RUN=.../SimulationsData/ou6M-2026-10-01
+#     RUN=.../SimulationsData/ou6M-<date>
 #     # the faster machine takes 12, i.e. 3 waves:
 #     bash hpc/run_array_local.sh -a 1-12 -o "$RUN"
 #     # the slower one takes 8, i.e. 2 waves (PYTHON= if its venv is elsewhere):
@@ -165,7 +162,7 @@ UNISELECTOR=continuous
 
 
 # Print the whole leading comment block, rather than a hardcoded line range:
-# the range silently went stale every time the header was edited.
+# a range silently goes stale every time the header is edited.
 usage() {
     awk 'NR == 1 { next }
          /^#/    { sub(/^# ?/, ""); print; next }
@@ -333,7 +330,7 @@ echo
 
 # Provenance alongside the results, so the directory is self-describing.
 # Appended, not overwritten: a design run as several invocations into one
-# directory (e.g. one per wiring, as the 2026-10-03 fixed-weight baseline was)
+# directory (e.g. one per wiring of the fixed-weight design)
 # would otherwise keep only the last invocation's record.
 {
     echo "----"
@@ -364,10 +361,10 @@ task_done() {   # a task counts as finished once its own batch CSV exists
     # The CSV is named ...-<serial>.csv, so a task is identified by its serial
     # rather than by a directory.  It is looked for in every dated directory of
     # the run, not only today's: an array resumed with -o on a later day, or
-    # one straddling midnight, has finished tasks under an earlier date (review
-    # finding SH-05: they were run again, and aggregation then found two CSVs
-    # for one task).  The legacy per-task path is still accepted so that an
-    # array started under the old layout can be resumed with -o.
+    # one straddling midnight, has finished tasks under an earlier date (run
+    # again, they would leave two CSVs for one task).  A per-task task_<i>/
+    # directory is accepted too, so that an array written in that layout can
+    # be resumed with -o.
     local s; s=$(printf '%02d' "$1")
     compgen -G "$RUNDIR/SimsData-*/batch_*-$s.csv" >/dev/null 2>&1 ||
         compgen -G "$RUNDIR/task_$1/*/batch_*.csv" >/dev/null 2>&1
@@ -447,11 +444,9 @@ run_task() {
         state_log_args="--state-log --log-interval $LOG_INTERVAL"
     fi
     mkdir -p "$DATADIR" "$RUNDIR/.numba/task_$i"
-    # ALL tasks write into one directory.  They used to get one directory each,
-    # which meant the results had to be merged by hand afterwards -- and that
-    # merge was lossy, because filenames were distinguished only by a
-    # whole-second timestamp and tasks starting in the same second produced
-    # identical names.  --run-tag makes every filename carry the task serial, so
+    # ALL tasks write into one directory, so the results need no merging.
+    # A whole-second timestamp alone does not tell apart tasks that start in
+    # the same second; --run-tag makes every filename carry the task serial, so
     # a shared directory is collision-free by construction.
     # NB: HOMEO_DATA_DIR is the data ROOT, not the final directory -- the
     # experiment appends "SimsData-<date>" to it itself.  Pointing it at
@@ -508,8 +503,8 @@ printf '== finished: %d started, %d skipped, %dh%02dm elapsed\n' \
        "$started" "$skipped" $(( elapsed / 3600 )) $(( elapsed % 3600 / 60 ))
 
 # Finished tasks of THIS invocation's range, by the same test that skips them:
-# counting every batch CSV under the run directory also counted other ranges'
-# and other invocations' tasks (SH-05).
+# counting every batch CSV under the run directory would also count other
+# ranges' and other invocations' tasks.
 ok=0
 for i in $(seq "$FIRST" "$LAST"); do task_done "$i" && ok=$(( ok + 1 )); done
 echo "   tasks with results: $ok/$n_tasks"

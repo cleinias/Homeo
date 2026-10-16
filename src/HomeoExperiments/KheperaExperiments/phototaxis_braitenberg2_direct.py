@@ -40,9 +40,8 @@ Initialization modes
    Ignores --random-topology/--continuous.  Two kinds of motor:
 
    --motor newtonian (default): the homeostat's own motor units with frozen
-      weights.  Motor dynamics as in the retired phototaxis_braitenberg2_control
-      (mass 1, viscosity 0, -0.9 self-connection) and a sigmoid from deviation to
-      wheel speed.  NOT a Braitenberg vehicle: each motor is a second-order
+      weights.  Motor dynamics: mass 1, viscosity 0, -0.9 self-connection, and
+      a sigmoid from deviation to wheel speed.  NOT a Braitenberg vehicle: each motor is a second-order
       system, and the self-connection acts as a spring, not as damping, so
       with zero viscosity the motor is an undamped oscillator -- under a
       constant light the wheel speed swings every ~18 ticks.
@@ -99,7 +98,7 @@ Usage
 '''
 
 from HomeoExperiments.KheperaExperiments import phototaxis_common as common
-# Some of these only for the callers that used to find them here
+# Some of these only for the callers that import them from here
 from HomeoExperiments.KheperaExperiments.phototaxis_common import (
     ACQUISITION_RADIUS, DEFAULT_START_RANGE, DEFAULT_ROBOT, STABILITY_MARGIN, TARGET_POS,
     seed_run, prepare_backend, experiment_suffix, set_light, configure_eyes,
@@ -158,9 +157,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             'aristotelian' (the true Braitenberg vehicle; see
                             _direct_fixed_weights).
         stable_draws:       redraw each motor's (mass, viscosity) while
-                            viscosity*dt/mass >= STABILITY_MARGIN, as runs
-                            before 13 Oct 2026 did; default False, the full
-                            distribution (see phototaxis_common.randomize_unit).
+                            viscosity*dt/mass >= STABILITY_MARGIN; default
+                            False, the full distribution (see phototaxis_common.randomize_unit).
 
     Returns:
         (hom, backend, seed)
@@ -354,7 +352,7 @@ def _direct_random_topology(hom, mass_range=(1, 10),
 # Fixed-weight vehicle parameters (the Newtonian motor; see _direct_fixed_weights)
 CONTROL_CROSS_WEIGHT = 1.0    # sensor -> motor, magnitude (sign set by `signs`)
 # Motor self-connection: with no viscosity a spring, not a damper -- the motor
-# oscillates about its balance point at constant amplitude (exact step, 2478b82)
+# oscillates about its balance point at constant amplitude (the step is exact)
 CONTROL_SELF_WEIGHT = -0.9
 CONTROL_MASS = 1.0
 CONTROL_VISCOSITY = 0.0
@@ -396,7 +394,7 @@ def _control_sensor_motor_pairs(wiring):
 def control_variant_name(wiring, signs, motor='newtonian'):
     '''Filename-safe tag for a non-adaptive variant, e.g. 'crossed_pm' for
     crossed +-, 'arist_crossed_pm' for the same with Aristotelian motors.  The
-    Newtonian vehicle keeps its untagged names, which its existing runs have.'''
+    Newtonian vehicle's names carry no motor tag.'''
     tag = '%s_%s' % (wiring, signs.replace('+', 'p').replace('-', 'm'))
     return 'arist_' + tag if motor == 'aristotelian' else tag
 
@@ -413,9 +411,8 @@ def _direct_fixed_weights(hom, max_speed_fraction=0.8, switching_rate=0.5,
     2b ("aggression").  No uniselector, no noise and no random parameters, so
     a run depends only on the start pose.
 
-    motor='newtonian': the homeostat's motor units, with dynamics as in the
-    retired phototaxis_braitenberg2_control -- mass 1, zero viscosity, a -0.9
-    self-connection and a sigmoid to wheel speed.  The self-connection acts as
+    motor='newtonian': the homeostat's motor units, with mass 1, zero
+    viscosity, a -0.9 self-connection and a sigmoid to wheel speed.  The self-connection acts as
     a spring, not as damping, so each motor is an undamped second-order
     oscillator (see the module docstring).
 
@@ -491,9 +488,8 @@ def add_constant_units(hom):
     '''Add the Drive and Spin units, both with output 1 and every connection
     into or out of them off.  Creating units and connections draws from
     np.random, so its state is saved and restored: the draws a seed makes
-    afterwards do not depend on whether these units exist.  (Until 14 Oct
-    2026 those included the start pose, which now comes from the
-    environment's own stream.)'''
+    afterwards do not depend on whether these units exist.  (The start pose
+    is not among them: it comes from the environment's own stream.)'''
     from Core.HomeoUnitAristotelian import HomeoUnitAristotelian
     np_state, py_state = np.random.get_state(), random.getstate()
     try:

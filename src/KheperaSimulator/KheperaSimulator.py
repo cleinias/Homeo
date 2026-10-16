@@ -194,8 +194,7 @@ def makePygletRing(r, numPoints=48):
     return _make_vlist(numPoints, GL_LINE_LOOP, vertices)
 
 # The radius of the eyes' field arcs in the visualizer, in metres: rendering
-# only (an eye has no maximum distance).  10 before 15 Oct 2026, which drew
-# each arc across the whole arena.
+# only (an eye has no maximum distance).
 FIELD_RENDER_RANGE = 0.15
 
 """Add drawing pyglet-specific drawing functions
@@ -239,10 +238,8 @@ def _drawShapes(userData, position, angle, fields=False):
        matching userData['colors']; and, when fields is true,
        userData['pygletField'] in userData['fieldColor'].
        The shape shader turns its rotation attribute clockwise, so it gets
-       -angle in degrees.  Before 15 Oct 2026 it got +angle, and every shape
-       was drawn turned the wrong way: a robot heading at 30 degrees was drawn
-       heading at -30, its eyes' arcs facing likewise (where the shapes were
-       placed was right)."""
+       -angle in degrees: with +angle every shape would be drawn turned the
+       wrong way, a robot heading at 30 degrees drawn heading at -30."""
     shapes = userData['pygletShape']
     if shapes is None:
         drawn = []
@@ -367,7 +364,7 @@ class KheperaRobot(object):
                   eyes={'rightEye': ('ls0', 'ls1'), 'leftEye': ('ls7', 'ls6')},
                   fieldOfView=180)
     # The K-Junior vehicle's top rim speed, 0.0243322561 m/s, over the
-    # e-puck2's wheel radius: the cap of 14 Oct 2026
+    # e-puck2's wheel radius: the e-puck2's capped top wheel speed
     EPUCK2_CAPPED_WHEEL_SPEED = 0.0243322561 / 0.020         # rad/s
 
     KJUNIOR_EYE_RADIUS_RATIO = 0.5
@@ -619,9 +616,9 @@ class KheperaRobot(object):
                 
         """Cache angles (in degrees) of eye sensors from robot's normal heading for future computation of irradiance:
            the direction of the sensor's position from the centre, plus orientation.  atan2, so that an
-           eye in the rear half faces backward (atan(y/x) turned it forward), and the orientation is
-           applied (it was ignored): review finding RS-07.  For the K-Junior's eyes, in front, the
-           angle is the same as atan's to the last bit."""
+           eye in the rear half faces backward (atan(y/x) would turn it forward), and the
+           orientation is applied.  For the K-Junior's eyes, in front, the angle is the same as
+           atan's to the last bit."""
         fx, fy = (rotMatrix * positionVector).A1
         sensorAngle = degrees(atan2(fy, fx)) + orientation
         sensorFixture.userData[sensorName + 'Angle']  = sensorAngle
@@ -696,7 +693,7 @@ class KheperaRobot(object):
             lightAmbRatio = targetLight.userData['ambRatio']
             cosAngleToTarget = np.dot(normalize(vecToTarget),eyeNormalVec)
             "Is target in range?  (The dot product of unit vectors can round"
-            "past +/-1, which acos refuses: review finding RS-06.)"
+            "past +/-1, which acos refuses.)"
             if degrees(acos(min(1.0, max(-1.0, cosAngleToTarget)))) > eyeAngleRange / 2:
                 continue
             directIntens = (lightIntensity * (1-lightAmbRatio)) * cosAngleToTarget
@@ -784,7 +781,7 @@ class KheperaRobot(object):
         '''Set the named eye's threshold, saturation (both irradiances) and
         response shape; None leaves a value as it is.  See eyeResponse.  The
         new settings are checked before any is stored, so a refused call
-        leaves the eye as it was (review finding RS-12).'''
+        leaves the eye as it was.'''
         userData = (fixture if fixture is not None else self.sensors[sensorName]).userData
         I0 = float(threshold) if threshold is not None else userData[sensorName + 'Threshold']
         Isat = float(saturation) if saturation is not None else userData[sensorName + 'Saturation']
@@ -818,10 +815,8 @@ class KheperaRobot(object):
         A source of negative intensity (a "darkness source", --dark) gives a
         negative irradiance, and the response is signed: minus the response to
         the irradiance's magnitude, in [-1, 0].  So a darkness source is a light
-        whose stimulus has the opposite sign, as it was before the threshold and
-        saturation were introduced (7170286), when negative irradiances reached
-        the sensor units unchanged; without the sign the eye read 0 and --dark
-        runs were blind (review finding RE-01)."""
+        whose stimulus has the opposite sign; without the sign the eye would
+        read 0 and --dark runs would be blind."""
         if irradiance < 0:
             return -self.eyeResponse(sensorName, -irradiance)
         userData = self.sensors[sensorName].userData
@@ -1035,8 +1030,8 @@ class KheperaSimulation(object):
 #         if len(self.allBodies)>0:
 #             print "Robot is currently at: ", self.allBodies[self.robotName].body.position
         
-        # Look the builder up, then call it outside the try: an error inside a
-        # builder used to come out as one of these two messages (RS-14)
+        # Look the builder up, then call it outside the try, so that an error
+        # inside a builder does not come out as one of these two messages
         if not isinstance(getattr(self, 'homeoWorldToRun', None), str):
             raise Exception("Cannot run simulation without an experiment to run")
         builder = getattr(self, self.homeoWorldToRun, None)
@@ -1216,10 +1211,7 @@ class KheperaSimulation(object):
         """Each extra pair has the light eyes' receptors and field (see
         KheperaRobot): the four modalities share one geometry,
         so they differ only in how they are wired, and none has a blind wedge
-        ahead.  Before 13 Oct 2026 the pairs sat on the rim at +/-45 (temperature),
-        +/-10 (oxygen) and +/-35 degrees (organic), with wedges reaching 0.078 and
-        0.257 from the centre and, for temperature, a strip straight ahead never
-        seen.  Other layouts (direction-free sensing of heat and chemicals, more
+        ahead.  Other layouts (direction-free sensing of heat and chemicals, more
         sensors per modality): research note "Khepera sensor placement for
         Vehicle 3c"."""
         for modality in ('Temp', 'Oxy', 'Org'):
@@ -1697,9 +1689,7 @@ class KheperaSimulationVisualizer(pyglet.window.Window):
 
 def nudgeWheels(sim, dRight, dLeft):
     """Change the speeds of sim's robot's wheels by dRight and dLeft rad/s
-    (the visualizer's O/L and Q/A keys).  The keys used to index getSpeed()'s
-    dict by position, and a robotName the visualizer does not have, and
-    crashed (review finding RS-09)."""
+    (the visualizer's O/L and Q/A keys)."""
     robot = sim.allBodies[sim.robotName]
     speeds = robot.getSpeed()                 # m/s at the rim
     robot.setSpeed(speeds['right'] / robot.wheelRadius + dRight,

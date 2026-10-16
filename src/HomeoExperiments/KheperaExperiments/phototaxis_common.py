@@ -6,11 +6,7 @@ records and command-line options.
 
 phototaxis_braitenberg2_direct (the 2+2 vehicle) and
 phototaxis_braitenberg2_Ashby (the 6-unit vehicle) only build their
-homeostats; everything else is here, so that a fix reaches both.  Until 13
-Oct 2026 each script had its own copy, and fixes reached only the direct one
-(review finding RE-06): the Ashby runs had no seed in batches, no run tag in
-their file names, no stepping or stability options, and tagged nothing in
-their batch files.
+homeostats; everything else is here, so that a fix reaches both.
 
 The command-line options both experiments take are listed in
 COMMON_OPTIONS_HELP.
@@ -52,17 +48,16 @@ SIMULATORS = ('box2d', 'webots')
 
 # --- Seeding and the world ----------------------------------------------------
 
-# A run has two independently seeded random streams (since 14 Oct 2026):
+# A run has two independently seeded random streams:
 #   - the homeostat's (--seed): numpy's, Python's and numba's global generators,
 #     which draw the units' and connections' parameters, the uniselectors'
 #     choices and every noise;
 #   - the environment's (--env-seed): a generator of its own, env_rng(), which
 #     draws the start pose.
-# One seed drove both before: a start pose drawn after the units consumed the
-# homeostat's stream, so the same seed gave a different noise history at a
-# random heading than at a fixed one, and the start pose depended on how many
-# draws the vehicle's setup made.  Separate streams allow the crossed
-# environment x seed decomposition: hold one stream, vary the other.  The
+# With one stream for both, a start pose drawn after the units would make the
+# same seed give a different noise history at a random heading than at a fixed
+# one, and the start pose would depend on how many draws the vehicle's setup
+# makes.  Separate streams allow the crossed environment x seed decomposition: hold one stream, vary the other.  The
 # environment's seed defaults to the homeostat's, so --seed alone still
 # reproduces a run; the two streams use different generators (MT19937 and
 # PCG64 through SeedSequence), so equal seeds give unrelated draws.
@@ -76,8 +71,7 @@ def seed_run(seed=None):
     '''Seed the homeostat's stream: numpy's, Python's and numba's generators;
     draw a seed from os.urandom if none is given.  Numba keeps a separate
     random state that np.random.seed() does not reach: without seeding it the
-    trajectory is not reproducible from the seed (SH-03, RE-05).  Returns the
-    seed.'''
+    trajectory is not reproducible from the seed.  Returns the seed.'''
     from Core.HomeoJIT import seed_jit_rng
     if seed is None:
         seed = new_seed()
@@ -139,10 +133,10 @@ def experiment_suffix(light_intensity=100, uniselector_type='ashby', adaptive=Tr
 def set_light(backend, light_intensity, eye_saturation=None, eye_threshold=None,
               eye_response=None):
     '''Set the light's intensity, then the eyes, whose saturation is computed
-    from it (RE-11), and keep the eyes as configured, (I0, Isat, response), in
+    from it, and keep the eyes as configured, (I0, Isat, response), in
     the simulation's eyeConfig for the run's records.  Call once the world
     exists.  Sets it even at the default 100: a Webots world reset by the
-    previous run need not have it (R2-WEBOTS-3).'''
+    previous run need not have it.'''
     target_body = backend.kheperaSimulation.allBodies['TARGET']
     target_body.userData['intensity'] = light_intensity
     target_body.userData['lightIntensity'] = light_intensity
@@ -173,7 +167,7 @@ def configure_eyes(backend, saturation=None, threshold=None, response=None):
                 KheperaWorldLightDef's defaults, which is checked).
     threshold:  an irradiance, I0.  A log eye needs one > 0 and gets 1 if none
                 is given, so that it stops seeing an intensity-100 light 10
-                units away -- as far as the old eyes' distance cut-off.
+                units away.
     response:   'linear' or 'log'.
     None leaves a setting at the eye's default (linear, I0 = 0, Isat = 100).
     Returns the eyes' (threshold, saturation irradiance, response)."""
@@ -222,7 +216,7 @@ def set_uniselector_type(unit, uniselector_type, continuous_params=None):
 
 
 def uniselector_tag(uniselector_type):
-    "The uniselector's tag in file names: its type (batch files called 'random' 'ashby')."
+    "The uniselector's tag in file names: its type."
     if uniselector_type not in UNISELECTOR_TYPES:
         raise ValueError("uniselector_type must be one of %s, got %r"
                          % (UNISELECTOR_TYPES, uniselector_type))
@@ -231,25 +225,22 @@ def uniselector_tag(uniselector_type):
 
 # --- Numerical-integration stability -----------------------------------------
 #
-# The Newtonian needle used to be integrated explicitly: with zero torque the
-# velocity recursion was
-#       v <- v * (1 - viscosity * dt_fast / mass)
-# so the step was stable only while  viscosity * dt_fast / mass < 2.  Outside
-# that bound the needle diverged to its limit within a few dozen ticks with no
-# sensory input at all, which looked like -- but was not -- a saturated unit.
-# Random (mass, viscosity) draws violated this in 9 of the 20 runs of
-# 2026-09-30; see "Bimodal acquisition in OU chemotaxis".
-# HomeoJIT._jit_needle_position_newtonian now takes the exact step, stable for
-# any ratio (Homeo 1257d58), so the guard is no longer needed for the
-# numerics, and since 13 Oct 2026 it is off: (mass, viscosity) come from
-# their full distribution, the one the Ashby experiment always used.
-# --stable-draws (stable_draws=True) restores it, to reproduce earlier runs of
-# the direct experiment; runs and batch files record which was used.
+# An explicit step of the Newtonian needle, with zero torque the velocity
+# recursion
+#       v <- v * (1 - viscosity * dt_fast / mass),
+# is stable only while  viscosity * dt_fast / mass < 2.  Outside that bound
+# the needle diverges to its limit within a few dozen ticks with no sensory
+# input at all, which looks like -- but is not -- a saturated unit.
+# HomeoJIT._jit_needle_position_newtonian takes the exact step, stable for
+# any ratio, so the numerics need no guard, and by default there is none:
+# (mass, viscosity) come from their full distribution, the one the Ashby
+# experiment uses.  --stable-draws (stable_draws=True) keeps the draws inside
+# the bound; runs and batch files record which was used.
 STABILITY_MARGIN = 1.8          # with stable_draws, keep viscosity*dt/mass below this
 
 
 def integration_ratio(unit):
-    "viscosity * dt_fast / mass (the old explicit step needed it below 2)."
+    "viscosity * dt_fast / mass (an explicit step needs it below 2)."
     dt = getattr(unit, '_dt_fast', 1.0)
     return unit.viscosity * dt / unit.mass if unit.mass else float('inf')
 
@@ -258,10 +249,9 @@ def randomize_unit(u, mass_range, stable_draws=False, start_at_rest=False, max_t
     """setRandomValues() + a mass uniform in mass_range (setRandomValues leaves
     it at the sluggish default of 100).
 
-    With stable_draws (the default of the direct experiment's runs before 13
-    Oct 2026) the (mass, viscosity) pair is resampled until
-    viscosity*dt_fast/mass < STABILITY_MARGIN, the bound the old explicit
-    integrator needed: the original joint distribution conditioned on that
+    With stable_draws the (mass, viscosity) pair is resampled until
+    viscosity*dt_fast/mass < STABILITY_MARGIN, the bound an explicit
+    integrator needs: the full joint distribution conditioned on that
     bound.  With start_at_rest the needle starts centred and motionless, so
     the vehicle begins stationary instead of mid-manoeuvre.
     """
@@ -495,9 +485,9 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
     min_t = 0
     early_stopped = False
     '''Time of first acquisition: the tick at which the vehicle first comes
-       within ACQUISITION_RADIUS of the target.  Recorded here rather than
-       reconstructed from the .traj afterwards, which is what the 2026-09-30
-       analysis had to do.  None if it never acquires.'''
+       within ACQUISITION_RADIUS of the target.  Recorded here, so that it
+       need not be reconstructed from the .traj afterwards.  None if it never
+       acquires.'''
     first_acq = None
     rx, ry = robot.body.position[0], robot.body.position[1]
     prev_x, prev_y, prev_tick = rx, ry, 0
@@ -566,7 +556,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                   start_dist=start_dist, start_sees_light=start_sees_light,
                   first_acq=first_acq, acquired=first_acq is not None,
                   # The eyes as configured, not as asked: a log eye's default
-                  # threshold is 1, not 0 (RE-11)
+                  # threshold is 1, not 0
                   eye_response=eye_config[2],
                   eye_threshold=eye_config[0],
                   eye_saturation='' if eye_saturation is None else eye_saturation,
@@ -816,9 +806,7 @@ Options both experiments take
                         (checked at each report; none by default)
    --state-log          a per-tick .statelog (--log-interval N: every N ticks)
    --stable-draws       redraw each unit's (mass, viscosity) while viscosity x
-                        dt / mass >= 1.8, as the direct experiment's runs
-                        before 13 Oct 2026 did, to reproduce them; batch files
-                        get "_stabledraws"
+                        dt / mass >= 1.8; batch files get "_stabledraws"
    --start-at-rest      the adaptive units start centred and motionless
 
    Start pose: default (4, 4), heading 0, the light at (7, 7) in view.
@@ -935,7 +923,7 @@ def parse_common_args(argv, flags=(), valued=None):
                              % (' '.join(BATCH_VARY), o['batch_vary']))
         if o['n_batch'] is None:
             raise SystemExit('--batch-vary applies only with --batch')
-    o['stable_draws'] = '--stable-draws' in argv     # off by default since 13 Oct 2026
+    o['stable_draws'] = '--stable-draws' in argv     # off by default
     o['start_at_rest'] = '--start-at-rest' in argv
     o['random_start'] = '--random-start' in argv
     o['random_heading'] = '--random-heading' in argv
@@ -1007,8 +995,7 @@ def parse_common_args(argv, flags=(), valued=None):
         raise SystemExit('Webots runs the e-puck2 only (--robot epuck2)')
 
     '''Trajectory volume.  Two rows are recorded per homeostat tick at ~50 bytes
-       each, so a 6M-step run writes ~600 MB and a batch of 20 wrote 11.5 GB on
-       2026-09-30.  --traj-interval decimates at write time; the final pose is
+       each, so a 6M-step run writes ~600 MB and a batch of 20 ~12 GB.  --traj-interval decimates at write time; the final pose is
        always kept, so final-distance analyses are unaffected.'''
     from Helpers.RobotTrajectoryWriter import configureTrajectoryDefaults
     traj_interval = 1

@@ -1,11 +1,10 @@
 '''
-Created on Sep 3, 2013
 @author: stefano
 
 The Transducer module contains the classes necessary to operate 
 a robot's actuators (motors, etc). The basic class is fairly abstract 
 and may be subclassed to operate concrete robotic simulation environments
-(the internal HOMEO simulator; formerly player/Stage, V-REP and Webots)
+(here, the HOMEO_ subclasses, for Homeo's own simulators)
 '''
 from Helpers.General_Helper_Functions import SubclassResponsibility
 from Helpers.ExceptionAndDebugClasses import hDebug
@@ -147,7 +146,7 @@ class _HOMEO_RobotByName(object):
     """The robot a sensor reads: looked up by name in its simulation at each
     read, as HOMEO_DiffMotor does, so that a sensor made before a world reset
     (which builds a new robot) reads the new robot.  Given a robot object
-    instead (no simul), the sensor reads that robot (review finding RS-11)."""
+    instead (no simul), the sensor reads that robot."""
 
     def getRobot(self):
         if getattr(self, 'simul', None) is not None:
