@@ -40,6 +40,8 @@ class HeadlessStateLogTest(unittest.TestCase):
     def testTheFileParses(self):
         data = self.data
         self.assertEqual(data.metadata['log_interval'], 1)
+        from Helpers.General_Helper_Functions import homeo_version
+        self.assertEqual(str(data.metadata['homeo']), homeo_version())
         self.assertEqual(sorted(data.unit_names),
                          sorted(u.name for u in self.result['hom'].homeoUnits))
         self.assertIn('Left Motor', data.unit_names)          # names with spaces

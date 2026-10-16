@@ -43,6 +43,10 @@ class GALogbookTest(unittest.TestCase):
             # how the genes decode (a layout's size does not identify it)
             self.assertEqual(summaries[0]['genomeLayout'], 'weightfree_v2')
             self.assertEqual(summaries[0]['lightIntensity'], 100)    # a light
+            # what ran: the code, the simulator and the robot
+            from Helpers.General_Helper_Functions import homeo_version
+            self.assertEqual((summaries[0]['homeo'], summaries[0]['simulator'],
+                              summaries[0]['robot']), (homeo_version(), 'box2d', 'epuck2'))
 
 
 if __name__ == '__main__':

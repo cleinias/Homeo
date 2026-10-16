@@ -252,7 +252,9 @@ def replay_visualized(genome, experiment_func, seed, data_dir,
     glClearColor(0.55, 0.95, 1.0, 1.0)
 
     lock = threading.Lock()
-    backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera', dataDir=data_dir)
+    from Simulator.HomeoGenAlg import GA_ROBOT
+    backend = SimulatorBackendHOMEO(lock=lock, robotName='Khepera', dataDir=data_dir,
+                                    robotModel=GA_ROBOT)
     backend.start('kheperaBraitenberg2_HOMEO_World')
 
     hom = _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby,
@@ -345,6 +347,14 @@ def main():
     print("  Experiment: %s  (%s units, %s evolved, genome size %s)"
           % (exp_name, meta.get('noUnits', '?'), meta.get('noEvolvedUnits', '?'),
              meta.get('genomeSize', '?')))
+
+    # The robot the run evaluated with: the GA's
+    from Simulator.HomeoGenAlg import GA_ROBOT
+    if meta.get('robot') != GA_ROBOT:
+        sys.exit("Cannot replay: the logbook's robot is %r, the GA's %r (a logbook that "
+                 "records no robot is replayed by the Homeo commit that wrote it)"
+                 % (meta.get('robot'), GA_ROBOT))
+    print("  Robot: %s   Homeo: %s" % (meta['robot'], meta.get('homeo', 'unknown')))
 
     # The TARGET's intensity the run evaluated with
     import Simulator.HomeoExperiments as HE

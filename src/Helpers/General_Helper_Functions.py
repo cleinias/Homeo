@@ -1,6 +1,23 @@
+from functools import lru_cache
 from math import sqrt
 import os
 import re
+import subprocess
+
+
+@lru_cache(maxsize=None)
+def homeo_version():
+    '''The Homeo code a run uses: `git describe --always --dirty` of this
+    checkout (a commit, "-dirty" when the tree has uncommitted changes), or
+    'unknown' outside a git checkout.  Every record a run writes carries it:
+    an old run is reproduced by running the commit that made it.'''
+    here = os.path.dirname(os.path.abspath(__file__))
+    try:
+        return subprocess.run(['git', '-C', here, 'describe', '--always', '--dirty'],
+                              capture_output=True, text=True,
+                              timeout=5).stdout.strip() or 'unknown'
+    except (OSError, subprocess.SubprocessError):
+        return 'unknown'
 
 
 def simulations_data_dir():

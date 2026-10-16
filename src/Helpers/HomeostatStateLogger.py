@@ -125,8 +125,10 @@ class HomeostatStateLogger:
     def _write_metadata_header(self):
         '''Write #-prefixed metadata lines with constant parameters.'''
         f = self._f
+        from Helpers.General_Helper_Functions import homeo_version
         f.write('# HomeostatStateLog v1\n')
         f.write('# date\t%s\n' % time.strftime('%Y-%m-%d %H:%M:%S'))
+        f.write('# homeo\t%s\n' % homeo_version())
         if self._seed is not None:
             f.write('# seed\t%d\n' % self._seed)
         f.write('# log_interval\t%d\n' % self._interval)

@@ -44,6 +44,9 @@ class TrajectoryRecordTest(unittest.TestCase):
         self.assertAlmostEqual(x, r['start_x'], places=5)
         self.assertAlmostEqual(y, r['start_y'], places=5)
         self.assertAlmostEqual(heading, r['start_heading'] % 360, places=1)
+        from Helpers.General_Helper_Functions import homeo_version
+        self.assertIn('# Homeo\t%s' % homeo_version(), [l.rstrip('\n') for l in header])
+        self.assertIn('# Robot model\tepuck2', [l.rstrip('\n') for l in header])
 
     def testTicksFromRows(self):
         for interval in (1, 10):

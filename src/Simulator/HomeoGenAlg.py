@@ -31,8 +31,13 @@ import os
 from time import time, strftime, localtime
 from Helpers.ExceptionAndDebugClasses import HomeoDebug, hDebug
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO
+from Helpers.General_Helper_Functions import homeo_version
 from threading import Lock
 from glob import glob
+
+# The robot every GA evaluation and replay builds (a KheperaRobot model); GA
+# logbooks record it, with the simulator and the Homeo code (homeo_version)
+GA_ROBOT = 'epuck2'
 
 
 # --- Reproducible evaluations ---
@@ -184,7 +189,7 @@ def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, d
        adjustHomeostat called with the homeostat once it is built, before its
                        units are connected (a replay uses it to swap uniselectors)
     """
-    backend = SimulatorBackendHOMEO(robotName='Khepera', lock=None)
+    backend = SimulatorBackendHOMEO(robotName='Khepera', lock=None, robotModel=GA_ROBOT)
     backend.setDataDir(dataDir)
 
     sim = HomeoQtSimulation(experiment=experiment, dataDir=dataDir)
@@ -303,7 +308,8 @@ class HomeoGASimulation(object):
         # "HOMEO" (Box2D), or anything else for none (the dummy evaluators).
         # The V-REP and old Webots backends were deleted on 14 Oct 2026.
         if simulatorBackend == "HOMEO":
-            self.simulatorBackend =  SimulatorBackendHOMEO(robotName = self._robotName, lock = self.worldBeingResetLock)
+            self.simulatorBackend =  SimulatorBackendHOMEO(robotName = self._robotName, lock = self.worldBeingResetLock,
+                                                           robotModel = GA_ROBOT)
         else:
             self.simulatorBackend = None
 
@@ -490,7 +496,10 @@ class HomeoGASimulation(object):
                             evalsPerIndividual = self.evalsPerIndividual,
                             postEvaluation = self.postEvaluation,
                             noNoise = self.experimentParams['noNoise'],
-                            noUnisel = self.experimentParams['noUnisel']) 
+                            noUnisel = self.experimentParams['noUnisel'],
+                            homeo = homeo_version(),
+                            simulator = 'box2d',
+                            robot = GA_ROBOT) 
 
 
         #=======================================================================

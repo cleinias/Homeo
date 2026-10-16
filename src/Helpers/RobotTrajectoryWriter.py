@@ -228,7 +228,10 @@ class RobotTrajectoryWriter(object):
     def writeEyes(self):
         '''The eyes' sensitivity, one comment line each, so that a chart can
         tell how far they see: an eye stops seeing a source of intensity I at
-        sqrt(I / threshold) (on its axis).  Since 14 Oct 2026 (HV-11).'''
+        sqrt(I / threshold) (on its axis).  With them, the Homeo code that
+        wrote the file and the robot.'''
+        from Helpers.General_Helper_Functions import homeo_version
+        self.posFile.write("# Homeo\t%s\n" % homeo_version())
         if self.robotModel is not None:
             self.posFile.write("# Robot model\t%s\n" % self.robotModel)
         if self.eyeRadiusRatio is not None:

@@ -274,6 +274,24 @@ class ReplayReproducesEvaluationTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr[-1500:])
         self.assertIn('Not a reproduction of the GA evaluation', r.stdout)
 
+    def testALogbookOfAnotherRobotIsNotReplayed(self):
+        "a logbook that records no robot, or another one, is refused"
+        import pickle
+        for robot in (None, 'kjunior'):
+            with open(self.logbook, 'rb') as f:
+                logbook = pickle.load(f)
+            for rec in logbook:
+                if 'exp' in rec and 'genome' not in rec:
+                    rec.pop('robot')
+                    if robot:
+                        rec['robot'] = robot
+            other = os.path.join(self.tmp.name, 'robot-%s.lgb' % robot)
+            with open(other, 'wb') as f:
+                pickle.dump(logbook, f)
+            r = self._replay(other, '--steps', '100')
+            self.assertNotEqual(r.returncode, 0, robot)
+            self.assertIn('Cannot replay', r.stderr)
+
     def testALogbookWithoutEvalSeedsNeedsASeed(self):
         "without evalSeeds the replay asks for --seed, and with it repeats itself"
         import pickle

@@ -57,7 +57,7 @@ def _uniselector_state(unis):
 def _environment():
     "What a run's numbers depend on besides the code's parameters."
     import platform
-    import subprocess
+    from Helpers.General_Helper_Functions import homeo_version
     env = {'python': platform.python_version(), 'numpy': np.__version__,
            'host': platform.node()}
     try:
@@ -65,13 +65,7 @@ def _environment():
         env['numba'] = numba.__version__
     except ImportError:
         env['numba'] = 'absent'             # the JIT functions run as plain Python
-    try:
-        here = os.path.dirname(os.path.abspath(__file__))
-        env['homeo'] = subprocess.run(['git', '-C', here, 'describe', '--always', '--dirty'],
-                                      capture_output=True, text=True,
-                                      timeout=5).stdout.strip() or 'unknown'
-    except (OSError, subprocess.SubprocessError):
-        env['homeo'] = 'unknown'
+    env['homeo'] = homeo_version()
     return env
 
 
