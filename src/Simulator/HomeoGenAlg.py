@@ -226,28 +226,33 @@ def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, d
     return sim, backend
 
 
-def _run_genome_evaluation(genome):
-    """Standalone fitness evaluation for use with multiprocessing.Pool.
-
-    Creates its own SimulatorBackendHOMEO and HomeoQtSimulation per call,
-    avoiding all shared state. Reads experiment parameters from the
-    module-level _worker_config dict (set by _init_worker at pool start).
-    """
-    cfg = _worker_config
-    sim, backend = prepare_genome_evaluation(
-        genome, cfg['experiment'], cfg['experimentParams'], cfg['stepsSize'], cfg['dataDir'])
-
+def evaluate_genome(genome, experiment, experimentParams, stepsSize, dataDir, fitnessSign=1):
+    """One fitness evaluation of `genome`: build it (prepare_genome_evaluation),
+       run it for stepsSize ticks, and return (fitnessSign * final distance
+       from the target,).  The serial path and the pool workers both evaluate
+       through it."""
+    if genome is None:
+        raise ValueError('a fitness evaluation needs a genome')
+    sim, backend = prepare_genome_evaluation(genome, experiment, experimentParams,
+                                             stepsSize, dataDir)
     timeNow = time()
-    for i in range(cfg['stepsSize']):
+    for i in range(stepsSize):
         sim.step()
     backend.kheperaSimulation.saveTrajectory()   # close (and flush) the .traj file
 
-    finalDis = backend.finalDisFromTarget()
-    fitness = cfg.get('fitnessSign', 1) * finalDis
+    fitness = fitnessSign * backend.finalDisFromTarget()
     print(" Evaluation for model %s (%d ticks) took time: %s with fitness %.5f" % (
-        genome.ID, cfg['stepsSize'],
-        str(datetime.timedelta(seconds=time() - timeNow)), fitness))
+        genome.ID, stepsSize, str(datetime.timedelta(seconds=time() - timeNow)), fitness))
     return fitness,
+
+
+def _run_genome_evaluation(genome):
+    """Standalone fitness evaluation for use with multiprocessing.Pool:
+    evaluate_genome with the module-level _worker_config (set by
+    _init_worker at pool start)."""
+    cfg = _worker_config
+    return evaluate_genome(genome, cfg['experiment'], cfg['experimentParams'], cfg['stepsSize'],
+                           cfg['dataDir'], cfg.get('fitnessSign', 1))
 
 
 class HomeoGASimulation(object):
@@ -984,72 +989,14 @@ class HomeoGASimulation(object):
                      entry['hofFitness']))
         return self.postEvaluation
 
-    def evaluateGenomeFitness(self,genome=None):
-        """Run a simulation for a given number of steps on the given genome.
-           Return final distance from target"""
-            
-        if genome is None:
-            genome=self.createRandomHomeostatGenome(self.genomeSize)
+    def evaluateGenomeFitness(self, genome):
+        """Evaluate genome as a pool worker does (evaluate_genome), with this
+           run's experiment, parameters and length.  Returns (fitness,)."""
+        params = {key: value for key, value in self.experimentParams.items()
+                  if key in ('dataDir', 'noNoise', 'noUnisel')}
+        return evaluate_genome(genome, self.experiment, params, self.stepsSize, self.dataDir,
+                               self.fitnessSign)
 
-        self.experimentParams['homeoGenome']= genome
-        self._simulation.initializeExperSetup(
-            message="Building Homeostat from genome %s" % genome.ID,
-            **self.experimentParams)
-
-        hDebug('network', "Trying to connect to supervisor")
-        self.simulatorBackend.connect()
-        hDebug('network', "Connected")
-        hDebug('network', "Resetting simulation world")
-        self.simulatorBackend.reset()
-        if self.simulatorBackend.name == "HOMEO":
-            self._simulation.initializeExperSetup(
-                message="Rebuilding world after reset",
-                **self.experimentParams)
-        hDebug('network', "Closing connection to supervisor")
-        self.simulatorBackend.close()
-#         self._supervisor.close()
-        hDebug('network', "Reconnecting to supervisor")
-#         self._supervisor.clientConnect()
-        self.simulatorBackend.connect()
-        hDebug('network', "Connecting units to network")
-        #
-        #
-        self.simulatorBackend.setRobotModel(genome.ID)
-        
-        "testing"
-#         sleep(1)
-        "end testing"
-        
-        self._simulation.maxRuns = self.stepsSize
-        "Initialize live data recording and display "
-        self._simulation.initializeLiveData()
-
-        # Enable headless/JIT optimizations for GA evaluation
-        hom = self._simulation.homeostat
-        hom._headless = True
-        hom._collectsData = False
-        hom._slowingFactor = 0
-        for u in hom.homeoUnits:
-            u._headless = True
-
-        #self._simulThread.start()
-        timeNow = time()
-        hDebug('eval' , "Simulation started at time: " +  str(timeNow))
-        hDebug('eval', ("Now computing %d ticks..." % self.stepsSize))
-        with self.worldBeingResetLock:          # released if a step raises (SG-10)
-            for i in range(self.stepsSize):
-                hDebug('eval', ("Step: "+ str(i+1)+"\n"))
-                self._simulation.step()
-        if self.simulatorBackend.name == "HOMEO":
-            self.simulatorBackend.kheperaSimulation.saveTrajectory()   # close (and flush) the .traj file
-        hDebug('eval', ("Elapsed time in seconds was " + str(round((time() - timeNow),3))))
-        finalDis =self.simulatorBackend.finalDisFromTarget()
-        fitness = self.fitnessSign * finalDis
-        hDebug('eval', ("Final distance from target was: " + str(finalDis)))
-        print(" Evaluation for model %s (%d ticks) took time: %s with fitness %.5f" %(
-            genome.ID, self.stepsSize, str(datetime.timedelta(seconds=time()- timeNow)), fitness))
-        return fitness,                                       # Return a tuple, as required by DEAP
-        
     def cleanUpTrajFiles(self):
         """Remove all files not related to specific homeostat models from
            dataDir: the trajectories of the robot before it has a model name,

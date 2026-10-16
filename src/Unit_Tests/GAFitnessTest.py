@@ -55,9 +55,22 @@ class FitnessSignTest(GATestCase):
                 self.assertEqual(ga.fitnessSign, sign)
                 ind = ga.toolbox.individual()
                 ind.ID = '000-001'
-                with mock.patch.object(ga.simulatorBackend, 'finalDisFromTarget', return_value=2.5), \
+                with mock.patch.object(SimulatorBackendHOMEO, 'finalDisFromTarget', return_value=2.5), \
                         contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(ga.evaluateGenomeFitness(ind), (sign * 2.5,))
+
+    def testSerialAndWorkersEvaluateAlike(self):
+        "The serial path evaluates through evaluate_genome, as the workers do"
+        ga = self.ga('initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2')
+        ind = ga.toolbox.individual()
+        ind.ID = '000-001'
+        with mock.patch.object(HomeoGenAlg, 'evaluate_genome', return_value=(1.5,)) as evaluate:
+            self.assertEqual(ga.evaluateGenomeFitness(ind), (1.5,))
+        evaluate.assert_called_once_with(
+            ind, 'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
+            {'dataDir': ga.dataDir, 'noNoise': False, 'noUnisel': False}, 5, ga.dataDir, 1)
+        with self.assertRaisesRegex(ValueError, 'needs a genome'):
+            ga.evaluateGenomeFitness(None)
 
     def testParallelEvaluationIsSignTimesDistance(self):
         for sign in (1, -1):
