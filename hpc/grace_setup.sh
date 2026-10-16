@@ -71,8 +71,10 @@ python -m pip install \
     pytest
 
 # numba is optional (HomeoJIT degrades silently to a no-op decorator) but gives
-# a real speedup on the inner loops, and is NOT in requirements.txt.
-python -m pip install numba || echo "!! numba unavailable for this Python; continuing without JIT"
+# a real speedup on the inner loops.  The version requirements.txt pins: numba
+# draws the headless runs' noise from its own generator, so runs on Grace and
+# on a workstation agree only with the same numba.
+python -m pip install "numba==0.68.*" || echo "!! numba 0.68 unavailable for this Python; continuing without JIT"
 
 python -c "import Box2D; print('box2d-py OK:', Box2D.__version__)"
 

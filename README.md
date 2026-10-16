@@ -31,9 +31,17 @@ the controllers of simulated robots (Braitenberg vehicles).
 ## Getting started
 
 ```bash
+pip install swig && pip install --no-build-isolation box2d-py
+                                        # Box2D, the Box2D simulator's physics
+                                        # (or a distribution's python-box2d)
 pip install -r requirements.txt
 pip install -e .                        # Homeo itself, editable
 ```
+
+Box2D has no wheel for current Pythons under either of its names: pip
+builds `box2d-py` from source, with swig.  numba is pinned (0.68): it draws
+the headless runs' noise from its own generator, so a seed gives the same
+run only with the same numba.
 
 The editable install (`pyproject.toml`) puts `src/` on Python's path, so the
 modules, which import each other as top-level packages (`from Helpers.X import
