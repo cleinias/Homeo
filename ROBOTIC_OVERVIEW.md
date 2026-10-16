@@ -24,7 +24,7 @@ A transducer wraps a single sensor or actuator and exposes three methods:
 - `act()` sends the current command (stored in the `funcParameters` property) to the actuator.
 - `range()` returns a `(min, max)` tuple describing the transducer's value range, used for scaling.
 
-The concrete transducers (in `RobotSimulator/Transducer.py`) call the robot directly in Python, in both simulators: `HOMEO_DiffMotor` sets a wheel's speed (`setRightSpeed`/`setLeftSpeed`, in rad/s; its range is +/- the robot's top wheel speed); `HOMEO_LightSensor` reads an eye's response to the lights (`getSensorRead`), in [0, 1], or in [-1, 0] for a darkness source; `HOMEO_QualitySensor` reads an eye's response to the sources of one quality only (`getSensorReadByQuality`: light, temperature, oxygen, organic matter), for Vehicle 3c. The motor finds its robot by name each time it acts, the sensors keep the robot object they were made with: after a backend reset, which builds a new robot, make the sensors again (every experiment does).
+The concrete transducers (in `RobotSimulator/Transducer.py`) call the robot directly in Python, in both simulators: `HOMEO_DiffMotor` sets a wheel's speed (`setRightSpeed`/`setLeftSpeed`, in rad/s; its range is +/- the robot's top wheel speed); `HOMEO_LightSensor` reads an eye's response to the lights (`getSensorRead`), in [0, 1], or in [-1, 0] for a darkness source; `HOMEO_QualitySensor` reads an eye's response to the sources of one quality only (`getSensorReadByQuality`: light, temperature, oxygen, organic matter), for Vehicle 3c. The motor and the sensors find their robot by name each time they act or read, so they keep working across a backend reset, which builds a new robot.
 
 Because all transducers share the same three-method interface, the homeostat has no knowledge of which backend it is talking to.
 
@@ -115,7 +115,7 @@ Each function takes the backend instance (`backendSimulator`), plus optional fla
 
 Every simulation run produces a `.traj` file that records the robot's pose at every simulator step (two per homeostat tick), or every N-th step with `--traj-interval N`; the last row is always the final pose. The file is written by `RobotTrajectoryWriter` (in `Helpers/RobotTrajectoryWriter.py`), which is created automatically when a simulation world is set up.
 
-Each `.traj` file starts with a header of comment lines and values, written at the run's first step: the sampling ("Sampled every N simulator steps, M steps per homeostat tick"), each light source's position, intensity (negative for a darkness source) and state, the robot model, the eyes as configured (threshold, saturation, response), and the robot's start position and heading. One tab-separated row per sample follows, with these columns:
+Each `.traj` file starts with a header of comment lines and values, written at the run's first step: the sampling ("Sampled every N simulator steps, M steps per homeostat tick"), each light source's position, intensity (negative for a darkness source) and state, the Homeo code that wrote it (`# Homeo`, a commit), the robot model, the eyes as configured (threshold, saturation, response), and the robot's start position and heading. One tab-separated row per sample follows, with these columns:
 
 | Column | Description |
 |--------|-------------|
@@ -126,7 +126,7 @@ Each `.traj` file starts with a header of comment lines and values, written at t
 | `light_y` | Light source y position |
 | `distance` | Euclidean distance from robot to light |
 
-If multiple lights are present, a light_x, light_y, distance triplet follows for each further source, named after it.
+If multiple lights are present, a light_x, light_y, distance triplet follows for each further source, named after it.  A file closed at the run's end has a last line, `# Steps recorded` and the number of rows.
 
 Trajectory files are saved under the `SimulationsData` directory (`$HOMEO_DATA_DIR` if set, else Cybernetics-research/SimulationsData or Homeo/SimulationsData: `simulations_data_dir` in `Helpers/General_Helper_Functions.py`), the experiment scripts' in a dated subdirectory, `SimsData-YYYY-MM-DD`. When an experiment sets `kheperaSimulation.experimentName`, the filename is `experimentName-YYYY-MM-DD-HH-MM-SS<tag>.traj` (e.g. `phototaxis_braitenberg2_direct-2026-02-21-14-30-00.traj`), `<tag>` being `-NN` for a run with `--run-tag NN` (the HPC arrays' task serial); without one, `trajData-ID-modelName-YYYY-MM-DD-HH-MM-SS<tag>.traj`. A name already taken gets `-2`, `-3`, ..., so runs started in the same second do not overwrite each other. A run's `.log`, `.json` and `.statelog` share its stem.
 
