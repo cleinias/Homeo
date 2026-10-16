@@ -388,5 +388,43 @@ class StabilityAfterResetTest(unittest.TestCase):
                 self.assertEqual(gui._stabilityLabel.text(), 'UNSTABLE')
 
 
+
+class GuiRunIsTheHeadlessRunTest(unittest.TestCase):
+    '''A GUI run with a seed is the headless run with that seed: the
+    critical-deviation sliders follow the needles without writing them back
+    (they wrote back each position floored to the slider's 1e-5 steps).'''
+
+    def testExp1(self):
+        import numpy as np
+        import Simulator.AshbyOriginalExperiments as A
+        ticks = 600
+        events = dict(A.exp1_events())
+        from Simulator.AshbyExperimentGui import AshbyExperimentGui
+        gui = AshbyExperimentGui(exp_num=1, seed=11)
+        self.addCleanup(closeGui, gui)
+        sim, hom = gui._simulation, gui._simulation.homeostat
+        inGui = []
+        for t in range(ticks):
+            if hom.time in events:
+                events[hom.time](hom)
+            sim._tick()
+            inGui.append([u.criticalDeviation for u in hom.homeoUnits[:2]])
+        headless, seed, meta = A.setup_exp1_basic_ultrastability(seed=11, unused_slots=True)
+        headless.time = 0
+        alone = []
+        for t in range(ticks):
+            if headless.time in events:
+                events[headless.time](headless)
+            headless.updateUnits()
+            headless.time += 1
+            alone.append([u.criticalDeviation for u in headless.homeoUnits[:2]])
+        np.testing.assert_array_equal(np.array(inGui), np.array(alone))
+        # a move of the slider still sets the unit's deviation
+        from PyQt5.QtWidgets import QSlider
+        slider = gui._homeostat_gui.findChild(QSlider, 'unit1CritDevSlider')
+        slider.setValue(slider.value() // 2 + 1000)
+        self.assertAlmostEqual(hom.homeoUnits[0].criticalDeviation, slider.value() / 1e5)
+
+
 if __name__ == '__main__':
     unittest.main()

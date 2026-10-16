@@ -22,6 +22,48 @@ from math import floor
 from itertools import cycle
 from time import strftime, localtime, time
 
+
+class _SliderFollower(QObject):
+    """Sets a slider's value, minimum and maximum with the slider's signals
+    blocked: a slider that follows a unit's value does not send it back.  A
+    critical-deviation slider, whose valueChanged sets the unit's deviation,
+    would otherwise write every needle position back into the unit, floored
+    to the slider's integer steps (HomeoUnit.precision), and a GUI run would
+    not be the headless run of its seed.  A QObject child of the slider, so
+    that a unit's signal from the simulation thread reaches it queued, in the
+    GUI thread."""
+
+    def __init__(self, slider):
+        super().__init__(slider)
+        self._slider = slider
+
+    def _quietly(self, setter, value):
+        blocked = self._slider.blockSignals(True)
+        try:
+            setter(value)
+        finally:
+            self._slider.blockSignals(blocked)
+
+    @pyqtSlot(int)
+    def setValue(self, value):
+        self._quietly(self._slider.setValue, value)
+
+    @pyqtSlot(int)
+    def setMinimum(self, value):
+        self._quietly(self._slider.setMinimum, value)
+
+    @pyqtSlot(int)
+    def setMaximum(self, value):
+        self._quietly(self._slider.setMaximum, value)
+
+
+def _followUnit(slider, unit):
+    "Make slider follow unit's critical deviation and its range (see _SliderFollower)"
+    follower = _SliderFollower(slider)
+    emitter(unit).criticalDeviationScaledChanged.connect(follower.setValue)
+    emitter(unit).minDeviationScaledChanged.connect(follower.setMinimum)
+    emitter(unit).maxDeviationScaledChanged.connect(follower.setMaximum)
+
 class HomeoSimulationControllerGui(QDialog):
     # Resume, delivered to the simulation in its own thread (a queued
     # connection: the simulation lives in _simulThread)
@@ -599,10 +641,10 @@ class HomeoSimulationControllerGui(QDialog):
 
             widget.valueChanged.connect(slot)
            
-            'The value passed back to the slider are scaled by the Unit'
-            emitter(self._simulation.homeostat.homeoUnits[i]).criticalDeviationScaledChanged.connect(widget.setValue)
-            emitter(self._simulation.homeostat.homeoUnits[i]).minDeviationScaledChanged.connect(widget.setMinimum)
-            emitter(self._simulation.homeostat.homeoUnits[i]).maxDeviationScaledChanged.connect(widget.setMaximum)
+            '''The values passed back to the slider are scaled by the Unit; the
+               slider follows them without sending them back (_SliderFollower):
+               only a move of the slider sets the unit's deviation'''
+            _followUnit(widget, self._simulation.homeostat.homeoUnits[i])
 
             "add newly created combo box to widget dictionary"
             homeostatGuiUnitWidgets[str(widget.objectName())] = widget          
@@ -1059,9 +1101,7 @@ class HomeoSimulationControllerGui(QDialog):
                     widget.valueChanged.disconnect()
                 except TypeError:
                     pass
-                emitter(unit).criticalDeviationScaledChanged.connect(widget.setValue)
-                emitter(unit).minDeviationScaledChanged.connect(widget.setMinimum)
-                emitter(unit).maxDeviationScaledChanged.connect(widget.setMaximum)
+                _followUnit(widget, unit)
                 deferredConns.append((widget.valueChanged, unit.setCriticalDeviationFromSlider))
 
             # --- Connection widgets ---
