@@ -33,18 +33,16 @@ class _DataDirTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        '''A temporary data directory for the class.  Its restoration is a
+        class cleanup, which runs also when a subclass's setUpClass fails
+        after this one (tearDownClass then does not run).'''
         cls.tmp = tempfile.TemporaryDirectory()
-        cls._saved = os.environ.get('HOMEO_DATA_DIR')
+        cls.addClassCleanup(cls.tmp.cleanup)
+        saved = os.environ.get('HOMEO_DATA_DIR')
         os.environ['HOMEO_DATA_DIR'] = cls.tmp.name
-
-    @classmethod
-    def tearDownClass(cls):
-        if cls._saved is None:
-            os.environ.pop('HOMEO_DATA_DIR', None)
-        else:
-            os.environ['HOMEO_DATA_DIR'] = cls._saved
-        configureTrajectoryDefaults(1, True)
-        cls.tmp.cleanup()
+        cls.addClassCleanup(lambda: os.environ.pop('HOMEO_DATA_DIR', None) if saved is None
+                            else os.environ.__setitem__('HOMEO_DATA_DIR', saved))
+        cls.addClassCleanup(configureTrajectoryDefaults, 1, True)
 
 
 def trajPath(r):
