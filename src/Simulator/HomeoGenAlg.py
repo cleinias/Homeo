@@ -360,6 +360,8 @@ class HomeoGASimulation(object):
         self.indivProb = indivProb 
         self.tournamentSize = tournamentSize
         self.clonableGenome = clonableGenome
+        if clonableGenome is not None:
+            self.checkClonableGenome(clonableGenome)
         self.stats = tools.Statistics(key=lambda ind: ind.fitness.values)
 
 
@@ -580,6 +582,20 @@ class HomeoGASimulation(object):
         ind.ID = ID
         return ind
     
+    def checkClonableGenome(self, genome):
+        '''ValueError unless genome (a dict as StatsAnalyzer.extractGenomeOfIndID
+           returns) fits this run's setup: its genomeLayout is the setup's, and
+           it has the setup's number of genes.  The layout must be named, since
+           two layouts can have the same size.'''
+        if 'genomeLayout' not in genome:
+            raise ValueError('the genome to clone does not say its layout (genomeLayout)')
+        if genome['genomeLayout'] != self.genomeLayout:
+            raise ValueError("the genome to clone has layout %r, %s's is %r"
+                             % (genome['genomeLayout'], self.experiment, self.genomeLayout))
+        if len(genome['genome']) != self.genomeSize:
+            raise ValueError("the genome to clone has %d genes, %s's genomes %d"
+                             % (len(genome['genome']), self.experiment, self.genomeSize))
+
     def initIndividualClone(self, indivClass, genome):
         """Generate an individual with given genome.
            Assumes 'genome' is a dictionary with keys indivId, genome and,

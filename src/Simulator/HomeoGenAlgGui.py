@@ -57,6 +57,7 @@ from Simulator.HomeoGenAlg import (HomeoGASimulation, selTournamentRemove,
                                    _init_worker, _evaluate_genome_worker)
 
 
+
 class QTextEditStream(QObject):
     """Thread-safe stream that redirects write() calls to a QTextEdit via a Qt signal.
 
@@ -256,22 +257,28 @@ class HomeoGASimulGUI(QWidget):
         popSize = self.noIndividualsSpinBox.value()
         useDummy = self.useDummyFitnessCheckBox.isChecked()
         backend = "NONE" if useDummy else "HOMEO"
-        self.gaSimulation = HomeoGASimulation(
-            stepsSize=self.stepsSpinBox.value(),
-            popSize=popSize,
-            generSize=self.generationsSpinBox.value(),
-            noUnits=self.noUnitsSpinBox.value(),
-            cxProb=self.cxProbSpinBox.value(),
-            mutationProb=self.mutProbSpinBox.value(),
-            indivProb=self.indivProbSpinBox.value(),
-            tournamentSize=self.tournamentSpinBox.value(),
-            exp=self.experimentComboBox.currentText(),
-            noNoise=self.noNoiseCheckBox.isChecked(),
-            noUnisel=self.noUniselCheckBox.isChecked(),
-            clonableGenome=self._clonableGenome,
-            simulatorBackend=backend,
-            nWorkers=self.workersSpinBox.value(),
-        )
+        try:
+            gaSimulation = HomeoGASimulation(
+                stepsSize=self.stepsSpinBox.value(),
+                popSize=popSize,
+                generSize=self.generationsSpinBox.value(),
+                noUnits=self.noUnitsSpinBox.value(),
+                cxProb=self.cxProbSpinBox.value(),
+                mutationProb=self.mutProbSpinBox.value(),
+                indivProb=self.indivProbSpinBox.value(),
+                tournamentSize=self.tournamentSpinBox.value(),
+                exp=self.experimentComboBox.currentText(),
+                noNoise=self.noNoiseCheckBox.isChecked(),
+                noUnisel=self.noUniselCheckBox.isChecked(),
+                clonableGenome=(self._clonableGenome
+                                if self.popTypeComboBox.currentText() == "Clones" else None),
+                simulatorBackend=backend,
+                nWorkers=self.workersSpinBox.value(),
+            )
+        except ValueError as e:           # a genome to clone that does not fit the setup
+            QMessageBox.warning(self, "Cannot initialize the GA", str(e))
+            return
+        self.gaSimulation = gaSimulation
 
         if self.useDummyFitnessCheckBox.isChecked():
             self.gaSimulation.toolbox.register("evaluate",

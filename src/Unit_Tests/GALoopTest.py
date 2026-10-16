@@ -230,9 +230,10 @@ class ClonePopulationTest(GALoopTestCase):
     summary as cloneSourceFitness (SG-09).'''
 
     def testClonesAreEvaluatedNotGivenTheLoggedFitness(self):
-        genome = [0.25, 0.5, 0.75, 0.1, 0.9] * 2
+        genome = [0.25, 0.5, 0.75, 0.1] * 2
         ga = self.ga(generSize=0, popSize=4,
-                     clonableGenome={'genome': genome, 'indivId': '007-003', 'fitness': (1.5,)})
+                     clonableGenome={'genome': genome, 'indivId': '007-003', 'fitness': (1.5,),
+                                     'genomeLayout': 'weightfree_v2'})
         pop = ga.generatePopOfClones(cloneName='007-003', randomSeed=2)
         self.assertFalse(any(ind.fitness.valid for ind in pop))
         self.runGA(ga, pop)
@@ -243,9 +244,10 @@ class ClonePopulationTest(GALoopTestCase):
         self.assertEqual(summary['cloneSourceFitness'], (1.5,))
 
     def testClonesShareTheGenomeAndTheRunRecordsThem(self):
-        genome = [0.25, 0.5, 0.75, 0.1, 0.9] * 2
+        genome = [0.25, 0.5, 0.75, 0.1] * 2
         ga = self.ga(generSize=1, popSize=6,
-                     clonableGenome={'genome': genome, 'indivId': '007-003', 'fitness': (1.5,)})
+                     clonableGenome={'genome': genome, 'indivId': '007-003', 'fitness': (1.5,),
+                                     'genomeLayout': 'weightfree_v2'})
         pop = ga.generatePopOfClones(cloneName='007-003', randomSeed=2)
         self.assertEqual(len(pop), 6)
         for ind in pop:
@@ -257,6 +259,29 @@ class ClonePopulationTest(GALoopTestCase):
         self.assertEqual(summary['type'], 'clones')
         self.assertEqual(summary['cloneName'], '007-003')
         self.assertEqual(summary['randomSeed'], 2)
+
+    def testAGenomeThatDoesNotFitTheSetupIsRefused(self):
+        "a clone needs the setup's layout, named, and its number of genes"
+        clone = {'indivId': '007-003', 'fitness': (1.5,)}
+        for genome, layout, message in (([0.5] * 10, 'weightfree_v2', '10 genes'),
+                                        ([0.5] * 8, 'weightfree', "layout 'weightfree'"),
+                                        ([0.5] * 8, None, "layout None")):
+            with self.subTest(message):
+                with self.assertRaisesRegex(ValueError, message):
+                    self.ga(clonableGenome=dict(clone, genome=genome, genomeLayout=layout))
+        with self.assertRaisesRegex(ValueError, 'does not say its layout'):
+            self.ga(clonableGenome=dict(clone, genome=[0.5] * 8))
+
+    def testTheLogbooksGenomeCarriesItsLayout(self):
+        import glob
+        from Helpers.StatsAnalyzer import extractGenomeOfIndID
+        ga = self.ga(generSize=0, popSize=2)
+        self.runGA(ga, ga.generateRandomPop(randomSeed=1))
+        [logbook] = glob.glob(os.path.join(ga.dataDir, 'Logbook-*.lgb'))
+        genome = extractGenomeOfIndID('000-002', logbook)
+        self.assertEqual(genome['genomeLayout'], 'weightfree_v2')
+        self.assertEqual(len(genome['genome']), 8)
+        self.ga(clonableGenome=genome)                 # fits
 
 
 class VariationOperatorsTest(GALoopTestCase):

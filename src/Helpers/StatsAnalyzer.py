@@ -262,12 +262,14 @@ def genomeAndFitnessPrettyPrinter(individuals, noUnits=6, noEvolvedUnits=None,
 
 def extractGenomeOfIndID(indID, logbookFileWithPath):
     """Extract the genome of individual indID from a DEAP logbook file.
-    Return a dictionary with indivId, genome, and fitness found at respective keys,
-    returns 'Not Found' otherwise."""
+    Return a dictionary with indivId, genome, fitness and genomeLayout (the
+    logbook's, see _logbook_layout) at the respective keys; genome is
+    'Not Found' if the logbook has no such individual."""
     genome = {'indivId' : indID, 'genome': "Not Found"}
     logbookFile = open(logbookFileWithPath, 'rb')
     logbook = _load_pickle(logbookFile)
     logbookFile.close()
+    genome['genomeLayout'] = _logbook_layout(logbook)[2]
     for entry in range(len(logbook)):
         try:
             if logbook[entry]['indivId'] == indID:
