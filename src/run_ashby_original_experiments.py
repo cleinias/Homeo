@@ -45,11 +45,13 @@ from Helpers.HomeostatConditionLogger import (
     log_homeostat_conditions_json)
 
 
-def _output_path(output_dir, exp_num, seed, ext):
-    '''Build an output file path.'''
+def _output_stem(output_dir, exp_num, seed):
+    '''The run's file stem in output_dir, ashby_exp<N>_seed<S>_<timestamp>,
+    with -2, -3, ... when a run of the same second has it (unique_stem).'''
+    from Helpers.General_Helper_Functions import unique_stem
     timestamp = time.strftime('%Y-%m-%d-%H-%M-%S')
-    fname = 'ashby_exp%d_seed%d_%s%s' % (exp_num, seed, timestamp, ext)
-    return os.path.join(output_dir, fname)
+    return os.path.join(output_dir, unique_stem(
+        output_dir, 'ashby_exp%d_seed%d_%s' % (exp_num, seed, timestamp), ('.statelog', '.json')))
 
 
 # Default run length per experiment: long enough for its protocol
@@ -141,8 +143,9 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
         sys.exit(1)
 
     # ---- Loggers ----
-    statelog_path = _output_path(output_dir, exp_num, seed, '.statelog')
-    json_path = _output_path(output_dir, exp_num, seed, '.json')
+    stem = _output_stem(output_dir, exp_num, seed)
+    statelog_path = stem + '.statelog'
+    json_path = stem + '.json'
 
     state_logger = AshbyStateLogger(hom, statelog_path, seed=seed)
     stability_tracker = StabilityTracker(hom, window=200)
@@ -334,7 +337,7 @@ def run_experiment(exp_num, seed=None, total_ticks=None, output_dir='.', figure=
 def main():
     parser = argparse.ArgumentParser(
         description="Run Ashby's original Homeostat experiments")
-    parser.add_argument('--exp', type=int, default=None,
+    parser.add_argument('--exp', type=int, default=None, choices=range(1, 8),
                         help='Experiment number (1-7). Omit to run all.')
     parser.add_argument('--seed', type=int, default=None,
                         help='RNG seed (default: random)')
