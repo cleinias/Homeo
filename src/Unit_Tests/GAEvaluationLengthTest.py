@@ -1,6 +1,4 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
 How long a GA evaluation runs: stepsSize counts homeostat ticks, one

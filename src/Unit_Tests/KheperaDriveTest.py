@@ -63,7 +63,7 @@ class KheperaDriveTest(unittest.TestCase):
     def testSlowMotionAndLongTurnsAreExact(self):
         '''The pose is kept in double precision: slow motion far from the
         origin and turns at a large heading follow the arc exactly (Box2D's
-        float32 state rounded them by several per cent).'''
+        float32 state would round them by several per cent).'''
         for right, left, heading in ((0.002, 0.002, 0.0), (0.01, 0.01, 0.3),
                                      (0.03, 0.01, 1000.0), (0.11, 0.01, 3000.0)):
             with self.subTest(right=right, left=left, heading=heading):

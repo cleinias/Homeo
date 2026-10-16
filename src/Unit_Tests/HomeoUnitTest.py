@@ -108,7 +108,7 @@ class HomeoUnitTest(unittest.TestCase):
 
     def testRemoveEveryConnectionFromAUnit(self):
         '''Every connection from the unit goes, the others stay, and the
-           headless arrays are marked for rebuilding (CU-18).'''
+           headless arrays are marked for rebuilding.'''
         q, r = HomeoUnit(), HomeoUnit()
         self.unit.addConnectionUnitWeightPolarityState(q, 0.5, 1, 'manual')
         self.unit.addConnectionUnitWeightPolarityState(q, 0.3, 1, 'manual')
@@ -163,9 +163,8 @@ class HomeoUnitTest(unittest.TestCase):
                 
     def testACopysDeathLeavesItsOriginalsName(self):
         """A copy takes its original's name; when the copy dies the original
-        still has it, so no new unit gets it (until 15 Oct 2026 the copy took
-        the name's ownership over and freed it, which surfaced as the test
-        above failing after some Ashby experiment tests)"""
+        still has it, so no new unit gets it (the copy does not take over the
+        name's ownership and free it)"""
         import gc
         HomeoUnit.clearNames()
         original = HomeoUnit()
@@ -1386,7 +1385,7 @@ class HomeoUnitTest(unittest.TestCase):
     def testUniselectorIsTriggered(self):
         """
         Test that a unit's uniselector is triggered when a unit's essential variable becomes critical,
-        and does not fire again on the next tick (at most once per uniselectorTimeInterval, CU-10)
+        and does not fire again on the next tick (at most once per uniselectorTimeInterval)
         """
         
         "Check a standard unit. Other kinds of unit have their test in their corresponding test class."
@@ -1443,7 +1442,7 @@ class HomeoUnitTest(unittest.TestCase):
 
     def testOutputRangeIsTheUnitsOwn(self):
         '''Each unit has its own output range: changing one unit's leaves the
-           others' and the class default alone (CU-15).'''
+           others' and the class default alone.'''
         default = dict(HomeoUnit.unitRange)
         def restore():
             HomeoUnit.unitRange.clear()
@@ -1461,8 +1460,8 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertEqual(self.unit.outputRange, {'high': 5, 'low': -3})
 
     def testNeedleCompMethodIsValidated(self):
-        '''An unknown needle computation method is refused; it used to switch
-           the unit silently to random needle positions (CU-16).'''
+        '''An unknown needle computation method is refused, not silently
+           taken for random needle positions.'''
         for method in ('linear', 'proportional', 'random'):
             self.unit.needleCompMethod = method
             self.assertEqual(self.unit.needleCompMethod, method)

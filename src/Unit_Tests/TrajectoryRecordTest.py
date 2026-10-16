@@ -1,5 +1,5 @@
 '''
-What a .traj file records (review findings HV-01, HV-06).
+What a .traj file records.
 
 The header is written at the first simulator step, so it records the world
 as the experiment set it up -- a darkness source's negative intensity, a
@@ -57,7 +57,7 @@ class TrajectoryRecordTest(unittest.TestCase):
                 self.assertEqual(ticksFromRows(header, rows), r['steps_run'])
 
     def testOlderHeaders(self):
-        "Files before 13 Oct 2026: 2 steps per tick; 'every N ticks' meant N steps"
+        "A header with no sampling line: 2 steps per tick; 'every N ticks' is every N steps"
         self.assertEqual(ticksFromRows(['# Position data\n'], 2000), 1000)
         self.assertEqual(ticksFromRows(['# Sampled every 100 ticks\n'], 1000), 50000)
 

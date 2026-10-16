@@ -1,6 +1,4 @@
 '''
-Created on Mar 13, 2013
-
 @author: stefano
 '''
 from   Core.HomeoUnit import *
@@ -134,8 +132,7 @@ class HomeoDataCollectorTest(unittest.TestCase):
         criticalDevAsCollectionOfArraysForAllUnits gives one row per recorded
         tick: for each unit, in the homeostat's order, its critical deviation
         and 1 if its uniselector was active, else 0.  The rows match the data
-        units recorded at that tick.  (Review findings CD-10, TS-12: this test
-        was a copy of the per-unit test and never called the all-units method.)
+        units recorded at that tick.
         """
         np.random.seed(4)
         self.homeostat.runFor(300)
@@ -226,9 +223,7 @@ class HomeoDataCollectorTest(unittest.TestCase):
 
 class ExportersTest(unittest.TestCase):
     """Each exporter the collector keeps writes data that read back as the
-    collected values (review finding CD-13).  The others -- the Ggobi,
-    separator and per-unit exporters -- crashed on any data and had no
-    callers: they were deleted on 14 Oct 2026."""
+    collected values."""
 
     def setUp(self):
         np.random.seed(2)
@@ -284,8 +279,8 @@ class ExportersTest(unittest.TestCase):
 
     def testTheDeviationHistoryArray(self):
         """criticalDevAsNPArrayForAllUnits is what CODE_OVERVIEW says: one
-        column per unit, its deviations; until 14 Oct 2026 the deviations
-        were interleaved with 0/1 uniselector columns (CD-14)."""
+        column per unit, its deviations, with no 0/1 uniselector columns
+        between them."""
         data = self.collector.criticalDevAsNPArrayForAllUnits()
         self.assertEqual(data.shape, (len(self.collector.states), len(self.names)))
         for j, unit in enumerate(self.homeostat.homeoUnits):
@@ -294,8 +289,7 @@ class ExportersTest(unittest.TestCase):
     def testCollectionNeedNotStartAtZero(self):
         """After flushData the first recorded tick is not 0: the exporters
         label rows with their ticks and the R exporter works; an empty
-        collector exports nothing.  Until 14 Oct 2026 the R exporter raised
-        KeyError and the essential one counted from 0 (CD-15)."""
+        collector exports nothing.  No exporter assumes the first tick is 0."""
         self.homeostat.flushData()
         self.homeostat.runFor(8)
         self.collector = self.homeostat.dataCollector

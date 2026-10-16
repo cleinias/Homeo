@@ -1,10 +1,8 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The experiment setups' small defects (review findings SE-06, SE-10, SE-11 (a-c),
-SE-13; Phase H of the 7 Oct 2026 review plan).
+The experiment setups' corner cases: the agent-environment setups built
+twice and their environment's mass, and the GA setups without a backend.
 '''
 import unittest
 
@@ -12,9 +10,9 @@ import Simulator.HomeoExperiments as HomeoExperiments
 
 
 class LegacySetupsTwiceTest(unittest.TestCase):
-    '''SE-10: the two legacy agent-environment setups give their units fixed
-    names, and a second call while the first homeostat was alive (the GUI's
-    New) raised "The name ... exists already".'''
+    '''The two agent-environment setups give their units fixed names: a
+    second call while the first homeostat is alive (the GUI's New) builds
+    again, without "The name ... exists already".'''
 
     def testEachCanBeBuiltAgain(self):
         for name, units in (('initialize_1minus_2xExperiment',
@@ -29,9 +27,8 @@ class LegacySetupsTwiceTest(unittest.TestCase):
 
 
 class LegacyEnvironmentMassTest(unittest.TestCase):
-    '''SE-11 (b): the environment units' mass was written "unit.mass -
-    env_mass", a no-op masked by the default mass being env_mass (100).  With
-    another default the setups must still give env_mass.'''
+    '''The environment units get env_mass (100), which is also the default
+    mass: with another default the setups must still give env_mass.'''
 
     def testTheEnvironmentHasItsMass(self):
         from unittest import mock
@@ -46,9 +43,8 @@ class LegacyEnvironmentMassTest(unittest.TestCase):
 
 
 class SetupsWithoutABackendTest(unittest.TestCase):
-    '''SE-06: the GA setups called without a backend failed with an
-    AttributeError raised from inside a bare except; they say what is
-    missing.'''
+    '''The GA setups called without a backend, or with one they cannot use,
+    say what is missing.'''
 
     def testEachGASetupAsksForABackend(self):
         import numpy as np

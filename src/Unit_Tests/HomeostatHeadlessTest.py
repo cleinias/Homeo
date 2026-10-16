@@ -121,8 +121,8 @@ class HomeostatHeadlessTest(unittest.TestCase):
 
     def testHeadlessMatchesPythonPathForAshbysUnits(self):
         """The same for Ashby's own (Aristotelian) units, HomeoUnit, whose
-        selfUpdate has its own headless OU branch: no test ran it (review
-        finding TS-08).  The weights drift, through the JIT arrays."""
+        selfUpdate has its own headless OU branch.  The weights drift,
+        through the JIT arrays."""
         ticks = 600
         python = ouHomeostat(9, headless=False, noise=False, unitClass=HomeoUnit)
         start = [signedWeights(unit) for unit in python.homeoUnits]

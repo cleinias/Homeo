@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-StatsAnalyzer's reports of a GA run (review findings HN-12, HN-13): the
+StatsAnalyzer's reports of a GA run: the
 hall-of-fame table and the comparison of value files.
 '''
 import unittest
@@ -14,7 +12,7 @@ from Helpers import StatsAnalyzer as SA
 
 
 def _logbook(fitnesses, noUnits=6):
-    "An old-style logbook (no metadata, classic 6-unit layout): one record per individual."
+    "A logbook with no metadata (classic 6-unit layout): one record per individual."
     rng = np.random.default_rng(1)
     return [{'genome': list(rng.random(noUnits * 4 + noUnits * noUnits)),
              'fitness': (f,), 'indivId': '%03d-%03d' % (1, i)}
@@ -24,8 +22,8 @@ def _logbook(fitnesses, noUnits=6):
 class HallOfFameTest(unittest.TestCase):
 
     def testRowsAreAlignedWithTheHeaders(self):
-        '''Each row is fitness, ID, then the genome, as long as the headers;
-        until 14 Oct 2026 the whole genome landed under "Fitness" (HN-12).'''
+        '''Each row is fitness, ID, then the genome, as long as the headers:
+        the genome does not land under "Fitness".'''
         logbook = _logbook([3.0, 1.0, 2.0])
         table = SA.hallOfFame(logbook, num=2).splitlines()
         headers = [h.strip() for h in table[0].strip('|').split('|')]
@@ -73,7 +71,7 @@ class HallOfFameTest(unittest.TestCase):
 
 
 class LogbookLayoutTest(unittest.TestCase):
-    """The layout StatsAnalyzer reads from a GA run's own logbook (HN-08): the
+    """The layout StatsAnalyzer reads from a GA run's own logbook: the
     classic, weight-free and weight-free-with-dt_fast genomes, each decoded
     and labelled as its setup builds it."""
 
@@ -121,9 +119,8 @@ class LogbookLayoutTest(unittest.TestCase):
 
 class ValueFilesTest(unittest.TestCase):
     '''The comparison of input and output value files fails on a missing or
-    unreadable file and on files of different lengths, and checks the right
-    eye's dummy files too; until 14 Oct 2026 the first counted as identical,
-    the second raised and the third were skipped (HN-13).'''
+    unreadable file and on files of different lengths, without raising, and
+    checks the right eye's dummy files too.'''
 
     def setUp(self):
         import os, tempfile

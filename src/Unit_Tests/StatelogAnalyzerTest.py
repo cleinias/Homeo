@@ -1,14 +1,11 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-StatelogAnalyzer's drift/diffusion split (review finding HN-04): on a
-noise-free weight trajectory the diffusion residual is zero.  Until 14 Oct
-2026 the drift used the unit's dt_fast instead of the uniselector's own dt,
-was one tick's drift compared with the change over log_interval ticks,
-was evaluated at the new weight instead of the old one, and always used the
-legacy model's formula.
+StatelogAnalyzer's drift/diffusion split: on a noise-free weight trajectory
+the diffusion residual is zero.  The drift uses the uniselector's own dt,
+not the unit's dt_fast, spans the log_interval ticks between two records,
+is evaluated at the earlier record's weight, and follows the formula of the
+uniselector's model (legacy or OU).
 '''
 import os
 import tempfile

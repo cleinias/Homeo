@@ -1,10 +1,8 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
 The Box2D Vehicle 3c world and its quality sensors, and the transducers after
-a world reset (review finding RS-04).
+a world reset.
 
 The 3c world has five point sources of four qualities: a light, two heat
 sources (one on the light), an oxygen and an organic-matter source.  Each

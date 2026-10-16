@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The phototaxis experiments' setups and behaviour (review finding RE-07): the
+The phototaxis experiments' setups and behaviour: the
 adaptive setups' wiring, the uniselector types, what the fixed-weight
 vehicles do (2b approaches the light, 2a turns away from it), the Newtonian
 motors staying bounded, and the run's acquisition time and early stop.

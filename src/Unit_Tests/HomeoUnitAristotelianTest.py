@@ -1,11 +1,8 @@
 '''
-Created on Mar 11, 2013
-
 @author: stefano
 
 The Aristotelian unit: the needle's velocity, not its acceleration, follows
-the force, and the medium's viscosity takes away a fraction of the force
-(review finding TS-14: this file had no tests).
+the force, and the medium's viscosity takes away a fraction of the force.
 '''
 from   Core.HomeoUnit import *
 from   Core.HomeoUnitAristotelian import HomeoUnitAristotelian

@@ -1,6 +1,4 @@
 '''
-Created on Mar 11, 2013
-
 @author: stefano
 '''
 from   Core.HomeoUnit import *
@@ -25,8 +23,8 @@ class HomeoConnectionTest(unittest.TestCase):
         pass
 
     def testOutgoingUnitIsAProperty(self):
-        '''outgoingUnit is the property, not a method that shadowed it and
-           sent assignments to the instance dictionary (CU-20): it reads the
+        '''outgoingUnit is a property, not shadowed by a method, and does
+           not send assignments to the instance dictionary: it reads the
            unit set, None before one is set, and a change of weight marks the
            holding unit's headless arrays stale.'''
         self.assertIsInstance(HomeoConnection.__dict__['outgoingUnit'], property)
@@ -40,9 +38,9 @@ class HomeoConnectionTest(unittest.TestCase):
         self.connection.newWeight(0.3)
         self.assertTrue(holder._jit_dirty)
 
-    def testConnectionsPickledWithTheOldLayoutLoad(self):
-        '''A connection pickled before the fix kept its outgoing unit under
-           'outgoingUnit' in its dictionary; it loads with the unit in place.'''
+    def testConnectionsPickledWithOutgoingUnitInTheirDictLoad(self):
+        '''A connection pickle that keeps its outgoing unit under
+           'outgoingUnit' in its dictionary loads with the unit in place.'''
         import pickle
         holder = HomeoUnit()
         self.connection.outgoingUnit = holder

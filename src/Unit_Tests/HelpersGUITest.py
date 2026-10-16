@@ -97,9 +97,9 @@ class TrajectoriesViewerImportTest(unittest.TestCase):
 
     def test_widget_instantiation(self):
         """TrajectoryViewer widget can be instantiated.  On an empty data
-        directory of its own: on the real one the result depended on the
+        directory of its own: on the real one the result would depend on the
         developer's data, and an unreadable logbook there would open a
-        modal message box (HV-05)."""
+        modal message box."""
         from unittest import mock
         from Helpers.TrajectoriesViewer import TrajectoryViewer
 
@@ -114,8 +114,8 @@ class TrajectoriesViewerImportTest(unittest.TestCase):
 
 class HallOfFameTableTest(unittest.TestCase):
     """The GA results table sorts fitness as numbers and keeps its row
-    selection (review finding HV-03): until 14 Oct 2026 it sorted the text,
-    10.2 before 2.5, and replaced its widget, losing the selection slots."""
+    selection: 2.5 sorts before 10.2, and the widget, with its selection
+    slots, is kept."""
 
     def testTheTableSortsNumbersAndSelectsRows(self):
         import contextlib, io
@@ -141,8 +141,7 @@ class HallOfFameTableTest(unittest.TestCase):
 
 class LogbookRefreshTest(unittest.TestCase):
     """The viewer's 1-second refresh reads the logbook again only when the file
-    changes, and reports an unreadable one once instead of aborting (review
-    finding HV-04)."""
+    changes, and reports an unreadable one once instead of aborting."""
 
     def testReloadOnlyOnChangeAndSurviveABadFile(self):
         import pickle

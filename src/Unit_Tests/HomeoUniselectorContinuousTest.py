@@ -1,6 +1,4 @@
 '''
-Created on Feb 26, 2026
-
 @author: stefano
 
 Unit tests for HomeoUniselectorContinuous.
@@ -225,7 +223,7 @@ class HomeoUniselectorContinuousModelsTest(unittest.TestCase):
 
 class ContinuousUniselectorFlagTest(unittest.TestCase):
     """An OU uniselector never fires: its unit's uniselectorActivated is 0,
-    even if a discrete uniselector had left it at 1 (review finding CD-12)"""
+    even if a discrete uniselector had left it at 1"""
 
     def testTheFlagIsCleared(self):
         from Core.HomeoUnit import HomeoUnit
@@ -296,11 +294,11 @@ class HomeoUnitDtFastTest(unittest.TestCase):
         self.unit.dt_fast = -1.0
         self.assertEqual(self.unit.dt_fast, 0.5)
 
-    def testBackwardsCompatibility(self):
-        '''With dt_fast=1.0 and no viscosity, displacement matches the old
+    def testUnitDtFastIsTheVerletStep(self):
+        '''With dt_fast=1.0 and no viscosity, displacement is the
         Verlet-derived result, displacement = v + 0.5*a (implicit dt=1).
         With viscosity the step is the exact solution of
-        m dv/dt = torque - viscosity * v (the old explicit step was unstable
+        m dv/dt = torque - viscosity * v (an explicit step would be unstable
         for viscosity * dt_fast / mass > 2).  A free needle: the self-connection,
         a spring, is off (see HomeoUnitNewtonianSpringTest).'''
         self.unit.disactivateSelfConn()

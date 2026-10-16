@@ -1,14 +1,12 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
-A unit's own noise cannot push its needle past the stops, headless or not
-(review finding CU-09).  The Python path adds the noise through the
-criticalDeviation setter, which clips; the headless path added it to the
-raw value without clipping.  A needle at a stop could then be pushed past
-it each tick, and clipped back with its velocity zeroed: held at the stop
-by an outward kick that the Python path lets an inward torque overcome.
+A unit's own noise cannot push its needle past the stops, headless or not.
+The Python path adds the noise through the criticalDeviation setter, which
+clips, and the headless path clips it too.  Without the clip a needle at a
+stop would be pushed past it each tick, and clipped back with its velocity
+zeroed: held at the stop by an outward kick that the Python path lets an
+inward torque overcome.
 '''
 import Core.HomeoUnit as HomeoUnitModule
 from Core.Homeostat import Homeostat

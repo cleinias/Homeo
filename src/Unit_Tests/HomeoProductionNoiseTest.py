@@ -7,7 +7,7 @@ copies _jit_unit_noise and _jit_conn_noise in Core/HomeoJIT.py (headless path).
 All four are "distorting normal" noise: a Gaussian with standard deviation
 bound/3, clipped to [-bound, bound], where bound is the unit's noise (linear),
 or the connection's noise times |current| (proportional, and so 0 when the
-current is 0: review finding CU-13).
+current is 0).
 
 Each test runs on a fixed random stream (see conftest.py), so the statistical
 checks are deterministic; their tolerances are still set wide enough (5
@@ -73,8 +73,8 @@ class HomeoProductionNoiseTest(unittest.TestCase):
                                        noise * abs(current))
 
     def testConnNoiseIsContinuousAtZeroCurrent(self):
-        '''No noise on a connection carrying no current, as next to it.  It
-        used to jump to the full noise at exactly 0 (CU-13).'''
+        '''No noise on a connection carrying no current, as next to it: no
+        jump to the full noise at exactly 0.'''
         for function in (HomeoNoise.connNoise, _jit_conn_noise):
             self.assertTrue(np.all(connSamples(function, 0.0, 0.2) == 0))
             self.assertLessEqual(np.abs(connSamples(function, 1e-9, 0.2)).max(), 0.2 * 1e-9)

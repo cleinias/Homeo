@@ -1,6 +1,4 @@
 '''
-Created on Feb 21, 2026
-
 Test the Braitenberg 2_2 simulation using the internal HOMEO Khepera backend.
 Requires Box2D and pyglet.
 
@@ -64,7 +62,7 @@ class Braiten2_2_HOMEO_Test(unittest.TestCase):
 
     def test_sensor_links_are_adaptive(self):
         """Every active link but the self-connections is under the uniselector,
-        the sensor -> eye links included (review finding SE-11 (d))"""
+        the sensor -> eye links included"""
         hom = initializeBraiten2_2(backendSimulator=self.backend)
         for name in ('Left Eye', 'Right Eye', 'Left Motor', 'Right Motor'):
             unit = [u for u in hom.homeoUnits if u.name == name][0]
@@ -90,7 +88,7 @@ class Braiten2_2_HOMEO_Test(unittest.TestCase):
         self.assertEqual(hom.time, 10)
 
     def test_raw_is_rejected_with_a_backend(self):
-        """raw=True (inverted sensors) is refused, not silently ignored (SE-04)."""
+        """raw=True (inverted sensors) is refused, not silently ignored."""
         with self.assertRaises(ValueError):
             initializeBraiten2_2(raw=True, backendSimulator=self.backend)
 

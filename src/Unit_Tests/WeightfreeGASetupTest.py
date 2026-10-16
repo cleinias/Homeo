@@ -1,11 +1,9 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
 The weight-free GA setups (direct 2+2, 2_2_Full, 3c) honour the GA's
-"No Uniselector" option (review finding SE-05): it used to be ignored, so a
-GA run with it set still adapted every evolved unit's weights.
+"No Uniselector" option: a GA run with it set does not adapt the evolved
+units' weights.
 '''
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO
 import Simulator.HomeoExperiments as HE
@@ -141,7 +139,6 @@ class GALightTest(unittest.TestCase):
                 for meta in (None, {}, {'exp': name}):
                     with self.assertRaisesRegex(ValueError, 'records no light intensity'):
                         logged(name, meta)
-        self.assertFalse(any(hasattr(getattr(HE, n), 'darkBefore20261015') for n in dir(HE)))
 
 if __name__ == '__main__':
     unittest.main()

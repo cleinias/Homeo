@@ -1,14 +1,11 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
-How Ashby's uniselector steps through its positions (review finding CD-02).
-Each firing reads the weights of the current position, then steps to the
-next; there are 25 positions and the switch wraps from the last to the
-first.  The index came from the Smalltalk original, which counts from 1:
-the switch had 26 positions over 25 rows, the first firing read the last
-row and every 26th firing read the same row again, changing nothing.
+How Ashby's uniselector steps through its positions.  Each firing reads
+the weights of the current position, then steps to the next; there are 25
+positions and the switch wraps from the last to the first.  The index
+counts from 0 (the Smalltalk original counts from 1): the first firing
+reads the first row, and no firing reads the same row as the one before.
 '''
 from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
 

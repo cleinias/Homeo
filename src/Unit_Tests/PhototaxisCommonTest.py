@@ -1,14 +1,11 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
 The two phototaxis experiments share their seeding, uniselectors, runners,
-records and options (phototaxis_common; review findings RE-06, RE-09): the
-Ashby experiment had no seeds in its batches, no run tag in its file names,
-no stepping, stability or eye options, and an unknown uniselector type, or
-'random' in a batch's name, passed as Ashby's.  --visualize dropped most
-options.
+records and options (phototaxis_common): both experiments' batches are
+seeded and their file names carry a run tag, both take the stepping,
+stability and eye options, an unknown uniselector type is an error, and
+--visualize takes every option.
 '''
 import contextlib
 import csv
@@ -115,9 +112,8 @@ class PhototaxisCommonTest(unittest.TestCase):
 
     def testTheStartPoseHasItsOwnStream(self):
         '''The environment's stream (--env-seed) draws the start pose; the
-        homeostat's (--seed) everything else.  Until 14 Oct 2026 the pose
-        came from the homeostat's stream, after the units: one seed drove
-        both, and the pose depended on the vehicle's setup.'''
+        homeostat's (--seed) everything else, so the pose does not depend on
+        the vehicle's setup.'''
         import numpy as np
         for name, M in EXPERIMENTS.items():
             with self.subTest(name):

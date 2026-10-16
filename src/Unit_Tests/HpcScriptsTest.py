@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The array scripts in hpc/ (review findings SH-05, SH-06, SH-07, SH-10):
+The array scripts in hpc/:
 run_array_local.sh's dry run -- which tasks it would run, with which seeds,
 and which it skips as finished -- aggregate_array.py, which joins the
 tasks' batch CSVs, and grace_fixedB2.slurm's task set-up, with srun, the
@@ -76,8 +74,8 @@ class RunArrayLocalDryRunTest(unittest.TestCase):
 
     def testFinishedTasksOfAnEarlierDayAreSkipped(self):
         '''A task whose batch CSV is in an earlier day's SimsData-<date>/ is
-        finished: resuming the array on a later day must not run it again
-        (SH-05: it was run again, and the run then had two CSVs for it).'''
+        finished: resuming the array on a later day must not run it again,
+        which would leave the run two CSVs for it.'''
         with tempfile.TemporaryDirectory() as rundir:
             write_batch_csv(os.path.join(rundir, 'SimsData-2020-01-01'), 2)
             write_batch_csv(os.path.join(rundir, 'SimsData-2020-01-02'), 12)
@@ -94,10 +92,10 @@ class AggregateArrayTest(unittest.TestCase):
         return subprocess.run([sys.executable, os.path.join(HPC, 'aggregate_array.py'), rundir]
                               + list(options), capture_output=True, text=True, timeout=120)
 
-    def testTasksFromSerialsAndLegacyDirectories(self):
+    def testTasksFromSerialsAndTaskDirectories(self):
         '''The task index comes from the serial after the timestamp, or, for
-        the old layout, from the task_<i>/ directory; a combined table
-        written before is not an input.'''
+        a run laid out in task_<i>/ directories, from the directory; a
+        combined table written before is not an input.'''
         with tempfile.TemporaryDirectory() as rundir:
             write_batch_csv(os.path.join(rundir, 'SimsData-2026-10-01'), 7, seed=107)
             write_batch_csv(os.path.join(rundir, 'SimsData-2026-10-02'), 12, seed=112)
@@ -176,7 +174,7 @@ class GraceFixedB2Test(unittest.TestCase):
         return out
 
     def testSpinIsComparedAsANumber(self):
-        '''SPIN 0.0 is no spin, as 0 is (it was compared as a string, SH-10).'''
+        '''SPIN 0.0 is no spin, as 0 is: it is compared as a number, not a string.'''
         for spin in ('0', '0.0', '0.00'):
             out = self.run_task(1, '4', '8', spin)
             self.assertNotIn('--spin', out, spin)
@@ -192,7 +190,7 @@ class GraceFixedB2Test(unittest.TestCase):
 
     def testOneProvenanceAmongConcurrentTasks(self):
         '''Tasks starting together leave exactly one, whole PROVENANCE.txt
-        and no temporary copies (SH-10: they checked, then wrote).'''
+        and no temporary copies.'''
         tasks = [self.task(i, '2', '6') for i in range(1, 17)]
         for p in tasks:
             out, err = p.communicate(timeout=120)

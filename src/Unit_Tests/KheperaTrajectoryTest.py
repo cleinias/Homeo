@@ -1,6 +1,4 @@
 '''
-Created on Oct 2, 2026
-
 @author: stefano
 
 Trajectory files written by KheperaSimulation.  Every world-setting method
@@ -40,7 +38,7 @@ class TrajectoryFilesClosedTest(unittest.TestCase):
         self.assertFalse(self.sim.trajectoryWriter.posFile.closed)
 
     def testResetClosesThePreviousFile(self):
-        "resetWorld closes the previous writer's file too (as it always did)"
+        "resetWorld closes the previous writer's file too"
         first = self.sim.trajectoryWriter
         self.sim.resetWorld()
         self.assertTrue(first.posFile.closed)
@@ -51,7 +49,7 @@ class TrajectoryFilesClosedTest(unittest.TestCase):
         for _ in range(5):
             self.sim.advanceSim()
         # In the same directory, within the same second: the new file must not
-        # reopen -- and empty -- this one (HV-09)
+        # reopen -- and empty -- this one
         self.sim.setupWorld()
         self.assertNotEqual(self.sim.trajectoryWriter.posFile.name, first.posFile.name)
         self.sim.saveTrajectory()
@@ -65,8 +63,8 @@ class TrajectoryFilesClosedTest(unittest.TestCase):
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed — KheperaSimulator unavailable")
 class DefaultDataDirTest(unittest.TestCase):
     """With no data directory given, trajectory files go to today's data
-       directory -- never to the current directory, where they used to land as
-       stray trajData-ID-Unspecified-*.traj files."""
+       directory -- never to the current directory, as stray
+       trajData-ID-Unspecified-*.traj files."""
 
     def setUp(self):
         self.data = tempfile.TemporaryDirectory()      # stands in for SimulationsData
@@ -95,7 +93,7 @@ class DefaultDataDirTest(unittest.TestCase):
         self.assertTrue(dated_data_dir().startswith(self.data.name))
 
     def testBackendPassesItsDataDirOnBeforeTheWorldStarts(self):
-        "SimulatorBackendHOMEO(dataDir=...) used to ignore its argument"
+        "SimulatorBackendHOMEO(dataDir=...) writes the trajectory to dataDir"
         from Simulator.SimulatorBackend import SimulatorBackendHOMEO
         with tempfile.TemporaryDirectory() as out:
             backend = SimulatorBackendHOMEO(robotName='Khepera', dataDir=out)

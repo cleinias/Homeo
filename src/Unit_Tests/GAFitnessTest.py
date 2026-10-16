@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-What the GA optimises (review finding TS-09): an evaluation's fitness is
+What the GA optimises: an evaluation's fitness is
 the experiment's fitnessSign times the final distance from the light, on
 the serial and the parallel path; DEAP's FitnessMin makes lower better, so
 phototaxis selects the nearer vehicle and scototaxis the farther; and

@@ -1,19 +1,15 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The GA's own loop, run in-process with a fake, deterministic evaluate
-(review finding SG-05): elitism, generation 0's statistics, clone
-populations, the variation operators' bounds and the clean-up of
-trajectory files.  Stopping and crashing are in GAStopTest, the
+The GA's own loop, run in-process with a fake, deterministic evaluate:
+elitism, generation 0's statistics, clone populations, the variation
+operators' bounds and the clean-up of trajectory files.  Stopping and crashing are in GAStopTest, the
 evaluation's length in GAEvaluationLengthTest.
 
-Noisy evaluation (review finding SG-06, decided 15 Oct 2026): everyone is
-evaluated afresh each generation (unless the noise scheme is 'genome'), the
-previous generation's best genome survives, an evaluation can average
-several runs, and the hall of fame's best are re-evaluated at the end
-(NoisyEvaluationTest).
+Noisy evaluation: everyone is evaluated afresh each generation (unless the
+noise scheme is 'genome'), the previous generation's best genome survives,
+an evaluation can average several runs, and the hall of fame's best are
+re-evaluated at the end (NoisyEvaluationTest).
 '''
 import contextlib
 import io
@@ -110,7 +106,7 @@ class ElitismTest(GALoopTestCase):
 
 
 class NoisyEvaluationTest(GALoopTestCase):
-    '''Noisy evaluation (SG-06): an evaluate whose score is drawn from the
+    '''Noisy evaluation: an evaluate whose score is drawn from the
     evaluation's seeded numpy stream, so every evaluation differs and a seed
     repeats it.'''
 
@@ -241,7 +237,7 @@ class GenerationZeroTest(GALoopTestCase):
 class ClonePopulationTest(GALoopTestCase):
     '''A population of clones of a logged genome: each clone starts without a
     fitness and generation 0 evaluates it; the logged fitness is kept in the
-    summary as cloneSourceFitness (SG-09).'''
+    summary as cloneSourceFitness.'''
 
     def testClonesAreEvaluatedNotGivenTheLoggedFitness(self):
         genome = [0.25, 0.5, 0.75, 0.1] * 2
@@ -301,7 +297,7 @@ class ClonePopulationTest(GALoopTestCase):
 class VariationOperatorsTest(GALoopTestCase):
     '''The toolbox's mate and mutate are DEAP's two-point crossover and
     Gaussian mutation, kept within [0, 1]: a mutation's out-of-range genes are
-    reflected back (SG-07), in-range ones left as the operator made them.'''
+    reflected back, in-range ones left as the operator made them.'''
 
     def setUp(self):
         super().setUp()
@@ -329,8 +325,9 @@ class VariationOperatorsTest(GALoopTestCase):
             self.assertAlmostEqual(reflect(value), want, places=12)
 
     def testMutationKeepsAUniformSpreadUniform(self):
-        '''With clipping, 50 mutations left 23% of genes exactly on 0 or 1
-        and 18% in each edge tenth (SG-07)'''
+        '''After 50 reflected mutations no gene is exactly 0 or 1 and each
+        tenth holds about 10% (clipping would leave 23% of genes exactly on 0
+        or 1 and 18% in each edge tenth)'''
         ind = self.ga_.toolbox.individual()
         rng = np.random.default_rng(3)
         ind[:] = rng.random(4000).tolist()
@@ -359,7 +356,7 @@ class TrajectoryCleanUpTest(GALoopTestCase):
 
     def testOnlyTheUnspecifiedRobotsTrajectoriesGo(self):
         """The files the trajectory writer names for the robot without a model
-        name go (review finding HV-10: the old pattern matched none of them);
+        name go;
         the individuals' trajectories and other files stay."""
         ga = self.ga()
         writer = RobotTrajectoryWriter('Unspecified', (0, 0, 0), [], dataDir=ga.dataDir,

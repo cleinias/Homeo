@@ -1,6 +1,4 @@
 '''
-Created on Oct 2, 2026
-
 @author: stefano
 
 The non-adaptive Braitenberg 2 vehicle of phototaxis_braitenberg2_direct
@@ -261,7 +259,7 @@ class SpinTest(unittest.TestCase):
         still, still_moved = self._spin_in_the_dark(0.0, ticks=250)
         # differential-drive kinematics, e-puck2 (52 mm between the wheels,
         # top speed capped at 24.3 mm/s, motors at 0.8 of it): 0.137 deg/tick
-        # (the K-Junior: 0.074; the old wheel physics: ~0.012); 250 ticks keep
+        # (the K-Junior: 0.074); 250 ticks keep
         # the light, behind, in the eyes' unseen rear sector (88 degrees)
         self.assertAlmostEqual(cw, -34.3, delta=0.5)
         self.assertAlmostEqual(cw, -ccw, delta=0.5)

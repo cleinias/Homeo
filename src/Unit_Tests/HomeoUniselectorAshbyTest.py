@@ -1,6 +1,4 @@
 '''
-Created on Mar 18, 2013
-
 @author: stefano
 '''
 from   Core.HomeoUnit import *
@@ -219,8 +217,8 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         True if they are of same class, have same ashbyKind, and have the same
         transition matrix.  A deep copy is the same, for every kind of matrix;
         changing one weight of the copy, or making a fresh matrix of the same
-        kind, makes it different (review finding CD-09: the test used shallow
-        copies, which share the matrix, and only one kind).
+        kind, makes it different.  The copies are deep: a shallow copy
+        shares the matrix.
         '''
         for kind in ('equallySpaced', 'independentlyRandomized', 'randomized'):
             with self.subTest(kind):

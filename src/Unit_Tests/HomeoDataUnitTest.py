@@ -1,6 +1,4 @@
 '''
-Created on Mar 13, 2013
-
 @author: stefano
 '''
 from   Core.HomeoUnit import *
@@ -134,9 +132,8 @@ class HomeoDataUnitTest(unittest.TestCase):
         """
         Two data units read from the same unit state have the same values,
         and so do their copies; a difference in any recorded value -- the
-        critical deviation included, which sameValuesAs used to ignore --
-        makes them different.  (Review finding CD-10: the test compared
-        empty data units.)
+        critical deviation included -- makes them different.  The data units
+        compared hold recorded values, not empty ones.
         """
         numpy.random.seed(3)
         self.unit.setRandomValues()
@@ -168,7 +165,7 @@ class HomeoDataUnitTest(unittest.TestCase):
     def testAFiringShowsWithTheWeightsItDrew(self):
         '''The row recorded at time t holds the state left by the update of
            tick t-1: a uniselector firing in that update shows in the same row
-           as the weights it drew, and only there (CD-12).'''
+           as the weights it drew, and only there.'''
         hom = Homeostat()
         hom.slowingFactor = 0
         units = [HomeoUnit() for i in range(2)]

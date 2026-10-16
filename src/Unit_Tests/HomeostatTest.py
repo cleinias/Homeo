@@ -1,6 +1,4 @@
 '''
-Created on Mar 11, 2013
-
 @author: stefano
 '''
 from   Core.HomeoUnit import *
@@ -15,7 +13,7 @@ class HomeostatTest(unittest.TestCase):
 
 
     def setUp(self):
-        "the pickles go to a temporary directory, not into the checkout (review finding TS-14)"
+        "the pickles go to a temporary directory, not into the checkout"
         self.tmpdir = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmpdir.cleanup)
         self.homeostat = Homeostat()
@@ -36,9 +34,8 @@ class HomeostatTest(unittest.TestCase):
 
 
     def testNoStartOrStop(self):
-        '''Homeostat.start ran forever in a thread, advancing time once per
-        unit and setting each unit's time to the time module; it and stop()
-        were deleted on 14 Oct 2026 (CD-06).  runFor and runOnce run it.'''
+        '''A homeostat has no start or stop methods: runFor and runOnce
+        run it.'''
         self.assertFalse(hasattr(Homeostat, 'start'))
         self.assertFalse(hasattr(Homeostat, 'stop'))
 
@@ -103,7 +100,7 @@ class HomeostatTest(unittest.TestCase):
         
 
     def testLoadedUnitsKeepTheirNames(self):
-        '''A loaded homeostat's units register their names (CU-14): a unit
+        '''A loaded homeostat's units register their names: a unit
            made afterwards gets a new name, also once the units they were
            saved from are gone.'''
         filename = os.path.join(self.tmpdir.name, 'names')
@@ -140,7 +137,7 @@ class HomeostatTest(unittest.TestCase):
 
     def testHomeostatWithAnUnreadyUnitIsNotReady(self):
         '''A unit missing an essential parameter makes the homeostat not
-           ready, and runFor does not run it (CU-17).'''
+           ready, and runFor does not run it.'''
         units = [HomeoUnit() for i in range(2)]
         for unit in units:
             self.homeostat.addFullyConnectedUnit(unit)
@@ -320,8 +317,7 @@ class HomeostatTest(unittest.TestCase):
         scripts call it (runFor(target_tick)).  A second runFor carries on
         from where the first stopped: time goes on from 20, the new ticks are
         recorded under their own indices, and the units' times follow; a
-        target already reached runs nothing.  (Review finding TS-10: no test
-        ran a homeostat whose time was not 0.)
+        target already reached runs nothing.
         """
         self.homeostat.slowingFactor = 0
         self.homeostat.runFor(20)

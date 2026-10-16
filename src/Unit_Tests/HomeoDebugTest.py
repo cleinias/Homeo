@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The debug-message helper (review finding HN-16): 'all' enables every code
+The debug-message helper: 'all' enables every code
 only as a code of its own, and a message's formatting is deferred until it
 is printed, so the per-connection hot path pays nothing when debugging is off.
 '''

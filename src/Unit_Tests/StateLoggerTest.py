@@ -1,13 +1,11 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-HomeostatStateLogger in a headless run, read back by StatelogAnalyzer
-(review finding HN-08).  In headless mode the OU uniselector changes only
-the JIT arrays, and the logger once read the connection objects instead, so
-the whole state log sat at the initial weights (fixed in a8e2cda, with no
-test): the logged weights must move, and end at the run's final weights.
+HomeostatStateLogger in a headless run, read back by StatelogAnalyzer.  In
+headless mode the OU uniselector changes only the JIT arrays, not the
+connection objects, so a logger reading the connections would log the
+initial weights throughout: the logged weights must move, and end at the
+run's final weights.
 '''
 import glob
 import os
@@ -70,8 +68,8 @@ class HeadlessAshbyStateLogTest(unittest.TestCase):
     """With discrete (Ashby) uniselectors a firing writes its weights to the
     connections, and the JIT arrays catch up only at the next tick: each row
     must show a firing with the weights it drew, as the Python path does --
-    the arrays logged them one row late, and never on the last tick
-    (R2-REC-1, CD-12)."""
+    the arrays alone would log them one row late, and never on the last
+    tick."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

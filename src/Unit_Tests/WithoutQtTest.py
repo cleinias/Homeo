@@ -1,6 +1,4 @@
 '''
-Created on Oct 2, 2026
-
 @author: stefano
 
 Headless simulation and GA runs without PyQt5.
@@ -68,7 +66,7 @@ class HomeoQtSimulationWithoutQtTest(unittest.TestCase):
         self.assertEqual(sim.homeostatFilename, 'some-name')
 
     def testSimulDelayCanBeSet(self):
-        "the simulDelay property sets the delay (its setter used to drop the value)"
+        "the simulDelay property sets the delay"
         sim = self.module.HomeoQtSimulation()
         sim.simulDelay = 25
         self.assertEqual(sim.simulDelay, 25)
@@ -169,8 +167,8 @@ class GARunWithoutQtTest(unittest.TestCase):
 
 class NoQtSuiteTest(unittest.TestCase):
     """pytest --no-qt collects the whole suite: every test module that needs
-    PyQt5 at import is in conftest's _QT_GUI_TEST_MODULES (AshbyExperimentGuiTest
-    was missing, so --no-qt stopped at collection)."""
+    PyQt5 at import is in conftest's _QT_GUI_TEST_MODULES, or --no-qt stops
+    at collection."""
 
     def testTheSuiteCollectsWithoutQt(self):
         src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

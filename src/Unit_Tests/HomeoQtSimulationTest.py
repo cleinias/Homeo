@@ -1,6 +1,4 @@
 '''
-Created on May 3, 2013
-
 @author: stefano
 '''
 
@@ -150,9 +148,8 @@ class HomeoQtSimulationTest(unittest.TestCase):
         """
         A simulation running in its thread, started as the GUI starts it,
         stops advancing when paused, part way through its runs, and resume
-        carries on from where it stopped.  (Review findings SR-11, TS-11: the
-        test never connected the thread to go(), so the simulation never ran
-        and the test could not fail.)
+        carries on from where it stopped.  The thread is connected to go(),
+        so the simulation does run.
         """
         self.simulation = HomeoQtSimulation()
         for unit in range(4):
@@ -207,7 +204,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
     def testDefaultDataFilenames(self):
         """Every default data filename is an extension-less stem, and skips the
         names whose files exist: the complete data under the stem, the plot data
-        under <stem>-essential.txt (review finding SR-16)."""
+        under <stem>-essential.txt."""
         import tempfile
         from datetime import datetime as realDatetime
         from unittest import mock
@@ -321,7 +318,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
     def testPlotDataReadsBackByName(self):
         """
         The saved plot data have one name per column, time first, so a reader
-        that maps names to columns reads every column right (SR-07)
+        that maps names to columns reads every column right
         """
         import tempfile
         import numpy as np
@@ -348,7 +345,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         """
         After a time reset the live data, and so the saved plot data, start
         again with the time, in the same containers (the GUI's charts hold
-        them); a new homeostat's live data have only its units (SR-15)
+        them); a new homeostat's live data have only its units
         """
         self.simulation.initializeExperSetup()
         self.simulation.maxRuns = 20
@@ -370,7 +367,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
     def testStepBeforeStart(self):
         """
         Step works before Start: the first step sets up the live data, as go()
-        does (it raised KeyError, e.g. in HomeoMinimalGui, where Step is on
+        does (no KeyError, e.g. in HomeoMinimalGui, where Step is on
         from the start)
         """
         self.simulation.initializeExperSetup()
@@ -383,7 +380,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         """
         Pause, here from a tick callback, ends go() after the tick under way;
         resume() carries on from there to maxRuns, with one live-data sample
-        and one callback and observer call per tick (SR-12)
+        and one callback and observer call per tick
         """
         sim = self.simulation
         sim.initializeExperSetup()
@@ -421,7 +418,7 @@ class HomeoQtSimulationTest(unittest.TestCase):
         """
         save() pickles the homeostat to its file; loadNewHomeostat reads it
         back into another simulation, live data restarted for the loaded
-        units; a file that is not a homeostat raises HomeostatError (SR-12)
+        units; a file that is not a homeostat raises HomeostatError
         """
         import tempfile
         sim = self.simulation

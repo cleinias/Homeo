@@ -1,6 +1,4 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
 Helpers.ExperimentOrchestrator.run_concurrently, the loop the orchestrator

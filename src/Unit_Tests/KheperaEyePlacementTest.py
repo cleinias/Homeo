@@ -1,6 +1,4 @@
 '''
-Created on Oct 13, 2026
-
 @author: stefano
 
 Where the robots' eyes sit.  The K-Junior's (model='kjunior'): each eye
@@ -83,7 +81,7 @@ class KheperaEyePlacementTest(unittest.TestCase):
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed")
 class EpuckEyesTest(KheperaEyePlacementTest.__base__):
-    '''The e-puck2's eyes (the robot since 14 Oct 2026): the right eye is ls0
+    '''The e-puck2's eyes: the right eye is ls0
     and ls1, the left ls7 and ls6, at the positions and facing the
     directions of Webots' E-puck.proto; an eye's irradiance is the mean of
     its two sensors', each with the cosine law and nothing from behind.'''

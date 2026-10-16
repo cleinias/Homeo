@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The analysis helpers on the files the runs write (review finding HV-05):
+The analysis helpers on the files the runs write:
 RobotTrajectoryWriter -> TrajectoryGrapher.loadTrajectory, its thinning,
 StripchartGrapher on a real .statelog, and HomeostatDiagramTikz on a real
 .log.  TrajectoryGrapherTest, TrajectoryRecordTest and StripchartGrapherTest

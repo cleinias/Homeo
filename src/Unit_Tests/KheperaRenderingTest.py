@@ -1,6 +1,4 @@
 '''
-Created on Oct 15, 2026
-
 @author: stefano
 
 The pyglet window of the phototaxis experiments' --visualize and the GA
@@ -146,8 +144,7 @@ class KheperaRenderingTest(unittest.TestCase):
 
     def testTheRobotIsDrawnTurnedItsOwnWay(self):
         """a robot heading at 60 degrees is drawn with its heading radius at
-        60, not -60: the shape shader turns clockwise (until 15 Oct 2026 each
-        shape was drawn turned the wrong way)"""
+        60, not -60, although the shape shader turns clockwise"""
         result, _ = self._draw(_HEADING)
         self.assertGreaterEqual(result['counts']['60'], 6, result)
         self.assertEqual(result['counts']['-60'], 0, result)

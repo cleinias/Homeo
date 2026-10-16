@@ -1,11 +1,10 @@
-'''Regression tests for the continuous (OU) uniselector in headless mode.
+'''Tests of the continuous (OU) uniselector in headless mode.
 
-The OU uniselector silently did nothing in headless mode from its first commit
-(629dfce, 2026-02-26) until 2026-10-01: HomeoUnit.selfUpdate() marked the JIT
-arrays dirty after evolve_weights_jit() had modified them, so the next tick
-rebuilt them from the untouched connection objects and discarded the step.
-Since every batch run and every GA evaluation is headless, all OU results
-produced in that window are frozen-weight results.
+In headless mode evolve_weights_jit() moves the weights in the JIT arrays.
+HomeoUnit.selfUpdate() must not mark the arrays dirty after that step: the
+next tick would rebuild them from the untouched connection objects and
+discard the step, and the OU uniselector would silently do nothing.  Every
+batch run and every GA evaluation is headless.
 '''
 
 import unittest

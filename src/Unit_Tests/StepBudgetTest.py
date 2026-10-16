@@ -1,7 +1,6 @@
 '''
-A run lasts its whole step budget (review finding RE-10): the report loops
-dropped the remainder of total_steps / report_interval, and crashed on runs
-shorter than report_interval.
+A run lasts its whole step budget: the report loops run the remainder of
+total_steps / report_interval too, and runs shorter than report_interval.
 '''
 import contextlib
 import io

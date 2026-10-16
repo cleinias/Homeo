@@ -1,19 +1,16 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-Invariants of every Braitenberg setup, GA and phototaxis (review finding
-SE-07): each builds; a connection under uniselector control belongs to a
-unit whose uniselector is active (else nothing could ever change it); the
+Invariants of every Braitenberg setup, GA and phototaxis: each builds; a
+connection under uniselector control belongs to a unit whose uniselector is
+active (else nothing could ever change it); the
 'manual' connections keep their signed weights through a run, with or
 without the headless (JIT) loop, while the uniselectors do change theirs;
 and the classic GA setups honour noUnisel (the weight-free ones:
 WeightfreeGASetupTest).  The wiring of the fixed-weight vehicles is in
 BraitenbergControlTest, the Ashby experiments' in AshbyExperimentsTest.
 
-Which connections are 'manual' is the setups' business (and, for the
-Sensor -> Eye links, an open decision, SE-11 (d)): the invariants hold
+Which connections are 'manual' is the setups' business: the invariants hold
 whatever it is.
 '''
 import os

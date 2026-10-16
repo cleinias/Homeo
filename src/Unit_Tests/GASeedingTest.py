@@ -1,6 +1,4 @@
 '''
-Created on Oct 2, 2026
-
 @author: stefano
 
 Reproducible GA runs: every fitness evaluation is seeded from the GA's seed by

@@ -1,9 +1,7 @@
 '''
-Created on Oct 14, 2026
-
 @author: stefano
 
-The GUI's Separator widget (review finding HV-13): every documented way of
+The GUI's Separator widget: every documented way of
 building one works, and its source compiles without invalid escapes.
 '''
 import os
