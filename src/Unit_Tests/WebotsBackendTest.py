@@ -94,6 +94,33 @@ box2d.saveTrajectory()
 print('PLACED ' + json.dumps(out))
 '''
 
+# Two setups in one process, the first with its light at 50: what the second
+# finds, in Webots (an eye) and in the light's records, and what Box2D's eye
+# reads at 100
+_RELIGHT = r'''
+import json, sys
+sys.path.insert(0, {src!r})
+from KheperaSimulator.KheperaSimulator import KheperaSimulation
+from WebotsSimulator.WebotsSimulation import WebotsSimulation
+
+world = 'kheperaBraitenberg2_HOMEO_World'
+webots = WebotsSimulation.shared()
+webots.setupWorld(world, {data!r})
+webots.allBodies['TARGET'].userData['intensity'] = 50
+webots.tickAdvance()
+webots.setupWorld(world, {data!r})
+light, robot = webots.allBodies['TARGET'], webots.allBodies['Khepera']
+box2d = KheperaSimulation()
+box2d.setupWorld(world, {data!r})
+br = box2d.allBodies['Khepera']
+out = dict(field=light._node.getField('intensity').getSFFloat(),
+           userData=light.userData['intensity'], eye=robot.lightIrradiance('leftEye'),
+           box2dEye=br.irradAtSensor('leftEye', br.detectableLights))
+webots.saveTrajectory()
+box2d.saveTrajectory()
+print('RELIT ' + json.dumps(out))
+'''
+
 
 @unittest.skipUnless(available(), 'Webots cannot run here (not installed, or no display/xvfb-run)')
 class WebotsBackendTest(unittest.TestCase):
@@ -242,6 +269,24 @@ class WebotsBackendTest(unittest.TestCase):
             self.assertAlmostEqual(start[i], float(header[i]), delta=delta)
         for i in range(2):                                      # one step's motion away
             self.assertAlmostEqual(start[i], float(first[i]), delta=0.01)
+
+    def testAResetWorldHasItsOwnLight(self):
+        '''A reset puts the lights back as the world file has them: a run
+        after one that set the light to 50 has it at 100, in Webots and in
+        its records.  (Until 16 Oct 2026 a reset kept the 50: R2-WEBOTS-3.)'''
+        with tempfile.TemporaryDirectory() as tmp:
+            script = os.path.join(tmp, 'relight.py')
+            with open(script, 'w') as f:
+                f.write(_RELIGHT.format(src=SRC, data=tmp))
+            r = subprocess.run([sys.executable, script], capture_output=True, text=True,
+                               timeout=300, env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+        lines = [l for l in r.stdout.splitlines() if l.startswith('RELIT ')]
+        self.assertTrue(lines, r.stdout[-2000:] + r.stderr[-2000:])
+        out = json.loads(lines[0][len('RELIT '):])
+        self.assertEqual(out['field'], 100)
+        self.assertEqual(out['userData'], 100)
+        self.assertGreater(out['box2dEye'], 0)
+        self.assertAlmostEqual(out['eye'], out['box2dEye'], delta=0.005 * out['box2dEye'])
 
 
 if __name__ == '__main__':

@@ -415,6 +415,10 @@ class WebotsSimulation(object):
         worldFile = os.path.join(WEBOTS_PROJECT, 'worlds', fileName)
         if self._supervisor is None:
             self._launch(worldFile)
+            # The lights as the world file has them, to put back on each reset
+            self._worldLightIntensities = {
+                name: self._supervisor.getFromDef(name).getField('intensity').getSFFloat()
+                for name, (quality, _) in sources.items() if quality == 'light'}
         elif worldFile != self._worldFile:
             raise RuntimeError('this process runs %s; one process runs one Webots world'
                                % self._worldFile)
@@ -425,6 +429,10 @@ class WebotsSimulation(object):
             # never moved (R2-WEBOTS-1).  So step once now, robot still.
             self._supervisor.simulationReset()
             self._supervisor.step(int(self._supervisor.getBasicTimeStep()))
+            # A reset keeps a field the supervisor changed: a light set to 50
+            # stayed at 50 for the next run (R2-WEBOTS-3).  Put them back.
+            for name, intensity in self._worldLightIntensities.items():
+                self._supervisor.getFromDef(name).getField('intensity').setSFFloat(intensity)
         self.homeoWorldToRun = HomeoWorld
         sup = self._supervisor
         self._timeStepMs = int(sup.getBasicTimeStep())

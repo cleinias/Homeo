@@ -160,11 +160,11 @@ def set_light(backend, light_intensity, eye_saturation=None, eye_threshold=None,
     '''Set the light's intensity, then the eyes, whose saturation is computed
     from it (RE-11), and keep the eyes as configured, (I0, Isat, response), in
     the simulation's eyeConfig for the run's records.  Call once the world
-    exists.'''
-    if light_intensity != 100:
-        target_body = backend.kheperaSimulation.allBodies['TARGET']
-        target_body.userData['intensity'] = light_intensity
-        target_body.userData['lightIntensity'] = light_intensity
+    exists.  Sets it even at the default 100: a Webots world reset by the
+    previous run need not have it (R2-WEBOTS-3).'''
+    target_body = backend.kheperaSimulation.allBodies['TARGET']
+    target_body.userData['intensity'] = light_intensity
+    target_body.userData['lightIntensity'] = light_intensity
     backend.kheperaSimulation.eyeConfig = configure_eyes(
         backend, eye_saturation, eye_threshold, eye_response)
 
