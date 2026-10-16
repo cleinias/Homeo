@@ -367,5 +367,26 @@ class GeneralGuiSmokeTest(unittest.TestCase):
         self.assertIn(self.sim.homeostat.homeoUnits[0].name + '_weight', columns)
 
 
+
+class StabilityAfterResetTest(unittest.TestCase):
+    '''Reset time and Clear charts start the stability tracker afresh: a
+    STABLE indicator does not survive them.'''
+
+    def testResetsStartTheTrackerAfresh(self):
+        for reset in ('resetTimeButton', 'resetChartsButton'):
+            with self.subTest(reset=reset):
+                gui = makeGui(self, 1)
+                tracker = gui._stability_tracker
+                tracker.currently_stable = True
+                tracker.episodes = [[10, 400]]
+                gui._updateExperimentDisplay(None)
+                self.assertEqual(gui._stabilityLabel.text(), 'STABLE')
+                getattr(gui, reset).click()
+                self.assertIsNot(gui._stability_tracker, tracker)
+                self.assertEqual(gui._stability_tracker.episodes, [])
+                self.assertIs(gui._stability_tracker.hom, gui._simulation.homeostat)
+                self.assertEqual(gui._stabilityLabel.text(), 'UNSTABLE')
+
+
 if __name__ == '__main__':
     unittest.main()
