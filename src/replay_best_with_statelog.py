@@ -19,8 +19,11 @@ Reproducing a GA evaluation.  A GA logbook records each individual's
 evalSeed.  The replay builds and runs the homeostat through the GA's own code
 (prepare_genome_evaluation in Simulator/HomeoGenAlg.py), seeded with the
 logged evalSeed, for the logged run length, and reports whether it reproduced
-the logged fitness exactly.  --seed replays the same genome under other
-noise; --steps runs it for another length.  A logbook without evalSeeds is
+the logged fitness exactly.  An evaluation of k runs (--evals-per-individual
+k) is replayed whole: each run from its seed, compared with its logged score,
+and their mean with the logged fitness; the .statelog is run 1's, or run j's
+with --run j.  --seed replays the same genome under other noise; --steps runs
+it for another length.  A logbook without evalSeeds is
 replayed only with --seed.  The visualizer builds the homeostat the same way
 but runs it non-headless, unlike the GA, so it does not check the fitness.
 """
@@ -180,12 +183,12 @@ def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, outp
                         log_interval=1, use_ashby=False, model_name=None,
                         light_intensity=None):
     """Replay a genome headless exactly as the GA evaluated it, writing a
-       .statelog: the GA's own setup (prepare_genome_evaluation), seeded with
-       eval_seed, advanced with the same sim.step() calls.  Returns the final
-       distance from the target."""
+       .statelog (none if output_path is None): the GA's own setup
+       (prepare_genome_evaluation), seeded with eval_seed, advanced with the
+       same sim.step() calls.  Returns the final distance from the target."""
     from Simulator.HomeoGenAlg import prepare_genome_evaluation, seeded_evaluation
 
-    data_dir = os.path.dirname(output_path)
+    data_dir = os.path.dirname(output_path) if output_path else simulations_data_dir()
     params = {'dataDir': data_dir,
               'noNoise': meta.get('noNoise', False),
               'noUnisel': meta.get('noUnisel', False)}
@@ -202,27 +205,33 @@ def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, outp
         # them lazily on the first selfUpdate): the logger constructor
         # inspects _jit_incoming_units, so it must come after.
         sim.step()
-        logger = HomeostatStateLogger(
-            hom, backend.kheperaSimulation, output_path,
-            log_interval=log_interval,
-            target_pos=(7, 7),
-            seed=eval_seed)
+        logger = None
+        if output_path:
+            logger = HomeostatStateLogger(
+                hom, backend.kheperaSimulation, output_path,
+                log_interval=log_interval,
+                target_pos=(7, 7),
+                seed=eval_seed)
+            logger.log_tick(1)
 
         print("Running %d ticks ..." % steps)
         t0 = time.time()
-        logger.log_tick(1)
         for tick in range(2, steps + 1):
             sim.step()
-            logger.log_tick(tick)
+            if logger is not None:
+                logger.log_tick(tick)
             if tick % 10000 == 0:
-                logger.flush()
+                if logger is not None:
+                    logger.flush()
                 print("  tick %d/%d  (%.1fs elapsed)" % (tick, steps, time.time() - t0))
 
-        logger.close()
+        if logger is not None:
+            logger.close()
         backend.kheperaSimulation.saveTrajectory()
         final_dist = backend.finalDisFromTarget()
     print("Done in %.1fs.  Final distance: %.4f" % (time.time() - t0, final_dist))
-    print("Statelog written to: %s" % output_path)
+    if output_path:
+        print("Statelog written to: %s" % output_path)
     return final_dist
 
 
@@ -330,6 +339,9 @@ def main():
                         help='Output .statelog path (default: auto-generated)')
     parser.add_argument('--log-interval', type=int, default=1,
                         help='Log every N-th tick (default: 1)')
+    parser.add_argument('--run', type=int, default=1,
+                        help='For an evaluation of k runs: the run whose .statelog is '
+                             'written (1..k, default 1)')
     parser.add_argument('--ashby', action='store_true',
                         help='Replace OU continuous uniselectors with Ashby discrete ones')
     parser.add_argument('--visualize', action='store_true',
@@ -381,6 +393,16 @@ def main():
     steps = args.steps if args.steps is not None else (meta or {}).get('length', DEFAULT_STEPS)
     print("  Seed: %d%s   Steps: %d" % (
         seed, " (the logged evalSeed)" if seed == logged_seed else "", steps))
+    # The evaluation's runs: k with --evals-per-individual k, each from its
+    # seed (repeat_seeds), the logged fitness their mean
+    from Simulator.HomeoGenAlg import repeat_seeds, averaged_fitness
+    scores = rec.get('scores', [fitness])
+    run_seeds = repeat_seeds(seed, len(scores))
+    if not 1 <= args.run <= len(scores):
+        sys.exit("--run must be between 1 and %d" % len(scores))
+    if len(scores) > 1:
+        print("  An evaluation of %d runs, seeds %s; the statelog is run %d's"
+              % (len(scores), run_seeds, args.run))
 
     # Build a descriptive model name for the .traj file
     unisel_tag = 'ashby' if args.ashby else 'OU'
@@ -408,17 +430,26 @@ def main():
             output_path = os.path.join(output_dir,
                                        'replay-%s-%dk.statelog' % (indiv_id, steps // 1000))
 
-        final_dist = replay_as_evaluated(
-            genome, indiv_id, exp_name, meta or {}, steps, seed, output_path,
-            log_interval=args.log_interval, use_ashby=args.ashby,
-            model_name=model_name, light_intensity=light_intensity)
-        if seed == logged_seed and steps == (meta or {}).get('length') and not args.ashby:
-            replayed = (meta or {}).get('fitnessSign', 1) * final_dist
-            if replayed == fitness:
+        as_logged = seed == logged_seed and steps == meta.get('length') and not args.ashby
+        sign = meta.get('fitnessSign', 1)
+        replayed = []
+        for j, run_seed in enumerate(run_seeds, 1):
+            if j != args.run and not as_logged:
+                continue                # another seed or length: only the run asked for
+            final_dist = replay_as_evaluated(
+                genome, indiv_id, exp_name, meta, steps, run_seed,
+                output_path if j == args.run else None,
+                log_interval=args.log_interval, use_ashby=args.ashby,
+                model_name=model_name, light_intensity=light_intensity)
+            replayed.append(sign * final_dist)
+        if as_logged:
+            mean = averaged_fitness(replayed)[0]
+            if replayed == list(scores) and mean == fitness:
                 print("Reproduced the logged fitness exactly: %r" % fitness)
             else:
-                sys.exit("MISMATCH: replayed fitness %r, logged %r -- the replay does not "
-                         "repeat the GA's evaluation" % (replayed, fitness))
+                sys.exit("MISMATCH: replayed %r (mean %r), logged %r (mean %r) -- the replay "
+                         "does not repeat the GA's evaluation"
+                         % (replayed, mean, list(scores), fitness))
         else:
             print("Not a reproduction of the GA evaluation (other seed, length or "
                   "uniselector): the logged fitness was %r" % fitness)

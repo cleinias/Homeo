@@ -219,9 +219,9 @@ sys.path.insert(0, {src!r})
 if __name__ == '__main__':
     from Simulator.HomeoGenAlg import HomeoGASimulation
     HomeoGASimulation.dataDirRoot = {out!r}
-    ga = HomeoGASimulation(postEvalTop=0, stepsSize=100, popSize=6, generSize=1,
+    ga = HomeoGASimulation(postEvalTop=0, stepsSize=100, popSize={pop}, generSize=1,
                            exp='initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
-                           simulatorBackend='HOMEO', nWorkers=2)
+                           simulatorBackend='HOMEO', nWorkers=2, evalsPerIndividual={k})
     ga.runGaSimulation(ga.generateRandomPop(randomSeed=3))
     print('LOGBOOK ' + sorted(glob.glob(ga.dataDir + '/Logbook-*.lgb'))[-1])
 '''
@@ -237,13 +237,20 @@ class ReplayReproducesEvaluationTest(unittest.TestCase):
         cls.src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         cls.tmp = tempfile.TemporaryDirectory()
         cls.env = dict(os.environ, NUMBA_CACHE_DIR=os.path.join(cls.tmp.name, 'numba'))
-        script = os.path.join(cls.tmp.name, 'ga.py')
+        cls.logbook = cls._runGA(pop=6, k=1)
+        cls.logbookOfPairs = cls._runGA(pop=2, k=2)     # evaluations of 2 runs
+
+    @classmethod
+    def _runGA(cls, pop, k):
+        out = os.path.join(cls.tmp.name, 'ga-%d' % k)
+        os.makedirs(out)
+        script = os.path.join(out, 'ga.py')
         with open(script, 'w') as f:
-            f.write(_GA_FOR_REPLAY.format(src=cls.src, out=cls.tmp.name))
+            f.write(_GA_FOR_REPLAY.format(src=cls.src, out=out, pop=pop, k=k))
         result = subprocess.run([sys.executable, script], cwd=cls.src, env=cls.env,
                                 capture_output=True, text=True, timeout=900)
         assert result.returncode == 0, result.stdout[-2000:] + result.stderr[-2000:]
-        cls.logbook = result.stdout.split('LOGBOOK ', 1)[1].splitlines()[0]
+        return result.stdout.split('LOGBOOK ', 1)[1].splitlines()[0]
 
     @classmethod
     def tearDownClass(cls):
@@ -267,6 +274,22 @@ class ReplayReproducesEvaluationTest(unittest.TestCase):
             r = self._replay(self.logbook, '--indiv', rec['indivId'])
             self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
             self.assertIn('Reproduced the logged fitness exactly', r.stdout, rec['indivId'])
+
+    def testAnEvaluationOfSeveralRunsIsReplayedWhole(self):
+        "with 2 runs per evaluation each run is replayed and compared; --run picks the statelog"
+        from Simulator.HomeoGenAlg import repeat_seeds
+        for rec in self._individuals(self.logbookOfPairs):
+            self.assertEqual(len(rec['scores']), 2)
+            r = self._replay(self.logbookOfPairs, '--indiv', rec['indivId'], '--run', '2')
+            self.assertEqual(r.returncode, 0, r.stdout[-1500:] + r.stderr[-1500:])
+            self.assertIn('Reproduced the logged fitness exactly', r.stdout, rec['indivId'])
+            [statelog] = [line.split(': ', 1)[1] for line in r.stdout.splitlines()
+                          if line.startswith('Statelog written to: ')]
+            with open(statelog) as f:
+                seed = [line.split('\t')[1].strip() for line in f if line.startswith('# seed')]
+            self.assertEqual(seed, [str(repeat_seeds(rec['evalSeed'], 2)[1])])
+        r = self._replay(self.logbookOfPairs, '--run', '3')
+        self.assertNotEqual(r.returncode, 0)
 
     def testAnotherSeedIsNotPassedOffAsAReproduction(self):
         "--seed replays the genome under other noise, and says so"
