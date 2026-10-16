@@ -32,10 +32,17 @@ the run environment (HOMEO_DATA_DIR, HOMEO_RUN_TAG) restored after every test
 and every test class (_restored_run_environment): many tests point the data
 directory at a temporary one and pop it after, which on a machine that sets
 it (Grace) sent every later test's files to the default directory.
+
+The suite's data directory is a temporary one of its own, whatever
+HOMEO_DATA_DIR says when pytest starts (pytest_configure): a test, or a script
+a test runs, that writes a record without choosing a directory writes it
+there, not into the SimulationsData of real runs.  It is deleted at the end.
 """
 import os
 import random
+import shutil
 import sys
+import tempfile
 import zlib
 import importlib.abc
 
@@ -84,6 +91,7 @@ class _BlockPyQt5(importlib.abc.MetaPathFinder):
 
 
 def pytest_configure(config):
+    os.environ['HOMEO_DATA_DIR'] = tempfile.mkdtemp(prefix='homeo-suite-data-')
     if not config.getoption('--no-qt'):
         return
     # The emitter decides at import time whether Qt is there, so the block must
@@ -96,6 +104,10 @@ def pytest_configure(config):
             '--no-qt: PyQt5 was imported before the suite started (%s), so it '
             'cannot be hidden from the tests' % ', '.join(loaded))
     sys.meta_path.insert(0, _BlockPyQt5())
+
+
+def pytest_unconfigure(config):
+    shutil.rmtree(os.environ.get('HOMEO_DATA_DIR', ''), ignore_errors=True)
 
 
 def pytest_ignore_collect(collection_path, config):
