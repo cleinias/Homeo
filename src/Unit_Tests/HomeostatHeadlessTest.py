@@ -137,3 +137,43 @@ class HomeostatHeadlessTest(unittest.TestCase):
             self.assertGreater(np.abs(signedWeights(b) - w0).max(), 1e-3)
             self.assertAlmostEqual(a.criticalDeviation, b.criticalDeviation, delta=1e-9)
             np.testing.assert_allclose(signedWeights(a), signedWeights(b), atol=1e-9)
+
+
+class ConnectionChangesBetweenRunsTest(unittest.TestCase):
+    '''Changing a connection's state, noise or status between headless
+    runFor() calls keeps the weights the uniselector evolved, as the Python
+    path does; setAbsoluteWeight keeps the sign the run has now.  Noise off:
+    the two paths of one seed follow the same trajectory.'''
+
+    def changed(self, headless, change):
+        "300 ticks, the change on every connection but the self-connections, one more tick"
+        hom = ouHomeostat(3, headless, noise=False, units=3)
+        hom.runFor(300)
+        # (no flushJitArrays here: a script changes the connections as they are)
+        evolved = [signedWeights(u) for u in hom.homeoUnits] if not headless else None
+        for unit in hom.homeoUnits:
+            for conn in unit.inputConnections[1:]:
+                if change == 'state':
+                    conn.state = 'manual'
+                elif change == 'noise':
+                    conn.noise = 0.0
+                elif change == 'status':
+                    conn.status = True
+                else:
+                    conn.setAbsoluteWeight(0.5)
+        hom.runFor(301)
+        for unit in hom.homeoUnits:
+            unit.flushJitArrays()
+        return hom, evolved
+
+    def testTheEvolvedWeightsAreKept(self):
+        for change in ('state', 'noise', 'status', 'absolute weight'):
+            with self.subTest(change=change):
+                python, _ = self.changed(False, change)
+                headless, evolved = self.changed(True, change)
+                for a, b in zip(python.homeoUnits, headless.homeoUnits):
+                    np.testing.assert_allclose(signedWeights(a), signedWeights(b), atol=1e-9)
+                python, evolved = self.changed(False, change)
+                if change == 'state':                  # frozen: the weights stay
+                    for unit, w in zip(python.homeoUnits, evolved):
+                        np.testing.assert_allclose(signedWeights(unit), w, atol=1e-12)
