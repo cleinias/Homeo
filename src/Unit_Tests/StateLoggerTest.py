@@ -23,7 +23,8 @@ HomeostatStateLogger in a headless run, read back by StatelogAnalyzer.  In
 headless mode the continuous uniselector changes only the JIT arrays, not the
 connection objects, so a logger reading the connections would log the
 initial weights throughout: the logged weights must move, and end at the
-run's final weights.
+run's final weights.  The uniselector's stress is graded from the centre
+('deviation'), so that the weights move inside the units' limits.
 '''
 import glob
 import os
@@ -43,6 +44,7 @@ class HeadlessStateLogTest(unittest.TestCase):
         try:
             cls.result = D.run_headless(total_steps=400, quiet=True, seed=3,
                                         uniselector_type='continuous',
+                                        continuous_params={'stress_source': 'deviation'},
                                         state_log=True, state_log_interval=1)
         finally:
             os.environ.pop('HOMEO_DATA_DIR', None)

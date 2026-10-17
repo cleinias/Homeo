@@ -1237,7 +1237,7 @@ def add_battery_to_homeostat(hom, backendSimulator, food_quality='light', capaci
                              discharge_rate=1e-4, recharge_factor=None, saturation=None,
                              critical_level=0.3, depletion='none', min_efficiency=0.1,
                              signal='hunger', to_motors=True, hunger_unit=False,
-                             hunger_inputs='battery', noNoise=False):
+                             hunger_inputs='battery', stress_source=None, noNoise=False):
     '''Give the robot of backendSimulator's world a battery and hom a
     Battery unit that senses it.  Call once the world exists (after the
     vehicle's setup).  Returns the Battery unit.
@@ -1266,6 +1266,11 @@ def add_battery_to_homeostat(hom, backendSimulator, food_quality='light', capaci
     motors' kind: continuous if theirs is), with a negative self-connection
     as the motors have: from the Battery only (hunger_inputs 'battery') or
     from every unit but itself ('all').
+
+    Every continuous uniselector of hom gets the battery's sensor, so that
+    its stress can come from the battery; stress_source, if given, is set on
+    every active one (HomeoUniselectorContinuous.STRESS_SOURCES: 'battery'
+    makes the search grow with hunger).
     '''
     from KheperaSimulator.Battery import Battery, BREAK_EVEN_DISTANCE
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
@@ -1315,11 +1320,20 @@ def add_battery_to_homeostat(hom, backendSimulator, food_quality='light', capaci
                 if conn.incomingUnit is source_unit:
                     conn.status = False
 
+    def stress_from_battery():
+        "Give every continuous uniselector the battery, and the stress source"
+        for unit in hom.homeoUnits:
+            if isinstance(unit.uniselector, HomeoUniselectorContinuous):
+                unit.uniselector.batterySensor = backendSimulator.getBatterySensor('level')
+                if stress_source is not None and unit.uniselectorActive:
+                    unit.uniselector.stress_source = stress_source
+
     if not hunger_unit:
         silence(battery_unit, keep=motors if to_motors else ())
         if to_motors:
             for motor in motors:
                 feed(motor, battery_unit)
+        stress_from_battery()
         return battery_unit
 
     hunger = HomeoUnitNewtonian()
@@ -1344,6 +1358,7 @@ def add_battery_to_homeostat(hom, backendSimulator, food_quality='light', capaci
     if to_motors:
         for motor in motors:
             feed(motor, hunger)
+    stress_from_battery()
     return battery_unit
 
 

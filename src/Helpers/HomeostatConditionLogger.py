@@ -58,7 +58,7 @@ except ImportError:
 
 
 _CONTINUOUS_FIELDS = ('model', 'tau_a', 'sigma_base', 'sigma_crit', 'dt',
-                      'stress_exponent')
+                      'stress_exponent', 'stress_source')
 
 
 def _uniselector_state(unis):

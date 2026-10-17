@@ -1132,10 +1132,16 @@ class HomeoUnit(object):
                 self.nextDeviation <= (self.critThreshold * self.minDeviation))
 
     def stressLevel(self):
-        '''Return a continuous measure in [0, 1] of how critical the essential variable is.
-        0 = at equilibrium (deviation = 0), 1 = at the limit (deviation = maxDeviation).
-        Used by HomeoUniselectorContinuous to modulate noise intensity.'''
+        '''Return a continuous measure in [0, 1] of how critical the essential variable is,
+        which sets the noise intensity of a continuous uniselector: the
+        uniselector's own stress (HomeoUniselectorContinuous.stress, from its
+        stress_source).  For a unit with another uniselector, the displacement
+        from equilibrium: 0 at deviation 0, 1 at the limit (deviation =
+        maxDeviation).'''
 
+        stress = getattr(self.uniselector, 'stress', None)
+        if stress is not None:
+            return stress(self)
         if self.maxDeviation == 0:
             return 0.0
         return min(abs(self.criticalDeviation) / self.maxDeviation, 1.0)

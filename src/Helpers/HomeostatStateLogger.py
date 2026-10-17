@@ -175,6 +175,7 @@ class HomeostatStateLogger:
                 f.write('%s_stress_exponent\t%.6f\n' % (
                     prefix, unis._stress_exponent))
                 f.write('%s_ou_dt\t%.6f\n' % (prefix, unis._dt))
+                f.write('%s_stress_source\t%s\n' % (prefix, unis._stress_source))
 
         # Connection states (manual vs uniselector)
         conn_states = []

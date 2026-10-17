@@ -110,6 +110,19 @@ class HungerSetupTest(unittest.TestCase):
         active = {c.incomingUnit.name for c in units['Hunger'].inputConnections if c.status}
         self.assertEqual(active, set(units))
 
+    def testTheMotorsSearchHarderAsTheBatteryEmpties(self):
+        _, backend, _, units = self.vehicle(stress_source='battery', hunger_unit=True)
+        battery = backend.kheperaSimulation.allBodies['Khepera'].battery
+        battery.level = 0.2
+        for name in ('Left Motor', 'Right Motor', 'Hunger'):
+            self.assertEqual(units[name].uniselector.stress_source, 'battery')
+            self.assertAlmostEqual(units[name].stressLevel(), 0.8)
+
+    def testTheStressSourceStaysAsSetWithoutOne(self):
+        _, _, _, units = self.vehicle()
+        self.assertEqual(units['Left Motor'].uniselector.stress_source, 'critical')
+        self.assertIsNotNone(units['Left Motor'].uniselector.batterySensor)
+
     def testAnAshbyVehiclesHungerUnitHasAshbysUniselector(self):
         _, _, _, units = self.vehicle(uniselector_type='ashby', hunger_unit=True)
         self.assertNotIsInstance(units['Hunger'].uniselector, HomeoUniselectorContinuous)

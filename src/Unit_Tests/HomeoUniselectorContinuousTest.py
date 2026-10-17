@@ -286,6 +286,105 @@ class HomeoUnitStressLevelTest(unittest.TestCase):
         self.assertAlmostEqual(unit.stressLevel(), 0.5)
 
 
+class StressSourceTest(unittest.TestCase):
+    '''Where a continuous uniselector's stress comes from (stress_source):
+    Ashby's gate at the critical limit (the default), the displacement from
+    the centre, or the robot's battery.'''
+
+    def unit(self, source=None, deviation=0.0):
+        unit = HomeoUnitNewtonian()
+        unit.uniselector = HomeoUniselectorContinuous()
+        if source is not None:
+            unit.uniselector.stress_source = source
+        unit._criticalDeviation = deviation
+        return unit
+
+    def testTheDefaultIsTheCriticalGate(self):
+        self.assertEqual(HomeoUniselectorContinuous().stress_source, 'critical')
+        unit = self.unit()
+        limit = unit.critThreshold * unit.maxDeviation
+        for deviation in (0.0, limit / 2, -limit, limit):
+            unit._criticalDeviation = deviation
+            self.assertEqual(unit.stressLevel(), 0.0, deviation)
+        unit._criticalDeviation = (limit + unit.maxDeviation) / 2   # half way to the stop
+        self.assertAlmostEqual(unit.stressLevel(), 0.5)
+        unit._criticalDeviation = unit.minDeviation
+        self.assertAlmostEqual(unit.stressLevel(), 1.0)
+
+    def testDeviationIsGradedFromTheCentre(self):
+        unit = self.unit('deviation')
+        unit._criticalDeviation = unit.maxDeviation / 4
+        self.assertAlmostEqual(unit.stressLevel(), 0.25)
+
+    def testInsideItsLimitsAUnitKeepsItsWeights(self):
+        for headless in (False, True):
+            with self.subTest(headless=headless):
+                unit = self.unit()
+                other = HomeoUnitNewtonian()
+                unit.addConnectionWithRandomValues(other)
+                conn = unit.inputConnections[-1]
+                conn.state = 'uniselector'
+                conn.status = True
+                unit.uniselectorActive = True
+                unit._headless = headless
+                unit._jit_dirty = True
+                before = conn.weight * conn.switch
+                for _ in range(20):
+                    unit._criticalDeviation = 0.5 * unit.maxDeviation
+                    unit.selfUpdate()
+                if headless:
+                    unit.flushJitArrays()
+                self.assertEqual(conn.weight * conn.switch, before)
+
+    def battery(self, level, critical_level=0.3):
+        from KheperaSimulator.Battery import Battery
+
+        class Sensor(object):
+            pass
+        sensor, robot = Sensor(), Sensor()
+        robot.battery = Battery(critical_level=critical_level)
+        robot.battery.level = level
+        sensor.robot = robot
+        return sensor
+
+    def testBatteryStressIsHunger(self):
+        unit = self.unit('battery', deviation=0.0)
+        unit.uniselector.batterySensor = self.battery(0.25)
+        self.assertAlmostEqual(unit.stressLevel(), 0.75)
+
+    def testBatteryCriticalIsGatedAtTheCriticalLevel(self):
+        unit = self.unit('battery_critical')
+        unit.uniselector.batterySensor = self.battery(0.5, critical_level=0.3)
+        self.assertEqual(unit.stressLevel(), 0.0)
+        unit.uniselector.batterySensor = self.battery(0.15, critical_level=0.3)
+        self.assertAlmostEqual(unit.stressLevel(), 0.5)
+        unit.uniselector.batterySensor = self.battery(0.0, critical_level=0.3)
+        self.assertAlmostEqual(unit.stressLevel(), 1.0)
+
+    def testABatterySourceWithoutABatteryIsAnError(self):
+        with self.assertRaises(ValueError):
+            self.unit('battery').stressLevel()
+
+    def testAnUnknownSourceIsRejected(self):
+        with self.assertRaises(ValueError):
+            HomeoUniselectorContinuous().stress_source = 'mood'
+
+    def testTheSourcePicklesAsAName(self):
+        import pickle
+        unis = HomeoUniselectorContinuous()
+        unis.stress_source = 'battery'
+        self.assertEqual(pickle.loads(pickle.dumps(unis)).stress_source, 'battery')
+
+    def testAPickleWithoutASourceIsGradedFromTheCentre(self):
+        import pickle
+        unis = HomeoUniselectorContinuous()
+        del unis._stress_source
+        del unis.batterySensor
+        restored = pickle.loads(pickle.dumps(unis))
+        self.assertEqual(restored.stress_source, 'deviation')
+        self.assertIsNone(restored.batterySensor)
+
+
 class HomeoUnitDtFastTest(unittest.TestCase):
     '''Test dt_fast property on HomeoUnitNewtonian'''
 
