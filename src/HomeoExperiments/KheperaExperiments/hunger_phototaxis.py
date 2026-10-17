@@ -34,8 +34,8 @@ Options
                         stop while it is empty), graded (the wheels slow with
                         the level) or none
    --capacity C         a full battery's charge (default 1)
-   --discharge R        the charge lost per tick (default 1e-5: a full battery
-                        lasts 100,000 ticks)
+   --discharge R        the charge lost per tick (default 1e-3: a full battery
+                        lasts 1,000 ticks)
    --recharge F         the charge gained per tick per unit of food (default:
                         break-even 1.0 from the light)
    --food-saturation S  the most food a tick absorbs (default: the food at the

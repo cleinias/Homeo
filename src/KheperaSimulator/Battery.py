@@ -36,9 +36,7 @@ class Battery(object):
 
     capacity        the charge of a full battery (the level's unit)
     discharge_rate  the charge lost per tick (the default empties a full
-                    battery in 100,000 ticks: a fixed-weight crossed ++
-                    vehicle, Braitenberg's 2b, reaches a light of intensity
-                    100 from 6 units away in about 75,000)
+                    battery in 1,000 ticks)
     recharge_factor the charge gained per tick per unit of food (the default
                     breaks even at food 100, 1 unit from a light of
                     intensity 100)
@@ -62,7 +60,7 @@ class Battery(object):
     minimum level, the ticks below the critical level and at zero, and the
     tick of death (None while alive) -- see summary().'''
 
-    def __init__(self, capacity=1.0, discharge_rate=1e-5, recharge_factor=1e-7,
+    def __init__(self, capacity=1.0, discharge_rate=1e-3, recharge_factor=1e-5,
                  saturation=None, critical_level=0.3, depletion='none',
                  min_efficiency=0.1):
         if not capacity > 0:

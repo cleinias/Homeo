@@ -1234,7 +1234,7 @@ def _foodSource(robot, target):
 
 
 def add_battery_to_homeostat(hom, backendSimulator, food_quality='light', capacity=1.0,
-                             discharge_rate=1e-5, recharge_factor=None, saturation=None,
+                             discharge_rate=1e-3, recharge_factor=None, saturation=None,
                              critical_level=0.3, depletion='none', min_efficiency=0.1,
                              signal='hunger', to_motors=True, hunger_unit=False,
                              hunger_inputs='battery', stress_source=None, noNoise=False):
