@@ -61,7 +61,7 @@ from pyglet.window import mouse, key
 from pyglet.math import Mat4, Vec3
 import numpy as np
 
-from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2, log, remainder, hypot
+from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2, log, remainder, hypot, exp
 from Helpers.General_Helper_Functions import normalize, dated_data_dir
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from time import sleep, time, strftime, localtime
@@ -305,6 +305,74 @@ b2Body.draw = b2PygletBodyDraw
 b2Fixture.draw = b2PygletFixtureDraw
 b2Body.update = b2BodyDefaultUpdate
 
+"Source laws: how a source's value falls off with distance"
+
+# A source's law, in its userData['law'] (None: the light's): a dict with
+# 'law' one of FIELD_LAWS and its parameters.  The value at distance r of a
+# source of intensity C0:
+#   'inverse_square'  C0 / (a0 + a1 r + a2 r^2), from the source's attenVec
+#                     (the light's law, a point source; the default)
+#   'k0'              C0 K0(r / length) / K0(radius / length) beyond radius, C0
+#                     within it: the steady state of a patch of that radius
+#                     emitting a chemical that diffuses and decays (length =
+#                     sqrt(D / k), D its diffusion coefficient and k its decay
+#                     rate; K0 the modified Bessel function of the second kind)
+#   'gaussian'        C0 exp(-r^2 / (2 sigma^2))
+#   'cone'            C0 max(0, 1 - r / radius)
+FIELD_LAWS = ('inverse_square', 'k0', 'gaussian', 'cone')
+_FIELD_PARAMETERS = {'inverse_square': (), 'k0': ('length', 'radius'), 'gaussian': ('sigma',),
+                     'cone': ('radius',)}
+
+
+def checkFieldLaw(law):
+    "law (a dict, see FIELD_LAWS) as given, or ValueError naming what is wrong with it"
+    name = law.get('law')
+    if name not in FIELD_LAWS:
+        raise ValueError('a field law must be one of %s, not %r' % (FIELD_LAWS, name))
+    for key in _FIELD_PARAMETERS[name]:
+        if not law.get(key, 0) > 0:
+            raise ValueError('field law %s needs %s > 0, got %r' % (name, key, law.get(key)))
+    return law
+
+
+def _fieldShape(law, distance):
+    "The fraction of its intensity a source of law (not inverse_square) gives at distance"
+    name = law['law']
+    if name == 'k0':
+        from scipy.special import k0
+        radius, length = law['radius'], law['length']
+        if distance <= radius:
+            return 1.0
+        return float(k0(distance / length) / k0(radius / length))
+    if name == 'gaussian':
+        return exp(-distance ** 2 / (2 * law['sigma'] ** 2))
+    return max(0.0, 1.0 - distance / law['radius'])
+
+
+# The chemotaxis world's food: a patch of organic matter, of intensity 100 and
+# the worlds' source radius, in the steady field of a chemical that diffuses
+# and decays, sensed over a few units
+CHEMOTAXIS_FIELD = {'law': 'k0', 'length': 2.0, 'radius': 0.06}
+
+# How far a chemical (direction-free) eye senses: its threshold is the field's
+# value at this distance (see chemicalEyeSensitivity)
+CHEMICAL_EYE_RANGE = 8.0
+
+# The modalities of the worlds' quality eyes: quality -> the infix of their
+# names (left<infix>Eye, right<infix>Eye)
+QUALITY_EYES = {'temperature': 'Temp', 'oxygen': 'Oxy', 'organic': 'Org'}
+
+
+def chemicalEyeSensitivity(source):
+    """A chemical eye's sensitivity for a source: a logarithmic response
+    (Weber-Fechner), from the source's value at CHEMICAL_EYE_RANGE (a
+    thousandth of its intensity where that is zero) to its intensity, the
+    value at the patch.  Returns (threshold, saturation, response)."""
+    intensity = abs(source.userData['intensity'])
+    threshold = abs(KheperaRobot.sourceValue(source, CHEMICAL_EYE_RANGE)) or intensity / 1000
+    return threshold, intensity, 'log'
+
+
 "Khepera simulation classes"
 
 class KheperaRobot(object):
@@ -532,7 +600,7 @@ class KheperaRobot(object):
         self.detectableSources = {}   # quality -> [body, ...]
 
     def addEye(self, eyeName, receptors, fieldOfView, threshold=0, saturation=100,
-               response='linear', renderRange=FIELD_RENDER_RANGE):
+               response='linear', renderRange=FIELD_RENDER_RANGE, directional=True):
         """Add an eye: one or more light receptors, each a ((x, y), facing) --
         a position in the robot's frame (x forward, y left) and a facing in
         degrees (> 0 left) -- each with the field fieldOfView (degrees, centred
@@ -540,6 +608,9 @@ class KheperaRobot(object):
         (irradAtSensor); its sensitivity (threshold, saturation, response) is
         the eye's (see eyeResponse).  renderRange: the radius of the receptors'
         field arcs in the visualizer, rendering only.
+        directional=False: a direction-free eye, a chemical sensor, whose
+        receptors read the sources' values at their positions with no field
+        of view and no cosine (their facings and fieldOfView unused).
         Drawn: each receptor as a small circle with a tick along its facing,
         and, when the visualizer shows the fields, the outer boundary of the
         eye's field, its receptors' fields combined (makePygletEyeField); a
@@ -552,6 +623,7 @@ class KheperaRobot(object):
         eyeFixture = self.body.CreateFixture(eyeDef)
         eyeFixture.userData = {eyeName + 'AngleRange': fieldOfView,
                                eyeName + 'Receptors': receptors,
+                               eyeName + 'Directional': directional,
                                'pygletShape': None, 'color': (0., 0.8, 0., 0.5),
                                'position': eyeFixture.shape.pos}
         self.setEyeSensitivity(eyeName, threshold=threshold, saturation=saturation,
@@ -691,6 +763,14 @@ class KheperaRobot(object):
         eyeAngleRange = sensorFixture.userData[sensorName + 'AngleRange']
         rotMatrix = b2Rot(self.body.angle)
         sensorIrrad = 0
+        if not sensorFixture.userData.get(sensorName + 'Directional', True):
+            # A direction-free eye (a chemical sensor): each receptor reads the
+            # sources' values at its position (concentrationAt), whatever its
+            # facing; no field of view, no cosine
+            for (rx, ry), facing in receptors:
+                p = self.body.position + rotMatrix * b2Vec2(rx, ry)
+                sensorIrrad += self.concentrationAt((p[0], p[1]), lightsList)
+            return sensorIrrad / len(receptors)
         for (rx, ry), facing in receptors:
             sensorIrrad += self._receptorIrrad(rotMatrix, b2Vec2(rx, ry), facing,
                                                eyeAngleRange, lightsList)
@@ -718,9 +798,13 @@ class KheperaRobot(object):
             if degrees(acos(min(1.0, max(-1.0, cosAngleToTarget)))) > eyeAngleRange / 2:
                 continue
             directIntens = (lightIntensity * (1-lightAmbRatio)) * cosAngleToTarget
-            attenuationFactor = 1/( lightAttenVec[0]+
-                                   (lightAttenVec[1]*targetDistance)+
-                                   (lightAttenVec[2]*targetDistance**2))
+            law = targetLight.userData.get('law')
+            if law is not None and law['law'] != 'inverse_square':
+                attenuationFactor = _fieldShape(law, targetDistance)
+            else:
+                attenuationFactor = 1/( lightAttenVec[0]+
+                                       (lightAttenVec[1]*targetDistance)+
+                                       (lightAttenVec[2]*targetDistance**2))
             sensorIrrad +=  (directIntens + (lightIntensity*lightAmbRatio)) * attenuationFactor
         return sensorIrrad
 
@@ -826,6 +910,11 @@ class KheperaRobot(object):
                        fixture.userData[name + 'Response'])
                 for name, fixture in self.sensors.items()}
 
+    def directionFreeEyes(self):
+        "The names of the direction-free eyes (addEye's directional=False)"
+        return [name for name, fixture in self.sensors.items()
+                if not fixture.userData.get(name + 'Directional', True)]
+
     def eyeResponse(self, sensorName, irradiance):
         """The named eye's response to the irradiance falling on it, in [0, 1]:
         0 up to its threshold I0, 1 from its saturation Isat on, and in between
@@ -872,11 +961,15 @@ class KheperaRobot(object):
     @staticmethod
     def sourceValue(source, distance):
         """A source's value at `distance` from it, whatever the direction: its
-        intensity times its attenuation, 1 / (a0 + a1 d + a2 d^2) from its
-        attenVec -- an eye's formula without the cosine (irradAtSensor), and
-        so the full intensity, its ambient part included.  Infinite at a
-        distance where the attenuation's denominator vanishes."""
+        intensity times its law's fall-off (FIELD_LAWS) -- for the light's law,
+        its attenuation 1 / (a0 + a1 d + a2 d^2) from its attenVec, an eye's
+        formula without the cosine (irradAtSensor), and so the full
+        intensity, its ambient part included; infinite where the
+        attenuation's denominator vanishes."""
         ud = source.userData
+        law = ud.get('law')
+        if law is not None and law['law'] != 'inverse_square':
+            return ud['intensity'] * _fieldShape(law, distance)
         a0, a1, a2 = ud['attenVec']
         denominator = a0 + a1 * distance + a2 * distance ** 2
         if denominator <= 0:
@@ -1068,6 +1161,15 @@ class KheperaSimulation(object):
         self.gridDefaultSpacing = 0.5
         self._grid = None
         self.showFields = False    # the visualizer draws the eyes' field arcs
+        # Field laws (FIELD_LAWS) for the sources of a quality, {quality: law},
+        # applied when a world is set up: the chemotaxis world's food has
+        # CHEMOTAXIS_FIELD unless 'organic' is given; in the Vehicle 3c world
+        # a quality given here gets the law, and its eyes become chemical
+        # (direction-free) ones
+        self.fieldLaws = {}
+        # The eyes a Braitenberg vehicle steers by, and the quality they sense:
+        # set by the world
+        self.vehicleEyes = ('leftEye', 'rightEye', 'light')
 
 #         self.setupWorld(self.dataDir)                    #  The called function will set up the class's Trajectory writer as well                
 
@@ -1167,6 +1269,19 @@ class KheperaSimulation(object):
             self.advanceSim()
         self.allBodies[self.robotName].tickBattery()
 
+    def vehicleSensorReads(self):
+        "The vehicle's two eyes' responses (vehicleEyes), left first"
+        left, right, quality = self.vehicleEyes
+        robot = self.allBodies[self.robotName]
+        return (robot.getSensorReadByQuality(left, quality),
+                robot.getSensorReadByQuality(right, quality))
+
+    def fieldSettings(self):
+        "The sources that have a field law, {name: law}, for the records"
+        return {name: dict(body.userData['law']) for name, body in self.allBodies.items()
+                if name != 'TARGET' and isinstance(getattr(body, 'userData', None), dict)
+                and body.userData.get('law') is not None}
+
     @property
     def halted(self):
         "Has the run ended: has the robot died (a battery with depletion 'death')?"
@@ -1252,8 +1367,62 @@ class KheperaSimulation(object):
         
         "Finally, inform the robot of the existing detectable lights"
         self.allBodies[kheperaRobotDefaultName].detectableLights = lights                  
+        self.vehicleEyes = ('leftEye', 'rightEye', 'light')
         
         return kheperaWorld
+
+    def kheperaChemotaxis_HOMEO_World(self):
+        """The chemotaxis world: the Braitenberg 2 world's layout, robot at
+        (4, 4) facing +x, with a food source FOOD where the light was, at
+        (7, 7), and no light.  FOOD is a patch of organic matter of intensity
+        100 in a chemical field (its law: fieldLaws['organic'], else
+        CHEMOTAXIS_FIELD); TARGET is FOOD.  The robot senses it with two
+        chemical eyes, leftOrgEye and rightOrgEye, direction-free, at the
+        light eyes' receptors (chemicalEyeSensitivity)."""
+        position = (7, 7)
+        kheperaWorld = b2World(gravity=(0, 0))
+        self.robotName = 'Khepera'
+        robot = KheperaRobot(world=kheperaWorld, unit='mm', color=(1.0, 0.0, 0.0, 0.5),
+                             name=self.robotName, ID='Unspecified', initialPose=(4, 4),
+                             model=self.robotModel)
+        self.allBodies[self.robotName] = robot
+        food = self._addSource(kheperaWorld, robot, 'FOOD', 'organic', position,
+                               (0.2, 0.8, 0.2, 1.0), 100)
+        food.userData['law'] = checkFieldLaw(dict(self.fieldLaws.get('organic', CHEMOTAXIS_FIELD)))
+        self._addChemicalEyes(robot, 'organic', food)
+        robot.detectableLights = []
+        self.allBodies['TARGET'] = food
+        self.vehicleEyes = ('leftOrgEye', 'rightOrgEye', 'organic')
+        self.trajectoryWriter = RobotTrajectoryWriter(
+            'Unspecified', (4, 0, 4), [food], dataDir=self.dataDir,
+            experimentName=self.experimentName)
+        return kheperaWorld
+
+    def _addSource(self, world, robot, name, quality, position, color, intensity,
+                   radius=0.06):
+        "A source body of the given quality, detectable by the robot"
+        body = world.CreateBody(self.KheperaWorldLightDef(color, position, intensity=intensity,
+                                                          name=name))
+        for fixDef in self.KheperaWorldLightFixtureDefs(radius):
+            body.CreateFixture(fixDef)
+        body.userData['pygletShape'] = (makePygletCircle(center=(0, 0), r=radius, numPoints=100,
+                                                         orientation=0, draw_mode=GL_TRIANGLE_FAN)
+                                        if _has_gl_context() else None)
+        body.userData.update(name=name, quality=quality, lightPos=(position[0], 0, position[1]),
+                             lightIntensity=intensity, lightIsOn=True)
+        self.allBodies[name] = body
+        robot.detectableSources.setdefault(quality, []).append(body)
+        return body
+
+    @staticmethod
+    def _addChemicalEyes(robot, quality, source):
+        """The robot's two direction-free eyes for quality, at its light eyes'
+        receptors, with the sensitivity chemicalEyeSensitivity gives source"""
+        threshold, saturation, response = chemicalEyeSensitivity(source)
+        for side in ('left', 'right'):
+            robot.addEye(side + QUALITY_EYES[quality] + 'Eye', robot.eyeReceptors[side + 'Eye'],
+                         robot.eyeFieldOfView, threshold=threshold, saturation=saturation,
+                         response=response, directional=False)
 
     def kheperaBraitenberg3c_HOMEO_World(self):
         """Create a multi-quality environment for Braitenberg Vehicle 3c.
@@ -1296,7 +1465,9 @@ class KheperaSimulation(object):
         KheperaRobot): the four modalities share one geometry,
         so they differ only in how they are wired, and none has a blind wedge
         ahead."""
-        for modality in ('Temp', 'Oxy', 'Org'):
+        for quality, modality in QUALITY_EYES.items():
+            if quality in self.fieldLaws:
+                continue                # chemical eyes, once the sources exist
             for side in ('left', 'right'):
                 robot.addEye(side + modality + 'Eye', robot.eyeReceptors[side + 'Eye'],
                              robot.eyeFieldOfView, saturation=100)
@@ -1340,8 +1511,17 @@ class KheperaSimulation(object):
         # detectableLights: the light-quality sources, as a world that sets it directly has
         robot.detectableLights = robot.detectableSources.get('light', [])
 
+        # The field laws asked for (fieldLaws), and those qualities' chemical eyes
+        for quality, law in self.fieldLaws.items():
+            if quality not in QUALITY_EYES:
+                raise ValueError('the Vehicle 3c world has no chemical quality %r' % quality)
+            for body in robot.detectableSources.get(quality, []):
+                body.userData['law'] = checkFieldLaw(dict(law))
+            self._addChemicalEyes(robot, quality, robot.detectableSources[quality][0])
+
         # TARGET alias points to LIGHT1 for fitness computation compatibility
         self.allBodies['TARGET'] = self.allBodies['LIGHT1']
+        self.vehicleEyes = ('leftEye', 'rightEye', 'light')
 
         "Set up trajectory writer with all source bodies"
         self.trajectoryWriter = RobotTrajectoryWriter(
