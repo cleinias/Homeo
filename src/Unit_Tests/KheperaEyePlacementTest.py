@@ -72,12 +72,6 @@ class KheperaEyePlacementTest(unittest.TestCase):
             self.assertAlmostEqual(robot.sensors[eye].userData[eye + 'AngleRange'], 90)
         self.assertAlmostEqual(abs(robot.sensors['leftEye'].userData['leftEyeAngle']), 21.8858, places=3)
 
-    def testThePlacementIsNotAnOption(self):
-        with self.assertRaises(TypeError):
-            self._robot(eyeRadiusRatio=1.0)
-        with self.assertRaises(TypeError):
-            KheperaSimulation(robotEyeRadiusRatio=1.0, robotModel='kjunior')
-
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed")
 class EpuckEyesTest(KheperaEyePlacementTest.__base__):

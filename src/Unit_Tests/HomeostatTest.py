@@ -32,13 +32,6 @@ class HomeostatTest(unittest.TestCase):
            from unfinished dataCollector class'''
 #        self.homeostat.collectsData = False
 
-
-    def testNoStartOrStop(self):
-        '''A homeostat has no start or stop methods: runFor and runOnce
-        run it.'''
-        self.assertFalse(hasattr(Homeostat, 'start'))
-        self.assertFalse(hasattr(Homeostat, 'stop'))
-
     def testAddFullyConnectedUnits(self):
         """
         

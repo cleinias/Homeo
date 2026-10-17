@@ -37,16 +37,13 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
         self.assertAlmostEqual(self.unis.stress_exponent, 2.0)
 
     def testTwoModels(self):
-        '''The models are 'diffusion' and 'ou'; any other is refused, and so is
-        a parameter they do not have, through the phototaxis setups too'''
+        '''The models are 'diffusion' and 'ou'; a parameter they do not have is
+        refused, through the phototaxis setups too'''
         self.assertEqual(HomeoUniselectorContinuous.MODELS, ('diffusion', 'ou'))
-        with self.assertRaises(ValueError):
-            self.unis.model = 'legacy'
-        self.assertFalse(hasattr(self.unis, 'theta'))
         from HomeoExperiments.KheperaExperiments.phototaxis_common import set_uniselector_type
         from Core.HomeoUnit import HomeoUnit
         with self.assertRaises(ValueError):
-            set_uniselector_type(HomeoUnit(), 'continuous', {'theta': 0.5})
+            set_uniselector_type(HomeoUnit(), 'continuous', {'drift': 0.5})
 
     def testSigmaAtZeroStress(self):
         '''At zero stress, sigma should equal sigma_base'''

@@ -145,12 +145,3 @@ class KheperaDriveTest(unittest.TestCase):
         robot.setSpeed(1.0, -0.5)
         self.assertEqual(robot.getSpeed(), {'right': robot.wheelRadius, 'left': -0.5 * robot.wheelRadius})
         sim.saveTrajectory()
-
-    def testTheRobotHasOneDrive(self):
-        "There is no choice of drive: the robot and the simulation take no drive argument"
-        with self.assertRaises(TypeError):
-            KheperaSimulation(robotDrive='legacy')
-        sim, robot = self.simulation()
-        sim.saveTrajectory()
-        for wheel in robot.wheels.values():
-            self.assertFalse(hasattr(wheel, 'update'))

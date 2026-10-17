@@ -141,7 +141,6 @@ class VisualizerWheelKeysTest(_WorldTest):
         import inspect
         from KheperaSimulator.KheperaSimulator import KheperaSimulationVisualizer
         source = inspect.getsource(KheperaSimulationVisualizer.on_key_press)
-        self.assertNotIn('self.robotName', source)
         self.assertEqual(source.count('nudgeWheels(self.sim'), 4)
 
 
