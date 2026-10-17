@@ -131,6 +131,11 @@ class Battery(object):
         "The mean level over the ticks so far (the level itself before any)"
         return self._levelSum / self.ticks if self.ticks else self.level
 
+    def meanOver(self, ticks):
+        """The mean level over a run of `ticks` ticks, the ticks the battery
+        has not lived through (after its death) counting as empty"""
+        return self._levelSum / ticks if ticks else self.level
+
     def motorEfficiency(self):
         "The factor the wheels' speeds are multiplied by (see depletion)"
         if self.depletion == 'none':

@@ -113,6 +113,9 @@ For the genetic algorithm (`Simulator/HomeoGenAlg.py`), each setup builds a home
 
 - `initializeBraiten2_2_Full_GA()` -- the six-unit vehicle, the genome (40 genes) encoding the four adaptive units' parameters and their connection weights; `_phototaxis` and `_scototaxis` variants set the fitness's sign.
 - `initializeBraiten2_2_Full_GA_continuous_weightfree..._v2`, `initializeBraiten2_direct_GA_continuous_weightfree..._v2`, `initializeBraiten3c_GA_continuous_weightfree..._v2` -- "weight-free" setups: the genome holds only the evolved units' parameters (mass and viscosity, log-uniform in [0.25, 250] and [0.05, 50], the continuous uniselector's `tau_a`, `maxDeviation`), the weights start small and random and adapt during the run through the continuous uniselector. The GA logbooks record each genome's layout; a logbook that records none is decoded too, its layout inferred from the experiment's name and the genome's size.
+- `initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2`, `initializeHunger3c_GA_continuous_weightfree_fixed_v2` -- the fixed-wiring direct vehicle and Vehicle 3c with a battery (`add_battery_to_homeostat`, depletion `death`) that recharges from the light or from organic matter.
+
+What the GA minimises is the setup's fitness measure, its `fitness` attribute (`HomeoGenAlg.FITNESS_MEASURES`): `final_distance` from the target (the default), `battery_mean` (minus the battery's mean level over the evaluation, the ticks after death counting as empty: the hunger setups') or `survival` (minus the fraction of the evaluation the robot lived), times the setup's `fitnessSign`. The logbook records the measure, and the replay (`replay_best_with_statelog.py`) recomputes it.
 
 Each function takes the backend instance (`backendSimulator`), plus optional flags like `noNoise` and `noUnisel` for ablation studies.
 

@@ -41,7 +41,9 @@ V2 = ['initializeBraiten2_2_Full_GA_continuous_weightfree_v2',
       'initializeBraiten2_direct_GA_continuous_weightfree_v2',
       'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
       'initializeBraiten3c_GA_continuous_weightfree_fixed_v2',
-      'initializeBraiten3c_GA_continuous_weightfree_open_v2']
+      'initializeBraiten3c_GA_continuous_weightfree_open_v2',
+      'initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2',
+      'initializeHunger3c_GA_continuous_weightfree_fixed_v2']
 
 
 class WeightfreeNoUniselTest(unittest.TestCase):

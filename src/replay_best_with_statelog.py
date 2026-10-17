@@ -97,6 +97,13 @@ _EXP_FUNC_MAP = {
         'initializeBraiten3c_GA_continuous_weightfree_fixed_v2',
     'initializeBraiten3c_GA_continuous_weightfree_open_v2':
         'initializeBraiten3c_GA_continuous_weightfree_open_v2',
+
+    # The hunger setups: the direct vehicle and Vehicle 3c with a battery,
+    # fitness the battery's mean level
+    'initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2':
+        'initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2',
+    'initializeHunger3c_GA_continuous_weightfree_fixed_v2':
+        'initializeHunger3c_GA_continuous_weightfree_fixed_v2',
 }
 
 
@@ -215,8 +222,11 @@ def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, outp
     """Replay a genome headless exactly as the GA evaluated it, writing a
        .statelog (none if output_path is None): the GA's own setup
        (prepare_genome_evaluation), seeded with eval_seed, advanced with the
-       same sim.step() calls.  Returns the final distance from the target."""
-    from Simulator.HomeoGenAlg import prepare_genome_evaluation, seeded_evaluation
+       same sim.step() calls.  Returns the setup's fitness measure, as the
+       GA computes it before its sign (HomeoGenAlg.measured_fitness): the
+       final distance from the target unless the setup names another."""
+    from Simulator.HomeoGenAlg import (prepare_genome_evaluation, seeded_evaluation,
+                                       fitness_measure, measured_fitness)
 
     data_dir = os.path.dirname(output_path) if output_path else simulations_data_dir()
     params = {'dataDir': data_dir,
@@ -259,10 +269,14 @@ def replay_as_evaluated(genome, indiv_id, exp_name, meta, steps, eval_seed, outp
             logger.close()
         backend.kheperaSimulation.saveTrajectory()
         final_dist = backend.finalDisFromTarget()
+        measure = fitness_measure(exp_name)
+        value = measured_fitness(backend, measure, steps)
     print("Done in %.1fs.  Final distance: %.4f" % (time.time() - t0, final_dist))
+    if measure != 'final_distance':
+        print("Fitness measure %s: %.6f" % (measure, value))
     if output_path:
         print("Statelog written to: %s" % output_path)
-    return final_dist
+    return value
 
 
 def replay_visualized(genome, experiment_func, seed, data_dir,
@@ -466,12 +480,12 @@ def main():
         for j, run_seed in enumerate(run_seeds, 1):
             if j != args.run and not as_logged:
                 continue                # another seed or length: only the run asked for
-            final_dist = replay_as_evaluated(
+            measured = replay_as_evaluated(
                 genome, indiv_id, exp_name, meta, steps, run_seed,
                 output_path if j == args.run else None,
                 log_interval=args.log_interval, use_ashby=args.ashby,
                 model_name=model_name, light_intensity=light_intensity)
-            replayed.append(sign * final_dist)
+            replayed.append(sign * measured)
         if as_logged:
             mean = averaged_fitness(replayed)[0]
             if replayed == list(scores) and mean == fitness:

@@ -45,7 +45,9 @@ SETUPS = ['initializeBraiten2_2_Full_GA_continuous_weightfree_v2',
           'initializeBraiten2_direct_GA_continuous_weightfree_v2',
           'initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2',
           'initializeBraiten3c_GA_continuous_weightfree_fixed_v2',
-          'initializeBraiten3c_GA_continuous_weightfree_open_v2']
+          'initializeBraiten3c_GA_continuous_weightfree_open_v2',
+          'initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2',
+          'initializeHunger3c_GA_continuous_weightfree_fixed_v2']
 
 CLASSIC_SETUPS = ['initializeBraiten2_2_Full_GA',
                   'initializeBraiten2_2_Full_GA_phototaxis',
@@ -89,7 +91,7 @@ class GenomeDecoderRoundTripTest(unittest.TestCase):
         "A GA setup's noUnits (6 when undeclared) is the number of units it builds"
         names = [name for name in dir(HomeoExperiments) if name.startswith('initialize')
                  and hasattr(getattr(HomeoExperiments, name), 'noEvolvedUnits')]
-        self.assertEqual(len(names), 10)
+        self.assertEqual(len(names), 12)
         for name in names:
             setup = getattr(HomeoExperiments, name)
             size = getattr(setup, 'genomeSize', CLASSIC_GENOME_SIZE)

@@ -1654,6 +1654,71 @@ initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeSize = 8
 initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeLayout = 'weightfree_v2'
 
 
+# ===============================================================
+#  Hunger GA setups: the weight-free vehicles with a battery
+#
+#  The battery dies at zero (depletion 'death') and the GA minimises the
+#  setup's fitness measure (`fitness`, read by HomeoGenAlg.evaluate_genome):
+#  'battery_mean', minus the battery's mean level over the evaluation (the
+#  ticks after death count as empty).
+# ===============================================================
+
+def initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        lightIntensity=GA_LIGHT_INTENSITY):
+    '''Hunger-driven phototaxis: the weight-free 2+2 direct vehicle with
+    fixed Braitenberg cross-wiring (initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2)
+    and a battery that recharges from the light, sensed by a Battery unit
+    feeding both motors (add_battery_to_homeostat, depletion 'death').
+    Fitness: the battery's mean level.
+
+    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2' (see initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2).
+    '''
+    hom = _setup_continuous_weightfree_homeostat_direct(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_v2',
+        lightIntensity=lightIntensity)
+    add_battery_to_homeostat(hom, backendSimulator, food_quality='light', depletion='death',
+                             noNoise=noNoise)
+    return hom
+
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.noEvolvedUnits = 2
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.noUnits = 5
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.fitnessSign = 1
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.fitness = 'battery_mean'
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.genomeSize = 8
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
+
+
+def initializeHunger3c_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        lightIntensity=GA_LIGHT_INTENSITY):
+    '''Hunger in the Vehicle 3c world: the weight-free Vehicle 3c with
+    fixed Braitenberg wiring (initializeBraiten3c_GA_continuous_weightfree_fixed_v2)
+    and a battery that recharges from organic matter, sensed by a Battery
+    unit feeding both motors (add_battery_to_homeostat, depletion 'death').
+    Fitness: the battery's mean level.
+
+    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2'.
+    '''
+    hom = _setup_braitenberg_3c_homeostat(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_v2',
+        lightIntensity=lightIntensity)
+    add_battery_to_homeostat(hom, backendSimulator, food_quality='organic', depletion='death',
+                             noNoise=noNoise)
+    return hom
+
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.noEvolvedUnits = 2
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.noUnits = 11
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.fitnessSign = 1
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.fitness = 'battery_mean'
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.genomeSize = 8
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
+
+
 # The GA phototaxis setups, which take lightIntensity (see GA_LIGHT_INTENSITY)
 for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA_phototaxis_continuous,
            initializeBraiten2_2_Full_GA_continuous_weightfree_v2,
@@ -1662,6 +1727,8 @@ for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA
            initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2,
            initializeBraiten3c_GA_continuous_weightfree_fixed_v2,
            initializeBraiten3c_GA_continuous_weightfree_open_v2,
+           initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2,
+           initializeHunger3c_GA_continuous_weightfree_fixed_v2,
            ):
     _f.lightIntensity = GA_LIGHT_INTENSITY
 
