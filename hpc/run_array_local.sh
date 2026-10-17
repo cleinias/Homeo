@@ -8,7 +8,7 @@
 #     bash hpc/run_array_local.sh --state-log --log-interval 200   # + weight traces
 #     bash hpc/run_array_local.sh --uniselector ashby      # discrete, not OU
 #     bash hpc/run_array_local.sh --random-heading         # heading from the seed
-#     bash hpc/run_array_local.sh --heading 45 --seeds 20261013,20261014,...
+#     bash hpc/run_array_local.sh --heading 45 --seeds 101,102,...
 #                                                  # chosen seeds, fixed heading
 #     bash hpc/run_array_local.sh --random-start --env-seed 7
 #                                  # one start pose for every task, the homeostat
@@ -383,7 +383,8 @@ list_entry() {   # list_entry <list> <option name> <task>
     echo "$value"
 }
 
-# Task i's seed (the homeostat's): 20260930 + i, unless --seeds gives it.
+# Task i's seed (the homeostat's): 20260930 (an arbitrary base) + i, unless
+# --seeds gives it.
 # --seeds is needed whenever the seeds are chosen rather than enumerated --
 # e.g. picked so that each connection-polarity class is represented a fixed
 # number of times, which no arithmetic rule can give.
