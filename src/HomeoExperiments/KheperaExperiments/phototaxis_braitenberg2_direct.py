@@ -127,6 +127,10 @@ import random
 import numpy as np
 
 
+# The experiment's name, which its files' names begin with
+EXPERIMENT = 'phototaxis_braitenberg2_direct'
+
+
 def setup_phototaxis(topology='fixed', backendSimulator=None,
                      mass_range=(1, 10), max_speed_fraction=0.8,
                      switching_rate=0.5, light_intensity=100,
@@ -135,7 +139,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      stable_draws=False, start_at_rest=False,
                      wiring='crossed', signs='++', spin=0.0, motor='newtonian',
                      eye_saturation=None, eye_threshold=None, eye_response=None,
-                     robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
+                     robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
+                     battery=None, experiment=EXPERIMENT):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -177,6 +182,14 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         stable_draws:       redraw each motor's (mass, viscosity) while
                             viscosity*dt/mass >= STABILITY_MARGIN; default
                             False, the full distribution (see phototaxis_common.randomize_unit).
+        battery:            None (no battery), or the arguments of
+                            Simulator.HomeoExperiments.add_battery_to_homeostat
+                            (a dict): the robot gets a battery and the
+                            homeostat a Battery unit (the hunger experiments,
+                            hunger_phototaxis).  Its noise follows the
+                            vehicle's: none for the fixed-weight vehicle.
+        experiment:         the experiment's name, which its files' names
+                            begin with (default EXPERIMENT).
 
     Returns:
         (hom, backend, seed)
@@ -196,15 +209,14 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     if motor != 'newtonian' and not fixed_weights:
         raise ValueError("motor=%r applies only with fixed_weights" % motor)
     if fixed_weights:
-        exp_name = ('phototaxis_braitenberg2_direct_control_'
-                    + control_variant_name(wiring, signs, motor))
+        exp_name = experiment + '_control_' + control_variant_name(wiring, signs, motor)
     elif topology == 'random':
-        exp_name = 'phototaxis_braitenberg2_direct_random'
+        exp_name = experiment + '_random'
     else:
-        exp_name = 'phototaxis_braitenberg2_direct_fixed'
+        exp_name = experiment + '_fixed'
     exp_name += experiment_suffix(light_intensity, uniselector_type, not fixed_weights,
                                   spin, eye_saturation, eye_threshold, eye_response,
-                                  robot, simulator)
+                                  robot, simulator, continuous_params) + common.battery_tag(battery)
     backendSimulator = prepare_backend(backendSimulator, exp_name, robot, simulator,
                                        rendering)
 
@@ -271,6 +283,10 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     else:
         _direct_fixed_topology(hom, **kwargs)
     apply_spin(hom, spin)
+    if battery is not None:
+        from Simulator.HomeoExperiments import add_battery_to_homeostat
+        add_battery_to_homeostat(hom, backendSimulator,
+                                 **dict(dict(noNoise=fixed_weights), **battery))
 
     return hom, backendSimulator, seed
 
@@ -542,6 +558,8 @@ def _setup(fixed_weights=False, wiring='crossed', signs='++', motor='newtonian',
     else:
         label = '%s topology, %s uniselector' % (kwargs.get('topology', 'fixed'),
                                                  kwargs.get('uniselector_type', 'ashby'))
+    if kwargs.get('battery') is not None:
+        label += ', battery (%s)' % common.battery_label(kwargs['battery'])
     extra = dict(wiring=wiring if fixed_weights else '',
                  signs=signs if fixed_weights else '',
                  motor=motor if fixed_weights else '')
@@ -556,7 +574,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  stable_draws=False, start_at_rest=False,
                  wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
                  spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
-                 eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
+                 eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
+                 battery=None, experiment=EXPERIMENT):
     '''Run the simplified 2+2 phototaxis experiment headless
     (phototaxis_common.run_headless, which describes the result).
 
@@ -584,7 +603,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         seed=seed, fixed_weights=fixed_weights, stable_draws=stable_draws,
         start_at_rest=start_at_rest, wiring=wiring, signs=signs, spin=spin,
         motor=motor, eye_saturation=eye_saturation, eye_threshold=eye_threshold,
-        eye_response=eye_response, robot=robot, simulator=simulator, rendering=rendering)
+        eye_response=eye_response, robot=robot, simulator=simulator, rendering=rendering,
+        battery=battery, experiment=experiment)
     return common.run_headless(
         setup, title, total_steps=total_steps, report_interval=report_interval,
         light_intensity=light_intensity, early_stop_distance=early_stop_distance,
@@ -604,7 +624,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               state_log=False, state_log_interval=1, heading=None,
               wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
               spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
-              eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
+              eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
+              battery=None, experiment=EXPERIMENT, batch_name='direct'):
     '''Run a batch of experiments and print a summary table
     (phototaxis_common.run_batch).
 
@@ -614,9 +635,10 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     if fixed_weights:
         variant = 'control_' + control_variant_name(wiring, signs, motor)
     else:
-        variant = uniselector_tag(uniselector_type)
+        variant = uniselector_tag(uniselector_type, continuous_params)
     kind = common.batch_kind(variant, spin, eye_saturation, eye_threshold, eye_response,
-                             stable_draws and not fixed_weights, robot, simulator)
+                             stable_draws and not fixed_weights, robot, simulator) \
+        + common.battery_tag(battery)
 
     def run_one(run_seed, run_env_seed):
         return run_headless(topology=topology, total_steps=total_steps,
@@ -638,8 +660,9 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                             spin=spin, motor=motor, eye_saturation=eye_saturation,
                             eye_threshold=eye_threshold, eye_response=eye_response,
                             robot=robot, simulator=simulator, rendering=rendering,
+                            battery=battery, experiment=experiment,
                             seed=run_seed, env_seed=run_env_seed)
-    return common.run_batch(run_one, n_runs, 'direct', kind,
+    return common.run_batch(run_one, n_runs, batch_name, kind,
                             light_intensity=light_intensity, total_steps=total_steps,
                             seed=seed, env_seed=env_seed,
                             vary=batch_vary)
@@ -651,7 +674,8 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
                    start_range=DEFAULT_START_RANGE, stable_draws=False,
                    start_at_rest=False, wiring='crossed', signs='++',
                    eye_saturation=None, eye_threshold=None, eye_response=None,
-                   robot=DEFAULT_ROBOT, simulator='box2d', rendering=False, continuous_params=None):
+                   robot=DEFAULT_ROBOT, simulator='box2d', rendering=False, continuous_params=None,
+                   battery=None, experiment=EXPERIMENT):
     '''Run the simplified 2+2 phototaxis experiment with the pyglet
     visualizer, with the same options as run_headless.'''
     setup, title, _ = _setup(
@@ -660,16 +684,22 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
         seed=seed, fixed_weights=fixed_weights, stable_draws=stable_draws,
         start_at_rest=start_at_rest, wiring=wiring, signs=signs, spin=spin,
         motor=motor, eye_saturation=eye_saturation, eye_threshold=eye_threshold,
-        eye_response=eye_response, robot=robot, simulator=simulator, rendering=rendering)
+        eye_response=eye_response, robot=robot, simulator=simulator, rendering=rendering,
+        battery=battery, experiment=experiment)
     common.run_visualized(setup, 'Phototaxis ' + title, light_intensity=light_intensity,
                           stable_draws=stable_draws, random_heading=random_heading,
                           random_start=random_start, heading=heading,
                           start_range=start_range, env_seed=env_seed)
 
 
-def main(argv):
-    o = common.parse_common_args(argv, flags=('--fixed-weights', '--uncrossed'),
-                                 valued={'--signs': 1, '--motor': 1})
+# This experiment's own options (see the module docstring)
+VEHICLE_FLAGS = ('--fixed-weights', '--uncrossed')
+VEHICLE_VALUED = {'--signs': 1, '--motor': 1}
+
+
+def parse_vehicle(argv):
+    '''The vehicle the options in argv ask for: dict(fixed_weights, wiring,
+    signs, motor); SystemExit for an option that does not apply.'''
     fixed_weights = '--fixed-weights' in argv
     if fixed_weights and ('--continuous' in argv or '--random-topology' in argv):
         print('Note: --fixed-weights ignores --continuous and --random-topology')
@@ -697,17 +727,31 @@ def main(argv):
                              % (' '.join(CONTROL_MOTORS), motor))
         if not fixed_weights:
             raise SystemExit('--motor applies only with --fixed-weights')
+    return dict(fixed_weights=fixed_weights, wiring=wiring, signs=signs, motor=motor)
 
-    vehicle = dict(fixed_weights=fixed_weights, wiring=wiring, signs=signs, motor=motor)
+
+def run(o, vehicle, **extra):
+    '''Run what the parsed options o ask for (the visualizer, a batch or one
+    headless run) with the vehicle (parse_vehicle); extra: run_headless's
+    other arguments (battery, experiment; for a batch, batch_name too).'''
     setup_options = common.pick(o, common.SETUP_OPTIONS)
     if o['visualize']:
-        run_visualized(**setup_options, **common.pick(o, common.POSE_OPTIONS), **vehicle)
+        extra.pop('batch_name', None)
+        run_visualized(**setup_options, **common.pick(o, common.POSE_OPTIONS), **vehicle,
+                       **extra)
     else:
         run_options = dict(setup_options, **common.pick(o, common.RUN_OPTIONS))
         if o['n_batch'] is not None:
-            run_batch(n_runs=o['n_batch'], batch_vary=o['batch_vary'], **run_options, **vehicle)
+            run_batch(n_runs=o['n_batch'], batch_vary=o['batch_vary'], **run_options, **vehicle,
+                      **extra)
         else:
-            run_headless(**run_options, **vehicle)
+            extra.pop('batch_name', None)
+            run_headless(**run_options, **vehicle, **extra)
+
+
+def main(argv):
+    o = common.parse_common_args(argv, flags=VEHICLE_FLAGS, valued=VEHICLE_VALUED)
+    run(o, parse_vehicle(argv))
 
 
 if __name__ == '__main__':
