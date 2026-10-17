@@ -68,7 +68,7 @@ from math import atan2, degrees, cos, sin, sqrt
 from Box2D import b2Vec2
 
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
-from KheperaSimulator.KheperaSimulator import KheperaRobot
+from KheperaSimulator.KheperaSimulator import KheperaRobot, KheperaSimulation
 
 
 WEBOTS_PROJECT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -208,6 +208,12 @@ class WebotsRobot(object):
     getMaxSensorValue = KheperaRobot.getMaxSensorValue
     irradAtSensor = KheperaRobot.irradAtSensor
     _receptorIrrad = KheperaRobot._receptorIrrad
+    sourceValue = staticmethod(KheperaRobot.sourceValue)
+    concentrationAt = KheperaRobot.concentrationAt
+    foodSources = KheperaRobot.foodSources
+    foodAtCentre = KheperaRobot.foodAtCentre
+    tickBattery = KheperaRobot.tickBattery
+    motorEfficiency = KheperaRobot.motorEfficiency
 
     def __init__(self, supervisor, timeStep):
         self.model = 'epuck2'
@@ -241,6 +247,9 @@ class WebotsRobot(object):
             self._lightSensors[eye] = devices
         self.detectableLights = []
         self.detectableSources = {}
+        # The battery and the food it feeds on, as KheperaRobot's
+        self.battery = None
+        self.foodQuality = 'light'
 
     def _addEye(self, eye, receptorNames):
         receptors = [self.EPUCK2['receptors'][n] for n in receptorNames]
@@ -268,7 +277,8 @@ class WebotsRobot(object):
         self.setLeftSpeed(newLeftSpeed)
 
     def _setSpeed(self, side, speed):
-        speed = max(-self.maxWheelSpeed, min(self.maxWheelSpeed, speed))
+        "Capped, then times the battery's motor efficiency (KheperaRobot.setRightSpeed)"
+        speed = max(-self.maxWheelSpeed, min(self.maxWheelSpeed, speed)) * self.motorEfficiency()
         setattr(self, side + 'Speed', speed * self.wheelRadius)
         self._motors[side].setVelocity(speed)
 
@@ -505,9 +515,13 @@ class WebotsSimulation(object):
         self.trajectoryWriter.runOnce(position=robot.body)
 
     def tickAdvance(self):
-        "One homeostat tick: stepsPerTick Webots steps, once every unit has updated"
+        '''One homeostat tick: stepsPerTick Webots steps, once every unit has
+        updated; then the robot's battery feeds (KheperaSimulation.tickAdvance)'''
         for i in range(self.stepsPerTick):
             self.advanceSim()
+        self.allBodies[self.robotName].tickBattery()
+
+    halted = KheperaSimulation.halted
 
     # --- records ---------------------------------------------------------------------
 

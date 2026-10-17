@@ -210,7 +210,8 @@ class Homeostat(object):
     def runFor(self,ticks):
         '''Start the simulation by setting the units 'in motion' and run it 
            until its time reaches ticks (from time 0, for that many ticks; a
-           later call carries on to the new target). 
+           later call carries on to the new target), or until a robot world
+           halts (its robot died). 
            This involves cycling through the units and asking them to update themselves, 
            then collecting data for each unit.
            First check that there are enough data to start'''
@@ -237,7 +238,8 @@ class Homeostat(object):
                         unit._sync_jit_arrays()
             worlds = self._robotWorlds()
 
-            while self.time < ticks:
+            # A world can end the run (KheperaSimulation.halted: the robot died)
+            while self.time < ticks and not any(getattr(w, 'halted', False) for w in worlds):
                 self.updateUnits()
                 for world in worlds:
                     world.tickAdvance()
