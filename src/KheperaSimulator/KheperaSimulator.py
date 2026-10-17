@@ -324,6 +324,21 @@ _FIELD_PARAMETERS = {'inverse_square': (), 'k0': ('length', 'radius'), 'gaussian
                      'cone': ('radius',)}
 
 
+def fieldContourRadius(law, fraction, outer=100.0):
+    """The distance at which a source of law (not inverse_square) falls to
+    `fraction` of its intensity (by bisection; None beyond outer)"""
+    if _fieldShape(law, outer) > fraction:
+        return None
+    low, high = 0.0, outer
+    for _ in range(60):
+        middle = (low + high) / 2
+        if _fieldShape(law, middle) > fraction:
+            low = middle
+        else:
+            high = middle
+    return (low + high) / 2
+
+
 def checkFieldLaw(law):
     "law (a dict, see FIELD_LAWS) as given, or ValueError naming what is wrong with it"
     name = law.get('law')
@@ -1253,6 +1268,8 @@ class KheperaSimulation(object):
             self.trajectoryWriter.eyeRadiusRatio = robot.eyeRadiusRatio
             self.trajectoryWriter.robotModel = robot.model
             self.trajectoryWriter.battery = robot.batterySettings()
+            self.trajectoryWriter.directionFreeEyes = robot.directionFreeEyes()
+            self.trajectoryWriter.fields = self.fieldSettings()
             self.trajectoryWriter.writeHeaderNow(robot.body)
         for body in self.allBodies.values():
             body.update(self.timeStep)
@@ -1711,9 +1728,11 @@ class KheperaRobotView(object):
     """What a window shows of a robot's run in a KheperaSimulation, and the
        mouse and keys that change it; used by the phototaxis experiments'
        --visualize (phototaxis_common.run_visualized) and the GA replay.
-       Drawn: the world (KheperaSimulation.pygletDraw), the robot's trail
-       and, while the robot is drawn smaller than LOCATOR_PIXELS across, a
-       ring of that radius around it, to find it by.
+       Drawn: the world (KheperaSimulation.pygletDraw), the robot's trail,
+       for each source with a field law the field's contours at
+       FIELD_CONTOURS of its intensity, in the source's colour, and, while
+       the robot is drawn smaller than LOCATOR_PIXELS across, a ring of that
+       radius around it, to find it by.
        - mouse wheel: zoom (about the pointer, or the robot when following);
        - drag: pan (and stop following);
        - F: follow the robot, or stop;
@@ -1731,6 +1750,7 @@ class KheperaRobotView(object):
     TRAIL_COLOR = (0.8, 0.2, 0.2, 0.7)
     LOCATOR_COLOR = (0.8, 0., 0., 0.8)
     HELP = 'mouse wheel: zoom   drag: pan   F: follow   C: close-up/arena   V: eye fields'
+    FIELD_CONTOURS = (0.5, 0.1, 0.01)
 
     def __init__(self, window, sim, robotName='Khepera'):
         self.window = window
@@ -1742,6 +1762,28 @@ class KheperaRobotView(object):
         self._trailLast = None
         self._locator = None
         self._locatorRadius = None
+        self._contours = None       # made at the first frame (a GL context)
+
+    def fieldContours(self):
+        "The field contours' vertex lists, placed and coloured (see FIELD_CONTOURS)"
+        if self._contours is None:
+            self._contours = []
+            for body in self.sim.allBodies.values():
+                ud = getattr(body, 'userData', None)
+                law = ud.get('law') if isinstance(ud, dict) else None
+                if law is None or law['law'] == 'inverse_square':
+                    continue
+                x, _, y = ud['lightPos']
+                color = tuple(ud.get('color', (0.2, 0.8, 0.2, 1.0))[:3])
+                for fraction in self.FIELD_CONTOURS:
+                    radius = fieldContourRadius(law, fraction)
+                    if radius is None:
+                        continue
+                    ring = makePygletRing(radius, numPoints=96)
+                    ring.translation[:] = [x, y] * ring.count
+                    ring.colors[:] = list(color + (0.6,)) * ring.count
+                    self._contours.append(ring)
+        return self._contours
 
     def metresPerPixel(self):
         return 2 * self.camera.zoom / self.window.height
@@ -1757,6 +1799,8 @@ class KheperaRobotView(object):
         program = _get_shape_program()
         program.use()
         try:
+            for ring in self.fieldContours():
+                ring.draw(ring._draw_mode)
             for segment in self.trail:
                 segment.draw(GL_LINES)
             radius = self.LOCATOR_PIXELS * self.metresPerPixel()

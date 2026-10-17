@@ -98,12 +98,15 @@ _EXP_FUNC_MAP = {
     'initializeBraiten3c_GA_continuous_weightfree_open_v2':
         'initializeBraiten3c_GA_continuous_weightfree_open_v2',
 
-    # The hunger setups: the direct vehicle and Vehicle 3c with a battery,
-    # fitness the battery's mean level
+    # The hunger setups: the direct vehicle (in the Braitenberg 2 world and in
+    # the chemotaxis world) and Vehicle 3c with a battery, fitness the
+    # battery's mean level
     'initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2':
         'initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2',
     'initializeHunger3c_GA_continuous_weightfree_fixed_v2':
         'initializeHunger3c_GA_continuous_weightfree_fixed_v2',
+    'initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2':
+        'initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2',
 }
 
 

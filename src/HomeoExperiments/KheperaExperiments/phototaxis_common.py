@@ -43,8 +43,17 @@ from math import sqrt, degrees, atan2
 
 import numpy as np
 
-# The light's position in kheperaBraitenberg2_HOMEO_World
+# The light's position in kheperaBraitenberg2_HOMEO_World, and the food's in
+# kheperaChemotaxis_HOMEO_World
 TARGET_POS = (7, 7)
+
+# The worlds the experiments run in (--world): the Braitenberg 2 world, a
+# light the vehicle senses with its light eyes (the default), and the
+# chemotaxis world, a food source in a chemical field the vehicle senses with
+# its chemical (direction-free) eyes.  KheperaSimulation's world names.
+WORLDS = {'braitenberg2': 'kheperaBraitenberg2_HOMEO_World',
+          'chemotaxis': 'kheperaChemotaxis_HOMEO_World'}
+DEFAULT_WORLD = 'braitenberg2'
 
 # A vehicle has "acquired" the source once it comes this close to it.
 ACQUISITION_RADIUS = 1.0
@@ -136,6 +145,32 @@ def prepare_backend(backendSimulator, experiment_name, robot=DEFAULT_ROBOT,
     return backendSimulator
 
 
+def world_experiment(experiment, world=DEFAULT_WORLD):
+    """An experiment's name in a world: in the chemotaxis world 'phototaxis'
+    becomes 'chemotaxis' (phototaxis_braitenberg2_direct ->
+    chemotaxis_braitenberg2_direct, hunger_phototaxis -> hunger_chemotaxis)"""
+    if world not in WORLDS:
+        raise ValueError('world must be one of %s, got %r' % (tuple(WORLDS), world))
+    return experiment.replace('phototaxis', 'chemotaxis') if world == 'chemotaxis' else experiment
+
+
+def set_field(backend, world=DEFAULT_WORLD, field_length=None):
+    """Before the world is built: the chemotaxis world's food field with
+    another length (CHEMOTAXIS_FIELD's otherwise).  ValueError for a length in
+    another world."""
+    if field_length is None:
+        return
+    if world != 'chemotaxis':
+        raise ValueError('a field length applies only to the chemotaxis world')
+    from KheperaSimulator.KheperaSimulator import CHEMOTAXIS_FIELD
+    backend.kheperaSimulation.fieldLaws = {'organic': dict(CHEMOTAXIS_FIELD, length=field_length)}
+
+
+def field_tag(field_length=None):
+    "Filename tag for a field length other than the default, e.g. '_len1'"
+    return '' if field_length is None else '_len%g' % field_length
+
+
 def experiment_suffix(light_intensity=100, uniselector_type='ashby', adaptive=True,
                       spin=0.0, eye_saturation=None, eye_threshold=None, eye_response=None,
                       robot=DEFAULT_ROBOT, simulator='box2d', continuous_params=None):
@@ -208,34 +243,41 @@ def eye_tag(saturation=None, threshold=None, response=None, robot=DEFAULT_ROBOT)
 
 
 def configure_eyes(backend, saturation=None, threshold=None, response=None):
-    """Set both eyes' sensitivity (KheperaRobot.setEyeSensitivity).
+    """Set the sensitivity of the vehicle's two eyes (KheperaSimulation.vehicleEyes:
+    the light eyes, or in the chemotaxis world the chemical eyes;
+    KheperaRobot.setEyeSensitivity).
 
     saturation: a DISTANCE -- the eye saturates at `saturation` units from the
-                light, on its axis: Isat = intensity / saturation^2 (the light
-                has no ambient part and purely quadratic attenuation,
-                KheperaWorldLightDef's defaults, which is checked).
+                TARGET: Isat is the TARGET's value there, intensity /
+                saturation^2 for the light (which has no ambient part and
+                purely quadratic attenuation, KheperaWorldLightDef's defaults,
+                which is checked), the field's value for a source with a law.
     threshold:  an irradiance, I0.  A log eye needs one > 0 and gets 1 if none
-                is given, so that it stops seeing an intensity-100 light 10
-                units away.
+                is given and it has none, so that it stops seeing an
+                intensity-100 light 10 units away.
     response:   'linear' or 'log'.
-    None leaves a setting at the eye's default (linear, I0 = 0, Isat = 100).
+    None leaves a setting at the eye's default (a light eye: linear, I0 = 0,
+    Isat = 100; a chemical eye: see chemicalEyeSensitivity).
     Returns the eyes' (threshold, saturation irradiance, response)."""
+    from KheperaSimulator.KheperaSimulator import KheperaRobot
     sim = backend.kheperaSimulation
     robot = sim.allBodies['Khepera']
     target = sim.allBodies['TARGET']
+    left, right, _ = sim.vehicleEyes
     Isat = None
     if saturation is not None:
         if not saturation > 0:
             raise ValueError('eye saturation distance must be > 0, got %r' % saturation)
-        if tuple(target.userData['attenVec']) != (0, 0, 1) or target.userData['ambRatio'] != 0:
+        ud = target.userData
+        if ud.get('law') is None and (tuple(ud['attenVec']) != (0, 0, 1) or ud['ambRatio'] != 0):
             raise ValueError('configure_eyes assumes purely quadratic attenuation and no ambient light')
-        Isat = abs(target.userData['intensity']) / saturation ** 2
-    if response == 'log' and threshold is None:
+        Isat = abs(KheperaRobot.sourceValue(target, saturation))
+    if response == 'log' and threshold is None and robot.sensors[left].userData[left + 'Threshold'] == 0:
         threshold = 1.0
-    for eye in ('leftEye', 'rightEye'):
+    for eye in (left, right):
         robot.setEyeSensitivity(eye, threshold=threshold, saturation=Isat, response=response)
-    ud = robot.sensors['leftEye'].userData
-    return ud['leftEyeThreshold'], ud['leftEyeSaturation'], ud['leftEyeResponse']
+    ud = robot.sensors[left].userData
+    return ud[left + 'Threshold'], ud[left + 'Saturation'], ud[left + 'Response']
 
 
 # --- Uniselectors and random unit parameters ---------------------------------
@@ -439,8 +481,11 @@ def run_settings(backend, light_intensity, stable_draws, env_seed, early_stop_di
     '''The settings every run records in its JSON (the homeostat's seed is
     recorded apart).  early_stop_distance: None when the run cannot stop early.'''
     eye_config = backend.kheperaSimulation.eyeConfig
-    robot = backend.kheperaSimulation.allBodies['Khepera']
+    sim = backend.kheperaSimulation
+    robot = sim.allBodies['Khepera']
     settings = dict(env_seed=env_seed,
+                    world=next((w for w, name in WORLDS.items() if name == sim.homeoWorldToRun),
+                               sim.homeoWorldToRun),
                     early_stop_distance=early_stop_distance,
                     simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
                     stable_draws=stable_draws,
@@ -449,7 +494,10 @@ def run_settings(backend, light_intensity, stable_draws, env_seed, early_stop_di
                     eye_threshold=eye_config[0],
                     eye_saturation_irradiance=eye_config[1],
                     eye_response=eye_config[2])
-    # The robot's battery, if it has one (the hunger experiments)
+    # The sources' field laws, if any (the chemotaxis world), and the robot's
+    # battery, if it has one (the hunger experiments)
+    if sim.fieldSettings():
+        settings['fields'] = sim.fieldSettings()
     settings.update(robot.batterySettings() or {})
     return settings
 
@@ -491,8 +539,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
     start_x, start_y = robot.body.position[0], robot.body.position[1]
     start_heading = degrees(robot.body.angle) % 360
     start_dist = sqrt((start_x - target_pos[0])**2 + (start_y - target_pos[1])**2)
-    start_sees_light = (robot.getSensorRead('leftEye') != 0 or
-                        robot.getSensorRead('rightEye') != 0)
+    start_sees_light = any(read != 0 for read in sim.vehicleSensorReads())
 
     # Headless: no per-tick sleep, no in-memory data (the initial and final
     # states go to the log files)
@@ -524,7 +571,8 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
     if spin:
         title += ', spin %g %s' % (abs(spin), 'CW' if spin > 0 else 'CCW')
     if not quiet:
-        print(f'=== Phototaxis: {title} ===')
+        taxis = 'Phototaxis' if sim.vehicleEyes[2] == 'light' else 'Chemotaxis'
+        print(f'=== {taxis}: {title} ===')
         print(f'Seed: {seed}  environment seed: {env_seed}')
         print(f'Robot start: ({start_x:.3f}, {start_y:.3f})  heading {start_heading:.1f}  '
               f'light {"in view" if start_sees_light else "NOT in view"}')
@@ -553,8 +601,7 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
         rx, ry = robot.body.position[0], robot.body.position[1]
         d = dist_to_target()
         a = degrees(robot.body.angle) % 360
-        lsensor = robot.getSensorRead('leftEye')
-        rsensor = robot.getSensorRead('rightEye')
+        lsensor, rsensor = sim.vehicleSensorReads()
 
         if d < min_dist:
             min_dist = d
@@ -648,11 +695,12 @@ BATCH_FIELDS = ['run', 'seed', 'env_seed', 'motor', 'wiring', 'signs', 'spin', '
 
 def batch_kind(variant, spin=0.0, eye_saturation=None, eye_threshold=None,
                eye_response=None, stable_draws=False,
-               robot=DEFAULT_ROBOT, simulator='box2d'):
+               robot=DEFAULT_ROBOT, simulator='box2d', world=DEFAULT_WORLD):
     '''The batch file's tag: the variant (the uniselector, or the fixed-weight
-    vehicle), then spin, eyes, '_stabledraws' and '_webots'.'''
-    kind = variant + spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response,
-                                              robot)
+    vehicle), then '_chemotaxis' in that world, spin, eyes, '_stabledraws'
+    and '_webots'.'''
+    kind = variant + ('_chemotaxis' if world == 'chemotaxis' else '')
+    kind += spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response, robot)
     if stable_draws:
         kind += '_stabledraws'
     if simulator == 'webots':
@@ -875,6 +923,13 @@ Options both experiments take
                         from the centre), battery or battery_critical (a
                         battery's: the hunger experiments)
    --dark               light intensity -100 (a "darkness source")
+   --world W            the world: braitenberg2 (default: a light, sensed by
+                        the light eyes) or chemotaxis (a food source in a
+                        chemical field, sensed by chemical, direction-free
+                        eyes; files and batches get "chemotaxis")
+   --field-length L     in the chemotaxis world, the food field's length
+                        (default 2: its value falls to 1% about 6 units from
+                        the food); files get "_lenL"
    --early-stop D       stop a run once the robot is within D of the light
                         (checked at each report; none by default)
    --state-log          a per-tick .statelog (--log-interval N: every N ticks)
@@ -931,7 +986,7 @@ COMMON_VALUED = {'--batch': 1, '--batch-vary': 1, '--early-stop': 1, '--env-seed
                  '--eye-response': 1, '--eye-saturation': 1, '--eye-threshold': 1,
                  '--heading': 1, '--log-interval': 1, '--robot': 1, '--run-tag': 1,
                  '--seed': 1, '--simulator': 1, '--spin': 1, '--start-range': 2,
-                 '--stress-source': 1,
+                 '--stress-source': 1, '--world': 1, '--field-length': 1,
                  '--steps': 1, '--traj-interval': 1}
 
 
@@ -967,6 +1022,17 @@ def parse_common_args(argv, flags=(), valued=None):
     o['topology'] = 'random' if '--random-topology' in argv else 'fixed'
     o['uniselector_type'] = 'continuous' if '--continuous' in argv else 'ashby'
     o['continuous_params'] = None
+    o['world'] = DEFAULT_WORLD
+    if '--world' in argv:
+        idx = argv.index('--world')
+        o['world'] = argv[idx + 1] if idx + 1 < len(argv) else ''
+        if o['world'] not in WORLDS:
+            raise SystemExit('--world must be one of %s, got %r' % (' '.join(WORLDS), o['world']))
+    o['field_length'] = None
+    if '--field-length' in argv:
+        o['field_length'] = _value(argv, '--field-length', float, '--field-length needs a length')
+        if not o['field_length'] > 0 or o['world'] != 'chemotaxis':
+            raise SystemExit('--field-length needs a length > 0 and --world chemotaxis')
     if '--stress-source' in argv:
         from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
         idx = argv.index('--stress-source')
@@ -1101,7 +1167,7 @@ def parse_common_args(argv, flags=(), valued=None):
 # The options of parse_common_args that setup_phototaxis takes, and those of
 # the runners
 SETUP_OPTIONS = ('topology', 'light_intensity', 'uniselector_type', 'continuous_params',
-                 'seed', 'stable_draws',
+                 'seed', 'stable_draws', 'world', 'field_length',
                  'start_at_rest', 'spin', 'eye_saturation', 'eye_threshold', 'eye_response',
                  'robot', 'simulator', 'rendering')
 RUN_OPTIONS = ('total_steps', 'light_intensity', 'early_stop_distance', 'state_log',

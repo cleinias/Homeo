@@ -546,6 +546,8 @@ class WebotsSimulation(object):
             self.trajectoryWriter.eyes = robot.eyeSettings()
             self.trajectoryWriter.robotModel = 'epuck2 (Webots)'
             self.trajectoryWriter.battery = robot.batterySettings()
+            self.trajectoryWriter.directionFreeEyes = robot.directionFreeEyes()
+            self.trajectoryWriter.fields = self.fieldSettings()
             self.trajectoryWriter.writeHeaderNow(robot.body)
         if self._supervisor.step(self._timeStepMs) == -1:
             raise RuntimeError('Webots has stopped')

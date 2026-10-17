@@ -69,7 +69,7 @@ class SetupsWithoutABackendTest(unittest.TestCase):
         names = ['initializeBraiten2_2_Full_GA'] + [
             n for n in dir(HomeoExperiments)
             if n.startswith('initialize') and hasattr(getattr(HomeoExperiments, n), 'genomeSize')]
-        self.assertEqual(len(names), 9)                 # the classic setup and the eight _v2 ones
+        self.assertEqual(len(names), 10)                # the classic setup and the nine _v2 ones
         for name in names:
             setup = getattr(HomeoExperiments, name)
             genome = np.full(getattr(setup, 'genomeSize', 40), 0.5)

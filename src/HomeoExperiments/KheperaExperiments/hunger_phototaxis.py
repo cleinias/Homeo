@@ -38,8 +38,13 @@ With --hunger-unit, a Newtonian Hunger unit stands between the Battery and
 the motors (Battery ──► Hunger ──► both motors), and its own uniselector
 adjusts its inputs.
 
-The battery breaks even 1.0 from the light (the acquisition radius): closer,
-it gains charge; farther, it loses it.  What an empty battery does is the
+With --world chemotaxis the vehicle is in the chemotaxis world: it senses a
+food source's chemical field with its chemical (direction-free) eyes and
+feeds on the field at its centre, and its files are named
+hunger_chemotaxis_....
+
+The battery breaks even 1.0 from the light, or the food (the acquisition
+radius): closer, it gains charge; farther, it loses it.  What an empty battery does is the
 depletion mode, death by default here: the robot stops for good and the run
 ends, so a run records how long the robot survived.
 
@@ -83,6 +88,10 @@ Usage
 
     # The continuous-uniselector vehicle whose search grows with hunger, with a Hunger unit
     python -m HomeoExperiments.KheperaExperiments.hunger_phototaxis --continuous --stress-source battery --hunger-unit
+
+    # Hunger-driven chemotaxis: the same vehicle in the chemotaxis world
+    python -m HomeoExperiments.KheperaExperiments.hunger_phototaxis --continuous --world chemotaxis
+
 '''
 
 from HomeoExperiments.KheperaExperiments import phototaxis_common as common

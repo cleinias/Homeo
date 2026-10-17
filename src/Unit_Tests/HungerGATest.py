@@ -39,7 +39,8 @@ from Simulator.HomeoGenAlg import (HomeoGASimulation, fitness_measure, measured_
 from Simulator.SimulatorBackend import SimulatorBackendHOMEO
 
 HUNGER_SETUPS = ('initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2',
-                 'initializeHunger3c_GA_continuous_weightfree_fixed_v2')
+                 'initializeHunger3c_GA_continuous_weightfree_fixed_v2',
+                 'initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2')
 
 
 class Genome(list):
@@ -59,7 +60,7 @@ class HungerSetupsTest(unittest.TestCase):
         return backend
 
     def testTheSetupsHaveABatteryThatDies(self):
-        for name, quality in zip(HUNGER_SETUPS, ('light', 'organic')):
+        for name, quality in zip(HUNGER_SETUPS, ('light', 'organic', 'organic')):
             with self.subTest(name):
                 f = getattr(HE, name)
                 backend = self.backend()
@@ -71,6 +72,17 @@ class HungerSetupsTest(unittest.TestCase):
                 self.assertIn('Battery', [u.name for u in hom.homeoUnits])
                 self.assertEqual(f.fitness, 'battery_mean')
                 self.assertEqual(fitness_measure(name), 'battery_mean')
+
+    def testTheChemotaxisSetupSteersByTheChemicalEyes(self):
+        name = HUNGER_SETUPS[2]
+        f = getattr(HE, name)
+        backend = self.backend()
+        hom = f(np.full(f.genomeSize, 0.5), backendSimulator=backend)
+        sim = backend.kheperaSimulation
+        self.assertIs(sim.allBodies['TARGET'], sim.allBodies['FOOD'])
+        sensors = {u.name: u for u in hom.homeoUnits}
+        self.assertEqual(sensors['Left Sensor'].transducer._eye, 'leftOrgEye')
+        self.assertEqual(sensors['Right Sensor'].transducer._quality, 'organic')
 
     def testTheDefaultMeasureIsTheFinalDistance(self):
         self.assertEqual(fitness_measure('initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2'),

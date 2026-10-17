@@ -123,7 +123,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      uniselector_type='ashby', continuous_params=None,
                      seed=None, stable_draws=False, start_at_rest=False,
                      spin=0.0, eye_saturation=None, eye_threshold=None,
-                     eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
+                     eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
+                     world=common.DEFAULT_WORLD, field_length=None):
     '''Set up an Ashby-style phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -159,6 +160,9 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         simulator, rendering: 'box2d' (default) or 'webots', and for Webots
                             whether to show its window (see
                             phototaxis_common.prepare_backend).
+        world:              'braitenberg2' (default) or 'chemotaxis' (see
+                            phototaxis_common.WORLDS; files named
+                            chemotaxis_braitenberg2_Ashby_...).
 
     Returns:
         (hom, backend, seed) - the configured Homeostat, the backend
@@ -169,15 +173,17 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     # Seed every generator before any stochastic initialization
     seed = seed_run(seed)
 
-    exp_name = ('phototaxis_braitenberg2_Ashby_random' if topology == 'random'
-                else 'phototaxis_braitenberg2_Ashby_fixed')
+    exp_name = common.world_experiment('phototaxis_braitenberg2_Ashby', world) + (
+        '_random' if topology == 'random' else '_fixed')
     exp_name += experiment_suffix(light_intensity, uniselector_type, True, spin,
                                   eye_saturation, eye_threshold, eye_response,
                                   robot, simulator, continuous_params)
+    exp_name += common.field_tag(field_length)
     backendSimulator = prepare_backend(backendSimulator, exp_name, robot, simulator,
                                        rendering)
+    common.set_field(backendSimulator, world, field_length)
 
-    hom = initializeBraiten2_2Pos(backendSimulator=backendSimulator)
+    hom = initializeBraiten2_2Pos(backendSimulator=backendSimulator, world=common.WORLDS[world])
     set_light(backendSimulator, light_intensity, eye_saturation, eye_threshold, eye_response)
 
     kwargs = dict(mass_range=mass_range,
@@ -329,7 +335,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
                  stable_draws=False, start_at_rest=False, spin=0.0,
                  eye_saturation=None, eye_threshold=None, eye_response=None,
-                 robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
+                 robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
+                 world=common.DEFAULT_WORLD, field_length=None):
     '''Run the Ashby phototaxis experiment headless
     (phototaxis_common.run_headless, which describes the options and the
     result; the setup's are setup_phototaxis's).'''
@@ -339,7 +346,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                           stable_draws=stable_draws, start_at_rest=start_at_rest,
                           spin=spin, eye_saturation=eye_saturation,
                           eye_threshold=eye_threshold, eye_response=eye_response,
-                          robot=robot, simulator=simulator, rendering=rendering)
+                          robot=robot, simulator=simulator, rendering=rendering,
+                          world=world, field_length=field_length)
     return common.run_headless(
         setup, title, total_steps=total_steps, report_interval=report_interval,
         light_intensity=light_intensity, early_stop_distance=early_stop_distance,
@@ -358,13 +366,14 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
               stable_draws=False, start_at_rest=False, spin=0.0,
               eye_saturation=None, eye_threshold=None, eye_response=None,
-              robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
+              robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
+              world=common.DEFAULT_WORLD, field_length=None):
     '''Run a batch of experiments and print a summary table
     (phototaxis_common.run_batch).  With seed given, run i uses seed+i;
     env_seed and batch_vary: see phototaxis_common.batch_seeds.'''
-    kind = common.batch_kind(uniselector_tag(uniselector_type, continuous_params), spin, eye_saturation,
-                             eye_threshold, eye_response, stable_draws, robot,
-                             simulator)
+    kind = common.batch_kind(uniselector_tag(uniselector_type, continuous_params), spin,
+                             eye_saturation, eye_threshold, eye_response, stable_draws, robot,
+                             simulator, world) + common.field_tag(field_length)
 
     def run_one(run_seed, run_env_seed):
         return run_headless(topology=topology, total_steps=total_steps,
@@ -380,7 +389,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                             stable_draws=stable_draws, start_at_rest=start_at_rest,
                             spin=spin, eye_saturation=eye_saturation,
                             eye_threshold=eye_threshold, eye_response=eye_response,
-                            robot=robot, simulator=simulator, rendering=rendering)
+                            robot=robot, simulator=simulator, rendering=rendering,
+                            world=world, field_length=field_length)
     return common.run_batch(run_one, n_runs, 'ashby', kind,
                             light_intensity=light_intensity, total_steps=total_steps,
                             seed=seed, env_seed=env_seed,
@@ -392,7 +402,8 @@ def run_visualized(topology='fixed', light_intensity=100, uniselector_type='ashb
                    random_heading=False, random_start=False, start_range=DEFAULT_START_RANGE,
                    stable_draws=False, start_at_rest=False, spin=0.0,
                    eye_saturation=None, eye_threshold=None, eye_response=None,
-                   robot=DEFAULT_ROBOT, simulator='box2d', rendering=False):
+                   robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
+                   world=common.DEFAULT_WORLD, field_length=None):
     '''Run the Ashby phototaxis experiment with the pyglet visualizer, with
     the same options as run_headless.
 
@@ -405,8 +416,10 @@ def run_visualized(topology='fixed', light_intensity=100, uniselector_type='ashb
                           stable_draws=stable_draws, start_at_rest=start_at_rest,
                           spin=spin, eye_saturation=eye_saturation,
                           eye_threshold=eye_threshold, eye_response=eye_response,
-                          robot=robot, simulator=simulator, rendering=rendering)
-    common.run_visualized(setup, 'Phototaxis ' + title, light_intensity=light_intensity,
+                          robot=robot, simulator=simulator, rendering=rendering,
+                          world=world, field_length=field_length)
+    common.run_visualized(setup, ('Chemotaxis ' if world == 'chemotaxis' else 'Phototaxis ')
+                          + title, light_intensity=light_intensity,
                           stable_draws=stable_draws, random_heading=random_heading,
                           random_start=random_start, heading=heading,
                           start_range=start_range, env_seed=env_seed)
