@@ -65,6 +65,17 @@ class EmitterWithQtTest(unittest.TestCase):
         self.assertIs(QObjectProxyEmitter.emitter(a), QObjectProxyEmitter.emitter(a))
         self.assertIsNot(QObjectProxyEmitter.emitter(a), QObjectProxyEmitter.emitter(b))
 
+    def testTheHubGoesWithItsObject(self):
+        "a hub is kept only while its object lives"
+        import gc
+        import weakref
+        ob = Owner()
+        hub = weakref.ref(QObjectProxyEmitter.emitter(ob))
+        self.assertIsNotNone(hub())
+        del ob
+        gc.collect()
+        self.assertIsNone(hub())
+
     def testSignalsDoNotCrossObjects(self):
         "an emit on one object does not reach a slot connected to another"
         a, b = Owner(), Owner()

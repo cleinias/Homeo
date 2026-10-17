@@ -1,20 +1,14 @@
 '''
-@author: Tom Dossis (original), Stefano Franchi (PyQt5 port)
+Qt signals for the Core classes (HomeoUnit, HomeoConnection, Homeostat,
+HomeoUniselector), which are not QObjects, so that they can be pickled.
+emitter(ob) returns the SignalHub that carries ob's signals: a QObject that
+declares every signal the Core classes emit, made the first time it is asked
+for and dropped with ob.
 
-Provides a SignalHub QObject that declares all signals used by non-QObject
-Core classes (HomeoUnit, HomeoConnection, Homeostat, HomeoUniselector).
-The emitter() function returns a SignalHub instance instead of a bare QObject,
-preserving picklability of the Core classes.
+Usage (PyQt5): a unit emits through its hub, and a widget listens to it:
 
-Sample usage (PyQt5):
-
-     class A(object):
-         def notify(self):
-             emitter(self).nameChanged.emit('hello')
-
-     ob = A()
-     emitter(ob).nameChanged.connect(some_slot)
-     ob.notify()
+     emitter(unit).nameChanged.connect(label.setText)
+     emitter(unit).nameChanged.emit(unit.name)
 
 Without PyQt5 (a headless batch run on a machine that has no Qt), emitter()
 returns a shared null hub instead.  Its signals accept .emit() and do nothing,
@@ -163,18 +157,15 @@ if QT_AVAILABLE:
         unitUniselSoundChanged = pyqtSignal(object)
 
 
-    _emitterCache = weakref.WeakKeyDictionary()
+    # ob -> its hub; an entry lasts as long as ob does.
+    _hubs = weakref.WeakKeyDictionary()
 
     def emitter(ob):
-        """Returns a SignalHub surrogate for *ob*, to use in Qt signaling.
-
-        This function enables you to connect to and emit signals from (almost)
-        any python object without having to subclass QObject.
-        """
-
-        if ob not in _emitterCache:
-            _emitterCache[ob] = SignalHub()
-        return _emitterCache[ob]
+        """ob's SignalHub, made on first use."""
+        hub = _hubs.get(ob)
+        if hub is None:
+            hub = _hubs[ob] = SignalHub()
+        return hub
 
 else:
 
