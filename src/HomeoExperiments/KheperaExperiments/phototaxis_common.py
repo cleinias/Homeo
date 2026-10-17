@@ -403,15 +403,19 @@ def run_settings(backend, light_intensity, stable_draws, env_seed, early_stop_di
     '''The settings every run records in its JSON (the homeostat's seed is
     recorded apart).  early_stop_distance: None when the run cannot stop early.'''
     eye_config = backend.kheperaSimulation.eyeConfig
-    return dict(env_seed=env_seed,
-                early_stop_distance=early_stop_distance,
-                simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
-                stable_draws=stable_draws,
-                light_intensity=light_intensity,
-                robot=backend.kheperaSimulation.allBodies['Khepera'].model,
-                eye_threshold=eye_config[0],
-                eye_saturation_irradiance=eye_config[1],
-                eye_response=eye_config[2])
+    robot = backend.kheperaSimulation.allBodies['Khepera']
+    settings = dict(env_seed=env_seed,
+                    early_stop_distance=early_stop_distance,
+                    simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
+                    stable_draws=stable_draws,
+                    light_intensity=light_intensity,
+                    robot=robot.model,
+                    eye_threshold=eye_config[0],
+                    eye_saturation_irradiance=eye_config[1],
+                    eye_response=eye_config[2])
+    # The robot's battery, if it has one (the hunger experiments)
+    settings.update(robot.batterySettings() or {})
+    return settings
 
 
 def run_headless(setup, title, total_steps=60000, report_interval=500,
@@ -530,10 +534,14 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                 print(f'\n  *** Early stop: distance {d:.3f} < {early_stop_distance}')
             early_stopped = True
             break
+        if sim.halted:
+            if not quiet:
+                print(f'\n  *** The robot died at tick {robot.battery.deathTick}')
+            break
 
     final_dist = dist_to_target()
     final_x, final_y = robot.body.position[0], robot.body.position[1]
-    steps_run = target_tick
+    steps_run = hom.time
     '''How the run ends, which "acquired" alone cannot tell: Braitenberg's
        Aggressor hits the source at speed, his Love vehicle comes to rest near
        it facing it, his Explorer comes to rest facing away.
@@ -579,9 +587,17 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                   final_speed=final_speed, final_bearing=final_bearing,
                   spin=spin,
                   stable_draws=stable_draws)
+    # The battery's run (Battery.summary), if the robot has one
+    if robot.battery is not None:
+        result.update(robot.battery.summary())
     result.update(extra or {})
     return result
 
+
+# The battery's fields of a result (run_headless), in a batch file when the
+# runs have a battery
+BATTERY_FIELDS = ['battery_mean', 'battery_min', 'battery_final', 'ticks_critical',
+                  'ticks_empty', 'alive', 'death_tick']
 
 BATCH_FIELDS = ['run', 'seed', 'env_seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response',
                 'eye_threshold', 'eye_saturation', 'eye_saturation_irradiance',
@@ -708,7 +724,8 @@ def run_batch(run_one, n_runs, experiment, kind, light_intensity=100, total_step
                                ('.csv',)) + '.csv'
         csv_path = os.path.join(log_dir, csv_name)
         with open(csv_path, 'w', newline='') as f:
-            w = _csv.DictWriter(f, fieldnames=BATCH_FIELDS, extrasaction='ignore')
+            fields = BATCH_FIELDS + (BATTERY_FIELDS if 'battery_mean' in results[0] else [])
+            w = _csv.DictWriter(f, fieldnames=fields, extrasaction='ignore')
             w.writeheader()
             w.writerows(results)
         print(f'\nSummary saved to: {csv_path}')

@@ -913,6 +913,12 @@ class KheperaRobot(object):
         "The factor the wheels' speeds are multiplied by: the battery's (1 without one)"
         return 1.0 if self.battery is None else self.battery.motorEfficiency()
 
+    def batterySettings(self):
+        "The battery's parameters and the food quality, for the records; None without a battery"
+        if self.battery is None:
+            return None
+        return dict(food_quality=self.foodQuality, **self.battery.settings())
+
     def rotateTo(self, angleRad):
         """Rotate robot and its wheels, about the robot's centre, to angleRad."""
         self._setPose(self._pose[:2], angleRad)
@@ -1144,6 +1150,7 @@ class KheperaSimulation(object):
             self.trajectoryWriter.eyes = robot.eyeSettings()
             self.trajectoryWriter.eyeRadiusRatio = robot.eyeRadiusRatio
             self.trajectoryWriter.robotModel = robot.model
+            self.trajectoryWriter.battery = robot.batterySettings()
             self.trajectoryWriter.writeHeaderNow(robot.body)
         for body in self.allBodies.values():
             body.update(self.timeStep)

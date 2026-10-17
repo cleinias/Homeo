@@ -214,6 +214,7 @@ class WebotsRobot(object):
     foodAtCentre = KheperaRobot.foodAtCentre
     tickBattery = KheperaRobot.tickBattery
     motorEfficiency = KheperaRobot.motorEfficiency
+    batterySettings = KheperaRobot.batterySettings
 
     def __init__(self, supervisor, timeStep):
         self.model = 'epuck2'
@@ -508,6 +509,7 @@ class WebotsSimulation(object):
             self.trajectoryWriter.stepsPerTick = self.stepsPerTick
             self.trajectoryWriter.eyes = robot.eyeSettings()
             self.trajectoryWriter.robotModel = 'epuck2 (Webots)'
+            self.trajectoryWriter.battery = robot.batterySettings()
             self.trajectoryWriter.writeHeaderNow(robot.body)
         if self._supervisor.step(self._timeStepMs) == -1:
             raise RuntimeError('Webots has stopped')
