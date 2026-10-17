@@ -1,0 +1,28 @@
+# How to cite Homeo.  GitHub shows it as "Cite this repository"; Zenodo
+# reads it for the archived release's record.
+cff-version: 1.2.0
+message: "If you use Homeo, please cite it as below."
+type: software
+title: "Homeo: a simulation of Ashby's homeostat and of homeostat-controlled robots"
+abstract: >-
+  A software simulation of W. Ross Ashby's homeostat, as described in Design
+  for a Brain and An Introduction to Cybernetics, and a platform for research
+  with it: Ashby's own experiments, generalized homeostatic units and
+  uniselectors, and homeostats as the controllers of simulated robots
+  (Braitenberg vehicles) in a built-in Box2D simulator or in Webots, with
+  genetic algorithms that evolve them.
+authors:
+  - family-names: Franchi
+    given-names: Stefano
+    orcid: "https://orcid.org/0000-0001-6955-6320"
+version: 0.1.0
+license: GPL-3.0-or-later
+repository-code: "https://github.com/cleinias/Homeo"
+keywords:
+  - homeostat
+  - W. Ross Ashby
+  - cybernetics
+  - ultrastability
+  - homeostasis
+  - Braitenberg vehicles
+  - simulation
