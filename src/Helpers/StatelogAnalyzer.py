@@ -151,9 +151,9 @@ def _auto_cast(val: str):
 def ou_drift_rate(umeta):
     '''The fraction of a weight its uniselector's drift removes per tick,
     k * ou_dt, from a unit's logged metadata; None if the unit has no
-    continuous uniselector.  k is theta/tau_a for a statelog whose
-    ou_model is 'legacy' (or that records no ou_model), 1/tau_a for 'ou' and
-    0 for 'diffusion' (HomeoUniselectorContinuous.step).  The step is the
+    continuous uniselector.  k is 1/tau_a for 'ou', 0 for 'diffusion'
+    (HomeoUniselectorContinuous.step), and theta/tau_a for a statelog of the
+    theta model, whose ou_model is 'legacy' or which records no ou_model.  The step is the
     uniselector's own dt (ou_dt, default 1), not the unit's dt_fast.'''
     tau_a = umeta.get('tau_a')
     if tau_a is None or not tau_a > 0:

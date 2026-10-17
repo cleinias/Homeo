@@ -81,7 +81,7 @@ class TrajectoryRoundTripTest(_DataDirTest):
                 self.assertAlmostEqual(xy[0][0], r['start_x'], delta=0.01)
 
     def testFilesWithoutAStepCount(self):
-        "Older files, and those of runs killed before closing, have no step count"
+        "A file without the closing step count, as a run killed before closing leaves it"
         _, path = self.run_vehicle(3)
         with open(path) as f:
             lines = f.readlines()

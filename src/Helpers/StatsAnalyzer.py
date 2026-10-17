@@ -12,10 +12,9 @@ import os
 
 from Helpers.General_Helper_Functions import simulations_data_dir
 
-# Logbook/history files pickled with Python 2 + dill <= 0.3.x need two
-# compatibility shims:
-#   1. dill 0.4.x renamed 'dill.dill' to 'dill._dill'
-#   2. Python 2 type names (ListType, DictType, etc.) do not exist in Python 3
+# Logbook and history pickles can refer to the module 'dill.dill' (dill's
+# other name for 'dill._dill') and to Python 2's type names (ListType,
+# DictType, ...), which Python 3 lacks: both are registered here.
 try:
     import dill
     import dill._dill
@@ -44,7 +43,7 @@ import glob
 from itertools import combinations
 
 def _load_pickle(fileObj):
-    """Load a pickle file with latin-1 encoding for Python 2 compatibility."""
+    """Load a pickle file; latin-1 reads the byte strings of a Python 2 pickle."""
     return pickle.Unpickler(fileObj, encoding='latin-1').load()
 
 def main():

@@ -17,8 +17,8 @@ import os
 from glob import glob
 from sys import stderr
 import dill
-sys.modules['dill.dill'] = dill._dill  # logbooks pickled with dill.dill, which dill 0.4 renamed dill._dill
-# Logbooks pickled under Python 2 refer to types like ListType, DictType, etc.
+sys.modules['dill.dill'] = dill._dill  # logbooks can refer to dill.dill, dill._dill's other name
+# Logbooks can refer to Python 2's type names (ListType, DictType, ...).
 # Register them so dill can deserialize those references.
 for _name, _type in [('ListType', list), ('DictType', dict), ('TupleType', tuple),
                      ('StringType', str), ('IntType', int), ('FloatType', float),

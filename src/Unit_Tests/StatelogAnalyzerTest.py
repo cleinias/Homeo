@@ -5,7 +5,7 @@ StatelogAnalyzer's drift/diffusion split: on a noise-free weight trajectory
 the diffusion residual is zero.  The drift uses the uniselector's own dt,
 not the unit's dt_fast, spans the log_interval ticks between two records,
 is evaluated at the earlier record's weight, and follows the formula of the
-uniselector's model (legacy or OU).
+model the statelog records (OU, or the theta model, 'legacy').
 '''
 import os
 import tempfile

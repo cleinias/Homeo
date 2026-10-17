@@ -233,7 +233,7 @@ class HomeoUnitNewtonian(HomeoUnit):
         Without an active self-connection: (aTorqueValue, 0.0).'''
         if self._headless:
             i = getattr(self, '_jit_self', None)
-            if i is None:                       # arrays built before this attribute
+            if i is None:                       # arrays without _jit_self: rebuild them
                 self._sync_jit_arrays()
                 i = self._jit_self
             if i < 0:

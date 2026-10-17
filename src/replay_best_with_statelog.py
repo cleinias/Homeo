@@ -373,8 +373,8 @@ def main():
     # The robot the run evaluated with: the GA's
     from Simulator.HomeoGenAlg import GA_ROBOT
     if meta.get('robot') != GA_ROBOT:
-        sys.exit("Cannot replay: the logbook's robot is %r, the GA's %r (a logbook that "
-                 "records no robot is replayed by the Homeo commit that wrote it)"
+        sys.exit("Cannot replay: the logbook's robot is %r, the GA's %r (replay a logbook "
+                 "that records no robot with the code that wrote it)"
                  % (meta.get('robot'), GA_ROBOT))
     print("  Robot: %s   Homeo: %s" % (meta['robot'], meta.get('homeo', 'unknown')))
 

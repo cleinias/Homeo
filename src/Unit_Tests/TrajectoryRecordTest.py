@@ -56,7 +56,7 @@ class TrajectoryRecordTest(unittest.TestCase):
                 header, _, rows = loadTrajectory(path)
                 self.assertEqual(ticksFromRows(header, rows), r['steps_run'])
 
-    def testOlderHeaders(self):
+    def testHeadersWithoutStepsPerTick(self):
         "A header with no sampling line: 2 steps per tick; 'every N ticks' is every N steps"
         self.assertEqual(ticksFromRows(['# Position data\n'], 2000), 1000)
         self.assertEqual(ticksFromRows(['# Sampled every 100 ticks\n'], 1000), 50000)
