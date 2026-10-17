@@ -37,9 +37,9 @@ from Helpers.General_Helper_Functions import distance
 # Optional backend dependencies: guarded so that the module loads without Box2D
 try:
     from RobotSimulator.Transducer import (HOMEO_DiffMotor, HOMEO_LightSensor,
-                                           HOMEO_QualitySensor)
+                                           HOMEO_QualitySensor, HOMEO_BatterySensor)
 except ImportError:
-    HOMEO_DiffMotor = HOMEO_LightSensor = HOMEO_QualitySensor = None
+    HOMEO_DiffMotor = HOMEO_LightSensor = HOMEO_QualitySensor = HOMEO_BatterySensor = None
 
 try:
     from KheperaSimulator.KheperaSimulator import KheperaSimulation
@@ -225,6 +225,12 @@ class SimulatorBackendHOMEO(SimulatorBackendAbstract):
 
         return HOMEO_QualitySensor(sensorName, quality, self._robotName,
                                    self.kheperaSimulation)
+
+    def getBatterySensor(self, signal='hunger'):
+        """Return a transducer to the robot's battery: its hunger (capacity -
+           level, the default) or its level (see HOMEO_BatterySensor)."""
+
+        return HOMEO_BatterySensor(self._robotName, self.kheperaSimulation, signal=signal)
 
 
 class SimulatorBackendWEBOTS(SimulatorBackendHOMEO):

@@ -249,5 +249,32 @@ class HOMEO_QualitySensor(_HOMEO_RobotByName, Transducer):
         raise TransducerException("Quality sensor %s cannot act" % self._eye)
 
 
+class HOMEO_BatterySensor(_HOMEO_RobotByName, Transducer):
+    """An interoceptive sensor: it reads the robot's battery
+    (KheperaSimulator.Battery).  signal 'hunger' (the default) reads
+    capacity - level, high when the battery is empty; 'level' reads the
+    level, high when it is full.  robotRef and simul as HOMEO_LightSensor's."""
+
+    SIGNALS = ('hunger', 'level')
+
+    def __init__(self, robotRef, simul=None, signal='hunger'):
+        if signal not in self.SIGNALS:
+            raise TransducerException("signal must be one of %s, not %r" % (self.SIGNALS, signal))
+        self.simul = simul
+        self.robot = robotRef
+        self.signal = signal
+        self._transdFunction = 'battery'
+
+    def read(self):
+        battery = self.robot.battery
+        return battery.capacity - battery.level if self.signal == 'hunger' else battery.level
+
+    def range(self):
+        return self.robot.battery.range()
+
+    def act(self):
+        raise TransducerException("The battery sensor cannot act")
+
+
         
        
