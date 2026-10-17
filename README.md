@@ -149,7 +149,6 @@ src/
   run_*.py           # Batch and GA entry points
 hpc/                 # SLURM arrays, workstation arrays, aggregation
 Docs/                # Figures (e.g. the e-puck's fields of view)
-resources/           # GUI resources (icons, images)
 ```
 
 See [CODE_OVERVIEW.md](CODE_OVERVIEW.md) for a detailed walkthrough of the

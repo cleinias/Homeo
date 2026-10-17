@@ -68,8 +68,7 @@ if not (os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY')):
 # --no-qt ---------------------------------------------------------------------
 
 # Test modules that exercise Qt GUI code and import PyQt5 at module level.
-_QT_GUI_TEST_MODULES = ('HelpersGUITest.py', 'HomeoQtSimulationTest.py', 'AshbyExperimentGuiTest.py',
-                        'QtSeparatorTest.py')
+_QT_GUI_TEST_MODULES = ('HelpersGUITest.py', 'HomeoQtSimulationTest.py', 'AshbyExperimentGuiTest.py')
 
 
 def pytest_addoption(parser):

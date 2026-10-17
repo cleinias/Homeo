@@ -8,7 +8,6 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from Core.Homeostat import *
-from Helpers.QtSeparator import Separator
 from Helpers.General_Helper_Functions import rchop
 from Simulator.HomeoQtSimulation import *
 from Helpers.QObjectProxyEmitter import emitter
@@ -62,6 +61,13 @@ def _followUnit(slider, unit):
     emitter(unit).criticalDeviationScaledChanged.connect(follower.setValue)
     emitter(unit).minDeviationScaledChanged.connect(follower.setMinimum)
     emitter(unit).maxDeviationScaledChanged.connect(follower.setMaximum)
+
+def _horizontalLine():
+    "A horizontal divider: Qt's own sunken line"
+    line = QFrame()
+    line.setFrameShape(QFrame.HLine)
+    line.setFrameShadow(QFrame.Sunken)
+    return line
 
 class HomeoSimulationControllerGui(QDialog):
     # Resume, delivered to the simulation in its own thread (a queued
@@ -185,8 +191,8 @@ class HomeoSimulationControllerGui(QDialog):
         self.slowingFactorSpinBox.setRange(0,1000)
         
         "Separators"
-        self.runningSectionSep1 = Separator()
-        self.runningSectionSep2 = Separator()
+        self.runningSectionSep1 = _horizontalLine()
+        self.runningSectionSep2 = _horizontalLine()
         
         "Layout"
         simulationPaneLayout = QGridLayout()
@@ -290,7 +296,7 @@ class HomeoSimulationControllerGui(QDialog):
         homeostatPaneLayout.addWidget(self.noOfUnitsLineEdit,2,1)
         
         'Row 3'
-        homeostatPaneLayout.addWidget(Separator(), 3,0,1,2)
+        homeostatPaneLayout.addWidget(_horizontalLine(), 3,0,1,2)
         
         'Row 4'
         homeostatPaneLayout.addWidget(self.homeostatActionsLabel, 4,0)

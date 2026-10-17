@@ -323,6 +323,14 @@ class GeneralGuiSmokeTest(unittest.TestCase):
         self.assertEqual(self.sim.homeostat.time, 0)
         self.assertTrue(self.gui.stepButton.isEnabled())
 
+    def testTheDividersAreQtLines(self):
+        from PyQt5.QtWidgets import QFrame
+        for line in (self.gui.runningSectionSep1, self.gui.runningSectionSep2):
+            self.assertIsInstance(line, QFrame)
+            self.assertEqual(line.frameShape(), QFrame.HLine)
+            self.assertEqual(line.frameShadow(), QFrame.Sunken)
+        self.assertEqual(self.gui.vertSeparator.frameShape(), QFrame.VLine)
+
     def testNewSaveAndLoad(self):
         old = self.sim.homeostat
         self.gui.newHomeostat()
