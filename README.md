@@ -1,5 +1,7 @@
 # Homeo
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23446367.svg)](https://doi.org/10.5281/zenodo.23446367)
+
 A software simulation of W. Ross Ashby's Homeostat, as described in
 *Design for a Brain* (1952) and *Introduction to Cybernetics* (1956), and a
 platform for research with it: Ashby's own experiments, and homeostats as
@@ -154,6 +156,14 @@ Docs/                # Figures (e.g. the e-puck's fields of view)
 See [CODE_OVERVIEW.md](CODE_OVERVIEW.md) for a detailed walkthrough of the
 codebase, and [ROBOTIC_OVERVIEW.md](ROBOTIC_OVERVIEW.md) for the robotic
 integration.
+
+## Citing Homeo
+
+Each release is archived on Zenodo.  To cite Homeo, use GitHub's "Cite this
+repository" (from [CITATION.cff](CITATION.cff)) or the DOI
+[10.5281/zenodo.23446367](https://doi.org/10.5281/zenodo.23446367), which
+resolves to the latest release; each release also has a DOI of its own on
+its Zenodo page.
 
 ## License
 
