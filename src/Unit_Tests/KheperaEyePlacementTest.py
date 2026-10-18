@@ -1,6 +1,24 @@
-'''
-@author: stefano
+# Copyright (C) 2026 Stefano Franchi
+#
+# This file is part of Homeo, a simulation of Ashby's homeostat and of
+# homeostat-controlled robots.
+#
+# Homeo is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# Homeo is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Homeo.  If not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 
+'''
 Where the robots' eyes sit.  The K-Junior's (model='kjunior'): each eye
 faces outward along its radius, 21.9 degrees off the heading, half way out
 (eyeRadiusRatio 0.5), and sees 45 degrees either side of that axis; the two

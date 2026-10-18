@@ -1,11 +1,11 @@
 # Test Coverage Report
 
-Measured at commit `5217d1e`, with Python 3.14.7, numba 0.68.0 and Webots R2025a.
+Measured for release v0.1.0, with Python 3.14.7, numba 0.68.0 and Webots R2025a.
 
-**659 tests pass, none fail or are skipped** (17,216 subtests; about 6 minutes). The Webots
+**659 tests pass, none fail or are skipped** (17,216 subtests; about 7 minutes). The Webots
 tests (`WebotsBackendTest`) run only where Webots can start, and are skipped elsewhere.
 
-Overall line coverage of `src/` (tests excluded): **84%** (11,261 statements, 1,797 not run).
+Overall line coverage of `src/` (tests excluded): **84%** (11,212 statements, 1,783 not run).
 
 ## How it was measured
 
@@ -45,15 +45,15 @@ CLIs, the Webots runs, the replay, the Ashby experiments' runner). The GUI tests
 | `Core/HomeoUnit.py` | 748 | 94% |
 | `Core/HomeoUnitNewtonian.py` | 133 | 85% |
 | `Core/HomeoConnection.py` | 171 | 74% |
-| `Core/HomeoJIT.py` | 129 | 60% (see below) |
+| `Core/HomeoJIT.py` | 129 | 60% |
 | **Simulator** | | |
 | `Simulator/AshbyOriginalExperiments.py` | 566 | 98% |
 | `Simulator/HomeoExperiments.py` | 879 | 96% |
 | `Simulator/HomeoGenAlg.py` | 507 | 95% |
 | `Simulator/HomeoQtSimulation.py` | 262 | 95% |
-| `Simulator/HomeoGeneralGUI.py` | 864 | 93% |
+| `Simulator/HomeoGeneralGUI.py` | 868 | 93% |
 | `Simulator/SimulatorBackend.py` | 124 | 81% |
-| `Simulator/HomeoGenAlgGui.py` | 273 | 79% |
+| `Simulator/HomeoGenAlgGui.py` | 269 | 79% |
 | `Simulator/AshbyExperimentGui.py` | 316 | 61% |
 | **Robots and experiments** | | |
 | `HomeoExperiments/KheperaExperiments/phototaxis_braitenberg2_direct.py` | 239 | 99% |
@@ -61,27 +61,26 @@ CLIs, the Webots runs, the replay, the Ashby experiments' runner). The GUI tests
 | `HomeoExperiments/KheperaExperiments/phototaxis_braitenberg2_Ashby.py` | 81 | 93% |
 | `RobotSimulator/HomeoUnitNewtonianTransduc.py` | 87 | 90% |
 | `WebotsSimulator/WebotsSimulation.py` | 317 | 90% |
-| `KheperaSimulator/KheperaSimulator.py` | 894 | 81% |
+| `KheperaSimulator/KheperaSimulator.py` | 894 | 82% |
 | `RobotSimulator/Transducer.py` | 105 | 80% |
 | **Helpers** | | |
 | `Helpers/ExceptionAndDebugClasses.py` | 21 | 100% |
 | `Helpers/ExperimentOrchestrator.py` | 39 | 100% |
 | `Helpers/HomeoNoise.py` | 23 | 100% |
-| `Helpers/QObjectProxyEmitter.py` | 75 | 100% |
+| `Helpers/QObjectProxyEmitter.py` | 76 | 100% |
 | `Helpers/HomeostatStateLogger.py` | 125 | 98% |
 | `Helpers/HomeostatConditionLogger.py` | 181 | 93% |
 | `Helpers/RobotTrajectoryWriter.py` | 151 | 92% |
 | `Helpers/StripchartGrapher.py` | 286 | 89% |
-| `Helpers/General_Helper_Functions.py` | 74 | 86% |
 | `Helpers/HomeostatDiagramTikz.py` | 212 | 86% |
 | `Helpers/SimulationThread.py` | 13 | 85% |
-| `Helpers/QtSeparator.py` | 35 | 83% |
 | `Helpers/GenomeDecoder.py` | 158 | 80% |
 | `Helpers/SFLineEdit.py` | 17 | 76% |
-| `Helpers/TrajectoryGrapher.py` | 404 | 75% |
+| `Helpers/TrajectoryGrapher.py` | 403 | 75% |
 | `Helpers/CustomWidgets.py` | 39 | 74% |
+| `Helpers/General_Helper_Functions.py` | 74 | 73% |
 | `Helpers/TrajectoriesViewer.py` | 294 | 73% |
-| `Helpers/StatsAnalyzer.py` | 239 | 60% |
+| `Helpers/StatsAnalyzer.py` | 225 | 62% |
 | `Helpers/StatelogAnalyzer.py` | 411 | 28% |
 | **Entry-point scripts** | | |
 | `replay_best_with_statelog.py` | 235 | 63% |
@@ -103,7 +102,7 @@ CLIs, the Webots runs, the replay, the Ashby experiments' runner). The GUI tests
   `run_ashby_original_experiments.py`), and what they run is tested (the Ashby experiments,
   the GA, the orchestration loop); the long runs they launch are not. `run_ashby_gui.py` only
   opens the GUI.
-- **`Helpers/StatelogAnalyzer.py` (28%)** and **`Helpers/StatsAnalyzer.py` (60%)**: the parsing,
+- **`Helpers/StatelogAnalyzer.py` (28%)** and **`Helpers/StatsAnalyzer.py` (62%)**: the parsing,
   enrichment, logbook decoding and hall-of-fame ranking are tested; the plotting functions
   (`plot_*`), the printed summary and the command line are not.
 - **`Simulator/AshbyExperimentGui.py` (61%)**: the setups, the run (equal to the headless run
@@ -111,6 +110,6 @@ CLIs, the Webots runs, the replay, the Ashby experiments' runner). The GUI tests
   (dialogs, live charts) is not.
 - **`replay_best_with_statelog.py` (63%)**: the replay of every GA vehicle and of k-run
   evaluations is tested; the visualizer is not.
-- **`KheperaSimulator/KheperaSimulator.py` (81%)**: the unmeasured lines are mostly the pyglet
+- **`KheperaSimulator/KheperaSimulator.py` (82%)**: the unmeasured lines are mostly the pyglet
   drawing and the visualizer window (`KheperaSimulationVisualizer`), and demo worlds
   (`braiten2a`, `braiten2b`, `sensorTesting`); the motion, eyes, sensors and worlds are tested.

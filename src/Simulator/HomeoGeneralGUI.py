@@ -1,14 +1,32 @@
+# Copyright (C) 2013-2026 Stefano Franchi
+#
+# This file is part of Homeo, a simulation of Ashby's homeostat and of
+# homeostat-controlled robots.
+#
+# Homeo is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# Homeo is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Homeo.  If not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 '''
 Provides a general interface to control a Homeostat simulation including an unlimited number of units.
 It can start and stop a simulation from a GUI, as well as save and graph the simulation's data. 
-@author: stefano
 '''
 
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from Core.Homeostat import *
-from Helpers.QtSeparator import Separator
 from Helpers.General_Helper_Functions import rchop
 from Simulator.HomeoQtSimulation import *
 from Helpers.QObjectProxyEmitter import emitter
@@ -62,6 +80,13 @@ def _followUnit(slider, unit):
     emitter(unit).criticalDeviationScaledChanged.connect(follower.setValue)
     emitter(unit).minDeviationScaledChanged.connect(follower.setMinimum)
     emitter(unit).maxDeviationScaledChanged.connect(follower.setMaximum)
+
+def _horizontalLine():
+    "A horizontal divider: Qt's own sunken line"
+    line = QFrame()
+    line.setFrameShape(QFrame.HLine)
+    line.setFrameShadow(QFrame.Sunken)
+    return line
 
 class HomeoSimulationControllerGui(QDialog):
     # Resume, delivered to the simulation in its own thread (a queued
@@ -185,8 +210,8 @@ class HomeoSimulationControllerGui(QDialog):
         self.slowingFactorSpinBox.setRange(0,1000)
         
         "Separators"
-        self.runningSectionSep1 = Separator()
-        self.runningSectionSep2 = Separator()
+        self.runningSectionSep1 = _horizontalLine()
+        self.runningSectionSep2 = _horizontalLine()
         
         "Layout"
         simulationPaneLayout = QGridLayout()
@@ -290,7 +315,7 @@ class HomeoSimulationControllerGui(QDialog):
         homeostatPaneLayout.addWidget(self.noOfUnitsLineEdit,2,1)
         
         'Row 3'
-        homeostatPaneLayout.addWidget(Separator(), 3,0,1,2)
+        homeostatPaneLayout.addWidget(_horizontalLine(), 3,0,1,2)
         
         'Row 4'
         homeostatPaneLayout.addWidget(self.homeostatActionsLabel, 4,0)
