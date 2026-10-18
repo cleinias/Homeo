@@ -1261,7 +1261,7 @@ def add_battery_to_homeostat(hom, backendSimulator, food_quality='light', capaci
 
     hunger_unit=True puts a Newtonian unit 'Hunger' between the Battery
     unit and the motors: the Battery feeds Hunger, Hunger feeds the motors
-    (small random weights, as above), and the Battery no longer feeds the
+    (small random weights, as above), and the Battery does not feed the
     motors directly.  Hunger's inputs are under its own uniselector (the
     motors' kind: continuous if theirs is), with a negative self-connection
     as the motors have: from the Battery only (hunger_inputs 'battery') or
