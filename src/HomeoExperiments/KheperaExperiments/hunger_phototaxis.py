@@ -1,3 +1,23 @@
+# Copyright (C) 2026 Stefano Franchi
+#
+# This file is part of Homeo, a simulation of Ashby's homeostat and of
+# homeostat-controlled robots.
+#
+# Homeo is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# Homeo is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Homeo.  If not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 '''
 Hunger-driven phototaxis: the 2+2 Braitenberg vehicle of
 phototaxis_braitenberg2_direct with a battery.
@@ -61,10 +81,8 @@ Usage
     # The fixed-weight crossed ++ vehicle with a battery, 20 random starts
     python -m HomeoExperiments.KheperaExperiments.hunger_phototaxis --fixed-weights --random-start --batch 20
 
-    # The OU vehicle whose search grows with hunger, with a Hunger unit
+    # The continuous-uniselector vehicle whose search grows with hunger, with a Hunger unit
     python -m HomeoExperiments.KheperaExperiments.hunger_phototaxis --continuous --stress-source battery --hunger-unit
-
-@author: stefano
 '''
 
 from HomeoExperiments.KheperaExperiments import phototaxis_common as common
