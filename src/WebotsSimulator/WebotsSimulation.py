@@ -68,7 +68,9 @@ from math import atan2, degrees, cos, sin, sqrt
 from Box2D import b2Vec2
 
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
-from KheperaSimulator.KheperaSimulator import KheperaRobot, KheperaSimulation
+from KheperaSimulator.KheperaSimulator import (KheperaRobot, KheperaSimulation, CHEMOTAXIS_FIELD,
+                                               QUALITY_EYES, checkFieldLaw,
+                                               chemicalEyeSensitivity)
 
 
 WEBOTS_PROJECT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -87,7 +89,14 @@ WORLDS = {
                                           'TEMP2': ('temperature', 80),
                                           'OXY1': ('oxygen', 100),
                                           'ORG1': ('organic', 100)}),
+    'kheperaChemotaxis_HOMEO_World': ('homeo_chemotaxis.wbt',
+                                      {'FOOD': ('organic', 100)}),
 }
+
+# The worlds whose sources have a field law of their own, {world: {source:
+# law}}; any other source's law comes from WebotsSimulation.fieldLaws, as in
+# KheperaSimulation
+WORLD_FIELDS = {'kheperaChemotaxis_HOMEO_World': {'FOOD': CHEMOTAXIS_FIELD}}
 
 ROBOT_DEF = 'ROBOT'
 ROBOT_NAME = 'e-puck'
@@ -259,11 +268,18 @@ class WebotsRobot(object):
         self.setEyeSensitivity(eye, threshold=0, saturation=100, response='linear')
         self.eyeReceptors[eye] = receptors
 
-    def addVirtualEye(self, eyeName, likeEye):
-        "A virtual eye with likeEye's receptors (the Vehicle 3c quality pairs)"
+    def addVirtualEye(self, eyeName, likeEye, directional=True, threshold=0, saturation=100,
+                      response='linear'):
+        '''A virtual eye with likeEye's receptors (the Vehicle 3c quality
+        pairs, the chemotaxis world's chemical eyes); directional=False: a
+        direction-free eye, as KheperaRobot.addEye's'''
         self.sensors[eyeName] = _Eye(eyeName, self.eyeReceptors[likeEye], self.eyeFieldOfView)
-        self.setEyeSensitivity(eyeName, threshold=0, saturation=100, response='linear')
+        self.sensors[eyeName].userData[eyeName + 'Directional'] = directional
+        self.setEyeSensitivity(eyeName, threshold=threshold, saturation=saturation,
+                               response=response)
         self.eyeReceptors[eyeName] = self.eyeReceptors[likeEye]
+
+    directionFreeEyes = KheperaRobot.directionFreeEyes
 
     # --- wheels, in rad/s, as KheperaRobot's -------------------------------
 
@@ -366,6 +382,9 @@ class WebotsSimulation(object):
         self._worldFile = None
         from Helpers.General_Helper_Functions import dated_data_dir
         self.dataDir = dated_data_dir()
+        # As KheperaSimulation's
+        self.fieldLaws = {}
+        self.vehicleEyes = ('leftEye', 'rightEye', 'light')
 
     # --- the process ---------------------------------------------------------
 
@@ -484,11 +503,28 @@ class WebotsSimulation(object):
             robot.detectableSources.setdefault(quality, []).append(light)
         robot.detectableLights = robot.detectableSources.get('light', [])
         if 'TARGET' not in self.allBodies:
-            self.allBodies['TARGET'] = robot.detectableLights[0]
-        for quality, prefix in (('temperature', 'Temp'), ('oxygen', 'Oxy'), ('organic', 'Org')):
-            if quality in robot.detectableSources:
-                for side in ('left', 'right'):
-                    robot.addVirtualEye(side + prefix + 'Eye', side + 'Eye')
+            self.allBodies['TARGET'] = (robot.detectableLights or lights)[0]
+        # The field laws: the world's own, then those asked for (fieldLaws)
+        for name, law in WORLD_FIELDS.get(HomeoWorld, {}).items():
+            source = self.allBodies[name]
+            source.userData['law'] = checkFieldLaw(dict(self.fieldLaws.get(
+                source.userData['quality'], law)))
+        for quality, law in self.fieldLaws.items():
+            for light in robot.detectableSources.get(quality, []):
+                light.userData['law'] = checkFieldLaw(dict(law))
+        for quality, prefix in QUALITY_EYES.items():
+            sources = robot.detectableSources.get(quality)
+            if not sources:
+                continue
+            chemical = sources[0].userData.get('law') is not None
+            sensitivity = (dict(zip(('threshold', 'saturation', 'response'),
+                                    chemicalEyeSensitivity(sources[0])))
+                           if chemical else {})
+            for side in ('left', 'right'):
+                robot.addVirtualEye(side + prefix + 'Eye', side + 'Eye',
+                                    directional=not chemical, **sensitivity)
+        self.vehicleEyes = (('leftOrgEye', 'rightOrgEye', 'organic') if not robot.detectableLights
+                            else ('leftEye', 'rightEye', 'light'))
         sup.step(self._timeStepMs)           # the sensors' first readings
         self.currentStep = 0
         start = robot.body.position
@@ -510,6 +546,8 @@ class WebotsSimulation(object):
             self.trajectoryWriter.eyes = robot.eyeSettings()
             self.trajectoryWriter.robotModel = 'epuck2 (Webots)'
             self.trajectoryWriter.battery = robot.batterySettings()
+            self.trajectoryWriter.directionFreeEyes = robot.directionFreeEyes()
+            self.trajectoryWriter.fields = self.fieldSettings()
             self.trajectoryWriter.writeHeaderNow(robot.body)
         if self._supervisor.step(self._timeStepMs) == -1:
             raise RuntimeError('Webots has stopped')
@@ -524,6 +562,8 @@ class WebotsSimulation(object):
         self.allBodies[self.robotName].tickBattery()
 
     halted = KheperaSimulation.halted
+    vehicleSensorReads = KheperaSimulation.vehicleSensorReads
+    fieldSettings = KheperaSimulation.fieldSettings
 
     # --- records ---------------------------------------------------------------------
 

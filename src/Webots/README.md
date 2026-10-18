@@ -14,6 +14,9 @@ homeostat tick, and reads the robot's pose as a supervisor.
 - `worlds/homeo_braitenberg3c.wbt`: the twin of `kheperaBraitenberg3c_HOMEO_World`;
   temperature, oxygen and organic matter are markers, their fields computed by
   Homeo ("virtual sensors").
+- `worlds/homeo_chemotaxis.wbt`: the twin of `kheperaChemotaxis_HOMEO_World`;
+  its food source is a marker, its chemical field and the robot's chemical
+  (direction-free) eyes computed by Homeo, as the 3c world's virtual sensors.
 
 Run an experiment on Webots with `--simulator webots` (add `--render` to watch it):
 

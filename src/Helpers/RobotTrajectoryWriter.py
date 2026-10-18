@@ -95,6 +95,11 @@ class RobotTrajectoryWriter(object):
         # The robot's battery, {parameter: value} (Battery.settings, with the
         # food quality), set as the eyes are; None: no battery
         self.battery = None
+        # The direction-free (chemical) eyes' names, and the sources' field
+        # laws, {source: law} (KheperaSimulation.fieldSettings), set as the
+        # eyes are
+        self.directionFreeEyes = ()
+        self.fields = None
         self.posFile = open(self.buildTrajFilename(modelName), 'w') if self._enabled else None
         self._openHeader(initialPos)
 
@@ -259,8 +264,12 @@ class RobotTrajectoryWriter(object):
         if self.eyeRadiusRatio is not None:
             self.posFile.write("# Eye radius ratio\t%g\n" % self.eyeRadiusRatio)
         for name, (threshold, saturation, response) in (self.eyes or {}).items():
-            self.posFile.write("# Eye\t%s\tthreshold\t%f\tsaturation\t%f\tresponse\t%s\n"
-                               % (name, threshold, saturation, response))
+            self.posFile.write("# Eye\t%s\tthreshold\t%f\tsaturation\t%f\tresponse\t%s%s\n"
+                               % (name, threshold, saturation, response,
+                                  '\tdirection-free' if name in self.directionFreeEyes else ''))
+        for name, law in (self.fields or {}).items():
+            self.posFile.write("# Field\t%s\t%s\n" % (name, "\t".join(
+                "%s\t%s" % item for item in law.items())))
         if self.battery is not None:
             self.posFile.write("# Battery\t%s\n" % "\t".join(
                 "%s\t%s" % item for item in self.battery.items()))

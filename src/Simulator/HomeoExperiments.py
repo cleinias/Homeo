@@ -348,7 +348,8 @@ def initialize_1minus_2_minus_3xExperiment(params=None):
     'Return the properly configured homeostat'
     return hom        
 
-def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir = None):
+def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir = None,
+                         world='kheperaBraitenberg2_HOMEO_World'):
     '''
     Initialize a Homeostat to replicate a Braitenberg type-2 vehicle with
     4 real units: two for either Motor and two for the sensors, plus 2  HomeoInput Units
@@ -361,6 +362,9 @@ def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir
     Every active link between units is under the uniselector, the sensor ->
     eye links included: as in every adaptive vehicle (and Ashby's homeostat),
     only the self-connections are manual.
+
+    world: the world, the Braitenberg 2 world or the chemotaxis world (the
+    sensors are then the chemical eyes; see basicBraiten2Tranducers).
 '''
     if backendSimulator is None:
         raise ValueError("initializeBraiten2_2 needs a backendSimulator")
@@ -368,12 +372,7 @@ def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir
         # The backends' sensors have no raw (inverted) reading
         raise ValueError("initializeBraiten2_2: raw=True is not supported with a "
                          "backendSimulator; its sensors have only the standard polarity")
-    worlds = {'HOMEO': 'kheperaBraitenberg2_HOMEO_World',
-              'WEBOTS': 'kheperaBraitenberg2_HOMEO_World'}     # its Webots twin
-    try:
-        world = worlds[backendSimulator.name]
-    except KeyError:
-        raise Exception("I cannot use backend simulator %s yet" % backendSimulator.name)
+    world = _backendWorld(backendSimulator, world)
     """The backend's transducers: a dictionary with rightWheelTransd,
     leftWheelTransd, rightEyeTransd, leftEyeTransd"""
     transducers = basicBraiten2Tranducers(backendSimulator, world)
@@ -566,11 +565,13 @@ def initializeBraiten2_2(raw=False,params=None, backendSimulator = None, dataDir
     hDebug('unit', "Homeostat initialized")
     return hom
 
-def initializeBraiten2_2Pos(params=None, backendSimulator = None, dataDir = None):
+def initializeBraiten2_2Pos(params=None, backendSimulator = None, dataDir = None,
+                            world='kheperaBraitenberg2_HOMEO_World'):
     '''Utility function to choose a  Braitenberg type-2 vehicle with
     4 real units and 2 positive connections between actual stimulus and sensory
     input (the higher the world's value, the higher the stimulus'''
-    return initializeBraiten2_2(False, backendSimulator = backendSimulator, dataDir = dataDir)
+    return initializeBraiten2_2(False, backendSimulator = backendSimulator, dataDir = dataDir,
+                                world=world)
 
 #===============================================================================
 # Genetic Algorithms experiments
@@ -926,7 +927,8 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
                                            dataDir=None, noNoise=False, noUnisel=False,
                                            topology='random',
                                            layout='weightfree_v2', eyes=True,
-                                           lightIntensity=GA_LIGHT_INTENSITY):
+                                           lightIntensity=GA_LIGHT_INTENSITY,
+                                           world='kheperaBraitenberg2_HOMEO_World'):
     '''Shared helper for the weight-free continuous-uniselector GA experiments on a
     Braitenberg type-2 vehicle: with eyes (6 units: 2 motors, 2 eyes, 2
     sensor inputs; the _Full_GA_continuous_weightfree setups) or without
@@ -964,10 +966,13 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
                     without, Left Sensor -> Right Motor, Right Sensor -> Left Motor.
     eyes : bool
         Whether the vehicle has the two eye units between sensors and motors.
+    world : str
+        The world: the Braitenberg 2 world (default) or the chemotaxis world,
+        whose sensors are chemical eyes and whose TARGET is the food.
     '''
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
-    world = _backendWorld(backendSimulator, 'kheperaBraitenberg2_HOMEO_World')
+    world = _backendWorld(backendSimulator, world)
 
     transducers = basicBraiten2Tranducers(backendSimulator, world)
     if transducers is None:
@@ -1155,7 +1160,8 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
                                                   dataDir=None, noNoise=False, noUnisel=False,
                                                   topology='fixed',
                                                   layout='weightfree_v2',
-                                                  lightIntensity=GA_LIGHT_INTENSITY):
+                                                  lightIntensity=GA_LIGHT_INTENSITY,
+                                                  world='kheperaBraitenberg2_HOMEO_World'):
     '''The weight-free continuous-uniselector helper for the simplified 2+2 vehicle
     (no eye intermediaries): _setup_continuous_weightfree_homeostat with
     eyes=False.'''
@@ -1163,7 +1169,7 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
                                                   dataDir=dataDir, noNoise=noNoise,
                                                   noUnisel=noUnisel, topology=topology,
                                                   layout=layout, eyes=False,
-                                                  lightIntensity=lightIntensity)
+                                                  lightIntensity=lightIntensity, world=world)
 
 
 def initializeBraiten2_direct_GA_continuous_weightfree_v2(homeoGenome, noHomeoParameters=4,
@@ -1379,7 +1385,9 @@ def _backendWorld(backendSimulator, world):
 
 def basicBraiten2Tranducers(backendSimulator, world):
     """Asks the back end simulator to return 4 
-       tranducers: two wheels and two sensors"""
+       tranducers: two wheels and two sensors, the eyes the world's vehicle
+       steers by (KheperaSimulation.vehicleEyes): the light eyes, or in the
+       chemotaxis world the chemical eyes"""
        
     "1. start backend simulation with correct world"
     
@@ -1393,6 +1401,10 @@ def basicBraiten2Tranducers(backendSimulator, world):
                    "leftWheelTransd"  : backendSimulator.getWheel('left'), 
                    "rightEyeTransd"   : backendSimulator.getSensor('right'), 
                    "leftEyeTransd"    : backendSimulator.getSensor('left')} 
+    left, right, quality = backendSimulator.kheperaSimulation.vehicleEyes
+    if quality != 'light':
+        transducers["rightEyeTransd"] = backendSimulator.getQualitySensor(right, quality)
+        transducers["leftEyeTransd"] = backendSimulator.getQualitySensor(left, quality)
    
     return transducers
 
@@ -1719,6 +1731,35 @@ initializeHunger3c_GA_continuous_weightfree_fixed_v2.genomeSize = 8
 initializeHunger3c_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
 
 
+def initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        lightIntensity=GA_LIGHT_INTENSITY):
+    '''Hunger-driven chemotaxis: the weight-free 2+2 direct vehicle with fixed
+    Braitenberg cross-wiring in the chemotaxis world, its sensors the chemical
+    eyes, and a battery that recharges from the food's field, sensed by a
+    Battery unit feeding both motors (add_battery_to_homeostat, depletion
+    'death').  Fitness: the battery's mean level.  lightIntensity: the
+    food's intensity.
+
+    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2' (see initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2).
+    '''
+    hom = _setup_continuous_weightfree_homeostat_direct(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_v2',
+        lightIntensity=lightIntensity, world='kheperaChemotaxis_HOMEO_World')
+    add_battery_to_homeostat(hom, backendSimulator, food_quality='organic', depletion='death',
+                             noNoise=noNoise)
+    return hom
+
+initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2.noEvolvedUnits = 2
+initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2.noUnits = 5
+initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2.fitnessSign = 1
+initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2.fitness = 'battery_mean'
+initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2.genomeSize = 8
+initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
+
+
 # The GA phototaxis setups, which take lightIntensity (see GA_LIGHT_INTENSITY)
 for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA_phototaxis_continuous,
            initializeBraiten2_2_Full_GA_continuous_weightfree_v2,
@@ -1729,6 +1770,7 @@ for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA
            initializeBraiten3c_GA_continuous_weightfree_open_v2,
            initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2,
            initializeHunger3c_GA_continuous_weightfree_fixed_v2,
+           initializeHungerChemotaxis_GA_continuous_weightfree_fixed_v2,
            ):
     _f.lightIntensity = GA_LIGHT_INTENSITY
 

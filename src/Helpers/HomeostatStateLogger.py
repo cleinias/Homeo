@@ -181,6 +181,8 @@ class HomeostatStateLogger:
                 f.write('%s_ou_dt\t%.6f\n' % (prefix, unis._dt))
                 f.write('%s_stress_source\t%s\n' % (prefix, unis._stress_source))
 
+        for name, law in self._sim.fieldSettings().items():
+            f.write('# field_%s\t%s\n' % (name, ','.join('%s=%s' % item for item in law.items())))
         if self._battery is not None:
             f.write('# food_quality\t%s\n' % self._robot.foodQuality)
             for key, value in self._battery.settings().items():
@@ -206,8 +208,7 @@ class HomeostatStateLogger:
         ry = robot.body.position[1]
         heading = degrees(robot.body.angle) % 360
         dist = sqrt((rx - self._target[0])**2 + (ry - self._target[1])**2)
-        l_sensor = robot.getSensorRead('leftEye')
-        r_sensor = robot.getSensorRead('rightEye')
+        l_sensor, r_sensor = self._sim.vehicleSensorReads()
         l_speed = robot.leftSpeed
         r_speed = robot.rightSpeed
 

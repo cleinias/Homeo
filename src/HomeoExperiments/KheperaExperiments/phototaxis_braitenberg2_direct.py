@@ -140,7 +140,8 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                      wiring='crossed', signs='++', spin=0.0, motor='newtonian',
                      eye_saturation=None, eye_threshold=None, eye_response=None,
                      robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
-                     battery=None, experiment=EXPERIMENT):
+                     battery=None, experiment=EXPERIMENT, world=common.DEFAULT_WORLD,
+                     field_length=None):
     '''Set up a simplified 2+2 phototaxis experiment.
 
     Creates a SimulatorBackendHOMEO (unless one is provided), initializes
@@ -189,7 +190,13 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                             hunger_phototaxis).  Its noise follows the
                             vehicle's: none for the fixed-weight vehicle.
         experiment:         the experiment's name, which its files' names
-                            begin with (default EXPERIMENT).
+                            begin with (default EXPERIMENT; in the chemotaxis
+                            world 'phototaxis' becomes 'chemotaxis').
+        world:              'braitenberg2' (default: the light, the light
+                            eyes) or 'chemotaxis' (a food source in a
+                            chemical field, the chemical eyes); see
+                            phototaxis_common.WORLDS.  A battery feeds on the
+                            world's target quality unless it says otherwise.
 
     Returns:
         (hom, backend, seed)
@@ -208,6 +215,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
         raise ValueError("motor must be one of %s, got %r" % (CONTROL_MOTORS, motor))
     if motor != 'newtonian' and not fixed_weights:
         raise ValueError("motor=%r applies only with fixed_weights" % motor)
+    experiment = common.world_experiment(experiment, world)
     if fixed_weights:
         exp_name = experiment + '_control_' + control_variant_name(wiring, signs, motor)
     elif topology == 'random':
@@ -217,12 +225,13 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     exp_name += experiment_suffix(light_intensity, uniselector_type, not fixed_weights,
                                   spin, eye_saturation, eye_threshold, eye_response,
                                   robot, simulator, continuous_params) + common.battery_tag(battery)
+    exp_name += common.field_tag(field_length)
     backendSimulator = prepare_backend(backendSimulator, exp_name, robot, simulator,
                                        rendering)
+    common.set_field(backendSimulator, world, field_length)
 
     # --- Build the 4-unit homeostat ---
-    world = 'kheperaBraitenberg2_HOMEO_World'
-    transducers = basicBraiten2Tranducers(backendSimulator, world)
+    transducers = basicBraiten2Tranducers(backendSimulator, common.WORLDS[world])
     set_light(backendSimulator, light_intensity, eye_saturation, eye_threshold, eye_response)
 
     hom = Homeostat()
@@ -285,8 +294,9 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
     apply_spin(hom, spin)
     if battery is not None:
         from Simulator.HomeoExperiments import add_battery_to_homeostat
-        add_battery_to_homeostat(hom, backendSimulator,
-                                 **dict(dict(noNoise=fixed_weights), **battery))
+        defaults = dict(noNoise=fixed_weights,
+                        food_quality=backendSimulator.kheperaSimulation.vehicleEyes[2])
+        add_battery_to_homeostat(hom, backendSimulator, **dict(defaults, **battery))
 
     return hom, backendSimulator, seed
 
@@ -575,7 +585,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
                  wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
                  spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
                  eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
-                 battery=None, experiment=EXPERIMENT):
+                 battery=None, experiment=EXPERIMENT, world=common.DEFAULT_WORLD,
+                 field_length=None):
     '''Run the simplified 2+2 phototaxis experiment headless
     (phototaxis_common.run_headless, which describes the result).
 
@@ -604,7 +615,8 @@ def run_headless(topology='fixed', total_steps=60000, report_interval=500,
         start_at_rest=start_at_rest, wiring=wiring, signs=signs, spin=spin,
         motor=motor, eye_saturation=eye_saturation, eye_threshold=eye_threshold,
         eye_response=eye_response, robot=robot, simulator=simulator, rendering=rendering,
-        battery=battery, experiment=experiment)
+        battery=battery, experiment=experiment, world=world,
+        field_length=field_length)
     return common.run_headless(
         setup, title, total_steps=total_steps, report_interval=report_interval,
         light_intensity=light_intensity, early_stop_distance=early_stop_distance,
@@ -625,7 +637,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
               wiring='crossed', signs='++', start_range=DEFAULT_START_RANGE,
               spin=0.0, motor='newtonian', eye_saturation=None, eye_threshold=None,
               eye_response=None, robot=DEFAULT_ROBOT, simulator='box2d', rendering=False,
-              battery=None, experiment=EXPERIMENT, batch_name='direct'):
+              battery=None, experiment=EXPERIMENT, batch_name='direct',
+              world=common.DEFAULT_WORLD, field_length=None):
     '''Run a batch of experiments and print a summary table
     (phototaxis_common.run_batch).
 
@@ -637,8 +650,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     else:
         variant = uniselector_tag(uniselector_type, continuous_params)
     kind = common.batch_kind(variant, spin, eye_saturation, eye_threshold, eye_response,
-                             stable_draws and not fixed_weights, robot, simulator) \
-        + common.battery_tag(battery)
+                             stable_draws and not fixed_weights, robot, simulator, world) \
+        + common.field_tag(field_length) + common.battery_tag(battery)
 
     def run_one(run_seed, run_env_seed):
         return run_headless(topology=topology, total_steps=total_steps,
@@ -660,7 +673,8 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
                             spin=spin, motor=motor, eye_saturation=eye_saturation,
                             eye_threshold=eye_threshold, eye_response=eye_response,
                             robot=robot, simulator=simulator, rendering=rendering,
-                            battery=battery, experiment=experiment,
+                            battery=battery, experiment=experiment, world=world,
+                            field_length=field_length,
                             seed=run_seed, env_seed=run_env_seed)
     return common.run_batch(run_one, n_runs, batch_name, kind,
                             light_intensity=light_intensity, total_steps=total_steps,
@@ -675,7 +689,8 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
                    start_at_rest=False, wiring='crossed', signs='++',
                    eye_saturation=None, eye_threshold=None, eye_response=None,
                    robot=DEFAULT_ROBOT, simulator='box2d', rendering=False, continuous_params=None,
-                   battery=None, experiment=EXPERIMENT):
+                   battery=None, experiment=EXPERIMENT, world=common.DEFAULT_WORLD,
+                   field_length=None):
     '''Run the simplified 2+2 phototaxis experiment with the pyglet
     visualizer, with the same options as run_headless.'''
     setup, title, _ = _setup(
@@ -685,8 +700,10 @@ def run_visualized(topology='fixed', fixed_weights=False, random_heading=False,
         start_at_rest=start_at_rest, wiring=wiring, signs=signs, spin=spin,
         motor=motor, eye_saturation=eye_saturation, eye_threshold=eye_threshold,
         eye_response=eye_response, robot=robot, simulator=simulator, rendering=rendering,
-        battery=battery, experiment=experiment)
-    common.run_visualized(setup, 'Phototaxis ' + title, light_intensity=light_intensity,
+        battery=battery, experiment=experiment, world=world,
+        field_length=field_length)
+    common.run_visualized(setup, ('Chemotaxis ' if world == 'chemotaxis' else 'Phototaxis ')
+                          + title, light_intensity=light_intensity,
                           stable_draws=stable_draws, random_heading=random_heading,
                           random_start=random_start, heading=heading,
                           start_range=start_range, env_seed=env_seed)

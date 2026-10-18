@@ -249,6 +249,16 @@ class WebotsBackendTest(unittest.TestCase):
         for webots, box2d in m['eyes']:
             self.assertAlmostEqual(webots, box2d, delta=0.005 * box2d + 1e-6)
 
+    def testTheChemotaxisWorldsChemicalEyes(self):
+        '''The chemotaxis world's chemical eyes, computed from the Webots
+        poses with the Box2D field, read as in Box2D; no light.'''
+        m = self.measure('kheperaChemotaxis_HOMEO_World')
+        self.assertEqual(len(m['qualities']), 5 * 2)
+        for webots, box2d in m['qualities']:
+            self.assertAlmostEqual(webots, box2d, delta=1e-4)
+        self.assertTrue(all(box2d > 0 for _, box2d in m['qualities']))
+        self.assertTrue(all(webots == 0 for webots, _ in m['eyes']))
+
     def testAPhototaxisRun(self):
         '''The direct experiment runs on Webots, records it, and refuses what
         Webots cannot do (darkness sources, the K-Junior).'''
