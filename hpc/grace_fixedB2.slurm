@@ -57,7 +57,7 @@
 #     sbatch --array=37 grace_fixedB2.slurm 4 8
 #     cmp <its .traj> <the other machine's ...crossed_pm-...-37.traj>
 #
-# Each run takes ~2 min (131 s on polus's Xeon E3-1220).  Trajectories are
+# Each run takes about 2 min on a ~3 GHz Xeon core.  Trajectories are
 # ~30 MB per run, ~6 GB per array: hence $SCRATCH.
 #
 # The project account is deliberately not in this file (public repo); export

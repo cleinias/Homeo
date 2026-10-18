@@ -10,8 +10,8 @@ each weight a little at every timestep, by an amount that grows with the
 unit's stress (0 at equilibrium, 1 at the limit of its range).  tau_a is the
 search's timescale: the weights move slowly relative to the fast needle
 dynamics when tau_a is large compared with them, the slow-fast separation of
-Research-notes/Addendum_to_the_CTRNN_Ashby_Discussion.md, Section 6
-(tau_a da/dt = f(x)).  Two models (attribute `model`):
+an adaptive parameter a whose rate is set by the fast state x,
+tau_a da/dt = f(x).  Two models (attribute `model`):
 
 'diffusion' (default): a stress-gated random walk with no drift,
 

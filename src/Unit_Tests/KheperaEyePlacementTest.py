@@ -145,9 +145,7 @@ class EpuckEyesTest(KheperaEyePlacementTest.__base__):
 class Vehicle3cSensorPlacementTest(unittest.TestCase):
     '''The Vehicle 3c world's extra pairs (temperature, oxygen, organic) sit
     where the light eyes sit, with their field: one geometry for the four
-    modalities, no blind wedge for any (research note "Khepera sensor
-    placement for Vehicle 3c").  They sat on the rim at +/-45, +/-10 and
-    +/-35 degrees, with wedges, and for temperature a blind strip.'''
+    modalities, no blind wedge for any.'''
 
     PAIRS = ('Eye', 'TempEye', 'OxyEye', 'OrgEye')
 

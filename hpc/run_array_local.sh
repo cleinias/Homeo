@@ -69,7 +69,7 @@
 # separate cores and the array finishes in one run's wall time (~37 min),
 # whereas locally they queue through however many cores you have.
 #
-# Measured on a 4-core Xeon W-2123: 2774 steps/s solo, so ~36 min per 6M-step
+# On a 4-core 3.6 GHz Xeon: 2774 steps/s solo, so ~36 min per 6M-step
 # run; 4 concurrent runs slow each other by ~1.25x, giving ~45 min per run and
 # ~3.7 h for the full 20. Re-measure with `-n 1 -s 200000` on other hardware.
 #

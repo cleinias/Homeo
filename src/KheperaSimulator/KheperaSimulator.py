@@ -1211,9 +1211,7 @@ class KheperaSimulation(object):
         """Each extra pair has the light eyes' receptors and field (see
         KheperaRobot): the four modalities share one geometry,
         so they differ only in how they are wired, and none has a blind wedge
-        ahead.  Other layouts (direction-free sensing of heat and chemicals, more
-        sensors per modality): research note "Khepera sensor placement for
-        Vehicle 3c"."""
+        ahead."""
         for modality in ('Temp', 'Oxy', 'Org'):
             for side in ('left', 'right'):
                 robot.addEye(side + modality + 'Eye', robot.eyeReceptors[side + 'Eye'],

@@ -8,9 +8,8 @@
 # Clone over HTTPS, not SSH: the repo is public, so this needs no key on Grace.
 # The clone is shallow -- the history is 22 MB and compute jobs never need it.
 #
-# If you are running uncommitted code, do NOT use this; rsync from the laptop
-# instead (see "Getting the code there" in the HPC deployment plan) and the
-# script will leave a non-git directory alone.
+# If you are running uncommitted code, do NOT use this; rsync the code there
+# instead, and the script will leave a non-git directory alone.
 set -euo pipefail
 
 HOMEO_SRC="${HOMEO_SRC:-$SCRATCH/Homeo}"

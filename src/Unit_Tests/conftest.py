@@ -31,7 +31,7 @@ below), so no test's outcome depends on which tests ran before it, and with
 the run environment (HOMEO_DATA_DIR, HOMEO_RUN_TAG) restored after every test
 and every test class (_restored_run_environment): many tests point the data
 directory at a temporary one and pop it after, which on a machine that sets
-it (Grace) sent every later test's files to the default directory.
+it would send every later test's files to the default directory.
 
 The suite's data directory is a temporary one of its own, whatever
 HOMEO_DATA_DIR says when pytest starts (pytest_configure): a test, or a script
