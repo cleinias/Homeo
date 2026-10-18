@@ -260,13 +260,13 @@ class HomeoUniselectorContinuous(HomeoUniselector):
         jit_weights[indices] = numpy.abs(w_new)
         jit_switches[indices] = numpy.where(w_new >= 0, 1.0, -1.0)
 
-    # --- Superclass interface (unused in continuous mode, but kept for compatibility) ---
+    # --- The HomeoUniselector interface, which the continuous mode does not use ---
 
     def advance(self):
         '''No-op: the continuous uniselector has no stepping index.'''
         pass
 
     def produceNewValue(self):
-        '''Not used in continuous mode.  Returns a random value for
-        compatibility with code that expects the discrete interface.'''
+        '''Not used in continuous mode.  A random value in the bounds, as
+        every HomeoUniselector gives.'''
         return numpy.random.uniform(self._lowerBound, self._upperBound)
