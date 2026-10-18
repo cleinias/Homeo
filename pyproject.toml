@@ -15,7 +15,7 @@
 # otherwise shadow them with its own copies in ~/.local.
 
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=77"]      # 77: the SPDX license field
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -25,6 +25,8 @@ description = "Simulation of Ashby's homeostat and homeostat-controlled Braitenb
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Stefano Franchi" }]
+license = "GPL-3.0-or-later"
+license-files = ["license.txt"]
 # The same as requirements.txt, minus the optional parts (the extras below).
 dependencies = [
     "numpy>=2.0",

@@ -157,4 +157,13 @@ integration.
 
 ## License
 
-See [license.txt](license.txt) for details.
+Homeo is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version (GPL-3.0-or-later).  See [license.txt](license.txt) for the licence's
+text.  Every source file carries the notice, with its copyright years; the
+documentation in this repository is under the same licence.
+
+One file is not Homeo's: `src/Webots/protos/HomeoEpuck.proto` is Cyberbotics'
+`E-puck.proto` with one change (its light sensors' lookup table), and is
+under the Webots Assets licence named in its header.
