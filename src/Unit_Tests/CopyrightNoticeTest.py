@@ -24,6 +24,10 @@ copyright and licence notice, the GNU GPL's (version 3 or later), as the FSF
 asks: after a #! or coding line, the #VRML_SIM line of a Webots file, or the
 #SBATCH block of a SLURM script, and before anything else.
 
+The notice opens with one copyright line per holder, whoever the holder is:
+anyone who adds a file to Homeo, or changes one, under the GPL can add their
+own.  The test checks that each file states its licence, not who holds it.
+
 The files are the repository's tracked ones, so the test runs in a git
 checkout only.
 '''
@@ -43,6 +47,7 @@ EXEMPT = {
         "Cyberbotics' E-puck.proto, under the Webots Assets licence of its header",
 }
 
+# The holder in the notices of the files Homeo is distributed with.
 HOLDER = 'Stefano Franchi'
 
 NOTICE = """\
@@ -64,18 +69,35 @@ along with Homeo.  If not, see <https://www.gnu.org/licenses/>.
 
 SPDX-License-Identifier: GPL-3.0-or-later"""
 
-COPYRIGHT = re.compile(r'Copyright \(C\) (\d{4})(?:-(\d{4}))? ' + re.escape(HOLDER) + '$')
+# Years are a year, a range or a list of both: '2026', '2006-2026', '2013, 2015-2026'.
+YEARS = r'\d{4}(?:-\d{4})?(?:, \d{4}(?:-\d{4})?)*'
+COPYRIGHT = re.compile(r'Copyright \(C\) (' + YEARS + r') (\S.*)$')
 
 
-def copyrightLine(years):
-    "'Copyright (C) <years> Stefano Franchi': years is '2026' or '2006-2026'"
-    return 'Copyright (C) %s %s' % (years, HOLDER)
+def copyrightLine(years, holder=HOLDER):
+    "'Copyright (C) <years> <holder>': years is '2026' or '2006-2026'"
+    return 'Copyright (C) %s %s' % (years, holder)
 
 
-def noticeLines(years, marker):
+def commented(lines, marker):
+    return [(marker + ' ' + line) if line else marker for line in lines]
+
+
+def noticeLines(years, marker, holder=HOLDER):
     "The notice as comment lines with marker, for a file of the given years"
-    return [(marker + ' ' + line) if line else marker
-            for line in [copyrightLine(years), ''] + NOTICE.split('\n')]
+    return commented([copyrightLine(years, holder), ''] + NOTICE.split('\n'), marker)
+
+
+def yearsInOrder(years):
+    "True if each range of years goes forward, and each piece comes after the one before"
+    last = 0
+    for piece in years.split(', '):
+        first, dash, end = piece.partition('-')
+        first, end = int(first), int(end or first)
+        if first <= last or (dash and end <= first):
+            return False
+        last = end
+    return True
 
 
 def codeLines(lines, marker):
@@ -122,15 +144,19 @@ def missingNotice(path, root=ROOT):
     i = headerEnd(lines)
     if i < len(lines) and lines[i] == marker:      # the separator after a #SBATCH block
         i += 1
-    first = lines[i][len(marker) + 1:] if i < len(lines) and lines[i].startswith(marker + ' ') else ''
-    m = COPYRIGHT.match(first)
-    if not m:
+    start = i
+    while i < len(lines) and lines[i].startswith(marker + ' '):
+        m = COPYRIGHT.match(lines[i][len(marker) + 1:])
+        if not m:
+            break
+        if not yearsInOrder(m.group(1)):
+            return 'the years %s at line %d are not in order' % (m.group(1), i + 1)
+        i += 1
+    if i == start:
         return 'no copyright line at line %d' % (i + 1)
-    if m.group(2) and not int(m.group(1)) < int(m.group(2)):
-        return 'the years %s are not a range' % first.split()[2]
-    expected = noticeLines(m.group(0).split()[2], marker)
+    expected = commented([''] + NOTICE.split('\n'), marker)
     if lines[i:i + len(expected)] != expected:
-        return 'the notice after line %d is not the licence text' % (i + 1)
+        return 'the notice after line %d is not the licence text' % i
     return None
 
 
@@ -158,7 +184,8 @@ class CopyrightNoticeTest(unittest.TestCase):
 
 class NoticeFunctionsTest(unittest.TestCase):
     '''missingNotice on made-up files: a notice after a #! line, a
-    #VRML_SIM line or a #SBATCH block; a missing, altered or misdated one.'''
+    #VRML_SIM line or a #SBATCH block; any holders; a missing, altered or
+    misdated one.'''
 
     def check(self, name, text):
         import tempfile
@@ -167,8 +194,8 @@ class NoticeFunctionsTest(unittest.TestCase):
                 f.write(text)
             return missingNotice(name, root=tmp)
 
-    def notice(self, years='2013-2026', marker='#'):
-        return '\n'.join(noticeLines(years, marker)) + '\n'
+    def notice(self, years='2013-2026', marker='#', holder=HOLDER):
+        return '\n'.join(noticeLines(years, marker, holder)) + '\n'
 
     def testPlacements(self):
         self.assertIsNone(self.check('a.py', self.notice() + '\nimport os\n'))
@@ -177,9 +204,22 @@ class NoticeFunctionsTest(unittest.TestCase):
         self.assertIsNone(self.check('j.slurm', '#!/bin/bash\n#SBATCH --array=1-2\n#\n' + self.notice()))
         self.assertIsNone(self.check('f.tex', self.notice(marker='%')))
 
+    def testAnyHolders(self):
+        self.assertIsNone(self.check('a.py', self.notice('2027', holder='Jane Doe')))
+        second = '# ' + copyrightLine('2027, 2029-2030', 'Jane Doe') + '\n'
+        first, rest = self.notice('2006-2026').split('\n', 1)
+        self.assertIsNone(self.check('a.py', first + '\n' + second + rest))
+
+    def testYearsInOrder(self):
+        for years in ['2026', '2006-2026', '2013, 2015-2026', '2006-2010, 2013']:
+            self.assertTrue(yearsInOrder(years), years)
+        for years in ['2026-2013', '2026-2026', '2015, 2013', '2006-2015, 2013']:
+            self.assertFalse(yearsInOrder(years), years)
+
     def testWhatIsWrong(self):
         self.assertIn('no copyright', self.check('a.py', 'import os\n' + self.notice()))
-        self.assertIn('not a range', self.check('a.py', self.notice('2026-2013')))
+        self.assertIn('no copyright', self.check('a.py', self.notice(holder='').replace('2026 \n', '2026\n')))
+        self.assertIn('not in order', self.check('a.py', self.notice('2026-2013')))
         altered = self.notice().replace('version 3', 'version 2')
         self.assertIn('not the licence text', self.check('a.py', altered))
 
