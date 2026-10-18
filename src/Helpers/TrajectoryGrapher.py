@@ -45,10 +45,6 @@ MAX_PLOT_POINTS = 50000
 # a log eye with I0 = 1.  The chart takes I0 from the trajectory's header or
 # the run's JSON beside it, and draws no ring when neither says
 # (noInputRadius); --sensor-range overrides it.
-#
-# Eyes with a hard cut-off at 10 units see nothing beyond it: chart their runs
-# with --sensor-range 10.
-OLD_SENSOR_MAX_RANGE = 10.0
 
 
 def main(argv=None):
@@ -71,7 +67,7 @@ def main(argv=None):
                              '(default: sqrt(intensity / eye threshold), from the '
                              "file's header or the run's JSON; no ring for eyes with "
                              'threshold 0 or when neither records it).  0 omits the '
-                             'ring; 10 for eyes with a hard cut-off at 10 units.')
+                             'ring.')
     parser.add_argument('--max-points', type=int, default=MAX_PLOT_POINTS,
                         help='Thin each trajectory to at most this many plotted points '
                              '(default %(default)s)')

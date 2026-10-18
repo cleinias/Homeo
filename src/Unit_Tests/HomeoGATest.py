@@ -348,19 +348,6 @@ except ImportError:
     HAS_QT_WIDGETS = False
 
 
-@unittest.skipUnless(HAS_QT_WIDGETS, "PyQt5 not installed — the GA GUI module needs it")
-class GAGuiReexportTest(unittest.TestCase):
-    """The engine moved to Simulator/HomeoGenAlg.py; the GUI module still offers it."""
-
-    def testGuiModuleReexportsTheEngine(self):
-        "existing imports from HomeoGenAlgGui get the very same objects"
-        import Simulator.HomeoGenAlg as engine
-        import Simulator.HomeoGenAlgGui as gui
-        for name in ('HomeoGASimulation', 'selTournamentRemove',
-                     '_init_worker', '_evaluate_genome_worker'):
-            self.assertIs(getattr(gui, name), getattr(engine, name), name)
-
-
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed — HOMEO backend unavailable")
 @unittest.skipUnless(HAS_QT_WIDGETS, "PyQt5 not installed — the GA GUI module needs it")
 class GAGuiSeedTest(unittest.TestCase):

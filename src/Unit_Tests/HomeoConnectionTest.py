@@ -133,5 +133,4 @@ class HomeoConnectionTest(unittest.TestCase):
             inputUnit.selfUpdate()
             
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

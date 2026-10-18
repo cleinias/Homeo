@@ -88,15 +88,6 @@ class HomeoUnitNewtonian(HomeoUnit):
         '''Output the drag force acting on the unit as
            a result of the viscosity in the trough and 
            the velocity of the needle.'''
-        #=======================================================================
-        # sys.stderr.write("The dragEquation drag for unit %s is %e\n The velocity is %f and the physical velocity is %f\n" % (self.name, 
-        #                                                                                                                    self.dragEquationDrag(),
-        #                                                                                                                    self.currentVelocity,
-        #                                                                                                                    self.physicalVelocity()))
-        # sys.stderr.write("The stokesLawDrag is %f\n" % self.stokesLawDrag())
-        # sys.stderr.write("The delta between dragEquation drag and stokesLawDrag is %f\n" % (self.stokesLawDrag() - self.dragEquationDrag()))
-        #=======================================================================
-#        return self.dragEquationDrag()
         return self.stokesLawDrag()
 
     def dragDummy(self):
@@ -170,20 +161,6 @@ class HomeoUnitNewtonian(HomeoUnit):
         displacement = new_pos - self.criticalDeviation
 
         try:
-            #print "My name is %s and I have a fileOut object to write to: %s " % (self.name, self._fileOut)
-            #===================================================================
-            # print "critDev: %3f\t curVel: %3f\t inputTorque: %3f\t torque: %3f\t drag: %3f\t acc: %3f\t mass: %3f\t displ: %3f\t newCrit: %3f\t noise: %3f" % (self.criticalDeviation,
-            #                                                                                                                                 self.currentVelocity,
-            #                                                                                                                                 self.inputTorque,
-            #                                                                                                                                  aTorqueValue,
-            #                                                                                                                                 self.drag(),
-            #                                                                                                                                 acceleration,
-            #                                                                                                                                 self.needleUnit.mass,
-            #                                                                                                                                 displacement,
-            #                                                                                                                                 self.criticalDeviation + displacement,
-            #                                                                                                                                 self.noise)
-            #===================================================================
-
             self._fileOut.write(str(self.criticalDeviation) + ',')
             self._fileOut.write(str(self.currentVelocity) + ',')
             self._fileOut.write(str(aTorqueValue) + ',')
@@ -196,7 +173,6 @@ class HomeoUnitNewtonian(HomeoUnit):
             self._fileOut.flush()            
         except AttributeError:
             pass
-            #print "My name is %s and type is %s" %(self.name, type(self))
         
         "Testing"
         if self.debugMode:      

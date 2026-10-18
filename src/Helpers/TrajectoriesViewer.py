@@ -90,7 +90,6 @@ class TrajectoryViewer(QWidget):
         self.genInfoLabel = QLabel("General Info        ")
         self.genInfoTextW.setLineWrapMode(0)
         self.genInfoTextW.setReadOnly(True)
-        #self.quitPB = QPushButton("Quit")
         self.hofWidget = QTableWidget()
         
         'build layouts'
@@ -105,9 +104,7 @@ class TrajectoryViewer(QWidget):
 
 
         self.buttonsLayout.addWidget(self.changeDirPB)
-        #self.buttonsLayout.addWidget(self.VisualizePB)        
         self.buttonsLayout.addStretch()
-        #self.buttonsLayout.addWidget(self.refreshPB)
         self.buttonsLayout.addStretch()
         self.buttonsLayout.addWidget(self.allIndivsPB)
         self.buttonsLayout.addWidget(self.hallOfFamePB)
@@ -140,12 +137,10 @@ class TrajectoryViewer(QWidget):
         self.TrajList.itemDoubleClicked.connect(self.onTrajectoryDoubleClicked)
         self.changeDirPB.clicked.connect(self.getNewDir)
         self.avgFitnessPB.clicked.connect(self.visualizeAvgFitnessGraph)
-        #self.refreshPB.clicked.connect(self._populate)
         self.hallOfFamePB.clicked.connect(self.visualizeHOF)
         self.allIndivsPB.clicked.connect(self.visualizeFullIndsData)
         self.genealogyPB.clicked.connect(self.visualizeGen)
         self.hofWidget.cellPressed.connect(self.onCellPressed)
-        #self.quitPB.clicked.connect(self.appRef.exit)
         self.refreshTimer.timeout.connect(self._populate)
         self.refreshTimer.timeout.connect(self.refreshLogbook)
         self.refreshTimer.timeout.connect(self.visualizeGenInfo)

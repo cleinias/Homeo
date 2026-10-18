@@ -733,10 +733,6 @@ class HomeoUnitTest(unittest.TestCase):
          Viscosity and clipping have their own tests, see HomeoProductionNoiseTest for noise testing.'''
         
         self.unit = HomeoUnit()
-        "testing on simple values "
-#        self.unit.criticalDeviation = 0.5
-#        self.unit.currentOutput = 1
-        " end of testing on simple values"
         testRuns = 100
         self.unit.needleCompMethod = 'linear'
         self.unit.maxDeviation = 10
@@ -748,9 +744,7 @@ class HomeoUnitTest(unittest.TestCase):
         the current deviation plus the output from self * weight (unless it runs to maximum)'''
         
         for test in range(testRuns):
-#            self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation,self.unit.maxDeviation)
             self.unit.computeOutput()
-#            self.unit.potentiometer = numpy.random.uniform(0, 1)
             self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))
             for i in range(10):
                 deviation = self.unit.criticalDeviation
@@ -787,10 +781,6 @@ class HomeoUnitTest(unittest.TestCase):
          Viscosity and clipping have their own tests, see HomeoProductionNoiseTest for noise testing.'''
         
         self.unit = HomeoUnit()
-        "testing on simple values "
-#        self.unit.criticalDeviation = 0.5
-#        self.unit.currentOutput = 1
-        " end of testing on simple values"
         testRuns = 100
         self.unit.needleCompMethod = 'proportional'
         self.unit.maxDeviation = 10
@@ -802,9 +792,7 @@ class HomeoUnitTest(unittest.TestCase):
         the current deviation plus the output from self * weight / maxdeviation *2 (unless it runs to maximum)'''
         
         for test in range(testRuns):
-#            self.unit.criticalDeviation = numpy.random.uniform(- self.unit.maxDeviation,self.unit.maxDeviation)
             self.unit.computeOutput()
-#            self.unit.potentiometer = numpy.random.uniform(0, 1)
             self.unit.switch = numpy.sign(numpy.random.uniform(-1,1))
             for i in range(10):
                 deviation = self.unit.criticalDeviation
@@ -1030,7 +1018,6 @@ class HomeoUnitTest(unittest.TestCase):
         outRange = self.unit.outputRange['high']-self.unit.outputRange['low']
         devRange = self.unit.maxDeviation - self.unit.minDeviation
         critDevDistance = np.sqrt(pow((1 - self.unit.minDeviation),2))
-#        dist = numpy.linalg.norm(1 - self.unit.minDeviation)                         # or could use numpy
         expectedOutput = (critDevDistance * (outRange/devRange)) + self.unit.outputRange['low']
         self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance)
 
@@ -1042,7 +1029,6 @@ class HomeoUnitTest(unittest.TestCase):
         outRange = self.unit.outputRange['high']-self.unit.outputRange['low']
         devRange = self.unit.maxDeviation - self.unit.minDeviation
         critDevDistance = np.sqrt(pow((0 - self.unit.minDeviation),2))  
-#        dist = numpy.linalg.norm(0 - self.unit.minDeviation)                         # or could use numpy
         expectedOutput = (critDevDistance * (outRange/devRange)) + self.unit.outputRange['low']
         self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance) 
 
@@ -1058,34 +1044,8 @@ class HomeoUnitTest(unittest.TestCase):
             outRange = self.unit.outputRange['high']-self.unit.outputRange['low']
             devRange = self.unit.maxDeviation - self.unit.minDeviation
             critDevDistance = np.sqrt(pow((critDev - self.unit.minDeviation),2))
-#        dist = numpy.linalg.norm(critDev - self.unit.minDeviation)                         # or could use numpy
             expectedOutput = (critDevDistance * (outRange/devRange)) + self.unit.outputRange['low']
             self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance) 
-
-#        "Finally, connect the unit to itself with random  values"
-#        "and test with  random values for critDeviation" 
-#        self.unit.noise = 0                      #eliminate flickering noise
-#        self.unit.inputConnections[0].noise = 0  # eliminate noise on the self-connection
-#        for i in range(100):                   
-##            potValue = np.random.uniform(0,1)
-##            switchValue = np.sign(np.random.uniform(-1,1)) 
-#            potValue = 1
-#            switchValue = 1 
-#            self.unit.potentiometer = potValue
-#            self.unit.switch = switchValue
-#            critDev = np.random.uniform(self.unit.minDeviation,self.unit.maxDeviation)
-##            self.unit.criticalDeviation = critDev
-#            self.unit.criticalDeviation = 1
-#            self.unit.currentOutput = 1            
-#            self.unit.selfUpdate()
-#            outRange = self.unit.outputRange['high']-self.unit.outputRange['low']
-#            devRange = self.unit.maxDeviation - self.unit.minDeviation
-#            critDevDistance = np.sqrt(pow((critDev - self.unit.minDeviation),2))
-##        dist = numpy.linalg.norm(critDev - self.unit.minDeviation)                         # or could use numpy
-#            """With one connected unit (self), the output must be equal to:
-#            """
-#            expectedOutput = (critDevDistance * (outRange/devRange)) + self.unit.outputRange['low']
-#            self.assertTrue(abs(self.unit.currentOutput - expectedOutput) < errorTolerance) 
 
     def testOutputAndDeviationInRange(self):
         """
@@ -1472,5 +1432,4 @@ class HomeoUnitTest(unittest.TestCase):
     
      
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()  

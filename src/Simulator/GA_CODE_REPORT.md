@@ -18,7 +18,7 @@ re-testing selected results, one Webots per process, not for the GA.
 | File | Role |
 |------|------|
 | `Simulator/HomeoGenAlg.py` | GA simulation class (`HomeoGASimulation`) and parallel-evaluation workers; no GUI, no PyQt5 |
-| `Simulator/HomeoGenAlgGui.py` | GA GUI; re-exports the engine |
+| `Simulator/HomeoGenAlgGui.py` | GA GUI |
 | `Simulator/HomeoExperiments.py` | Experiment initialisation functions |
 | `Simulator/SimulatorBackend.py` | Abstraction over robotic simulators |
 | `Helpers/GenomeDecoder.py` | Genome decoding and pretty-printing |

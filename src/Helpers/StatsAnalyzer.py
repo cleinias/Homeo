@@ -10,7 +10,6 @@ import pickle
 import sys
 import os
 
-from Helpers.General_Helper_Functions import simulations_data_dir
 
 # Logbook and history pickles can refer to the module 'dill.dill' (dill's
 # other name for 'dill._dill') and to Python 2's type names (ListType,
@@ -46,43 +45,6 @@ def _load_pickle(fileObj):
     """Load a pickle file; latin-1 reads the byte strings of a Python 2 pickle."""
     return pickle.Unpickler(fileObj, encoding='latin-1').load()
 
-def main():
-    "All function calls in the main() functions are for testing purposes only"  
-    dirL = simulations_data_dir()
-    fileL = 'History-2015-01-11-12-55-19.hist'
-    filename = os.path.join(dirL,fileL)
-    #logbook = pickle.load(open(filename, 'r'))
-    #---------------------------------------------
-    #
-    # Experiment to see whether I can unpickle the history object in a different environment
-    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-    
-    'Homeostat genome is a list plus an ID'     
-    creator.create("Individual", list, fitness=creator.FitnessMin, ID=None)   
-
-                
-    'Register function to create a random individual'
-    #toolbox.register("individual", self.initIndividual, creator.Individual, genomeSize=self.genomeSize, ID = 'DummyID')  
-    
-    'Register function to create an individual with given genome'
-    #toolbox.register('individualClone', self.initIndividualClone, creator.Individual, self.clonableGenome)
-    
-    #
-    #---------------------------------------------
-    history = _load_pickle(open(filename,'rb'))
-    showGenealogyTree(history)
-    #hDebug('ga',"Logbook loaded")
-    #indivs = indivsDecodedFromLogbook(logbook)
-    #fitness_data = minMaxAvgFromLogbook(logbook)
-    #indID = '001-003'
-    #gens = extractAllGenomes(filename)
-    #print indID, extractGenomeOfIndID(indID, (os.path.join(os.getcwd(),"Logbook-2015-01-04-19-11-21.lgb")))
-    #saveGenomeToCSV(extractGenomeOfIndI('001-001', 
-    #                                    (os.path.join(os.getcwd(),"Logbook-2015-01-04-19-11-21.lgb"))), 
-    #                os.path.join(os.getcwd(),indID+'-genome.gnm'))
-    #hof = hallOfFameInds(indivs, 10, max=False)
-    #minMaxAvgFitPlot(fitness_data[0], fitness_data[1],fitness_data[2], fitness_data[3])
-    
 def plotFitnessesFromLogBook(logbook):
     """Produce a MatplotLib chart of min, max, and avg fitness
        from data extracted from the logbook"""
@@ -415,8 +377,3 @@ def areAllInpAndOutpFilesIdentical():
             for pair in list(combinations(fileList, 2)):
                 results.append(areValueFilesIdentical(pair[0], pair[1]))                                   
     return all(x is True for x in results)
-                                   
-             
-if __name__=="__main__":
-    main()
-    

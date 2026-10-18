@@ -270,5 +270,4 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         self.assertFalse(self.uniselector.sameKindAs(anotherUniselector))
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

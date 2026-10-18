@@ -26,11 +26,6 @@ class HomeostatTest(unittest.TestCase):
         self.homeostat.addFullyConnectedUnit(unit2)
         self.homeostat.addFullyConnectedUnit(unit3)
         self.homeostat.addFullyConnectedUnit(unit4)
-        
-        '''temporary testing:
-           set collectsData to False to avoid generating errors
-           from unfinished dataCollector class'''
-#        self.homeostat.collectsData = False
 
     def testAddFullyConnectedUnits(self):
         """
@@ -332,5 +327,4 @@ class HomeostatTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
