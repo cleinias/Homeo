@@ -219,7 +219,7 @@ class HomeoUniselectorContinuousModelsTest(unittest.TestCase):
 
 
 class ContinuousUniselectorFlagTest(unittest.TestCase):
-    """An OU uniselector never fires: its unit's uniselectorActivated is 0,
+    """A continuous uniselector never fires: its unit's uniselectorActivated is 0,
     even if a discrete uniselector had left it at 1"""
 
     def testTheFlagIsCleared(self):

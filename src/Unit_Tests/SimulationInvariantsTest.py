@@ -46,7 +46,7 @@ def headlessHomeostat(units, seed, continuous=False):
 class HeadlessRunLoopTest(unittest.TestCase):
 
     def testOUDriftSurvivesStepping(self):
-        "Stepping tick by tick (as the GA does) must evolve the OU weights as one runFor() does"
+        "Stepping tick by tick (as the GA does) must evolve the continuous uniselector's weights as one runFor() does"
         ticks = 1500
         whole = headlessHomeostat(2, seed=3, continuous=True)
         whole.runFor(ticks)
@@ -68,11 +68,11 @@ class HeadlessRunLoopTest(unittest.TestCase):
                                    [u.criticalDeviation for u in chunked.homeoUnits], atol=1e-9)
 
     def testOULeavesManualConnectionsAlone(self):
-        "In a headless OU run a 'manual' self-connection must keep its weight"
+        "In a headless run with continuous uniselectors a 'manual' self-connection must keep its weight"
         hom = headlessHomeostat(2, seed=1, continuous=True)
         for unit in hom.homeoUnits:
             unit.uniselectorActive = True
-            unit.criticalDeviation = 5.0            # stressed, so the OU noise is large
+            unit.criticalDeviation = 5.0            # stressed, so its uniselector's steps are large
             unit.inputConnections[0].state = 'manual'
             unit._jit_dirty = True
         before = [u.inputConnections[0].weight * u.inputConnections[0].switch for u in hom.homeoUnits]

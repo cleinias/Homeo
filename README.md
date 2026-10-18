@@ -95,8 +95,8 @@ python -m HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_direct \
     --batch 20 --seed 1 --random-start --steps 300000
 
 # genetic algorithms
-python src/run_direct_vehicle_ga.py           # GA + OU on the direct vehicle
-python src/run_phototaxis_comparison.py       # Ashby, OU, and two GA + OU runs side by side
+python src/run_direct_vehicle_ga.py           # GA + continuous uniselector on the direct vehicle
+python src/run_phototaxis_comparison.py       # Ashby's and the continuous uniselector, and two GA runs, side by side
 python src/replay_best_with_statelog.py --logbook path.lgb   # replay an individual
 
 # arrays: SLURM (hpc/grace_*.slurm) or a workstation

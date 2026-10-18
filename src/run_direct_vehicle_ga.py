@@ -4,7 +4,7 @@
 Runs a GA experiment on the 4-unit Braitenberg-2 vehicle (2 sensors + 2
 motors, no eye intermediaries):
 
-  Exp 1: GA + OU, 8-gene genome (2 units x 4 params), the _v2 setup: mass and
+  Exp 1: GA + continuous uniselector, 8-gene genome (2 units x 4 params), the _v2 setup: mass and
          viscosity log-uniform
 
 with fixed Braitenberg cross-wiring (Left Sensor -> Right Motor, Right
@@ -80,7 +80,7 @@ def run_ga_experiment(exp_num, exp_name, n_workers, seed,
 
 def run_exp1(n_workers, pop_size=DEFAULT_POP_SIZE, generations=DEFAULT_GENERATIONS,
              steps=DEFAULT_STEPS, noise_scheme=DEFAULT_NOISE_SCHEME, evals=DEFAULT_EVALS):
-    """Exp 1: Direct 2+2, GA + OU, 8-gene genome (mass and viscosity log-uniform)."""
+    """Exp 1: Direct 2+2, GA + continuous uniselector, 8-gene genome (mass and viscosity log-uniform)."""
     run_ga_experiment(1,
         "initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2",
         n_workers, seed=44, pop_size=pop_size, generations=generations,

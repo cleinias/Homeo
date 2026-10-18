@@ -1,10 +1,10 @@
-'''Tests of the continuous (OU) uniselector in headless mode.
+'''Tests of the continuous uniselector in headless mode.
 
 In headless mode evolve_weights_jit() moves the weights in the JIT arrays.
 HomeoUnit.selfUpdate() must not mark the arrays dirty after that step: the
 next tick would rebuild them from the untouched connection objects and
-discard the step, and the OU uniselector would silently do nothing.  Every
-batch run and every GA evaluation is headless.
+discard the step, and the continuous uniselector would silently do nothing.
+Every batch run and every GA evaluation is headless.
 '''
 
 import unittest
@@ -16,7 +16,7 @@ from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
 
 def _twoUnitHomeostat(headless):
-    "Two mutually connected Newtonian units with OU uniselectors."
+    "Two mutually connected Newtonian units with continuous uniselectors."
     hom = Homeostat()
     HomeoUnitNewtonian.clearNames()
     for _ in range(2):
@@ -52,7 +52,7 @@ def _signedWeights(hom):
 class HomeoUniselectorContinuousHeadlessTest(unittest.TestCase):
 
     def testWeightsEvolveInHeadlessMode(self):
-        "The OU process must actually move the weights when headless."
+        "The continuous uniselector must actually move the weights when headless."
         np.random.seed(42)
         hom = _twoUnitHomeostat(headless=True)
         hom.runFor(1)
@@ -61,7 +61,7 @@ class HomeoUniselectorContinuousHeadlessTest(unittest.TestCase):
         after = _signedWeights(hom)
         self.assertGreater(
             np.abs(after - before).max(), 1e-3,
-            "headless OU weights did not change over 2000 ticks -- the JIT "
+            "headless continuous-uniselector weights did not change over 2000 ticks -- the JIT "
             "arrays are being discarded (see this module's docstring)")
 
     def testHeadlessAndNonHeadlessBothEvolve(self):
@@ -75,7 +75,7 @@ class HomeoUniselectorContinuousHeadlessTest(unittest.TestCase):
             hom.runFor(2000)
             moves[headless] = np.abs(_signedWeights(hom) - before).max()
         self.assertGreater(moves[True], moves[False] / 10.0,
-                           "headless OU drift is an order of magnitude below "
+                           "headless continuous-uniselector drift is an order of magnitude below "
                            "non-headless: %r" % moves)
 
     def testFlushJitArraysExposesEvolvedWeights(self):

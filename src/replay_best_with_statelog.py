@@ -165,7 +165,7 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
         backendSimulator=backend,
         dataDir=data_dir, **extra)
 
-    # (optional) Swap OU uniselectors for Ashby discrete ones
+    # (optional) Swap continuous uniselectors for Ashby discrete ones
     if use_ashby:
         _swap_to_ashby(hom)
 
@@ -180,7 +180,7 @@ class _Genome(list):
 
 
 def _swap_to_ashby(hom):
-    "Replace OU continuous uniselectors with Ashby discrete ones."
+    "Replace continuous uniselectors with Ashby discrete ones."
     from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
     for u in hom.homeoUnits:
@@ -353,7 +353,7 @@ def main():
                         help='For an evaluation of k runs: the run whose .statelog is '
                              'written (1..k, default 1)')
     parser.add_argument('--ashby', action='store_true',
-                        help='Replace OU continuous uniselectors with Ashby discrete ones')
+                        help='Replace continuous uniselectors with Ashby discrete ones')
     parser.add_argument('--visualize', action='store_true',
                         help='Run with pyglet visualizer instead of headless')
     args = parser.parse_args()

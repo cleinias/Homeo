@@ -310,7 +310,7 @@ class HomeoQtSimulation(QObject):
             self.liveData[unit].append(unit.criticalDeviation)
             # After the tick's update: the deviation and the firing flag of that
             # update (1 if the discrete uniselector fired, triggered by that
-            # deviation; always 0 for OU)
+            # deviation; always 0 for the continuous one)
             self.liveData[self.uniselectorKey(unit)].append(unit.uniselectorActivated)
             self.liveDataWindow[unit].append(unit.criticalDeviation)
             self.liveDataWindow[self.uniselectorKey(unit)].append(unit.uniselectorActivated)

@@ -374,7 +374,7 @@ class HomeoUnit(object):
     def flushJitArrays(self):
         """Write the JIT weight arrays back onto the connection objects.
 
-        In headless mode with a continuous (OU) uniselector the arrays carry the
+        In headless mode with a continuous uniselector the arrays carry the
         weights the dynamics actually used, while the connection objects keep
         their last synced values.  This brings the connections up to date, so
         call it before logging or inspecting them.  A connection changed through
@@ -394,7 +394,7 @@ class HomeoUnit(object):
         """Extract active connection parameters into numpy arrays for JIT loop.
 
         The arrays may hold weights the connections do not have yet (the
-        headless OU uniselector evolves only the arrays), so they are first
+        headless continuous uniselector evolves only the arrays), so they are first
         written back, and only then rebuilt from the connections.  Rebuilding
         alone would throw that evolution away every time it ran."""
         self.flushJitArrays()
@@ -1319,12 +1319,12 @@ class HomeoUnit(object):
 
         '''3. Weight adaptation --- two modes depending on uniselector type.
            Discrete (Ashby/UniformRandom): periodic check + random resampling.
-           Continuous (OU process): evolve weights every timestep.'''
+           Continuous: evolve weights every timestep.'''
 
         if self.uniselectorActive:
             if isinstance(self.uniselector, HomeoUniselectorContinuous):
                 "Continuous mode: evolve weights at every timestep"
-                # An OU uniselector never fires: the flag stays 0, even after
+                # A continuous uniselector never fires: the flag stays 0, even after
                 # a discrete uniselector left it at 1
                 self.uniselectorActivated = 0
                 stress = self.stressLevel()
@@ -1338,8 +1338,8 @@ class HomeoUnit(object):
                        mutates them in place and they are authoritative until
                        something edits the connection objects; marking them
                        dirty makes the next tick rebuild them from the
-                       (unchanged) connections, discarding every OU step.
-                       Call flushJitArrays() to write them back for logging.'''
+                       (unchanged) connections, discarding every step of the
+                       continuous uniselector.  Call flushJitArrays() to write them back for logging.'''
                 else:
                     self.uniselector.evolve_weights(self.inputConnections, stress)
                     self._jit_dirty = True

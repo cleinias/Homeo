@@ -28,7 +28,7 @@ class HomeoDataUnit(object):
                                                  update checks the deviation it has just computed) and the
                                                  weights it drew.  Every per-tick record follows this
                                                  convention: row t is the state after t updates.
-                                                 The continuous (OU) uniselector, whose weights drift every
+                                                 The continuous uniselector, whose weights drift every
                                                  tick, never fires: its flag is always 0.
     '''
 

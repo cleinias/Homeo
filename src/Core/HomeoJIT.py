@@ -122,7 +122,7 @@ def _jit_spring_step(p, q, f, v0, t):
     the damped frequency), critically damped, overdamped (two exponentials),
     q < 0 (cosh and sinh), and q = 0 (no equilibrium f/q; the drag-only
     formula).  The units cross those boundaries all the time -- a uniselector
-    or OU weight passes through 0, so q -> 0 and f/q blows up; near critical
+    weight, of either kind, passes through 0, so q -> 0 and f/q blows up; near critical
     damping the damped frequency -> 0; in Ashby's stiff regime one root is
     the difference of two nearly equal numbers -- and each boundary needs its
     own special handling.  The matrix exponential below is the same solution

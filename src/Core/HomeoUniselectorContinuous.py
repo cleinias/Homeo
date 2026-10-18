@@ -117,7 +117,7 @@ class HomeoUniselectorContinuous(HomeoUniselector):
         return self._dt
 
     def setDt(self, value):
-        "The OU process's time step, in ticks."
+        "The uniselector's time step, in ticks."
         if not value > 0:
             raise HomeoUniselectorError('dt must be positive, not %r' % value)
         self._dt = float(value)

@@ -193,9 +193,9 @@ def configure_eyes(backend, saturation=None, threshold=None, response=None):
 
 def set_uniselector_type(unit, uniselector_type, continuous_params=None):
     '''Set the uniselector on a unit: 'ashby' (the stepping switch, already
-    every new unit's), 'random' (uniform random) or 'continuous' (the OU
-    process; continuous_params overrides its parameters, and a name that is
-    not one of them is an error).  Any other type is an error.'''
+    every new unit's), 'random' (uniform random) or 'continuous'
+    (HomeoUniselectorContinuous; continuous_params overrides its parameters,
+    and a name that is not one of them is an error).  Any other type is an error.'''
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
     from Core.HomeoUniselectorUniformRandom import HomeoUniselectorUniformRandom
 
@@ -795,7 +795,7 @@ Options both experiments take
                         Q quit, Up/Down speed, C close-up/arena, F follow,
                         V eye fields; mouse wheel zoom, drag pan
    --random-topology    every connection between the adaptive units on
-   --continuous         the continuous (OU) uniselector instead of Ashby's
+   --continuous         the continuous uniselector instead of Ashby's
    --dark               light intensity -100 (a "darkness source")
    --early-stop D       stop a run once the robot is within D of the light
                         (checked at each report; none by default)

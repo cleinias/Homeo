@@ -18,7 +18,7 @@ class HomeoNoise(object):
     def connNoise(current, noise):
         '''Distorting-normal-proportional noise for a connection carrying
            current: Gaussian(0, bound/3) clipped to +/-bound, bound = noise x
-           |current|.  None on a connection carrying no current.'''
+           |current|.  0.0 with no current or no noise.'''
         if noise == 0 or current == 0:
             return 0.0
         bound = noise * abs(current)

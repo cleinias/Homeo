@@ -875,7 +875,7 @@ def initializeBraiten2_2_Full_GA_phototaxis_continuous(homeoGenome, noHomeoParam
 
     setTargetIntensity(backendSimulator, lightIntensity)
 
-    # Replace discrete uniselectors with continuous OU process on evolved units
+    # Replace discrete uniselectors with continuous ones on evolved units
     if not noUnisel:
         for unit in hom.homeoUnits:
             if unit.uniselectorActive:
@@ -910,7 +910,7 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
                                            topology='random',
                                            layout='weightfree_v2', eyes=True,
                                            lightIntensity=GA_LIGHT_INTENSITY):
-    '''Shared helper for the weight-free continuous (OU) GA experiments on a
+    '''Shared helper for the weight-free continuous-uniselector GA experiments on a
     Braitenberg type-2 vehicle: with eyes (6 units: 2 motors, 2 eyes, 2
     sensor inputs; the _Full_GA_continuous_weightfree setups) or without
     (eyes=False: the 2+2 direct vehicle, the sensors feeding the motors; the
@@ -922,7 +922,7 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     eyes, 8 without), [mass, viscosity, tau_a, maxDeviation].
 
     Connection weights are NOT in the genome — they are initialised to small
-    random values and evolved online by the OU process.  Without eyes the
+    random values and evolved online by the continuous uniselector.  Without eyes the
     motors' self-connections are always negative (guaranteed stability per
     2-unit homeostat analysis); with eyes they are drawn from [-0.1, 0.1).
 
@@ -937,8 +937,8 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
     noNoise : bool
         If True, set all noise to 0.
     noUnisel : bool
-        If True, the evolved units' uniselectors are inactive: no OU process,
-        the weights stay at their initial values.
+        If True, the evolved units' uniselectors are inactive: the weights
+        stay at their initial values.
     topology : str
         'random' — all connections on the evolved units are active.
         'fixed'  — only Braitenberg cross-wired connections are active:
@@ -1066,9 +1066,9 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
                 conn.state = 'uniselector'
                 conn.status = True
 
-    "7. Swap uniselectors to continuous (OU) and set tau_a from genome"
+    "7. Swap uniselectors to continuous ones and set tau_a from genome"
     for i, unit in enumerate(evolved_units):
-        # noUnisel: the OU process stays installed (it records tau_a) but
+        # noUnisel: the continuous uniselector stays installed (it records tau_a) but
         # never runs, so the weights keep their initial values
         unit.uniselectorActive = not noUnisel
         unis = HomeoUniselectorContinuous()
@@ -1087,7 +1087,7 @@ def _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
 def initializeBraiten2_2_Full_GA_continuous_weightfree_v2(homeoGenome, noHomeoParameters=4,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         lightIntensity=GA_LIGHT_INTENSITY):
-    '''Weight-free phototaxis GA experiment with continuous (OU) uniselectors
+    '''Weight-free phototaxis GA experiment with continuous uniselectors
     on the vehicle with eyes; all connections between evolved units active.
 
     Genome: 16 genes = 4 units x 4 params [mass, viscosity, tau_a, maxDeviation],
@@ -1108,7 +1108,7 @@ initializeBraiten2_2_Full_GA_continuous_weightfree_v2.genomeLayout = 'weightfree
 def initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         lightIntensity=GA_LIGHT_INTENSITY):
-    '''Weight-free phototaxis GA experiment with continuous (OU) uniselectors
+    '''Weight-free phototaxis GA experiment with continuous uniselectors
     on the vehicle with eyes; fixed Braitenberg cross-wiring.
 
     Genome: 16 genes = 4 units x 4 params [mass, viscosity, tau_a, maxDeviation],
@@ -1139,7 +1139,7 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
                                                   topology='fixed',
                                                   layout='weightfree_v2',
                                                   lightIntensity=GA_LIGHT_INTENSITY):
-    '''The weight-free continuous (OU) helper for the simplified 2+2 vehicle
+    '''The weight-free continuous-uniselector helper for the simplified 2+2 vehicle
     (no eye intermediaries): _setup_continuous_weightfree_homeostat with
     eyes=False.'''
     return _setup_continuous_weightfree_homeostat(homeoGenome, backendSimulator,
@@ -1152,7 +1152,7 @@ def _setup_continuous_weightfree_homeostat_direct(homeoGenome, backendSimulator,
 def initializeBraiten2_direct_GA_continuous_weightfree_v2(homeoGenome, noHomeoParameters=4,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         lightIntensity=GA_LIGHT_INTENSITY):
-    '''Weight-free 2+2 direct phototaxis GA experiment with continuous (OU)
+    '''Weight-free 2+2 direct phototaxis GA experiment with continuous
     uniselectors; all connections on the motors active.
 
     Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
@@ -1174,7 +1174,7 @@ initializeBraiten2_direct_GA_continuous_weightfree_v2.genomeLayout = 'weightfree
 def initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
         backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
         lightIntensity=GA_LIGHT_INTENSITY):
-    '''Weight-free 2+2 direct phototaxis GA experiment with continuous (OU)
+    '''Weight-free 2+2 direct phototaxis GA experiment with continuous
     uniselectors; fixed Braitenberg cross-wiring.
 
     Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
@@ -1278,7 +1278,7 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
     [mass, viscosity, tau_a, maxDeviation].
 
     Connection weights are NOT in the genome — they are initialised to small
-    random values and evolved online by the OU process.
+    random values and evolved online by the continuous uniselector.
 
     Parameters
     ----------
@@ -1426,9 +1426,9 @@ def _setup_braitenberg_3c_homeostat(homeoGenome, backendSimulator,
                     conn.state = 'uniselector'
                     conn.status = True
 
-    "7. Swap uniselectors to continuous (OU) and set tau_a from genome"
+    "7. Swap uniselectors to continuous ones and set tau_a from genome"
     for i, unit in enumerate(evolved_units):
-        # noUnisel: the OU process stays installed (it records tau_a) but
+        # noUnisel: the continuous uniselector stays installed (it records tau_a) but
         # never runs, so the weights keep their initial values
         unit.uniselectorActive = not noUnisel
         unis = HomeoUniselectorContinuous()

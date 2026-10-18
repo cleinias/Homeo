@@ -26,11 +26,10 @@ class HomeoUnitNewtonian(HomeoUnit):
 #===============================================================================
     def __init__(self):
         '''
-        The mass of the needle unit is directly responsible for the unit's inertia and, 
-        therefore, for its sensitivity to external forces (inputs). The default value is stored
-        in the superclass (HomeoUnit) dictionary. We need to initialize it 
-        to a rather large value (expressed in internal units) to ensure a minimum
-        of stability 
+        The mass of the needle unit is directly responsible for the unit's
+        inertia and, therefore, for its sensitivity to external forces
+        (inputs).  HomeoUnit's __init__ sets it to
+        HomeoUnit.DefaultParameters['mass'] (100, in internal units).
         '''
         
         "initialize according to superclass first"
@@ -260,12 +259,12 @@ class HomeoUnitNewtonian(HomeoUnit):
 
         '''3. Weight adaptation --- two modes depending on uniselector type.
            Discrete (Ashby/UniformRandom): periodic check + random resampling.
-           Continuous (OU process): evolve weights every timestep.'''
+           Continuous: evolve weights every timestep.'''
 
         if self.uniselectorActive:
             if isinstance(self.uniselector, HomeoUniselectorContinuous):
                 "Continuous mode: evolve weights at every timestep"
-                # An OU uniselector never fires: the flag stays 0, even after
+                # A continuous uniselector never fires: the flag stays 0, even after
                 # a discrete uniselector left it at 1
                 self.uniselectorActivated = 0
                 stress = self.stressLevel()

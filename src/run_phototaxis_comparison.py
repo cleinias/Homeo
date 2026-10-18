@@ -2,8 +2,8 @@
 """run_phototaxis_comparison.py — Launch the 3 phototaxis experiments concurrently.
 
   Exp 1: standalone Ashby (discrete uniselector)
-  Exp 2: standalone OU (continuous uniselector)
-  Exp 3: GA + OU, 16-gene genome (4 units x 4 params), the _v2 setup
+  Exp 2: standalone continuous uniselector
+  Exp 3: GA + continuous uniselector, 16-gene genome (4 units x 4 params), the _v2 setup
 The genome has no dt_fast gene: dt_fast is a rescaling of mass and viscosity,
 which the _v2 setup evolves.
 
@@ -39,7 +39,7 @@ def run_exp1():
 
 
 def run_exp2():
-    """Exp 2: Standalone OU (continuous uniselector)."""
+    """Exp 2: Standalone continuous uniselector."""
     from HomeoExperiments.KheperaExperiments.phototaxis_braitenberg2_Ashby import run_headless
 
     print("PROGRESS: Exp 2 started — Standalone OU, 60k steps", flush=True)
@@ -78,7 +78,7 @@ def run_ga_experiment(exp_num, exp_name, n_workers, seed):
 
 
 def run_exp3(n_workers):
-    """Exp 3: GA + OU, 16-gene genome (mass and viscosity log-uniform)."""
+    """Exp 3: GA + continuous uniselector, 16-gene genome (mass and viscosity log-uniform)."""
     run_ga_experiment(3,
         "initializeBraiten2_2_Full_GA_continuous_weightfree_fixed_v2",
         n_workers, seed=42)

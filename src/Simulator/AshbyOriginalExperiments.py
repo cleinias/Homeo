@@ -137,7 +137,7 @@ class AshbyStateLogger:
     of tick t: uniselector_fired is 1 if the unit's discrete uniselector fired
     in that update, so it shows in the same row as the deviation that
     triggered it (the update checks the deviation it has just computed) and
-    the weights it drew.  A continuous (OU)
+    the weights it drew.  A continuous
     uniselector never fires: 0.
     '''
 

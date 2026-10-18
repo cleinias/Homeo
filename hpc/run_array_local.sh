@@ -6,7 +6,7 @@
 #     bash hpc/run_array_local.sh -n 2 -s 200000   # 2 workers, short test runs
 #     bash hpc/run_array_local.sh --dry-run
 #     bash hpc/run_array_local.sh --state-log --log-interval 200   # + weight traces
-#     bash hpc/run_array_local.sh --uniselector ashby      # discrete, not OU
+#     bash hpc/run_array_local.sh --uniselector ashby      # discrete, not continuous
 #     bash hpc/run_array_local.sh --random-heading         # heading from the seed
 #     bash hpc/run_array_local.sh --heading 45 --seeds 101,102,...
 #                                                  # chosen seeds, fixed heading
