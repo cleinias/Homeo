@@ -8,6 +8,26 @@
 #SBATCH --output=logs/%x-%A_%a.out
 #SBATCH --error=logs/%x-%A_%a.err
 #
+# Copyright (C) 2026 Stefano Franchi
+#
+# This file is part of Homeo, a simulation of Ashby's homeostat and of
+# homeostat-controlled robots.
+#
+# Homeo is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# Homeo is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Homeo.  If not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
 # The fixed-weight Braitenberg 2 design as one 200-task array: the 8 wirings
 # (crossed/uncrossed x signs ++ +- -+ --) x 25 random start poses, 300,000
 # steps each, full trajectories (--traj-interval 1).

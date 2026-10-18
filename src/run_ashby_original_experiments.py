@@ -1,4 +1,24 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 Stefano Franchi
+#
+# This file is part of Homeo, a simulation of Ashby's homeostat and of
+# homeostat-controlled robots.
+#
+# Homeo is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# Homeo is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Homeo.  If not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 '''
 Run Ashby's original Homeostat experiments from Design for a Brain.
 
@@ -12,8 +32,6 @@ Each experiment produces:
     - A .statelog TSV file with per-tick state data
     - A .json file with initial and final conditions
     - Console summary with timing, stability, and uniselector statistics
-
-@author: stefano (with Claude)
 '''
 
 import argparse

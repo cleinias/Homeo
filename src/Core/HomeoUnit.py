@@ -1,3 +1,23 @@
+# Copyright (C) 2006-2026 Stefano Franchi
+#
+# This file is part of Homeo, a simulation of Ashby's homeostat and of
+# homeostat-controlled robots.
+#
+# Homeo is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# Homeo is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Homeo.  If not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from Core.HomeoNeedleUnit import *
 from Core.HomeoUniselectorAshby import *
 from Core.HomeoUniselector import *
@@ -21,8 +41,6 @@ class HomeoUnitError(Exception):
 
 class HomeoUnit(object):
     '''
-    @author: stefano
-
     Homeo Unit is the fundamental element of a Homeostat.
     
     HomeoUnit represents a basic unit of Ashby's Homeostat (see Ashby's Design for a Brain, 1960, chp. 8). 

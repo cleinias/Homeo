@@ -1,3 +1,23 @@
+# Copyright (C) 2026 Stefano Franchi
+#
+# This file is part of Homeo, a simulation of Ashby's homeostat and of
+# homeostat-controlled robots.
+#
+# Homeo is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# Homeo is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Homeo.  If not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 '''
 Log the initial and final conditions of a Homeostat to human-readable
 (.log) and machine-readable (.json) files.
@@ -9,8 +29,6 @@ continuous uniselector's parameters), and the JSON file the environment
 homeostat back in a snapshot's state.  Not recorded: the random generators'
 states, the Ashby uniselector's random matrix, and the robot's pose, so a
 restored run continues the logged one only up to its noise.
-
-@author: stefano
 '''
 
 import json
