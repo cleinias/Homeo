@@ -373,6 +373,24 @@ CHEMOTAXIS_FIELD = {'law': 'k0', 'length': 2.0, 'radius': 0.06}
 # value at this distance (see chemicalEyeSensitivity)
 CHEMICAL_EYE_RANGE = 8.0
 
+# The recorded field's grid (KheperaSimulation.fieldSnapshot): FIELD_GRID_POINTS
+# x FIELD_GRID_POINTS points, out to where each source falls to
+# FIELD_GRID_FRACTION of its intensity, at most FIELD_GRID_REACH units from it
+FIELD_GRID_POINTS = 101
+FIELD_GRID_FRACTION = 0.001
+FIELD_GRID_REACH = 20.0
+
+
+def fieldReach(law):
+    '''How far from a source of law the recorded field's grid reaches: where
+    the law falls to FIELD_GRID_FRACTION, at most FIELD_GRID_REACH (and that,
+    for inverse_square)'''
+    if law['law'] == 'inverse_square':
+        return FIELD_GRID_REACH
+    reach = fieldContourRadius(law, FIELD_GRID_FRACTION, outer=FIELD_GRID_REACH)
+    return FIELD_GRID_REACH if reach is None else reach
+
+
 # The modalities of the worlds' quality eyes: quality -> the infix of their
 # names (left<infix>Eye, right<infix>Eye)
 QUALITY_EYES = {'temperature': 'Temp', 'oxygen': 'Oxy', 'organic': 'Org'}
@@ -1270,6 +1288,7 @@ class KheperaSimulation(object):
             self.trajectoryWriter.battery = robot.batterySettings()
             self.trajectoryWriter.directionFreeEyes = robot.directionFreeEyes()
             self.trajectoryWriter.fields = self.fieldSettings()
+            self.trajectoryWriter.fieldSnapshot = self.fieldSnapshot
             self.trajectoryWriter.writeHeaderNow(robot.body)
         for body in self.allBodies.values():
             body.update(self.timeStep)
@@ -1298,6 +1317,32 @@ class KheperaSimulation(object):
         return {name: dict(body.userData['law']) for name, body in self.allBodies.items()
                 if name != 'TARGET' and isinstance(getattr(body, 'userData', None), dict)
                 and body.userData.get('law') is not None}
+
+    def fieldSnapshot(self):
+        """The field the chemical eyes read, sampled on a grid, for each quality
+        whose sources have a field law: {quality: (x0, y0, spacing, n, values)},
+        values[j][i] the sum of those sources' values (KheperaRobot.concentrationAt)
+        at (x0 + i spacing, y0 + j spacing).  The grid is a square of n =
+        FIELD_GRID_POINTS points a side, centred on the sources and reaching
+        fieldReach beyond each.  {} for a world with no field, or with no robot
+        (destroyed)."""
+        robot = self.allBodies.get(getattr(self, 'robotName', None))
+        snapshot = {}
+        for quality, sources in getattr(robot, 'detectableSources', {}).items():
+            sources = [source for source in sources if source.userData.get('law') is not None]
+            if not sources:
+                continue
+            xs = [source.userData['lightPos'][0] for source in sources]
+            ys = [source.userData['lightPos'][2] for source in sources]
+            half = (max(max(xs) - min(xs), max(ys) - min(ys)) / 2
+                    + max(fieldReach(source.userData['law']) for source in sources))
+            n = FIELD_GRID_POINTS
+            spacing = 2 * half / (n - 1)
+            x0, y0 = (max(xs) + min(xs)) / 2 - half, (max(ys) + min(ys)) / 2 - half
+            values = [[robot.concentrationAt((x0 + i * spacing, y0 + j * spacing), sources)
+                       for i in range(n)] for j in range(n)]
+            snapshot[quality] = (x0, y0, spacing, n, values)
+        return snapshot
 
     @property
     def halted(self):

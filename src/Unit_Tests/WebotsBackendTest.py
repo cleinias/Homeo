@@ -213,6 +213,42 @@ print('BATTERY ' + json.dumps(dict(fed=fed, ticks=robot.battery.ticks, speed=rob
                                    moved=moved, halted=webots.halted)))
 '''
 
+# The chemotaxis world's field snapshot in Webots, against the law at the grid
+# points (from the food's position as the Supervisor reports it) and against
+# Box2D's; and the snapshots a few steps' .traj records
+_FIELD = r'''
+import json, math, os, sys
+sys.path.insert(0, {src!r})
+from KheperaSimulator.KheperaSimulator import KheperaSimulation, _fieldShape
+from WebotsSimulator.WebotsSimulation import WebotsSimulation
+from Helpers.TrajectoryGrapher import readFieldSnapshots
+
+world = 'kheperaChemotaxis_HOMEO_World'
+webots = WebotsSimulation.shared()
+webots.setupWorld(world, {data!r})
+box2d = KheperaSimulation()
+box2d.setupWorld(world, {data!r})
+food = webots.allBodies['FOOD'].userData
+fx, _, fy = food['lightPos']
+[(quality, (x0, y0, spacing, n, values))] = webots.fieldSnapshot().items()
+law = max(abs(values[j][i] - food['intensity'] * _fieldShape(
+              food['law'], math.hypot(x0 + i * spacing - fx, y0 + j * spacing - fy)))
+          for j in range(n) for i in range(n))
+twin = box2d.fieldSnapshot()['organic']
+for i in range(10):
+    webots.advanceSim()
+path = webots.trajectoryWriter.posFile.name
+webots.saveTrajectory()
+box2d.saveTrajectory()
+read = readFieldSnapshots(path)
+print('FIELD ' + json.dumps(dict(
+    quality=quality, n=n, law=law, grid=(x0, y0, spacing), twin=twin[:3],
+    twinValues=max(abs(a - b) for ra, rb in zip(values, twin[4]) for a, b in zip(ra, rb)),
+    moments=sorted(read),
+    readBack=max(abs(read['end']['organic']['values'][j][i] - values[j][i]) / max(values[j][i], 1e-300)
+                 for j in range(n) for i in range(n)))))
+'''
+
 
 @unittest.skipUnless(available(), 'Webots cannot run here (not installed, or no display/xvfb-run)')
 class WebotsBackendTest(unittest.TestCase):
@@ -258,6 +294,26 @@ class WebotsBackendTest(unittest.TestCase):
             self.assertAlmostEqual(webots, box2d, delta=1e-4)
         self.assertTrue(all(box2d > 0 for _, box2d in m['qualities']))
         self.assertTrue(all(webots == 0 for webots, _ in m['eyes']))
+
+    def testTheChemotaxisWorldsFieldSnapshot(self):
+        '''Webots records the field as Box2D does: the law's values on the same
+        grid (to the Supervisor's float positions), at the start and the end.'''
+        with tempfile.TemporaryDirectory() as tmp:
+            script = os.path.join(tmp, 'field.py')
+            with open(script, 'w') as f:
+                f.write(_FIELD.format(src=SRC, data=tmp))
+            r = subprocess.run([sys.executable, script], capture_output=True, text=True,
+                               timeout=300, env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+        lines = [l for l in r.stdout.splitlines() if l.startswith('FIELD ')]
+        self.assertTrue(lines, r.stdout[-2000:] + r.stderr[-2000:])
+        m = json.loads(lines[0][len('FIELD '):])
+        self.assertEqual((m['quality'], m['n']), ('organic', 101))
+        self.assertEqual(m['law'], 0)
+        for webots, box2d in zip(m['grid'], m['twin']):
+            self.assertAlmostEqual(webots, box2d, delta=1e-5)
+        self.assertLess(m['twinValues'], 1e-3)
+        self.assertEqual(m['moments'], ['end', 'start'])
+        self.assertLess(m['readBack'], 5e-6)
 
     def testAPhototaxisRun(self):
         '''The direct experiment runs on Webots, records it, and refuses what

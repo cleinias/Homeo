@@ -100,6 +100,11 @@ class RobotTrajectoryWriter(object):
         # eyes are
         self.directionFreeEyes = ()
         self.fields = None
+        # The field the chemical eyes read, on a grid: a function returning
+        # {quality: (x0, y0, spacing, n, values)} (KheperaSimulation.fieldSnapshot),
+        # set as the eyes are; None: no field.  The file records it at the
+        # start, in the header, and at the end (writeFieldSnapshots)
+        self.fieldSnapshot = None
         self.posFile = open(self.buildTrajFilename(modelName), 'w') if self._enabled else None
         self._openHeader(initialPos)
 
@@ -185,7 +190,8 @@ class RobotTrajectoryWriter(object):
 
     def _finishFile(self):
         '''Complete the file before closing it: the header (if no step was
-           recorded), the last skipped row, and a last comment line with the
+           recorded), the last skipped row, the field at the end (if the world
+           has one, writeFieldSnapshots), and a last comment line with the
            number of steps recorded, "# Steps recorded<TAB>S".  A decimated
            file's rows give the run's length only to within a sampling
            interval; this line gives it exactly (a file whose run was
@@ -193,6 +199,7 @@ class RobotTrajectoryWriter(object):
         self.writeHeaderNow()
         self._flushPendingRow()
         if self.posFile is not None and not self.posFile.closed:
+            self.writeFieldSnapshots('end')
             self.posFile.write("# Steps recorded\t%d\n" % self._rowCount)
 
     def _flushPendingRow(self):
@@ -239,6 +246,7 @@ class RobotTrajectoryWriter(object):
                 light.userData['lightPos'][0], light.userData['lightPos'][2], intensity,
                 light.userData['lightIsOn']))
         self.writeEyes()
+        self.writeFieldSnapshots('start')
         self.posFile.write("# Vehicle's initial position at:\n")
         self.posFile.write('%f\t %f%s\n\n' % (initialPos[0], initialPos[2], heading))
         '''One light_x, light_y, distance triplet per source, in the order of
@@ -273,6 +281,20 @@ class RobotTrajectoryWriter(object):
         if self.battery is not None:
             self.posFile.write("# Battery\t%s\n" % "\t".join(
                 "%s\t%s" % item for item in self.battery.items()))
+
+    def writeFieldSnapshots(self, moment):
+        '''The field as it is now (fieldSnapshot), moment 'start' or 'end': for
+        each quality a line "# Field snapshot<TAB>quality<TAB>moment<TAB>x0<TAB>X
+        <TAB>y0<TAB>Y<TAB>spacing<TAB>S<TAB>n<TAB>N", then N comment lines
+        "#<TAB>v<TAB>v...", the values at y = Y, Y + S, ..., each from x = X up,
+        to 6 significant digits.'''
+        if self.fieldSnapshot is None or self.posFile is None:
+            return
+        for quality, (x0, y0, spacing, n, values) in self.fieldSnapshot().items():
+            self.posFile.write("# Field snapshot\t%s\t%s\tx0\t%r\ty0\t%r\tspacing\t%r\tn\t%d\n"
+                               % (quality, moment, float(x0), float(y0), float(spacing), n))
+            for row in values:
+                self.posFile.write("#\t" + "\t".join("%.6g" % value for value in row) + "\n")
 
     def buildTrajFilename(self, modelName=None):
         '''Reads dataDir from internal ivar and builds a

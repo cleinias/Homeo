@@ -34,6 +34,16 @@ the first entry, "ALL on / off", hides or shows them all (keys: 'a' shows
 all, 'n' hides all).  This works in the toolbar's zoom and pan modes too.
 The figure keeps its full size however many runs the legend lists: when it
 does not fit on the screen, the window scrolls instead of shrinking the plot.
+
+The background is the field the file records (RobotTrajectoryWriter's field
+snapshots: the chemical eyes' field, sampled on a grid at the run's start and
+end), in grey on a log scale with contours at FIELD_CONTOURS of its peak.
+--field-time picks the moment: end (the default), start, or both, two panels
+side by side, whose trajectories the legend hides and shows together.  A file
+that records no field gets a warning: one whose sources have no field law
+(phototaxis) is shaded with a schematic of the light, 1 / (1 + d^2) around
+TARGET; one with field laws but no snapshot is not shaded.  With several
+files, the chart shows the first file's field that has one.
 '''
 import matplotlib.pyplot as plt
 #from matplotlib.axes.Axes import text
@@ -49,6 +59,13 @@ from math import sqrt, ceil
 # produce hundreds of MB of .traj data (300k ticks ~ 30 MB, 6M ticks ~ 600 MB),
 # far more points than a chart can show.  The first and last points are always kept.
 MAX_PLOT_POINTS = 50000
+
+# The recorded field's shading: grey on a log scale from the field's peak down
+# to FIELD_SHADING_FLOOR of it, with contours at FIELD_CONTOURS of the peak
+# (the visualizer's, KheperaRobotView.FIELD_CONTOURS)
+FIELD_SHADING_FLOOR = 0.001
+FIELD_CONTOURS = (0.5, 0.1, 0.01)
+FIELD_TIMES = ('end', 'start', 'both')
 
 # The no-input ring: the radius, in world units, beyond which the main source
 # gives the eyes no input at all, whatever the vehicle's heading.  Outside it
@@ -88,20 +105,26 @@ def main(argv=None):
     parser.add_argument('--max-points', type=int, default=MAX_PLOT_POINTS,
                         help='Thin each trajectory to at most this many plotted points '
                              '(default %(default)s)')
+    parser.add_argument('--field-time', choices=FIELD_TIMES, default='end',
+                        help='The recorded field to shade: at the run\'s end (the default), '
+                             'at its start, or both, in two panels')
     args = parser.parse_args(argv[1:])
     graphTrajectories(args.traj_files, output_path=args.output, dark=args.dark,
-                      maxPoints=args.max_points, sensorRange=args.sensor_range)
+                      maxPoints=args.max_points, sensorRange=args.sensor_range,
+                      fieldTime=args.field_time)
 
 
 def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MAX_PLOT_POINTS,
-                    sensorRange=None):
+                    sensorRange=None, fieldTime='end'):
     """Chart the vehicle's trajectory with matplotlib.
 
-    The background shows a radial grey gradient centered on the light
-    source, representing the irradiance field.  For positive-intensity
-    lights the centre is bright and the edges dark (the robot is avoiding
-    brightness); for negative-intensity (dark) lights the centre is dark
-    and the edges bright (the robot is seeking darkness).
+    The background is the field the file records at fieldTime (see
+    fieldPanels; 'both': two panels).  A file whose sources have no field
+    law gets a radial grey gradient centered on the light source instead, a
+    schematic of the irradiance: for positive-intensity lights the centre is
+    bright and the edges dark (the robot is avoiding brightness); for
+    negative-intensity (dark) lights the centre is dark and the edges bright
+    (the robot is seeking darkness).
 
     Args:
         trajDataFilename: path to a .traj file
@@ -112,6 +135,7 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MA
         maxPoints: thin the trajectory to at most this many plotted points.
         sensorRange: the no-input ring's radius, 0 for none; None: the run's
                      own (noInputRadius).
+        fieldTime: the recorded field to shade, one of FIELD_TIMES.
     """
 
     'Read header and (thinned) trajectory data'
@@ -131,35 +155,39 @@ def graphTrajectory(trajDataFilename, output_path=None, dark=False, maxPoints=MA
         initialDistance = finalDistance = 0.0
 
     'build plot'
-    fig, ax = plt.subplots()
+    panels = fieldPanels([trajDataFilename], [dataFileHeader], fieldTime)
+    fig, axes = plt.subplots(1, len(panels), squeeze=False, figsize=(6.4 * len(panels), 4.8))
     xmin, xmax, ymin, ymax = _plotBounds([trajData], lightsOnDic, sensorRange)
-    _drawIrradianceBackground(ax, lightsOnDic, (xmin, xmax, ymin, ymax), dark)
-    _drawNoInputBoundary(ax, lightsOnDic, sensorRange)
-
-    ax.plot(trajData[:,0], trajData[:,1], zorder=2)
-    ax.set_title(os.path.split(trajDataFilename)[1])
+    name = os.path.split(trajDataFilename)[1]
     if output_path is None:
-        fig.canvas.manager.set_window_title(os.path.split(trajDataFilename)[1])
-
+        fig.canvas.manager.set_window_title(name)
     'Add summary info above the plot'
     summary = ("Initial distance: {:.3f}    Final distance: {:.3f}    "
                "Time: {}".format(initialDistance, finalDistance, _formatTicks(ticks)))
-    ax.set_xlabel(summary, fontsize=9)
 
-    _drawSources(ax, lightsOnDic)
-    startMark = Circle(tuple(trajData[0]), 0.05, alpha=1, color='green', zorder=3)
-    ax.add_artist(startMark) #draw starting position in green
-    endMark = Circle(tuple(trajData[-1]), 0.05, alpha=1, color='red', zorder=3)
-    ax.add_artist(endMark)   # Draw end position in red
-    ax.set_aspect('equal')   # Otherwise circle comes out as an ellipse
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
+    for ax, (moment, background) in zip(axes[0], panels):
+        _drawBackground(ax, background, lightsOnDic, (xmin, xmax, ymin, ymax), dark)
+        _drawNoInputBoundary(ax, lightsOnDic, sensorRange)
+        ax.plot(trajData[:,0], trajData[:,1], zorder=2)
+        # two panels: the file's name once, above both
+        ax.set_title(_momentTitle(moment).strip() if len(panels) > 1 else name + _momentTitle(moment))
+        ax.set_xlabel(summary, fontsize=9)
+        _drawSources(ax, lightsOnDic)
+        startMark = Circle(tuple(trajData[0]), 0.05, alpha=1, color='green', zorder=3)
+        ax.add_artist(startMark) #draw starting position in green
+        endMark = Circle(tuple(trajData[-1]), 0.05, alpha=1, color='red', zorder=3)
+        ax.add_artist(endMark)   # Draw end position in red
+        ax.set_aspect('equal')   # Otherwise circle comes out as an ellipse
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
+    if len(panels) > 1:
+        fig.suptitle(name)
 
     _showOrSave(fig, output_path)
 
 
 def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints=MAX_PLOT_POINTS,
-                      sensorRange=None):
+                      sensorRange=None, fieldTime='end'):
     """Chart several trajectories on the same axes.
 
     Each trajectory gets its own colour; its end point is marked with a dot of
@@ -168,17 +196,22 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     the distinguishing ending of its filename, plus its final distance from the
     target.  A single file is charted with graphTrajectory().  With
     sensorRange None, the no-input ring is drawn only if every run has the same.
+    The background is the first recorded field's at fieldTime (fieldPanels);
+    with 'both', two panels, whose trajectories the legend toggles together.
     """
     if len(trajDataFilenames) == 1:
-        return graphTrajectory(trajDataFilenames[0], output_path, dark, maxPoints, sensorRange)
+        return graphTrajectory(trajDataFilenames[0], output_path, dark, maxPoints, sensorRange,
+                               fieldTime)
 
     labels = _distinctEndings(trajDataFilenames)
     runs = []
+    headers = []
     lightsOnDic = {}
     radii = set()
     for filename, label in zip(trajDataFilenames, labels):
         print("Reading %s ..." % os.path.basename(filename), file=sys.stderr, flush=True)
         header, trajData, nRows = loadTrajectory(filename, maxPoints)
+        headers.append(header)
         ticks = ticksFromRows(header, nRows, readStepsRecorded(filename))
         lights = readLightsFromHeader(header)
         for name, light in lights.items():
@@ -194,6 +227,7 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
 
     target = _mainTarget(lightsOnDic)
     colors = _distinctColors(len(runs))
+    panels = fieldPanels(trajDataFilenames, headers, fieldTime)
 
     xmin, xmax, ymin, ymax = _plotBounds([t for _, t, _ in runs], lightsOnDic, sensorRange)
     # Size the figure to the data's aspect ratio (equal axes would otherwise leave
@@ -202,46 +236,50 @@ def graphTrajectories(trajDataFilenames, output_path=None, dark=False, maxPoints
     nEntries = len(runs) + (1 if interactive else 0)    # + the "ALL on / off" entry
     ncol = min(nEntries, 4 if nEntries <= 12 else 5)
     legendRows = ceil(nEntries / ncol)
-    width = 9.0
-    plotHeight = width * min(max((ymax - ymin) / (xmax - xmin), 0.35), 1.5)
-    fig, ax = plt.subplots(figsize=(width, plotHeight + 1.0 + 0.25 * legendRows),
-                           layout='constrained')
+    width = 9.0 if len(panels) == 1 else 14.0
+    plotHeight = (width / len(panels)) * min(max((ymax - ymin) / (xmax - xmin), 0.35), 1.5)
+    fig, axes = plt.subplots(1, len(panels), squeeze=False,
+                             figsize=(width, plotHeight + 1.0 + 0.25 * legendRows),
+                             layout='constrained')
     dark = dark or _hasDarknessSource(lightsOnDic)
-    _drawIrradianceBackground(ax, lightsOnDic, (xmin, xmax, ymin, ymax), dark)
-    _drawNoInputBoundary(ax, lightsOnDic, sensorRange)
+    common = _commonPrefix([os.path.splitext(os.path.basename(f))[0] for f in trajDataFilenames])
+    title = "%d trajectories" % len(runs) + (": %s" % common.rstrip('-_ ') if common else "")
+    if output_path is None:
+        fig.canvas.manager.set_window_title(
+            title + "   [click legend entries to hide/show; a = all, n = none]")
 
     finalDistances = []
-    runArtists = []      # per run: [trajectory line, end marker, start marker]
-    for (label, trajData, ticks), color in zip(runs, colors):
+    labels = []
+    for label, trajData, ticks in runs:
         if target is not None:
             finalDistance = _distance(target, trajData[-1])
             finalDistances.append(finalDistance)
             label = "%s  (d=%.2f)" % (label, finalDistance)
-        line, = ax.plot(trajData[:,0], trajData[:,1], color=color, linewidth=0.8, alpha=0.85,
-                        zorder=2, label=label)
-        end, = ax.plot(*trajData[-1], marker='o', markersize=6, color=color,
-                       markeredgecolor='black', linestyle='none', zorder=5)
-        start, = ax.plot(*trajData[0], marker='o', markersize=4, color='green',
-                         linestyle='none', zorder=4)
-        runArtists.append([line, end, start])
+        labels.append(label)
+    # per run: its trajectory line, end marker and start marker, in every panel
+    runArtists = [[] for _ in runs]
+    for ax, (moment, background) in zip(axes[0], panels):
+        _drawBackground(ax, background, lightsOnDic, (xmin, xmax, ymin, ymax), dark)
+        _drawNoInputBoundary(ax, lightsOnDic, sensorRange)
+        for artists, (_, trajData, _), label, color in zip(runArtists, runs, labels, colors):
+            line, = ax.plot(trajData[:,0], trajData[:,1], color=color, linewidth=0.8,
+                            alpha=0.85, zorder=2, label=label)
+            end, = ax.plot(*trajData[-1], marker='o', markersize=6, color=color,
+                           markeredgecolor='black', linestyle='none', zorder=5)
+            start, = ax.plot(*trajData[0], marker='o', markersize=4, color='green',
+                             linestyle='none', zorder=4)
+            artists += [line, end, start]
+        _drawSources(ax, lightsOnDic, asMarkers=True)
+        ax.set_aspect('equal')
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
+        ax.set_title(title + _momentTitle(moment), fontsize=10)
+        if finalDistances:
+            ax.set_xlabel("Final distance: mean %.3f   min %.3f   max %.3f    Time: %s"
+                          % (np.mean(finalDistances), min(finalDistances), max(finalDistances),
+                             _formatTicks(max(t for _, _, t in runs))), fontsize=9)
 
-    _drawSources(ax, lightsOnDic, asMarkers=True)
-    ax.set_aspect('equal')
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
-
-    common = _commonPrefix([os.path.splitext(os.path.basename(f))[0] for f in trajDataFilenames])
-    title = "%d trajectories" % len(runs) + (": %s" % common.rstrip('-_ ') if common else "")
-    ax.set_title(title, fontsize=10)
-    if output_path is None:
-        fig.canvas.manager.set_window_title(
-            title + "   [click legend entries to hide/show; a = all, n = none]")
-    if finalDistances:
-        ax.set_xlabel("Final distance: mean %.3f   min %.3f   max %.3f    Time: %s"
-                      % (np.mean(finalDistances), min(finalDistances), max(finalDistances),
-                         _formatTicks(max(t for _, _, t in runs))), fontsize=9)
-
-    handles, labels = ax.get_legend_handles_labels()
+    handles, labels = axes[0][0].get_legend_handles_labels()
     if interactive:
         from matplotlib.lines import Line2D
         handles = [Line2D([], [], color='black')] + handles
@@ -454,6 +492,175 @@ def _plotBounds(trajectories, lightsOnDic, boundaryRadius=0.0):
     ymin = min(y.min() for y in ys); ymax = max(y.max() for y in ys)
     margin = max(1.5, 0.05 * max(xmax - xmin, ymax - ymin))
     return xmin - margin, xmax + margin, ymin - margin, ymax + margin
+
+
+def fieldPanels(trajDataFilenames, headers, fieldTime='end'):
+    """What each panel's background shows, [(moment, background)]: one panel,
+    or two for fieldTime 'both' (start, end).  background is ('field',
+    (quality, grid)), the field the first file with a snapshot records at
+    that moment (readFieldSnapshots); ('light', None), the light schematic,
+    when no file has a snapshot and none has field laws; ('none', None) when
+    no file has a snapshot and some have field laws.  Warnings on stderr:
+    each file with no snapshot; a missing moment (its other is shown);
+    snapshots that differ between files; qualities not shaded."""
+    moments = ('start', 'end') if fieldTime == 'both' else (fieldTime,)
+    snapshots = [readFieldSnapshots(f, h) for f, h in zip(trajDataFilenames, headers)]
+    recorded = [i for i, snapshot in enumerate(snapshots) if snapshot]
+    for filename, header, snapshot in zip(trajDataFilenames, headers, snapshots):
+        if snapshot:
+            continue
+        if _hasFieldLaws(header):
+            _warn("%s: field laws but no recorded field: %s" % (
+                filename, "not shaded" if not recorded else "the chart shows another file's"))
+        else:
+            _warn("%s: no recorded field: the shading is a schematic of the light, "
+                  "1 / (1 + d^2), not a recorded field" % filename)
+    if not recorded:
+        anyLaws = any(_hasFieldLaws(header) for header in headers)
+        return [(None, ('none' if anyLaws else 'light', None))]
+    first = recorded[0]
+    panels = []
+    for moment in moments:
+        shown = moment if moment in snapshots[first] else next(iter(snapshots[first]))
+        if shown != moment:
+            _warn("%s: no field at the %s (a run not closed?): showing the %s"
+                  % (trajDataFilenames[first], moment, shown))
+        snapshot = snapshots[first][shown]
+        for i in recorded[1:]:
+            other = snapshots[i].get(shown)
+            if other is not None and not _sameSnapshot(snapshot, other):
+                _warn("%s: its field at the %s differs from %s's, which the chart shows"
+                      % (trajDataFilenames[i], shown, trajDataFilenames[first]))
+        quality = sorted(snapshot)[0]
+        if len(snapshot) > 1:
+            _warn("%s: fields of %s recorded; the chart shades %s"
+                  % (trajDataFilenames[first], ', '.join(sorted(snapshot)), quality))
+        panels.append((shown, ('field', (quality, snapshot[quality]))))
+    return panels
+
+
+def readFieldSnapshots(trajDataFilename, dataFileHeader=None):
+    """The fields a .traj file records (RobotTrajectoryWriter.writeFieldSnapshots),
+    {moment: {quality: grid}}, moment 'start' or 'end'; grid a dict of x0, y0,
+    spacing, n and values, an n x n array whose row j is at y0 + j spacing.
+    The start comes from the header, the end from the file's last lines, read
+    back from its end; a file closed before the run ended has no end.  {}
+    for a file with no field."""
+    if dataFileHeader is None:
+        dataFileHeader = readDataFileHeader(trajDataFilename)
+    snapshots = {}
+    start = _parseFieldSnapshots(dataFileHeader).get('start')
+    if start:
+        snapshots['start'] = start
+    # The end snapshot is about as long as the start one
+    startBytes = sum(len(line) for line in dataFileHeader
+                     if line.startswith('#\t') or line.startswith('# Field snapshot'))
+    with open(trajDataFilename, 'rb') as f:
+        f.seek(0, os.SEEK_END)
+        size = f.tell()
+        tailSize = min(size, 2 * startBytes + 65536)
+        f.seek(size - tailSize)
+        lines = f.read().decode('ascii', 'replace').split('\n')
+    if tailSize < size:
+        lines = lines[1:]           # cut in the middle
+    end = _parseFieldSnapshots(lines).get('end')
+    if end:
+        snapshots['end'] = end
+    return snapshots
+
+
+def _parseFieldSnapshots(lines):
+    "The complete snapshot blocks in lines, {moment: {quality: grid}} (readFieldSnapshots)"
+    found = {}
+    pattern = re.compile(r'# Field snapshot\t(\S+)\t(start|end)\tx0\t(\S+)\ty0\t(\S+)'
+                         r'\tspacing\t(\S+)\tn\t(\d+)\s*$')
+    i = 0
+    while i < len(lines):
+        m = pattern.match(lines[i])
+        i += 1
+        if not m:
+            continue
+        quality, moment = m.group(1), m.group(2)
+        x0, y0, spacing, n = float(m.group(3)), float(m.group(4)), float(m.group(5)), int(m.group(6))
+        rows = lines[i:i + n]
+        try:
+            values = np.array([[float(v) for v in row.rstrip('\n').split('\t')[1:]]
+                               for row in rows], dtype=float)
+        except ValueError:
+            continue
+        if values.shape != (n, n) or not all(row.startswith('#\t') for row in rows):
+            continue
+        i += n
+        found.setdefault(moment, {})[quality] = {'x0': x0, 'y0': y0, 'spacing': spacing,
+                                                 'n': n, 'values': values}
+    return found
+
+
+def _sameSnapshot(a, b):
+    "Do two snapshots ({quality: grid}) record the same field, to their 6 digits?"
+    if sorted(a) != sorted(b):
+        return False
+    for quality in a:
+        ga, gb = a[quality], b[quality]
+        if (ga['n'], ga['x0'], ga['y0'], ga['spacing']) != (gb['n'], gb['x0'], gb['y0'],
+                                                            gb['spacing']):
+            return False
+        if not np.allclose(ga['values'], gb['values'], rtol=1e-5, atol=0, equal_nan=True):
+            return False
+    return True
+
+
+def _hasFieldLaws(dataFileHeader):
+    "Does the header give its sources' field laws (\"# Field\" lines)?"
+    return any(re.match(r'#\s*Field\t', line) for line in dataFileHeader)
+
+
+def _warn(message):
+    print("Warning: " + message, file=sys.stderr)
+
+
+def _momentTitle(moment):
+    return "" if moment is None else "\nfield at the %s" % moment
+
+
+def _drawBackground(ax, background, lightsOnDic, bounds, dark):
+    "A panel's background (fieldPanels): the recorded field, the light schematic, or none"
+    kind, field = background
+    if kind == 'field':
+        _drawFieldShading(ax, *field)
+    elif kind == 'light':
+        _drawIrradianceBackground(ax, lightsOnDic, bounds, dark)
+
+
+def _drawFieldShading(ax, quality, grid):
+    """The recorded field as the background: grey on a log scale, from its
+    peak (white) down to FIELD_SHADING_FLOOR of it and below (the darkest
+    grey, which also fills the axes beyond the grid, where the field is
+    below that), with contour lines at FIELD_CONTOURS of the peak, labelled,
+    in the quality's colour."""
+    x0, y0, spacing, n = grid['x0'], grid['y0'], grid['spacing'], grid['n']
+    values = np.abs(grid['values'])
+    finite = values[np.isfinite(values)]
+    peak = finite.max() if finite.size else 0.0
+    if not peak > 0:
+        return
+    values = np.where(np.isfinite(values), values, peak)
+    floor = peak * FIELD_SHADING_FLOOR
+    level = np.clip(np.log10(np.maximum(values, floor) / floor) / np.log10(peak / floor), 0, 1)
+    dimmest = 0.45                  # the light schematic's range, [0.45, 1]
+    ax.set_facecolor((dimmest,) * 3)
+    half = spacing / 2
+    far = (n - 1) * spacing
+    ax.imshow(dimmest + (1 - dimmest) * level, extent=[x0 - half, x0 + far + half,
+                                                       y0 - half, y0 + far + half],
+              origin='lower', cmap='gray', vmin=0, vmax=1, aspect='equal', zorder=0,
+              interpolation='bilinear')
+    coordinates = np.arange(n) * spacing
+    X, Y = np.meshgrid(x0 + coordinates, y0 + coordinates)
+    contours = ax.contour(X, Y, values, levels=sorted(peak * f for f in FIELD_CONTOURS),
+                          colors=_QUALITY_COLORS.get(quality, 'black'), linewidths=0.7,
+                          zorder=1)
+    ax.clabel(contours, fmt=lambda value: '%g%%' % round(100 * value / peak, 6), fontsize=6)
 
 
 def _drawIrradianceBackground(ax, lightsOnDic, bounds, dark):

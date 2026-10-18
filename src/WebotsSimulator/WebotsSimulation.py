@@ -548,6 +548,7 @@ class WebotsSimulation(object):
             self.trajectoryWriter.battery = robot.batterySettings()
             self.trajectoryWriter.directionFreeEyes = robot.directionFreeEyes()
             self.trajectoryWriter.fields = self.fieldSettings()
+            self.trajectoryWriter.fieldSnapshot = self.fieldSnapshot
             self.trajectoryWriter.writeHeaderNow(robot.body)
         if self._supervisor.step(self._timeStepMs) == -1:
             raise RuntimeError('Webots has stopped')
@@ -564,6 +565,7 @@ class WebotsSimulation(object):
     halted = KheperaSimulation.halted
     vehicleSensorReads = KheperaSimulation.vehicleSensorReads
     fieldSettings = KheperaSimulation.fieldSettings
+    fieldSnapshot = KheperaSimulation.fieldSnapshot
 
     # --- records ---------------------------------------------------------------------
 
