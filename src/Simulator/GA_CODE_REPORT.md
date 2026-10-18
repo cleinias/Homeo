@@ -462,29 +462,16 @@ The alternatives are not used, for the following reasons:
 
 ---
 
-## 10. Known Limitations and Design Notes
+## 10. Design Notes
 
-1. **Genes for evolved units only:** The genome contains only genes for
-   evolved units (40 genes, not 60). Each experiment function declares a
-   `noEvolvedUnits` attribute; sensor-only units are excluded.
+1. **Genes for evolved units only:** The genome contains genes only for the
+   evolved units. Each experiment function declares a `noEvolvedUnits`
+   attribute; sensor-only units are excluded.
 
 2. **Mutation sigma:** Sigma is 0.2, keeping most mutations within the
    [0, 1] gene range for neighbourhood exploration.
 
-3. **Parallel evaluation:** `multiprocessing.Pool` with configurable
-   `nWorkers`. Numba JIT compilation accelerates headless simulation
-   arithmetic (section 8).
-
-4. **Elitism:** The previous generation's best genome is re-inserted into
-   the offspring (replacing the worst) when it would otherwise be lost (k=1
-   elitism); under noise everyone, the elite included, is evaluated afresh
-   each generation (section 4.1).
-
-5. **Clone fitness:** Clones start without a fitness and are evaluated in
-   generation 0; the source's logged fitness is recorded as
-   `cloneSourceFitness` (section 6).
-
-6. **Fixed topology:** The GA evolves only unit parameters and connection
+3. **Fixed topology:** The GA evolves only unit parameters and connection
    weights. The network topology (which units exist, which connections are
    active) is fixed by the experiment function. This is a fundamental
    design choice — changing it would require a substantially different
