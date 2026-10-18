@@ -66,9 +66,9 @@ def simulations_data_dir():
         return research
 
     # 4. Standalone checkout (e.g. $SCRATCH on the cluster): keep data in the repo.
-    legacy = os.path.join(_homeo, "SimulationsData")
-    os.makedirs(legacy, exist_ok=True)
-    return legacy
+    standalone = os.path.join(_homeo, "SimulationsData")
+    os.makedirs(standalone, exist_ok=True)
+    return standalone
 
 
 def dated_data_dir():

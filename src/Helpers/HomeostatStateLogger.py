@@ -5,8 +5,8 @@ phototaxis experiments.
 Produces a .statelog file: tab-separated values with a #-prefixed
 metadata header.  Constant parameters (mass, viscosity, tau_a, etc.)
 are written once in the header; per-tick columns capture deviation,
-output, velocity, torque, stress, signed connection weights, OU sigma,
-sensor readings, motor speeds, and robot position.
+output, velocity, torque, stress, signed connection weights, the continuous
+uniselector's sigma, sensor readings, motor speeds, and robot position.
 
 In headless mode the JIT arrays (_jit_weights, _jit_switches) are the
 authoritative source of connection weights — the Connection objects may
@@ -68,7 +68,7 @@ class HomeostatStateLogger:
         # Build connection column info and JIT index mapping
         self._conn_keys = []       # list of "w_{unit}<-{from}" strings
         self._conn_sources = []    # list of ('auto', unit, conn, jit_idx) tuples
-        self._has_ou = []          # per-unit: True if unit has OU uniselector
+        self._has_ou = []          # per-unit: True if unit has a continuous uniselector
 
         from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
 
@@ -103,7 +103,7 @@ class HomeostatStateLogger:
                      '%s_stress' % name]
         cols += self._conn_keys
         # Cumulative uniselector firings, for the units that have one active.
-        # Discrete (Ashby) uniselectors fire; the continuous OU one never does,
+        # Discrete (Ashby) uniselectors fire; the continuous one never does,
         # and its column simply stays 0, which is itself the thing worth seeing.
         self._has_unisel = [bool(getattr(u, 'uniselectorActive', False))
                             for u in self._units]
@@ -204,7 +204,7 @@ class HomeostatStateLogger:
         # are newest -- the rule of HomeoUnit.flushJitArrays.  The JIT arrays
         # (magnitudes in jit_weights, signs in jit_switches) are, once they
         # exist (from the first tick, so this resolves per sample): the
-        # headless OU uniselector evolves only them.  But a connection changed
+        # headless continuous uniselector evolves only them.  But a connection changed
         # through its setters since the arrays were built (_jitStale: a
         # discrete uniselector's firing) is newer; the arrays catch up only at
         # the next tick.  Read from the arrays, a firing's weights would come
@@ -222,11 +222,10 @@ class HomeostatStateLogger:
         for i, unit in enumerate(self._units):
             if self._has_unisel[i]:
                 # No getattr default: a unit whose class forgets to keep this
-                # count should fail loudly, not log a plausible 0.  That default
-                # hid exactly such a miss in HomeoUnitNewtonian for a whole run.
+                # count should fail loudly, not log a plausible 0.
                 vals.append('%d' % unit.uniselectorActivationCount)
 
-        # OU sigma columns
+        # The continuous uniselectors' sigma columns
         for i, unit in enumerate(self._units):
             if self._has_ou[i]:
                 stress = unit.stressLevel()

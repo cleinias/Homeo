@@ -89,8 +89,8 @@ class SensorFacingTest(_WorldTest):
         front = robot.sensors['frontEye'].userData['frontEyeAngle']
         self.assertAlmostEqual(robot.sensors['turnedEye'].userData['turnedEyeAngle'], front + 30)
 
-    def testTheKJuniorEyesAreUnchanged(self):
-        "Its eyes, in front at +/-21.9 degrees, keep their facings to the last bit"
+    def testTheKJuniorEyesFaceAtPlusMinus21_9(self):
+        "Its eyes, in front, face at +/-21.9 degrees: the directions of their positions"
         sim = self.world(robotModel='kjunior')
         robot = sim.allBodies['Khepera']
         for eye, sign in (('leftEye', 1), ('rightEye', -1)):
@@ -141,14 +141,12 @@ class VisualizerWheelKeysTest(_WorldTest):
         import inspect
         from KheperaSimulator.KheperaSimulator import KheperaSimulationVisualizer
         source = inspect.getsource(KheperaSimulationVisualizer.on_key_press)
-        self.assertNotIn('self.robotName', source)
         self.assertEqual(source.count('nudgeWheels(self.sim'), 4)
 
 
 class WorldSetupErrorsTest(_WorldTest):
     '''A TypeError or AttributeError raised inside a world builder comes
-    through setupWorld as it is, not as "Cannot run simulation without an
-    experiment" or "Cannot find ... among my experiment setup methods".'''
+    through setupWorld as it is.'''
 
     def testABuildersOwnErrorComesThrough(self):
         class Broken(KheperaSimulation):

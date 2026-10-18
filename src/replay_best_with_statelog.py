@@ -165,7 +165,7 @@ def _build_homeostat(genome, experiment_func, seed, backend, data_dir, use_ashby
         backendSimulator=backend,
         dataDir=data_dir, **extra)
 
-    # (optional) Swap OU uniselectors for Ashby discrete ones
+    # (optional) Swap continuous uniselectors for Ashby discrete ones
     if use_ashby:
         _swap_to_ashby(hom)
 
@@ -180,7 +180,7 @@ class _Genome(list):
 
 
 def _swap_to_ashby(hom):
-    "Replace OU continuous uniselectors with Ashby discrete ones."
+    "Replace continuous uniselectors with Ashby discrete ones."
     from Core.HomeoUniselectorAshby import HomeoUniselectorAshby
     from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
     for u in hom.homeoUnits:
@@ -353,7 +353,7 @@ def main():
                         help='For an evaluation of k runs: the run whose .statelog is '
                              'written (1..k, default 1)')
     parser.add_argument('--ashby', action='store_true',
-                        help='Replace OU continuous uniselectors with Ashby discrete ones')
+                        help='Replace continuous uniselectors with Ashby discrete ones')
     parser.add_argument('--visualize', action='store_true',
                         help='Run with pyglet visualizer instead of headless')
     args = parser.parse_args()
@@ -373,8 +373,8 @@ def main():
     # The robot the run evaluated with: the GA's
     from Simulator.HomeoGenAlg import GA_ROBOT
     if meta.get('robot') != GA_ROBOT:
-        sys.exit("Cannot replay: the logbook's robot is %r, the GA's %r (a logbook that "
-                 "records no robot is replayed by the Homeo commit that wrote it)"
+        sys.exit("Cannot replay: the logbook's robot is %r, the GA's %r (replay a logbook "
+                 "that records no robot with the code that wrote it)"
                  % (meta.get('robot'), GA_ROBOT))
     print("  Robot: %s   Homeo: %s" % (meta['robot'], meta.get('homeo', 'unknown')))
 

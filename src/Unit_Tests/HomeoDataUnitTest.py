@@ -114,8 +114,6 @@ class HomeoDataUnitTest(unittest.TestCase):
     def testPrintEssentialVariableOnString(self):
         """
         Test that the ***essential*** data the HomeoDataUnit prints out correctly represent its data
-        TODO
-        Check HomeoDataUnit>>printEssentialVariablesOn: for ideas on how to carry out the test
         """
         self.unit
         unit2 = HomeoUnit()
@@ -195,5 +193,4 @@ class HomeoDataUnitTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

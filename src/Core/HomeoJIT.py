@@ -122,7 +122,7 @@ def _jit_spring_step(p, q, f, v0, t):
     the damped frequency), critically damped, overdamped (two exponentials),
     q < 0 (cosh and sinh), and q = 0 (no equilibrium f/q; the drag-only
     formula).  The units cross those boundaries all the time -- a uniselector
-    or OU weight passes through 0, so q -> 0 and f/q blows up; near critical
+    weight, of either kind, passes through 0, so q -> 0 and f/q blows up; near critical
     damping the damped frequency -> 0; in Ashby's stiff regime one root is
     the difference of two nearly equal numbers -- and each boundary needs its
     own special handling.  The matrix exponential below is the same solution
@@ -216,8 +216,8 @@ def _jit_needle_position_newtonian(torque, viscosity, current_velocity, mass, cr
     self-connection, which acts on the needle as a spring (or, with positive
     feedback, a negative spring); the other connections' torque is held over
     the step.  Being exact, the step adds nothing of its own: no growth the
-    equation does not have (an explicit step blew up beyond viscosity * dt /
-    mass = 2, and made an undamped spring's swing grow), no damping it does
+    equation does not have (an explicit step blows up beyond viscosity * dt /
+    mass = 2, and makes an undamped spring's swing grow), no damping it does
     not have.
 
     Without stiffness the solution is, with b = viscosity * dt_fast / mass,

@@ -54,7 +54,7 @@ GA_ROBOT = 'epuck2'
 NOISE_SCHEMES = ('individual', 'genome', 'generation')
 """How evaluations get their noise -- a research choice, so it is a GA parameter:
    'individual'  each evaluation its own sequence, keyed by the individual's ID:
-                 independent noise per evaluation, as before seeding existed;
+                 independent noise per evaluation;
    'genome'      keyed by the genome's exact values: identical genomes face the
                  same noise and score the same;
    'generation'  keyed by the generation: everyone in a generation faces the
@@ -597,8 +597,8 @@ class HomeoGASimulation(object):
            Assumes 'genome' is a dictionary with keys indivId, genome and,
            optionally, fitness.  The clone starts without a fitness:
            generation 0 evaluates it, like every individual.  The logged
-           fitness came from another run's evaluation (often of another code
-           version), so it is recorded in the logbook's summary as
+           fitness came from another run's evaluation (possibly of other
+           code), so it is recorded in the logbook's summary as
            cloneSourceFitness, not given to the clones."""
         ind = indivClass(genome['genome'])
         ind.ID = genome["indivId"]

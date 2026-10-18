@@ -129,8 +129,6 @@ class HomeoSimulationControllerGui(QDialog):
         self._homeostat_gui = self.setupHomeostatGuiDialog()
         self._homeostat_gui.move(50,50)
         self._homeostat_gui.show()
-#        sys.stderr.write(self.geometry())
-#        sys.stderr.write(self._homeostat_gui.geometry())
         
         "prepare to run the simulation itself in a thread"
         self._simulThread = SimulationThread()
@@ -173,7 +171,6 @@ class HomeoSimulationControllerGui(QDialog):
         self.discardDataButton.setCheckable(True)
         self.discardDataButton.setChecked(not self._simulation.homeostat.collectsData)
         self.resetChartsButton = QPushButton("Clear charts")
-        #self.graphTrajectoryButton = QPushButton("Chart trajectory")
         
         'Spinboxes and lineEdits'
         self.maxRunSpinBox = QSpinBox()
@@ -212,7 +209,6 @@ class HomeoSimulationControllerGui(QDialog):
         'Row 4'
         simulationPaneLayout.addWidget(self.currentTimeLabel,4,0)
         simulationPaneLayout.addWidget(self.currentTimeSpinBox,4,1)
-        #simulationPaneLayout.addWidget(self.graphTrajectoryButton,4,2)
         
         'Row 5'
         simulationPaneLayout.addWidget(self.slowingFactorLabel, 5,0)
@@ -253,7 +249,6 @@ class HomeoSimulationControllerGui(QDialog):
         self.showUniselActionButton.clicked.connect(self.toggleShowUniselAction)
         self.discardDataButton.clicked.connect(self.toggleDiscardData)
         self.resetChartsButton.clicked.connect(self.resetCharts)
-        #self.graphTrajectoryButton.clicked.connect(self.graphTrajectory)
 
 
         emitter(self._simulation.homeostat).homeostatTimeChanged.connect(self.currentTimeSpinBox.setValue)
@@ -275,7 +270,6 @@ class HomeoSimulationControllerGui(QDialog):
         self.saveDataButton = QPushButton("Save all data")
         self.saveGraphDataButton = QPushButton("Save plot data")
         self.graphButton = QPushButton("Graph")
-#        self.dataWindow = QLineEdit()
 
         "checkBoxes"
         self.liveDataOnCheckbox = QCheckBox("Charts on")
@@ -317,7 +311,6 @@ class HomeoSimulationControllerGui(QDialog):
         'Row 8'
         homeostatPaneLayout.addWidget(self.liveDataOnCheckbox, 8,0,1,1)
         homeostatPaneLayout.addWidget(self.liveDataWindowCheckBox, 8, 1,1,1)
-#        homeostatPaneLayout.addWidget(self.dataWindow, 8,2,1,1)
         
         self.vertSeparator = QFrame()
         self.vertSeparator.setFrameShape(QFrame.VLine)
@@ -344,25 +337,6 @@ class HomeoSimulationControllerGui(QDialog):
         self.liveDataOnCheckbox.setChecked(True)
         self.liveDataWindowCheckBox.stateChanged.connect(self.toggleLiveDataWindow)
         
-        
-        #=======================================================================
-        # Output and Err panel
-        #=======================================================================
-        # Uncomment the following to add a stdout/stderr text widget
-        # Need to work on class Outlog first
-        #=======================================================================
-        # self.outAndErr = QTextEdit()
-        # sys.stdout = OutLog(self.outAndErr, sys.stdout)
-        # sys.stderr = OutLog(self.outAndErr, sys.stderr, QColor(255,0,0) ) 
-        # completeLayout = QVBoxLayout()
-        # completeLayout.addLayout(layout)
-        # completeLayout.addWidget(self.outAndErr)
-        # self.setLayout(completeLayout)
-        #=======================================================================
-        #=======================================================================
-
-        
-                
         #===============================================================================
         # Homeostat control pane and Simulation control pane  layout        
         #===============================================================================
@@ -406,8 +380,8 @@ class HomeoSimulationControllerGui(QDialog):
             colorFaded = [self.minusXifPlus(170,x)  for x in color]
             self.pgChartsAndItems[unit] = []
             # The plots are not named: pyqtgraph connects a named view's
-            # destroyed signal to a Python lambda, which crashed the
-            # interpreter when garbage collection freed a closed window.
+            # destroyed signal to a Python lambda, which crashes the
+            # interpreter when garbage collection frees a closed window.
             plotItemCritDev = plotsWindow.addPlot(row=dataPlotRow, col=0, rowspan=1, colspan=4)
             plotItemCritDev.addLine(y=0, pen ={'color' : '#E6E6AF'})  #pale muted yellow color in hex RGB value
             plotItemCritDev.setRange(rect=None, xRange=None, yRange=(unit.minDeviation, unit.maxDeviation),
@@ -416,8 +390,6 @@ class HomeoSimulationControllerGui(QDialog):
             plotDataItemCritDev = plotItemCritDev.plot(self._plotData[unit], pen = color)
             self.pgChartsAndItems[unit].append(plotItemCritDev)
             self.pgChartsAndItems[unit].append(plotDataItemCritDev)
-#            plotItem.setTitle(unit.name)
-#            plotItem.setAutoPan(x=1000)
             "adding uniselectors"
             plotItemUnisel = plotsWindow.addPlot(row = uniselPlotRow, col=0, rowspan=1, colspan=4)
             plotItemUnisel.setRange(rect=None, xRange=None, yRange=(0, 1),
@@ -433,7 +405,6 @@ class HomeoSimulationControllerGui(QDialog):
             
         plotLayout.addWidget(plotsWindow)
         self._simulation.liveDataCritDevChanged.connect(self.updateCritDevChart)
-#        self.connect(self._simulation, SIGNAL("liveDataUniselChanged"), self.updateCritDevChart)
         return plotLayout
  
     def updateCritDevChart(self, unitRef):
@@ -490,8 +461,6 @@ class HomeoSimulationControllerGui(QDialog):
         
         'Set HomeoGUI to standard size'
         homeoGUI.setMinimumSize(homeoGuiSize[0],homeoGuiSize[1])
-#        homeoGUI.setMaximumSize(homeoGuiSize[0],homeoGuiSize[1])
-#        homeoGUI.setSizePolicy(fixedSizePolicy)
         
         "Dictionary to hold all the widgets for a single units prior to layout"
         homeostatGuiUnitWidgets = {} 
@@ -531,10 +500,6 @@ class HomeoSimulationControllerGui(QDialog):
                 if isinstance(unitAttribute, str):
                     widget.setText(unitAttribute)
                 else:
-#                    floatValidator = QDoubleValidator()
-#                    if lineEdit[3]:                     # Empty lists and tuple are false in Python (Yak!) 
-#                        floatValidator.setRange(lineEdit[3][0], lineEdit[3][1])
-#                    widget.setValidator(floatValidator)
                     widget.setText(str(round(unitAttribute, lineEdit[1])))
                 widget.textModified.connect(slot)                
                 'Update signals'
@@ -563,8 +528,8 @@ class HomeoSimulationControllerGui(QDialog):
             for uniselectType in uniselectList:
                 widget.addItem(uniselectType.__name__.split("HomeoUniselector").pop())
             widget.setEditable(False)
-            # Show the unit's own type, then connect once (connecting inside the
-            # loop ran changeUniselectorType once per uniselector class)
+            # Show the unit's own type, then connect once, outside the loop, so
+            # that a change of type calls changeUniselectorType once
             idx = widget.findText(type(unit.uniselector).__name__.split("HomeoUniselector").pop())
             if idx >= 0:
                 widget.setCurrentIndex(idx)
@@ -718,9 +683,6 @@ class HomeoSimulationControllerGui(QDialog):
                     attribute = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], attrName)
                     values = list(attrData[0].keys())
                     slot = getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit], attrData[2])
-                    # print "The slot of the incoming connection for unit %s coming from connection to unit %s comboboxes is set to %s" % (self._simulation.homeostat.homeoUnits[incomingUnit].name,
-                                                                                                                                         # self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit].incomingUnit.name,
-                                                                                                                                         # slot.__name__)
                     index = list(attrData[0].values()).index(getattr(self._simulation.homeostat.homeoUnits[incomingUnit].inputConnections[outgoingUnit],attrName))
                     widget.addItems(values)
                     widget.setEditable(False)
@@ -749,8 +711,6 @@ class HomeoSimulationControllerGui(QDialog):
             
             w = QWidget(self)
             unitAllConnectionsLayout = QGridLayout(w)      # The Layout with all the connections
-#            unitAllConnectionsLayout.setVerticalSpacing(1)
-#            unitAllConnectionsLayout.setHorizontalSpacing(1)
             unitConnectionsScrollA = QScrollArea()         # Scroll Area for unit's connections
             unitConnectionsScrollA.setMinimumSize(unitConnectionsSize[0],unitConnectionsSize[1])
             unitConnectionsScrollA.setMaximumSize(unitConnectionsSize[0],unitConnectionsSize[1])
@@ -1197,12 +1157,9 @@ class HomeoSimulationControllerGui(QDialog):
     def graphData(self):
         "Chart essential data (crit dev and uniselector ticks) with matplotlib"
 
-#        dataArray = np.genfromtxt(StringIO(self._simulation.essentialSimulationData()), delimiter = ',', skiprows = 3,  names = True)
         plt.figure()
         for unit in self._simulation.homeostat.homeoUnits:
-#            dataArray = np.genfromtxt(StringIO(self._simulation.liveData[unit]))
             plt.plot(self._simulation.liveData[unit], label = unit.name)
-#            uniselArray = np.genfromtxt(StringIO(self._simulation.liveData[unit.uniselector]))
             plt.plot(self._simulation.liveData[self._simulation.uniselectorKey(unit)], label = (unit.name + '-un'))
         plt.legend(loc=3, fontsize = 8)
         plt.ylabel('Critical Deviation')
@@ -1211,29 +1168,6 @@ class HomeoSimulationControllerGui(QDialog):
         plt.grid(visible=True, which='both', color='0.65',linestyle='-')
         plt.axis(ymin=self._simulation.homeostat.homeoUnits[0].minDeviation, ymax= self._simulation.homeostat.homeoUnits[0].maxDeviation)
         plt.show()
-
-    #def graphTrajectory(self):
-    #    "Chart the vehicle's trajectory with matplotlib"
-    #
-    #    '''Assume that the current directory is under a "src" directory
-    #    and that a data folder called 'SimulationsData will exist
-    #    at the same level as "src"
-    #    Assume also that the trajectory data filename will start with
-    #    the string filenamePattern and will include date and time info in the filename
-    #    so they properly sort in time order
-    #    Get the most recent file fulfilling the criteria'''
-    #
-    #    addedPath = 'SimulationsData'
-    #    datafilePath = os.path.join(os.getcwd().split('src/')[0],addedPath)
-    #    trajFiles = [f for f in os.listdir(datafilePath) if f.endswith('.traj')]
-    #    if not trajFiles:
-    #        QMessageBox.warning(self, 'No data file', 'There are no trajectory data to visualize', QMessageBox.Cancel)
-    #        return
-    #
-    #    "graph the most recent .traj file"
-    #    graphTrajectory(os.path.join(datafilePath, max(trajFiles)))
-
-
 
     def clearLiveCharts(self):
         oldKeys = list(self.pgChartsAndItems.keys())

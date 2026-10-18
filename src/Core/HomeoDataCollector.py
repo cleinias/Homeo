@@ -85,7 +85,6 @@ class HomeoDataCollector(object):
         '''Save essential data on a file in text format.
         Will erase aFilename if it exists already'''
         
-#        dataToSave = self.printEssentialDataOnAString('')
         dataToSave = self.printPlottingDataForROnAString('')
         fileOut = open(aFilename, 'w')
         fileOut.write(dataToSave)

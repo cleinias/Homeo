@@ -36,7 +36,7 @@ class HomeoUniselectorTest(unittest.TestCase):
     def testIntervalBounds(self):
         """
         A HomeoUniselector's weights default to the interval [0, 1], and its
-        bounds can be set (Ashby's uniselector keeps them at 0 and 1: see
+        bounds can be set (Ashby's uniselector keeps them at -1 and 1: see
         HomeoUniselectorAshbyTest.testIntervalBounds)
         """
         self.assertEqual((self.uniselector.lowerBound, self.uniselector.upperBound), (0, 1))

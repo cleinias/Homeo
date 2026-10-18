@@ -99,9 +99,9 @@ class AggregateArrayTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as rundir:
             write_batch_csv(os.path.join(rundir, 'SimsData-2026-10-01'), 7, seed=107)
             write_batch_csv(os.path.join(rundir, 'SimsData-2026-10-02'), 12, seed=112)
-            legacy = os.path.join(rundir, 'task_3', 'SimsData-2026-09-30')
-            os.makedirs(legacy)
-            with open(os.path.join(legacy, 'batch_direct_continuous_light_2026-09-30-10-00-07.csv'), 'w') as f:
+            taskDir = os.path.join(rundir, 'task_3', 'SimsData-2026-09-30')
+            os.makedirs(taskDir)
+            with open(os.path.join(taskDir, 'batch_direct_continuous_light_2026-09-30-10-00-07.csv'), 'w') as f:
                 f.write(CSV_HEADER + '103,103,False,,2.0,1.5,500,6000,10.0\n')
             out = os.path.join(rundir, 'combined.csv')
             r = self.aggregate(rundir, '-o', out)

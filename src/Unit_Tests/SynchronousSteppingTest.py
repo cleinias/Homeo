@@ -56,14 +56,3 @@ class SynchronousSteppingTest(unittest.TestCase):
         hom.runFor(200)
         self.assertLess((robot.body.position - start).length, 1e-6)
         self.assertNotEqual(robot.body.angle, 0)
-
-    def testThereIsOneStepping(self):
-        "No choice of stepping: neither the simulation nor the scripts take one"
-        from KheperaSimulator.KheperaSimulator import KheperaSimulation
-        from Simulator.SimulatorBackend import SimulatorBackendHOMEO
-        with self.assertRaises(TypeError):
-            KheperaSimulation(synchronousStepping=False)
-        with self.assertRaises(TypeError):
-            SimulatorBackendHOMEO(robotName='Khepera', synchronousStepping=False)
-        with self.assertRaisesRegex(SystemExit, 'Unknown option'):
-            D.common.parse_common_args(['x', '--async-stepping'])

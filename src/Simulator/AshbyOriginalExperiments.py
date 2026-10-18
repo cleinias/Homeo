@@ -137,7 +137,7 @@ class AshbyStateLogger:
     of tick t: uniselector_fired is 1 if the unit's discrete uniselector fired
     in that update, so it shows in the same row as the deviation that
     triggered it (the update checks the deviation it has just computed) and
-    the weights it drew.  A continuous (OU)
+    the weights it drew.  A continuous
     uniselector never fires: 0.
     '''
 
@@ -440,8 +440,7 @@ def setup_exp1_basic_ultrastability(seed=None, unused_slots=False):
     compensating one.  With self-feedback on both units most reversals are
     simply absorbed; with it on unit 1 only, unit 1 settles inside its limits
     while 2 is pinned and nothing adapts.  Strongly damped units (Ashby's
-    m -> 0, DfB 19/11).  Over 30 seeds the protocol of
-    run_ashby_original_experiments.py gives Ashby's full sequence in 29.
+    m -> 0, DfB 19/11).
 
     unused_slots: add inactive units up to four (for the GUI).
 
@@ -517,8 +516,7 @@ def setup_exp2_self_reorganization(seed=None):
     Fig. 8/5/1), after Sperry's crossing of nerves to antagonist muscles.
 
     The units are named by Ashby's numbers only.  Ashby does not say which
-    of them, if any, stands for an environment, and reading them as sensor,
-    motor and environment led this setup astray before.
+    of them, if any, stands for an environment, so none is treated as one.
 
     Unit 1: no uniselector.
     Unit 2: has the uniselector; no self-connection.
@@ -532,9 +530,8 @@ def setup_exp2_self_reorganization(seed=None):
     the ring into a vicious circle unit 2 is driven to its limit and its
     uniselector acts (with self-feedback it settles inside its limits while
     1 and 3 are pinned, and nothing can adapt).  1->2 starts positive: in
-    Ashby's starting state "2 followed 1".  Over 30 seeds this gives Ashby's
-    sequence (stable, destabilised by R, restabilised with 1->2 reversed by
-    the uniselector) in 28.
+    Ashby's starting state "2 followed 1".  Ashby's sequence: stable,
+    destabilised by R, restabilised with 1->2 reversed by the uniselector.
 
     A uniselector re-draws its own unit's input connections, so the
     uniselector that controls 1->2 is unit 2's ("the action 1 to 2 was
@@ -646,12 +643,11 @@ def setup_exp3_training(seed=None, unused_slots=False):
     makes unit 2 critical only if 1->2 > 0.9 p2: a smaller positive 1->2 is
     a trap, stable and wrong, which no punishment can change.  1->2 starts
     in the forbidden band where the start is stable and S1's punishment
-    acts, as in Ashby's run.  Strongly damped units.  Over 30 seeds the
-    trainer produces Ashby's result in 14 (punished, then a change of 1->2,
-    then the desired response without punishment), while the same tests
-    without the trainer end in the desired response in 1.  7 runs end in
-    the trap (each re-draw of 1->2 can land in it): a property of the linear
-    Homeostat with this wiring rather than of the code.
+    acts, as in Ashby's run.  Strongly damped units.  Ashby's result:
+    punished, then a change of 1->2, then the desired response without
+    punishment.  A run can end in the trap, since each re-draw of 1->2 can
+    land in it: a property of the linear Homeostat with this wiring rather
+    than of the code.
 
     unused_slots: add an inactive unit 4 (for the GUI).
 
@@ -822,12 +818,12 @@ def setup_exp4_alternating_environments(seed=None, unused_slots=False):
     at least 0.9 |H|: with less, after a reversal unit 2 can be pinned at its
     limit while unit 1 settles inside its own, and nothing adapts.  Strongly
     damped units.  Ashby's start: 2->1 is stable for the first position of H
-    and unstable for the second, as in Fig. 8/10/1.  With reversals every
-    8000 ticks (a runaway can take thousands of ticks to reach the critical
+    and unstable for the second, as in Fig. 8/10/1.  H reverses every 8000
+    ticks (a runaway can take thousands of ticks to reach the critical
     level, and H must be "sustained long enough so that the change does not
-    interrupt the process of trial and error") Ashby's sequence appears in
-    20 of 30 seeds (stable before the first reversal, changes after it, a
-    field stable for both H kept through at least three reversals).
+    interrupt the process of trial and error").  Ashby's sequence: stable
+    before the first reversal, changes after it, a field stable for both H
+    kept through at least three reversals.
 
     unused_slots: add inactive units up to four (for the GUI).
 
@@ -931,10 +927,10 @@ def setup_exp5_constraint(seed=None, unused_slots=False):
     field is stable and the field with the fibre is not (m -> 0 limit, with
     a margin so that J's runaway reaches the critical level in time),
     Ashby's "at first stable" and "in this case ... unstable".  Strongly
-    damped units of equal mass (the fibre averages them).  Over 30 seeds
-    the full sequence (stable, J destabilises, re-adapted with the fibre,
-    R destabilises) appears in 23; in 7 more the field found with the fibre
-    is stable without it as well.
+    damped units of equal mass (the fibre averages them).  The full
+    sequence: stable, J destabilises, re-adapted with the fibre, R
+    destabilises.  The field found with the fibre can also be stable
+    without it, and then R shows nothing.
 
     unused_slots: add an inactive unit 4 (for the GUI).
 
@@ -1039,10 +1035,10 @@ def setup_exp6_habituation(seed=None, unused_slots=False):
     traces return to rest after each D, and with it about half the
     uniselector's values make D drive 2 critical (with stronger
     self-feedback D almost never does, and there is nothing to habituate).
-    Strongly damped units.  Over 30 seeds, with ten D's of 8 every 4000
-    ticks (long enough "for the system to come to equilibrium before the
-    next application", 14/3), Ashby's result appears in 20; in 8 more the
-    first value of 1->2 already gives a small response.
+    Strongly damped units.  Ten D's of 8, every 4000 ticks (long enough
+    "for the system to come to equilibrium before the next application",
+    14/3).  The first value of 1->2 can already give a small response, and
+    then there is nothing to habituate.
 
     For Fig. 14/6/2 (1 <-> 2, both on uniselectors) see
     setup_exp6b_habituation_ultrastable.
@@ -1093,11 +1089,10 @@ def setup_exp6b_habituation_ultrastable(seed=None):
     their limits, is that of an unstable field at rest, as a real magnet
     held by pivot friction can be.  A noisy simulation cannot rest in an
     unstable field: its ultrastable search finds a stable one before any
-    D, which a modest D rarely drives critical (6 in 30 seeds show Ashby's
-    result).  So here the units have no noise and start at rest at the
-    centre: then 18 in 30 do, with D = 6 every 2000 ticks.  Weak negative
-    self-feedback on both (0.05-0.15; with none, a 2-unit field is never
-    asymptotically stable).  Strongly damped units.
+    D, which a modest D rarely drives critical.  So here the units have no
+    noise and start at rest at the centre, with D = 6 every 2000 ticks.
+    Weak negative self-feedback on both (0.05-0.15; with none, a 2-unit
+    field is never asymptotically stable).  Strongly damped units.
 
     Returns: (homeostat, seed, metadata)
     '''
@@ -1243,9 +1238,9 @@ def setup_exp7_multistable(seed=None, unused_slots=False):
     have 0.5-1 (they must return to the bar).  Strongly damped units; 2 and
     3 start at or below the bar.  The search stops only at values stable for
     both pairs, which in the m -> 0 limit means 2->1 > 0 and 3->1 < 0: a
-    quarter of the uniselector's draws.  Over 30 seeds, with test
-    displacements of unit 1 after 20000 ticks, Ashby's result appears in 22;
-    in 6 more the first draw is already stable for both pairs.
+    quarter of the uniselector's draws.  Unit 1 is displaced to test the
+    field after 20000 ticks.  The first draw can already be stable for
+    both pairs.
 
     unused_slots: add an inactive unit 4 (for the GUI).
 

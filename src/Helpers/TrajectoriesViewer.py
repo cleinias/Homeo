@@ -17,8 +17,8 @@ import os
 from glob import glob
 from sys import stderr
 import dill
-sys.modules['dill.dill'] = dill._dill  # logbooks pickled with dill.dill, which dill 0.4 renamed dill._dill
-# Logbooks pickled under Python 2 refer to types like ListType, DictType, etc.
+sys.modules['dill.dill'] = dill._dill  # logbooks can refer to dill.dill, dill._dill's other name
+# Logbooks can refer to Python 2's type names (ListType, DictType, ...).
 # Register them so dill can deserialize those references.
 for _name, _type in [('ListType', list), ('DictType', dict), ('TupleType', tuple),
                      ('StringType', str), ('IntType', int), ('FloatType', float),
@@ -90,7 +90,6 @@ class TrajectoryViewer(QWidget):
         self.genInfoLabel = QLabel("General Info        ")
         self.genInfoTextW.setLineWrapMode(0)
         self.genInfoTextW.setReadOnly(True)
-        #self.quitPB = QPushButton("Quit")
         self.hofWidget = QTableWidget()
         
         'build layouts'
@@ -105,9 +104,7 @@ class TrajectoryViewer(QWidget):
 
 
         self.buttonsLayout.addWidget(self.changeDirPB)
-        #self.buttonsLayout.addWidget(self.VisualizePB)        
         self.buttonsLayout.addStretch()
-        #self.buttonsLayout.addWidget(self.refreshPB)
         self.buttonsLayout.addStretch()
         self.buttonsLayout.addWidget(self.allIndivsPB)
         self.buttonsLayout.addWidget(self.hallOfFamePB)
@@ -140,12 +137,10 @@ class TrajectoryViewer(QWidget):
         self.TrajList.itemDoubleClicked.connect(self.onTrajectoryDoubleClicked)
         self.changeDirPB.clicked.connect(self.getNewDir)
         self.avgFitnessPB.clicked.connect(self.visualizeAvgFitnessGraph)
-        #self.refreshPB.clicked.connect(self._populate)
         self.hallOfFamePB.clicked.connect(self.visualizeHOF)
         self.allIndivsPB.clicked.connect(self.visualizeFullIndsData)
         self.genealogyPB.clicked.connect(self.visualizeGen)
         self.hofWidget.cellPressed.connect(self.onCellPressed)
-        #self.quitPB.clicked.connect(self.appRef.exit)
         self.refreshTimer.timeout.connect(self._populate)
         self.refreshTimer.timeout.connect(self.refreshLogbook)
         self.refreshTimer.timeout.connect(self.visualizeGenInfo)

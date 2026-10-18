@@ -9,7 +9,7 @@ import unittest
 import Simulator.HomeoExperiments as HomeoExperiments
 
 
-class LegacySetupsTwiceTest(unittest.TestCase):
+class AgentEnvironmentSetupsTwiceTest(unittest.TestCase):
     '''The two agent-environment setups give their units fixed names: a
     second call while the first homeostat is alive (the GUI's New) builds
     again, without "The name ... exists already".'''
@@ -26,7 +26,7 @@ class LegacySetupsTwiceTest(unittest.TestCase):
             self.assertEqual([u.name for u in second.homeoUnits], units, name)
 
 
-class LegacyEnvironmentMassTest(unittest.TestCase):
+class AgentEnvironmentMassTest(unittest.TestCase):
     '''The environment units get env_mass (100), which is also the default
     mass: with another default the setups must still give env_mass.'''
 

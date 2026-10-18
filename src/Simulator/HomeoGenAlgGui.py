@@ -2,8 +2,7 @@
 @author: stefano
 
 The GUI for GA simulations of Homeo experiments.  The engine itself --
-HomeoGASimulation and the worker functions -- is in Simulator/HomeoGenAlg.py and
-is re-exported here, so it can also be imported from this module.
+HomeoGASimulation and the worker functions -- is in Simulator/HomeoGenAlg.py.
 '''
 
 from deap import base
@@ -31,12 +30,6 @@ except ImportError:
     futures = None  # scoop only works when launched via its runner
 import multiprocessing
 
-
-try:
-    from playdoh import map as pd_map
-except ImportError:
-    pd_map = None  # playdoh is Python 2 only; its usage is commented out
-
 import os
 from math import sqrt, ceil as math_ceil
 import math
@@ -50,9 +43,7 @@ from glob import glob
 
 
 
-# The GA engine, re-exported so that it can also be imported from this module.
-from Simulator.HomeoGenAlg import (HomeoGASimulation, selTournamentRemove,
-                                   _init_worker, _evaluate_genome_worker)
+from Simulator.HomeoGenAlg import HomeoGASimulation
 
 
 

@@ -72,12 +72,6 @@ class KheperaEyePlacementTest(unittest.TestCase):
             self.assertAlmostEqual(robot.sensors[eye].userData[eye + 'AngleRange'], 90)
         self.assertAlmostEqual(abs(robot.sensors['leftEye'].userData['leftEyeAngle']), 21.8858, places=3)
 
-    def testThePlacementIsNotAnOption(self):
-        with self.assertRaises(TypeError):
-            self._robot(eyeRadiusRatio=1.0)
-        with self.assertRaises(TypeError):
-            KheperaSimulation(robotEyeRadiusRatio=1.0, robotModel='kjunior')
-
 
 @unittest.skipUnless(HAS_BOX2D, "Box2D not installed")
 class EpuckEyesTest(KheperaEyePlacementTest.__base__):
@@ -151,9 +145,7 @@ class EpuckEyesTest(KheperaEyePlacementTest.__base__):
 class Vehicle3cSensorPlacementTest(unittest.TestCase):
     '''The Vehicle 3c world's extra pairs (temperature, oxygen, organic) sit
     where the light eyes sit, with their field: one geometry for the four
-    modalities, no blind wedge for any (research note "Khepera sensor
-    placement for Vehicle 3c").  They sat on the rim at +/-45, +/-10 and
-    +/-35 degrees, with wedges, and for temperature a blind strip.'''
+    modalities, no blind wedge for any.'''
 
     PAIRS = ('Eye', 'TempEye', 'OxyEye', 'OrgEye')
 

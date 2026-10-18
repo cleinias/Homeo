@@ -6,9 +6,9 @@
 #     bash hpc/run_array_local.sh -n 2 -s 200000   # 2 workers, short test runs
 #     bash hpc/run_array_local.sh --dry-run
 #     bash hpc/run_array_local.sh --state-log --log-interval 200   # + weight traces
-#     bash hpc/run_array_local.sh --uniselector ashby      # discrete, not OU
+#     bash hpc/run_array_local.sh --uniselector ashby      # discrete, not continuous
 #     bash hpc/run_array_local.sh --random-heading         # heading from the seed
-#     bash hpc/run_array_local.sh --heading 45 --seeds 20261013,20261014,...
+#     bash hpc/run_array_local.sh --heading 45 --seeds 101,102,...
 #                                                  # chosen seeds, fixed heading
 #     bash hpc/run_array_local.sh --random-start --env-seed 7
 #                                  # one start pose for every task, the homeostat
@@ -69,7 +69,7 @@
 # separate cores and the array finishes in one run's wall time (~37 min),
 # whereas locally they queue through however many cores you have.
 #
-# Measured on a 4-core Xeon W-2123: 2774 steps/s solo, so ~36 min per 6M-step
+# On a 4-core 3.6 GHz Xeon: 2774 steps/s solo, so ~36 min per 6M-step
 # run; 4 concurrent runs slow each other by ~1.25x, giving ~45 min per run and
 # ~3.7 h for the full 20. Re-measure with `-n 1 -s 200000` on other hardware.
 #
@@ -383,7 +383,8 @@ list_entry() {   # list_entry <list> <option name> <task>
     echo "$value"
 }
 
-# Task i's seed (the homeostat's): 20260930 + i, unless --seeds gives it.
+# Task i's seed (the homeostat's): 20260930 (an arbitrary base) + i, unless
+# --seeds gives it.
 # --seeds is needed whenever the seeds are chosen rather than enumerated --
 # e.g. picked so that each connection-polarity class is represented a fixed
 # number of times, which no arithmetic rule can give.

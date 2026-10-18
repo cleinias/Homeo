@@ -20,19 +20,16 @@ every series of a file in one strip instead.  Several files are drawn as
 separate strips (or, with --overlay, one strip per file).
 
 SMOOTHING, AND WHY YOU USUALLY WANT IT.  The log samples every --log-interval
-ticks, which can be far coarser than the process being logged.  In a statelog
-of the 'legacy' continuous uniselector a connection weight evolves by
-sigma*sqrt(dt) per tick: at sigma_crit = 0.1 and an interval of 200 ticks, a
-stressed weight moves 0.1*sqrt(200) = 1.41 between consecutive samples -- more
-than the whole [-1, 1] range it is clipped to.  Samples inside such a burst are
-therefore independent draws, and the raw trace is aliased noise that straddles
-zero no matter what the weight is really doing; smoothed over the process's own
-correlation time (tau_a/theta for 'legacy'), the same data show it.
---smooth-ticks takes that timescale directly; --smooth takes it in samples.
-The raw trace stays visible underneath so the smoothing never hides what it was
-computed from.  In the models of HomeoUniselectorContinuous ('diffusion', 'ou')
-a stressed weight moves sigma*sqrt(2*dt/tau_a) per tick, and tau_a is the
-timescale to smooth over.
+ticks, which can be far coarser than the process being logged.  In both models
+of HomeoUniselectorContinuous ('diffusion', 'ou') a stressed weight moves
+sigma*sqrt(2*dt/tau_a) per tick, and roams its whole [-1, 1] range in about
+tau_a/(2*sigma^2) ticks: 500 at the defaults (sigma_crit = 1, tau_a = 1000).
+Samples 200 ticks apart are then nearly independent draws, and the raw trace
+is aliased noise that straddles zero no matter what the weight is really
+doing; smoothed over tau_a, the process's own timescale, the same data show
+it.  --smooth-ticks takes that timescale directly; --smooth takes it in
+samples.  The raw trace stays visible underneath so the smoothing never hides
+what it was computed from.
 
 @author: stefano
 '''
@@ -200,8 +197,8 @@ def seriesBounds(column, meta):
 
     Drawn as a pair of rules so the limit is visible as a limit.  Without them
     the axis frame reads as the bound -- a deviation clipped at -10 stops a
-    hair above the bottom spine and looks like it never arrives, when in this
-    array it sits exactly at -10.000000 for tens of samples per run.
+    hair above the bottom spine and looks like it never arrives, when it may
+    sit exactly at the limit for many samples.
     """
     if column.startswith('w_'):
         return (-1.0, 1.0)              # HomeoUniselectorContinuous clips here
@@ -470,8 +467,8 @@ def main(argv=None):
                         help='Running mean over N samples')
     parser.add_argument('--smooth-ticks', type=float, default=None, metavar='T',
                         help='Running mean over T ticks (converted using the '
-                             "log's own log_interval). For an OU weight, the "
-                             'honest window is tau_a/theta.')
+                             "log's own log_interval). For a weight of the "
+                             'continuous uniselector, the honest window is tau_a.')
     parser.add_argument('--no-raw', action='store_true',
                         help='Omit the faint raw trace under a smoothed line')
     parser.add_argument('--ribbons', action='store_true',

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Concatenate the per-task CSVs of a Homeo SLURM array into one table.
 
-    python aggregate_array.py $SCRATCH/homeo/ou6M-<jobid>  [-o combined.csv]
+    python aggregate_array.py $SCRATCH/homeo/<run>-<jobid>  [-o combined.csv]
 """
 import argparse, glob, os, re, sys
 import pandas as pd
 
 ap = argparse.ArgumentParser()
-ap.add_argument('rundir', help='the ou6M-<jobid> run directory')
+ap.add_argument('rundir', help='the <run>-<jobid> run directory')
 ap.add_argument('-o', '--output', default=None)
 a = ap.parse_args()
 
@@ -18,7 +18,7 @@ def task_of(path):
     Two layouts.  All tasks in one directory: the index is a serial appended
     after the timestamp,
 
-        batch_direct_continuous_light_2026-10-01-13-58-11-07.csv
+        batch_direct_continuous_light_2000-01-01-12-00-00-07.csv
                                       \_____ timestamp ____/ \/ serial
 
     One task_<i>/ directory per task: the filename ends at the timestamp and
@@ -32,7 +32,7 @@ def task_of(path):
     """
     stem = os.path.basename(path)[:-len('.csv')]
     # [-_] before the year: the CSV names join it with '_'
-    # (batch_direct_continuous_light_2026-10-01-...), the .json/.log with '-'.
+    # (batch_direct_continuous_light_2000-01-01-...), the .json/.log with '-'.
     m = re.search(r'[-_]\d{4}(?:-\d{2}){5}(?:-(\w+))?$', stem)
     if m and m.group(1) and m.group(1).isdigit():
         return int(m.group(1))

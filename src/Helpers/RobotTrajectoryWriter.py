@@ -214,7 +214,8 @@ class RobotTrajectoryWriter(object):
         self.posFile.write("# Vehicle's initial position at:\n")
         self.posFile.write('%f\t %f%s\n\n' % (initialPos[0], initialPos[2], heading))
         '''One light_x, light_y, distance triplet per source, in the order of
-           the rows' columns; the first named as before.'''
+           the rows' columns: the first source's unprefixed, the others'
+           prefixed with their names.'''
         columns = ['robot_x', 'robot_y', 'heading', 'light_x', 'light_y', 'distance']
         for light in lights[1:]:
             name = light.userData['name']

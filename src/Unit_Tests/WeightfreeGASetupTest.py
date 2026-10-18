@@ -48,7 +48,7 @@ class WeightfreeNoUniselTest(unittest.TestCase):
             with self.subTest(name):
                 hom = self._build(name, noUnisel=True)
                 before = [c.weight for u in hom.homeoUnits for c in u.inputConnections]
-                hom.runFor(50)      # not headless: the OU process acts on the connections
+                hom.runFor(50)      # not headless: the continuous uniselector acts on the connections
                 self.assertEqual([c.weight for u in hom.homeoUnits for c in u.inputConnections],
                                  before)
 

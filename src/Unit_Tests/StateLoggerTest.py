@@ -2,7 +2,7 @@
 @author: stefano
 
 HomeostatStateLogger in a headless run, read back by StatelogAnalyzer.  In
-headless mode the OU uniselector changes only the JIT arrays, not the
+headless mode the continuous uniselector changes only the JIT arrays, not the
 connection objects, so a logger reading the connections would log the
 initial weights throughout: the logged weights must move, and end at the
 run's final weights.

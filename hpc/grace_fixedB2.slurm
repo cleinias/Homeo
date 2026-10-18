@@ -19,7 +19,7 @@
 #          (--spin; default 0, no spin).
 # MOTOR:   newtonian (default) or aristotelian, the true Braitenberg vehicle
 #          (--motor; memoryless linear motors).  Aristotelian runs go to
-#          fixedB2-arist-...; e.g. the four Braitenberg baseline arrays:
+#          fixedB2-arist-...; e.g. at both start ranges, without and with a spin:
 #              sbatch grace_fixedB2.slurm 2 6 0 aristotelian
 #              sbatch grace_fixedB2.slurm 4 8 0 aristotelian
 #              sbatch grace_fixedB2.slurm 2 6 0.05 aristotelian
@@ -42,12 +42,12 @@
 #            26- 50 crossed +-     126-150 uncrossed +-
 #            51- 75 crossed -+     151-175 uncrossed -+
 #            76-100 crossed --     176-200 uncrossed --
-#     seed = 20261004 + (task - 1) % 25
+#     seed = 20261004 + (task - 1) % 25         (20261004: an arbitrary base)
 # The seed alone fixes the start pose -- it comes from the environment's
 # stream, which the seed also seeds unless --env-seed/--seed say otherwise --
 # so a seed has the same start pose in every variant, with or without a spin.
 #
-# The "exploratory" arrays, slow clockwise spin:
+# Arrays with a slow clockwise spin:
 #     mkdir -p logs
 #     sbatch grace_fixedB2.slurm 2 6 0.05
 #     sbatch grace_fixedB2.slurm 4 8 0.05
@@ -57,7 +57,7 @@
 #     sbatch --array=37 grace_fixedB2.slurm 4 8
 #     cmp <its .traj> <the other machine's ...crossed_pm-...-37.traj>
 #
-# Each run takes ~2 min (131 s on polus's Xeon E3-1220).  Trajectories are
+# Each run takes about 2 min on a ~3 GHz Xeon core.  Trajectories are
 # ~30 MB per run, ~6 GB per array: hence $SCRATCH.
 #
 # The project account is deliberately not in this file (public repo); export
@@ -114,7 +114,7 @@ WIRINGS=(crossed uncrossed)
 SIGNS_LIST=('++' '+-' '-+' '--')
 WIRING=${WIRINGS[$(( i / 100 ))]}
 SIGNS=${SIGNS_LIST[$(( i / 25 % 4 ))]}
-SEED=$(( 20261004 + i % 25 ))
+SEED=$(( 20261004 + i % 25 ))         # an arbitrary base
 # The environment's seed (the start pose): by default the same per-task value.
 ENV_SEED=$SEED
 [ -n "$FIXED_ENV_SEED" ] && ENV_SEED=$FIXED_ENV_SEED

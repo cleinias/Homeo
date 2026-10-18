@@ -80,7 +80,7 @@ mkdir -p "$NUMBA_CACHE_DIR"
 cd "$HOMEO_SRC/src"
 
 # Seed from the array index so the whole set is reproducible and distinct.
-SEED=$(( 20260930 + SLURM_ARRAY_TASK_ID ))
+SEED=$(( 20260930 + SLURM_ARRAY_TASK_ID ))         # an arbitrary base
 ENV_SEED=$SEED
 [ -n "$FIXED_ENV_SEED" ] && ENV_SEED=$FIXED_ENV_SEED
 [ -n "$FIXED_SEED" ] && SEED=$FIXED_SEED

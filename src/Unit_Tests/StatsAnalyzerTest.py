@@ -72,8 +72,8 @@ class HallOfFameTest(unittest.TestCase):
 
 class LogbookLayoutTest(unittest.TestCase):
     """The layout StatsAnalyzer reads from a GA run's own logbook: the
-    classic, weight-free and weight-free-with-dt_fast genomes, each decoded
-    and labelled as its setup builds it."""
+    classic and weight-free genomes, each decoded and labelled as its setup
+    builds it."""
 
     def logbook(self, exp):
         import contextlib, io, tempfile

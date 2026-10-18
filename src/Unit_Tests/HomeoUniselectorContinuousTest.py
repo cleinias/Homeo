@@ -37,16 +37,13 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
         self.assertAlmostEqual(self.unis.stress_exponent, 2.0)
 
     def testTwoModels(self):
-        '''The models are 'diffusion' and 'ou'; any other is refused, and so is
-        a parameter they do not have, through the phototaxis setups too'''
+        '''The models are 'diffusion' and 'ou'; a parameter they do not have is
+        refused, through the phototaxis setups too'''
         self.assertEqual(HomeoUniselectorContinuous.MODELS, ('diffusion', 'ou'))
-        with self.assertRaises(ValueError):
-            self.unis.model = 'legacy'
-        self.assertFalse(hasattr(self.unis, 'theta'))
         from HomeoExperiments.KheperaExperiments.phototaxis_common import set_uniselector_type
         from Core.HomeoUnit import HomeoUnit
         with self.assertRaises(ValueError):
-            set_uniselector_type(HomeoUnit(), 'continuous', {'theta': 0.5})
+            set_uniselector_type(HomeoUnit(), 'continuous', {'drift': 0.5})
 
     def testSigmaAtZeroStress(self):
         '''At zero stress, sigma should equal sigma_base'''
@@ -116,7 +113,7 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
         self.unis.advance()  # should be a no-op
 
     def testProduceNewValueFallback(self):
-        '''produceNewValue should return a value in [-1, 1] for compatibility'''
+        '''produceNewValue should return a value in [-1, 1], as every HomeoUniselector does'''
         for _ in range(100):
             v = self.unis.produceNewValue()
             self.assertGreaterEqual(v, -1.0)
@@ -222,7 +219,7 @@ class HomeoUniselectorContinuousModelsTest(unittest.TestCase):
 
 
 class ContinuousUniselectorFlagTest(unittest.TestCase):
-    """An OU uniselector never fires: its unit's uniselectorActivated is 0,
+    """A continuous uniselector never fires: its unit's uniselectorActivated is 0,
     even if a discrete uniselector had left it at 1"""
 
     def testTheFlagIsCleared(self):

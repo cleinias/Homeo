@@ -10,8 +10,8 @@ each weight a little at every timestep, by an amount that grows with the
 unit's stress (0 at equilibrium, 1 at the limit of its range).  tau_a is the
 search's timescale: the weights move slowly relative to the fast needle
 dynamics when tau_a is large compared with them, the slow-fast separation of
-Research-notes/Addendum_to_the_CTRNN_Ashby_Discussion.md, Section 6
-(tau_a da/dt = f(x)).  Two models (attribute `model`):
+an adaptive parameter a whose rate is set by the fast state x,
+tau_a da/dt = f(x).  Two models (attribute `model`):
 
 'diffusion' (default): a stress-gated random walk with no drift,
 
@@ -117,7 +117,7 @@ class HomeoUniselectorContinuous(HomeoUniselector):
         return self._dt
 
     def setDt(self, value):
-        "The OU process's time step, in ticks."
+        "The uniselector's time step, in ticks."
         if not value > 0:
             raise HomeoUniselectorError('dt must be positive, not %r' % value)
         self._dt = float(value)
@@ -260,13 +260,13 @@ class HomeoUniselectorContinuous(HomeoUniselector):
         jit_weights[indices] = numpy.abs(w_new)
         jit_switches[indices] = numpy.where(w_new >= 0, 1.0, -1.0)
 
-    # --- Superclass interface (unused in continuous mode, but kept for compatibility) ---
+    # --- The HomeoUniselector interface, which the continuous mode does not use ---
 
     def advance(self):
         '''No-op: the continuous uniselector has no stepping index.'''
         pass
 
     def produceNewValue(self):
-        '''Not used in continuous mode.  Returns a random value for
-        compatibility with code that expects the discrete interface.'''
+        '''Not used in continuous mode.  A random value in the bounds, as
+        every HomeoUniselector gives.'''
         return numpy.random.uniform(self._lowerBound, self._upperBound)

@@ -46,7 +46,7 @@ python -m pip install --upgrade pip setuptools wheel
 # but it is a Python shim that imports its own package -- so inside pip's
 # isolated build environment it fails with "No module named 'swig'".  Hence
 # --no-build-isolation for this one install, which lets the shim see the venv
-# it was installed into.  Verified building box2d-py 2.3.8 on Python 3.14.
+# it was installed into.  This builds box2d-py 2.3.8 on Python 3.14.
 #
 # A real swig binary works too (`module load SWIG`) and needs no special flag,
 # but the module is toolchain-gated on Grace like Python is, so the pip route
@@ -101,10 +101,8 @@ echo "== running the test suite:"
 # exit kills the pipeline and the script dies before saying it finished, which
 # reads as a broken environment when it is not.
 # --no-qt runs the suite as this environment is meant to be: PyQt5 hidden (even in
-# an older venv that has it), the Qt GUI test modules not collected.  Expect about
-# 184 passed / 6 skipped (the Qt-only halves of a few tests).  A few statistical tests
-# (HomeoNoiseTest, HomeoUniselectorAshbyTest) fail intermittently, as does the
-# order-dependent HomeoUnitTest::testUnitNameUnique; rerun before worrying.
+# a venv that has it), the Qt GUI test modules not collected.  Everything passes
+# but a few skips (the Qt-only halves of a few tests).
 if python -m pytest -q --no-qt Unit_Tests 2>&1 | tail -2; then
     :
 else

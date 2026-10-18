@@ -3,8 +3,9 @@ GenomeDecoder against the GA setups it decodes.
 
 Each setup builds a homeostat from a genome; decoding the same genome must
 give the body parameters the setup gave its evolved units: masses,
-viscosities, OU timescales and maxDeviations for the weight-free layout; masses, viscosities, uniselector intervals and maxDeviations for
-the classic one.
+viscosities, the continuous uniselector's tau_a and maxDeviations for the
+weight-free layout; masses, viscosities, uniselector intervals and
+maxDeviations for the classic one.
 '''
 import os
 import shutil
@@ -54,18 +55,15 @@ class GenomeDecoderRoundTripTest(unittest.TestCase):
             hom = setup(genome, backendSimulator=backend, dataDir=self.dataDir)
             evolved = setup.noEvolvedUnits
             layout = setup.genomeLayout
+            self.assertEqual(layout, 'weightfree_v2', name)
             decoded = genomeDecoder(len(hom.homeoUnits), genome, noEvolvedUnits=evolved,
                                     layout=layout)
             perUnit = len(decoded) // evolved
             for i, unit in enumerate(hom.homeoUnits[:evolved]):
                 actual = [unit.mass, unit.viscosity, unit.uniselector.tau_a, unit.maxDeviation]
-                if layout == 'weightfree_dt':
-                    actual += [unit.dt_fast, unit.mass / unit.dt_fast ** 2,
-                               unit.viscosity / unit.dt_fast]
                 np.testing.assert_allclose(decoded[i * perUnit:(i + 1) * perUnit], actual,
                                            rtol=1e-12, err_msg='%s, unit %s' % (name, unit.name))
-            low, high = (0.25, 250) if layout == 'weightfree_v2' else (1, 10)
-            self.assertTrue(all(low <= unit.mass <= high for unit in hom.homeoUnits[:evolved]))
+            self.assertTrue(all(0.25 <= unit.mass <= 250 for unit in hom.homeoUnits[:evolved]))
 
     def testUnitCountsMatchTheSetups(self):
         "A GA setup's noUnits (6 when undeclared) is the number of units it builds"

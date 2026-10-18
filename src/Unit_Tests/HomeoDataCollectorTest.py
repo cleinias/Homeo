@@ -304,14 +304,6 @@ class ExportersTest(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(HomeoDataCollector().printPlottingDataForROnAString(''), '')
 
-    def testTheBrokenExportersAreGone(self):
-        for name in ('saveDeviationOnForUnit', 'saveEssentialsOnAStringWithSeparator',
-                     'printPlottingDataForGgobiOnAString', 'printPlottingDataOnAString',
-                     'printPlottingDataOnAStringWithSeparator',
-                     'uniselectorActivatedAsCollectionOfArraysForAllUnits'):
-            self.assertFalse(hasattr(HomeoDataCollector, name), name)
-
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

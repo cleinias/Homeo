@@ -1,8 +1,8 @@
 '''
-Headless runs with the continuous (OU) uniselector.
+Headless runs with the continuous uniselector.
 
-In headless mode a unit reads its connections from JIT arrays, and the OU
-uniselector evolves those arrays, not the connection objects.  These tests
+In headless mode a unit reads its connections from JIT arrays, and the
+continuous uniselector evolves those arrays, not the connection objects.  These tests
 check that the two stay consistent: the arrays keep their evolution across
 Homeostat.runFor() calls, changes made to the connections between calls
 still reach the arrays, data collection records the weights the run used,
@@ -21,7 +21,7 @@ from Core.HomeoJIT import seed_jit_rng
 
 
 def ouHomeostat(seed, headless, noise=True, units=2, inactive=(), unitClass=HomeoUnitNewtonian):
-    """Fully connected units (two Newtonian ones by default) with OU
+    """Fully connected units (two Newtonian ones by default) with continuous
     uniselectors; the units numbered in inactive are switched off."""
     np.random.seed(seed)
     random.seed(seed)
@@ -41,7 +41,7 @@ def ouHomeostat(seed, headless, noise=True, units=2, inactive=(), unitClass=Home
             unit.noise = 0
             for conn in unit.inputConnections:
                 conn.noise = 0
-        unit.criticalDeviation = 0.95 * unit.maxDeviation   # stressed: large OU steps
+        unit.criticalDeviation = 0.95 * unit.maxDeviation   # stressed: large uniselector steps
     for i in inactive:
         hom.homeoUnits[i].disactivate()
     hom._headless = headless
@@ -57,7 +57,7 @@ def signedWeights(unit):
 class HomeostatHeadlessTest(unittest.TestCase):
 
     def testChangeBetweenRunsReachesTheArrays(self):
-        "A weight set between runFor() calls is used, and the other weights keep their OU drift"
+        "A weight set between runFor() calls is used, and the other weights keep their drift"
         hom = ouHomeostat(5, headless=True)
         hom.runFor(500)
         unit = hom.homeoUnits[0]
@@ -71,7 +71,7 @@ class HomeostatHeadlessTest(unittest.TestCase):
         np.testing.assert_allclose(synced[others], drifted[others])
 
     def testDataCollectionRecordsTheEvolvedWeights(self):
-        "Recorded connection weights are the ones the headless OU run is using"
+        "Recorded connection weights are the ones the headless run is using"
         hom = ouHomeostat(7, headless=True)
         hom.collectsData = True
         start = {u.name: signedWeights(u) for u in hom.homeoUnits}
@@ -121,7 +121,7 @@ class HomeostatHeadlessTest(unittest.TestCase):
 
     def testHeadlessMatchesPythonPathForAshbysUnits(self):
         """The same for Ashby's own (Aristotelian) units, HomeoUnit, whose
-        selfUpdate has its own headless OU branch.  The weights drift,
+        selfUpdate has its own headless continuous-uniselector branch.  The weights drift,
         through the JIT arrays."""
         ticks = 600
         python = ouHomeostat(9, headless=False, noise=False, unitClass=HomeoUnit)

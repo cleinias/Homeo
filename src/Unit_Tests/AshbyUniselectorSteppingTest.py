@@ -4,7 +4,7 @@
 How Ashby's uniselector steps through its positions.  Each firing reads
 the weights of the current position, then steps to the next; there are 25
 positions and the switch wraps from the last to the first.  The index
-counts from 0 (the Smalltalk original counts from 1): the first firing
+counts from 0: the first firing
 reads the first row, and no firing reads the same row as the one before.
 '''
 from Core.HomeoUniselectorAshby import HomeoUniselectorAshby

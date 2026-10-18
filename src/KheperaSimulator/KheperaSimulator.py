@@ -588,7 +588,7 @@ class KheperaRobot(object):
                         V-REP's saturation value), and the shape of the
                         response in between, 'linear' or 'log' (Weber-Fechner).
                         See eyeResponse.
-        - maxValue      older name for saturation, kept for existing callers
+        - maxValue      an alias of saturation
         - maxRange      radius of the field-of-view arc drawn by the visualizer;
                         rendering only.  An eye has no maximum distance: how far
                         it sees follows from the light's intensity and its threshold.
@@ -615,10 +615,8 @@ class KheperaRobot(object):
         
                 
         """Cache angles (in degrees) of eye sensors from robot's normal heading for future computation of irradiance:
-           the direction of the sensor's position from the centre, plus orientation.  atan2, so that an
-           eye in the rear half faces backward (atan(y/x) would turn it forward), and the
-           orientation is applied.  For the K-Junior's eyes, in front, the angle is the same as
-           atan's to the last bit."""
+           the direction of the sensor's position from the centre (atan2, so that an eye in the
+           rear half faces backward), plus orientation."""
         fx, fy = (rotMatrix * positionVector).A1
         sensorAngle = degrees(atan2(fy, fx)) + orientation
         sensorFixture.userData[sensorName + 'Angle']  = sensorAngle
@@ -673,8 +671,8 @@ class KheperaRobot(object):
         for (rx, ry), facing in receptors:
             sensorIrrad += self._receptorIrrad(rotMatrix, b2Vec2(rx, ry), facing,
                                                eyeAngleRange, lightsList)
-        # The eye's irradiance is its receptors' mean (an e-puck eye has two;
-        # a K-Junior eye one, so its value is unchanged)
+        # The eye's irradiance is its receptors' mean (an e-puck eye has two,
+        # a K-Junior eye one)
         return sensorIrrad / len(receptors)
 
     def _receptorIrrad(self, rotMatrix, relPosition, facing, eyeAngleRange, lightsList):
@@ -841,7 +839,7 @@ class KheperaRobot(object):
         """Return the response of sensorName to sources of the given quality only."""
         sources = self.detectableSources.get(quality, [])
         if not sources and quality == 'light':
-            sources = self.detectableLights   # backward compat fallback
+            sources = self.detectableLights   # a world that lists its lights only there
         return self.eyeResponse(sensorName, self.irradAtSensor(sensorName, sources))
 
     def rotateTo(self, angleRad):
@@ -1096,7 +1094,7 @@ class KheperaSimulation(object):
     def newTrajectoryFile(self):
         """Asks the trajectoryWriter to open a new trajectory file for the
         robot.  The file lists the world's sources, as the world's first file
-        does (in the 3c world, all five, not only the light ones)."""
+        does (in the 3c world, all five sources, of every quality)."""
         self.trajectoryWriter.runOnce(transitionMessage = "NEWFILE",
                                       modelName = self.allBodies[self.robotName].body.userData['ID'],
                                       position = (self.allBodies[self.robotName].body.position[0],0,self.allBodies[self.robotName].body.position[1]))
@@ -1211,9 +1209,7 @@ class KheperaSimulation(object):
         """Each extra pair has the light eyes' receptors and field (see
         KheperaRobot): the four modalities share one geometry,
         so they differ only in how they are wired, and none has a blind wedge
-        ahead.  Other layouts (direction-free sensing of heat and chemicals, more
-        sensors per modality): research note "Khepera sensor placement for
-        Vehicle 3c"."""
+        ahead."""
         for modality in ('Temp', 'Oxy', 'Org'):
             for side in ('left', 'right'):
                 robot.addEye(side + modality + 'Eye', robot.eyeReceptors[side + 'Eye'],
@@ -1255,7 +1251,7 @@ class KheperaSimulation(object):
             # Populate detectableSources by quality
             robot.detectableSources.setdefault(quality, []).append(body)
 
-        # Backward compat: detectableLights = light-quality sources
+        # detectableLights: the light-quality sources, as a world that sets it directly has
         robot.detectableLights = robot.detectableSources.get('light', [])
 
         # TARGET alias points to LIGHT1 for fitness computation compatibility

@@ -61,8 +61,8 @@ class ControlWiringTest(unittest.TestCase):
                             for pair, sign in zip(pairs, signs)}
                 self.assertEqual(_motor_inputs(hom), expected, (wiring, signs))
 
-    def testDefaultIsTheOriginal2b(self):
-        "the default, crossed ++, is the vehicle --fixed-weights always built"
+    def testDefaultIsCrossedPlusPlus2b(self):
+        "the default is crossed ++"
         hom, backend = self._build('crossed', '++')
         self.assertEqual(_motor_inputs(hom),
                          {('Left Sensor', 'Right Motor'): D.CONTROL_CROSS_WEIGHT,
@@ -90,14 +90,14 @@ class StartPoseTest(unittest.TestCase):
             self.assertTrue(4.0 <= d <= 8.0, d)
             self.assertTrue(0 <= heading < 360)
 
-    def testDefaultRangeUnchanged(self):
+    def testDefaultRangeIsTwoToSix(self):
         "without a range, the draws are the 2-6 ones: heading, distance, bearing"
-        new = D.common.random_start_pose((7, 7), True, rng=np.random.default_rng(5))
+        pose = D.common.random_start_pose((7, 7), True, rng=np.random.default_rng(5))
         rng = np.random.default_rng(5)
         heading = rng.uniform(0, 360)
         d = rng.uniform(2.0, 6.0)
         bearing = rng.uniform(0, 2 * np.pi)
-        self.assertEqual(new, (7 + d * np.cos(bearing), 7 + d * np.sin(bearing), heading))
+        self.assertEqual(pose, (7 + d * np.cos(bearing), 7 + d * np.sin(bearing), heading))
 
     def testSameSeedSamePoseWhateverTheWiring(self):
         "a seed fixes the start pose for every variant, so batches can be paired"

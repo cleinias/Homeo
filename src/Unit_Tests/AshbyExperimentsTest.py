@@ -446,7 +446,7 @@ class AshbyExp6Test(unittest.TestCase):
 
     def testHabituation(self):
         """Fig. 14/6/1: some D's change 1->2, then one value is kept and the response is small.
-        21 of seeds 1-30 habituate; seed 1 does not (its first 1->2 already
+        Not every seed habituates: seed 1 does not (its first 1->2 already
         gives a small response).  Seeds that do."""
         for seed in (2, 3):
             hom, seed, meta = setup_exp6_habituation(seed)
@@ -540,8 +540,7 @@ class AshbyExp3Test(unittest.TestCase):
 
     def testTraining(self):
         """Punished, then 1->2 changed by a punishment, then the desired response.
-        Training succeeds for most seeds, not all (25 of seeds 1-40): seeds
-        that do."""
+        Training does not succeed for every seed: seeds that do."""
         for seed in (1, 3):
             hom, seed, meta = setup_exp3_training(seed)
             quiet(hom)

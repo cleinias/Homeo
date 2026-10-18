@@ -1,10 +1,7 @@
 '''
-Regression tests for known bugs that change simulation results.
-
-Each test states the behaviour the code should have.  While its bug is in
-the code the test fails, so it is marked xfail(strict=True): the suite stays
-green, and turns red as soon as the bug is fixed.  The marker is then removed
-and the test guards the fix; the unmarked tests below are such guards.
+Behaviour that changes simulation results if it breaks: the headless run
+loop, the Newtonian unit's drag, the Ashby experiments' wiring, and the
+Khepera robot's wheels and eyes.
 '''
 import os
 import random
@@ -13,7 +10,6 @@ import tempfile
 import unittest
 
 import numpy as np
-import pytest
 
 from Core.Homeostat import Homeostat
 from Core.HomeoUnit import HomeoUnit
@@ -50,7 +46,7 @@ def headlessHomeostat(units, seed, continuous=False):
 class HeadlessRunLoopTest(unittest.TestCase):
 
     def testOUDriftSurvivesStepping(self):
-        "Stepping tick by tick (as the GA does) must evolve the OU weights as one runFor() does"
+        "Stepping tick by tick (as the GA does) must evolve the continuous uniselector's weights as one runFor() does"
         ticks = 1500
         whole = headlessHomeostat(2, seed=3, continuous=True)
         whole.runFor(ticks)
@@ -72,11 +68,11 @@ class HeadlessRunLoopTest(unittest.TestCase):
                                    [u.criticalDeviation for u in chunked.homeoUnits], atol=1e-9)
 
     def testOULeavesManualConnectionsAlone(self):
-        "In a headless OU run a 'manual' self-connection must keep its weight"
+        "In a headless run with continuous uniselectors a 'manual' self-connection must keep its weight"
         hom = headlessHomeostat(2, seed=1, continuous=True)
         for unit in hom.homeoUnits:
             unit.uniselectorActive = True
-            unit.criticalDeviation = 5.0            # stressed, so the OU noise is large
+            unit.criticalDeviation = 5.0            # stressed, so its uniselector's steps are large
             unit.inputConnections[0].state = 'manual'
             unit._jit_dirty = True
         before = [u.inputConnections[0].weight * u.inputConnections[0].switch for u in hom.homeoUnits]

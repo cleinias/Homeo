@@ -18,7 +18,7 @@ re-testing selected results, one Webots per process, not for the GA.
 | File | Role |
 |------|------|
 | `Simulator/HomeoGenAlg.py` | GA simulation class (`HomeoGASimulation`) and parallel-evaluation workers; no GUI, no PyQt5 |
-| `Simulator/HomeoGenAlgGui.py` | GA GUI; re-exports the engine |
+| `Simulator/HomeoGenAlgGui.py` | GA GUI |
 | `Simulator/HomeoExperiments.py` | Experiment initialisation functions |
 | `Simulator/SimulatorBackend.py` | Abstraction over robotic simulators |
 | `Helpers/GenomeDecoder.py` | Genome decoding and pretty-printing |
@@ -123,8 +123,7 @@ connections are stored contiguously:
 
 ### 2.2 Genome size
 
-All 40 genes have a phenotypic effect. The genome contains only genes for
-the evolved units:
+The genome has genes for the evolved units only:
 - 16 unit parameters (4 evolved units x 4 params)
 - 24 connection weights (4 evolved units x 6 connections)
 
@@ -182,8 +181,8 @@ generation's best genome is no longer among them, a copy of it is evaluated
 with them and replaces the worst offspring (k=1 elitism).
 
 **Noisy evaluation**.  An evaluation is noisy: in the direct 2+2 vehicle the same genome's final
-distance over ten seeds had a standard deviation of 1-4, larger than the
-differences between genomes' means.  So:
+distance varies from seed to seed, often by more than genomes' means differ.
+So:
 - under the 'individual' and 'generation' noise schemes **every individual is
   evaluated afresh each generation**, survivors and the elite included, with a
   new ID and so new noise: no score is carried over from an earlier
@@ -352,8 +351,8 @@ from a previous GA run's logbook via `extractGenomeOfIndID()`. This
 allows re-evolving from a known good starting point.
 
 Clones start without a fitness, and generation 0 evaluates them like any
-individual.  The source's logged fitness came from another run, often of
-another code version, so it is kept only in the logbook's summary
+individual.  The source's logged fitness came from another run, possibly of
+other code, so it is kept only in the logbook's summary
 (`cloneSourceFitness`).
 
 ---
@@ -462,29 +461,16 @@ The alternatives are not used, for the following reasons:
 
 ---
 
-## 10. Known Limitations and Design Notes
+## 10. Design Notes
 
-1. **Genes for evolved units only:** The genome contains only genes for
-   evolved units (40 genes, not 60). Each experiment function declares a
-   `noEvolvedUnits` attribute; sensor-only units are excluded.
+1. **Genes for evolved units only:** The genome contains genes only for the
+   evolved units. Each experiment function declares a `noEvolvedUnits`
+   attribute; sensor-only units are excluded.
 
 2. **Mutation sigma:** Sigma is 0.2, keeping most mutations within the
    [0, 1] gene range for neighbourhood exploration.
 
-3. **Parallel evaluation:** `multiprocessing.Pool` with configurable
-   `nWorkers`. Numba JIT compilation accelerates headless simulation
-   arithmetic (section 8).
-
-4. **Elitism:** The previous generation's best genome is re-inserted into
-   the offspring (replacing the worst) when it would otherwise be lost (k=1
-   elitism); under noise everyone, the elite included, is evaluated afresh
-   each generation (section 4.1).
-
-5. **Clone fitness:** Clones start without a fitness and are evaluated in
-   generation 0; the source's logged fitness is recorded as
-   `cloneSourceFitness` (section 6).
-
-6. **Fixed topology:** The GA evolves only unit parameters and connection
+3. **Fixed topology:** The GA evolves only unit parameters and connection
    weights. The network topology (which units exist, which connections are
    active) is fixed by the experiment function. This is a fundamental
    design choice — changing it would require a substantially different

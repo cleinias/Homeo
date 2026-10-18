@@ -257,7 +257,8 @@ class Homeostat(object):
                 if self.collectsData:
                     if headless:
                         # Record the weights the run is using: in headless
-                        # OU runs they are only in the unit's JIT arrays.
+                        # runs with continuous uniselectors they are only in
+                        # the unit's JIT arrays.
                         unit.flushJitArrays()
                     self.dataCollector.atTimeIndexAddDataUnitForAUnit(self.time, unit)
                 unit.time = self.time
