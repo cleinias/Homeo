@@ -92,6 +92,9 @@ class RobotTrajectoryWriter(object):
         self.eyes = None
         self.eyeRadiusRatio = None
         self.robotModel = None
+        # The robot's battery, {parameter: value} (Battery.settings, with the
+        # food quality), set as the eyes are; None: no battery
+        self.battery = None
         self.posFile = open(self.buildTrajFilename(modelName), 'w') if self._enabled else None
         self._openHeader(initialPos)
 
@@ -258,6 +261,9 @@ class RobotTrajectoryWriter(object):
         for name, (threshold, saturation, response) in (self.eyes or {}).items():
             self.posFile.write("# Eye\t%s\tthreshold\t%f\tsaturation\t%f\tresponse\t%s\n"
                                % (name, threshold, saturation, response))
+        if self.battery is not None:
+            self.posFile.write("# Battery\t%s\n" % "\t".join(
+                "%s\t%s" % item for item in self.battery.items()))
 
     def buildTrajFilename(self, modelName=None):
         '''Reads dataDir from internal ivar and builds a

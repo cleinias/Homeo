@@ -1210,6 +1210,158 @@ initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.genomeSize = 8
 initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
 
 
+# ===============================================================
+#  Hunger: a battery on the robot, sensed by the homeostat
+#
+#  A composable layer: add_battery_to_homeostat() gives any vehicle's
+#  robot a battery (KheperaSimulator.Battery) and its homeostat a
+#  Battery unit, an interoceptive sensor, wired to the motors -- directly,
+#  or through a Hunger unit whose inputs its own uniselector adjusts.
+# ===============================================================
+
+# The radius of the worlds' sources (their bodies' radius): a battery whose
+# saturation is not given absorbs at most the food at its source's edge.
+FOOD_SOURCE_RADIUS = 0.06
+
+
+def _foodSource(robot, target):
+    "The source the robot feeds on: the TARGET if it is one of its food sources, else the first"
+    sources = robot.foodSources()
+    if not sources:
+        raise ValueError('the world has no source of quality %r with a positive intensity'
+                         % robot.foodQuality)
+    return target if any(s is target for s in sources) else sources[0]
+
+
+def add_battery_to_homeostat(hom, backendSimulator, food_quality='light', capacity=1.0,
+                             discharge_rate=1e-3, recharge_factor=None, saturation=None,
+                             critical_level=0.3, depletion='none', min_efficiency=0.1,
+                             signal='hunger', to_motors=True, hunger_unit=False,
+                             hunger_inputs='battery', stress_source=None, noNoise=False):
+    '''Give the robot of backendSimulator's world a battery and hom a
+    Battery unit that senses it.  Call once the world exists (after the
+    vehicle's setup).  Returns the Battery unit.
+
+    The battery (KheperaSimulator.Battery; its parameters are described
+    there) feeds on the sources of quality food_quality.  Defaults:
+      recharge_factor None: break-even at BREAK_EVEN_DISTANCE (1.0) from the
+                      food source (the TARGET, if it is one), so the battery
+                      gains charge closer than that and loses it farther;
+      saturation None: the food at the food source's edge
+                      (FOOD_SOURCE_RADIUS from its centre), the most a robot
+                      on the source can absorb.
+    The Battery unit (a HomeoUnitInput, no inputs, no uniselector) reads the
+    battery's hunger (signal 'hunger', the default: capacity - level) or
+    its level ('level').  With to_motors (the default) it feeds every motor
+    (the units named '... Motor') through a small random weight, in
+    [-0.1, 0.1) as the weight-free vehicles' sensor weights, under the
+    motor's uniselector if it has an active one, fixed otherwise; its other
+    outgoing connections are off.  to_motors=False: a battery that is only
+    recorded.
+
+    hunger_unit=True puts a Newtonian unit 'Hunger' between the Battery
+    unit and the motors: the Battery feeds Hunger, Hunger feeds the motors
+    (small random weights, as above), and the Battery does not feed the
+    motors directly.  Hunger's inputs are under its own uniselector (the
+    motors' kind: continuous if theirs is), with a negative self-connection
+    as the motors have: from the Battery only (hunger_inputs 'battery') or
+    from every unit but itself ('all').
+
+    Every continuous uniselector of hom gets the battery's sensor, so that
+    its stress can come from the battery; stress_source, if given, is set on
+    every active one (HomeoUniselectorContinuous.STRESS_SOURCES: 'battery'
+    makes the search grow with hunger).
+    '''
+    from KheperaSimulator.Battery import Battery, BREAK_EVEN_DISTANCE
+    from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
+
+    if hunger_inputs not in ('battery', 'all'):
+        raise ValueError("hunger_inputs must be 'battery' or 'all', got %r" % hunger_inputs)
+    sim = backendSimulator.kheperaSimulation
+    robot = sim.allBodies['Khepera']
+    robot.foodQuality = food_quality
+    source = _foodSource(robot, sim.allBodies.get('TARGET'))
+    if recharge_factor is None:
+        recharge_factor = Battery.breakEvenRechargeFactor(
+            discharge_rate, robot.sourceValue(source, BREAK_EVEN_DISTANCE))
+    if saturation is None:
+        saturation = robot.sourceValue(source, FOOD_SOURCE_RADIUS)
+    robot.battery = Battery(capacity=capacity, discharge_rate=discharge_rate,
+                            recharge_factor=recharge_factor, saturation=saturation,
+                            critical_level=critical_level, depletion=depletion,
+                            min_efficiency=min_efficiency)
+
+    unit_noise = 0 if noNoise else 0.05
+    conn_noise = 0.0 if noNoise else 0.05
+    motors = [u for u in hom.homeoUnits if u.name.endswith('Motor')]
+
+    battery_unit = HomeoUnitInput(transducer=backendSimulator.getBatterySensor(signal))
+    hom.addFullyConnectedUnit(battery_unit)
+    battery_unit.name = 'Battery'
+    battery_unit.noise = unit_noise
+    battery_unit.uniselectorActive = False
+    for conn in battery_unit.inputConnections:
+        conn.status = False
+
+    def feed(unit, source_unit):
+        "Connect source_unit to unit with a small random weight"
+        conn = [c for c in unit.inputConnections if c.incomingUnit is source_unit][0]
+        conn.newWeight(np.random.uniform(-0.1, 0.1))
+        conn.noise = conn_noise
+        conn.state = 'uniselector' if unit.uniselectorActive else 'manual'
+        conn.status = True
+
+    def silence(source_unit, keep=()):
+        "Turn off source_unit's connections to every unit not in keep"
+        for unit in hom.homeoUnits:
+            if unit is source_unit or any(unit is k for k in keep):
+                continue
+            for conn in unit.inputConnections:
+                if conn.incomingUnit is source_unit:
+                    conn.status = False
+
+    def stress_from_battery():
+        "Give every continuous uniselector the battery, and the stress source"
+        for unit in hom.homeoUnits:
+            if isinstance(unit.uniselector, HomeoUniselectorContinuous):
+                unit.uniselector.batterySensor = backendSimulator.getBatterySensor('level')
+                if stress_source is not None and unit.uniselectorActive:
+                    unit.uniselector.stress_source = stress_source
+
+    if not hunger_unit:
+        silence(battery_unit, keep=motors if to_motors else ())
+        if to_motors:
+            for motor in motors:
+                feed(motor, battery_unit)
+        stress_from_battery()
+        return battery_unit
+
+    hunger = HomeoUnitNewtonian()
+    hom.addFullyConnectedUnit(hunger)
+    hunger.name = 'Hunger'
+    hunger.noise = unit_noise
+    hunger.uniselectorActive = True
+    if any(isinstance(m.uniselector, HomeoUniselectorContinuous) for m in motors):
+        hunger.uniselector = HomeoUniselectorContinuous()
+    for conn in hunger.inputConnections:
+        conn.status = False
+    self_conn = hunger.inputConnections[0]
+    self_conn.newWeight(-np.random.uniform(0.01, 0.1))
+    self_conn.noise = conn_noise
+    self_conn.state = 'manual'
+    self_conn.status = True
+    for unit in hom.homeoUnits:
+        if unit is battery_unit or (hunger_inputs == 'all' and unit is not hunger):
+            feed(hunger, unit)
+    silence(battery_unit, keep=(hunger,))
+    silence(hunger, keep=motors if to_motors else ())
+    if to_motors:
+        for motor in motors:
+            feed(motor, hunger)
+    stress_from_battery()
+    return battery_unit
+
+
 #===============================================================================
 # Utility functions
 #===============================================================================
@@ -1502,6 +1654,71 @@ initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeSize = 8
 initializeBraiten3c_GA_continuous_weightfree_open_v2.genomeLayout = 'weightfree_v2'
 
 
+# ===============================================================
+#  Hunger GA setups: the weight-free vehicles with a battery
+#
+#  The battery dies at zero (depletion 'death') and the GA minimises the
+#  setup's fitness measure (`fitness`, read by HomeoGenAlg.evaluate_genome):
+#  'battery_mean', minus the battery's mean level over the evaluation (the
+#  ticks after death count as empty).
+# ===============================================================
+
+def initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        lightIntensity=GA_LIGHT_INTENSITY):
+    '''Hunger-driven phototaxis: the weight-free 2+2 direct vehicle with
+    fixed Braitenberg cross-wiring (initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2)
+    and a battery that recharges from the light, sensed by a Battery unit
+    feeding both motors (add_battery_to_homeostat, depletion 'death').
+    Fitness: the battery's mean level.
+
+    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2' (see initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2).
+    '''
+    hom = _setup_continuous_weightfree_homeostat_direct(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_v2',
+        lightIntensity=lightIntensity)
+    add_battery_to_homeostat(hom, backendSimulator, food_quality='light', depletion='death',
+                             noNoise=noNoise)
+    return hom
+
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.noEvolvedUnits = 2
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.noUnits = 5
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.fitnessSign = 1
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.fitness = 'battery_mean'
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.genomeSize = 8
+initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
+
+
+def initializeHunger3c_GA_continuous_weightfree_fixed_v2(homeoGenome, noHomeoParameters=4,
+        backendSimulator=None, dataDir=None, noNoise=False, noUnisel=False,
+        lightIntensity=GA_LIGHT_INTENSITY):
+    '''Hunger in the Vehicle 3c world: the weight-free Vehicle 3c with
+    fixed Braitenberg wiring (initializeBraiten3c_GA_continuous_weightfree_fixed_v2)
+    and a battery that recharges from organic matter, sensed by a Battery
+    unit feeding both motors (add_battery_to_homeostat, depletion 'death').
+    Fitness: the battery's mean level.
+
+    Genome: 8 genes = 2 units x 4 params [mass, viscosity, tau_a, maxDeviation],
+    layout 'weightfree_v2'.
+    '''
+    hom = _setup_braitenberg_3c_homeostat(
+        homeoGenome, backendSimulator, dataDir=dataDir,
+        noNoise=noNoise, noUnisel=noUnisel, topology='fixed', layout='weightfree_v2',
+        lightIntensity=lightIntensity)
+    add_battery_to_homeostat(hom, backendSimulator, food_quality='organic', depletion='death',
+                             noNoise=noNoise)
+    return hom
+
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.noEvolvedUnits = 2
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.noUnits = 11
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.fitnessSign = 1
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.fitness = 'battery_mean'
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.genomeSize = 8
+initializeHunger3c_GA_continuous_weightfree_fixed_v2.genomeLayout = 'weightfree_v2'
+
+
 # The GA phototaxis setups, which take lightIntensity (see GA_LIGHT_INTENSITY)
 for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA_phototaxis_continuous,
            initializeBraiten2_2_Full_GA_continuous_weightfree_v2,
@@ -1510,6 +1727,8 @@ for _f in (initializeBraiten2_2_Full_GA_phototaxis, initializeBraiten2_2_Full_GA
            initializeBraiten2_direct_GA_continuous_weightfree_fixed_v2,
            initializeBraiten3c_GA_continuous_weightfree_fixed_v2,
            initializeBraiten3c_GA_continuous_weightfree_open_v2,
+           initializeHungerPhototaxis_GA_continuous_weightfree_fixed_v2,
+           initializeHunger3c_GA_continuous_weightfree_fixed_v2,
            ):
     _f.lightIntensity = GA_LIGHT_INTENSITY
 

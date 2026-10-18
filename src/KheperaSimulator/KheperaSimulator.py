@@ -61,7 +61,7 @@ from pyglet.window import mouse, key
 from pyglet.math import Mat4, Vec3
 import numpy as np
 
-from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2, log, remainder
+from math import sin, cos, asin, acos, atan, pi, radians, degrees, sqrt, atan2, log, remainder, hypot
 from Helpers.General_Helper_Functions import normalize, dated_data_dir
 from Helpers.RobotTrajectoryWriter import RobotTrajectoryWriter
 from time import sleep, time, strftime, localtime
@@ -458,6 +458,11 @@ class KheperaRobot(object):
         else:
             self._addSensors()
 
+        # The robot's energy store (KheperaSimulator.Battery; None: none) and
+        # the quality of the sources it feeds on (see foodAtCentre)
+        self.battery = None
+        self.foodQuality = 'light'
+
         "Add a pyglet shape to robot's body for rendering"
         self.setRenderingParameters(color = color)
 
@@ -770,13 +775,15 @@ class KheperaRobot(object):
     
     def setRightSpeed(self, newSpeed):
         """Wheel speed is expressed in rad/sec.
-           Convert to linear wheel speeds from wheel radius"""
-        self.rightSpeed = newSpeed * self.wheelRadius
+           Convert to linear wheel speeds from wheel radius, times the
+           battery's motor efficiency"""
+        self.rightSpeed = newSpeed * self.wheelRadius * self.motorEfficiency()
 
     def setLeftSpeed(self, newSpeed):
         """Wheel speed is expressed in rad/sec.
-           Convert to linear wheel speeds from wheel radius"""
-        self.leftSpeed = newSpeed * self.wheelRadius
+           Convert to linear wheel speeds from wheel radius, times the
+           battery's motor efficiency"""
+        self.leftSpeed = newSpeed * self.wheelRadius * self.motorEfficiency()
     
     def getSpeed(self):
         return {'right':self.rightSpeed,'left':self.leftSpeed}
@@ -859,6 +866,58 @@ class KheperaRobot(object):
         if not sources and quality == 'light':
             sources = self.detectableLights   # a world that lists its lights only there
         return self.eyeResponse(sensorName, self.irradAtSensor(sensorName, sources))
+
+    # --- Food and the battery ---------------------------------------------------
+
+    @staticmethod
+    def sourceValue(source, distance):
+        """A source's value at `distance` from it, whatever the direction: its
+        intensity times its attenuation, 1 / (a0 + a1 d + a2 d^2) from its
+        attenVec -- an eye's formula without the cosine (irradAtSensor), and
+        so the full intensity, its ambient part included.  Infinite at a
+        distance where the attenuation's denominator vanishes."""
+        ud = source.userData
+        a0, a1, a2 = ud['attenVec']
+        denominator = a0 + a1 * distance + a2 * distance ** 2
+        if denominator <= 0:
+            return float('inf')
+        return ud['intensity'] / denominator
+
+    def concentrationAt(self, point, sources):
+        "The sum of the sources' values (sourceValue) at point, (x, y) in the world"
+        total = 0.0
+        for source in sources:
+            x, _, y = source.userData['lightPos']
+            total += self.sourceValue(source, hypot(point[0] - x, point[1] - y))
+        return total
+
+    def foodSources(self):
+        """The sources the robot feeds on: those of quality foodQuality, with a
+        positive intensity (a darkness source does not feed)."""
+        sources = self.detectableSources.get(self.foodQuality, [])
+        if not sources and self.foodQuality == 'light':
+            sources = self.detectableLights
+        return [s for s in sources if s.userData['intensity'] > 0]
+
+    def foodAtCentre(self):
+        "The food at the robot's centre: its food sources' concentration there"
+        position = self.body.position
+        return self.concentrationAt((position[0], position[1]), self.foodSources())
+
+    def tickBattery(self):
+        "One tick of the battery's metabolism, if the robot has one"
+        if self.battery is not None:
+            self.battery.tick(self.foodAtCentre())
+
+    def motorEfficiency(self):
+        "The factor the wheels' speeds are multiplied by: the battery's (1 without one)"
+        return 1.0 if self.battery is None else self.battery.motorEfficiency()
+
+    def batterySettings(self):
+        "The battery's parameters and the food quality, for the records; None without a battery"
+        if self.battery is None:
+            return None
+        return dict(food_quality=self.foodQuality, **self.battery.settings())
 
     def rotateTo(self, angleRad):
         """Rotate robot and its wheels, about the robot's centre, to angleRad."""
@@ -1091,6 +1150,7 @@ class KheperaSimulation(object):
             self.trajectoryWriter.eyes = robot.eyeSettings()
             self.trajectoryWriter.eyeRadiusRatio = robot.eyeRadiusRatio
             self.trajectoryWriter.robotModel = robot.model
+            self.trajectoryWriter.battery = robot.batterySettings()
             self.trajectoryWriter.writeHeaderNow(robot.body)
         for body in self.allBodies.values():
             body.update(self.timeStep)
@@ -1101,9 +1161,17 @@ class KheperaSimulation(object):
     
     def tickAdvance(self):
         '''Advance the world by one homeostat tick (stepsPerTick steps), once
-        every unit has updated.'''
+        every unit has updated; then the robot's battery, if it has one,
+        feeds where the robot now is.'''
         for i in range(self.stepsPerTick):
             self.advanceSim()
+        self.allBodies[self.robotName].tickBattery()
+
+    @property
+    def halted(self):
+        "Has the run ended: has the robot died (a battery with depletion 'death')?"
+        battery = getattr(self.allBodies.get(self.robotName), 'battery', None)
+        return battery is not None and not battery.alive
 
     def saveTrajectory(self):
         "Asks the TrajectorytWriter to save the robot's trajectory"

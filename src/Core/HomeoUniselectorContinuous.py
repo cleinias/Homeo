@@ -51,6 +51,23 @@ tau_a da/dt = f(x).  Two models (attribute `model`):
 
 Both reflect the weights at +-1, so no mass piles up at the bounds.
 
+The stress itself comes from the uniselector's stress_source (stress()):
+
+'critical' (default): Ashby's gate.  Zero while the unit's deviation lies
+  inside its critical limit (critThreshold x maxDeviation), then graded
+  from 0 at the limit to 1 at the stop.  A unit inside its limits keeps its
+  weights.
+'deviation': graded from the centre, |deviation| / maxDeviation, with no
+  gate: the weights move whenever the needle is off zero.
+'battery': the robot's hunger, 1 - level / capacity (KheperaSimulator.Battery):
+  the search grows as the battery empties, whatever the needle does.
+'battery_critical': zero while the battery is above its critical level,
+  then graded from 0 at that level to 1 when empty.
+
+The battery sources read the battery through batterySensor, a battery
+transducer (HOMEO_BatterySensor) that add_battery_to_homeostat gives every
+continuous uniselector of the homeostat.
+
 This preserves Ashby's core hypothesis: adaptation operates on the
 parameters (weights), not within the dynamics.  The fast ODE is untouched.
 '''
@@ -88,10 +105,17 @@ class HomeoUniselectorContinuous(HomeoUniselector):
                           2 = quadratic, etc.)
     '''
 
+    # A uniselector unpickled with no stress source or battery sensor of its
+    # own grades its stress from the centre, and has no battery
+    _stress_source = 'deviation'
+    batterySensor = None
+
     MODELS = ('diffusion', 'ou')
+    STRESS_SOURCES = ('critical', 'deviation', 'battery', 'battery_critical')
 
     DefaultParameters = {
         'model': 'diffusion',
+        'stress_source': 'critical',
         'tau_a': 1000.0,
         'sigma_base': 0.0,
         'sigma_crit': 1.0,
@@ -113,6 +137,8 @@ class HomeoUniselectorContinuous(HomeoUniselector):
         self._sigma_crit = self.DefaultParameters['sigma_crit']
         self._dt = self.DefaultParameters['dt']
         self._stress_exponent = self.DefaultParameters['stress_exponent']
+        self._stress_source = self.DefaultParameters['stress_source']
+        self.batterySensor = None
 
     # --- Properties ---
 
@@ -194,7 +220,40 @@ class HomeoUniselectorContinuous(HomeoUniselector):
     stress_exponent = property(fget=lambda self: self.getStressExponent(),
                                fset=lambda self, value: self.setStressExponent(value))
 
+    def getStressSource(self):
+        return self._stress_source
+
+    def setStressSource(self, value):
+        if value not in self.STRESS_SOURCES:
+            raise ValueError('stress_source must be one of %s, not %r'
+                             % (self.STRESS_SOURCES, value))
+        self._stress_source = value
+
+    stress_source = property(fget=lambda self: self.getStressSource(),
+                             fset=lambda self, value: self.setStressSource(value))
+
     # --- Core methods ---
+
+    def stress(self, unit):
+        '''The stress, in [0, 1], that sets the search's amplitude for `unit`,
+        the unit this uniselector serves, from stress_source (see the module
+        docstring).'''
+        source = self._stress_source
+        if source in ('deviation', 'critical'):
+            if unit.maxDeviation == 0:
+                return 0.0
+            displacement = min(abs(unit.criticalDeviation) / unit.maxDeviation, 1.0)
+            if source == 'deviation':
+                return displacement
+            limit = unit.critThreshold
+            return 0.0 if displacement <= limit else (displacement - limit) / (1.0 - limit)
+        if self.batterySensor is None:
+            raise ValueError("stress_source %r needs a battery (add_battery_to_homeostat)" % source)
+        battery = self.batterySensor.robot.battery
+        if source == 'battery':
+            return battery.hunger()
+        fraction, critical = battery.fraction(), battery.critical_level
+        return 0.0 if fraction >= critical or critical == 0 else (critical - fraction) / critical
 
     def sigma(self, stress_level):
         '''Compute noise intensity from the current stress level.

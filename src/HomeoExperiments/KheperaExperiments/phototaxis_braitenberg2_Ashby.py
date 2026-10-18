@@ -173,7 +173,7 @@ def setup_phototaxis(topology='fixed', backendSimulator=None,
                 else 'phototaxis_braitenberg2_Ashby_fixed')
     exp_name += experiment_suffix(light_intensity, uniselector_type, True, spin,
                                   eye_saturation, eye_threshold, eye_response,
-                                  robot, simulator)
+                                  robot, simulator, continuous_params)
     backendSimulator = prepare_backend(backendSimulator, exp_name, robot, simulator,
                                        rendering)
 
@@ -362,7 +362,7 @@ def run_batch(n_runs=10, topology='fixed', total_steps=2000000,
     '''Run a batch of experiments and print a summary table
     (phototaxis_common.run_batch).  With seed given, run i uses seed+i;
     env_seed and batch_vary: see phototaxis_common.batch_seeds.'''
-    kind = common.batch_kind(uniselector_tag(uniselector_type), spin, eye_saturation,
+    kind = common.batch_kind(uniselector_tag(uniselector_type, continuous_params), spin, eye_saturation,
                              eye_threshold, eye_response, stable_draws, robot,
                              simulator)
 

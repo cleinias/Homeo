@@ -184,6 +184,35 @@ for f in sorted(os.listdir({data!r})):
 print('MODEL ' + json.dumps(files))
 '''
 
+# A battery on the Webots robot: one tick 1 from the light, then an empty
+# battery that paralyses the wheels for 20 ticks
+_BATTERY = r'''
+import json, sys
+sys.path.insert(0, {src!r})
+from KheperaSimulator.Battery import Battery
+from WebotsSimulator.WebotsSimulation import WebotsSimulation
+from HomeoExperiments.KheperaExperiments.phototaxis_common import set_start_pose
+
+webots = WebotsSimulation.shared()
+webots.setupWorld('kheperaBraitenberg2_HOMEO_World', {data!r})
+robot = webots.allBodies['Khepera']
+set_start_pose(robot, 6, 7, 0)
+robot.battery = Battery(discharge_rate=0.01, recharge_factor=0.001, depletion='paralysis')
+robot.battery.level = 0.5
+webots.tickAdvance()
+fed = robot.battery.level
+robot.battery.level = 0.0
+robot.battery.recharge_factor = 0.0
+start = robot.body.position
+robot.setSpeed(2.0, 2.0)
+for i in range(20):
+    webots.tickAdvance()
+moved = (robot.body.position - start).length
+webots.saveTrajectory()
+print('BATTERY ' + json.dumps(dict(fed=fed, ticks=robot.battery.ticks, speed=robot.getSpeed(),
+                                   moved=moved, halted=webots.halted)))
+'''
+
 
 @unittest.skipUnless(available(), 'Webots cannot run here (not installed, or no display/xvfb-run)')
 class WebotsBackendTest(unittest.TestCase):
@@ -381,6 +410,25 @@ class WebotsBackendTest(unittest.TestCase):
         self.assertEqual(sum(1 for l in genome if l and not l.startswith('#')
                              and len(l.split()) > 5), 6)
         self.assertEqual(genome[-1], '# Steps recorded\t6')
+
+    def testTheBatteryInWebots(self):
+        '''The Webots world ticks the robot's battery once per tick, feeding
+        it as in Box2D (1 from a light of 100: food 100), and an empty
+        battery with depletion 'paralysis' stops the wheels.'''
+        with tempfile.TemporaryDirectory() as tmp:
+            script = os.path.join(tmp, 'battery.py')
+            with open(script, 'w') as f:
+                f.write(_BATTERY.format(src=SRC, data=tmp))
+            r = subprocess.run([sys.executable, script], capture_output=True, text=True,
+                               timeout=300, env=dict(os.environ, HOMEO_DATA_DIR=tmp))
+        lines = [l for l in r.stdout.splitlines() if l.startswith('BATTERY ')]
+        self.assertTrue(lines, r.stdout[-2000:] + r.stderr[-2000:])
+        out = json.loads(lines[0][len('BATTERY '):])
+        self.assertAlmostEqual(out['fed'], 0.59, places=4)
+        self.assertEqual(out['ticks'], 21)
+        self.assertEqual(out['speed'], {'right': 0.0, 'left': 0.0})
+        self.assertLess(out['moved'], 1e-4)
+        self.assertFalse(out['halted'])
 
 
 if __name__ == '__main__':

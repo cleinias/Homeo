@@ -138,12 +138,12 @@ def prepare_backend(backendSimulator, experiment_name, robot=DEFAULT_ROBOT,
 
 def experiment_suffix(light_intensity=100, uniselector_type='ashby', adaptive=True,
                       spin=0.0, eye_saturation=None, eye_threshold=None, eye_response=None,
-                      robot=DEFAULT_ROBOT, simulator='box2d'):
+                      robot=DEFAULT_ROBOT, simulator='box2d', continuous_params=None):
     "The experiment name's tags: '_webots', '_dark', the uniselector if not Ashby's, spin, eyes."
     suffix = '_webots' if simulator == 'webots' else ''
     suffix += '_dark' if light_intensity < 0 else ''
     if adaptive and uniselector_type != 'ashby':
-        suffix += '_' + uniselector_tag(uniselector_type)
+        suffix += '_' + uniselector_tag(uniselector_type, continuous_params)
     return suffix + spin_tag(spin) + eye_tag(eye_saturation, eye_threshold, eye_response,
                                              robot)
 
@@ -160,6 +160,37 @@ def set_light(backend, light_intensity, eye_saturation=None, eye_threshold=None,
     target_body.userData['lightIntensity'] = light_intensity
     backend.kheperaSimulation.eyeConfig = configure_eyes(
         backend, eye_saturation, eye_threshold, eye_response)
+
+
+# --- The battery (the hunger experiments) ------------------------------------------
+
+def battery_tag(battery):
+    """Filename tag for a battery (add_battery_to_homeostat's arguments, a
+    dict; None: no battery, ''), e.g. '_death_hungerunit_stbattery': the
+    depletion mode unless 'none', '_hungerunit', '_recorded' for a battery
+    that does not feed the motors, and the stress source if one is set."""
+    if battery is None:
+        return ''
+    tag = ''
+    if battery.get('depletion', 'none') != 'none':
+        tag += '_' + battery['depletion']
+    if battery.get('hunger_unit'):
+        tag += '_hungerunit'
+    if not battery.get('to_motors', True):
+        tag += '_recorded'
+    if battery.get('stress_source'):
+        tag += '_st' + battery['stress_source'].replace('_', '')
+    return tag
+
+
+def battery_label(battery):
+    "A battery's arguments as a run's title gives them, e.g. 'depletion death, hunger unit'"
+    parts = ['depletion %s' % battery.get('depletion', 'none')]
+    if battery.get('hunger_unit'):
+        parts.append('hunger unit')
+    if battery.get('stress_source'):
+        parts.append('stress from %s' % battery['stress_source'])
+    return ', '.join(parts)
 
 
 # --- The eyes -------------------------------------------------------------------
@@ -233,11 +264,16 @@ def set_uniselector_type(unit, uniselector_type, continuous_params=None):
                          % (UNISELECTOR_TYPES, uniselector_type))
 
 
-def uniselector_tag(uniselector_type):
-    "The uniselector's tag in file names: its type."
+def uniselector_tag(uniselector_type, continuous_params=None):
+    """The uniselector's tag in file names: its type, and for a continuous one
+    given a stress source (continuous_params), '_st' and the source, e.g.
+    'continuous_stdeviation'."""
     if uniselector_type not in UNISELECTOR_TYPES:
         raise ValueError("uniselector_type must be one of %s, got %r"
                          % (UNISELECTOR_TYPES, uniselector_type))
+    source = (continuous_params or {}).get('stress_source')
+    if uniselector_type == 'continuous' and source:
+        return uniselector_type + '_st' + source.replace('_', '')
     return uniselector_type
 
 
@@ -403,15 +439,19 @@ def run_settings(backend, light_intensity, stable_draws, env_seed, early_stop_di
     '''The settings every run records in its JSON (the homeostat's seed is
     recorded apart).  early_stop_distance: None when the run cannot stop early.'''
     eye_config = backend.kheperaSimulation.eyeConfig
-    return dict(env_seed=env_seed,
-                early_stop_distance=early_stop_distance,
-                simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
-                stable_draws=stable_draws,
-                light_intensity=light_intensity,
-                robot=backend.kheperaSimulation.allBodies['Khepera'].model,
-                eye_threshold=eye_config[0],
-                eye_saturation_irradiance=eye_config[1],
-                eye_response=eye_config[2])
+    robot = backend.kheperaSimulation.allBodies['Khepera']
+    settings = dict(env_seed=env_seed,
+                    early_stop_distance=early_stop_distance,
+                    simulator='webots' if backend.name == 'WEBOTS' else 'box2d',
+                    stable_draws=stable_draws,
+                    light_intensity=light_intensity,
+                    robot=robot.model,
+                    eye_threshold=eye_config[0],
+                    eye_saturation_irradiance=eye_config[1],
+                    eye_response=eye_config[2])
+    # The robot's battery, if it has one (the hunger experiments)
+    settings.update(robot.batterySettings() or {})
+    return settings
 
 
 def run_headless(setup, title, total_steps=60000, report_interval=500,
@@ -530,10 +570,14 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                 print(f'\n  *** Early stop: distance {d:.3f} < {early_stop_distance}')
             early_stopped = True
             break
+        if sim.halted:
+            if not quiet:
+                print(f'\n  *** The robot died at tick {robot.battery.deathTick}')
+            break
 
     final_dist = dist_to_target()
     final_x, final_y = robot.body.position[0], robot.body.position[1]
-    steps_run = target_tick
+    steps_run = hom.time
     '''How the run ends, which "acquired" alone cannot tell: Braitenberg's
        Aggressor hits the source at speed, his Love vehicle comes to rest near
        it facing it, his Explorer comes to rest facing away.
@@ -579,9 +623,17 @@ def run_headless(setup, title, total_steps=60000, report_interval=500,
                   final_speed=final_speed, final_bearing=final_bearing,
                   spin=spin,
                   stable_draws=stable_draws)
+    # The battery's run (Battery.summary), if the robot has one
+    if robot.battery is not None:
+        result.update(robot.battery.summary())
     result.update(extra or {})
     return result
 
+
+# The battery's fields of a result (run_headless), in a batch file when the
+# runs have a battery
+BATTERY_FIELDS = ['battery_mean', 'battery_min', 'battery_final', 'ticks_critical',
+                  'ticks_empty', 'alive', 'death_tick']
 
 BATCH_FIELDS = ['run', 'seed', 'env_seed', 'motor', 'wiring', 'signs', 'spin', 'eye_response',
                 'eye_threshold', 'eye_saturation', 'eye_saturation_irradiance',
@@ -708,7 +760,8 @@ def run_batch(run_one, n_runs, experiment, kind, light_intensity=100, total_step
                                ('.csv',)) + '.csv'
         csv_path = os.path.join(log_dir, csv_name)
         with open(csv_path, 'w', newline='') as f:
-            w = _csv.DictWriter(f, fieldnames=BATCH_FIELDS, extrasaction='ignore')
+            fields = BATCH_FIELDS + (BATTERY_FIELDS if 'battery_mean' in results[0] else [])
+            w = _csv.DictWriter(f, fieldnames=fields, extrasaction='ignore')
             w.writeheader()
             w.writerows(results)
         print(f'\nSummary saved to: {csv_path}')
@@ -766,9 +819,11 @@ def run_visualized(setup, caption, light_intensity=100, stable_draws=False,
         view.extendTrail()
         rx, ry = robot.body.position[0], robot.body.position[1]
         dist = sqrt((rx - target_pos[0])**2 + (ry - target_pos[1])**2)
+        battery = ('' if robot.battery is None else
+                   f'battery={robot.battery.level:.3f}{"" if robot.battery.alive else " DEAD"}  ')
         window.set_caption(
             f'{caption} - seed {seed}/{env_seed}  t={state[0]}  speed={state[1]}  '
-            f'dist={dist:.2f}  [{1/max(dt, 0.001):.0f} fps]')
+            f'dist={dist:.2f}  {battery}[{1/max(dt, 0.001):.0f} fps]')
 
     @window.event
     def on_key_press(symbol, modifiers):
@@ -814,6 +869,11 @@ Options both experiments take
                         V eye fields; mouse wheel zoom, drag pan
    --random-topology    every connection between the adaptive units on
    --continuous         the continuous uniselector instead of Ashby's
+   --stress-source S    with --continuous, where its stress comes from:
+                        critical (the default: zero inside the critical
+                        limit, then graded to the stop), deviation (graded
+                        from the centre), battery or battery_critical (a
+                        battery's: the hunger experiments)
    --dark               light intensity -100 (a "darkness source")
    --early-stop D       stop a run once the robot is within D of the light
                         (checked at each report; none by default)
@@ -871,6 +931,7 @@ COMMON_VALUED = {'--batch': 1, '--batch-vary': 1, '--early-stop': 1, '--env-seed
                  '--eye-response': 1, '--eye-saturation': 1, '--eye-threshold': 1,
                  '--heading': 1, '--log-interval': 1, '--robot': 1, '--run-tag': 1,
                  '--seed': 1, '--simulator': 1, '--spin': 1, '--start-range': 2,
+                 '--stress-source': 1,
                  '--steps': 1, '--traj-interval': 1}
 
 
@@ -905,6 +966,17 @@ def parse_common_args(argv, flags=(), valued=None):
     o = {}
     o['topology'] = 'random' if '--random-topology' in argv else 'fixed'
     o['uniselector_type'] = 'continuous' if '--continuous' in argv else 'ashby'
+    o['continuous_params'] = None
+    if '--stress-source' in argv:
+        from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
+        idx = argv.index('--stress-source')
+        source = argv[idx + 1] if idx + 1 < len(argv) else ''
+        if source not in HomeoUniselectorContinuous.STRESS_SOURCES:
+            raise SystemExit('--stress-source must be one of %s, got %r'
+                             % (' '.join(HomeoUniselectorContinuous.STRESS_SOURCES), source))
+        if o['uniselector_type'] != 'continuous':
+            raise SystemExit('--stress-source applies only with --continuous')
+        o['continuous_params'] = {'stress_source': source}
     o['total_steps'] = (_value(argv, '--steps', int, '--steps needs a number of ticks')
                         if '--steps' in argv else 60000)
     o['light_intensity'] = -100 if '--dark' in argv else 100
@@ -1028,7 +1100,8 @@ def parse_common_args(argv, flags=(), valued=None):
 
 # The options of parse_common_args that setup_phototaxis takes, and those of
 # the runners
-SETUP_OPTIONS = ('topology', 'light_intensity', 'uniselector_type', 'seed', 'stable_draws',
+SETUP_OPTIONS = ('topology', 'light_intensity', 'uniselector_type', 'continuous_params',
+                 'seed', 'stable_draws',
                  'start_at_rest', 'spin', 'eye_saturation', 'eye_threshold', 'eye_response',
                  'robot', 'simulator', 'rendering')
 RUN_OPTIONS = ('total_steps', 'light_intensity', 'early_stop_distance', 'state_log',

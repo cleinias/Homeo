@@ -131,6 +131,10 @@ class HomeostatStateLogger:
         for i, name in enumerate(self._unit_names):
             if self._has_ou[i]:
                 cols.append('sigma_%s' % name)
+        # The robot's battery, if it has one (KheperaSimulator.Battery)
+        self._battery = getattr(self._robot, 'battery', None)
+        if self._battery is not None:
+            cols += ['battery_level', 'motor_efficiency', 'alive']
         self._columns = cols
         self._ncols = len(cols)
 
@@ -175,6 +179,12 @@ class HomeostatStateLogger:
                 f.write('%s_stress_exponent\t%.6f\n' % (
                     prefix, unis._stress_exponent))
                 f.write('%s_ou_dt\t%.6f\n' % (prefix, unis._dt))
+                f.write('%s_stress_source\t%s\n' % (prefix, unis._stress_source))
+
+        if self._battery is not None:
+            f.write('# food_quality\t%s\n' % self._robot.foodQuality)
+            for key, value in self._battery.settings().items():
+                f.write('# %s\t%s\n' % (key, value))
 
         # Connection states (manual vs uniselector)
         conn_states = []
@@ -249,6 +259,10 @@ class HomeostatStateLogger:
                 stress = unit.stressLevel()
                 sigma = unit.uniselector.sigma(stress)
                 vals.append('%.6f' % sigma)
+
+        if self._battery is not None:
+            vals += ['%.6f' % self._battery.level, '%.6f' % self._battery.motorEfficiency(),
+                     '%d' % self._battery.alive]
 
         self._f.write('\t'.join(vals) + '\n')
 

@@ -247,11 +247,44 @@ def prepare_genome_evaluation(genome, experiment, experimentParams, stepsSize, d
     return sim, backend
 
 
+# What a setup's GA minimises, its `fitness` attribute (final_distance if it
+# has none); every measure is one to minimise:
+#   final_distance  the robot's final distance from the TARGET
+#   battery_mean    minus the battery's mean level over the evaluation, the
+#                   ticks after the robot's death counting as empty
+#   survival        minus the fraction of the evaluation the robot lived
+FITNESS_MEASURES = ('final_distance', 'battery_mean', 'survival')
+
+
+def fitness_measure(experiment):
+    "The fitness measure of the setup named experiment (see FITNESS_MEASURES)"
+    measure = getattr(getattr(Simulator.HomeoExperiments, experiment), 'fitness', 'final_distance')
+    if measure not in FITNESS_MEASURES:
+        raise ValueError('setup %s: fitness must be one of %s, not %r'
+                         % (experiment, FITNESS_MEASURES, measure))
+    return measure
+
+
+def measured_fitness(backend, measure, stepsSize):
+    """The fitness measure (FITNESS_MEASURES) of an evaluation of stepsSize
+       ticks that has just run on backend."""
+    if measure == 'final_distance':
+        return backend.finalDisFromTarget()
+    battery = backend.kheperaSimulation.allBodies['Khepera'].battery
+    if battery is None:
+        raise ValueError('fitness %r needs a robot with a battery' % measure)
+    if measure == 'battery_mean':
+        return -battery.meanOver(stepsSize)
+    lived = stepsSize if battery.deathTick is None else battery.deathTick
+    return -lived / stepsSize
+
+
 def evaluate_genome(genome, experiment, experimentParams, stepsSize, dataDir, fitnessSign=1):
     """One fitness evaluation of `genome`: build it (prepare_genome_evaluation),
-       run it for stepsSize ticks, and return (fitnessSign * final distance
-       from the target,).  The serial path and the pool workers both evaluate
-       through it."""
+       run it for stepsSize ticks, and return (fitnessSign * the setup's
+       fitness measure,): its final distance from the target unless the
+       setup names another (fitness_measure).  The serial path and the pool
+       workers both evaluate through it."""
     if genome is None:
         raise ValueError('a fitness evaluation needs a genome')
     sim, backend = prepare_genome_evaluation(genome, experiment, experimentParams,
@@ -261,7 +294,7 @@ def evaluate_genome(genome, experiment, experimentParams, stepsSize, dataDir, fi
         sim.step()
     backend.kheperaSimulation.saveTrajectory()   # close (and flush) the .traj file
 
-    fitness = fitnessSign * backend.finalDisFromTarget()
+    fitness = fitnessSign * measured_fitness(backend, fitness_measure(experiment), stepsSize)
     print(" Evaluation for model %s (%d ticks) took time: %s with fitness %.5f" % (
         genome.ID, stepsSize, str(datetime.timedelta(seconds=time() - timeNow)), fitness))
     return fitness,
@@ -363,6 +396,8 @@ class HomeoGASimulation(object):
         self.noUnits = getattr(exp_func, 'noUnits', noUnits)
         self.noEvolvedUnits = getattr(exp_func, 'noEvolvedUnits', noUnits)
         self.fitnessSign = getattr(exp_func, 'fitnessSign', 1)
+        # What it minimises (FITNESS_MEASURES), recorded in the logbook
+        self.fitnessMeasure = fitness_measure(exp)
         self.genomeSize = getattr(exp_func, 'genomeSize',
                                    (self.noEvolvedUnits * essentParams) + (self.noEvolvedUnits * self.noUnits))
         # How the genes decode (Helpers.GenomeDecoder): recorded in the logbook,
@@ -507,6 +542,7 @@ class HomeoGASimulation(object):
                             indivProb=self.indivProb,
                             tournSize=self.tournamentSize,
                             fitnessSign=self.fitnessSign,
+                            fitnessMeasure=self.fitnessMeasure,
                             timeElapsed = str(datetime.timedelta(seconds=timeElapsed)),
                             finalPop = len(pop),
                             finalIndivs = [(ind.ID, ind.fitness.values, list(ind)) for ind in pop],

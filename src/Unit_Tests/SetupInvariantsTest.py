@@ -29,7 +29,9 @@ WeightfreeGASetupTest).  The wiring of the fixed-weight vehicles is in
 BraitenbergControlTest, the Ashby experiments' in AshbyExperimentsTest.
 
 Which connections are 'manual' is the setups' business: the invariants hold
-whatever it is.
+whatever it is.  The continuous uniselectors run with their stress graded
+from the centre ('deviation'), so that they adapt within the short runs
+whether or not a unit leaves its critical limits.
 '''
 import os
 import tempfile
@@ -91,6 +93,10 @@ class SetupInvariantsTest(unittest.TestCase):
                    lambda m=mod, t=topology, u=unisel: self.buildPhototaxis(m, t, u))
 
     def runHomeostat(self, hom, headless):
+        from Core.HomeoUniselectorContinuous import HomeoUniselectorContinuous
+        for u in hom.homeoUnits:
+            if isinstance(u.uniselector, HomeoUniselectorContinuous):
+                u.uniselector.stress_source = 'deviation'
         hom.slowingFactor = 0
         hom.collectsData = False
         hom._headless = headless
