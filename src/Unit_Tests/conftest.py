@@ -9,7 +9,7 @@ COLLECTION time, before any test runs:
     pyglet.display.xlib.NoSuchDisplayException: Cannot connect to "None"
 
 and pytest then aborts the whole session with "Interrupted: N errors during
-collection", so the other 180-odd tests never run either.
+collection", so none of the other tests runs either.
 
 The headless experiment scripts already avoid this by turning off pyglet's
 shadow window before importing anything that touches pyglet. This file does the
@@ -123,9 +123,9 @@ def _isolated_random_state(request):
     """Give every test its own fixed random stream, and leave nothing behind.
 
     Without this, a test that seeds the global RNGs (the GA tests seed with 42,
-    BraitenbergControlTest with 11 and 5) fixes the stream for every test that
-    runs after it, so whether a statistical test passes depended on test order,
-    and a test could pass alone and fail in the full run.
+    BraitenbergControlTest with 11 and 5) would fix the stream for every test
+    that runs after it, so whether a statistical test passes would depend on
+    test order, and a test could pass alone and fail in the full run.
 
     Each test is seeded from its own node id, so its draws are the same whether
     it runs alone or in the suite.  Python's and NumPy's states are restored

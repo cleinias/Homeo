@@ -389,7 +389,7 @@ class StabilityAfterResetTest(unittest.TestCase):
 class GuiRunIsTheHeadlessRunTest(unittest.TestCase):
     '''A GUI run with a seed is the headless run with that seed: the
     critical-deviation sliders follow the needles without writing them back
-    (they wrote back each position floored to the slider's 1e-5 steps).'''
+    (writing back would floor each position to the slider's 1e-5 steps).'''
 
     def testExp1(self):
         import numpy as np

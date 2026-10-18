@@ -123,8 +123,7 @@ connections are stored contiguously:
 
 ### 2.2 Genome size
 
-All 40 genes have a phenotypic effect. The genome contains only genes for
-the evolved units:
+The genome has genes for the evolved units only:
 - 16 unit parameters (4 evolved units x 4 params)
 - 24 connection weights (4 evolved units x 6 connections)
 
@@ -182,8 +181,8 @@ generation's best genome is no longer among them, a copy of it is evaluated
 with them and replaces the worst offspring (k=1 elitism).
 
 **Noisy evaluation**.  An evaluation is noisy: in the direct 2+2 vehicle the same genome's final
-distance over ten seeds had a standard deviation of 1-4, larger than the
-differences between genomes' means.  So:
+distance varies from seed to seed, often by more than genomes' means differ.
+So:
 - under the 'individual' and 'generation' noise schemes **every individual is
   evaluated afresh each generation**, survivors and the elite included, with a
   new ID and so new noise: no score is carried over from an earlier
@@ -352,8 +351,8 @@ from a previous GA run's logbook via `extractGenomeOfIndID()`. This
 allows re-evolving from a known good starting point.
 
 Clones start without a fitness, and generation 0 evaluates them like any
-individual.  The source's logged fitness came from another run, often of
-another code version, so it is kept only in the logbook's summary
+individual.  The source's logged fitness came from another run, possibly of
+other code, so it is kept only in the logbook's summary
 (`cloneSourceFitness`).
 
 ---

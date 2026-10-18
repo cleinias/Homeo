@@ -88,7 +88,7 @@ class HomeoQtSimulationWithoutQtTest(unittest.TestCase):
 
 @unittest.skipUnless(QObjectProxyEmitter.QT_AVAILABLE, 'PyQt5 is not available')
 class HomeoQtSimulationWithQtTest(unittest.TestCase):
-    """HomeoQtSimulation with PyQt5: unchanged, still a QObject with real signals."""
+    """HomeoQtSimulation with PyQt5: a QObject with real signals."""
 
     def testIsAQObjectWithWorkingSignals(self):
         "the class is a QObject and its signals reach connected slots"

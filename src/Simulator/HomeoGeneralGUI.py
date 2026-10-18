@@ -380,8 +380,8 @@ class HomeoSimulationControllerGui(QDialog):
             colorFaded = [self.minusXifPlus(170,x)  for x in color]
             self.pgChartsAndItems[unit] = []
             # The plots are not named: pyqtgraph connects a named view's
-            # destroyed signal to a Python lambda, which crashed the
-            # interpreter when garbage collection freed a closed window.
+            # destroyed signal to a Python lambda, which crashes the
+            # interpreter when garbage collection frees a closed window.
             plotItemCritDev = plotsWindow.addPlot(row=dataPlotRow, col=0, rowspan=1, colspan=4)
             plotItemCritDev.addLine(y=0, pen ={'color' : '#E6E6AF'})  #pale muted yellow color in hex RGB value
             plotItemCritDev.setRange(rect=None, xRange=None, yRange=(unit.minDeviation, unit.maxDeviation),
@@ -528,8 +528,8 @@ class HomeoSimulationControllerGui(QDialog):
             for uniselectType in uniselectList:
                 widget.addItem(uniselectType.__name__.split("HomeoUniselector").pop())
             widget.setEditable(False)
-            # Show the unit's own type, then connect once (connecting inside the
-            # loop ran changeUniselectorType once per uniselector class)
+            # Show the unit's own type, then connect once, outside the loop, so
+            # that a change of type calls changeUniselectorType once
             idx = widget.findText(type(unit.uniselector).__name__.split("HomeoUniselector").pop())
             if idx >= 0:
                 widget.setCurrentIndex(idx)

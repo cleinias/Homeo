@@ -136,8 +136,8 @@ class HomeoUnitTest(unittest.TestCase):
         # Keep the units alive: a unit references itself through its
         # self-connection, so a discarded one is freed by the cyclic garbage
         # collector at an unpredictable moment, and HomeoUnit.__del__ then
-        # releases its name for reuse.  Collecting only the names made the
-        # test fail whenever a collection happened inside the loop.
+        # releases its name for reuse: with only the names kept, a collection
+        # inside the loop could free a name.
         units = [HomeoUnit() for i in range(100)]
         names = [unit.name for unit in units]
         self.assertEqual(len(names), len(set(names)))
@@ -1320,11 +1320,10 @@ class HomeoUnitTest(unittest.TestCase):
                         (inputTorque /(self.unit.maxDeviation *2.)) * (1. - normalizedVisc))
         
 
-    def testSelfUpdateAdvancesUnitTime(self):
+    def testSelfUpdateLeavesUnitTimeAlone(self):
         """
-        Test that a HomeoUnit's simulation time advances by 1 after a self update
-        In current implementation, a HomeoUnit's time is updated by the Homeostat
-        that holds it. A HomeUnit has no means of advancing its internal time counter.
+        A self update leaves a HomeoUnit's time as it is: the Homeostat that
+        holds the unit advances it.
         """
         
         oldUnitTime = self.unit.time
@@ -1420,8 +1419,7 @@ class HomeoUnitTest(unittest.TestCase):
         self.assertEqual(self.unit.outputRange, {'high': 5, 'low': -3})
 
     def testNeedleCompMethodIsValidated(self):
-        '''An unknown needle computation method is refused, not silently
-           taken for random needle positions.'''
+        '''An unknown needle computation method is refused.'''
         for method in ('linear', 'proportional', 'random'):
             self.unit.needleCompMethod = method
             self.assertEqual(self.unit.needleCompMethod, method)

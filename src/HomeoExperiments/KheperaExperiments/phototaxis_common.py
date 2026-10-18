@@ -58,7 +58,7 @@ SIMULATORS = ('box2d', 'webots')
 # same seed give a different noise history at a random heading than at a fixed
 # one, and the start pose would depend on how many draws the vehicle's setup
 # makes.  Separate streams allow the crossed environment x seed decomposition: hold one stream, vary the other.  The
-# environment's seed defaults to the homeostat's, so --seed alone still
+# environment's seed defaults to the homeostat's, so --seed alone
 # reproduces a run; the two streams use different generators (MT19937 and
 # PCG64 through SeedSequence), so equal seeds give unrelated draws.
 
@@ -225,17 +225,12 @@ def uniselector_tag(uniselector_type):
 
 # --- Numerical-integration stability -----------------------------------------
 #
-# An explicit step of the Newtonian needle, with zero torque the velocity
-# recursion
-#       v <- v * (1 - viscosity * dt_fast / mass),
-# is stable only while  viscosity * dt_fast / mass < 2.  Outside that bound
-# the needle diverges to its limit within a few dozen ticks with no sensory
-# input at all, which looks like -- but is not -- a saturated unit.
-# HomeoJIT._jit_needle_position_newtonian takes the exact step, stable for
-# any ratio, so the numerics need no guard, and by default there is none:
+# HomeoJIT._jit_needle_position_newtonian takes the exact step of the
+# Newtonian needle, stable for any viscosity * dt_fast / mass, so by default
 # (mass, viscosity) come from their full distribution, the one the Ashby
-# experiment uses.  --stable-draws (stable_draws=True) keeps the draws inside
-# the bound; runs and batch files record which was used.
+# experiment uses.  --stable-draws (stable_draws=True) keeps the draws where
+# an explicit step would be stable too, viscosity * dt_fast / mass < 2 (below
+# STABILITY_MARGIN); runs and batch files record which was used.
 STABILITY_MARGIN = 1.8          # with stable_draws, keep viscosity*dt/mass below this
 
 
@@ -271,7 +266,7 @@ def randomize_unit(u, mass_range, stable_draws=False, start_at_rest=False, max_t
 
 def set_motor_response(u, max_speed_fraction, switching_rate):
     '''A motor's fraction of the wheel speed range and the steepness of its
-    sigmoid.  The actuator's defaults, 0.2 and 0.1, left a robot with random
+    sigmoid.  The actuator's defaults, 0.2 and 0.1, leave a robot with random
     parameters nearly immobile: speeds in a tiny band, and almost none for a
     moderate deviation.'''
     u._maxSpeedFraction = max_speed_fraction

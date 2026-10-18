@@ -1,10 +1,7 @@
 '''
-Regression tests for known bugs that change simulation results.
-
-Each test states the behaviour the code should have.  While its bug is in
-the code the test fails, so it is marked xfail(strict=True): the suite stays
-green, and turns red as soon as the bug is fixed.  The marker is then removed
-and the test guards the fix; the unmarked tests below are such guards.
+Behaviour that changes simulation results if it breaks: the headless run
+loop, the Newtonian unit's drag, the Ashby experiments' wiring, and the
+Khepera robot's wheels and eyes.
 '''
 import os
 import random
@@ -13,7 +10,6 @@ import tempfile
 import unittest
 
 import numpy as np
-import pytest
 
 from Core.Homeostat import Homeostat
 from Core.HomeoUnit import HomeoUnit

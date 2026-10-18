@@ -10,7 +10,7 @@ from copy import deepcopy
 
 class HomeoUniselectorAshbyTest(unittest.TestCase):
     '''
-    Unit tests for the revised HomeoUniselectorAshby class. See class comments for a detailed description
+    Unit tests for the HomeoUniselectorAshby class. See class comments for a detailed description
     '''
 
     def setUp(self):
@@ -139,9 +139,9 @@ class HomeoUniselectorAshbyTest(unittest.TestCase):
         
         '''And uniformly distributed over -upperBound,upperBound.
             The 100 advances above cycle through the same m*n matrix entries about
-            4 times, so allValues is not an independent sample: testing it as one
-            inflated the KS statistic and failed about two runs in three.  Test the
-            m*n distinct entries against the uniform distribution itself instead.'''
+            4 times, so allValues is not an independent sample, and a KS test on
+            it would be inflated.  The m*n distinct entries are tested against the
+            uniform distribution instead.'''
         bound = self.uniselector.upperBound
         D, p = stats.kstest(numpy.unique(allValues), stats.uniform(loc=-bound, scale=2 * bound).cdf)
         self.assertGreater(p, 0.001)

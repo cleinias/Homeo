@@ -516,8 +516,7 @@ def setup_exp2_self_reorganization(seed=None):
     Fig. 8/5/1), after Sperry's crossing of nerves to antagonist muscles.
 
     The units are named by Ashby's numbers only.  Ashby does not say which
-    of them, if any, stands for an environment, and reading them as sensor,
-    motor and environment led this setup astray before.
+    of them, if any, stands for an environment, so none is treated as one.
 
     Unit 1: no uniselector.
     Unit 2: has the uniselector; no self-connection.

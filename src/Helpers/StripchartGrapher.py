@@ -200,8 +200,8 @@ def seriesBounds(column, meta):
 
     Drawn as a pair of rules so the limit is visible as a limit.  Without them
     the axis frame reads as the bound -- a deviation clipped at -10 stops a
-    hair above the bottom spine and looks like it never arrives, when in this
-    array it sits exactly at -10.000000 for tens of samples per run.
+    hair above the bottom spine and looks like it never arrives, when it may
+    sit exactly at the limit for many samples.
     """
     if column.startswith('w_'):
         return (-1.0, 1.0)              # HomeoUniselectorContinuous clips here

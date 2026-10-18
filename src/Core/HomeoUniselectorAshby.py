@@ -207,7 +207,7 @@ class HomeoUniselectorAshby(HomeoUniselector):
     def produceNewValue(self):
         '''Return the weight, at the switch's current position, for the next
         connection and advance the unitIndex.  The position is the matrix's
-        row _index, counted from 0 (the Smalltalk original counts from 1).'''
+        row _index, counted from 0.'''
         if self._unitIndex < self._matrix.shape[1]:
             if self._beeps:
                 # FIXME will need to put a beep here

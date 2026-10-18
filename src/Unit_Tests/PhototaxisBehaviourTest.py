@@ -215,8 +215,7 @@ class AcquisitionTest(_DataDirTest):
 
     def testADarkRunThatReachesTheSourceIsAcquired(self):
         '''--dark runs as light runs do: no early stop, so a vehicle that
-        reaches the darkness source is acquired.  (With a stop at 1.5 this
-        run would end at t=2800, 1.479 from the source, not acquired.)'''
+        reaches the darkness source is acquired.'''
         options = D.common.parse_common_args(['x', '--dark'])
         self.assertIsNone(options['early_stop_distance'])
         r = D.run_headless(fixed_weights=True, wiring='crossed', signs='--', heading=45,

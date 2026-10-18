@@ -503,8 +503,8 @@ class ExperimentAttributesTest(unittest.TestCase):
         """Scototaxis experiment has noEvolvedUnits == 4"""
         self.assertEqual(self.exps.initializeBraiten2_2_Full_GA_scototaxis.noEvolvedUnits, 4)
 
-    def testExistingExperimentsFitnessSign(self):
-        """Existing experiment functions have fitnessSign == 1 (backward compat)"""
+    def testDistanceMinimisingExperimentsFitnessSign(self):
+        """The distance-minimising experiment functions have fitnessSign == 1"""
         for name in ['initializeBraiten2_2_Full_GA']:
             func = getattr(self.exps, name)
             self.assertEqual(func.fitnessSign, 1,

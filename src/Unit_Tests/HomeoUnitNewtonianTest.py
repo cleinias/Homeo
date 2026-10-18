@@ -238,7 +238,7 @@ class HomeoUnitNewtonianSpringTest(unittest.TestCase):
     a damped oscillator (k > 0, negative feedback) or an unstable one (k < 0).
     The step solves it exactly, so the unit must follow the solution at
     t = dt_fast, 2 dt_fast, ... whatever the damping: an undamped spring keeps
-    its amplitude (the explicit step made it grow), an overdamped one relaxes
+    its amplitude (an explicit Euler step would make it grow), an overdamped one relaxes
     without overshoot, positive feedback grows at its true rate.  Both paths.
     """
 
@@ -424,10 +424,9 @@ class HomeoUnitNewtonianTimeScaleTest(unittest.TestCase):
 class HomeoUnitNewtonianIntegratorTest(unittest.TestCase):
     """The integrator, step by step, against the exact solution.
 
-    The tests above leave the velocity at 0, the viscosity at its default of 0
-    and dt_fast at 1, so they check only the 1/2 a term.  Here a unit driven by
-    a constant torque F, with Stokes drag c = viscosity, must follow the
-    solution of m dv/dt = F - c v at t = dt_fast, 2 dt_fast, ...:
+    A unit driven by a constant torque F, with Stokes drag c = viscosity,
+    must follow the solution of m dv/dt = F - c v at t = dt_fast,
+    2 dt_fast, ...:
 
         v(t) = F/c + (v0 - F/c) e^(-c t / m)
         x(t) = F t / c + (v0 - F/c) (m / c) (1 - e^(-c t / m))

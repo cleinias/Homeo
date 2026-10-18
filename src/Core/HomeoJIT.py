@@ -216,8 +216,8 @@ def _jit_needle_position_newtonian(torque, viscosity, current_velocity, mass, cr
     self-connection, which acts on the needle as a spring (or, with positive
     feedback, a negative spring); the other connections' torque is held over
     the step.  Being exact, the step adds nothing of its own: no growth the
-    equation does not have (an explicit step blew up beyond viscosity * dt /
-    mass = 2, and made an undamped spring's swing grow), no damping it does
+    equation does not have (an explicit step blows up beyond viscosity * dt /
+    mass = 2, and makes an undamped spring's swing grow), no damping it does
     not have.
 
     Without stiffness the solution is, with b = viscosity * dt_fast / mass,

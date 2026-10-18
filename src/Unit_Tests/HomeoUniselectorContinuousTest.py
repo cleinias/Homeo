@@ -113,7 +113,7 @@ class HomeoUniselectorContinuousTest(unittest.TestCase):
         self.unis.advance()  # should be a no-op
 
     def testProduceNewValueFallback(self):
-        '''produceNewValue should return a value in [-1, 1] for compatibility'''
+        '''produceNewValue should return a value in [-1, 1], as every HomeoUniselector does'''
         for _ in range(100):
             v = self.unis.produceNewValue()
             self.assertGreaterEqual(v, -1.0)

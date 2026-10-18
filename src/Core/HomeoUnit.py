@@ -396,7 +396,7 @@ class HomeoUnit(object):
         The arrays may hold weights the connections do not have yet (the
         headless OU uniselector evolves only the arrays), so they are first
         written back, and only then rebuilt from the connections.  Rebuilding
-        alone threw that evolution away every time it ran."""
+        alone would throw that evolution away every time it ran."""
         self.flushJitArrays()
         active = [c for c in self._inputConnections
                   if c.isActive() and c.incomingUnit.isActive()]
@@ -661,8 +661,8 @@ class HomeoUnit(object):
     
     def getOutputRange(self):
         return self._outputRange
-    # Set with a dict {'low': .., 'high': ..}, or setOutputRange(low, high)
-    # (the setter took two arguments, which a property cannot pass)
+    # Set with a dict {'low': .., 'high': ..}, or setOutputRange(low, high),
+    # which takes two arguments, as a property setter cannot
     outputRange = property(fget = lambda self: self.getOutputRange(),
                            fset = lambda self, aDict: self.setOutputRange(aDict['low'], aDict['high']))
     def setUniselectorActive(self,aBoolean):
@@ -1019,7 +1019,7 @@ class HomeoUnit(object):
         "Change the unit's uniselector to a new instance of aUniselClassName (also abbreviated)"
         validUniselTypeNames = [x.__name__ for x in HomeoUniselector.__subclasses__()]
         if not "HomeoUniselector" in aUniselClassName:
-            aUniselClassName = str("HomeoUniselector" + aUniselClassName) # PyQt returns QString, which will fail  as keys of globals()
+            aUniselClassName = str("HomeoUniselector" + aUniselClassName) # str(): the name may come from a Qt widget
         if aUniselClassName in validUniselTypeNames:
             uniSelInstance = globals()[aUniselClassName]()
             self.uniselector = uniSelInstance

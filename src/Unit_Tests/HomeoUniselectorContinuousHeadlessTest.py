@@ -62,7 +62,7 @@ class HomeoUniselectorContinuousHeadlessTest(unittest.TestCase):
         self.assertGreater(
             np.abs(after - before).max(), 1e-3,
             "headless OU weights did not change over 2000 ticks -- the JIT "
-            "arrays are being discarded again (see this module's docstring)")
+            "arrays are being discarded (see this module's docstring)")
 
     def testHeadlessAndNonHeadlessBothEvolve(self):
         "Headless must not be systematically quieter than non-headless."
